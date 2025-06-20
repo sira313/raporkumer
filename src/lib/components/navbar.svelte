@@ -1,11 +1,30 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import IconMenuDrawer from '$lib/icons/menu-drawer.svg?raw';
 	import IconQuestion from '$lib/icons/question.svg?raw';
 	import { pageMeta } from '$lib/state.svelte';
-	let modalRef: HTMLDialogElement | null = null;
+	import { showModal } from './modal/state.svelte';
 
-	function openModal() {
-		modalRef?.showModal();
+	const helps: Record<string, string> = {
+		// path: body
+		'/sekolah': 'Things todo before join WW3',
+		'/siswa': 'WW3 begin because of non-exists country, we know!'
+	};
+
+	function showHelp() {
+		const body = helps[page.url.pathname.replace(/\/+$/, '')] || 'Noting match to `helps`';
+		showModal({
+			// body can be string or Snippet
+			body: body,
+			dismissible: true,
+			onNeutral: {
+				label: 'OK',
+				action({ close }) {
+					// do something here
+					close();
+				}
+			}
+		});
 	}
 </script>
 
@@ -21,21 +40,10 @@
 	<div class="flex-none">
 		<ul class="menu menu-horizontal px-1">
 			<li class="menu-item">
-				<button class="btn btn-ghost" on:click={openModal} aria-label="Buka Modal">
+				<button class="btn btn-ghost" aria-label="Bantuan" onclick={showHelp}>
 					{@html IconQuestion}
 				</button>
 			</li>
 		</ul>
 	</div>
 </div>
-
-<!-- cara efektif untuk letakkan elemen ini biar konten dinamis, bisa diatur tiap laman gimana? -->
-<dialog bind:this={modalRef} class="modal">
-  <div class="modal-box">
-    <h3 class="text-lg font-bold">Tutorial</h3>
-    <p class="py-4">Tutorial akan berubah dinamis setiap laman</p>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
-</dialog>

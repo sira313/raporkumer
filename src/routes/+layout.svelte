@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Menu from '$lib/components/menu.svelte';
+	import ModalDialog from '$lib/components/modal/modal-dialog.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
 	import { appName, pageMeta, setPageTitle } from '$lib/state.svelte';
 	import { findTitleByPath } from '$lib/utils';
@@ -10,7 +11,7 @@
 
 	$effect(() => {
 		const title = findTitleByPath(page.url.pathname);
-		setPageTitle(title);
+		title && setPageTitle(title);
 	});
 </script>
 
@@ -45,3 +46,5 @@
 		</ul>
 	</div>
 </main>
+
+<ModalDialog />
