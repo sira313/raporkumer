@@ -13,11 +13,7 @@
 <dialog bind:this={modal} class="modal" onclose={() => setTimeout(hideModal, 800)}>
 	{#if props}
 		<div class="modal-box">
-			{#if props.dismissible}
-				<form method="dialog">
-					<button class="btn btn-sm btn-circle btn-ghost absolute top-2 right-2">✕</button>
-				</form>
-			{/if}
+			<!-- Tombol close di pojok kanan atas sudah dihapus -->
 
 			{#if props.title}
 				<h3 class="text-lg font-bold">{props.title}</h3>
