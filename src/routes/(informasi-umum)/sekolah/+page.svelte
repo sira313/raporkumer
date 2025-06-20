@@ -1,4 +1,4 @@
-<fieldset class="fieldset bg-base-200 w-full rounded-lg border border-none p-4 shadow-lg">
+<fieldset class="fieldset bg-base-200 w-full rounded-lg border border-none p-4 shadow-md">
 	<legend class="fieldset-legend">Tabel Data Sekolah</legend>
 
 	<!-- Jenjang Pendidikan -->
