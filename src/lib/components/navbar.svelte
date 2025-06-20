@@ -9,7 +9,7 @@
 	}
 </script>
 
-<div class="navbar bg-base-300 sticky top-0 z-50 shadow-md">
+<div class="navbar bg-base-300 shadow-b-md sticky top-0 z-50">
 	<div class="flex-none lg:hidden">
 		<label for="my-drawer-2" class="btn btn-square btn-ghost drawer-button">
 			{@html IconMenuDrawer}
@@ -31,11 +31,11 @@
 
 <!-- cara efektif untuk letakkan elemen ini biar konten dinamis, bisa diatur tiap laman gimana? -->
 <dialog bind:this={modalRef} class="modal">
-  <div class="modal-box">
-    <h3 class="text-lg font-bold">Tutorial</h3>
-    <p class="py-4">Tutorial akan berubah dinamis setiap laman</p>
-  </div>
-  <form method="dialog" class="modal-backdrop">
-    <button>close</button>
-  </form>
+	<div class="modal-box">
+		<h3 class="text-lg font-bold">Tutorial</h3>
+		<p class="py-4">Tutorial akan berubah dinamis setiap laman</p>
+	</div>
+	<form method="dialog" class="modal-backdrop">
+		<button>close</button>
+	</form>
 </dialog>
