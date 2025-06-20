@@ -1,12 +1,18 @@
 <script lang="ts">
 	import IconSearch from '$lib/icons/search.svg?raw';
+	import TambahSiswa from '$lib/components/modal/tambah-siswa.svelte';
+	let showModal = false;
 </script>
 
 <fieldset class="fieldset bg-base-100 w-full rounded-lg border border-none p-4 shadow-md">
 	<legend class="fieldset-legend">Formulir Dan Tabel Isian Data Siswa</legend>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
-		<button class="btn btn-primary flex items-center shadow-none">Tambah Siswa</button>
+		<button
+			class="btn btn-primary flex items-center shadow-none"
+			on:click={() => (showModal = true)}>Tambah Siswa</button
+		>
+		<TambahSiswa open={showModal} onClose={() => (showModal = false)} />
 		<!-- Tombol Download template excel -->
 		<button class="btn btn-success shadow-none sm:ml-auto">Download Template</button>
 		<!-- Tombol Import file template yang sudah diisi -->
