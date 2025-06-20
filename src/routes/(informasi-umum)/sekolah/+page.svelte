@@ -1,5 +1,5 @@
 <fieldset class="fieldset bg-base-100 w-full rounded-lg border border-none p-4 shadow-md">
-	<legend class="fieldset-legend">Tabel Data Sekolah</legend>
+	<legend class="fieldset-legend">Formulir Isian Data Sekolah</legend>
 
 	<!-- Jenjang Pendidikan -->
 	<legend class="fieldset-legend">Jenjang Pendidikan</legend>
@@ -97,5 +97,5 @@
 	<p class="label">Format png, tanpa latar belakang, maksimal 300KB</p>
 
 	<!-- Save -->
-	<button class="btn btn-secondary ml-auto">Simpan</button>
+	<button class="btn btn-secondary ml-auto shadow-none">Simpan</button>
 </fieldset>
