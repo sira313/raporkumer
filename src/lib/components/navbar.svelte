@@ -2,6 +2,11 @@
 	import IconMenuDrawer from '$lib/icons/menu-drawer.svg?raw';
 	import IconQuestion from '$lib/icons/question.svg?raw';
 	import { pageMeta } from '$lib/state.svelte';
+	let modalRef: HTMLDialogElement | null = null;
+
+	function openModal() {
+		modalRef?.showModal();
+	}
 </script>
 
 <div class="navbar bg-base-300 sticky top-0 z-50 shadow-md">
@@ -16,10 +21,20 @@
 	<div class="flex-none">
 		<ul class="menu menu-horizontal px-1">
 			<li class="menu-item">
-				<a href="/" aria-label="Menu">
+				<button class="btn btn-ghost" on:click={openModal} aria-label="Buka Modal">
 					{@html IconQuestion}
-				</a>
+				</button>
 			</li>
 		</ul>
 	</div>
 </div>
+
+<dialog bind:this={modalRef} class="modal">
+  <div class="modal-box">
+    <h3 class="text-lg font-bold">Tutorial</h3>
+    <p class="py-4">Tutorial akan berubah dinamis setiap laman</p>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
