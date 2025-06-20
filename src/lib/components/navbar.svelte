@@ -28,7 +28,9 @@
 	}
 </script>
 
-<div class="navbar bg-base-300 sticky top-0 z-50">
+<div
+	class="navbar bg-base-100 border-base-200 sticky top-0 z-50 border-b lg:border-b-0 lg:border-l"
+>
 	<div class="flex-none lg:hidden">
 		<label for="my-drawer-2" class="btn btn-square btn-ghost drawer-button">
 			{@html IconMenuDrawer}

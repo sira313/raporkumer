@@ -1,9 +1,9 @@
-<fieldset class="fieldset bg-base-200 w-full rounded-lg border border-none p-4 shadow-md">
+<fieldset class="fieldset bg-base-100 w-full rounded-lg border border-none p-4 shadow-md">
 	<legend class="fieldset-legend">Tabel Data Sekolah</legend>
 
 	<!-- Jenjang Pendidikan -->
 	<legend class="fieldset-legend">Jenjang Pendidikan</legend>
-	<select class="select bg-base-100 w-full dark:border-none">
+	<select class="select bg-base-200 w-full border-none">
 		<option disabled selected>Pilih Jenjang Pendidikan</option>
 		<option>SD (Sekolah Dasar)</option>
 		<option>SMP (Sekolah Menengah Pertama)</option>
@@ -17,7 +17,7 @@
 			<input
 				required
 				type="text"
-				class="input bg-base-100 w-full dark:border-none"
+				class="input bg-base-200 w-full border-none"
 				placeholder="Contoh: SD Negeri 19 Periji"
 			/>
 		</div>
@@ -28,7 +28,7 @@
 			<input
 				required
 				type="text"
-				class="input bg-base-100 w-full dark:border-none"
+				class="input bg-base-200 w-full border-none"
 				placeholder="Contoh: 69856875"
 			/>
 		</div>
@@ -39,7 +39,7 @@
 	<input
 		required
 		type="text"
-		class="input bg-base-100 w-full dark:border-none"
+		class="input bg-base-200 w-full border-none"
 		placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
 	/>
 
@@ -50,7 +50,7 @@
 			<input
 				required
 				type="text"
-				class="input bg-base-100 w-full dark:border-none"
+				class="input bg-base-200 w-full border-none"
 				placeholder="Contoh: Desa Sungai Dangin atau Kelurahan Sungai Sengkuang"
 			/>
 		</div>
@@ -61,7 +61,7 @@
 			<input
 				required
 				type="text"
-				class="input bg-base-100 w-full dark:border-none"
+				class="input bg-base-200 w-full border-none"
 				placeholder="Contoh: Kecamatan Noyan"
 			/>
 		</div>
@@ -74,7 +74,7 @@
 			<input
 				required
 				type="text"
-				class="input bg-base-100 w-full dark:border-none"
+				class="input bg-base-200 w-full border-none"
 				placeholder="Contoh: Sanggau"
 			/>
 		</div>
@@ -85,7 +85,7 @@
 			<input
 				required
 				type="text"
-				class="input bg-base-100 w-full dark:border-none"
+				class="input bg-base-200 w-full border-none"
 				placeholder="Contoh: 78554"
 			/>
 		</div>
@@ -93,7 +93,7 @@
 
 	<!-- Upload logo sekolah -->
 	<legend class="fieldset-legend">Logo Sekolah</legend>
-	<input type="file" class="file-input file-input-primary dark:border-none" />
+	<input type="file" class="file-input file-input-primary bg-base-200 border-none" />
 	<p class="label">Format png, tanpa latar belakang, maksimal 300KB</p>
 
 	<!-- Save -->
