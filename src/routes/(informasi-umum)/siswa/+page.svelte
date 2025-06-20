@@ -1,7 +1,9 @@
 <script lang="ts">
 	import IconSearch from '$lib/icons/search.svg?raw';
-	import TambahSiswa from '$lib/components/modal/tambah-siswa.svelte';
-	let showModal = false;
+	import TambahSiswa from '$lib/components/modal/tambah-murid.svelte';
+	import DetilSiswa from '$lib/components/modal/detil-murid.svelte';
+	let showTambahMurid = false;
+	let showDetilMurid = false;
 </script>
 
 <fieldset class="fieldset bg-base-100 w-full rounded-lg border border-none p-4 shadow-md">
@@ -10,9 +12,9 @@
 		<!-- Tombol Tambah Manual -->
 		<button
 			class="btn btn-primary flex items-center shadow-none"
-			on:click={() => (showModal = true)}>Tambah Siswa</button
+			on:click={() => (showTambahMurid = true)}>Tambah Murid</button
 		>
-		<TambahSiswa open={showModal} onClose={() => (showModal = false)} />
+		<TambahSiswa open={showTambahMurid} onClose={() => (showTambahMurid = false)} />
 		<!-- Tombol Download template excel -->
 		<button class="btn btn-success shadow-none sm:ml-auto">Download Template</button>
 		<!-- Tombol Import file template yang sudah diisi -->
@@ -56,7 +58,13 @@
 					<td>Donald Trump</td>
 					<td>
 						<div class="flex flex-col gap-2 sm:flex-row">
-							<button class="btn btn-info btn-sm shadow-none"> Lihat </button>
+							<button
+								class="btn btn-info btn-sm shadow-none"
+								on:click={() => (showDetilMurid = true)}
+							>
+								Lihat
+							</button>
+							<DetilSiswa open={showDetilMurid} onClose={() => (showDetilMurid = false)} />
 							<button class="btn btn-accent btn-sm shadow-none"> Hapus </button>
 						</div>
 					</td>

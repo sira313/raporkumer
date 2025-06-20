@@ -264,7 +264,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="border-base-200 mt-8 flex flex-col gap-2 sm:flex-row">
+		<div class="border-base-200 mt-4 flex flex-col gap-2 sm:flex-row">
 			<button class="btn border-none shadow-none" on:click={handleBatal}>Batal</button>
 			<button class="btn btn-primary border-none shadow-none sm:ml-auto">Simpan</button>
 		</div>
