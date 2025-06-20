@@ -29,6 +29,7 @@
 	</div>
 </div>
 
+<!-- cara efektif untuk letakkan elemen ini biar konten dinamis, bisa diatur tiap laman gimana? -->
 <dialog bind:this={modalRef} class="modal">
   <div class="modal-box">
     <h3 class="text-lg font-bold">Tutorial</h3>
