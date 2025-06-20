@@ -10,10 +10,8 @@
 			{@html IconMenuDrawer}
 		</label>
 	</div>
-	<div class="flex-1 px-2">
-		<span class="text-lg font-bold">
-			{pageMeta?.title}
-		</span>
+	<div class="mx-2 flex-1 px-2">
+		<span class="text-lg font-bold">{pageMeta?.title}</span>
 	</div>
 	<div class="flex-none">
 		<ul class="menu menu-horizontal px-1">
