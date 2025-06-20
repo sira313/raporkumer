@@ -1,5 +1,9 @@
 Beranda
 daisyui
+Dangin
 Formatif
+Noyan
+NPSN
+Periji
 Rapor
 Sumatif

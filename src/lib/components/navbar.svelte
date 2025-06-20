@@ -28,7 +28,7 @@
 	}
 </script>
 
-<div class="navbar bg-base-300 sticky top-0 z-50 shadow-md">
+<div class="navbar bg-base-300 sticky top-0 z-50">
 	<div class="flex-none lg:hidden">
 		<label for="my-drawer-2" class="btn btn-square btn-ghost drawer-button">
 			{@html IconMenuDrawer}
@@ -40,7 +40,7 @@
 	<div class="flex-none">
 		<ul class="menu menu-horizontal px-1">
 			<li class="menu-item">
-				<button class="btn btn-ghost" aria-label="Bantuan" onclick={showHelp}>
+				<button class="btn btn-ghost btn-circle" aria-label="Bantuan" onclick={showHelp}>
 					{@html IconQuestion}
 				</button>
 			</li>
