@@ -18,11 +18,10 @@
 		</legend>
 		<div class="max-h-[60vh] overflow-y-auto sm:max-h-none sm:overflow-y-visible">
 			<div class="join join-vertical w-full max-w-full">
-				<!-- Data Murid Data Dummy -->
-				<div class="collapse-arrow join-item border-base-200 collapse border">
-					<input type="radio" name="my-accordion-4" checked={true} />
-					<div class="collapse-title text-lg font-semibold">Data Murid</div>
-					<div class="collapse-content">
+				<div class="tabs tabs-box">
+					<!-- data Murid -->
+					<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Murid" checked />
+					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							<div>
 								<span class="text-sm text-gray-500">NIS</span>
@@ -54,28 +53,25 @@
 							</div>
 						</div>
 					</div>
-				</div>
-				<!-- Formulir Data Orang tua -->
-				<div class="collapse-arrow join-item border-base-200 collapse border">
-					<input type="radio" name="my-accordion-4" />
-					<div class="collapse-title text-lg font-semibold">Data Orang Tua</div>
-					<div class="collapse-content">
+					<!-- data Orang Tua -->
+					<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Orang Tua" />
+					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							<div>
 								<span class="text-sm text-gray-500">Nama Ayah</span>
-								<p class="font-medium">dsfads</p>
+								<p class="font-medium">John StillInTheHouse</p>
 							</div>
 							<div>
 								<span class="text-sm text-gray-500">Pekerjaan Ayah</span>
-								<p class="font-medium">dfwafs</p>
+								<p class="font-medium">Youtuber</p>
 							</div>
 							<div>
 								<span class="text-sm text-gray-500">Nama Ibu</span>
-								<p class="font-medium">dsfas</p>
+								<p class="font-medium">Prices</p>
 							</div>
 							<div>
 								<span class="text-sm text-gray-500">Pekerjaan Ibu</span>
-								<p class="font-medium">dfadsf</p>
+								<p class="font-medium">Pemancing</p>
 							</div>
 							<div class="sm:col-span-2">
 								<span class="text-sm text-gray-500">Nomor Telepon</span>
@@ -83,41 +79,35 @@
 							</div>
 						</div>
 					</div>
-				</div>
-				<!-- Formulir Alamat -->
-				<div class="collapse-arrow join-item border-base-200 collapse border">
-					<input type="radio" name="my-accordion-4" />
-					<div class="collapse-title text-lg font-semibold">Data Alamat Murid</div>
-					<div class="collapse-content">
+					<!-- data Alamat Murid -->
+					<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Alamat Murid" />
+					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							<div class="sm:col-span-2">
 								<span class="text-sm text-gray-500">Jalan</span>
-								<p class="font-medium">dafdsf</p>
+								<p class="font-medium">Jalan Polandia</p>
 							</div>
 							<div>
 								<span class="text-sm text-gray-500">Kelurahan/Desa</span>
-								<p class="font-medium">dsafdf</p>
+								<p class="font-medium">Chili</p>
 							</div>
 							<div>
 								<span class="text-sm text-gray-500">Kecamatan</span>
-								<p class="font-medium">dsfaads</p>
+								<p class="font-medium">Antartika</p>
 							</div>
 							<div>
 								<span class="text-sm text-gray-500">Kabupaten/Kota</span>
-								<p class="font-medium">dsafads</p>
+								<p class="font-medium">Madagaskar</p>
 							</div>
 							<div>
 								<span class="text-sm text-gray-500">Provinsi</span>
-								<p class="font-medium">dsafads</p>
+								<p class="font-medium">Hawai</p>
 							</div>
 						</div>
 					</div>
-				</div>
-				<!-- Formulir Data Wali -->
-				<div class="collapse-arrow join-item border-base-200 collapse border">
-					<input type="radio" name="my-accordion-4" />
-					<div class="collapse-title text-lg font-semibold">Data Wali</div>
-					<div class="collapse-content">
+					<!-- data Wali -->
+					<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Wali" />
+					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							<div>
 								<span class="text-sm text-gray-500">Nama Wali</span>
@@ -133,7 +123,7 @@
 							</div>
 							<div class="sm:col-span-2">
 								<span class="text-sm text-gray-500">Kontak</span>
-								<p class="font-medium">blabala</p>
+								<p class="font-medium">7312341</p>
 							</div>
 						</div>
 					</div>

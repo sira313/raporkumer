@@ -22,7 +22,7 @@
 				var dark = localStorage.getItem('dark-mode');
 				if (dark) dark = JSON.parse(dark);
 				else dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-				if (dark) document.documentElement.classList.add('dark');
+				document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
 			} catch (e) {
 				console.error('failed initialize dark mode:', e);
 			}

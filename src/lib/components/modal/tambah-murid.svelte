@@ -17,248 +17,237 @@
 			<pre class="bg-base-200 rounded-xl px-2">Formulir Tambah Murid Manual</pre>
 		</legend>
 		<div class="max-h-[60vh] overflow-y-auto sm:max-h-none sm:overflow-y-visible">
-			<div class="join join-vertical w-full max-w-full">
-				<!-- Formulir Data Murid -->
-				<div class="collapse-arrow join-item border-base-200 collapse border">
-					<input type="radio" name="my-accordion-4" checked={true} />
-					<div class="collapse-title text-lg font-semibold">Data Murid</div>
-					<div class="collapse-content">
-						<div class="flex flex-col gap-2 sm:flex-row">
-							<!-- NIS -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">NIS</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: 0030"
-								/>
-							</div>
-							<!-- NISN -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">NISN</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: 8371612"
-								/>
-							</div>
+			<!-- Tab Isian -->
+			<div class="tabs tabs-box">
+				<!-- data Murid -->
+				<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Murid" checked />
+				<div class="tab-content bg-base-100 p-4">
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- NIS -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">NIS</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: 0030"
+							/>
 						</div>
-						<!-- Nama Murid -->
-						<legend class="fieldset-legend">Nama Murid</legend>
-						<input
-							required
-							type="text"
-							class="input bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: Chairil Anwar"
-						/>
-						<div class="flex flex-col gap-2 sm:flex-row">
-							<!-- Tempat lahir -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Tempat Lahir</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Kembayan"
-								/>
-							</div>
-							<!-- Tanggal Lahir -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Tanggal Lahir</legend>
-								<input type="date" class="input bg-base-200 w-full dark:border-none" />
-							</div>
+						<!-- NISN -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">NISN</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: 8371612"
+							/>
 						</div>
-						<div class="flex flex-col gap-2 sm:flex-row">
-							<!-- Jenis Kelamin -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Jenis Kelamin</legend>
-								<select class="select bg-base-200 w-full dark:border-none">
-									<option disabled selected>Pilih Jenis Kelamin</option>
-									<option>Laki-laki</option>
-									<option>Perempuan</option>
-								</select>
-							</div>
-							<!-- Agama -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Agama</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Islam"
-								/>
-							</div>
+					</div>
+					<!-- Nama Murid -->
+					<legend class="fieldset-legend">Nama Murid</legend>
+					<input
+						required
+						type="text"
+						class="input bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: Chairil Anwar"
+					/>
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- Tempat lahir -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Tempat Lahir</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Kembayan"
+							/>
+						</div>
+						<!-- Tanggal Lahir -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Tanggal Lahir</legend>
+							<input type="date" class="input bg-base-200 w-full dark:border-none" />
+						</div>
+					</div>
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- Jenis Kelamin -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Jenis Kelamin</legend>
+							<select class="select bg-base-200 w-full dark:border-none">
+								<option disabled selected>Pilih Jenis Kelamin</option>
+								<option>Laki-laki</option>
+								<option>Perempuan</option>
+							</select>
+						</div>
+						<!-- Agama -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Agama</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Islam"
+							/>
 						</div>
 					</div>
 				</div>
-				<!-- Formulir Data Orang tua -->
-				<div class="collapse-arrow join-item border-base-200 collapse border">
-					<input type="radio" name="my-accordion-4" />
-					<div class="collapse-title text-lg font-semibold">Data Orang Tua</div>
-					<div class="collapse-content">
-						<div class="flex flex-col gap-2 sm:flex-row">
-							<!-- Nama Ayah -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Nama Ayah</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Agus"
-								/>
-							</div>
-							<!-- Nama Ibu -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Nama Ibu</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Ratih"
-								/>
-							</div>
+				<!-- data Orang Tua -->
+				<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Orang Tua" />
+				<div class="tab-content bg-base-100 p-4">
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- Nama Ayah -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Nama Ayah</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Agus"
+							/>
 						</div>
-						<div class="flex flex-col gap-2 sm:flex-row">
-							<!-- Pekerjaan Ayah -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Pekerjaan Ayah</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Tani"
-								/>
-							</div>
-							<!-- Pekerjaan Ibu -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Pekerjaan Ibu</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: IRT"
-								/>
-							</div>
+						<!-- Nama Ibu -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Nama Ibu</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Ratih"
+							/>
 						</div>
-						<!-- Kontak -->
-						<legend class="fieldset-legend">Kontak</legend>
-						<input
-							required
-							type="text"
-							class="input bg-base-200 w-full dark:border-none"
-							placeholder="Nomor telepon atau WhatsApp"
-						/>
 					</div>
-				</div>
-				<!-- Formulir Alamat -->
-				<div class="collapse-arrow join-item border-base-200 collapse border">
-					<input type="radio" name="my-accordion-4" />
-					<div class="collapse-title text-lg font-semibold">Data Alamat Murid</div>
-					<div class="collapse-content">
-						<!-- Alamat Jalan -->
-						<legend class="fieldset-legend">Jalan</legend>
-						<input
-							required
-							type="text"
-							class="input bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
-						/>
-						<div class="flex flex-col gap-2 sm:flex-row">
-							<!-- Kelurahan/Desa -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Kelurahan/Desa</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Sungai Dangin"
-								/>
-							</div>
-							<!-- Kecamatan -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Kecamatan</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Noyan"
-								/>
-							</div>
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- Pekerjaan Ayah -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Pekerjaan Ayah</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Tani"
+							/>
 						</div>
-						<div class="flex flex-col gap-2 sm:flex-row">
-							<!-- Kabupaten -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Kabupaten</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Sanggau"
-								/>
-							</div>
-							<!-- Provinsi -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Provinsi</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Kalimantan Barat"
-								/>
-							</div>
+						<!-- Pekerjaan Ibu -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Pekerjaan Ibu</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: IRT"
+							/>
+						</div>
+					</div>
+					<!-- Kontak -->
+					<legend class="fieldset-legend">Kontak</legend>
+					<input
+						required
+						type="text"
+						class="input bg-base-200 w-full dark:border-none"
+						placeholder="Nomor telepon atau WhatsApp"
+					/>
+				</div>
+				<!-- data Alamat Murid -->
+				<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Alamat Murid" />
+				<div class="tab-content bg-base-100 p-4">
+					<!-- Alamat Jalan -->
+					<legend class="fieldset-legend">Jalan</legend>
+					<input
+						required
+						type="text"
+						class="input bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
+					/>
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- Kelurahan/Desa -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Kelurahan/Desa</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Sungai Dangin"
+							/>
+						</div>
+						<!-- Kecamatan -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Kecamatan</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Noyan"
+							/>
+						</div>
+					</div>
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- Kabupaten -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Kabupaten</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Sanggau"
+							/>
+						</div>
+						<!-- Provinsi -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Provinsi</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Kalimantan Barat"
+							/>
 						</div>
 					</div>
 				</div>
-				<!-- Formulir Data Wali -->
-				<div class="collapse-arrow join-item border-base-200 collapse border">
-					<input type="radio" name="my-accordion-4" />
-					<div class="collapse-title text-lg font-semibold">Data Wali</div>
-					<div class="collapse-content">
-						<div class="flex flex-col gap-2 sm:flex-row">
-							<!-- Nama Wali -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Nama Wali</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Hendra"
-								/>
-							</div>
-							<!-- Pekerjaan Wali -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Pekerjaan Wali</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: PNS"
-								/>
-							</div>
+				<!-- data Wali -->
+				<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Wali" />
+				<div class="tab-content bg-base-100 p-4">
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- Nama Wali -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Nama Wali</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Hendra"
+							/>
 						</div>
-						<div class="flex flex-col gap-2 sm:flex-row">
-							<!-- Alamat Wali -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Alamat Wali</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
-								/>
-							</div>
-							<!-- Kontak Wali -->
-							<div class="flex-1">
-								<legend class="fieldset-legend">Kontak</legend>
-								<input
-									required
-									type="text"
-									class="input bg-base-200 w-full dark:border-none"
-									placeholder="Nomor telepon atau WhatsApp"
-								/>
-							</div>
+						<!-- Pekerjaan Wali -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Pekerjaan Wali</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: PNS"
+							/>
+						</div>
+					</div>
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- Alamat Wali -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Alamat Wali</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
+							/>
+						</div>
+						<!-- Kontak Wali -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Kontak</legend>
+							<input
+								required
+								type="text"
+								class="input bg-base-200 w-full dark:border-none"
+								placeholder="Nomor telepon atau WhatsApp"
+							/>
 						</div>
 					</div>
 				</div>
