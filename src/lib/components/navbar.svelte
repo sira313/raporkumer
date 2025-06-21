@@ -6,6 +6,7 @@
 	import IconQuestion from '$lib/icons/question.svg?raw';
 	import { pageMeta } from '$lib/state.svelte';
 	import { showModal } from './modal/state.svelte';
+	import DarkMode from '$lib/components/dark-mode.svelte';
 
 	const helps: Record<string, string> = {
 		// path: body
@@ -47,14 +48,7 @@
 		<ul class="menu menu-horizontal px-1">
 			<!-- tombol dark/light -->
 			<li class="menu-item">
-				<label class="btn btn-circle btn-ghost swap swap-rotate">
-					<!-- this hidden checkbox controls the state -->
-					<input type="checkbox" />
-					<!-- sun icon -->
-					{@html iconSun}
-					<!-- moon icon -->
-					{@html iconMoon}
-				</label>
+				<DarkMode />
 			</li>
 			<li class="menu-item">
 				<button class="btn btn-ghost btn-circle" aria-label="Bantuan" onclick={showHelp}>
