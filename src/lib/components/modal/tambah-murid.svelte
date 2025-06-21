@@ -30,7 +30,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: 0030"
 								/>
 							</div>
@@ -40,7 +40,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: 8371612"
 								/>
 							</div>
@@ -50,7 +50,7 @@
 						<input
 							required
 							type="text"
-							class="input bg-base-200 w-full border-none"
+							class="input bg-base-200 w-full dark:border-none"
 							placeholder="Contoh: Chairil Anwar"
 						/>
 						<div class="flex flex-col gap-2 sm:flex-row">
@@ -60,21 +60,21 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Kembayan"
 								/>
 							</div>
 							<!-- Tanggal Lahir -->
 							<div class="flex-1">
 								<legend class="fieldset-legend">Tanggal Lahir</legend>
-								<input type="date" class="input bg-base-200 w-full border-none" />
+								<input type="date" class="input bg-base-200 w-full dark:border-none" />
 							</div>
 						</div>
 						<div class="flex flex-col gap-2 sm:flex-row">
 							<!-- Jenis Kelamin -->
 							<div class="flex-1">
 								<legend class="fieldset-legend">Jenis Kelamin</legend>
-								<select class="select bg-base-200 w-full border-none">
+								<select class="select bg-base-200 w-full dark:border-none">
 									<option disabled selected>Pilih Jenis Kelamin</option>
 									<option>Laki-laki</option>
 									<option>Perempuan</option>
@@ -86,7 +86,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Islam"
 								/>
 							</div>
@@ -105,7 +105,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Agus"
 								/>
 							</div>
@@ -115,7 +115,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Ratih"
 								/>
 							</div>
@@ -127,7 +127,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Tani"
 								/>
 							</div>
@@ -137,7 +137,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: IRT"
 								/>
 							</div>
@@ -147,7 +147,7 @@
 						<input
 							required
 							type="text"
-							class="input bg-base-200 w-full border-none"
+							class="input bg-base-200 w-full dark:border-none"
 							placeholder="Nomor telepon atau WhatsApp"
 						/>
 					</div>
@@ -162,7 +162,7 @@
 						<input
 							required
 							type="text"
-							class="input bg-base-200 w-full border-none"
+							class="input bg-base-200 w-full dark:border-none"
 							placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
 						/>
 						<div class="flex flex-col gap-2 sm:flex-row">
@@ -172,7 +172,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Sungai Dangin"
 								/>
 							</div>
@@ -182,7 +182,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Noyan"
 								/>
 							</div>
@@ -194,7 +194,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Sanggau"
 								/>
 							</div>
@@ -204,7 +204,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Kalimantan Barat"
 								/>
 							</div>
@@ -223,7 +223,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Hendra"
 								/>
 							</div>
@@ -233,7 +233,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: PNS"
 								/>
 							</div>
@@ -245,7 +245,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
 								/>
 							</div>
@@ -255,7 +255,7 @@
 								<input
 									required
 									type="text"
-									class="input bg-base-200 w-full border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									placeholder="Nomor telepon atau WhatsApp"
 								/>
 							</div>

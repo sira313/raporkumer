@@ -16,12 +16,24 @@
 </script>
 
 <svelte:head>
+	<script>
+		(function () {
+			try {
+				var dark = localStorage.getItem('dark-mode');
+				if (dark) dark = JSON.parse(dark);
+				else dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				if (dark) document.documentElement.classList.add('dark');
+			} catch (e) {
+				console.error('failed initialize dark mode:', e);
+			}
+		})();
+	</script>
 	<title>{appName}{pageMeta.title ? ' - ' + pageMeta.title : ''}</title>
 </svelte:head>
 
 <main class="drawer lg:drawer-open">
 	<input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-	<div class="drawer-content bg-base-200">
+	<div class="drawer-content bg-base-300 dark:bg-base-200">
 		<Navbar />
 
 		<!-- Page content -->

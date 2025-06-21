@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import IconMenuDrawer from '$lib/icons/menu-drawer.svg?raw';
+	import iconSun from '$lib/icons/sun.svg?raw';
+	import iconMoon from '$lib/icons/moon.svg?raw';
 	import IconQuestion from '$lib/icons/question.svg?raw';
 	import { pageMeta } from '$lib/state.svelte';
 	import { showModal } from './modal/state.svelte';
+	import DarkMode from '$lib/components/dark-mode.svelte';
 
 	const helps: Record<string, string> = {
 		// path: body
@@ -43,6 +46,10 @@
 	</div>
 	<div class="flex-none">
 		<ul class="menu menu-horizontal px-1">
+			<!-- tombol dark/light -->
+			<li class="menu-item">
+				<DarkMode />
+			</li>
 			<li class="menu-item">
 				<button class="btn btn-ghost btn-circle" aria-label="Bantuan" onclick={showHelp}>
 					{@html IconQuestion}
