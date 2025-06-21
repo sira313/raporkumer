@@ -21,7 +21,7 @@
 
 <main class="drawer lg:drawer-open">
 	<input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-	<div class="drawer-content bg-base-200">
+	<div class="drawer-content bg-base-300 dark:bg-base-200">
 		<Navbar />
 
 		<!-- Page content -->
