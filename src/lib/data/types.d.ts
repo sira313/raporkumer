@@ -14,6 +14,7 @@ interface Sekolah {
 	npsn: string;
 	alamat: Alamat;
 	logo?: Blob;
+	logoURL?: string;
 	website?: string;
 	email: string;
 }

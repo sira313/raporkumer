@@ -8,7 +8,6 @@ interface MenuItem {
 interface PageMeta {
 	title: string;
 	description?: string;
-	logoURL?: string;
 	sekolah?: Sekolah;
 }
 

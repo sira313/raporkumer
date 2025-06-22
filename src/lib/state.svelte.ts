@@ -17,12 +17,14 @@ export function setPageTitle(title?: string) {
 
 export async function loadSekolah() {
 	if (!browser) return;
+	if (pageMeta.sekolah?.logoURL) URL.revokeObjectURL(pageMeta.sekolah.logoURL);
+
 	const result = await db.sekolah.get(1);
 	pageMeta.sekolah = result;
 
-	if (!result?.logo?.size) return;
+	if (!pageMeta.sekolah || !result?.logo?.size) return;
 	const url = URL.createObjectURL(result.logo);
-	pageMeta.logoURL = url;
+	pageMeta.sekolah.logoURL = url;
 }
 
 export class StorageState<T extends string | number | boolean> {

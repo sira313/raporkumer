@@ -17,7 +17,7 @@
 	});
 
 	onMount(() => {
-		loadSekolah();
+		loadSekolah().catch(console.error);
 	});
 </script>
 
@@ -53,16 +53,8 @@
 		<label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
 		<ul class="menu bg-base-100 text-base-content min-h-full w-80 p-4">
 			<div class="mt-20 flex items-center gap-2 pb-4 pl-3 lg:mt-1">
-				{#if pageMeta.logoURL}
-					<img
-						class="h-8 rounded"
-						src={pageMeta.logoURL}
-						onload={() => {
-							// release the object URL after the image loads to free memory
-							if (pageMeta.logoURL) URL.revokeObjectURL(pageMeta.logoURL);
-						}}
-						alt="Brand logo"
-					/>
+				{#if pageMeta.sekolah?.logoURL}
+					<img class="h-8 rounded" src={pageMeta.sekolah?.logoURL} alt="Brand logo" />
 				{/if}
 				<a href="/"><h2 class="mb-2 text-xl font-bold">Dashboard</h2></a>
 			</div>
