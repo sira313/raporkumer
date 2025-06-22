@@ -4,8 +4,7 @@
 	import ModalDialog from '$lib/components/modal/modal-dialog.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
 	import Toast from '$lib/components/toast/toast.svelte';
-	import db from '$lib/data/db';
-	import { appName, pageMeta, setPageLogo, setPageTitle } from '$lib/state.svelte';
+	import { appName, loadSekolah, pageMeta, setPageTitle } from '$lib/state.svelte';
 	import { findTitleByPath } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import '../app.css';
@@ -18,14 +17,7 @@
 	});
 
 	onMount(() => {
-		db.sekolah
-			.get(1)
-			.then((s) => {
-				if (s?.logo) setPageLogo(s.logo);
-			})
-			.catch((e) => {
-				console.warn(`failed to load logo:`, e);
-			});
+		loadSekolah();
 	});
 </script>
 

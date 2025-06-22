@@ -6,18 +6,22 @@ see:
 */
 
 import { browser } from '$app/environment';
+import db from './data/db';
 
-export const appName = 'Rapor Kurikulum Merdeka';
-
+export const appName = 'Rapor Kumer';
 export const pageMeta = $state<PageMeta>({ title: '' });
 
 export function setPageTitle(title?: string) {
 	pageMeta.title = title || '';
 }
 
-export function setPageLogo(logo: Blob) {
-	if (!logo) return;
-	const url = URL.createObjectURL(logo);
+export async function loadSekolah() {
+	if (!browser) return;
+	const result = await db.sekolah.get(1);
+	pageMeta.sekolah = result;
+
+	if (!result?.logo?.size) return;
+	const url = URL.createObjectURL(result.logo);
 	pageMeta.logoURL = url;
 }
 
