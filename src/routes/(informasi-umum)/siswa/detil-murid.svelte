@@ -1,13 +1,22 @@
 <script lang="ts">
-	export let open = false;
-	export let onClose: () => void = () => {};
-	let dialogRef: HTMLDialogElement;
+	interface Props {
+		murid: Murid;
+		onEdit: (m: Murid) => void;
+		onDismiss: () => void;
+	}
 
-	$: if (open && dialogRef) dialogRef.showModal();
-	$: if (!open && dialogRef) dialogRef.close();
+	let { murid, onEdit, onDismiss }: Props = $props();
 </script>
 
-<dialog bind:this={dialogRef} class="modal" on:close={onClose}>
+{#snippet field(label: string, value: string)}
+	<!-- use snippet for repeatable elements -->
+	<div>
+		<span class="text-sm text-gray-500">{label}</span>
+		<p class="font-medium">{value}</p>
+	</div>
+{/snippet}
+
+<dialog class="modal" onclose={() => onDismiss()} open>
 	<fieldset class="fieldset modal-box p-4 sm:w-full sm:max-w-2xl">
 		<legend class="fieldset-legend">
 			<pre class="bg-base-200 rounded-xl px-2">Detail Data Murid</pre>
@@ -19,34 +28,13 @@
 					<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Murid" checked />
 					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							<div>
-								<span class="text-sm text-gray-500">NIS</span>
-								<p class="font-medium">132455</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">NISN</span>
-								<p class="font-medium">67834556</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Nama</span>
-								<p class="font-medium">Donald Trump</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Jenis Kelamin</span>
-								<p class="font-medium">Laki-laki</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Tempat Lahir</span>
-								<p class="font-medium">Terusan</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Tanggal Lahir</span>
-								<p class="font-medium">15 Juni 2020</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Agama</span>
-								<p class="font-medium">Katolik</p>
-							</div>
+							{@render field('NIS', murid.nis)}
+							{@render field('NISN', murid.nisn)}
+							{@render field('Nama', murid.nama)}
+							{@render field('Jenis Kelamin', murid.jenisKelamin)}
+							{@render field('Tempat Lahir', murid.tempatLahir)}
+							{@render field('Tanggal Lahir', murid.tanggalLahir)}
+							{@render field('Agama', murid.agama)}
 						</div>
 					</div>
 					<!-- data Orang Tua -->
@@ -126,7 +114,13 @@
 				</div>
 			</div>
 		</div>
-		<button class="btn btn-primary mt-4 border-none shadow-none sm:ml-auto">Edit</button>
+		<button
+			class="btn btn-primary mt-4 border-none shadow-none sm:ml-auto"
+			type="button"
+			onclick={() => onEdit(murid)}
+		>
+			Edit
+		</button>
 	</fieldset>
 	<form method="dialog" class="modal-backdrop">
 		<button>close</button>

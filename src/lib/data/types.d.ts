@@ -21,7 +21,7 @@ interface Murid {
 	nisn: string;
 	nama: string;
 	tempatLahir: string;
-	tanggalLahir: Date;
+	tanggalLahir: string;
 	jenisKelamin: 'Laki-laki' | 'Perempuan';
 	agama: string;
 	alamat: Alamat;
