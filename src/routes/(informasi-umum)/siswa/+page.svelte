@@ -1,28 +1,81 @@
 <script lang="ts">
-	import IconSearch from '$lib/icons/search.svg?raw';
-	import IconDownload from '$lib/icons/download.svg?raw';
-	import IconPlus from '$lib/icons/plus.svg?raw';
-	import iconImport from '$lib/icons/import.svg?raw';
-	import iconExport from '$lib/icons/export.svg?raw';
+	import { showModal } from '$lib/components/modal/state.svelte';
+	import db from '$lib/data/db';
 	import iconDel from '$lib/icons/del.svg?raw';
+	import IconDownload from '$lib/icons/download.svg?raw';
+	import iconExport from '$lib/icons/export.svg?raw';
 	import iconEye from '$lib/icons/eye.svg?raw';
-	import TambahSiswa from '$lib/components/modal/tambah-murid.svelte';
-	import DetilSiswa from '$lib/components/modal/detil-murid.svelte';
-	import HapusData from '$lib/components/modal/hapus-data.svelte';
-	let showTambahMurid = false;
-	let showDetilMurid = false;
-	let showHapusData = false;
+	import iconImport from '$lib/icons/import.svg?raw';
+	import IconPlus from '$lib/icons/plus.svg?raw';
+	import IconSearch from '$lib/icons/search.svg?raw';
+	import { onMount } from 'svelte';
+	import DetilMurid from './detil-murid.svelte';
+	import FormMurid from './form-murid.svelte';
+
+	let formMuridShown = $state(false);
+	let formMuridData = $state<Murid>();
+	let detailMuridData = $state<Murid>();
+
+	let siswa = $state<Murid[]>([]);
+	let loading = $state(false);
+	let limit = $state(50);
+
+	async function load() {
+		try {
+			loading = true;
+			const result = await db.murid.limit(limit).toArray();
+			siswa = result;
+		} catch (error) {
+			// TODO: use Toast
+			console.error(error);
+		} finally {
+			loading = false;
+		}
+	}
+
+	async function deleteMurid(murid: Murid) {
+		showModal({
+			title: 'Hapus Murid',
+			body: `Anda yakin untuk menghapus data murid ini? <br />
+				NIS: <strong>${murid.nis}</strong> <br />
+				Nama: <strong>${murid.nama}</strong> <br /><br />
+				<em>Tidak ada opsi undo</em>`.replaceAll('\t', ''),
+			dismissible: true,
+			onNeutral: {
+				label: 'Batal',
+				action({ close }) {
+					close();
+				}
+			},
+			onNegative: {
+				label: 'Ya, yakin',
+				async action() {
+					try {
+						await db.murid.delete(murid.nis);
+						load();
+						alert('Hapus berhasil');
+					} catch (error) {
+						alert('Gaga hapus: ' + JSON.stringify(error));
+					}
+				}
+			}
+		});
+	}
+
+	onMount(() => {
+		load();
+	});
 </script>
 
 <fieldset class="fieldset bg-base-100 w-full rounded-lg border border-none p-4 shadow-md">
 	<legend class="fieldset-legend">Formulir Dan Tabel Isian Data Siswa</legend>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
-		<button class="btn flex items-center shadow-none" on:click={() => (showTambahMurid = true)}>
+		<button class="btn flex items-center shadow-none" onclick={() => (formMuridShown = true)}>
 			<span>{@html IconPlus}</span>
 			Tambah Murid
 		</button>
-		<TambahSiswa open={showTambahMurid} onClose={() => (showTambahMurid = false)} />
+
 		<!-- Tombol Download template excel -->
 		<button class="btn shadow-none sm:ml-auto">
 			<span>{@html IconDownload}</span>
@@ -72,69 +125,63 @@
 				</tr>
 			</thead>
 			<tbody>
-				<!-- row 1 -->
-				<tr>
-					<td><input type="checkbox" checked={false} class="checkbox" /></td>
-					<td>1</td>
-					<td>Donald Trump</td>
-					<td>New York</td>
-					<td>14 Juni 2009</td>
-					<td>
-						<div class="flex flex-row gap-2">
-							<button
-								class="btn btn-sm btn-ghost btn-circle"
-								on:click={() => (showDetilMurid = true)}
-							>
-								<span>{@html iconEye}</span>
-							</button>
-							<DetilSiswa open={showDetilMurid} onClose={() => (showDetilMurid = false)} />
-							<button
-								class="btn btn-sm btn-ghost btn-circle"
-								on:click={() => (showHapusData = true)}
-							>
-								<span class="text-error">{@html iconDel}</span>
-							</button>
-							<HapusData open={showHapusData} onClose={() => (showHapusData = false)} />
-						</div>
-					</td>
-				</tr>
-				<!-- row 2 -->
-				<tr>
-					<td><input type="checkbox" checked={false} class="checkbox" /></td>
-					<td>2</td>
-					<td>Benyamin Netanyahu</td>
-					<td>Jos Santos</td>
-					<td>14 Agustus 2010</td>
-					<td>
-						<div class="flex flex-row gap-2">
-							<button class="btn btn-sm btn-ghost btn-circle">
-								<span>{@html iconEye}</span>
-							</button>
-							<button class="btn btn-sm btn-ghost btn-circle">
-								<span class="text-error">{@html iconDel}</span>
-							</button>
-						</div>
-					</td>
-				</tr>
-				<!-- row 3 -->
-				<tr>
-					<td><input type="checkbox" checked={true} class="checkbox" /></td>
-					<td>3</td>
-					<td>Vladimir Putin</td>
-					<td>Las Adios</td>
-					<td>14 April 2009</td>
-					<td>
-						<div class="flex flex-row gap-2">
-							<button class="btn btn-sm btn-ghost btn-circle">
-								<span>{@html iconEye}</span>
-							</button>
-							<button class="btn btn-sm btn-ghost btn-circle">
-								<span class="text-error">{@html iconDel}</span>
-							</button>
-						</div>
-					</td>
-				</tr>
+				{#each siswa as m, index (m)}
+					<tr>
+						<td><input type="checkbox" checked={false} class="checkbox" /></td>
+						<td>{index + 1}</td>
+						<td>{m.nama}</td>
+						<td>{m.tempatLahir}</td>
+						<td>{m.tanggalLahir}</td>
+						<td>
+							<div class="flex flex-row gap-2">
+								<button
+									class="btn btn-sm btn-ghost btn-circle"
+									type="button"
+									onclick={() => (detailMuridData = m)}
+								>
+									<span>{@html iconEye}</span>
+								</button>
+
+								<button
+									class="btn btn-sm btn-ghost btn-circle"
+									type="button"
+									onclick={() => deleteMurid(m)}
+								>
+									<span class="text-error">{@html iconDel}</span>
+								</button>
+							</div>
+						</td>
+					</tr>
+				{:else}
+					<tr>
+						<td class="text-center p-7" colspan="6">
+							<em class="opacity-50">Belum ada data siswa</em>
+						</td>
+					</tr>
+				{/each}
 			</tbody>
 		</table>
 	</div>
 </fieldset>
+
+{#if formMuridShown}
+	<FormMurid
+		murid={formMuridData}
+		onDismiss={() => {
+			formMuridData = undefined;
+			formMuridShown = false;
+		}}
+	/>
+{/if}
+
+{#if detailMuridData}
+	<DetilMurid
+		murid={detailMuridData}
+		onDismiss={() => (detailMuridData = undefined)}
+		onEdit={(m) => {
+			formMuridData = m;
+			formMuridShown = true;
+			detailMuridData = undefined;
+		}}
+	/>
+{/if}
