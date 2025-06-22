@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { showModal } from '$lib/components/modal/state.svelte';
+	import { toast } from '$lib/components/toast/state.svelte';
 	import db from '$lib/data/db';
 	import iconDel from '$lib/icons/del.svg?raw';
 	import IconDownload from '$lib/icons/download.svg?raw';
@@ -26,8 +27,8 @@
 			const result = await db.murid.limit(limit).toArray();
 			siswa = result;
 		} catch (error) {
-			// TODO: use Toast
 			console.error(error);
+			toast('Terjadi kesalahan saat memuat data siswa', 'error');
 		} finally {
 			loading = false;
 		}
@@ -53,9 +54,10 @@
 					try {
 						await db.murid.delete(murid.nis);
 						load();
-						alert('Hapus berhasil');
+						toast('Data murid telah dihapus');
 					} catch (error) {
-						alert('Gaga hapus: ' + JSON.stringify(error));
+						console.log(error);
+						toast('Gagal menghapus data murid', 'error');
 					}
 				}
 			}
@@ -170,6 +172,7 @@
 		onDismiss={() => {
 			formMuridData = undefined;
 			formMuridShown = false;
+			load();
 		}}
 	/>
 {/if}
