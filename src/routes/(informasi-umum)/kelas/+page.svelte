@@ -1,5 +1,7 @@
 <form>
-	<fieldset class="fieldset bg-base-100 w-full rounded-lg border border-none p-4 shadow-md">
+	<fieldset
+		class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg border border-none p-4 shadow-md"
+	>
 		<legend class="fieldset-legend">Formulir Isian Data Kelas</legend>
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<!-- Nama Kelas -->
