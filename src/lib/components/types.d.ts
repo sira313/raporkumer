@@ -16,4 +16,6 @@ interface ModalProps {
 interface Toast {
 	message: string;
 	type?: 'info' | 'success' | 'warning' | 'error';
+	/** if true, toast will not close automatically */
+	persist?: boolean;
 }
