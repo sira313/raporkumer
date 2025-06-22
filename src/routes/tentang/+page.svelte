@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { setPageTitle } from '$lib/state.svelte';
+	import Masukan from './masukan.svelte';
 
 	setPageTitle('Tentang Aplikasi');
+	let masukanModal: InstanceType<typeof Masukan>;
 </script>
 
 <div class="card rounded-box bg-base-100 mx-auto w-full max-w-3xl shadow-sm">
@@ -47,7 +49,10 @@
 			(UX, Data Handler)<br />
 		</p>
 		<div class="card-actions mt-4 justify-end">
-			<button class="btn btn-primary shadow-none">Kirim Masukan</button>
+			<button class="btn btn-primary shadow-none" on:click={() => masukanModal.openModal()}>
+				Kirim Masukan
+			</button>
 		</div>
 	</div>
 </div>
+<Masukan bind:this={masukanModal} />
