@@ -8,8 +8,10 @@
 	import iconEye from '$lib/icons/eye.svg?raw';
 	import TambahSiswa from '$lib/components/modal/tambah-murid.svelte';
 	import DetilSiswa from '$lib/components/modal/detil-murid.svelte';
+	import HapusData from '$lib/components/modal/hapus-data.svelte';
 	let showTambahMurid = false;
 	let showDetilMurid = false;
+	let showHapusData = false;
 </script>
 
 <fieldset class="fieldset bg-base-100 w-full rounded-lg border border-none p-4 shadow-md">
@@ -86,9 +88,13 @@
 								<span>{@html iconEye}</span>
 							</button>
 							<DetilSiswa open={showDetilMurid} onClose={() => (showDetilMurid = false)} />
-							<button class="btn btn-sm btn-ghost btn-circle">
+							<button
+								class="btn btn-sm btn-ghost btn-circle"
+								on:click={() => (showHapusData = true)}
+							>
 								<span class="text-error">{@html iconDel}</span>
 							</button>
+							<HapusData open={showHapusData} onClose={() => (showHapusData = false)} />
 						</div>
 					</td>
 				</tr>
