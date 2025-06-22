@@ -50,9 +50,10 @@
 			},
 			onNegative: {
 				label: 'Ya, yakin',
-				async action() {
+				async action({ close }) {
 					try {
 						await db.murid.delete(murid.nis);
+						close();
 						load();
 						toast('Data murid telah dihapus');
 					} catch (error) {
