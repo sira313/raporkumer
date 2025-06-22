@@ -13,7 +13,10 @@ interface Sekolah {
 	nama: string;
 	npsn: string;
 	alamat: Alamat;
-	logo: Blob;
+	logo?: Blob;
+	logoURL?: string;
+	website?: string;
+	email: string;
 }
 
 interface Murid {

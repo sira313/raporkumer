@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { toast } from '$lib/components/toast/state.svelte';
 	import db from '$lib/data/db';
 	import { flatten, populateForm, unflatten } from '$lib/utils';
 	import { onMount } from 'svelte';
@@ -30,9 +31,10 @@
 				const result = await db.murid.add(murid);
 				existingMuridNis = result;
 			}
-			alert('Data murid tersimpan');
+			toast('Data murid berhasil disimpan', 'success');
 		} catch (error) {
-			alert('Gagal simpan: ' + JSON.stringify(error));
+			console.error(error);
+			toast('Gagal menyimpan data murid', 'error');
 		} finally {
 			saving = false;
 		}

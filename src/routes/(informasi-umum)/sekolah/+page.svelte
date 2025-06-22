@@ -1,28 +1,11 @@
 <script lang="ts">
+	import { toast } from '$lib/components/toast/state.svelte';
 	import db from '$lib/data/db';
-	import { setPageLogo } from '$lib/state.svelte';
+	import { loadSekolah, pageMeta } from '$lib/state.svelte';
 	import { flatten, populateForm, unflatten } from '$lib/utils';
-	import { onMount } from 'svelte';
-
-	// TODO: replace alert() with Toast
 
 	let form: HTMLFormElement;
-
-	let loading = $state(false);
 	let saving = $state(false);
-
-	async function load() {
-		try {
-			loading = true;
-			const sekolah = await db.sekolah.get(1);
-			if (!sekolah) return;
-			populateForm(form, flatten(sekolah));
-		} catch (error) {
-			alert(`Gagal memuat:` + JSON.stringify(error));
-		} finally {
-			loading = false;
-		}
-	}
 
 	async function save(e: FormSubmitEvent) {
 		e.preventDefault();
@@ -31,18 +14,22 @@
 			const formData = new FormData(e.currentTarget);
 			const sekolah = unflatten<Sekolah>(Object.fromEntries(formData.entries()));
 			sekolah.id = 1;
+			// prevent remove logo if user not upload
+			sekolah.logo = sekolah.logo?.size ? sekolah.logo : pageMeta.sekolah?.logo;
 			await db.sekolah.put(sekolah);
-			setPageLogo(sekolah.logo);
-			alert('Data sekolah tersimpan');
+			loadSekolah();
+			toast('Data sekolah berhasil disimpan', 'success');
 		} catch (error) {
-			alert(`Gagal simpan: ` + JSON.stringify(error));
+			console.error(error);
+			toast('Gagal menyimpan data sekolah', 'error');
 		} finally {
 			saving = false;
 		}
 	}
 
-	onMount(() => {
-		load();
+	$effect(() => {
+		if (!pageMeta.sekolah) return;
+		populateForm(form, flatten(pageMeta.sekolah));
 	});
 </script>
 
@@ -50,12 +37,7 @@
 	<fieldset
 		class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg border border-none p-4 shadow-md"
 	>
-		<legend class="fieldset-legend">
-			Formulir Isian Data Sekolah
-			{#if loading}
-				<em class="opacity-50">Loading...</em>
-			{/if}
-		</legend>
+		<legend class="fieldset-legend"> Formulir Isian Data Sekolah </legend>
 
 		<!-- Jenjang Pendidikan -->
 		<legend class="fieldset-legend">Jenjang Pendidikan</legend>
@@ -166,7 +148,7 @@
 					type="text"
 					class="input validator bg-base-200 w-full dark:border-none"
 					placeholder="Kosongkan bila tidak ada"
-					name="website.sekolah"
+					name="website"
 				/>
 			</div>
 
@@ -178,7 +160,7 @@
 					type="text"
 					class="input validator bg-base-200 w-full dark:border-none"
 					placeholder="Contoh: cs@sdn19periji.sch.id"
-					name="email.sekolah"
+					name="email"
 				/>
 			</div>
 		</div>
@@ -189,7 +171,7 @@
 		<p class="label">Format png, tanpa latar belakang, maksimal 300KB</p>
 
 		<!-- Save -->
-		<button class="btn btn-primary ml-auto shadow-none" disabled={saving || loading}>
+		<button class="btn btn-primary ml-auto shadow-none" disabled={saving}>
 			{#if saving}
 				<span class="loading loading-spinner"></span>
 			{/if}
