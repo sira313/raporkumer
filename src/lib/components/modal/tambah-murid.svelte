@@ -20,7 +20,7 @@
 			<!-- Tab Isian -->
 			<div class="tabs tabs-box">
 				<!-- data Murid -->
-				<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Murid" checked />
+				<input type="radio" name="tab-tambah-murid" class="tab" aria-label="Data Murid" checked />
 				<div class="tab-content bg-base-100 p-4">
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- NIS -->
@@ -92,7 +92,7 @@
 					</div>
 				</div>
 				<!-- data Orang Tua -->
-				<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Orang Tua" />
+				<input type="radio" name="tab-tambah-murid" class="tab" aria-label="Data Orang Tua" />
 				<div class="tab-content bg-base-100 p-4">
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Nama Ayah -->
@@ -148,7 +148,7 @@
 					/>
 				</div>
 				<!-- data Alamat Murid -->
-				<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Alamat Murid" />
+				<input type="radio" name="tab-tambah-murid" class="tab" aria-label="Data Alamat Murid" />
 				<div class="tab-content bg-base-100 p-4">
 					<!-- Alamat Jalan -->
 					<legend class="fieldset-legend">Jalan</legend>
@@ -204,7 +204,7 @@
 					</div>
 				</div>
 				<!-- data Wali -->
-				<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Wali" />
+				<input type="radio" name="tab-tambah-murid" class="tab" aria-label="Data Wali" />
 				<div class="tab-content bg-base-100 p-4">
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Nama Wali -->
