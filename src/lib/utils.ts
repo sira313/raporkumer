@@ -1,90 +1,4 @@
-export const appMenuItems: MenuItem[] = [
-	{
-		title: 'Informasi Umum',
-		subMenu: [
-			{
-				title: 'Data Sekolah',
-				path: '/sekolah'
-			},
-			{
-				title: 'Data Siswa',
-				path: '/siswa'
-			},
-			{
-				title: 'Data Kelas',
-				path: '/kelas'
-			}
-		]
-	},
-	{
-		title: 'Mata Pelajaran',
-		subMenu: [
-			{
-				title: 'Daftar Mata Pelajaran',
-				path: '/mata-pelajaran'
-			},
-			{
-				title: 'Ekstrakurikuler',
-				path: '/ekstrakurikuler'
-			}
-		]
-	},
-	{
-		title: 'Input Nilai',
-		subMenu: [
-			{
-				title: 'Kurikulum Merdeka',
-				subMenu: [
-					{
-						title: 'Tujuan Pembelajaran',
-						path: '/tujuan-pembelajaran'
-					},
-					{
-						title: 'Lingkup Materi',
-						path: '/lingkup-materi'
-					},
-					{
-						title: 'Asesmen Formatif',
-						path: '/asesmen-formatif'
-					},
-					{
-						title: 'Asesmen Sumatif',
-						path: '/asesmen-sumatif'
-					},
-					{
-						title: 'Nilai Akhir',
-						path: '/nilai-akhir'
-					}
-				]
-			},
-			{
-				title: 'Absen',
-				path: '/absen'
-			},
-			{
-				title: 'Nilai Ekstrakurikuler',
-				path: '/nilai-ekstrakurikuler'
-			}
-		]
-	},
-	{
-		title: 'Cetak Dokumen',
-		subMenu: [
-			{
-				title: 'Cetak Rapor',
-				path: '/cetak/rapor'
-			},
-			{
-				title: 'Cetak Cover',
-				path: '/cetak/cover'
-			},
-			{
-				title: 'Cetak Biodata',
-				path: '/cetak/biodata'
-			}
-		]
-	}
-];
+import { appMenuItems } from './components/menu';
 
 export function findTitleByPath(path: string, items = appMenuItems): string | undefined {
 	path = path.replace(/\/+$/, '');
@@ -159,4 +73,17 @@ export function populateForm<T = Record<string, unknown>>(form: HTMLFormElement,
 			field.value = value as typeof field.value;
 		}
 	}
+}
+
+export function searchQueryMarker(query?: string, target?: string) {
+	if (!query || !target) return target;
+
+	// escape special characters in the query string
+	const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+	// create a regular expression pattern to match the query string as whole words
+	const pattern = new RegExp(escaped.split(/\s+/).join('|'), 'gi');
+
+	// replace matches using the pattern
+	return target.replace(pattern, (match) => `<mark>${match}</mark>`);
 }
