@@ -2,11 +2,13 @@
 	import IconCollapseAll from '$lib/icons/collapse-all.svg?raw';
 	import IconExpandAll from '$lib/icons/expand-all.svg?raw';
 	import IconSearch from '$lib/icons/search.svg?raw';
+	import { StorageState } from '$lib/state.svelte';
 	import { searchQueryMarker } from '$lib/utils';
 	import { appMenuItems } from './menu';
 
+	const expanded = new StorageState<boolean>('menu-expanded');
+
 	let search = $state('');
-	let expanded = $derived(false || !!search);
 	let menuItems = $derived(search ? filterMenuByTitle(appMenuItems, search) : appMenuItems);
 
 	function filterMenuByTitle(menu: MenuItem[], search: string): MenuItem[] {
@@ -36,7 +38,7 @@
 {#snippet menu_item(item: MenuItem)}
 	<li>
 		{#if item.subMenu}
-			<details open={expanded}>
+			<details open={expanded.value || !!search}>
 				<summary>
 					<span>{@html searchQueryMarker(search, item.title)}</span>
 				</summary>
@@ -60,8 +62,8 @@
 			{@html IconSearch}
 			<input type="search" class="grow" bind:value={search} placeholder="Cari menu" />
 		</label>
-		<label class="swap" title={expanded ? 'Sempitkan menu' : 'Luaskan menu'}>
-			<input type="checkbox" bind:checked={expanded} />
+		<label class="swap" title={expanded.value ? 'Sempitkan menu' : 'Luaskan menu'}>
+			<input type="checkbox" bind:checked={expanded.value} />
 			<span class="swap-on h-4 w-4">{@html IconExpandAll}</span>
 			<span class="swap-off h-4 w-4">{@html IconCollapseAll}</span>
 		</label>
@@ -69,5 +71,9 @@
 
 	{#each menuItems as menu (menu)}
 		{@render menu_item(menu)}
+	{:else}
+		<li>
+			<span class="italic opacity-50 text-sm"> Tidak ada hasil pencarian </span>
+		</li>
 	{/each}
 </div>
