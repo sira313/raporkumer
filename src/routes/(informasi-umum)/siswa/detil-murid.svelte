@@ -25,7 +25,7 @@
 			<div class="join join-vertical w-full max-w-full">
 				<div class="tabs tabs-box">
 					<!-- data Murid -->
-					<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Murid" checked />
+					<input type="radio" name="tab-detil-murid" class="tab" aria-label="Data Murid" checked />
 					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							{@render field('NIS', murid.nis)}
@@ -38,7 +38,7 @@
 						</div>
 					</div>
 					<!-- data Orang Tua -->
-					<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Orang Tua" />
+					<input type="radio" name="tab-detil-murid" class="tab" aria-label="Data Orang Tua" />
 					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							<div>
@@ -64,7 +64,7 @@
 						</div>
 					</div>
 					<!-- data Alamat Murid -->
-					<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Alamat Murid" />
+					<input type="radio" name="tab-detil-murid" class="tab" aria-label="Data Alamat Murid" />
 					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							<div class="sm:col-span-2">
@@ -90,7 +90,7 @@
 						</div>
 					</div>
 					<!-- data Wali -->
-					<input type="radio" name="my_tabs_3" class="tab" aria-label="Data Wali" />
+					<input type="radio" name="tab-detil-murid" class="tab" aria-label="Data Wali" />
 					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							<div>
