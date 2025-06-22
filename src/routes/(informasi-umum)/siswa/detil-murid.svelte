@@ -41,74 +41,32 @@
 					<input type="radio" name="tab-detil-murid" class="tab" aria-label="Data Orang Tua" />
 					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							<div>
-								<span class="text-sm text-gray-500">Nama Ayah</span>
-								<p class="font-medium">John StillInTheHouse</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Pekerjaan Ayah</span>
-								<p class="font-medium">Youtuber</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Nama Ibu</span>
-								<p class="font-medium">Prices</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Pekerjaan Ibu</span>
-								<p class="font-medium">Pemancing</p>
-							</div>
-							<div class="sm:col-span-2">
-								<span class="text-sm text-gray-500">Nomor Telepon</span>
-								<p class="font-medium">3214136457</p>
-							</div>
+							{@render field('Nama Ayah', murid.orangTua?.namaAyah || '-')}
+							{@render field('Pekerjaan Ayah', murid.orangTua?.pekerjaanAyah || '-')}
+							{@render field('Nama Ibu', murid.orangTua?.namaIbu || '-')}
+							{@render field('Pekerjaan Ibu', murid.orangTua?.pekerjaanIbu || '-')}
+							{@render field('Kontak', murid.orangTua?.kontak || '-')}
 						</div>
 					</div>
 					<!-- data Alamat Murid -->
 					<input type="radio" name="tab-detil-murid" class="tab" aria-label="Data Alamat Murid" />
 					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							<div class="sm:col-span-2">
-								<span class="text-sm text-gray-500">Jalan</span>
-								<p class="font-medium">Jalan Polandia</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Kelurahan/Desa</span>
-								<p class="font-medium">Chili</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Kecamatan</span>
-								<p class="font-medium">Antartika</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Kabupaten/Kota</span>
-								<p class="font-medium">Madagaskar</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Provinsi</span>
-								<p class="font-medium">Hawai</p>
-							</div>
+							{@render field('Jalan', murid.alamat?.jalan || '-')}
+							{@render field('Kelurahan/Desa', murid.alamat?.desa || '-')}
+							{@render field('Kecamatan', murid.alamat?.kecamatan || '-')}
+							{@render field('Kabupaten/Kota', murid.alamat?.kabupaten || '-')}
+							{@render field('Provinsi', murid.alamat?.provinsi || '-')}
 						</div>
 					</div>
 					<!-- data Wali -->
 					<input type="radio" name="tab-detil-murid" class="tab" aria-label="Data Wali" />
 					<div class="tab-content bg-base-100 p-4">
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							<div>
-								<span class="text-sm text-gray-500">Nama Wali</span>
-								<p class="font-medium">Juan</p>
-							</div>
-							<div>
-								<span class="text-sm text-gray-500">Pekerjaan Wali</span>
-								<p class="font-medium">Tukang Bajak</p>
-							</div>
-							<div class="sm:col-span-2">
-								<span class="text-sm text-gray-500">Alamat Wali</span>
-								<p class="font-medium">Gak tau</p>
-							</div>
-							<div class="sm:col-span-2">
-								<span class="text-sm text-gray-500">Kontak</span>
-								<p class="font-medium">7312341</p>
-							</div>
+							{@render field('Nama Wali', murid.wali?.nama || '-')}
+							{@render field('Pekerjaan Wali', murid.wali?.pekerjaan || '-')}
+							{@render field('Alamat Wali', murid.wali?.alamat || '-')}
+							{@render field('Kontak', murid.wali?.kontak || '-')}
 						</div>
 					</div>
 				</div>
