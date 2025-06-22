@@ -5,10 +5,6 @@
 
 	$: if (open && dialogRef) dialogRef.showModal();
 	$: if (!open && dialogRef) dialogRef.close();
-
-	function handleBatal() {
-		onClose();
-	}
 </script>
 
 <dialog bind:this={dialogRef} class="modal" on:close={onClose}>

@@ -13,14 +13,14 @@
 
 	$effect(() => {
 		const title = findTitleByPath(page.url.pathname);
-		title && setPageTitle(title);
+		if (title) setPageTitle(title);
 	});
 
 	onMount(() => {
 		db.sekolah
 			.get(1)
 			.then((s) => {
-				s?.logo && setPageLogo(s.logo);
+				if (s?.logo) setPageLogo(s.logo);
 			})
 			.catch((e) => {
 				console.warn(`failed to load logo:`, e);
@@ -66,7 +66,7 @@
 						src={pageMeta.logoURL}
 						onload={() => {
 							// release the object URL after the image loads to free memory
-							pageMeta.logoURL && URL.revokeObjectURL(pageMeta.logoURL);
+							if (pageMeta.logoURL) URL.revokeObjectURL(pageMeta.logoURL);
 						}}
 						alt="Brand logo"
 					/>
