@@ -58,14 +58,17 @@
 
 <div class="flex-1">
 	<div class="mb-3 flex gap-1">
-		<label class="input input-sm">
+		<label class="input bg-base-200 ml-2 dark:border-none">
 			{@html IconSearch}
 			<input type="search" class="grow" bind:value={search} placeholder="Cari menu" />
 		</label>
-		<label class="btn btn-sm swap" title={expanded.value ? 'Sempitkan menu' : 'Luaskan menu'}>
+		<label
+			class="btn swap btn-square shadow-none"
+			title={expanded.value ? 'Sempitkan menu' : 'Luaskan menu'}
+		>
 			<input type="checkbox" bind:checked={expanded.value} />
-			<span class="swap-on h-4 w-4">{@html IconExpandAll}</span>
-			<span class="swap-off h-4 w-4">{@html IconCollapseAll}</span>
+			<span class="swap-on">{@html IconExpandAll}</span>
+			<span class="swap-off">{@html IconCollapseAll}</span>
 		</label>
 	</div>
 
