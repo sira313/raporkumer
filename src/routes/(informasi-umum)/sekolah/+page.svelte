@@ -1,10 +1,9 @@
 <script lang="ts">
+	import { toast } from '$lib/components/toast/state.svelte';
 	import db from '$lib/data/db';
 	import { setPageLogo } from '$lib/state.svelte';
 	import { flatten, populateForm, unflatten } from '$lib/utils';
 	import { onMount } from 'svelte';
-
-	// TODO: replace alert() with Toast
 
 	let form: HTMLFormElement;
 
@@ -18,7 +17,8 @@
 			if (!sekolah) return;
 			populateForm(form, flatten(sekolah));
 		} catch (error) {
-			alert(`Gagal memuat:` + JSON.stringify(error));
+			console.error(error);
+			toast('Gagal memuat data sekolah', 'error');
 		} finally {
 			loading = false;
 		}
@@ -31,11 +31,14 @@
 			const formData = new FormData(e.currentTarget);
 			const sekolah = unflatten<Sekolah>(Object.fromEntries(formData.entries()));
 			sekolah.id = 1;
+			// TODO: prevent remove logo if user not upload. This will work when `sekolah` available globally.
+			// sekolah.logo = sekolah.logo || page.data.sekolah.logo
 			await db.sekolah.put(sekolah);
 			setPageLogo(sekolah.logo);
-			alert('Data sekolah tersimpan');
+			toast('Data sekolah berhasil disimpan', 'success');
 		} catch (error) {
-			alert(`Gagal simpan: ` + JSON.stringify(error));
+			console.error(error);
+			toast('Gagal menyimpan data sekolah', 'error');
 		} finally {
 			saving = false;
 		}

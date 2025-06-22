@@ -3,6 +3,7 @@
 	import Menu from '$lib/components/menu.svelte';
 	import ModalDialog from '$lib/components/modal/modal-dialog.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
+	import Toast from '$lib/components/toast/toast.svelte';
 	import db from '$lib/data/db';
 	import { appName, pageMeta, setPageLogo, setPageTitle } from '$lib/state.svelte';
 	import { findTitleByPath } from '$lib/utils';
@@ -84,3 +85,4 @@
 </main>
 
 <ModalDialog />
+<Toast />
