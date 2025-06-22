@@ -47,7 +47,9 @@
 </script>
 
 <form bind:this={form} onsubmit={save}>
-	<fieldset class="fieldset bg-base-100 w-full rounded-lg border border-none p-4 shadow-md">
+	<fieldset
+		class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg border border-none p-4 shadow-md"
+	>
 		<legend class="fieldset-legend">
 			Formulir Isian Data Sekolah
 			{#if loading}
@@ -152,6 +154,31 @@
 					class="input validator bg-base-200 w-full dark:border-none"
 					placeholder="Contoh: 78554"
 					name="alamat.kodePos"
+				/>
+			</div>
+		</div>
+
+		<div class="flex-row gap-4 lg:flex">
+			<!-- Website Sekolah -->
+			<div class="flex-1">
+				<legend class="fieldset-legend">Website Sekolah</legend>
+				<input
+					type="text"
+					class="input validator bg-base-200 w-full dark:border-none"
+					placeholder="Kosongkan bila tidak ada"
+					name="website.sekolah"
+				/>
+			</div>
+
+			<!-- Email Sekolah -->
+			<div class="flex-1">
+				<legend class="fieldset-legend">Email Sekolah</legend>
+				<input
+					required
+					type="text"
+					class="input validator bg-base-200 w-full dark:border-none"
+					placeholder="Contoh: cs@sdn19periji.sch.id"
+					name="email.sekolah"
 				/>
 			</div>
 		</div>
