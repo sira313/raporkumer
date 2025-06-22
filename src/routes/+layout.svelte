@@ -43,7 +43,7 @@
 		<Navbar />
 
 		<!-- Page content -->
-		<div class="card-body">
+		<div class="card-body flex min-h-[calc(100vh-4rem)] flex-1 flex-col">
 			<div class="prose max-w-none">
 				{@render children()}
 			</div>
@@ -61,7 +61,7 @@
 
 			<Menu />
 
-			<div class="pl-3">
+			<div class="mt-4 pl-3">
 				<a href="/tentang"><h2 class="mb-2 font-bold">Tentang Aplikasi</h2></a>
 			</div>
 		</ul>
