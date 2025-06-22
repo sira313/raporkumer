@@ -1,12 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import DarkMode from '$lib/components/dark-mode.svelte';
 	import IconMenuDrawer from '$lib/icons/menu-drawer.svg?raw';
-	import iconSun from '$lib/icons/sun.svg?raw';
-	import iconMoon from '$lib/icons/moon.svg?raw';
 	import IconQuestion from '$lib/icons/question.svg?raw';
 	import { pageMeta } from '$lib/state.svelte';
 	import { showModal } from './modal/state.svelte';
-	import DarkMode from '$lib/components/dark-mode.svelte';
 
 	const helps: Record<string, string> = {
 		// path: body

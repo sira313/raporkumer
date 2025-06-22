@@ -4,9 +4,11 @@ Beranda
 Chairil
 daisyui
 Dangin
+dexie
 Formatif
 Hendra
 Kembayan
+Kumer
 Netanyahu
 Noyan
 NPSN
@@ -14,3 +16,4 @@ Periji
 Rapor
 Ratih
 Sumatif
+unflatten

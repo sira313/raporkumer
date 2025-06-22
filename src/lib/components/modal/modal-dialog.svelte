@@ -6,7 +6,8 @@
 
 	$effect(() => {
 		if (!modal) return;
-		props ? modal.showModal() : modal.close();
+		if (props) modal.showModal();
+		else modal.close();
 	});
 </script>
 

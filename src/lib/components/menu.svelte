@@ -8,8 +8,8 @@
 			<details>
 				<summary>{item.title}</summary>
 				<ul>
-					{#each item.subMenu as i}
-						{@render menu_item(i)}
+					{#each item.subMenu as menu (menu)}
+						{@render menu_item(menu)}
 					{/each}
 				</ul>
 			</details>
@@ -20,7 +20,7 @@
 {/snippet}
 
 <div class="flex-1">
-	{#each appMenuItems as m}
-		{@render menu_item(m)}
+	{#each appMenuItems as menu (menu)}
+		{@render menu_item(menu)}
 	{/each}
 </div>

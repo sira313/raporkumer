@@ -12,3 +12,9 @@ export const pageMeta = $state<PageMeta>({ title: '' });
 export function setPageTitle(title?: string) {
 	pageMeta.title = title || '';
 }
+
+export function setPageLogo(logo: Blob) {
+	if (!logo) return;
+	const url = URL.createObjectURL(logo);
+	pageMeta.logoURL = url;
+}
