@@ -13,7 +13,7 @@
 
 <dialog bind:this={modal} class="modal" onclose={() => setTimeout(hideModal, 800)}>
 	{#if props}
-		<div class="modal-box">
+		<div class="modal-box sm:w-full sm:max-w-2xl">
 			{#if props.title}
 				<h3 class="text-lg font-bold">{props.title}</h3>
 			{/if}
@@ -40,7 +40,7 @@
 
 					{#if props.onNeutral}
 						<button
-							class="btn btn-neutral"
+							class="btn shadow-none"
 							type="button"
 							onclick={() => props.onNeutral?.action?.({ close: hideModal })}
 						>
