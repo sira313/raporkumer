@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import IconCollapseAll from '$lib/icons/collapse-all.svg?raw';
 	import IconExpandAll from '$lib/icons/expand-all.svg?raw';
 	import IconSearch from '$lib/icons/search.svg?raw';
@@ -36,6 +37,7 @@
 </script>
 
 {#snippet menu_item(item: MenuItem)}
+	{@const active = page.url.pathname.replace(/\/+$/, '') == item.path}
 	<li>
 		{#if item.subMenu}
 			<details open={expanded.value || !!search}>
@@ -49,7 +51,8 @@
 				</ul>
 			</details>
 		{:else}
-			<a href={item.path}>
+			<!-- `class:menu-active` is shorthand for `class="{active ? 'menu-active': ''}"` -->
+			<a class:menu-active={active} href={item.path}>
 				<span>{@html searchQueryMarker(search, item.title)}</span>
 			</a>
 		{/if}
