@@ -8,14 +8,14 @@
 	import { showModal } from './modal/state.svelte';
 	import { toast } from './toast/state.svelte';
 
-	const helps: Record<string, string> = {
-		// path: fileName
-		'/sekolah': 'sekolah.md',
-		'/siswa': 'siswa.md'
+	const helpMaps: Record<string, string> = {
+		// path: fileName (without extension)
+		'/sekolah': 'sekolah',
+		'/siswa': 'siswa'
 	};
 
 	async function getHelpPage(fileName: string) {
-		const page = await import(/* @vite-ignore */ `../../docs/help/${fileName}`);
+		const page = await import(`../../docs/help/${fileName}.md`);
 		return {
 			meta: page.metadata as { title: string },
 			ContentPage: page.default as Component
@@ -23,7 +23,7 @@
 	}
 
 	async function showHelp() {
-		const fileName = helps[page.url.pathname.replace(/\/+$/, '')];
+		const fileName = helpMaps[page.url.pathname.replace(/\/+$/, '')];
 		if (!fileName) return toast(`Tidak ada informasi bantuan`);
 
 		const result = await getHelpPage(fileName);
