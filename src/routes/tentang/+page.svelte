@@ -44,9 +44,9 @@
 		<p class="mt-4">
 			Pengembang:<br />
 			- <a href="https://apoxi.cam/" target="_blank" class="link link-primary">Aris Pratama</a>
-			(UI Developer)<br />
+			(UI Dev)<br />
 			- <a href="https://mustofa.id" target="_blank" class="link link-primary">Habib Mustofa</a>
-			(UX, Data Handler)<br />
+			(DB Dev)<br />
 		</p>
 		<div class="card-actions mt-4 justify-end">
 			<button class="btn btn-primary shadow-none" on:click={() => masukanModal.openModal()}>

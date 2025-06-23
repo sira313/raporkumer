@@ -3,6 +3,7 @@
 	import IconInfo from '$lib/icons/info.svg?raw';
 	import IconSuccess from '$lib/icons/success.svg?raw';
 	import IconWarning from '$lib/icons/warning.svg?raw';
+	import IconClose from '$lib/icons/close.svg?raw';
 	import { flip } from 'svelte/animate';
 	import { toasts } from './state.svelte';
 
@@ -26,15 +27,16 @@
 	});
 </script>
 
-<div class="toast toast-top toast-center z-50 max-w-md">
+<div class="toast toast-top toast-center toast-center z-50">
 	{#each toasts as t (t)}
 		{@const [color, icon] = typesMaps[t.type || 'info']}
 		<div animate:flip={{ duration: 200, delay: 80 }} class="alert {color}" role="alert">
 			{@html icon}
 			<span>{@html t.message}</span>
 
-			<button class="btn btn-xs" type="button" title="Tutup" onclick={() => close(t)}>
-				Tutup
+			<button class="btn btn-circle btn-ghost" type="button" title="Tutup" onclick={() => close(t)}>
+				{@html IconClose}
+				<span class="sr-only">Tutup</span>
 			</button>
 		</div>
 	{/each}

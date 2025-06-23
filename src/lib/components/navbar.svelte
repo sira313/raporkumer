@@ -24,7 +24,10 @@
 
 	async function showHelp() {
 		const fileName = helpMaps[page.url.pathname.replace(/\/+$/, '')];
-		if (!fileName) return toast(`Tidak ada informasi bantuan`);
+		if (!fileName)
+			return toast(
+				`Tombol ini berfungsi untuk menampilkan petunjuk penggunaan.<br />Silahkan klik salah satu menu lalu klik lagi tombol ini.`
+			);
 
 		const result = await getHelpPage(fileName);
 		showModal({
