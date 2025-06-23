@@ -6,7 +6,7 @@ interface ModalAction {
 
 interface ModalProps {
 	title?: string;
-	body: string | import('svelte').Snippet;
+	body: string | import('svelte').Component;
 	dismissible?: boolean;
 	onPositive?: ModalAction;
 	onNeutral?: ModalAction;

@@ -22,7 +22,7 @@
 				{#if typeof props.body == 'string'}
 					{@html props.body}
 				{:else}
-					{@render props.body()}
+					<props.body />
 				{/if}
 			</p>
 

@@ -4,26 +4,36 @@
 	import IconMenuDrawer from '$lib/icons/menu-drawer.svg?raw';
 	import IconQuestion from '$lib/icons/question.svg?raw';
 	import { pageMeta } from '$lib/state.svelte';
+	import type { Component } from 'svelte';
 	import { showModal } from './modal/state.svelte';
+	import { toast } from './toast/state.svelte';
 
 	const helps: Record<string, string> = {
-		// path: body
-		'/sekolah':
-			'<h3 class="font-bold text-lg mb-4">Petunjuk Penggunaan</h3><p>Isi data sekolah dengan lengkap dan benar. Pastikan untuk mengunggah logo sekolah dalam format PNG.</p>',
-		'/siswa':
-			'<h3 class="font-bold text-lg mb-4">Petunjuk Penggunaan</h3><ul class="space-y-3"><li class="flex items-start gap-3"><p><code class="bg-primary text-primary-content rounded-md px-2">Tambah Siswa</code> Berfungsi untuk menambahkan siswa secara manual ke dalam daftar.</p></li><li class="flex items-start gap-3"><p><code class="bg-success text-success-content px-2 rounded-md">Download Template</code> Berfungsi untuk mengunduh template Excel yang digunakan saat mengisi data siswa.</p></li><li class="flex items-start gap-3"><p><code class="bg-warning text-warning-content px-2 rounded-md">Import</code> Berfungsi untuk mengunggah data siswa dari file Excel. Gunakan template yang sudah disediakan!</p></li><li class="flex items-start gap-3"><p><code class="bg-accent text-accent-content px-2 rounded-md">Export</code> Berfungsi untuk mengunduh daftar siswa yang telah dimasukkan dalam format Excel.</p></li></ul>'
+		// path: fileName
+		'/sekolah': 'sekolah.md',
+		'/siswa': 'siswa.md'
 	};
 
-	function showHelp() {
-		const body = helps[page.url.pathname.replace(/\/+$/, '')] || 'Noting match to `helps`';
+	async function getHelpPage(fileName: string) {
+		const page = await import(/* @vite-ignore */ `../../docs/help/${fileName}`);
+		return {
+			meta: page.metadata as { title: string },
+			ContentPage: page.default as Component
+		};
+	}
+
+	async function showHelp() {
+		const fileName = helps[page.url.pathname.replace(/\/+$/, '')];
+		if (!fileName) return toast(`Tidak ada informasi bantuan`);
+
+		const result = await getHelpPage(fileName);
 		showModal({
-			// body can be string or Snippet
-			body: body,
+			body: result.ContentPage,
+			title: result.meta.title,
 			dismissible: true,
 			onNeutral: {
 				label: 'OK',
 				action({ close }) {
-					// do something here
 					close();
 				}
 			}
