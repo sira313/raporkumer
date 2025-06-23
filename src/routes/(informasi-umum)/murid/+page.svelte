@@ -17,7 +17,7 @@
 	let formMuridData = $state<Murid>();
 	let detailMuridData = $state<Murid>();
 
-	let siswa = $state<Murid[]>([]);
+	let murid = $state<Murid[]>([]);
 	let loading = $state(false);
 	let limit = $state(50);
 
@@ -25,10 +25,10 @@
 		try {
 			loading = true;
 			const result = await db.murid.limit(limit).toArray();
-			siswa = result;
+			murid = result;
 		} catch (error) {
 			console.error(error);
-			toast('Terjadi kesalahan saat memuat data siswa', 'error');
+			toast('Terjadi kesalahan saat memuat data murid', 'error');
 		} finally {
 			loading = false;
 		}
@@ -71,7 +71,7 @@
 </script>
 
 <fieldset class="fieldset bg-base-100 w-full rounded-lg border border-none p-4 shadow-md">
-	<legend class="fieldset-legend">Formulir Dan Tabel Isian Data Siswa</legend>
+	<legend class="fieldset-legend">Formulir Dan Tabel Isian Data Murid</legend>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
 		<button class="btn flex items-center shadow-none" onclick={() => (formMuridShown = true)}>
@@ -89,7 +89,7 @@
 			<span>{@html iconImport}</span>
 			Import
 		</button>
-		<!-- Tombol Export daftar siswa dalam bentuk excel -->
+		<!-- Tombol Export daftar murid dalam bentuk excel -->
 		<button class="btn shadow-none">
 			<span>{@html iconExport}</span>
 			Export
@@ -97,10 +97,10 @@
 	</div>
 
 	<div class="flex flex-col gap-2 sm:flex-row">
-		<!-- Cari nama siswa -->
+		<!-- Cari nama murid -->
 		<label class="input bg-base-200 dark:border-none">
 			<span>{@html IconSearch}</span>
-			<input type="search" required placeholder="Cari nama siswa..." />
+			<input type="search" required placeholder="Cari nama murid..." />
 		</label>
 		<!-- pagination -->
 		<div class="join sm:ml-auto">
@@ -111,7 +111,7 @@
 		</div>
 	</div>
 
-	<!-- Tabel daftar siswa -->
+	<!-- Tabel daftar murid -->
 	<div
 		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
 	>
@@ -128,7 +128,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each siswa as m, index (m)}
+				{#each murid as m, index (m)}
 					<tr>
 						<td><input type="checkbox" checked={false} class="checkbox" /></td>
 						<td>{index + 1}</td>
@@ -158,7 +158,7 @@
 				{:else}
 					<tr>
 						<td class="text-center p-7" colspan="6">
-							<em class="opacity-50">Belum ada data siswa</em>
+							<em class="opacity-50">Belum ada data murid</em>
 						</td>
 					</tr>
 				{/each}

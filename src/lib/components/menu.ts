@@ -7,8 +7,8 @@ export const appMenuItems: MenuItem[] = [
 				path: '/sekolah'
 			},
 			{
-				title: 'Data Siswa',
-				path: '/siswa'
+				title: 'Data Murid',
+				path: '/murid'
 			},
 			{
 				title: 'Data Kelas',

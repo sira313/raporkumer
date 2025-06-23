@@ -11,7 +11,7 @@
 	const helpMaps: Record<string, string> = {
 		// path: fileName (without extension)
 		'/sekolah': 'sekolah',
-		'/siswa': 'siswa'
+		'/murid': 'murid'
 	};
 
 	async function getHelpPage(fileName: string) {
