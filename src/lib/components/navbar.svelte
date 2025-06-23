@@ -11,7 +11,9 @@
 	const helpMaps: Record<string, string> = {
 		// path: fileName (without extension)
 		'/sekolah': 'sekolah',
-		'/siswa': 'siswa'
+		'/murid': 'murid',
+		'/mata-pelajaran': 'mata-pelajaran',
+		'/ekstrakurikuler': 'ekstrakurikuler'
 	};
 
 	async function getHelpPage(fileName: string) {
@@ -24,7 +26,10 @@
 
 	async function showHelp() {
 		const fileName = helpMaps[page.url.pathname.replace(/\/+$/, '')];
-		if (!fileName) return toast(`Tidak ada informasi bantuan`);
+		if (!fileName)
+			return toast(
+				`Tombol ini berfungsi untuk menampilkan petunjuk penggunaan.<br />Silahkan klik salah satu menu lalu klik lagi tombol ini.`
+			);
 
 		const result = await getHelpPage(fileName);
 		showModal({

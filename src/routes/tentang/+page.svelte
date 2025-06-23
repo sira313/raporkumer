@@ -7,8 +7,8 @@
 </script>
 
 <div class="card rounded-box bg-base-100 mx-auto w-full max-w-3xl shadow-sm">
-	<div class="card-body">
-		<h2 class="card-title mb-6 text-xl font-bold">Aplikasi E-Rapor Kurikulum Merdeka</h2>
+	<div class="card-body text-base">
+		<h2 class="card-title mb-4 text-xl font-bold">Aplikasi E-Rapor Kurikulum Merdeka</h2>
 		<p>
 			Aplikasi E-Rapor Kurikulum Merdeka ini kami kembangkan dengan tujuan utama untuk memudahkan
 			guru dalam mengelola dan mengolah nilai peserta didik menjadi nilai rapor yang siap cetak.
@@ -44,9 +44,9 @@
 		<p class="mt-4">
 			Pengembang:<br />
 			- <a href="https://apoxi.cam/" target="_blank" class="link link-primary">Aris Pratama</a>
-			(UI Developer)<br />
+			(UI Dev)<br />
 			- <a href="https://mustofa.id" target="_blank" class="link link-primary">Habib Mustofa</a>
-			(UX, Data Handler)<br />
+			(DB Dev)<br />
 		</p>
 		<div class="card-actions mt-4 justify-end">
 			<button class="btn btn-primary shadow-none" on:click={() => masukanModal.openModal()}>

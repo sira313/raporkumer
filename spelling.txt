@@ -5,6 +5,7 @@ Chairil
 daisyui
 Dangin
 dexie
+Extrakurikuler
 Formatif
 Hendra
 Kembayan
@@ -16,5 +17,6 @@ NPSN
 Periji
 Rapor
 Ratih
+Silahkan
 Sumatif
 unflatten
