@@ -1,0 +1,67 @@
+<script lang="ts">
+	import iconDel from '$lib/icons/del.svg?raw';
+	import IconPlus from '$lib/icons/plus.svg?raw';
+</script>
+
+<fieldset
+	class="fieldset bg-base-100 rounded-box mx-auto w-full max-w-3xl border border-none p-4 shadow-md"
+>
+	<legend class="fieldset-legend">Daftar Extrakurikuler</legend>
+	<!-- tombol tambah mapel -->
+	<div class="flex flex-col gap-2 sm:flex-row">
+		<div class="flex flex-row gap-2">
+			<input
+				class="input bg-base-200 validator w-full sm:w-100 dark:border-none"
+				placeholder="Ketik nama ekstrakurikuler"
+			/>
+			<button class="btn rounded-box shadow-none">
+				<span>{@html IconPlus}</span>
+				Tambah
+			</button>
+		</div>
+		<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
+		<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
+			<span>{@html iconDel}</span>
+			Hapus
+		</button>
+	</div>
+	<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+		<!-- Tabel data -->
+		<table class="border-base-200 table border dark:border-none">
+			<thead>
+				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
+					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
+					<th style="width: 50px; min-width: 40px;">No</th>
+					<th style="width: 70%;">Mata Pelajaran</th>
+					<th>Aksi</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><input type="checkbox" class="checkbox" /></td>
+					<td>1</td>
+					<td>Sepak bola</td>
+					<td>
+						<div class="flex flex-row gap-2">
+							<button class="btn btn-sm btn-ghost btn-circle" type="button">
+								<span class="text-error">{@html iconDel}</span>
+							</button>
+						</div>
+					</td>
+				</tr>
+				<tr>
+					<td><input type="checkbox" class="checkbox" /></td>
+					<td>1</td>
+					<td>Pramuka</td>
+					<td>
+						<div class="flex flex-row gap-2">
+							<button class="btn btn-sm btn-ghost btn-circle" type="button">
+								<span class="text-error">{@html iconDel}</span>
+							</button>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</fieldset>

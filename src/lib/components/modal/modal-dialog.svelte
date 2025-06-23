@@ -30,7 +30,7 @@
 				<div class="modal-action">
 					{#if props.onNegative}
 						<button
-							class="btn btn-error"
+							class="btn btn-error shadow-none"
 							type="button"
 							onclick={() => props.onNegative?.action?.({ close: hideModal })}
 						>
