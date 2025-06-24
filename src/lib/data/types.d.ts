@@ -8,7 +8,7 @@ interface Alamat {
 }
 
 interface Sekolah {
-	id: 1; // always 1
+	id: 1; // always 1 for now
 	jenjangPendidikan: string;
 	nama: string;
 	npsn: string;
@@ -17,6 +17,22 @@ interface Sekolah {
 	logoURL?: string;
 	website?: string;
 	email: string;
+	kepalaSekolah: {
+		nama: string;
+		nip: string;
+	};
+}
+
+interface Kelas {
+	id: number;
+	nama: string;
+	fase: string;
+	semester: 'Genap' | 'Ganjil';
+	tahunAjaran: string;
+	waliKelas: {
+		nama: string;
+		nip: string;
+	};
 }
 
 interface Murid {
