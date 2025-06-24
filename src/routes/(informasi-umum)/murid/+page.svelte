@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { showModal } from '$lib/components/modal/state.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
 	import { toast } from '$lib/components/toast/state.svelte';
 	import db from '$lib/data/db';
 	import iconDel from '$lib/icons/del.svg?raw';

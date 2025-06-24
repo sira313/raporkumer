@@ -1,18 +1,21 @@
-<script lang="ts">
-	import { getModalProps, hideModal } from './state.svelte';
-
+<script lang="ts" module>
 	let modal: HTMLDialogElement;
-	let props = $derived(getModalProps());
+	let modalProps = $state<ModalProps>();
 
-	$effect(() => {
-		if (!modal) return;
-		if (props) modal.showModal();
-		else modal.close();
-	});
+	export function showModal(props: ModalProps) {
+		modalProps = props;
+		modal.showModal();
+	}
+
+	export function hideModal() {
+		modal.close();
+		modalProps = undefined;
+	}
 </script>
 
-<dialog bind:this={modal} class="modal" onclose={() => setTimeout(hideModal, 800)}>
-	{#if props}
+<dialog bind:this={modal} class="modal" onclose={() => hideModal()}>
+	{#if modalProps}
+		{@const props = modalProps}
 		<div class="modal-box sm:w-full sm:max-w-2xl">
 			{#if props.title}
 				<h3 class="text-lg font-bold">{props.title}</h3>

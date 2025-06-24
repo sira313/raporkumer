@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import GlobalModal from '$lib/components/global-modal.svelte';
 	import Menu from '$lib/components/menu.svelte';
-	import ModalDialog from '$lib/components/modal/modal-dialog.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
 	import Toast from '$lib/components/toast/toast.svelte';
 	import { appName, loadSekolah, pageMeta, setPageTitle } from '$lib/state.svelte';
@@ -68,5 +68,5 @@
 	</div>
 </main>
 
-<ModalDialog />
 <Toast />
+<GlobalModal />
