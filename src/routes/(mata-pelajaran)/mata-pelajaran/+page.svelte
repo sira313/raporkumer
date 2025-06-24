@@ -1,7 +1,5 @@
 <script lang="ts">
-	import iconDel from '$lib/icons/del.svg?raw';
-	import IconPlus from '$lib/icons/plus.svg?raw';
-	import IconEdit from '$lib/icons/edit.svg?raw';
+	import Icon from '$lib/components/icon.svelte';
 </script>
 
 <div class="mx-auto grid max-w-4xl gap-4">
@@ -18,12 +16,12 @@
 				on:click={() =>
 					(document.getElementById('modal-tambah-mapel') as HTMLDialogElement)?.showModal()}
 			>
-				<span>{@html IconPlus}</span>
+				<Icon name="plus" />
 				Tambah Mapel
 			</button>
 			<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
 			<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
-				<span>{@html iconDel}</span>
+				<Icon name="del" />
 				Hapus Mapel
 			</button>
 		</div>
@@ -50,14 +48,14 @@
 						<td>76</td>
 						<td class="flex flex-row gap-2">
 							<a href="/mata-pelajaran/tp-rl" class="btn btn-sm btn-soft shadow-none" type="button">
-								<span>{@html IconEdit}</span>
+								<Icon name="edit" />
 								Edit TP
 							</a>
 						</td>
 						<td>
 							<div class="flex flex-row gap-2">
 								<button class="btn btn-sm btn-soft btn-error shadow-none" type="button">
-									<span>{@html iconDel}</span>
+									<Icon name="del" />
 									Hapus
 								</button>
 							</div>
@@ -89,14 +87,14 @@
 						<td>76</td>
 						<td class="flex flex-row gap-2">
 							<button class="btn btn-sm btn-soft shadow-none" type="button">
-								<span>{@html IconEdit}</span>
+								<Icon name="edit" />
 								Edit TP
 							</button>
 						</td>
 						<td>
 							<div class="flex flex-row gap-2">
 								<button class="btn btn-sm btn-soft btn-error shadow-none" type="button">
-									<span>{@html iconDel}</span>
+									<Icon name="del" />
 									Hapus
 								</button>
 							</div>

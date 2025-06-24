@@ -1,14 +1,8 @@
 <script lang="ts">
 	import { showModal } from '$lib/components/global-modal.svelte';
+	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast/state.svelte';
 	import db from '$lib/data/db';
-	import iconDel from '$lib/icons/del.svg?raw';
-	import IconDownload from '$lib/icons/download.svg?raw';
-	import iconExport from '$lib/icons/export.svg?raw';
-	import iconEye from '$lib/icons/eye.svg?raw';
-	import iconImport from '$lib/icons/import.svg?raw';
-	import IconPlus from '$lib/icons/plus.svg?raw';
-	import IconSearch from '$lib/icons/search.svg?raw';
 	import { onMount } from 'svelte';
 	import DetilMurid from './detil-murid.svelte';
 	import FormMurid from './form-murid.svelte';
@@ -95,23 +89,23 @@
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
 		<button class="btn flex items-center shadow-none" onclick={() => (formMuridShown = true)}>
-			<span>{@html IconPlus}</span>
+			<Icon name="plus" />
 			Tambah Murid
 		</button>
 
 		<!-- Tombol Download template excel -->
 		<button class="btn shadow-none sm:ml-auto">
-			<span>{@html IconDownload}</span>
+			<Icon name="download" />
 			Download Template
 		</button>
 		<!-- Tombol Import file template yang sudah diisi -->
 		<button class="btn shadow-none">
-			<span>{@html iconImport}</span>
+			<Icon name="import" />
 			Import
 		</button>
 		<!-- Tombol Export daftar murid dalam bentuk excel -->
 		<button class="btn shadow-none">
-			<span>{@html iconExport}</span>
+			<Icon name="export" />
 			Export
 		</button>
 	</div>
@@ -122,7 +116,7 @@
 			{#if daftarMuridLoading}
 				<div class="loading loading-spinner"></div>
 			{:else}
-				<span>{@html IconSearch}</span>
+				<Icon name="search" />
 			{/if}
 			<input type="search" required placeholder="Cari nama murid..." />
 		</label>
@@ -187,7 +181,7 @@
 									type="button"
 									onclick={() => (detailMuridData = murid)}
 								>
-									<span>{@html iconEye}</span>
+									<Icon name="eye" />
 								</button>
 
 								<button
@@ -195,7 +189,7 @@
 									type="button"
 									onclick={() => deleteMurid(murid)}
 								>
-									<span class="text-error">{@html iconDel}</span>
+									<span class="text-error"><Icon name="del" /></span>
 								</button>
 							</div>
 						</td>

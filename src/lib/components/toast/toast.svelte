@@ -1,18 +1,14 @@
 <script lang="ts">
-	import IconError from '$lib/icons/error.svg?raw';
-	import IconInfo from '$lib/icons/info.svg?raw';
-	import IconSuccess from '$lib/icons/success.svg?raw';
-	import IconWarning from '$lib/icons/warning.svg?raw';
-	import IconClose from '$lib/icons/close.svg?raw';
 	import { flip } from 'svelte/animate';
+	import Icon from '../icon.svelte';
 	import { toasts } from './state.svelte';
 
 	const autoCloseAfter = 5; // seconds
 	const typesMaps: Record<NonNullable<Toast['type']>, [string, string]> = {
-		info: ['alert-info', IconInfo],
-		success: ['alert-success', IconSuccess],
-		warning: ['alert-warning', IconWarning],
-		error: ['alert-error', IconError]
+		info: ['alert-info', 'info'],
+		success: ['alert-success', 'success'],
+		warning: ['alert-warning', 'warning'],
+		error: ['alert-error', 'error']
 	};
 
 	function close(toast: Toast) {
@@ -31,11 +27,11 @@
 	{#each toasts as t (t)}
 		{@const [color, icon] = typesMaps[t.type || 'info']}
 		<div animate:flip={{ duration: 200, delay: 80 }} class="alert {color}" role="alert">
-			{@html icon}
+			<Icon name={icon} />
 			<span>{@html t.message}</span>
 
 			<button class="btn btn-circle btn-ghost" type="button" title="Tutup" onclick={() => close(t)}>
-				{@html IconClose}
+				<Icon name="close" />
 				<span class="sr-only">Tutup</span>
 			</button>
 		</div>

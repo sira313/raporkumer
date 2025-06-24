@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import IconCollapseAll from '$lib/icons/collapse-all.svg?raw';
-	import IconExpandAll from '$lib/icons/expand-all.svg?raw';
-	import IconSearch from '$lib/icons/search.svg?raw';
 	import { StorageState } from '$lib/state.svelte';
 	import { searchQueryMarker } from '$lib/utils';
+	import Icon from './icon.svelte';
 	import { appMenuItems } from './menu';
 
 	const expanded = new StorageState<boolean>('menu-expanded');
@@ -73,7 +71,7 @@
 <div class="flex-1">
 	<div class="mb-3 flex gap-1">
 		<label class="input bg-base-200 ml-2 dark:border-none">
-			{@html IconSearch}
+			<Icon name="search" />
 			<input type="search" class="grow" bind:value={search} placeholder="Cari menu" />
 		</label>
 		<label
@@ -81,8 +79,8 @@
 			title={expanded.value ? 'Sempitkan menu' : 'Luaskan menu'}
 		>
 			<input type="checkbox" bind:checked={expanded.value} />
-			<span class="swap-on">{@html IconExpandAll}</span>
-			<span class="swap-off">{@html IconCollapseAll}</span>
+			<span class="swap-on"><Icon name="expand-all" /></span>
+			<span class="swap-off"><Icon name="collapse-all" /></span>
 		</label>
 	</div>
 

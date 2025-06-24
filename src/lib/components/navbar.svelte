@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import DarkMode from '$lib/components/dark-mode.svelte';
-	import IconMenuDrawer from '$lib/icons/menu-drawer.svg?raw';
-	import IconQuestion from '$lib/icons/question.svg?raw';
 	import { pageMeta } from '$lib/state.svelte';
 	import type { Component } from 'svelte';
 	import { showModal } from './global-modal.svelte';
+	import Icon from './icon.svelte';
 	import { toast } from './toast/state.svelte';
 
 	const helpMaps: Record<string, string> = {
@@ -53,7 +52,7 @@
 >
 	<div class="flex-none lg:hidden">
 		<label for="my-drawer-2" class="btn btn-square btn-ghost drawer-button">
-			{@html IconMenuDrawer}
+			<Icon name="menu-drawer" />
 		</label>
 	</div>
 	<div class="mx-2 flex-1 px-2">
@@ -67,7 +66,7 @@
 			</li>
 			<li class="menu-item">
 				<button class="btn btn-ghost btn-circle" aria-label="Bantuan" onclick={showHelp}>
-					{@html IconQuestion}
+					<Icon name="question" />
 				</button>
 			</li>
 		</ul>
