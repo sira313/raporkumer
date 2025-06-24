@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { toast } from '$lib/components/toast/state.svelte';
+	import db from '$lib/data/db';
+	import { onMount } from 'svelte';
+
 	interface Props {
 		murid: Murid;
 		onEdit: (m: Murid) => void;
@@ -6,6 +10,25 @@
 	}
 
 	let { murid, onEdit, onDismiss }: Props = $props();
+	let kelas = $state<Kelas>();
+	let kelasLoading = $state(false);
+
+	async function loadKelas() {
+		try {
+			kelasLoading = true;
+			const result = await db.kelas.get(murid.kelasId);
+			kelas = result;
+		} catch (error) {
+			console.error(error);
+			toast(`Gagal memuat data kelas dari murid "${murid.nama}"`, 'warning');
+		} finally {
+			kelasLoading = false;
+		}
+	}
+
+	onMount(() => {
+		loadKelas();
+	});
 </script>
 
 {#snippet field(label: string, value: string)}
@@ -31,6 +54,7 @@
 							{@render field('NIS', murid.nis)}
 							{@render field('NISN', murid.nisn)}
 							{@render field('Nama', murid.nama)}
+							{@render field('Kelas', `${kelas?.nama || '-'} - ${kelas?.fase || '-'}`)}
 							{@render field('Jenis Kelamin', murid.jenisKelamin)}
 							{@render field('Tempat Lahir', murid.tempatLahir)}
 							{@render field('Tanggal Lahir', murid.tanggalLahir)}

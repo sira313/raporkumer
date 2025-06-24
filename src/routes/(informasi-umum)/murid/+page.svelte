@@ -119,7 +119,11 @@
 	<div class="flex flex-col gap-2 sm:flex-row">
 		<!-- Cari nama murid -->
 		<label class="input bg-base-200 dark:border-none">
-			<span>{@html IconSearch}</span>
+			{#if daftarMuridLoading}
+				<div class="loading loading-spinner"></div>
+			{:else}
+				<span>{@html IconSearch}</span>
+			{/if}
 			<input type="search" required placeholder="Cari nama murid..." />
 		</label>
 
@@ -134,7 +138,9 @@
 					{daftarKelasLoading ? 'Loading...' : 'Pilih Kelas'}
 				</option>
 				{#each daftarKelas as kelas}
-					<option value={kelas}>{kelas.nama} - {kelas.fase}</option>
+					<option value={kelas}>
+						{kelas.nama} &bullet; {kelas.fase} &bullet; {kelas.semester} &bullet; {kelas.tahunAjaran}
+					</option>
 				{/each}
 			{:else}
 				<option value="" disabled selected> Belum ada data kelas </option>
@@ -208,6 +214,7 @@
 
 {#if formMuridShown}
 	<FormMurid
+		{daftarKelas}
 		murid={formMuridData}
 		onDismiss={() => {
 			formMuridData = undefined;
