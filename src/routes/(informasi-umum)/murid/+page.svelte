@@ -17,20 +17,39 @@
 	let formMuridData = $state<Murid>();
 	let detailMuridData = $state<Murid>();
 
-	let murid = $state<Murid[]>([]);
-	let loading = $state(false);
-	let limit = $state(50);
+	let daftarMurid = $state<Murid[]>([]);
+	let daftarMuridLoading = $state(false);
+	let limit = $state(100);
 
-	async function load() {
+	let daftarKelas = $state<Kelas[]>([]);
+	let daftarKelasLoading = $state(false);
+	let activeKelas = $state<Kelas>();
+
+	async function loadDaftarKelas() {
 		try {
-			loading = true;
-			const result = await db.murid.limit(limit).toArray();
-			murid = result;
+			daftarKelasLoading = true;
+			const result = await db.kelas.toArray();
+			daftarKelas = result;
+			activeKelas = daftarKelas[0];
 		} catch (error) {
 			console.error(error);
-			toast('Terjadi kesalahan saat memuat data murid', 'error');
+			toast('Terjadi kesalahan saat memuat daftar kelas', 'error');
 		} finally {
-			loading = false;
+			daftarKelasLoading = false;
+		}
+	}
+
+	async function loadDaftarMurid() {
+		if (!activeKelas) return;
+		try {
+			daftarMuridLoading = true;
+			const result = await db.murid.where('kelasId').equals(activeKelas.id).limit(limit).toArray();
+			daftarMurid = result;
+		} catch (error) {
+			console.error(error);
+			toast('Terjadi kesalahan saat memuat daftar murid', 'error');
+		} finally {
+			daftarMuridLoading = false;
 		}
 	}
 
@@ -54,7 +73,7 @@
 					try {
 						await db.murid.delete(murid.nis);
 						close();
-						load();
+						loadDaftarMurid();
 						toast('Data murid telah dihapus');
 					} catch (error) {
 						console.log(error);
@@ -65,8 +84,9 @@
 		});
 	}
 
-	onMount(() => {
-		load();
+	onMount(async () => {
+		await loadDaftarKelas();
+		loadDaftarMurid();
 	});
 </script>
 
@@ -99,13 +119,33 @@
 	<div class="flex flex-col items-center gap-2 sm:flex-row">
 		<!-- Cari nama murid -->
 		<label class="input bg-base-200 dark:border-none">
-			<span>{@html IconSearch}</span>
+			{#if daftarMuridLoading}
+				<div class="loading loading-spinner"></div>
+			{:else}
+				<span>{@html IconSearch}</span>
+			{/if}
 			<input type="search" required placeholder="Cari nama murid..." />
 		</label>
 
-		{#if loading}
-			<em class="opacity-50">Loading...</em>
-		{/if}
+		<select
+			class="select bg-base-200 dark:border-none"
+			title="Pilih kelas"
+			bind:value={activeKelas}
+			onchange={() => loadDaftarMurid()}
+		>
+			{#if daftarKelas?.length}
+				<option value="" disabled selected>
+					{daftarKelasLoading ? 'Loading...' : 'Pilih Kelas'}
+				</option>
+				{#each daftarKelas as kelas}
+					<option value={kelas}>
+						{kelas.nama} &bullet; {kelas.fase} &bullet; {kelas.semester} &bullet; {kelas.tahunAjaran}
+					</option>
+				{/each}
+			{:else}
+				<option value="" disabled selected> Belum ada data kelas </option>
+			{/if}
+		</select>
 
 		<!-- pagination -->
 		<div class="join sm:ml-auto">
@@ -133,19 +173,19 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each murid as m, index (m)}
+				{#each daftarMurid as murid, index (murid)}
 					<tr>
 						<td><input type="checkbox" checked={false} class="checkbox" /></td>
 						<td>{index + 1}</td>
-						<td>{m.nama}</td>
-						<td>{m.tempatLahir}</td>
-						<td>{m.tanggalLahir}</td>
+						<td>{murid.nama}</td>
+						<td>{murid.tempatLahir}</td>
+						<td>{murid.tanggalLahir}</td>
 						<td>
 							<div class="flex flex-row gap-2">
 								<button
 									class="btn btn-sm btn-ghost btn-circle"
 									type="button"
-									onclick={() => (detailMuridData = m)}
+									onclick={() => (detailMuridData = murid)}
 								>
 									<span>{@html iconEye}</span>
 								</button>
@@ -153,7 +193,7 @@
 								<button
 									class="btn btn-sm btn-ghost btn-circle"
 									type="button"
-									onclick={() => deleteMurid(m)}
+									onclick={() => deleteMurid(murid)}
 								>
 									<span class="text-error">{@html iconDel}</span>
 								</button>
@@ -174,11 +214,12 @@
 
 {#if formMuridShown}
 	<FormMurid
+		{daftarKelas}
 		murid={formMuridData}
 		onDismiss={() => {
 			formMuridData = undefined;
 			formMuridShown = false;
-			load();
+			loadDaftarMurid();
 		}}
 	/>
 {/if}

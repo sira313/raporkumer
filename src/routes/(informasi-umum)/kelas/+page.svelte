@@ -1,106 +1,83 @@
-<form>
-	<fieldset
-		class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg border border-none p-4 shadow-md"
-	>
-		<legend class="fieldset-legend">Formulir Isian Data Kelas</legend>
-		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-			<!-- Nama Kelas -->
-			<div>
-				<legend class="fieldset-legend">Nama Kelas</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: VI (Kelas 6)"
-					name="namaKelas"
-				/>
-			</div>
+<script lang="ts">
+	import { goto } from '$app/navigation';
+	import { toast } from '$lib/components/toast/state.svelte';
+	import db from '$lib/data/db';
+	import { onMount } from 'svelte';
 
-			<!-- Fase -->
-			<div>
-				<legend class="fieldset-legend">Fase</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: Fase C (Kelas 6)"
-					name="fase"
-				/>
-			</div>
+	let loading = $state(false);
+	let daftarKelas = $state<Kelas[]>([]);
 
-			<!-- Semester -->
-			<div>
-				<legend class="fieldset-legend">Semester</legend>
-				<select
-					class="select bg-base-200 validator w-full border dark:border-none"
-					name="semester"
-					required
-				>
-					<option value="" disabled selected>Pilih Semester</option>
-					<option>Ganjil</option>
-					<option>Genap</option>
-				</select>
-			</div>
+	async function load() {
+		loading = true;
+		try {
+			const result = await db.kelas.toArray();
+			daftarKelas = result;
 
-			<!-- Tahun Ajaran -->
-			<div>
-				<legend class="fieldset-legend">Tahun Ajaran</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: 2025/2026"
-					name="tahunAjaran"
-				/>
-			</div>
-			<!-- Nama Kepala Sekolah -->
-			<div>
-				<legend class="fieldset-legend">Nama Kepala Sekolah</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: Bruce Wayne, Bat"
-					name="namaKepalaSekolah"
-				/>
-			</div>
+			if (!daftarKelas?.length) {
+				// arahkan ke form tambah kelas jika belum ada data kelas
+				await goto('/kelas/form');
+			}
+		} catch (error) {
+			console.error(error);
+			toast('Gagal memuat data kelas', 'error');
+		} finally {
+			loading = false;
+		}
+	}
 
-			<!-- NIP Kepala Sekolah -->
-			<div>
-				<legend class="fieldset-legend">NIP Kepala Sekolah</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: 19700305 199309 1 009"
-					name="nipKepalaSekolah"
-				/>
-			</div>
+	onMount(() => {
+		load();
+	});
+</script>
 
-			<!-- Wali Kelas -->
-			<div>
-				<legend class="fieldset-legend">Wali Kelas</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: Damian Wayne, Bat"
-					name="waliKelas"
-				/>
-			</div>
+{#if loading}
+	<em class="opacity-50">Loading...</em>
+{/if}
 
-			<!-- NIP Wali Kelas -->
-			<div>
-				<legend class="fieldset-legend">NIP Wali Kelas</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: 19940505 201803 1 008"
-					name="nipWaliKelas"
-				/>
+{#each daftarKelas as kelas (kelas)}
+	<fieldset class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg p-4 shadow-md">
+		<legend class="fieldset-legend">Data Kelas</legend>
+
+		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			<div class="card bg-base-200">
+				<div class="card-body p-4">
+					<h2 class="card-title text-base-content/70 text-sm">Nama Kelas</h2>
+					<p class="text-lg font-semibold">{kelas.nama}</p>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body p-4">
+					<h2 class="card-title text-base-content/70 text-sm">Fase</h2>
+					<p class="text-lg font-semibold">{kelas.fase}</p>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body p-4">
+					<h2 class="card-title text-base-content/70 text-sm">Semester</h2>
+					<p class="text-lg font-semibold">{kelas.semester}</p>
+				</div>
+			</div>
+			<div class="card bg-base-200">
+				<div class="card-body p-4">
+					<h2 class="card-title text-base-content/70 text-sm">Tahun Ajaran</h2>
+					<p class="text-lg font-semibold">{kelas.tahunAjaran}</p>
+				</div>
+			</div>
+			<div class="card bg-base-200 col-span-full lg:col-span-1">
+				<div class="card-body p-4">
+					<h2 class="card-title text-base-content/70 text-sm">Wali Kelas</h2>
+					<p class="text-lg font-semibold">{kelas.waliKelas?.nama}</p>
+					<p class="text-base-content/70 text-sm">NIP {kelas.waliKelas?.nip}</p>
+				</div>
 			</div>
 		</div>
-		<button class="btn btn-primary mt-6 ml-auto shadow-none"> Simpan </button>
+
+		<div class="mt-6 text-right">
+			<a href="/kelas/form?id={kelas.id}" class="btn btn-primary shadow-md">Edit</a>
+		</div>
 	</fieldset>
-</form>
+{:else}
+	<div>
+		<p>Belum ada data kelas</p>
+	</div>
+{/each}

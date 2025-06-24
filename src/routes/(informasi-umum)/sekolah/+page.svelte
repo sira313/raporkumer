@@ -1,181 +1,84 @@
 <script lang="ts">
-	import { toast } from '$lib/components/toast/state.svelte';
-	import db from '$lib/data/db';
-	import { loadSekolah, pageMeta } from '$lib/state.svelte';
-	import { flatten, populateForm, unflatten } from '$lib/utils';
+	import { goto } from '$app/navigation';
+	import { pageMeta } from '$lib/state.svelte';
+	import { onMount } from 'svelte';
 
-	let form: HTMLFormElement;
-	let saving = $state(false);
+	let sekolah = $derived(pageMeta.sekolah);
 
-	async function save(e: FormSubmitEvent) {
-		e.preventDefault();
-		try {
-			saving = true;
-			const formData = new FormData(e.currentTarget);
-			const sekolah = unflatten<Sekolah>(Object.fromEntries(formData.entries()));
-			sekolah.id = 1;
-			// prevent remove logo if user not upload
-			sekolah.logo = sekolah.logo?.size ? sekolah.logo : pageMeta.sekolah?.logo;
-			await db.sekolah.put(sekolah);
-			loadSekolah();
-			toast('Data sekolah berhasil disimpan', 'success');
-		} catch (error) {
-			console.error(error);
-			toast('Gagal menyimpan data sekolah', 'error');
-		} finally {
-			saving = false;
-		}
+	function plainAlamat(alamat?: Alamat) {
+		if (!alamat) return '-';
+		return `${alamat.jalan || '-'}, ${alamat.desa || '-'}, ${alamat.kabupaten || '-'}, ${alamat.kecamatan || '-'}, ${alamat.provinsi || '-'}, ${alamat.kodePos || '-'}`;
 	}
 
-	$effect(() => {
-		if (!pageMeta.sekolah) return;
-		populateForm(form, flatten(pageMeta.sekolah));
+	onMount(() => {
+		// arahkan ke form jika belum ada data sekolah
+		if (!sekolah) goto('/sekolah/form');
 	});
 </script>
 
-<form bind:this={form} onsubmit={save}>
-	<fieldset
-		class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg border border-none p-4 shadow-md"
-	>
-		<legend class="fieldset-legend"> Formulir Isian Data Sekolah </legend>
-
-		<!-- Jenjang Pendidikan -->
-		<legend class="fieldset-legend">Jenjang Pendidikan</legend>
-		<select
-			class="select bg-base-200 validator w-full border dark:border-none"
-			name="jenjangSekolah"
-			required
+<div
+	class="bg-base-100 rounded-box relative mx-auto mt-8 flex max-w-3xl flex-col items-center gap-8 p-6 shadow sm:flex-row sm:p-10"
+>
+	<!-- Logo -->
+	<div class="flex-shrink-0">
+		<div
+			class="bg-base-200 flex h-36 w-36 items-center justify-center overflow-hidden rounded-full shadow-lg"
 		>
-			<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
-			<option>SD (Sekolah Dasar)</option>
-			<option>SMP (Sekolah Menengah Pertama)</option>
-			<option>SMA (Sekolah Menengah Atas)</option>
-		</select>
-
-		<div class="flex-row gap-4 lg:flex">
-			<!-- Nama Sekolah -->
-			<div class="flex-1">
-				<legend class="fieldset-legend">Nama Sekolah</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: SD Negeri 19 Periji"
-					name="nama"
-				/>
-			</div>
-
-			<!-- NPSN -->
-			<div class="flex-1">
-				<legend class="fieldset-legend">NPSN</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: 69856875"
-					name="npsn"
-				/>
+			<img
+				src={sekolah?.logoURL || '/sekolah.png'}
+				alt="Logo sekolah"
+				class="h-32 w-32 object-contain"
+			/>
+		</div>
+	</div>
+	<!-- Data Sekolah -->
+	<div class="space-y-4">
+		<h2 class="text-base-content mb-4 text-2xl font-bold">{sekolah?.nama}</h2>
+		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
+			<div class="text-base-content/70 text-sm font-semibold">Jenjang Pendidikan</div>
+			<div class="text-base-content sm:col-span-2">{sekolah?.jenjangPendidikan}</div>
+		</div>
+		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
+			<div class="text-base-content/70 text-sm font-semibold">NPSN</div>
+			<div class="text-base-content sm:col-span-2">{sekolah?.npsn}</div>
+		</div>
+		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
+			<div class="text-base-content/70 text-sm font-semibold">Kepala Sekolah</div>
+			<div class="text-base-content sm:col-span-2">
+				<div class="tooltip" data-tip={sekolah?.kepalaSekolah?.nip}>
+					{sekolah?.kepalaSekolah?.nama}
+				</div>
 			</div>
 		</div>
-
-		<!-- Alamat Sekolah -->
-		<legend class="fieldset-legend">Alamat Sekolah</legend>
-		<input
-			required
-			type="text"
-			class="input validator bg-base-200 w-full dark:border-none"
-			placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
-			name="alamat.jalan"
-		/>
-
-		<div class="flex-row gap-4 lg:flex">
-			<!-- Nama desa atau kelurahan -->
-			<div class="flex-1">
-				<legend class="fieldset-legend">Desa atau Kelurahan</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: Desa Sungai Dangin atau Kelurahan Sungai Sengkuang"
-					name="alamat.desa"
-				/>
-			</div>
-
-			<!-- Kecamatan -->
-			<div class="flex-1">
-				<legend class="fieldset-legend">Kecamatan</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: Kecamatan Noyan"
-					name="alamat.kecamatan"
-				/>
+		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
+			<div class="text-base-content/70 text-sm font-semibold">Alamat</div>
+			<div class="text-base-content leading-relaxed sm:col-span-2">
+				{plainAlamat(sekolah?.alamat)}
 			</div>
 		</div>
-
-		<div class="flex-row gap-4 lg:flex">
-			<!-- Kabupaten -->
-			<div class="flex-1">
-				<legend class="fieldset-legend">Kabupaten</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: Sanggau"
-					name="alamat.kabupaten"
-				/>
-			</div>
-
-			<!-- Kode Pos -->
-			<div class="flex-1">
-				<legend class="fieldset-legend">Kode POS</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: 78554"
-					name="alamat.kodePos"
-				/>
+		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
+			<div class="text-base-content/70 text-sm font-semibold">Website Sekolah</div>
+			<div class="text-primary break-all underline sm:col-span-2">
+				<a href={sekolah?.website || '#'} target="_blank">{sekolah?.website || '-'}</a>
 			</div>
 		</div>
-
-		<div class="flex-row gap-4 lg:flex">
-			<!-- Website Sekolah -->
-			<div class="flex-1">
-				<legend class="fieldset-legend">Website Sekolah</legend>
-				<input
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Kosongkan bila tidak ada"
-					name="website"
-				/>
-			</div>
-
-			<!-- Email Sekolah -->
-			<div class="flex-1">
-				<legend class="fieldset-legend">Email Sekolah</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: cs@sdn19periji.sch.id"
-					name="email"
-				/>
+		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
+			<div class="text-base-content/70 text-sm font-semibold">Email Sekolah</div>
+			<div class="link link-accent break-all sm:col-span-2">
+				{#if sekolah?.email}
+					<a href="mailto:{sekolah.email}" target="_blank">{sekolah.email}</a>
+				{:else}
+					-
+				{/if}
 			</div>
 		</div>
-
-		<!-- Upload logo sekolah -->
-		<legend class="fieldset-legend">Logo Sekolah</legend>
-		<input type="file" class="file-input file-input-ghost" accept="image/*" name="logo" />
-		<p class="label">Format png, tanpa latar belakang, maksimal 300KB</p>
-
-		<!-- Save -->
-		<button class="btn btn-primary ml-auto shadow-none" disabled={saving}>
-			{#if saving}
-				<span class="loading loading-spinner"></span>
-			{/if}
-			Simpan
-		</button>
-	</fieldset>
-</form>
+	</div>
+	<!-- Edit -->
+	<a
+		href="/sekolah/form"
+		class="btn btn-primary absolute right-4 bottom-4 shadow-none"
+		aria-label="Edit data sekolah"
+	>
+		Edit
+	</a>
+</div>

@@ -6,7 +6,13 @@
 
 	const uid = $props.id();
 
-	let { onDismiss, murid }: { onDismiss: () => void; murid?: Murid } = $props();
+	interface Props {
+		daftarKelas: Kelas[];
+		murid?: Murid;
+		onDismiss: () => void;
+	}
+
+	let { daftarKelas, murid, onDismiss }: Props = $props();
 	let activeTab = $state<'murid' | 'orangTua' | 'alamat' | 'wali'>('murid');
 	let nis = $state('');
 	let saving = $state(false);
@@ -23,11 +29,13 @@
 				const murid = await db.murid.get(existingMuridNis);
 				if (murid) {
 					const muridToSave = { ...murid, ...partialMurid };
+					muridToSave.kelasId = Number(muridToSave.kelasId); // fix form value string
 					const result = await db.murid.put(muridToSave, murid.nis);
 					existingMuridNis = result;
 				}
 			} else {
 				const murid = unflatten<Murid>(Object.fromEntries(formData.entries()));
+				murid.kelasId = Number(murid.kelasId); // fix form value string
 				const result = await db.murid.add(murid);
 				existingMuridNis = result;
 			}
@@ -102,15 +110,43 @@
 							/>
 						</div>
 					</div>
-					<!-- Nama Murid -->
-					<legend class="fieldset-legend">Nama Murid</legend>
-					<input
-						required
-						type="text"
-						class="input validator bg-base-200 w-full dark:border-none"
-						placeholder="Contoh: Chairil Anwar"
-						name="nama"
-					/>
+
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- Nama Murid -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Nama Murid</legend>
+							<input
+								required
+								type="text"
+								class="input validator bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: Chairil Anwar"
+								name="nama"
+							/>
+						</div>
+
+						<!-- Kelas -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Kelas</legend>
+							<select
+								class="select bg-base-200 dark:border-none"
+								title="Pilih kelas"
+								name="kelasId"
+								required
+							>
+								{#if daftarKelas?.length}
+									<option value="" disabled selected> Pilih Kelas </option>
+									{#each daftarKelas as kelas}
+										<option value={kelas.id}>
+											{kelas.nama} &bullet; {kelas.fase} &bullet; {kelas.semester} &bullet; {kelas.tahunAjaran}
+										</option>
+									{/each}
+								{:else}
+									<option value="" disabled selected> Belum ada data kelas </option>
+								{/if}
+							</select>
+						</div>
+					</div>
+
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Tempat lahir -->
 						<div class="flex-1">

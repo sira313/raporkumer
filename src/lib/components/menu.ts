@@ -7,12 +7,12 @@ export const appMenuItems: MenuItem[] = [
 				path: '/sekolah'
 			},
 			{
-				title: 'Data Murid',
-				path: '/murid'
-			},
-			{
 				title: 'Data Kelas',
 				path: '/kelas'
+			},
+			{
+				title: 'Data Murid',
+				path: '/murid'
 			}
 		]
 	},

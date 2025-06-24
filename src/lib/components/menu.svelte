@@ -34,10 +34,21 @@
 			})
 			.filter((item) => item !== null);
 	}
+
+	function isMenuActive(currentPath: string, menuPath?: string) {
+		if (!menuPath) return false;
+
+		// match to sub paths
+		const normalizedPath = currentPath.replace(/\/+$/, '');
+		const normalizedItemPath = menuPath.replace(/\/+$/, '');
+		const active =
+			normalizedPath === normalizedItemPath || normalizedPath.startsWith(normalizedItemPath + '/');
+		return active;
+	}
 </script>
 
 {#snippet menu_item(item: MenuItem)}
-	{@const active = page.url.pathname.replace(/\/+$/, '') == item.path}
+	{@const active = isMenuActive(page.url.pathname, item.path)}
 	<li>
 		{#if item.subMenu}
 			<details open={expanded.value || !!search}>
