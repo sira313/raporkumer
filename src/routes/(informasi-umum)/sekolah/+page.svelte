@@ -59,12 +59,18 @@
 		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
 			<div class="text-base-content/70 text-sm font-semibold">Website Sekolah</div>
 			<div class="text-primary break-all underline sm:col-span-2">
-				<a href="https://sdn19periji.sch.id" target="_blank">{sekolah?.website || '-'}</a>
+				<a href={sekolah?.website || '#'} target="_blank">{sekolah?.website || '-'}</a>
 			</div>
 		</div>
 		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
 			<div class="text-base-content/70 text-sm font-semibold">Email Sekolah</div>
-			<div class="link link-accent break-all sm:col-span-2">{sekolah?.email || '-'}</div>
+			<div class="link link-accent break-all sm:col-span-2">
+				{#if sekolah?.email}
+					<a href="mailto:{sekolah.email}" target="_blank">{sekolah.email}</a>
+				{:else}
+					-
+				{/if}
+			</div>
 		</div>
 	</div>
 	<!-- Edit -->
