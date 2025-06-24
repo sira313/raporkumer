@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { showModal } from '$lib/components/modal/state.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
 	import { toast } from '$lib/components/toast/state.svelte';
 	import db from '$lib/data/db';
 	import iconDel from '$lib/icons/del.svg?raw';
@@ -116,7 +116,7 @@
 		</button>
 	</div>
 
-	<div class="flex flex-col gap-2 sm:flex-row">
+	<div class="flex flex-col items-center gap-2 sm:flex-row">
 		<!-- Cari nama murid -->
 		<label class="input bg-base-200 dark:border-none">
 			{#if daftarMuridLoading}

@@ -5,7 +5,7 @@
 	import IconQuestion from '$lib/icons/question.svg?raw';
 	import { pageMeta } from '$lib/state.svelte';
 	import type { Component } from 'svelte';
-	import { showModal } from './modal/state.svelte';
+	import { showModal } from './global-modal.svelte';
 	import { toast } from './toast/state.svelte';
 
 	const helpMaps: Record<string, string> = {
@@ -26,10 +26,12 @@
 
 	async function showHelp() {
 		const fileName = helpMaps[page.url.pathname.replace(/\/+$/, '')];
-		if (!fileName)
-			return toast(
+		if (!fileName) {
+			toast(
 				`Tombol ini berfungsi untuk menampilkan petunjuk penggunaan.<br />Silahkan klik salah satu menu lalu klik lagi tombol ini.`
 			);
+			return;
+		}
 
 		const result = await getHelpPage(fileName);
 		showModal({
