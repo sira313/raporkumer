@@ -16,7 +16,7 @@
 			saving = true;
 			const formData = new FormData(e.currentTarget);
 			const kelas = unflatten<Kelas>(Object.fromEntries(formData.entries()));
-			const result = await db.kelas.put(kelas);
+			const result = kelas_id ? await db.kelas.update(kelas_id, kelas) : await db.kelas.add(kelas);
 			kelas_id = result;
 			toast('Data kelas berhasil disimpan', 'success');
 		} catch (error) {
@@ -58,7 +58,12 @@
 	<fieldset
 		class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg border border-none p-4 shadow-md"
 	>
-		<legend class="fieldset-legend">Formulir Isian Data Kelas</legend>
+		<legend class="fieldset-legend">
+			Formulir Isian Data Kelas
+			{#if loading}
+				<em class="text-xs opacity-50">Loading...</em>
+			{/if}
+		</legend>
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 			<!-- Nama Kelas -->
 			<div>
