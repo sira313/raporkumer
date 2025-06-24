@@ -96,12 +96,17 @@
 		</button>
 	</div>
 
-	<div class="flex flex-col gap-2 sm:flex-row">
+	<div class="flex flex-col items-center gap-2 sm:flex-row">
 		<!-- Cari nama murid -->
 		<label class="input bg-base-200 dark:border-none">
 			<span>{@html IconSearch}</span>
 			<input type="search" required placeholder="Cari nama murid..." />
 		</label>
+
+		{#if loading}
+			<em class="opacity-50">Loading...</em>
+		{/if}
+
 		<!-- pagination -->
 		<div class="join sm:ml-auto">
 			<button class="join-item btn btn-active">1</button>
