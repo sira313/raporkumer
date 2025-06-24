@@ -1,4 +1,60 @@
-<form>
+<script lang="ts">
+	import { page } from '$app/state';
+	import { toast } from '$lib/components/toast/state.svelte';
+	import db from '$lib/data/db';
+	import { flatten, populateForm, unflatten } from '$lib/utils';
+	import { onMount } from 'svelte';
+
+	let form: HTMLFormElement;
+	let kelas_id = $state<number>();
+	let saving = $state(false);
+	let loading = $state(false);
+
+	async function save(e: FormSubmitEvent) {
+		e.preventDefault();
+		try {
+			saving = true;
+			const formData = new FormData(e.currentTarget);
+			const kelas = unflatten<Kelas>(Object.fromEntries(formData.entries()));
+			const result = await db.kelas.put(kelas);
+			kelas_id = result;
+			toast('Data kelas berhasil disimpan', 'success');
+		} catch (error) {
+			console.error(error);
+			toast('Gagal simpan data kelas', 'error');
+		} finally {
+			saving = false;
+		}
+	}
+
+	async function load() {
+		loading = true;
+		kelas_id = Number(page.url.searchParams.get('id'));
+		if (!kelas_id) {
+			loading = false;
+			return;
+		}
+		try {
+			const kelas = await db.kelas.get(kelas_id);
+			if (!kelas) {
+				toast(`Data kelas dengan id "${kelas_id}" tidak ditemukan`, 'warning');
+				return;
+			}
+			populateForm(form, flatten(kelas));
+		} catch (error) {
+			console.error(error);
+			toast('Terjadi kesalahan saat memuat data kelas', 'error');
+		} finally {
+			loading = false;
+		}
+	}
+
+	onMount(() => {
+		load();
+	});
+</script>
+
+<form bind:this={form} onsubmit={save}>
 	<fieldset
 		class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg border border-none p-4 shadow-md"
 	>
@@ -12,7 +68,7 @@
 					type="text"
 					class="input validator bg-base-200 w-full dark:border-none"
 					placeholder="Contoh: VI (Kelas 6)"
-					name="namaKelas"
+					name="nama"
 				/>
 			</div>
 
@@ -62,7 +118,7 @@
 					type="text"
 					class="input validator bg-base-200 w-full dark:border-none"
 					placeholder="Contoh: Damian Wayne, Bat"
-					name="waliKelas"
+					name="waliKelas.nama"
 				/>
 			</div>
 
@@ -74,10 +130,18 @@
 					type="text"
 					class="input validator bg-base-200 w-full dark:border-none"
 					placeholder="Contoh: 19940505 201803 1 008"
-					name="nipWaliKelas"
+					name="waliKelas.nip"
 				/>
 			</div>
 		</div>
-		<button class="btn btn-primary mt-6 ml-auto shadow-none"> Simpan </button>
+		<button
+			class="btn mt-6 ml-auto shadow-none {kelas_id ? 'btn-secondary' : 'btn-primary'}"
+			disabled={saving || loading}
+		>
+			{#if saving}
+				<div class="loading loading-spinner"></div>
+			{/if}
+			{kelas_id ? 'Update' : 'Tambah'}
+		</button>
 	</fieldset>
 </form>
