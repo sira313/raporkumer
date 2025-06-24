@@ -11,6 +11,7 @@
 	}
 
 	onMount(() => {
+		// arahkan ke form jika belum ada data sekolah
 		if (!sekolah) goto('/sekolah/form');
 	});
 </script>
