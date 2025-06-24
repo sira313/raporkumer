@@ -2,7 +2,7 @@ import { readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 /*
-This script only running on pre-dev fro now, if there is
+This script only running on pre-dev for now, if there is
 new icon file, we need to rerun `pnpm dev` command since
 it's not detect file icon change. Need write Vite plugin
 for this job. Skip for now.
