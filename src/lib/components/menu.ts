@@ -36,14 +36,6 @@ export const appMenuItems: MenuItem[] = [
 				title: 'Kurikulum Merdeka',
 				subMenu: [
 					{
-						title: 'Tujuan Pembelajaran',
-						path: '/tujuan-pembelajaran'
-					},
-					{
-						title: 'Lingkup Materi',
-						path: '/lingkup-materi'
-					},
-					{
 						title: 'Asesmen Formatif',
 						path: '/asesmen-formatif'
 					},
