@@ -38,6 +38,8 @@ interface Kelas {
 interface Murid {
 	nis: string;
 	nisn: string;
+	kelas: Kelas;
+	kelasId: Kelas['id'];
 	nama: string;
 	tempatLahir: string;
 	tanggalLahir: string;

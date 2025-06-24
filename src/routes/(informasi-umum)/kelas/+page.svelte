@@ -34,7 +34,7 @@
 	<em class="opacity-50">Loading...</em>
 {/if}
 
-{#each daftarKelas as kelas}
+{#each daftarKelas as kelas (kelas)}
 	<fieldset class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg p-4 shadow-md">
 		<legend class="fieldset-legend">Data Kelas</legend>
 
