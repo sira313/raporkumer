@@ -78,6 +78,32 @@
 			</div>
 		</div>
 
+		<div class="flex-row gap-4 lg:flex">
+			<!-- Nama Kepala Sekolah -->
+			<div class="flex-1">
+				<legend class="fieldset-legend">Nama Kepala Sekolah</legend>
+				<input
+					required
+					type="text"
+					class="input validator bg-base-200 w-full dark:border-none"
+					placeholder="Contoh: Bruce Wayne, Bat"
+					name="kepalaSekolah.nama"
+				/>
+			</div>
+
+			<!-- NIP Kepala Sekolah -->
+			<div class="flex-1">
+				<legend class="fieldset-legend">NIP Kepala Sekolah</legend>
+				<input
+					required
+					type="text"
+					class="input validator bg-base-200 w-full dark:border-none"
+					placeholder="Contoh: 19700305 199309 1 009"
+					name="kepalaSekolah.nip"
+				/>
+			</div>
+		</div>
+
 		<!-- Alamat Sekolah -->
 		<legend class="fieldset-legend">Alamat Sekolah</legend>
 		<input

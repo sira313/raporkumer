@@ -28,13 +28,6 @@
 		</div>
 		<div class="card bg-base-200 col-span-full lg:col-span-1">
 			<div class="card-body p-4">
-				<h2 class="card-title text-base-content/70 text-sm">Kepala Sekolah</h2>
-				<p class="text-lg font-semibold">Bruce Wayne, Bat</p>
-				<p class="text-base-content/70 text-sm">NIP 19700305 199309 1 009</p>
-			</div>
-		</div>
-		<div class="card bg-base-200 col-span-full lg:col-span-1">
-			<div class="card-body p-4">
 				<h2 class="card-title text-base-content/70 text-sm">Wali Kelas</h2>
 				<p class="text-lg font-semibold">Damian Wayne, Bat</p>
 				<p class="text-base-content/70 text-sm">NIP 19940505 201803 1 008</p>

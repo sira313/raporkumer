@@ -21,6 +21,12 @@
 			<div class="text-base-content sm:col-span-2">69856875</div>
 		</div>
 		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
+			<div class="text-base-content/70 text-sm font-semibold">Kepala Sekolah</div>
+			<div class="text-base-content sm:col-span-2">
+				<div class="tooltip" data-tip="NIP 19700305 199309 1 009">Bruce Wayne, Bat</div>
+			</div>
+		</div>
+		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
 			<div class="text-base-content/70 text-sm font-semibold">Alamat</div>
 			<div class="text-base-content leading-relaxed sm:col-span-2">
 				Dusun Periji, Desa Sungai Dangin, Kecamatan Noyan, Kabupaten Sanggau. Kode POS 78554

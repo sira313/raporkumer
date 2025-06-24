@@ -53,29 +53,6 @@
 					name="tahunAjaran"
 				/>
 			</div>
-			<!-- Nama Kepala Sekolah -->
-			<div>
-				<legend class="fieldset-legend">Nama Kepala Sekolah</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: Bruce Wayne, Bat"
-					name="namaKepalaSekolah"
-				/>
-			</div>
-
-			<!-- NIP Kepala Sekolah -->
-			<div>
-				<legend class="fieldset-legend">NIP Kepala Sekolah</legend>
-				<input
-					required
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: 19700305 199309 1 009"
-					name="nipKepalaSekolah"
-				/>
-			</div>
 
 			<!-- Wali Kelas -->
 			<div>
