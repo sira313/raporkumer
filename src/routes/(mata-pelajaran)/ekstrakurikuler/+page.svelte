@@ -9,9 +9,9 @@
 	<legend class="fieldset-legend">Daftar Extrakurikuler</legend>
 	<!-- tombol tambah mapel -->
 	<div class="flex flex-col gap-2 sm:flex-row">
-		<div class="flex flex-row gap-2">
+		<div class="flex w-full flex-row gap-2">
 			<input
-				class="input bg-base-200 validator w-full sm:w-100 dark:border-none"
+				class="input bg-base-200 validator flex-1 dark:border-none"
 				placeholder="Ketik nama ekstrakurikuler"
 			/>
 			<button class="btn rounded-box shadow-none">
