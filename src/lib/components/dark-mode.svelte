@@ -1,7 +1,6 @@
 <script>
-	import DarkModeIcon from '$lib/icons/moon.svg?raw';
-	import LightModeIcon from '$lib/icons/sun.svg?raw';
 	import { onMount } from 'svelte';
+	import Icon from './icon.svelte';
 
 	let dark_mode = false;
 
@@ -42,5 +41,11 @@
 	title={dark_mode ? 'Light mode' : 'Dark mode'}
 	onclick={toggle}
 >
-	{@html dark_mode ? LightModeIcon : DarkModeIcon}
+	{#if dark_mode}
+		<Icon name="sun" />
+	{:else}
+		<Icon name="moon" />
+	{/if}
+
+	<!-- {@html dark_mode ? LightModeIcon : DarkModeIcon} -->
 </button>
