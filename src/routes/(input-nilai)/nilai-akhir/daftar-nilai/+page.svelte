@@ -16,7 +16,7 @@
 		<button class="btn shadow-none sm:ml-auto">
 			<!-- download template excel -->
 			<Icon name="export" />
-			Expor
+			Export
 		</button>
 	</div>
 
