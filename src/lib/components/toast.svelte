@@ -13,6 +13,8 @@
 	import { flip } from 'svelte/animate';
 	import Icon from './icon.svelte';
 
+	let interact = $state(false);
+
 	const autoCloseAfter = 5; // seconds
 	const typesMaps: Record<NonNullable<Toast['type']>, [string, IconName]> = {
 		info: ['alert-info', 'info'],
@@ -28,7 +30,12 @@
 
 	$effect(() => {
 		if (!toasts.length) return;
-		const timer = setTimeout(() => toasts.shift(), autoCloseAfter * 1000);
+		let timer;
+		if (interact) {
+			clearTimeout(timer);
+			return;
+		}
+		timer = setTimeout(() => toasts.shift(), autoCloseAfter * 1000);
 		return () => clearInterval(timer);
 	});
 </script>
@@ -36,10 +43,17 @@
 <div class="toast toast-top toast-center toast-center z-50">
 	{#each toasts as t (t)}
 		{@const [color, icon] = typesMaps[t.type || 'info']}
-		<div animate:flip={{ duration: 200, delay: 80 }} class="alert {color}" role="alert">
+		<div
+			animate:flip={{ duration: 200, delay: 80 }}
+			class="alert relative {color}"
+			role="alert"
+			onmouseover={() => (interact = true)}
+			onfocus={() => (interact = true)}
+			onmouseleave={() => (interact = false)}
+			onblur={() => (interact = false)}
+		>
 			<Icon name={icon} />
 			<span>{@html t.message}</span>
-
 			<button class="btn btn-circle btn-ghost" type="button" title="Tutup" onclick={() => close(t)}>
 				<Icon name="close" />
 				<span class="sr-only">Tutup</span>
