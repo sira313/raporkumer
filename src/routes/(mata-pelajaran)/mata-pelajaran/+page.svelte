@@ -12,8 +12,8 @@
 			<option value="" disabled selected> Pilih Kelas</option>
 			<option value=""> Kelas VI </option>
 		</select>
-		<!-- tombol tambah mapel -->
-		<div class="flex flex-col sm:flex-row">
+		<div class="flex flex-col gap-2 sm:flex-row">
+			<!-- tombol tambah mapel -->
 			<button
 				class="btn mb-2 shadow-none sm:max-w-40"
 				type="button"
@@ -21,12 +21,22 @@
 					(document.getElementById('modal-tambah-mapel') as HTMLDialogElement)?.showModal()}
 			>
 				<Icon name="plus" />
-				Tambah Mapel
+				Tambah
+			</button>
+			<!-- tombol download template -->
+			<button class="btn mb-2 shadow-none">
+				<Icon name="download" />
+				Download Template
+			</button>
+			<!-- tombol import -->
+			<button class="btn mb-2 shadow-none">
+				<Icon name="import" />
+				Import
 			</button>
 			<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
 			<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
 				<Icon name="del" />
-				Hapus Mapel
+				Hapus
 			</button>
 		</div>
 		<!-- Tabel Mapel Wajib -->
