@@ -3,7 +3,7 @@
 </script>
 
 <fieldset
-	class="fieldset bg-base-100 rounded-box mx-auto w-full max-w-3xl border border-none p-4 shadow-md"
+	class="fieldset bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md"
 >
 	<legend class="fieldset-legend">Daftar Extrakurikuler</legend>
 	<!-- tombol tambah mapel -->
@@ -13,7 +13,7 @@
 				class="input bg-base-200 validator flex-1 dark:border-none"
 				placeholder="Ketik nama ekstrakurikuler"
 			/>
-			<button class="btn rounded-box shadow-none">
+			<button class="btn shadow-none">
 				<Icon name="plus" />
 				Tambah
 			</button>
@@ -31,7 +31,7 @@
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
 					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
 					<th style="width: 50px; min-width: 40px;">No</th>
-					<th style="width: 70%;">Mata Pelajaran</th>
+					<th class="w-full" style="min-width: 150px;">Mata Pelajaran</th>
 					<th>Aksi</th>
 				</tr>
 			</thead>

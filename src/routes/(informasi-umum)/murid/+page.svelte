@@ -84,7 +84,9 @@
 	});
 </script>
 
-<fieldset class="fieldset bg-base-100 w-full rounded-lg border border-none p-4 shadow-md">
+<fieldset
+	class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
+>
 	<legend class="fieldset-legend">Formulir Dan Tabel Isian Data Murid</legend>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->

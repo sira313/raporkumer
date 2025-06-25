@@ -3,9 +3,12 @@
 </script>
 
 <!-- Data Mapel Wajib -->
-<fieldset class="fieldset bg-base-100 rounded-box mx-auto w-full border border-none p-4 shadow-md">
-	<legend class="fieldset-legend">Daftar Mata Pelajaran Wajib</legend>
-	<!-- tombol tambah mapel -->
+<fieldset
+	class="fieldset bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md"
+>
+	<!-- Judul IPAS bisa berubah dinamis sesuai mata pelajaran yang dipilih -->
+	<legend class="fieldset-legend">Daftar Tujuan Pembelajaran Mata Pelajaran IPAS</legend>
+	<!-- tombol tambah Tujuan Pembelajaran -->
 	<div class="flex flex-col sm:flex-row">
 		<button
 			class="btn mb-2 shadow-none sm:max-w-40"
