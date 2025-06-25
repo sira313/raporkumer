@@ -9,7 +9,11 @@
 	<!-- Judul IPAS bisa berubah dinamis sesuai mata pelajaran yang dipilih -->
 	<legend class="fieldset-legend">Daftar Tujuan Pembelajaran Mata Pelajaran IPAS</legend>
 	<!-- tombol tambah Tujuan Pembelajaran -->
-	<div class="flex flex-col sm:flex-row">
+	<div class="flex flex-col gap-2 sm:flex-row">
+		<a href="/mata-pelajaran" class="btn shadow-none">
+			<Icon name="left" />
+			Kembali
+		</a>
 		<button
 			class="btn mb-2 shadow-none sm:max-w-40"
 			type="button"
@@ -84,6 +88,7 @@
 				on:click={() =>
 					(document.getElementById('modal-tambah-mapel') as HTMLDialogElement)?.close()}
 			>
+				<Icon name="close-sm" />
 				Batal
 			</button>
 			<button type="submit" class="btn btn-primary shadow-none">Simpan</button>
