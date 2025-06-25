@@ -13,7 +13,7 @@
 				class="input bg-base-200 validator flex-1 dark:border-none"
 				placeholder="Ketik nama ekstrakurikuler"
 			/>
-			<button class="btn rounded-box shadow-none">
+			<button class="btn shadow-none">
 				<Icon name="plus" />
 				Tambah
 			</button>
