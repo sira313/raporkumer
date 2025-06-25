@@ -18,14 +18,22 @@
 		</button>
 	</div>
 
-	<div class="flex flex-col items-center gap-2 sm:flex-row">
-		<!-- pili mapel dulu, wajib! -->
-		<select class="select bg-base-200 dark:border-none" title="Pilih kelas">
-			<option value="" disabled selected> Pilih Mata Pelajaran </option>
+	<div class="mb-2 flex flex-col items-center gap-2 sm:flex-row">
+		<!-- pilih Kelas dan mapel dulu, wajib! -->
+		<select class="select bg-base-200 w-full dark:border-none" title="Pilih kelas">
+			<option value="" disabled selected> Pilih Kelas</option>
+			<option value=""> Kelas VI </option>
+		</select>
+		<select class="select bg-base-200 w-full dark:border-none" title="Pilih kelas">
+			<option value="" disabled selected> Pilih Mata Pelajaran</option>
 			<option value=""> IPAS </option>
 		</select>
+	</div>
+
+	<div class="flex flex-col items-center gap-2 sm:flex-row">
 		<!-- Cari nama murid -->
-		<label class="input bg-base-200 dark:border-none">
+		<label class="input bg-base-200 w-full dark:border-none">
+			<Icon name="search" />
 			<input type="search" required placeholder="Cari nama murid..." />
 		</label>
 

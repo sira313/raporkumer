@@ -8,6 +8,10 @@
 		class="fieldset bg-base-100 rounded-box mx-auto w-full border border-none p-4 shadow-md"
 	>
 		<legend class="fieldset-legend">Daftar Mata Pelajaran</legend>
+		<select class="select bg-base-200 mb-2 w-full dark:border-none" title="Pilih kelas">
+			<option value="" disabled selected> Pilih Kelas</option>
+			<option value=""> Kelas VI </option>
+		</select>
 		<!-- tombol tambah mapel -->
 		<div class="flex flex-col sm:flex-row">
 			<button

@@ -8,6 +8,10 @@
 	<legend class="fieldset-legend">Daftar Extrakurikuler</legend>
 	<!-- tombol tambah mapel -->
 	<div class="flex flex-col gap-2 sm:flex-row">
+		<select class="select bg-base-200 dark:border-none" title="Pilih kelas">
+			<option value="" disabled selected> Pilih Kelas</option>
+			<option value=""> Kelas VI </option>
+		</select>
 		<div class="flex w-full flex-row gap-2">
 			<input
 				class="input bg-base-200 validator flex-1 dark:border-none"
