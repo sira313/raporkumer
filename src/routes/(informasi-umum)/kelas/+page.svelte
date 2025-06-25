@@ -2,9 +2,10 @@
 	import { goto } from '$app/navigation';
 	import { toast } from '$lib/components/toast/state.svelte';
 	import db from '$lib/data/db';
+	import { delay } from '$lib/utils';
 	import { onMount } from 'svelte';
 
-	let loading = $state(false);
+	let loading = $state(true);
 	let daftarKelas = $state<Kelas[]>([]);
 
 	async function load() {
@@ -15,6 +16,7 @@
 
 			if (!daftarKelas?.length) {
 				// arahkan ke form tambah kelas jika belum ada data kelas
+				await delay();
 				await goto('/kelas/form');
 			}
 		} catch (error) {
@@ -25,14 +27,10 @@
 		}
 	}
 
-	onMount(() => {
-		load();
+	onMount(async () => {
+		await load();
 	});
 </script>
-
-{#if loading}
-	<em class="opacity-50">Loading...</em>
-{/if}
 
 {#each daftarKelas as kelas (kelas)}
 	<fieldset class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg p-4 shadow-md">
@@ -77,7 +75,7 @@
 		</div>
 	</fieldset>
 {:else}
-	<div>
-		<p>Belum ada data kelas</p>
+	<div class="flex items-center justify-center h-[80vh]">
+		<em class="opacity-50">{loading ? 'Loading...' : 'Belum ada data kelas'}</em>
 	</div>
 {/each}

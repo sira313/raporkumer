@@ -4,20 +4,25 @@
 	import { onMount } from 'svelte';
 
 	let sekolah = $derived(pageMeta.sekolah);
+	let loading = $state(true);
 
 	function plainAlamat(alamat?: Alamat) {
 		if (!alamat) return '-';
 		return `${alamat.jalan || '-'}, ${alamat.desa || '-'}, ${alamat.kabupaten || '-'}, ${alamat.kecamatan || '-'}, ${alamat.provinsi || '-'}, ${alamat.kodePos || '-'}`;
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		// arahkan ke form jika belum ada data sekolah
-		if (!sekolah) goto('/sekolah/form');
+		if (!sekolah) {
+			await goto('/sekolah/form');
+		}
+		loading = false;
 	});
 </script>
 
 <div
 	class="bg-base-100 rounded-box relative mx-auto mt-8 flex max-w-3xl flex-col items-center gap-8 p-6 shadow sm:flex-row sm:p-10"
+	hidden={loading}
 >
 	<!-- Logo -->
 	<div class="flex-shrink-0">

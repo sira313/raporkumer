@@ -4,7 +4,7 @@
 	import { toasts } from './state.svelte';
 
 	const autoCloseAfter = 5; // seconds
-	const typesMaps: Record<NonNullable<Toast['type']>, [string, string]> = {
+	const typesMaps: Record<NonNullable<Toast['type']>, [string, IconName]> = {
 		info: ['alert-info', 'info'],
 		success: ['alert-success', 'success'],
 		warning: ['alert-warning', 'warning'],

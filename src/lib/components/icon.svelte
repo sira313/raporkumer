@@ -1,8 +1,12 @@
 <script lang="ts">
 	const { name }: { name: IconName } = $props();
+
+	const icons = import.meta.glob('/src/lib/icons/*.svg', { query: '?raw', eager: true });
+	const icon = icons[`/src/lib/icons/${name}.svg`] as { default: string } | undefined;
 </script>
 
-<!-- this will even better when Svelte Async Component released -->
-{#await import(`$lib/icons/${name}.svg?raw`) then { default: Icon }}
-	{@html Icon}
-{/await}
+{#if icon}
+	{@html icon.default}
+{:else}
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="h-3.5 w-3.5"> </svg>
+{/if}

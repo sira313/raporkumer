@@ -1,18 +1,47 @@
-import { readdir, writeFile } from 'node:fs/promises';
+/// @ts-check
+
+import { readdir, watch, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-/*
-This script only running on pre-dev for now, if there is
-new icon file, we need to rerun `pnpm dev` command since
-it's not detect file icon change. Need write Vite plugin
-for this job. Skip for now.
-*/
+const types_file = '__icons.d.ts'; // remember to gitignore it
+const icons_dir = `./src/lib/icons`;
+const watch_ctrl = new AbortController();
 
-const files = await readdir('./src/lib/icons');
-const svg_files_union = files
-	.filter((f) => path.extname(f).toLocaleLowerCase() == '.svg')
-	.map((t) => `'${path.parse(t).name}'\n`)
-	.join('\t| ');
-const raw = `type IconName =\n\t| ${svg_files_union.trimEnd()};\n`;
+async function generate_types() {
+	const files = await readdir(icons_dir);
+	const comment = `// this file is generated — do not edit it\n\n`;
+	const svg_files_union = files
+		.filter((f) => path.extname(f).toLocaleLowerCase() == '.svg')
+		.map((t) => `'${path.parse(t).name}'\n`)
+		.join('\t| ');
+	const content = `${comment}type IconName =\n\t| ${svg_files_union.trimEnd()};\n`;
+	await writeFile(path.join(icons_dir, types_file), content, 'utf8');
+}
 
-await writeFile('./src/lib/components/icon.d.ts', raw, 'utf8');
+async function run_watcher() {
+	try {
+		let timer;
+		const watcher = watch(icons_dir, { signal: watch_ctrl.signal });
+		for await (const event of watcher) {
+			if (event.filename == types_file) continue;
+			clearTimeout(timer);
+			timer = setTimeout(generate_types, 700);
+		}
+	} catch (err) {
+		if (err.name === 'AbortError') {
+			console.log('Icon type-gen aborted gracefully.');
+		} else {
+			console.error('Icon type-gen error:', err);
+		}
+	}
+}
+
+const shutdown = () => {
+	watch_ctrl.abort();
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+
+generate_types();
+run_watcher();

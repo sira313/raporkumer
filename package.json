@@ -4,8 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"predev": "node scripts/icon.js",
-		"dev": "vite dev",
+		"dev": "vite dev & node scripts/icon.js",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",

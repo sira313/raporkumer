@@ -87,3 +87,7 @@ export function searchQueryMarker(query?: string, target?: string) {
 	// replace matches using the pattern
 	return target.replace(pattern, (match) => `<mark>${match}</mark>`);
 }
+
+export async function delay(ms = 500) {
+	return new Promise((r) => setTimeout(r, ms));
+}
