@@ -3,7 +3,7 @@
 	import GlobalModal from '$lib/components/global-modal.svelte';
 	import Menu from '$lib/components/menu.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
-	import Toast from '$lib/components/toast/toast.svelte';
+	import Toast from '$lib/components/toast.svelte';
 	import { appName, loadSekolah, pageMeta, setPageTitle } from '$lib/state.svelte';
 	import { findTitleByPath } from '$lib/utils';
 	import { onMount } from 'svelte';

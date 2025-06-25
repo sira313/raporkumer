@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { toast } from '$lib/components/toast/state.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 	import db from '$lib/data/db';
 	import { delay } from '$lib/utils';
 	import { onMount } from 'svelte';

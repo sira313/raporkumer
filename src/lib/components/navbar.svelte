@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import DarkMode from '$lib/components/dark-mode.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
+	import Icon from '$lib/components/icon.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 	import { pageMeta } from '$lib/state.svelte';
 	import type { Component } from 'svelte';
-	import { showModal } from './global-modal.svelte';
-	import Icon from './icon.svelte';
-	import { toast } from './toast/state.svelte';
 
 	const helpMaps: Record<string, string> = {
 		// path: fileName (without extension)
@@ -27,7 +27,8 @@
 		const fileName = helpMaps[page.url.pathname.replace(/\/+$/, '')];
 		if (!fileName) {
 			toast(
-				`Tombol ini berfungsi untuk menampilkan petunjuk penggunaan.<br />Silahkan klik salah satu menu lalu klik lagi tombol ini.`
+				`Tombol ini berfungsi untuk menampilkan petunjuk penggunaan.<br />` +
+					`Silahkan klik salah satu menu lalu klik lagi tombol ini.`
 			);
 			return;
 		}

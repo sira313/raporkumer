@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { toast } from '$lib/components/toast/state.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 	import db from '$lib/data/db';
 	import { flatten, populateForm, unflatten } from '$lib/utils';
 	import { onMount } from 'svelte';
@@ -135,7 +135,7 @@
 							>
 								{#if daftarKelas?.length}
 									<option value="" disabled selected> Pilih Kelas </option>
-									{#each daftarKelas as kelas}
+									{#each daftarKelas as kelas (kelas)}
 										<option value={kelas.id}>
 											{kelas.nama} &bullet; {kelas.fase} &bullet; {kelas.semester} &bullet; {kelas.tahunAjaran}
 										</option>

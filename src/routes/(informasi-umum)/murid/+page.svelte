@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import { toast } from '$lib/components/toast/state.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 	import db from '$lib/data/db';
 	import { onMount } from 'svelte';
 	import DetilMurid from './detil-murid.svelte';
@@ -131,7 +131,7 @@
 				<option value="" disabled selected>
 					{daftarKelasLoading ? 'Loading...' : 'Pilih Kelas'}
 				</option>
-				{#each daftarKelas as kelas}
+				{#each daftarKelas as kelas (kelas)}
 					<option value={kelas}>
 						{kelas.nama} &bullet; {kelas.fase} &bullet; {kelas.semester} &bullet; {kelas.tahunAjaran}
 					</option>
