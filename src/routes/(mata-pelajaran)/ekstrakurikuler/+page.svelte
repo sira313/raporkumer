@@ -8,24 +8,27 @@
 	<legend class="fieldset-legend">Daftar Extrakurikuler</legend>
 	<!-- tombol tambah mapel -->
 	<div class="flex flex-col gap-2 sm:flex-row">
-		<select class="select bg-base-200 dark:border-none" title="Pilih kelas">
+		<select class="select bg-base-200 w-full sm:max-w-50 dark:border-none" title="Pilih kelas">
 			<option value="" disabled selected> Pilih Kelas</option>
 			<option value=""> Kelas VI </option>
 		</select>
-		<div class="flex w-full flex-row gap-2">
-			<input
-				class="input bg-base-200 validator flex-1 dark:border-none"
-				placeholder="Ketik nama ekstrakurikuler"
-			/>
-			<button class="btn shadow-none">
-				<Icon name="plus" />
-				Tambah
-			</button>
-		</div>
+
 		<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
 		<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
 			<Icon name="del" />
 			Hapus
+		</button>
+	</div>
+	<div class="mb-2 flex w-full flex-col gap-2 sm:flex-row">
+		<!-- input ekstrakurikuler -->
+		<input
+			class="input bg-base-200 validator w-full dark:border-none"
+			placeholder="Ketik nama ekstrakurikuler"
+		/>
+		<!-- tambah extrakurikuler -->
+		<button class="btn shadow-none">
+			<Icon name="plus" />
+			Tambah
 		</button>
 	</div>
 	<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">

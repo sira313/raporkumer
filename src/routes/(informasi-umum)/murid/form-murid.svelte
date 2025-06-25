@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import db from '$lib/data/db';
 	import { flatten, populateForm, unflatten } from '$lib/utils';
@@ -398,7 +399,10 @@
 			</div>
 		</div>
 		<div class="border-base-200 mt-4 flex flex-col gap-2 sm:flex-row">
-			<button class="btn border-none shadow-none" onclick={() => onDismiss()}>Batal</button>
+			<button class="btn border-none shadow-none" onclick={() => onDismiss()}>
+				<Icon name="close-sm" />
+				Batal
+			</button>
 			<button
 				class="btn {existingMuridNis
 					? 'btn-secondary'

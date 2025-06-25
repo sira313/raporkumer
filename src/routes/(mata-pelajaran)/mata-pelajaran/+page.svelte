@@ -153,6 +153,7 @@
 				on:click={() =>
 					(document.getElementById('modal-tambah-mapel') as HTMLDialogElement)?.close()}
 			>
+				<Icon name="close-sm" />
 				Batal
 			</button>
 			<button type="submit" class="btn btn-primary shadow-none">Simpan</button>
