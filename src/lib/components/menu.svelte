@@ -62,6 +62,9 @@
 		{:else}
 			<!-- `class:menu-active` is shorthand for `class="{active ? 'menu-active': ''}"` -->
 			<a class:menu-active={active} href={item.path}>
+				{#if item.icon}
+					<Icon name={item.icon} />
+				{/if}
 				<span>{@html searchQueryMarker(search, item.title)}</span>
 			</a>
 		{/if}

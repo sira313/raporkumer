@@ -1,7 +1,7 @@
 interface MenuItem {
 	title: string;
 	path?: string;
-	icon?: string;
+	icon?: IconName;
 	subMenu?: MenuItem[];
 }
 
