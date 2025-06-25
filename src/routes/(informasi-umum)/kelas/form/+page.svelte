@@ -58,7 +58,7 @@
 
 <form bind:this={form} onsubmit={save}>
 	<fieldset
-		class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg border border-none p-4 shadow-md"
+		class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
 	>
 		<legend class="fieldset-legend">
 			Formulir Isian Data Kelas

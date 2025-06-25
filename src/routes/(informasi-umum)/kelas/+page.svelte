@@ -33,7 +33,7 @@
 </script>
 
 {#each daftarKelas as kelas (kelas)}
-	<fieldset class="fieldset bg-base-100 mx-auto w-full max-w-3xl rounded-lg p-4 shadow-md">
+	<fieldset class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg p-4 shadow-md">
 		<legend class="fieldset-legend">Data Kelas</legend>
 
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

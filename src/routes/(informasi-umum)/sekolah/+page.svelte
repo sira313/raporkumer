@@ -21,7 +21,7 @@
 </script>
 
 <div
-	class="bg-base-100 rounded-box relative mx-auto mt-8 flex max-w-3xl flex-col items-center gap-8 p-6 shadow sm:flex-row sm:p-10"
+	class="bg-base-100 rounded-box relative mx-auto mt-8 flex max-w-4xl flex-col items-center gap-8 p-6 shadow sm:flex-row sm:p-10"
 	hidden={loading}
 >
 	<!-- Logo -->

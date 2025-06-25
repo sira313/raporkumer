@@ -51,6 +51,9 @@
 		{#if item.subMenu}
 			<details open={expanded.value || !!search}>
 				<summary>
+					{#if item.icon}
+						<Icon name={item.icon} />
+					{/if}
 					<span>{@html searchQueryMarker(search, item.title)}</span>
 				</summary>
 				<ul>
