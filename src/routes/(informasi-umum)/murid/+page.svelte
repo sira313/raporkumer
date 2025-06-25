@@ -131,7 +131,7 @@
 				<option value="" disabled selected>
 					{daftarKelasLoading ? 'Loading...' : 'Pilih Kelas'}
 				</option>
-				{#each daftarKelas as kelas}
+				{#each daftarKelas as kelas (kelas)}
 					<option value={kelas}>
 						{kelas.nama} &bullet; {kelas.fase} &bullet; {kelas.semester} &bullet; {kelas.tahunAjaran}
 					</option>
