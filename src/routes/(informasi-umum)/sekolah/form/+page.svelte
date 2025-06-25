@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { toast } from '$lib/components/toast/state.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 	import db from '$lib/data/db';
 	import { loadSekolah, pageMeta } from '$lib/state.svelte';
 	import { flatten, populateForm, unflatten } from '$lib/utils';

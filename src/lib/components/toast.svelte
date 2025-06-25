@@ -1,7 +1,17 @@
+<script lang="ts" module>
+	export const toasts = $state<Toast[]>([]);
+
+	export function toast(data: Toast | string, type?: Toast['type']) {
+		if (typeof data == 'string') {
+			data = { message: data, type };
+		}
+		toasts.push(data);
+	}
+</script>
+
 <script lang="ts">
 	import { flip } from 'svelte/animate';
-	import Icon from '../icon.svelte';
-	import { toasts } from './state.svelte';
+	import Icon from './icon.svelte';
 
 	const autoCloseAfter = 5; // seconds
 	const typesMaps: Record<NonNullable<Toast['type']>, [string, IconName]> = {

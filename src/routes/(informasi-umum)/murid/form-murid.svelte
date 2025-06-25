@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { toast } from '$lib/components/toast/state.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 	import db from '$lib/data/db';
 	import { flatten, populateForm, unflatten } from '$lib/utils';
 	import { onMount } from 'svelte';
