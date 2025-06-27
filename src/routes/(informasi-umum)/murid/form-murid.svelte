@@ -197,6 +197,29 @@
 							/>
 						</div>
 					</div>
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<!-- Pendidikan Sebelumnya -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Pendidikan Sebelumnya</legend>
+							<input
+								required
+								type="text"
+								class="input validator bg-base-200 w-full dark:border-none"
+								placeholder="Contoh: TK Kencana Pertiwi"
+								name="pendidikanSebelumnya"
+							/>
+						</div>
+						<!-- Tanggal Masuk Sekolah Ini -->
+						<div class="flex-1">
+							<legend class="fieldset-legend">Tanggal masuk sekolah ini</legend>
+							<input
+								type="date"
+								class="input validator bg-base-200 w-full dark:border-none"
+								name="tanggalLahir"
+								required
+							/>
+						</div>
+					</div>
 				</form>
 
 				<!-- data Orang Tua -->
