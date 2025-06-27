@@ -61,19 +61,6 @@ export const appMenuItems: MenuItem[] = [
 	},
 	{
 		title: 'Cetak Dokumen',
-		subMenu: [
-			{
-				title: 'Cetak Rapor',
-				path: '/cetak/rapor'
-			},
-			{
-				title: 'Cetak Cover',
-				path: '/cetak/cover'
-			},
-			{
-				title: 'Cetak Biodata',
-				path: '/cetak/biodata'
-			}
-		]
+		path: '/cetak'
 	}
 ];
