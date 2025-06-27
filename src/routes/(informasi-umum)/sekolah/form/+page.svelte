@@ -171,12 +171,10 @@
 			<!-- Website Sekolah -->
 			<div class="flex-1">
 				<legend class="fieldset-legend">Website Sekolah</legend>
-				<input
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Kosongkan bila tidak ada"
-					name="website"
-				/>
+				<label class="input bg-base-200 validator w-full dark:border-none">
+					<span class="label">https://</span>
+					<input type="text" placeholder="Kosongkan bila tidak ada" name="website" />
+				</label>
 			</div>
 
 			<!-- Email Sekolah -->
