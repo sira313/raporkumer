@@ -78,7 +78,9 @@ Formulir Asesmen Sumatif</pre>
 
 	<!-- info rata-rata -->
 	<div role="alert" class="alert rounded-box alert-soft alert-info mt-4">
-		<Icon name="info" />
+		<span class="text-2xl">
+			<Icon name="info" />
+		</span>
 		<span>
 			<p class="text-lg">NA Sumatif Lingkup Materi</p>
 			<p class="text-2xl font-bold">78,5</p>
@@ -141,7 +143,9 @@ Formulir Asesmen Sumatif</pre>
 	</div>
 	<!-- info rata-rata SAS -->
 	<div role="alert" class="alert rounded-box alert-soft alert-info mt-4">
-		<Icon name="info" />
+		<span class="text-2xl">
+			<Icon name="info" />
+		</span>
 		<span>
 			<p class="text-lg">NA Sumatif Akhir Semester</p>
 			<p class="text-2xl font-bold">80,5</p>
@@ -151,7 +155,9 @@ Formulir Asesmen Sumatif</pre>
 
 	<!-- info rata-rata lingkup materi dan sas -->
 	<div role="alert" class="alert rounded-box alert-success mt-6">
-		<span class="h-[1.5em]"><Icon name="check" /></span>
+		<span class="text-2xl">
+			<Icon name="check" />
+		</span>
 		<span>
 			<p class="text-lg">Nilai Akhir</p>
 			<p class="text-2xl font-bold">78,5</p>

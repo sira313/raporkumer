@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import db from '$lib/data/db';
 	import { delay } from '$lib/utils';
@@ -71,7 +72,10 @@
 		</div>
 
 		<div class="mt-6 text-right">
-			<a href="/kelas/form?id={kelas.id}" class="btn btn-primary shadow-md">Edit</a>
+			<a href="/kelas/form?id={kelas.id}" class="btn btn-primary shadow-md">
+				<Icon name="edit" />
+				Edit
+			</a>
 		</div>
 	</fieldset>
 {:else}

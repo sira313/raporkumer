@@ -52,10 +52,14 @@
 			onmouseleave={() => (interact = false)}
 			onblur={() => (interact = false)}
 		>
-			<Icon name={icon} />
+			<span class="text-lg">
+				<Icon name={icon} />
+			</span>
 			<span>{@html t.message}</span>
 			<button class="btn btn-circle btn-ghost" type="button" title="Tutup" onclick={() => close(t)}>
-				<Icon name="close" />
+				<span class="text-lg">
+					<Icon name="close" />
+				</span>
 				<span class="sr-only">Tutup</span>
 			</button>
 		</div>

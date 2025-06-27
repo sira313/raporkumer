@@ -53,7 +53,9 @@
 >
 	<div class="flex-none lg:hidden">
 		<label for="my-drawer-2" class="btn btn-square btn-ghost drawer-button">
-			<Icon name="menu-drawer" />
+			<span class="text-lg">
+				<Icon name="menu-drawer" />
+			</span>
 		</label>
 	</div>
 	<div class="mx-2 flex-1 px-2">
@@ -67,7 +69,9 @@
 			</li>
 			<li class="menu-item">
 				<button class="btn btn-ghost btn-circle" aria-label="Bantuan" onclick={showHelp}>
-					<Icon name="question" />
+					<span class="text-xl">
+						<Icon name="question" />
+					</span>
 				</button>
 			</li>
 		</ul>

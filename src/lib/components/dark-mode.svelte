@@ -42,9 +42,13 @@
 	onclick={toggle}
 >
 	{#if dark_mode}
-		<Icon name="sun" />
+		<span class="text-xl">
+			<Icon name="sun" />
+		</span>
 	{:else}
-		<Icon name="moon" />
+		<span class="text-base text-xl">
+			<Icon name="moon" />
+		</span>
 	{/if}
 
 	<!-- {@html dark_mode ? LightModeIcon : DarkModeIcon} -->

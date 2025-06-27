@@ -91,7 +91,10 @@
 				<Icon name="close-sm" />
 				Batal
 			</button>
-			<button type="submit" class="btn btn-primary shadow-none">Simpan</button>
+			<button type="submit" class="btn btn-primary shadow-none">
+				<Icon name="save" />
+				Simpan
+			</button>
 		</div>
 	</fieldset>
 </dialog>

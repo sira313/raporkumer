@@ -20,10 +20,16 @@
 		</button>
 	</div>
 
-	<!-- Info rata-rata -->
-	<div role="alert" class="alert alert-info">
-		<Icon name="info" />
-		<span>Nilai rata-rata semua mata pelajaran <b>71.25</b> dari 100</span>
+	<!-- info rata-rata -->
+	<div role="alert" class="alert rounded-box alert-soft alert-info mt-4">
+		<span class="text-2xl">
+			<Icon name="info" />
+		</span>
+		<span>
+			<p class="text-lg">Nilai rata-rata</p>
+			<p class="text-2xl font-bold">80,5</p>
+			<p class="text-sm">dari semua mata pelajaran</p>
+		</span>
 	</div>
 
 	<!-- Tabel daftar murid -->

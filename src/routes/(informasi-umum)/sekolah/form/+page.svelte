@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import db from '$lib/data/db';
 	import { loadSekolah, pageMeta } from '$lib/state.svelte';
@@ -201,6 +202,7 @@
 			{#if saving}
 				<span class="loading loading-spinner"></span>
 			{/if}
+			<Icon name="save" />
 			Simpan
 		</button>
 	</fieldset>
