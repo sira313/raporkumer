@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import db from '$lib/data/db';
 	import { flatten, populateForm, unflatten } from '$lib/utils';
@@ -147,8 +148,13 @@
 		>
 			{#if saving}
 				<div class="loading loading-spinner"></div>
+			{:else if kelas_id}
+				<Icon name="edit" />
+				Update
+			{:else}
+				<Icon name="plus" />
+				Tambah
 			{/if}
-			{kelas_id ? 'Update' : 'Tambah'}
 		</button>
 	</fieldset>
 </form>

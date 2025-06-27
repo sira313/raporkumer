@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import Icon from '$lib/components/icon.svelte';
 	import { pageMeta } from '$lib/state.svelte';
 	import { onMount } from 'svelte';
 
@@ -84,6 +85,7 @@
 		class="btn btn-primary absolute right-4 bottom-4 shadow-none"
 		aria-label="Edit data sekolah"
 	>
+		<Icon name="edit" />
 		Edit
 	</a>
 </div>
