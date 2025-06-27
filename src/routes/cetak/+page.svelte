@@ -18,6 +18,7 @@
 			<option value=""> Cover </option>
 			<option value=""> Biodata </option>
 			<option value=""> Rapor </option>
+			<option value=""> Piagam </option>
 		</select>
 		<button class="btn shadow-none sm:ml-auto">
 			<Icon name="print" />

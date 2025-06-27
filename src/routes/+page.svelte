@@ -6,7 +6,7 @@
 </script>
 
 <!-- Kontainer Utama Grid -->
-<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+<div class="mx-auto grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-2">
 	<!-- Kolom 1: Data Utama & Progress -->
 	<div class="flex flex-col gap-6">
 		<!-- Widget Data Sekolah -->
@@ -138,17 +138,23 @@
 					</span>
 					Tindakan Cepat
 				</h2>
-				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<div class="grid grid-cols-1 gap-4">
 					<!-- Tombol Export Data -->
 					<button class="btn btn-primary w-full shadow-none">
 						<Icon name="export" />
 						Export Dapodik
 					</button>
 					<!-- Tombol Backup Data -->
-					<button class="btn btn-outline btn-accent w-full shadow-none">
-						<Icon name="database" />
-						Backup Data
-					</button>
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+						<button class="btn btn-outline btn-accent w-full shadow-none">
+							<Icon name="database" />
+							Backup Data
+						</button>
+						<button class="btn btn-outline btn-accent w-full shadow-none">
+							<Icon name="import" />
+							Import Data
+						</button>
+					</div>
 				</div>
 				<p class="mt-4 text-xs text-gray-400">
 					Pastikan semua data sudah terisi lengkap sebelum melakukan export.
