@@ -4,6 +4,8 @@ Beranda
 Chairil
 daisyui
 Dangin
+Dapodik
+datanya
 dexie
 Extrakurikuler
 Formatif
@@ -15,6 +17,7 @@ mdsvex
 Netanyahu
 Noyan
 NPSN
+penginputan
 Periji
 Rapor
 Ratih

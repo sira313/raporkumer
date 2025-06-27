@@ -2,4 +2,4 @@
 title: Petunjuk
 ---
 
-Silahkan input Ekstrakurikuler menggunakan tombol **Tambah**.
+Silahkan ketik nama Ekstrakurikuler lalu klik tombol `Tambah` untuk menambahkan kegiatan.

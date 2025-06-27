@@ -8,11 +8,24 @@
 	import type { Component } from 'svelte';
 
 	const helpMaps: Record<string, string> = {
-		// path: fileName (without extension)
+		'/': 'umum',
 		'/sekolah': 'sekolah',
+		'/sekolah/form': 'sekolah',
 		'/murid': 'murid',
 		'/mata-pelajaran': 'mata-pelajaran',
-		'/ekstrakurikuler': 'ekstrakurikuler'
+		'/ekstrakurikuler': 'ekstrakurikuler',
+		'/kelas': 'data-kelas',
+		'/kelas/form': 'data-kelas',
+		'/mata-pelajaran/tp-rl': 'tp-rl',
+		'/asesmen-formatif': 'asesmen-formatif',
+		'/asesmen-formatif/formulir-asesmen': 'form-formatif',
+		'/asesmen-sumatif': 'asesmen-sumatif',
+		'/asesmen-sumatif/formulir-asesmen': 'form-sumatif',
+		'/nilai-akhir': 'nilai-akhir',
+		'/nilai-akhir/daftar-nilai': 'daftar-nilai',
+		'/absen': 'absen',
+		'/nilai-ekstrakurikuler': 'nilai-ekstrakurikuler',
+		'/cetak': 'cetak'
 	};
 
 	async function getHelpPage(fileName: string) {
@@ -24,7 +37,8 @@
 	}
 
 	async function showHelp() {
-		const fileName = helpMaps[page.url.pathname.replace(/\/+$/, '')];
+		const pathname = page.url.pathname.replace(/\/+$/, '') || '/';
+		const fileName = helpMaps[pathname];
 		if (!fileName) {
 			toast(
 				`Tombol ini berfungsi untuk menampilkan petunjuk penggunaan.<br />` +
