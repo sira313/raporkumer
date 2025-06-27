@@ -5,7 +5,7 @@ const args = process.argv.slice(2);
 const vite_args = ['dev', ...args];
 
 const icon_process = spawn('node', ['scripts/icon.js'], { stdio: 'inherit' });
-const vite_process = spawn('npx', ['vite', ...vite_args], { stdio: 'inherit' });
+const vite_process = spawn('npx', ['vite', ...vite_args], { stdio: 'inherit', shell: true });
 
 /** @param {string} name */
 const on_exit = (name) => {
