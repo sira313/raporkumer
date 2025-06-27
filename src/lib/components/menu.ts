@@ -1,6 +1,7 @@
 export const appMenuItems: MenuItem[] = [
 	{
 		title: 'Informasi Umum',
+		icon: 'chart',
 		subMenu: [
 			{
 				title: 'Data Sekolah',
@@ -18,6 +19,7 @@ export const appMenuItems: MenuItem[] = [
 	},
 	{
 		title: 'Mata Pelajaran',
+		icon: 'book',
 		subMenu: [
 			{
 				title: 'Daftar Mata Pelajaran',
@@ -31,6 +33,7 @@ export const appMenuItems: MenuItem[] = [
 	},
 	{
 		title: 'Input Nilai',
+		icon: 'pen',
 		subMenu: [
 			{
 				title: 'Kurikulum Merdeka',
@@ -61,19 +64,7 @@ export const appMenuItems: MenuItem[] = [
 	},
 	{
 		title: 'Cetak Dokumen',
-		subMenu: [
-			{
-				title: 'Cetak Rapor',
-				path: '/cetak/rapor'
-			},
-			{
-				title: 'Cetak Cover',
-				path: '/cetak/cover'
-			},
-			{
-				title: 'Cetak Biodata',
-				path: '/cetak/biodata'
-			}
-		]
+		icon: 'print',
+		path: '/cetak'
 	}
 ];
