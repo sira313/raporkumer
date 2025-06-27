@@ -60,3 +60,15 @@ interface Murid {
 		kontak: string;
 	};
 }
+
+interface MataPelajaran {
+	id: number;
+	nama: string;
+	kkm: number;
+	jenis: 'wajib' | 'muatan_lokal';
+	tujuanPembelajaran: {
+		nomor: number;
+		deskripsi: string;
+		lingkupMateri: string;
+	}[];
+}
