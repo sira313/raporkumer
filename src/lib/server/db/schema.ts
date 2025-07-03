@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import { blob, int, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 const audit = {
@@ -40,6 +41,11 @@ export const tableSekolah = sqliteTable('sekolah', {
 	...audit
 });
 
+export const tableSekolahRelations = relations(tableSekolah, ({ one }) => ({
+	alamat: one(tableAlamat),
+	kepalaSekolah: one(tablePegawai)
+}));
+
 export const tableKelas = sqliteTable('kelas', {
 	id: int().primaryKey({ autoIncrement: true }),
 	sekolah: int()
@@ -52,6 +58,10 @@ export const tableKelas = sqliteTable('kelas', {
 		.notNull(),
 	...audit
 });
+
+export const tableKelasRelations = relations(tableKelas, ({ one }) => ({
+	sekolah: one(tableSekolah)
+}));
 
 export const tableWaliMurid = sqliteTable('wali_murid', {
 	id: int().primaryKey({ autoIncrement: true }),
@@ -81,3 +91,10 @@ export const tableMurid = sqliteTable('murid', {
 	wali: int().references(() => tableWaliMurid.id),
 	...audit
 });
+
+export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
+	alamat: one(tableAlamat),
+	ibu: one(tableWaliMurid),
+	ayah: one(tableWaliMurid),
+	wali: one(tableWaliMurid)
+}));
