@@ -5,14 +5,18 @@ import { redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
 export async function load({ url, cookies, route }) {
-	const sekolah_id = +(cookies.get('active_sekolah_id') || '1');
+	const rawSekolahId = cookies.get('active_sekolah_id');
 	const sekolah = await db.query.tableSekolah.findFirst({
-		where: eq(tableSekolah.id, sekolah_id),
-		with: { alamat: true, kepalaSekolah: true }
+		with: { alamat: true, kepalaSekolah: true },
+		where: rawSekolahId ? eq(tableSekolah.id, +rawSekolahId) : undefined
 	});
 
-	if (!sekolah && route.id != '/(informasi-umum)/sekolah/form') {
+	if (!sekolah?.id && route.id != '/(informasi-umum)/sekolah/form') {
 		redirect(303, `/sekolah/form`);
+	}
+
+	if (sekolah?.id) {
+		cookies.set('active_sekolah_id', String(sekolah.id), { path: '/' });
 	}
 
 	const meta: PageMeta = {
