@@ -8,6 +8,7 @@ interface MenuItem {
 interface PageMeta {
 	title?: string;
 	description?: string;
+	logoUrl?: string;
 }
 
 type MaybePromise<T> = T | Promise<T>;

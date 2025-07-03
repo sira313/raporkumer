@@ -1,40 +1,21 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import Icon from '$lib/components/icon.svelte';
-	import { toast } from '$lib/components/toast.svelte';
-	import db from '$lib/data/db';
-	import { loadSekolah, pageMeta } from '$lib/state.svelte';
-	import { flatten, populateForm, unflatten } from '$lib/utils';
+	import { jenjangPendidikan } from '$lib/statics';
+	import { flatten, populateForm } from '$lib/utils';
+	import { onMount } from 'svelte';
 
-	let form: HTMLFormElement;
+	let { data } = $props();
 	let saving = $state(false);
 
-	async function save(e: FormSubmitEvent) {
-		e.preventDefault();
-		try {
-			saving = true;
-			const formData = new FormData(e.currentTarget);
-			const sekolah = unflatten<Sekolah>(Object.fromEntries(formData.entries()));
-			sekolah.id = 1;
-			// prevent remove logo if user not upload
-			sekolah.logo = sekolah.logo?.size ? sekolah.logo : pageMeta.sekolah?.logo;
-			await db.sekolah.put(sekolah);
-			loadSekolah();
-			toast('Data sekolah berhasil disimpan', 'success');
-		} catch (error) {
-			console.error(error);
-			toast('Gagal menyimpan data sekolah', 'error');
-		} finally {
-			saving = false;
-		}
-	}
+	let formEl: HTMLFormElement;
 
-	$effect(() => {
-		if (!pageMeta.sekolah) return;
-		populateForm(form, flatten(pageMeta.sekolah));
+	onMount(() => {
+		populateForm(formEl, flatten(data.sekolah));
 	});
 </script>
 
-<form bind:this={form} onsubmit={save}>
+<form bind:this={formEl} action="?/save" method="POST" enctype="multipart/form-data" use:enhance>
 	<fieldset
 		class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
 	>
@@ -48,9 +29,9 @@
 			required
 		>
 			<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
-			<option>SD (Sekolah Dasar)</option>
-			<option>SMP (Sekolah Menengah Pertama)</option>
-			<option>SMA (Sekolah Menengah Atas)</option>
+			{#each Object.entries(jenjangPendidikan) as [value, label]}
+				<option {value}>{label}</option>
+			{/each}
 		</select>
 
 		<div class="flex-row gap-4 lg:flex">
