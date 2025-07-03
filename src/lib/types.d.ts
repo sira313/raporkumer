@@ -6,9 +6,8 @@ interface MenuItem {
 }
 
 interface PageMeta {
-	title: string;
+	title?: string;
 	description?: string;
-	sekolah?: Sekolah;
 }
 
 type MaybePromise<T> = T | Promise<T>;

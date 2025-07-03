@@ -32,7 +32,7 @@ export const tableSekolah = sqliteTable('sekolah', {
 	alamat: int()
 		.references(() => tableAlamat.id)
 		.notNull(),
-	logo: blob(),
+	logo: blob().$type<Blob>(),
 	website: text(),
 	email: text().notNull(),
 	kepalaSekolah: int()

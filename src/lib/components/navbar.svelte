@@ -4,7 +4,6 @@
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
-	import { pageMeta } from '$lib/state.svelte';
 	import type { Component } from 'svelte';
 
 	const helpMaps: Record<string, string> = {
@@ -73,7 +72,7 @@
 		</label>
 	</div>
 	<div class="mx-2 flex-1 px-2">
-		<span class="text-lg font-bold">{pageMeta?.title}</span>
+		<span class="text-lg font-bold">{page.data.meta?.title || ''}</span>
 	</div>
 	<div class="flex-none">
 		<ul class="menu menu-horizontal px-1">
