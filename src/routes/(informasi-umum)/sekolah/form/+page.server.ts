@@ -1,22 +1,24 @@
 import db from '$lib/server/db/index.js';
 import { tableAlamat, tablePegawai, tableSekolah } from '$lib/server/db/schema.js';
 import { unflatten } from '$lib/utils';
+import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
 export const actions = {
 	async save({ cookies, request }) {
 		const form = await request.formData();
-		const data = unflatten<Sekolah>(Object.fromEntries(form));
+		const data = unflatten<Omit<Sekolah, 'id'> & { id?: number }>(Object.fromEntries(form));
 		const logo = form.get('logo') as File;
 		if (logo) data.logo = new Uint8Array(await logo.arrayBuffer());
 
 		await db.transaction(async (db) => {
-			const sekolah = await db.query.tableSekolah.findFirst({
-				where: eq(tableSekolah.id, +data.id),
-				with: { alamat: true, kepalaSekolah: true }
-			});
+			if (data.id) {
+				const sekolah = await db.query.tableSekolah.findFirst({
+					where: eq(tableSekolah.id, +data.id),
+					with: { alamat: true, kepalaSekolah: true }
+				});
+				if (!sekolah) error(404, `Data sekolah tidak ditemukan`);
 
-			if (sekolah) {
 				await db
 					.update(tableAlamat) //
 					.set(data.alamat)
@@ -32,6 +34,7 @@ export const actions = {
 					.set({ ...data, alamatId: sekolah.alamatId, kepalaSekolahId: sekolah.kepalaSekolahId })
 					.where(eq(tableSekolah.id, data.id));
 			} else {
+				delete data.id;
 				if (data.alamat) {
 					const [alamat] = await db
 						.insert(tableAlamat)

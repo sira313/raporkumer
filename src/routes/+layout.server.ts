@@ -2,14 +2,15 @@ import db from '$lib/server/db';
 import { tableSekolah } from '$lib/server/db/schema.js';
 import { findTitleByPath } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
 export async function load({ url, cookies, route }) {
 	const rawSekolahId = cookies.get('active_sekolah_id') || '';
 	const [sekolah] = await db.query.tableSekolah.findMany({
 		with: { alamat: true, kepalaSekolah: true },
 		where: +rawSekolahId ? eq(tableSekolah.id, +rawSekolahId) : undefined,
-		limit: 1
+		limit: 1,
+		orderBy: [desc(tableSekolah.id)]
 	});
 
 	if (!sekolah?.id && route.id != '/(informasi-umum)/sekolah/form') {
