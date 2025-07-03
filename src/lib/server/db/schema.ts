@@ -7,7 +7,7 @@ const audit = {
 	updatedAt: text()
 };
 
-export const alamat = sqliteTable('alamat', {
+export const tableAlamat = sqliteTable('alamat', {
 	id: int().primaryKey({ autoIncrement: true }),
 	jalan: text().notNull(),
 	kecamatan: text().notNull(),
@@ -16,44 +16,44 @@ export const alamat = sqliteTable('alamat', {
 	...audit
 });
 
-export const pegawai = sqliteTable('pegawai', {
+export const tablePegawai = sqliteTable('pegawai', {
 	id: int().primaryKey({ autoIncrement: true }),
 	nama: text().notNull(),
 	nip: text().notNull(),
 	...audit
 });
 
-export const sekolah = sqliteTable('sekolah', {
+export const tableSekolah = sqliteTable('sekolah', {
 	id: int().primaryKey({ autoIncrement: true }),
 	jenjangPendidikan: text({ enum: ['sd', 'smp', 'sma'] }).notNull(),
 	nama: text().notNull(),
 	npsn: text().notNull(),
 	alamat: int()
-		.references(() => alamat.id)
+		.references(() => tableAlamat.id)
 		.notNull(),
 	logo: blob(),
 	website: text(),
 	email: text().notNull(),
 	kepalaSekolah: int()
-		.references(() => pegawai.id)
+		.references(() => tablePegawai.id)
 		.notNull(),
 	...audit
 });
 
-export const kelas = sqliteTable('kelas', {
+export const tableKelas = sqliteTable('kelas', {
 	id: int().primaryKey({ autoIncrement: true }),
 	sekolah: int()
-		.references(() => sekolah.id)
+		.references(() => tableSekolah.id)
 		.notNull(),
 	nama: text().notNull(),
 	fase: text().notNull(),
 	waliKelas: int()
-		.references(() => pegawai.id)
+		.references(() => tablePegawai.id)
 		.notNull(),
 	...audit
 });
 
-export const waliMurid = sqliteTable('wali_murid', {
+export const tableWaliMurid = sqliteTable('wali_murid', {
 	id: int().primaryKey({ autoIncrement: true }),
 	nama: text().notNull(),
 	pekerjaan: text().notNull(),
@@ -62,11 +62,11 @@ export const waliMurid = sqliteTable('wali_murid', {
 	...audit
 });
 
-export const murid = sqliteTable('murid', {
+export const tableMurid = sqliteTable('murid', {
 	nis: text().primaryKey(),
 	nisn: text().unique().notNull(),
 	kelas: int()
-		.references(() => kelas.id)
+		.references(() => tableKelas.id)
 		.notNull(),
 	nama: text().notNull(),
 	tempatLahir: text().notNull(),
@@ -74,10 +74,10 @@ export const murid = sqliteTable('murid', {
 	jenisKelamin: text({ enum: ['L', 'P'] }).notNull(),
 	agama: text().notNull(),
 	alamat: int()
-		.references(() => alamat.id)
+		.references(() => tableAlamat.id)
 		.notNull(),
-	ibu: int().references(() => waliMurid.id),
-	ayah: int().references(() => waliMurid.id),
-	wali: int().references(() => waliMurid.id),
+	ibu: int().references(() => tableWaliMurid.id),
+	ayah: int().references(() => tableWaliMurid.id),
+	wali: int().references(() => tableWaliMurid.id),
 	...audit
 });
