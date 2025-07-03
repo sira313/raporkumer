@@ -4,6 +4,8 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
+		"db:push": "drizzle-kit push",
+		"db:studio": "drizzle-kit studio",
 		"dev": "node scripts/dev.js",
 		"build": "vite build",
 		"preview": "vite preview",
