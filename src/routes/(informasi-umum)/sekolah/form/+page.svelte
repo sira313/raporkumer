@@ -16,7 +16,9 @@
 </script>
 
 <form bind:this={formEl} action="?/save" method="POST" enctype="multipart/form-data" use:enhance>
-	<input name="id" value={data.sekolah?.id || null} hidden />
+	{#if data.sekolah?.id}
+		<input name="id" value={data.sekolah.id} hidden />
+	{/if}
 
 	<fieldset
 		class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"

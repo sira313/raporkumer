@@ -5,10 +5,11 @@ import { redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
 export async function load({ url, cookies, route }) {
-	const rawSekolahId = cookies.get('active_sekolah_id');
-	const sekolah = await db.query.tableSekolah.findFirst({
+	const rawSekolahId = cookies.get('active_sekolah_id') || '';
+	const [sekolah] = await db.query.tableSekolah.findMany({
 		with: { alamat: true, kepalaSekolah: true },
-		where: rawSekolahId ? eq(tableSekolah.id, +rawSekolahId) : undefined
+		where: +rawSekolahId ? eq(tableSekolah.id, +rawSekolahId) : undefined,
+		limit: 1
 	});
 
 	if (!sekolah?.id && route.id != '/(informasi-umum)/sekolah/form') {
