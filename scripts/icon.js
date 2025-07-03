@@ -29,9 +29,9 @@ async function run_watcher() {
 		}
 	} catch (err) {
 		if (err.name === 'AbortError') {
-			console.log('Icon type-gen aborted gracefully.');
+			console.log('\nIcon type-gen aborted gracefully.');
 		} else {
-			console.error('Icon type-gen error:', err);
+			console.error('\nIcon type-gen error:', err);
 		}
 	}
 }
