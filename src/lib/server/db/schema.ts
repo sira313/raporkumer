@@ -115,3 +115,14 @@ export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
 	ayah: one(tableWaliMurid, { fields: [tableMurid.ayahId], references: [tableWaliMurid.id] }),
 	wali: one(tableWaliMurid, { fields: [tableMurid.waliId], references: [tableWaliMurid.id] })
 }));
+
+export const tableMataPelajaran = sqliteTable('mata_pelajaran', {
+	id: int().primaryKey({ autoIncrement: true }),
+	kelasId: int()
+		.references(() => tableKelas.id)
+		.notNull(),
+	nama: text().notNull(),
+	kkm: int().notNull().default(0),
+	jenis: text({ enum: ['wajib', 'mulok'] }),
+	...audit
+});
