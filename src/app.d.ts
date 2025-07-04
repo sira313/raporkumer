@@ -9,7 +9,10 @@ declare global {
 		interface PageData {
 			meta: PageMeta;
 		}
-		// interface PageState {}
+		interface PageState {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			selected: any;
+		}
 		// interface Platform {}
 	}
 }

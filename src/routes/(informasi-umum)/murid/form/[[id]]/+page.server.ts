@@ -1,7 +1,7 @@
 import db from '$lib/server/db/index.js';
 import { tableAlamat, tableMurid, tableWaliMurid } from '$lib/server/db/schema.js';
 import { unflattenFormData } from '$lib/utils.js';
-import { error, redirect } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
 export async function load({ params }) {
@@ -60,9 +60,6 @@ export const actions = {
 				formMurid.id = murid?.id;
 			}
 		});
-
-		if (formMurid.id) redirect(303, `/murid/form/${formMurid.id}`);
-
 		return { message: `Data murid berhasil disimpan` };
 	}
 };

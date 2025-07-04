@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 
@@ -6,9 +7,13 @@
 	let activeTab = $state(0);
 </script>
 
-<FormEnhance action="?/save" init={data.murid}>
+<FormEnhance
+	action="?/save"
+	init={data.murid}
+	onsuccess={async () => await goto('/murid', { invalidate: ['app:murid'] })}
+>
 	{#snippet children({ submitting, invalid })}
-		<fieldset class="fieldset p-4 sm:w-full sm:max-w-2xl">
+		<fieldset class="fieldset">
 			<legend class="fieldset-legend">
 				<pre class="bg-base-200 rounded-xl px-2">{data.murid?.id
 						? 'Formulir Edit Murid Manual'
@@ -350,10 +355,10 @@
 				</div>
 			</div>
 			<div class="border-base-200 mt-4 flex flex-col gap-2 sm:flex-row">
-				<a class="btn border-none shadow-none" href="/murid">
+				<button class="btn border-none shadow-none" type="button" onclick={() => history.back()}>
 					<Icon name="close-sm" />
 					Batal
-				</a>
+				</button>
 
 				{#if invalid}
 					<button

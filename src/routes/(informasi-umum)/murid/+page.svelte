@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
-	import { searchQueryMarker } from '$lib/utils';
+	import { autoSubmit, modalRoute, searchQueryMarker } from '$lib/utils';
+	import FormMurid from './form/[[id]]/+page.svelte';
 
 	let { data } = $props();
 </script>
@@ -11,7 +13,7 @@
 	<legend class="fieldset-legend">Formulir Dan Tabel Isian Data Murid</legend>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
-		<a class="btn flex items-center shadow-none" href="/murid/form">
+		<a class="btn flex items-center shadow-none" href="/murid/form" use:modalRoute>
 			<Icon name="plus" />
 			Tambah Murid
 		</a>
@@ -33,7 +35,12 @@
 		</button>
 	</div>
 
-	<form class="flex flex-col items-center gap-2 sm:flex-row">
+	<form
+		class="flex flex-col items-center gap-2 sm:flex-row"
+		data-sveltekit-keepfocus
+		data-sveltekit-replacestate
+		use:autoSubmit
+	>
 		<!-- Cari nama murid -->
 		<label class="input bg-base-200 dark:border-none">
 			<Icon name="search" />
@@ -119,3 +126,11 @@
 		</table>
 	</div>
 </fieldset>
+
+{#if page.state.selected}
+	<dialog class="modal" onclose={() => history.back()} open>
+		<div class="modal-box p-4 sm:w-full sm:max-w-2xl">
+			<FormMurid data={page.state.selected} />
+		</div>
+	</dialog>
+{/if}

@@ -11,9 +11,10 @@
 		action: string;
 		enctype?: HTMLFormAttributes['enctype'];
 		init?: Record<string, unknown>;
+		onsuccess?: (data?: Record<string, any>) => void;
 	}
 
-	let { children, action, enctype, init }: Props = $props();
+	let { children, action, enctype, init, onsuccess }: Props = $props();
 	let submitting = $state(false);
 	let invalid = $state(true);
 
@@ -25,6 +26,7 @@
 				switch (result.type) {
 					case 'success':
 						toast(result.data?.message || 'Sukses', 'success');
+						onsuccess?.(result.data);
 						break;
 					case 'failure':
 						toast(result.data?.fail || 'Gagal', 'warning');
@@ -46,6 +48,16 @@
 		};
 	};
 
+	function validity() {
+		let timer: ReturnType<typeof setTimeout>;
+		return (e: Event) => {
+			clearTimeout(timer);
+			timer = setTimeout(() => {
+				invalid = !(e.target as HTMLFormElement)?.checkValidity();
+			}, 900);
+		};
+	}
+
 	function loader(form: HTMLFormElement) {
 		// well, this is client side loader, doesn't make us of
 		// ssr, but this make form element value loading ease
@@ -53,13 +65,6 @@
 	}
 </script>
 
-<form
-	{action}
-	method="POST"
-	{enctype}
-	use:enhance={enhancedSubmit}
-	use:loader
-	onchange={(e) => (invalid = !e.currentTarget.checkValidity())}
->
+<form {action} method="POST" {enctype} use:enhance={enhancedSubmit} use:loader oninput={validity()}>
 	{@render children({ submitting, invalid })}
 </form>

@@ -2,7 +2,8 @@ import db from '$lib/server/db/index.js';
 import { tableMurid } from '$lib/server/db/schema.js';
 import { and, asc, eq, sql } from 'drizzle-orm';
 
-export async function load({ locals, url }) {
+export async function load({ locals, url, depends }) {
+	depends('app:murid');
 	const search = url.searchParams.get('q');
 	const kelasId = url.searchParams.get('kelas_id');
 	const daftarMurid = await db.query.tableMurid.findMany({

@@ -1,3 +1,4 @@
+import { goto, preloadData, pushState } from '$app/navigation';
 import { appMenuItems } from './components/menu';
 
 export const cookieNames = {
@@ -99,4 +100,59 @@ export function searchQueryMarker(query?: string | null, target?: string | null)
 
 export async function delay(ms = 500) {
 	return new Promise((r) => setTimeout(r, ms));
+}
+
+export function modalRoute(anchor: HTMLAnchorElement) {
+	anchor.onclick = async (e) => {
+		if (
+			innerWidth < 640 || // bail if the screen is too small
+			e.shiftKey || // or the link is opened in a new window
+			e.metaKey ||
+			e.ctrlKey // or a new tab (mac: metaKey, win/linux: ctrlKey)
+			// should also consider clicking with a mouse scroll wheel
+		)
+			return;
+
+		// prevent navigation
+		e.preventDefault();
+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const href = ((e.currentTarget || e.target) as any).href;
+
+		// run `load` functions (or rather, get the result of the `load` functions
+		// that are already running because of `data-sveltekit-preload-data`)
+		const result = await preloadData(href);
+
+		if (result.type === 'loaded' && result.status === 200) {
+			pushState(href, { selected: result.data });
+		} else {
+			// something bad happened! try navigating
+			goto(href);
+		}
+	};
+}
+
+export function autoSubmit(form: HTMLFormElement) {
+	const btn = document.createElement('button');
+	btn.hidden = true;
+	btn.type = 'submit';
+	form.appendChild(btn);
+
+	let timer: ReturnType<typeof setTimeout>;
+
+	function submit(e: Event) {
+		clearTimeout(timer);
+		if (e.target instanceof HTMLSelectElement) {
+			btn.click();
+		} else {
+			timer = setTimeout(() => btn.click(), 550);
+		}
+	}
+
+	form.addEventListener('input', submit);
+	return {
+		destroy() {
+			form.removeEventListener('input', submit);
+		}
+	};
 }
