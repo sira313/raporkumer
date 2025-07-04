@@ -1,5 +1,9 @@
 import { appMenuItems } from './components/menu';
 
+export const cookieNames = {
+	ACTIVE_SEKOLAH_ID: 'active-sekolah-id'
+};
+
 export function findTitleByPath(path: string, items = appMenuItems): string | undefined {
 	path = path.replace(/\/+$/, '');
 	for (const item of items) {
@@ -32,6 +36,11 @@ export function unflatten<T = Record<string, unknown>>(obj: Record<string, unkno
 		}
 	}
 	return result as T;
+}
+
+export function unflattenFormData<T = Record<string, unknown>>(formData: FormData) {
+	const obj = Object.fromEntries(formData);
+	return unflatten<T>(obj);
 }
 
 export function flatten<T = Record<string, unknown>>(obj: T, prefix = ''): Record<string, unknown> {

@@ -1,65 +1,70 @@
 import db from '$lib/server/db/index.js';
 import { tableAlamat, tablePegawai, tableSekolah } from '$lib/server/db/schema.js';
-import { unflatten } from '$lib/utils';
+import { cookieNames, unflattenFormData } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
 export const actions = {
 	async save({ cookies, request }) {
-		const form = await request.formData();
-		const data = unflatten<Omit<Sekolah, 'id'> & { id?: number }>(Object.fromEntries(form));
-		const logo = form.get('logo') as File;
-		if (logo) data.logo = new Uint8Array(await logo.arrayBuffer());
+		const formData = await request.formData();
+		const formSekolah = unflattenFormData<OptId<Sekolah>>(formData);
+
+		const logo = formData.get('logo') as File;
+		if (logo) formSekolah.logo = new Uint8Array(await logo.arrayBuffer());
 
 		await db.transaction(async (db) => {
-			if (data.id) {
+			if (formSekolah.id) {
 				const sekolah = await db.query.tableSekolah.findFirst({
-					where: eq(tableSekolah.id, +data.id),
+					where: eq(tableSekolah.id, +formSekolah.id),
 					with: { alamat: true, kepalaSekolah: true }
 				});
 				if (!sekolah) error(404, `Data sekolah tidak ditemukan`);
 
 				await db
 					.update(tableAlamat) //
-					.set(data.alamat)
+					.set(formSekolah.alamat)
 					.where(eq(tableAlamat.id, sekolah.alamatId));
 
 				await db
 					.update(tablePegawai)
-					.set(data.kepalaSekolah)
+					.set(formSekolah.kepalaSekolah)
 					.where(eq(tablePegawai.id, sekolah.kepalaSekolahId));
 
 				await db
 					.update(tableSekolah)
-					.set({ ...data, alamatId: sekolah.alamatId, kepalaSekolahId: sekolah.kepalaSekolahId })
-					.where(eq(tableSekolah.id, data.id));
+					.set({
+						...formSekolah,
+						alamatId: sekolah.alamatId,
+						kepalaSekolahId: sekolah.kepalaSekolahId
+					})
+					.where(eq(tableSekolah.id, formSekolah.id));
 			} else {
-				delete data.id;
-				if (data.alamat) {
+				delete formSekolah.id;
+				if (formSekolah.alamat) {
 					const [alamat] = await db
 						.insert(tableAlamat)
-						.values(data.alamat)
+						.values(formSekolah.alamat)
 						.returning({ id: tableAlamat.id });
-					data.alamatId = alamat.id;
+					formSekolah.alamatId = alamat.id;
 				}
 
-				if (data.kepalaSekolah) {
+				if (formSekolah.kepalaSekolah) {
 					const [pegawai] = await db
 						.insert(tablePegawai)
-						.values(data.kepalaSekolah)
+						.values(formSekolah.kepalaSekolah)
 						.returning({ id: tablePegawai.id });
-					data.kepalaSekolahId = pegawai.id;
+					formSekolah.kepalaSekolahId = pegawai.id;
 				}
 
 				const [newSekolah] = await db
 					.insert(tableSekolah)
-					.values(data)
+					.values(formSekolah)
 					.returning({ id: tableSekolah.id });
-				data.id = newSekolah.id;
+				formSekolah.id = newSekolah.id;
 			}
 		});
 
-		cookies.set('active_sekolah_id', String(data.id), { path: '/' });
+		cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(formSekolah.id), { path: '/' });
 		return { message: 'Data sekolah berhasil disimpan' };
 	}
 };
