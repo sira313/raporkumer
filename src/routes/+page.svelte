@@ -1,8 +1,5 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
-	import { setPageTitle } from '$lib/state.svelte';
-
-	setPageTitle('Beranda');
 </script>
 
 <!-- Kontainer Utama Grid -->
@@ -80,7 +77,7 @@
 	<!-- Kolom 2: Progress & Aksi -->
 	<div class="flex flex-col gap-6">
 		<!-- Widget Progress Pengisian -->
-		<div class="card bg-base-100 rounded-box bg-base-100">
+		<div class="card bg-base-100 rounded-box">
 			<div class="card-body">
 				<h2 class="card-title mb-4">
 					<span class="text-xl">

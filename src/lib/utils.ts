@@ -1,4 +1,9 @@
+import { goto, preloadData, pushState } from '$app/navigation';
 import { appMenuItems } from './components/menu';
+
+export const cookieNames = {
+	ACTIVE_SEKOLAH_ID: 'active-sekolah-id'
+};
 
 export function findTitleByPath(path: string, items = appMenuItems): string | undefined {
 	path = path.replace(/\/+$/, '');
@@ -32,6 +37,11 @@ export function unflatten<T = Record<string, unknown>>(obj: Record<string, unkno
 		}
 	}
 	return result as T;
+}
+
+export function unflattenFormData<T = Record<string, unknown>>(formData: FormData) {
+	const obj = Object.fromEntries(formData);
+	return unflatten<T>(obj);
 }
 
 export function flatten<T = Record<string, unknown>>(obj: T, prefix = ''): Record<string, unknown> {
@@ -75,7 +85,7 @@ export function populateForm<T = Record<string, unknown>>(form: HTMLFormElement,
 	}
 }
 
-export function searchQueryMarker(query?: string, target?: string) {
+export function searchQueryMarker(query?: string | null, target?: string | null) {
 	if (!query || !target) return target;
 
 	// escape special characters in the query string
@@ -90,4 +100,59 @@ export function searchQueryMarker(query?: string, target?: string) {
 
 export async function delay(ms = 500) {
 	return new Promise((r) => setTimeout(r, ms));
+}
+
+export function modalRoute(anchor: HTMLAnchorElement, name: string) {
+	anchor.onclick = async (e) => {
+		if (
+			innerWidth < 640 || // bail if the screen is too small
+			e.shiftKey || // or the link is opened in a new window
+			e.metaKey ||
+			e.ctrlKey // or a new tab (mac: metaKey, win/linux: ctrlKey)
+			// should also consider clicking with a mouse scroll wheel
+		)
+			return;
+
+		// prevent navigation
+		e.preventDefault();
+
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const href = ((e.currentTarget || e.target) as any).href;
+
+		// run `load` functions (or rather, get the result of the `load` functions
+		// that are already running because of `data-sveltekit-preload-data`)
+		const result = await preloadData(href);
+
+		if (result.type === 'loaded' && result.status === 200) {
+			pushState(href, { modal: { data: result.data, name: name } });
+		} else {
+			// something bad happened! try navigating
+			goto(href);
+		}
+	};
+}
+
+export function autoSubmit(form: HTMLFormElement) {
+	const btn = document.createElement('button');
+	btn.hidden = true;
+	btn.type = 'submit';
+	form.appendChild(btn);
+
+	let timer: ReturnType<typeof setTimeout>;
+
+	function submit(e: Event) {
+		clearTimeout(timer);
+		if (e.target instanceof HTMLSelectElement) {
+			btn.click();
+		} else {
+			timer = setTimeout(() => btn.click(), 550);
+		}
+	}
+
+	form.addEventListener('input', submit);
+	return {
+		destroy() {
+			form.removeEventListener('input', submit);
+		}
+	};
 }

@@ -46,10 +46,8 @@
 			<Icon name="sun" />
 		</span>
 	{:else}
-		<span class="text-base text-xl">
+		<span class="text-xl">
 			<Icon name="moon" />
 		</span>
 	{/if}
-
-	<!-- {@html dark_mode ? LightModeIcon : DarkModeIcon} -->
 </button>

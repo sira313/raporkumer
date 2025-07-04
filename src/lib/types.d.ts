@@ -6,11 +6,13 @@ interface MenuItem {
 }
 
 interface PageMeta {
-	title: string;
+	title?: string;
 	description?: string;
-	sekolah?: Sekolah;
+	logoUrl?: string;
 }
 
 type MaybePromise<T> = T | Promise<T>;
 
 type FormSubmitEvent = SubmitEvent & { currentTarget: EventTarget & HTMLFormElement };
+
+type OptId<T, ID = number> = Omit<T, 'id'> & { id?: ID };

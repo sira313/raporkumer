@@ -1,29 +1,18 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/icon.svelte';
-	import { pageMeta } from '$lib/state.svelte';
-	import { onMount } from 'svelte';
+	import { jenjangPendidikan } from '$lib/statics.js';
 
-	let sekolah = $derived(pageMeta.sekolah);
-	let loading = $state(true);
+	let { data } = $props();
+	let sekolah = data.sekolah;
 
 	function plainAlamat(alamat?: Alamat) {
 		if (!alamat) return '-';
 		return `${alamat.jalan || '-'}, ${alamat.desa || '-'}, ${alamat.kabupaten || '-'}, ${alamat.kecamatan || '-'}, ${alamat.provinsi || '-'}, ${alamat.kodePos || '-'}`;
 	}
-
-	onMount(async () => {
-		// arahkan ke form jika belum ada data sekolah
-		if (!sekolah) {
-			await goto('/sekolah/form');
-		}
-		loading = false;
-	});
 </script>
 
 <div
 	class="bg-base-100 rounded-box relative mx-auto mt-8 flex max-w-4xl flex-col items-center gap-8 p-6 shadow sm:flex-row sm:p-10"
-	hidden={loading}
 >
 	<!-- Logo -->
 	<div class="flex-shrink-0">
@@ -31,7 +20,7 @@
 			class="bg-base-200 flex h-36 w-36 items-center justify-center overflow-hidden rounded-full shadow-lg"
 		>
 			<img
-				src={sekolah?.logoURL || '/sekolah.png'}
+				src={data.meta?.logoUrl || '/sekolah.png'}
 				alt="Logo sekolah"
 				class="h-32 w-32 object-contain"
 			/>
@@ -42,7 +31,9 @@
 		<h2 class="text-base-content mb-4 text-2xl font-bold">{sekolah?.nama}</h2>
 		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
 			<div class="text-base-content/70 text-sm font-semibold">Jenjang Pendidikan</div>
-			<div class="text-base-content sm:col-span-2">{sekolah?.jenjangPendidikan}</div>
+			<div class="text-base-content sm:col-span-2">
+				{jenjangPendidikan[sekolah!.jenjangPendidikan]}
+			</div>
 		</div>
 		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
 			<div class="text-base-content/70 text-sm font-semibold">NPSN</div>

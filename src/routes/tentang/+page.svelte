@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { setPageTitle } from '$lib/state.svelte';
 	import Masukan from './masukan.svelte';
 
-	setPageTitle('Tentang Aplikasi');
 	let masukanModal: InstanceType<typeof Masukan>;
 </script>
 

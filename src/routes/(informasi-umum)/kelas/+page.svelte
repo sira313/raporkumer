@@ -1,39 +1,10 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/icon.svelte';
-	import { toast } from '$lib/components/toast.svelte';
-	import db from '$lib/data/db';
-	import { delay } from '$lib/utils';
-	import { onMount } from 'svelte';
 
-	let loading = $state(true);
-	let daftarKelas = $state<Kelas[]>([]);
-
-	async function load() {
-		loading = true;
-		try {
-			const result = await db.kelas.toArray();
-			daftarKelas = result;
-
-			if (!daftarKelas?.length) {
-				// arahkan ke form tambah kelas jika belum ada data kelas
-				await delay();
-				await goto('/kelas/form');
-			}
-		} catch (error) {
-			console.error(error);
-			toast('Gagal memuat data kelas', 'error');
-		} finally {
-			loading = false;
-		}
-	}
-
-	onMount(async () => {
-		await load();
-	});
+	let { data } = $props();
 </script>
 
-{#each daftarKelas as kelas (kelas)}
+{#each data.daftarKelas as kelas (kelas)}
 	<fieldset class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg p-4 shadow-md">
 		<legend class="fieldset-legend">Data Kelas</legend>
 
@@ -50,18 +21,7 @@
 					<p class="text-lg font-semibold">{kelas.fase}</p>
 				</div>
 			</div>
-			<div class="card bg-base-200">
-				<div class="card-body p-4">
-					<h2 class="card-title text-base-content/70 text-sm">Semester</h2>
-					<p class="text-lg font-semibold">{kelas.semester}</p>
-				</div>
-			</div>
-			<div class="card bg-base-200">
-				<div class="card-body p-4">
-					<h2 class="card-title text-base-content/70 text-sm">Tahun Ajaran</h2>
-					<p class="text-lg font-semibold">{kelas.tahunAjaran}</p>
-				</div>
-			</div>
+
 			<div class="card bg-base-200 col-span-full lg:col-span-1">
 				<div class="card-body p-4">
 					<h2 class="card-title text-base-content/70 text-sm">Wali Kelas</h2>
@@ -72,7 +32,7 @@
 		</div>
 
 		<div class="mt-6 text-right">
-			<a href="/kelas/form?id={kelas.id}" class="btn btn-primary shadow-md">
+			<a href="/kelas/form/{kelas.id}" class="btn btn-primary shadow-md">
 				<Icon name="edit" />
 				Edit
 			</a>
@@ -80,6 +40,13 @@
 	</fieldset>
 {:else}
 	<div class="flex items-center justify-center h-[80vh]">
-		<em class="opacity-50">{loading ? 'Loading...' : 'Belum ada data kelas'}</em>
+		<em class="opacity-50">Belum ada data kelas</em>
 	</div>
 {/each}
+
+<div class="mx-auto mt-5 text-center">
+	<a class="btn btn-primary" href="/kelas/form">
+		<Icon name="plus" />
+		Tambah kelas
+	</a>
+</div>
