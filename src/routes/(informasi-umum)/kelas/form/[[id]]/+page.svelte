@@ -36,32 +36,6 @@
 					/>
 				</div>
 
-				<!-- Semester -->
-				<div>
-					<legend class="fieldset-legend">Semester</legend>
-					<select
-						class="select bg-base-200 validator w-full border dark:border-none"
-						name="semester"
-						required
-					>
-						<option value="" disabled selected>Pilih Semester</option>
-						<option>Ganjil</option>
-						<option>Genap</option>
-					</select>
-				</div>
-
-				<!-- Tahun Ajaran -->
-				<div>
-					<legend class="fieldset-legend">Tahun Ajaran</legend>
-					<input
-						required
-						type="text"
-						class="input validator bg-base-200 w-full dark:border-none"
-						placeholder="Contoh: 2025/2026"
-						name="tahunAjaran"
-					/>
-				</div>
-
 				<!-- Wali Kelas -->
 				<div>
 					<legend class="fieldset-legend">Wali Kelas</legend>
