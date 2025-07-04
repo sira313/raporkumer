@@ -4,14 +4,15 @@ import { cookieNames, unflattenFormData } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
-export function load() {
-	return { meta: { title: 'Form Sekolah' } };
+export function load({ url }) {
+	const isInit = url.searchParams.has('init');
+	return { isInit, meta: { title: 'Form Sekolah' } };
 }
 
 export const actions = {
 	async save({ cookies, request }) {
 		const formData = await request.formData();
-		const formSekolah = unflattenFormData<OptId<Sekolah>>(formData);
+		const formSekolah = unflattenFormData<Sekolah>(formData);
 
 		// TODO: input validation
 
@@ -45,7 +46,6 @@ export const actions = {
 					})
 					.where(eq(tableSekolah.id, formSekolah.id));
 			} else {
-				delete formSekolah.id;
 				if (formSekolah.alamat) {
 					const [alamat] = await db
 						.insert(tableAlamat)

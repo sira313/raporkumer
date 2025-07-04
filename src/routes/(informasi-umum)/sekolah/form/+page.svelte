@@ -6,6 +6,14 @@
 	let { data } = $props();
 </script>
 
+{#if data.isInit}
+	<div role="alert" class="alert alert-success alert-soft">
+		<!-- TODO: sesuaikan pesan saat pertama kali setup -->
+		<Icon name="info" />
+		<span>Selamat datang! Pertama-tama, isi formulir sekolah terlebih dahulu!</span>
+	</div>
+{/if}
+
 <FormEnhance action="?/save" init={data.sekolah} enctype="multipart/form-data">
 	{#snippet children({ submitting })}
 		{#if data.sekolah?.id}

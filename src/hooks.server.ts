@@ -19,7 +19,7 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 	}
 
 	if (!sekolah?.id && event.route.id != '/(informasi-umum)/sekolah/form') {
-		redirect(303, `/sekolah/form`);
+		redirect(303, `/sekolah/form?init`);
 	}
 
 	event.locals.sekolah = sekolah;
