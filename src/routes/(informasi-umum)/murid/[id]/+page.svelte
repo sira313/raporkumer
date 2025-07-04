@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
+	import { jenisKelamin } from '$lib/statics.js';
 	import { modalRoute } from '$lib/utils.js';
 
 	let { data } = $props();
@@ -30,7 +31,7 @@
 						{@render field('NISN', data.murid.nisn)}
 						{@render field('Nama', data.murid.nama)}
 						{@render field('Kelas', kelas)}
-						{@render field('Jenis Kelamin', data.murid.jenisKelamin)}
+						{@render field('Jenis Kelamin', jenisKelamin[data.murid.jenisKelamin])}
 						{@render field('Tempat Lahir', data.murid.tempatLahir)}
 						{@render field('Tanggal Lahir', data.murid.tanggalLahir)}
 						{@render field('Agama', data.murid.agama)}

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { jenisKelamin } from '$lib/statics';
 
 	let { data } = $props();
 	let activeTab = $state(0);
@@ -123,8 +124,9 @@
 									required
 								>
 									<option value="" disabled selected>Pilih Jenis Kelamin</option>
-									<option value="L">Laki-laki</option>
-									<option value="P">Perempuan</option>
+									{#each Object.entries(jenisKelamin) as [value, label]}
+										<option {value}>{label}</option>
+									{/each}
 								</select>
 							</div>
 							<!-- Agama -->

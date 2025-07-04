@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
+	import { jenjangPendidikan } from '$lib/statics.js';
 
 	let { data } = $props();
 	let sekolah = data.sekolah;
@@ -30,7 +31,9 @@
 		<h2 class="text-base-content mb-4 text-2xl font-bold">{sekolah?.nama}</h2>
 		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
 			<div class="text-base-content/70 text-sm font-semibold">Jenjang Pendidikan</div>
-			<div class="text-base-content sm:col-span-2">{sekolah?.jenjangPendidikan}</div>
+			<div class="text-base-content sm:col-span-2">
+				{jenjangPendidikan[sekolah!.jenjangPendidikan]}
+			</div>
 		</div>
 		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
 			<div class="text-base-content/70 text-sm font-semibold">NPSN</div>
