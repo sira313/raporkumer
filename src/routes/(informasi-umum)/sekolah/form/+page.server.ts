@@ -4,6 +4,10 @@ import { cookieNames, unflattenFormData } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
+export function load() {
+	return { meta: { title: 'Form Sekolah' } };
+}
+
 export const actions = {
 	async save({ cookies, request }) {
 		const formData = await request.formData();

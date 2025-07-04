@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import GlobalModal from '$lib/components/global-modal.svelte';
 	import Menu from '$lib/components/menu.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
@@ -24,7 +25,7 @@
 			}
 		})();
 	</script>
-	<title>{appName}{data.meta.title ? ' - ' + data.meta.title : ''}</title>
+	<title>{appName}{page.data.meta.title ? ' - ' + page.data.meta.title : ''}</title>
 </svelte:head>
 
 <main class="drawer lg:drawer-open">
