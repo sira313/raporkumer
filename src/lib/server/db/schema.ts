@@ -123,6 +123,6 @@ export const tableMataPelajaran = sqliteTable('mata_pelajaran', {
 		.notNull(),
 	nama: text().notNull(),
 	kkm: int().notNull().default(0),
-	jenis: text({ enum: ['wajib', 'mulok'] }),
+	jenis: text({ enum: ['wajib', 'mulok'] }).notNull(),
 	...audit
 });
