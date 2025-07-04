@@ -81,6 +81,9 @@ export const tableWaliMurid = sqliteTable('wali_murid', {
 export const tableMurid = sqliteTable('murid', {
 	nis: text().primaryKey(),
 	nisn: text().unique().notNull(),
+	sekolahId: int()
+		.references(() => tableSekolah.id)
+		.notNull(),
 	kelasId: int()
 		.references(() => tableKelas.id)
 		.notNull(),

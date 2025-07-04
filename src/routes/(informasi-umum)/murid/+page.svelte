@@ -1,87 +1,8 @@
 <script lang="ts">
-	import { showModal } from '$lib/components/global-modal.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import { toast } from '$lib/components/toast.svelte';
-	import db from '$lib/data/db';
-	import { onMount } from 'svelte';
-	import DetilMurid from './detil-murid.svelte';
-	import FormMurid from './form-murid.svelte';
+	import { searchQueryMarker } from '$lib/utils';
 
-	let formMuridShown = $state(false);
-	let formMuridData = $state<Murid>();
-	let detailMuridData = $state<Murid>();
-
-	let daftarMurid = $state<Murid[]>([]);
-	let daftarMuridLoading = $state(false);
-	let limit = $state(100);
-
-	let daftarKelas = $state<Kelas[]>([]);
-	let daftarKelasLoading = $state(false);
-	let activeKelas = $state<Kelas>();
-
-	async function loadDaftarKelas() {
-		try {
-			daftarKelasLoading = true;
-			const result = await db.kelas.toArray();
-			daftarKelas = result;
-			activeKelas = daftarKelas[0];
-		} catch (error) {
-			console.error(error);
-			toast('Terjadi kesalahan saat memuat daftar kelas', 'error');
-		} finally {
-			daftarKelasLoading = false;
-		}
-	}
-
-	async function loadDaftarMurid() {
-		if (!activeKelas) return;
-		try {
-			daftarMuridLoading = true;
-			const result = await db.murid.where('kelasId').equals(activeKelas.id).limit(limit).toArray();
-			daftarMurid = result;
-		} catch (error) {
-			console.error(error);
-			toast('Terjadi kesalahan saat memuat daftar murid', 'error');
-		} finally {
-			daftarMuridLoading = false;
-		}
-	}
-
-	async function deleteMurid(murid: Murid) {
-		showModal({
-			title: 'Hapus Murid',
-			body: `Anda yakin untuk menghapus data murid ini? <br />
-				NIS: <strong>${murid.nis}</strong> <br />
-				Nama: <strong>${murid.nama}</strong> <br /><br />
-				<em>Tidak ada opsi undo</em>`.replaceAll('\t', ''),
-			dismissible: true,
-			onNeutral: {
-				label: 'Batal',
-				action({ close }) {
-					close();
-				}
-			},
-			onNegative: {
-				label: 'Ya, yakin',
-				async action({ close }) {
-					try {
-						await db.murid.delete(murid.nis);
-						close();
-						loadDaftarMurid();
-						toast('Data murid telah dihapus');
-					} catch (error) {
-						console.log(error);
-						toast('Gagal menghapus data murid', 'error');
-					}
-				}
-			}
-		});
-	}
-
-	onMount(async () => {
-		await loadDaftarKelas();
-		loadDaftarMurid();
-	});
+	let { data } = $props();
 </script>
 
 <fieldset
@@ -90,7 +11,7 @@
 	<legend class="fieldset-legend">Formulir Dan Tabel Isian Data Murid</legend>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
-		<button class="btn flex items-center shadow-none" onclick={() => (formMuridShown = true)}>
+		<button class="btn flex items-center shadow-none">
 			<Icon name="plus" />
 			Tambah Murid
 		</button>
@@ -112,45 +33,44 @@
 		</button>
 	</div>
 
-	<div class="flex flex-col items-center gap-2 sm:flex-row">
+	<form class="flex flex-col items-center gap-2 sm:flex-row">
 		<!-- Cari nama murid -->
 		<label class="input bg-base-200 dark:border-none">
-			{#if daftarMuridLoading}
-				<div class="loading loading-spinner"></div>
-			{:else}
-				<Icon name="search" />
-			{/if}
-			<input type="search" required placeholder="Cari nama murid..." />
+			<Icon name="search" />
+			<input
+				type="search"
+				name="q"
+				value={data.page.search}
+				spellcheck="false"
+				placeholder="Cari nama murid..."
+				autocomplete="name"
+			/>
 		</label>
 
 		<select
 			class="select bg-base-200 dark:border-none"
 			title="Pilih kelas"
-			bind:value={activeKelas}
-			onchange={() => loadDaftarMurid()}
+			name="kelas_id"
+			value={data.page.kelasId}
 		>
-			{#if daftarKelas?.length}
-				<option value="" disabled selected>
-					{daftarKelasLoading ? 'Loading...' : 'Pilih Kelas'}
+			<option value={null} disabled selected> Pilih Kelas </option>
+			{#each data.daftarKelas as kelas (kelas)}
+				<option value={kelas.id + ''}>
+					Kelas: {kelas.nama} &bullet; Fase: {kelas.fase}
 				</option>
-				{#each daftarKelas as kelas (kelas)}
-					<option value={kelas}>
-						{kelas.nama} &bullet; {kelas.fase} &bullet; {kelas.semester} &bullet; {kelas.tahunAjaran}
-					</option>
-				{/each}
 			{:else}
-				<option value="" disabled selected> Belum ada data kelas </option>
-			{/if}
+				<option value={null} disabled selected> Belum ada data kelas </option>
+			{/each}
 		</select>
 
 		<!-- pagination -->
 		<div class="join sm:ml-auto">
-			<button class="join-item btn btn-active">1</button>
-			<button class="join-item btn">2</button>
-			<button class="join-item btn">3</button>
-			<button class="join-item btn">4</button>
+			<button type="button" class="join-item btn btn-active">1</button>
+			<button type="button" class="join-item btn">2</button>
+			<button type="button" class="join-item btn">3</button>
+			<button type="button" class="join-item btn">4</button>
 		</div>
-	</div>
+	</form>
 
 	<!-- Tabel daftar murid -->
 	<div
@@ -169,28 +89,20 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each daftarMurid as murid, index (murid)}
+				{#each data.daftarMurid as murid, index (murid)}
 					<tr>
 						<td><input type="checkbox" checked={false} class="checkbox" /></td>
 						<td>{index + 1}</td>
-						<td>{murid.nama}</td>
+						<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
 						<td>{murid.tempatLahir}</td>
 						<td>{murid.tanggalLahir}</td>
 						<td>
 							<div class="flex flex-row gap-2">
-								<button
-									class="btn btn-sm btn-ghost btn-circle"
-									type="button"
-									onclick={() => (detailMuridData = murid)}
-								>
+								<button class="btn btn-sm btn-ghost btn-circle" type="button">
 									<Icon name="eye" />
 								</button>
 
-								<button
-									class="btn btn-sm btn-ghost btn-circle"
-									type="button"
-									onclick={() => deleteMurid(murid)}
-								>
+								<button class="btn btn-sm btn-ghost btn-circle" type="button">
 									<span class="text-error"><Icon name="del" /></span>
 								</button>
 							</div>
@@ -207,27 +119,3 @@
 		</table>
 	</div>
 </fieldset>
-
-{#if formMuridShown}
-	<FormMurid
-		{daftarKelas}
-		murid={formMuridData}
-		onDismiss={() => {
-			formMuridData = undefined;
-			formMuridShown = false;
-			loadDaftarMurid();
-		}}
-	/>
-{/if}
-
-{#if detailMuridData}
-	<DetilMurid
-		murid={detailMuridData}
-		onDismiss={() => (detailMuridData = undefined)}
-		onEdit={(m) => {
-			formMuridData = m;
-			formMuridShown = true;
-			detailMuridData = undefined;
-		}}
-	/>
-{/if}

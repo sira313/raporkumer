@@ -11,3 +11,12 @@ type Kelas = typeof import('$lib/server/db/schema').tableKelas.$inferSelect & {
 	sekolah: Sekolah;
 	waliKelas: Pegawai;
 };
+
+type WaliMurid = typeof import('$lib/server/db/schema').tableWaliMurid.$inferSelect;
+
+type Murid = typeof import('$lib/server/db/schema').tableMurid.$inferSelect & {
+	alamat: Alamat;
+	ibu: WaliMurid;
+	ayah: WaliMurid;
+	wali: WaliMurid;
+};

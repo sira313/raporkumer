@@ -84,7 +84,7 @@ export function populateForm<T = Record<string, unknown>>(form: HTMLFormElement,
 	}
 }
 
-export function searchQueryMarker(query?: string, target?: string) {
+export function searchQueryMarker(query?: string | null, target?: string | null) {
 	if (!query || !target) return target;
 
 	// escape special characters in the query string
