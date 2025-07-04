@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { blob, int, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { blob, int, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 
 const audit = {
 	createdAt: text()
@@ -73,33 +73,40 @@ export const tableWaliMurid = sqliteTable('wali_murid', {
 	id: int().primaryKey({ autoIncrement: true }),
 	nama: text().notNull(),
 	pekerjaan: text().notNull(),
-	kontak: text().notNull(),
-	alamat: text().notNull(),
+	kontak: text(),
+	alamat: text(),
 	...audit
 });
 
-export const tableMurid = sqliteTable('murid', {
-	nis: text().primaryKey(),
-	nisn: text().unique().notNull(),
-	sekolahId: int()
-		.references(() => tableSekolah.id)
-		.notNull(),
-	kelasId: int()
-		.references(() => tableKelas.id)
-		.notNull(),
-	nama: text().notNull(),
-	tempatLahir: text().notNull(),
-	tanggalLahir: text().notNull(),
-	jenisKelamin: text({ enum: ['L', 'P'] }).notNull(),
-	agama: text().notNull(),
-	alamatId: int()
-		.references(() => tableAlamat.id)
-		.notNull(),
-	ibuId: int().references(() => tableWaliMurid.id),
-	ayahId: int().references(() => tableWaliMurid.id),
-	waliId: int().references(() => tableWaliMurid.id),
-	...audit
-});
+export const tableMurid = sqliteTable(
+	'murid',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		nis: text().notNull(),
+		nisn: text().notNull(),
+		sekolahId: int()
+			.references(() => tableSekolah.id)
+			.notNull(),
+		kelasId: int()
+			.references(() => tableKelas.id)
+			.notNull(),
+		nama: text().notNull(),
+		tempatLahir: text().notNull(),
+		tanggalLahir: text().notNull(),
+		jenisKelamin: text({ enum: ['L', 'P'] }).notNull(),
+		agama: text().notNull(),
+		pendidikanSebelumnya: text().notNull(),
+		tanggalMasuk: text().notNull(),
+		alamatId: int()
+			.references(() => tableAlamat.id)
+			.notNull(),
+		ibuId: int().references(() => tableWaliMurid.id),
+		ayahId: int().references(() => tableWaliMurid.id),
+		waliId: int().references(() => tableWaliMurid.id),
+		...audit
+	},
+	(t) => [unique().on(t.sekolahId, t.nis)]
+);
 
 export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
 	alamat: one(tableAlamat, { fields: [tableMurid.alamatId], references: [tableAlamat.id] }),

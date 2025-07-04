@@ -7,7 +7,7 @@
 	import { toast } from './toast.svelte';
 
 	interface Props {
-		children: Snippet<[{ submitting: boolean }]>;
+		children: Snippet<[{ submitting: boolean; invalid: boolean }]>;
 		action: string;
 		enctype?: HTMLFormAttributes['enctype'];
 		init?: Record<string, unknown>;
@@ -15,6 +15,7 @@
 
 	let { children, action, enctype, init }: Props = $props();
 	let submitting = $state(false);
+	let invalid = $state(true);
 
 	const enhancedSubmit: SubmitFunction = () => {
 		submitting = true;
@@ -52,6 +53,13 @@
 	}
 </script>
 
-<form {action} method="POST" {enctype} use:enhance={enhancedSubmit} use:loader>
-	{@render children({ submitting })}
+<form
+	{action}
+	method="POST"
+	{enctype}
+	use:enhance={enhancedSubmit}
+	use:loader
+	onchange={(e) => (invalid = !e.currentTarget.checkValidity())}
+>
+	{@render children({ submitting, invalid })}
 </form>

@@ -11,10 +11,10 @@
 	<legend class="fieldset-legend">Formulir Dan Tabel Isian Data Murid</legend>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
-		<button class="btn flex items-center shadow-none">
+		<a class="btn flex items-center shadow-none" href="/murid/form">
 			<Icon name="plus" />
 			Tambah Murid
-		</button>
+		</a>
 
 		<!-- Tombol Download template excel -->
 		<button class="btn shadow-none sm:ml-auto">

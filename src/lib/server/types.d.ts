@@ -1,3 +1,7 @@
+type DBTransaction = Parameters<
+	Parameters<typeof import('$lib/server/db/index').default.transaction>['0']
+>[0];
+
 type Alamat = typeof import('$lib/server/db/schema').tableAlamat.$inferSelect;
 
 type Pegawai = typeof import('$lib/server/db/schema').tablePegawai.$inferSelect;
