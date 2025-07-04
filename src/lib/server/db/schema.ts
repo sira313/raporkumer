@@ -53,19 +53,20 @@ export const tableSekolahRelations = relations(tableSekolah, ({ one }) => ({
 
 export const tableKelas = sqliteTable('kelas', {
 	id: int().primaryKey({ autoIncrement: true }),
-	sekolah: int()
+	sekolahId: int()
 		.references(() => tableSekolah.id)
 		.notNull(),
 	nama: text().notNull(),
 	fase: text().notNull(),
-	waliKelas: int()
+	waliKelasId: int()
 		.references(() => tablePegawai.id)
 		.notNull(),
 	...audit
 });
 
 export const tableKelasRelations = relations(tableKelas, ({ one }) => ({
-	sekolah: one(tableSekolah, { fields: [tableKelas.sekolah], references: [tableSekolah.id] })
+	sekolah: one(tableSekolah, { fields: [tableKelas.sekolahId], references: [tableSekolah.id] }),
+	waliKelas: one(tablePegawai, { fields: [tableKelas.waliKelasId], references: [tablePegawai.id] })
 }));
 
 export const tableWaliMurid = sqliteTable('wali_murid', {
@@ -80,7 +81,7 @@ export const tableWaliMurid = sqliteTable('wali_murid', {
 export const tableMurid = sqliteTable('murid', {
 	nis: text().primaryKey(),
 	nisn: text().unique().notNull(),
-	kelas: int()
+	kelasId: int()
 		.references(() => tableKelas.id)
 		.notNull(),
 	nama: text().notNull(),
@@ -88,18 +89,18 @@ export const tableMurid = sqliteTable('murid', {
 	tanggalLahir: text().notNull(),
 	jenisKelamin: text({ enum: ['L', 'P'] }).notNull(),
 	agama: text().notNull(),
-	alamat: int()
+	alamatId: int()
 		.references(() => tableAlamat.id)
 		.notNull(),
-	ibu: int().references(() => tableWaliMurid.id),
-	ayah: int().references(() => tableWaliMurid.id),
-	wali: int().references(() => tableWaliMurid.id),
+	ibuId: int().references(() => tableWaliMurid.id),
+	ayahId: int().references(() => tableWaliMurid.id),
+	waliId: int().references(() => tableWaliMurid.id),
 	...audit
 });
 
 export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
-	alamat: one(tableAlamat, { fields: [tableMurid.alamat], references: [tableAlamat.id] }),
-	ibu: one(tableWaliMurid, { fields: [tableMurid.ibu], references: [tableWaliMurid.id] }),
-	ayah: one(tableWaliMurid, { fields: [tableMurid.ayah], references: [tableWaliMurid.id] }),
-	wali: one(tableWaliMurid, { fields: [tableMurid.wali], references: [tableWaliMurid.id] })
+	alamat: one(tableAlamat, { fields: [tableMurid.alamatId], references: [tableAlamat.id] }),
+	ibu: one(tableWaliMurid, { fields: [tableMurid.ibuId], references: [tableWaliMurid.id] }),
+	ayah: one(tableWaliMurid, { fields: [tableMurid.ayahId], references: [tableWaliMurid.id] }),
+	wali: one(tableWaliMurid, { fields: [tableMurid.waliId], references: [tableWaliMurid.id] })
 }));

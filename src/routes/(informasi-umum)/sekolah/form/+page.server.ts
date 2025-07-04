@@ -9,6 +9,8 @@ export const actions = {
 		const formData = await request.formData();
 		const formSekolah = unflattenFormData<OptId<Sekolah>>(formData);
 
+		// TODO: input validation
+
 		const logo = formData.get('logo') as File;
 		if (logo) formSekolah.logo = new Uint8Array(await logo.arrayBuffer());
 
@@ -45,7 +47,7 @@ export const actions = {
 						.insert(tableAlamat)
 						.values(formSekolah.alamat)
 						.returning({ id: tableAlamat.id });
-					formSekolah.alamatId = alamat.id;
+					formSekolah.alamatId = alamat?.id;
 				}
 
 				if (formSekolah.kepalaSekolah) {
@@ -53,15 +55,17 @@ export const actions = {
 						.insert(tablePegawai)
 						.values(formSekolah.kepalaSekolah)
 						.returning({ id: tablePegawai.id });
-					formSekolah.kepalaSekolahId = pegawai.id;
+					formSekolah.kepalaSekolahId = pegawai?.id;
 				}
 
 				const [newSekolah] = await db
 					.insert(tableSekolah)
 					.values(formSekolah)
 					.returning({ id: tableSekolah.id });
-				formSekolah.id = newSekolah.id;
+				formSekolah.id = newSekolah?.id;
 			}
+
+			if (!formSekolah.id) error(409, `Gagal simpan data sekolah`);
 		});
 
 		cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(formSekolah.id), { path: '/' });
