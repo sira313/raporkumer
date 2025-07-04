@@ -8,3 +8,8 @@ export const jenisKelamin: Record<Murid['jenisKelamin'], string> = {
 	L: 'Laki-laki',
 	P: 'Perempuan'
 };
+
+export const jenisMapel: Record<MataPelajaran['jenis'], string> = {
+	wajib: 'Mata Pelajaran wajib',
+	mulok: 'Muatan Lokal'
+};

@@ -24,3 +24,5 @@ type Murid = typeof import('$lib/server/db/schema').tableMurid.$inferSelect & {
 	ayah: WaliMurid;
 	wali: WaliMurid;
 };
+
+type MataPelajaran = typeof import('$lib/server/db/schema').tableMataPelajaran.$inferSelect;
