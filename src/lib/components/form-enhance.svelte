@@ -48,16 +48,6 @@
 		};
 	};
 
-	function validity() {
-		let timer: ReturnType<typeof setTimeout>;
-		return (e: Event) => {
-			clearTimeout(timer);
-			timer = setTimeout(() => {
-				invalid = !(e.target as HTMLFormElement)?.checkValidity();
-			}, 900);
-		};
-	}
-
 	function loader(form: HTMLFormElement) {
 		// well, this is client side loader, doesn't make us of
 		// ssr, but this make form element value loading ease
@@ -65,6 +55,13 @@
 	}
 </script>
 
-<form {action} method="POST" {enctype} use:enhance={enhancedSubmit} use:loader oninput={validity()}>
+<form
+	{action}
+	method="POST"
+	{enctype}
+	use:enhance={enhancedSubmit}
+	use:loader
+	oninput={(e) => (invalid = !e.currentTarget.checkValidity())}
+>
 	{@render children({ submitting, invalid })}
 </form>
