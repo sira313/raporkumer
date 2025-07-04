@@ -60,6 +60,6 @@ export const actions = {
 		});
 
 		cookies.set('active_sekolah_id', String(data.id), { path: '/' });
-		return { success: true };
+		return { message: 'Data sekolah berhasil disimpan' };
 	}
 };
