@@ -109,6 +109,7 @@ export const tableMurid = sqliteTable(
 );
 
 export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
+	kelas: one(tableKelas, { fields: [tableMurid.kelasId], references: [tableKelas.id] }),
 	alamat: one(tableAlamat, { fields: [tableMurid.alamatId], references: [tableAlamat.id] }),
 	ibu: one(tableWaliMurid, { fields: [tableMurid.ibuId], references: [tableWaliMurid.id] }),
 	ayah: one(tableWaliMurid, { fields: [tableMurid.ayahId], references: [tableWaliMurid.id] }),

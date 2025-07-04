@@ -2,6 +2,8 @@
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
 	import { autoSubmit, modalRoute, searchQueryMarker } from '$lib/utils';
+	import DetailMurid from './[id]/+page.svelte';
+	import DeleteMurid from './[id]/delete/+page.svelte';
 	import FormMurid from './form/[[id]]/+page.svelte';
 
 	let { data } = $props();
@@ -13,7 +15,7 @@
 	<legend class="fieldset-legend">Formulir Dan Tabel Isian Data Murid</legend>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
-		<a class="btn flex items-center shadow-none" href="/murid/form" use:modalRoute>
+		<a class="btn flex items-center shadow-none" href="/murid/form" use:modalRoute={'add-murid'}>
 			<Icon name="plus" />
 			Tambah Murid
 		</a>
@@ -105,13 +107,21 @@
 						<td>{murid.tanggalLahir}</td>
 						<td>
 							<div class="flex flex-row gap-2">
-								<button class="btn btn-sm btn-ghost btn-circle" type="button">
+								<a
+									class="btn btn-sm btn-ghost btn-circle"
+									href="/murid/{murid.id}"
+									use:modalRoute={'detail-murid'}
+								>
 									<Icon name="eye" />
-								</button>
+								</a>
 
-								<button class="btn btn-sm btn-ghost btn-circle" type="button">
+								<a
+									class="btn btn-sm btn-ghost btn-circle"
+									href="/murid/{murid.id}/delete"
+									use:modalRoute={'delete-murid'}
+								>
 									<span class="text-error"><Icon name="del" /></span>
-								</button>
+								</a>
 							</div>
 						</td>
 					</tr>
@@ -127,10 +137,32 @@
 	</div>
 </fieldset>
 
-{#if page.state.selected}
+{#if ['add-murid', 'edit-murid'].includes(page.state.modal?.name)}
 	<dialog class="modal" onclose={() => history.back()} open>
 		<div class="modal-box p-4 sm:w-full sm:max-w-2xl">
-			<FormMurid data={page.state.selected} />
+			<FormMurid data={page.state.modal?.data} />
 		</div>
+	</dialog>
+{/if}
+
+{#if page.state.modal?.name == 'detail-murid'}
+	<dialog class="modal" onclose={() => history.back()} open>
+		<div class="modal-box p-4 sm:w-full sm:max-w-2xl">
+			<DetailMurid data={page.state.modal?.data} />
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
+	</dialog>
+{/if}
+
+{#if page.state.modal?.name == 'delete-murid'}
+	<dialog class="modal" onclose={() => history.back()} open>
+		<div class="modal-box p-4 sm:w-full sm:max-w-2xl">
+			<DeleteMurid data={page.state.modal?.data} />
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
 	</dialog>
 {/if}

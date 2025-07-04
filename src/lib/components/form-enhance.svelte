@@ -51,7 +51,10 @@
 	function loader(form: HTMLFormElement) {
 		// well, this is client side loader, doesn't make us of
 		// ssr, but this make form element value loading ease
-		if (init) populateForm(form, flatten(init));
+		if (init) {
+			populateForm(form, flatten(init));
+			invalid = !form.checkValidity();
+		}
 	}
 </script>
 

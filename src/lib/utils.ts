@@ -102,7 +102,7 @@ export async function delay(ms = 500) {
 	return new Promise((r) => setTimeout(r, ms));
 }
 
-export function modalRoute(anchor: HTMLAnchorElement) {
+export function modalRoute(anchor: HTMLAnchorElement, name: string) {
 	anchor.onclick = async (e) => {
 		if (
 			innerWidth < 640 || // bail if the screen is too small
@@ -124,7 +124,7 @@ export function modalRoute(anchor: HTMLAnchorElement) {
 		const result = await preloadData(href);
 
 		if (result.type === 'loaded' && result.status === 200) {
-			pushState(href, { selected: result.data });
+			pushState(href, { modal: { data: result.data, name: name } });
 		} else {
 			// something bad happened! try navigating
 			goto(href);
