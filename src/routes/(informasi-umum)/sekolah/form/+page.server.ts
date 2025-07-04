@@ -22,8 +22,7 @@ export const actions = {
 		await db.transaction(async (db) => {
 			if (formSekolah.id) {
 				const sekolah = await db.query.tableSekolah.findFirst({
-					where: eq(tableSekolah.id, +formSekolah.id),
-					with: { alamat: true, kepalaSekolah: true }
+					where: eq(tableSekolah.id, +formSekolah.id)
 				});
 				if (!sekolah) error(404, `Data sekolah tidak ditemukan`);
 
@@ -62,6 +61,7 @@ export const actions = {
 					formSekolah.kepalaSekolahId = pegawai?.id;
 				}
 
+				formSekolah.updatedAt = new Date().toISOString();
 				const [newSekolah] = await db
 					.insert(tableSekolah)
 					.values(formSekolah)

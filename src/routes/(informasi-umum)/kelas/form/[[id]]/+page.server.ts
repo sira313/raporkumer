@@ -35,6 +35,7 @@ export const actions = {
 					.set(formKelas.waliKelas)
 					.where(eq(tablePegawai.id, kelas.waliKelasId));
 
+				formKelas.waliKelasId = kelas.waliKelasId;
 				await db
 					.update(tableKelas) //
 					.set(formKelas)
@@ -49,6 +50,7 @@ export const actions = {
 				}
 
 				formKelas.sekolahId = locals.sekolah!.id;
+				formKelas.updatedAt = new Date().toISOString();
 				const [kelas] = await db
 					.insert(tableKelas)
 					.values(formKelas)
