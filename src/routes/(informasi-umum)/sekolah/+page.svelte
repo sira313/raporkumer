@@ -7,76 +7,84 @@
 
 	function plainAlamat(alamat?: Alamat) {
 		if (!alamat) return '-';
-		return `${alamat.jalan || '-'}, ${alamat.desa || '-'}, ${alamat.kabupaten || '-'}, ${alamat.kecamatan || '-'}, ${alamat.provinsi || '-'}, ${alamat.kodePos || '-'}`;
+		return `${alamat.jalan || '-'}, ${alamat.desa || '-'}, ${alamat.kecamatan || '-'}, ${alamat.kabupaten || '-'}, ${alamat.provinsi || '-'}, ${alamat.kodePos || '-'}`;
 	}
 </script>
 
-<div
-	class="bg-base-100 rounded-box relative mx-auto mt-8 flex max-w-4xl flex-col items-center gap-8 p-6 shadow sm:flex-row sm:p-10"
->
-	<!-- Logo -->
-	<div class="flex-shrink-0">
-		<div
-			class="bg-base-200 flex h-36 w-36 items-center justify-center overflow-hidden rounded-full shadow-lg"
-		>
-			<img
-				src={data.meta?.logoUrl || '/sekolah.png'}
-				alt="Logo sekolah"
-				class="h-32 w-32 object-contain"
-			/>
-		</div>
-	</div>
-	<!-- Data Sekolah -->
-	<div class="space-y-4">
-		<h2 class="text-base-content mb-4 text-2xl font-bold">{sekolah?.nama}</h2>
-		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
-			<div class="text-base-content/70 text-sm font-semibold">Jenjang Pendidikan</div>
-			<div class="text-base-content sm:col-span-2">
-				{jenjangPendidikan[sekolah!.jenjangPendidikan]}
-			</div>
-		</div>
-		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
-			<div class="text-base-content/70 text-sm font-semibold">NPSN</div>
-			<div class="text-base-content sm:col-span-2">{sekolah?.npsn}</div>
-		</div>
-		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
-			<div class="text-base-content/70 text-sm font-semibold">Kepala Sekolah</div>
-			<div class="text-base-content sm:col-span-2">
-				<div class="tooltip" data-tip={sekolah?.kepalaSekolah?.nip}>
-					{sekolah?.kepalaSekolah?.nama}
+<div class="card bg-base-100 rounded-box mx-auto w-full max-w-4xl">
+	<div class="card-body p-0">
+		<!-- Header Kartu: Logo dan Judul -->
+		<div class="flex items-center space-x-4 p-6">
+			<!-- Placeholder untuk Logo Sekolah -->
+			<div class="avatar">
+				<div class="rounded-box w-18">
+					<img src={data.meta?.logoUrl || '/tutwuri.png'} alt="Logo sekolah" />
 				</div>
 			</div>
-		</div>
-		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
-			<div class="text-base-content/70 text-sm font-semibold">Alamat</div>
-			<div class="text-base-content leading-relaxed sm:col-span-2">
-				{plainAlamat(sekolah?.alamat)}
+			<div>
+				<h2 class="card-title text-2xl font-bold">{sekolah?.nama}</h2>
+				<p class="text-base-content/70">Data Pokok Sekolah</p>
 			</div>
 		</div>
-		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
-			<div class="text-base-content/70 text-sm font-semibold">Website Sekolah</div>
-			<div class="text-primary break-all underline sm:col-span-2">
-				<a href={sekolah?.website || '#'} target="_blank">{sekolah?.website || '-'}</a>
+
+		<div class="border-base-300 dark:border-base-200 border"></div>
+
+		<div class="p-6">
+			<!-- Rincian Data Sekolah -->
+			<div class="space-y-4">
+				<!-- Setiap baris data -->
+				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
+					<span class="text-base-content/70 font-semibold">Jenjang Pendidikan</span>
+					<span class="text-base-content md:col-span-2"
+						>{jenjangPendidikan[sekolah!.jenjangPendidikan]}</span
+					>
+				</div>
+
+				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
+					<span class="text-base-content/70 font-semibold">NPSN</span>
+					<span class="text-base-content md:col-span-2">{sekolah?.npsn}</span>
+				</div>
+
+				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
+					<span class="text-base-content/70 font-semibold">Kepala Sekolah</span>
+					<div class="text-base-content sm:col-span-2">
+						<div class="tooltip" data-tip={sekolah?.kepalaSekolah?.nip}>
+							{sekolah?.kepalaSekolah?.nama}
+						</div>
+					</div>
+				</div>
+
+				<div class="grid grid-cols-1 items-start gap-2 md:grid-cols-3">
+					<span class="text-base-content/70 font-semibold">Alamat</span>
+					<span class="text-base-content md:col-span-2">{plainAlamat(sekolah?.alamat)}</span>
+				</div>
+
+				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
+					<span class="text-base-content/70 font-semibold">Website Sekolah</span>
+					<div class="text-primary break-all underline sm:col-span-2">
+						<a href={sekolah?.website || '#'} target="_blank">{sekolah?.website || '-'}</a>
+					</div>
+				</div>
+
+				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
+					<span class="text-base-content/70 font-semibold">Email Sekolah</span>
+					<div class="link link-accent break-all sm:col-span-2">
+						{#if sekolah?.email}
+							<a href="mailto:{sekolah.email}" target="_blank">{sekolah.email}</a>
+						{:else}
+							-
+						{/if}
+					</div>
+				</div>
 			</div>
-		</div>
-		<div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-3">
-			<div class="text-base-content/70 text-sm font-semibold">Email Sekolah</div>
-			<div class="link link-accent break-all sm:col-span-2">
-				{#if sekolah?.email}
-					<a href="mailto:{sekolah.email}" target="_blank">{sekolah.email}</a>
-				{:else}
-					-
-				{/if}
+
+			<!-- Aksi Kartu: Tombol Edit -->
+			<div class="card-actions mt-8 justify-end">
+				<a href="/sekolah/form" class="btn btn-primary shadow-none" aria-label="Edit data sekolah">
+					<Icon name="edit" />
+					Edit
+				</a>
 			</div>
 		</div>
 	</div>
-	<!-- Edit -->
-	<a
-		href="/sekolah/form"
-		class="btn btn-primary absolute right-4 bottom-4 shadow-none"
-		aria-label="Edit data sekolah"
-	>
-		<Icon name="edit" />
-		Edit
-	</a>
 </div>
