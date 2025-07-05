@@ -2,12 +2,22 @@ import db from '$lib/server/db';
 import { tableMataPelajaran } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 
-export async function load({ url }) {
+export async function load({ depends, url }) {
+	depends('app:mapel');
 	const kelasId = url.searchParams.get('kelas_id');
-	if (!kelasId) return {};
+	const mapel = kelasId
+		? await db.query.tableMataPelajaran.findMany({
+				where: eq(tableMataPelajaran.kelasId, +kelasId)
+			})
+		: [];
 
-	const mapel = await db.query.tableMataPelajaran.findMany({
-		where: eq(tableMataPelajaran.kelasId, +kelasId)
-	});
-	return { mapel };
+	const { daftarWajib, daftarMulok } = mapel.reduce(
+		(acc, item) => {
+			if (item.jenis == 'wajib') acc.daftarWajib.push(item);
+			else if (item.jenis == 'mulok') acc.daftarMulok.push(item);
+			return acc;
+		},
+		{ daftarWajib: <MataPelajaran[]>[], daftarMulok: <MataPelajaran[]>[] }
+	);
+	return { mapel: { daftarWajib, daftarMulok } };
 }

@@ -138,7 +138,7 @@
 </fieldset>
 
 {#if ['add-murid', 'edit-murid'].includes(page.state.modal?.name)}
-	<dialog class="modal" onclose={() => history.back()} open>
+	<dialog class="modal" open>
 		<div class="modal-box p-4 sm:w-full sm:max-w-2xl">
 			<FormMurid data={page.state.modal?.data} />
 		</div>
