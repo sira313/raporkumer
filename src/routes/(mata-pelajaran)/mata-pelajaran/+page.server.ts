@@ -2,6 +2,8 @@ import db from '$lib/server/db';
 import { tableMataPelajaran } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 
+type MataPelajaranList = Omit<MataPelajaran, 'tujuanPembelajaran'>[];
+
 export async function load({ depends, url }) {
 	depends('app:mapel');
 	const kelasId = url.searchParams.get('kelas_id');
@@ -17,7 +19,7 @@ export async function load({ depends, url }) {
 			else if (item.jenis == 'mulok') acc.daftarMulok.push(item);
 			return acc;
 		},
-		{ daftarWajib: <MataPelajaran[]>[], daftarMulok: <MataPelajaran[]>[] }
+		{ daftarWajib: <MataPelajaranList>[], daftarMulok: <MataPelajaranList>[] }
 	);
 	return { mapel: { daftarWajib, daftarMulok } };
 }
