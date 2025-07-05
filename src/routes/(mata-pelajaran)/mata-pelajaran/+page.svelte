@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
 	import { autoSubmit, modalRoute } from '$lib/utils';
+	import DeleteMataPelajaran from './[id]/delete/+page.svelte';
 	import FormMataPelajaran from './form/+page.svelte';
 
 	let { data } = $props();
@@ -87,10 +88,15 @@
 							</td>
 							<td>
 								<div class="flex flex-row gap-2">
-									<button class="btn btn-sm btn-soft btn-error shadow-none" type="button">
+									<a
+										class="btn btn-sm btn-soft btn-error shadow-none"
+										type="button"
+										href="/mata-pelajaran/{mapel.id}/delete"
+										use:modalRoute={'delete-mapel'}
+									>
 										<Icon name="del" />
 										Hapus
-									</button>
+									</a>
 								</div>
 							</td>
 						</tr>
@@ -136,10 +142,15 @@
 							</td>
 							<td>
 								<div class="flex flex-row gap-2">
-									<button class="btn btn-sm btn-soft btn-error shadow-none" type="button">
+									<a
+										class="btn btn-sm btn-soft btn-error shadow-none"
+										type="button"
+										href="/mata-pelajaran/{mapel.id}/delete"
+										use:modalRoute={'delete-mapel'}
+									>
 										<Icon name="del" />
 										Hapus
-									</button>
+									</a>
 								</div>
 							</td>
 						</tr>
@@ -156,9 +167,18 @@
 
 <!-- Modal Tambah Data -->
 {#if page.state.modal?.name == 'add-mapel'}
-	<dialog id="modal-tambah-mapel" class="modal" open>
+	<dialog class="modal" open>
 		<div class="modal-box p-4">
 			<FormMataPelajaran data={page.state.modal?.data} />
+		</div>
+	</dialog>
+{/if}
+
+<!-- Modal Hapus Data -->
+{#if page.state.modal?.name == 'delete-mapel'}
+	<dialog class="modal" open>
+		<div class="modal-box p-4">
+			<DeleteMataPelajaran data={page.state.modal?.data} />
 		</div>
 	</dialog>
 {/if}
