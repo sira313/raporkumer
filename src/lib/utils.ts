@@ -116,18 +116,24 @@ export function modalRoute(anchor: HTMLAnchorElement, name: string) {
 		// prevent navigation
 		e.preventDefault();
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const href = ((e.currentTarget || e.target) as any).href;
+		const href = anchor.href;
 
-		// run `load` functions (or rather, get the result of the `load` functions
-		// that are already running because of `data-sveltekit-preload-data`)
-		const result = await preloadData(href);
+		try {
+			anchor.setAttribute('data-preloading', 'true');
+			anchor.href = '#';
 
-		if (result.type === 'loaded' && result.status === 200) {
-			pushState(href, { modal: { data: result.data, name: name } });
-		} else {
-			// something bad happened! try navigating
-			goto(href);
+			// run `load` functions (or rather, get the result of the `load` functions
+			// that are already running because of `data-sveltekit-preload-data`)
+			const result = await preloadData(href);
+			if (result.type === 'loaded' && result.status === 200) {
+				pushState(href, { modal: { data: result.data, name: name } });
+			} else {
+				// something bad happened! try navigating
+				goto(href);
+			}
+		} finally {
+			anchor.removeAttribute('data-preloading');
+			anchor.href = href;
 		}
 	};
 }
