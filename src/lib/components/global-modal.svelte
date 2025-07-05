@@ -4,16 +4,15 @@
 
 	export function showModal(props: ModalProps) {
 		modalProps = props;
-		modal.showModal();
+		requestAnimationFrame(() => modal.showModal());
 	}
 
 	export function hideModal() {
 		modal.close();
-		modalProps = undefined;
 	}
 </script>
 
-<dialog bind:this={modal} class="modal" onclose={() => hideModal()}>
+<dialog bind:this={modal} class="modal">
 	{#if modalProps}
 		{@const props = modalProps}
 		<div class="modal-box sm:w-full sm:max-w-2xl">
