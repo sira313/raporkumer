@@ -115,3 +115,35 @@ export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
 	ayah: one(tableWaliMurid, { fields: [tableMurid.ayahId], references: [tableWaliMurid.id] }),
 	wali: one(tableWaliMurid, { fields: [tableMurid.waliId], references: [tableWaliMurid.id] })
 }));
+
+export const tableMataPelajaran = sqliteTable('mata_pelajaran', {
+	id: int().primaryKey({ autoIncrement: true }),
+	kelasId: int()
+		.references(() => tableKelas.id)
+		.notNull(),
+	nama: text().notNull(),
+	kkm: int().notNull().default(0),
+	jenis: text({ enum: ['wajib', 'mulok'] }).notNull(),
+	...audit
+});
+
+export const tableTujuanPembelajaran = sqliteTable('tujuan_pembelajaran', {
+	id: int().primaryKey({ autoIncrement: true }),
+	mataPelajaranId: int()
+		.references(() => tableMataPelajaran.id)
+		.notNull(),
+	deskripsi: text().notNull(),
+	lingkupMateri: text().notNull(),
+	...audit
+});
+
+export const tableMataPelajaranRelations = relations(tableMataPelajaran, ({ many }) => ({
+	tujuanPembelajaran: many(tableTujuanPembelajaran)
+}));
+
+export const tableTujuanPembelajaranRelations = relations(tableTujuanPembelajaran, ({ one }) => ({
+	mataPelajaran: one(tableMataPelajaran, {
+		fields: [tableTujuanPembelajaran.mataPelajaranId],
+		references: [tableMataPelajaran.id]
+	})
+}));

@@ -12,3 +12,7 @@
 		}
 	}
 }
+
+a[data-preloading] {
+	@apply cursor-wait opacity-50;
+}
