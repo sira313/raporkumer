@@ -21,5 +21,5 @@ export async function load({ depends, url }) {
 		},
 		{ daftarWajib: <MataPelajaranList>[], daftarMulok: <MataPelajaranList>[] }
 	);
-	return { mapel: { daftarWajib, daftarMulok } };
+	return { kelasId, mapel: { daftarWajib, daftarMulok } };
 }

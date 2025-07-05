@@ -19,10 +19,11 @@
 				class="select bg-base-200 mb-2 w-full dark:border-none"
 				title="Pilih kelas"
 				name="kelas_id"
+				value={data.kelasId}
 			>
 				<option value="" disabled selected> Pilih Kelas </option>
 				{#each data.daftarKelas as kelas (kelas)}
-					<option value={kelas.id}>Kelas: {kelas.nama} - Fase: {kelas.fase}</option>
+					<option value={kelas.id + ''}>Kelas: {kelas.nama} - Fase: {kelas.fase}</option>
 				{:else}
 					<option value="" disabled selected> Belum ada data kelas </option>
 				{/each}
