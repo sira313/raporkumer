@@ -26,7 +26,11 @@
 						</div>
 					</div>
 					<div class="mt-6 text-right">
-						<a href="/kelas/form/{kelas.id}" class="btn btn-primary shadow-md">
+						<button class="btn btn-error shadow-none">
+							<Icon name="del" />
+							Hapus
+						</button>
+						<a href="/kelas/form/{kelas.id}" class="btn shadow-none">
 							<Icon name="edit" />
 							Edit
 						</a>
@@ -42,7 +46,7 @@
 		{/each}
 		<a
 			href="/kelas/form"
-			class="card bg-base-100 rounded-box border-base-300 hover:bg-base-200 flex border-2 border-dashed transition-colors duration-300"
+			class="card bg-base-100 rounded-box border-base-300 hover:bg-base-200 flex min-h-40 border-2 border-dashed transition-colors duration-300"
 		>
 			<div class="my-auto items-center justify-center text-center">
 				<svg
