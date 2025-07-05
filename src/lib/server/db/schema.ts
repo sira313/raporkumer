@@ -126,3 +126,24 @@ export const tableMataPelajaran = sqliteTable('mata_pelajaran', {
 	jenis: text({ enum: ['wajib', 'mulok'] }).notNull(),
 	...audit
 });
+
+export const tableTujuanPembelajaran = sqliteTable('tujuan_pembelajaran', {
+	id: int().primaryKey({ autoIncrement: true }),
+	mataPelajaranId: int()
+		.references(() => tableMataPelajaran.id)
+		.notNull(),
+	deskripsi: text().notNull(),
+	lingkupMateri: text().notNull(),
+	...audit
+});
+
+export const tableMataPelajaranRelations = relations(tableMataPelajaran, ({ many }) => ({
+	tujuanPembelajaran: many(tableTujuanPembelajaran)
+}));
+
+export const tableTujuanPembelajaranRelations = relations(tableTujuanPembelajaran, ({ one }) => ({
+	mataPelajaran: one(tableMataPelajaran, {
+		fields: [tableTujuanPembelajaran.mataPelajaranId],
+		references: [tableMataPelajaran.id]
+	})
+}));
