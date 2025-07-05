@@ -7,7 +7,7 @@
 </script>
 
 {#if data.isInit}
-	<div role="alert" class="alert alert-success alert-soft">
+	<div role="alert" class="alert alert-success alert-soft mx-auto mb-4 max-w-4xl">
 		<!-- TODO: sesuaikan pesan saat pertama kali setup -->
 		<Icon name="info" />
 		<span>Selamat datang! Pertama-tama, isi formulir sekolah terlebih dahulu!</span>
