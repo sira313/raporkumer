@@ -3,7 +3,7 @@ import { tableTujuanPembelajaran } from '$lib/server/db/schema';
 import { unflattenFormData } from '$lib/utils';
 
 export async function load({ params }) {
-	return { mapelId: +params.id };
+	return { mapelId: +params.id, meta: { title: `Tambah Tujuan Pembelajaran` } };
 }
 
 export const actions = {
