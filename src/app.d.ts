@@ -4,7 +4,8 @@ declare global {
 	namespace App {
 		// interface Error {}
 		interface Locals {
-			sekolah?: Sekolah;
+			sekolah?: Omit<Sekolah, 'logo'>;
+			sekolahDirty?: boolean;
 		}
 		interface PageData {
 			meta: PageMeta;

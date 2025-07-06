@@ -7,7 +7,12 @@ import { desc, eq } from 'drizzle-orm';
 
 const cookieParser: Handle = async ({ event, resolve }) => {
 	const sekolahId = event.cookies.get(cookieNames.ACTIVE_SEKOLAH_ID) || '';
+	if (+sekolahId == event.locals.sekolah?.id && !event.locals.sekolahDirty) {
+		return resolve(event);
+	}
+
 	const [sekolah] = await db.query.tableSekolah.findMany({
+		columns: { logo: false },
 		with: { alamat: true, kepalaSekolah: true },
 		where: +sekolahId ? eq(tableSekolah.id, +sekolahId) : undefined,
 		limit: 1,

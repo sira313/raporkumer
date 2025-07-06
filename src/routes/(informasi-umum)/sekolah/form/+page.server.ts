@@ -10,14 +10,17 @@ export function load({ url }) {
 }
 
 export const actions = {
-	async save({ cookies, request }) {
+	async save({ locals, cookies, request }) {
 		const formData = await request.formData();
 		const formSekolah = unflattenFormData<Sekolah>(formData);
 
 		// TODO: input validation
 
 		const logo = formData.get('logo') as File;
-		if (logo) formSekolah.logo = new Uint8Array(await logo.arrayBuffer());
+		if (logo?.size) {
+			formSekolah.logo = new Uint8Array(await logo.arrayBuffer());
+			formSekolah.logoType = logo.type;
+		}
 
 		await db.transaction(async (db) => {
 			if (formSekolah.id) {
@@ -72,6 +75,7 @@ export const actions = {
 			if (!formSekolah.id) error(409, `Gagal simpan data sekolah`);
 		});
 
+		locals.sekolahDirty = true;
 		cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(formSekolah.id), { path: '/' });
 		return { message: 'Data sekolah berhasil disimpan' };
 	}

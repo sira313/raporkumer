@@ -16,7 +16,7 @@
 		<div class="flex items-center space-x-4 p-6">
 			<div class="avatar">
 				<div class="rounded-box w-18">
-					<img src={data.meta?.logoUrl || '/tutwuri.png'} alt="Logo sekolah" />
+					<img src="/sekolah/logo" alt="Logo sekolah" />
 				</div>
 			</div>
 
