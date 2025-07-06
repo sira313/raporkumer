@@ -24,3 +24,14 @@ type Murid = typeof import('$lib/server/db/schema').tableMurid.$inferSelect & {
 	ayah: WaliMurid;
 	wali: WaliMurid;
 };
+
+type MataPelajaran = typeof import('$lib/server/db/schema').tableMataPelajaran.$inferSelect & {
+	tujuanPembelajaran: TujuanPembelajaran[];
+};
+
+type TujuanPembelajaran =
+	typeof import('$lib/server/db/schema').tableTujuanPembelajaran.$inferSelect & {
+		mataPelajaran: MataPelajaran;
+	};
+
+type Ekstrakurikuler = typeof import('$lib/server/db/schema').tableEkstrakurikuler.$inferSelect;

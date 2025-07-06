@@ -1,5 +1,11 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
+	import { autoSubmit, modalRoute } from '$lib/utils';
+	import DeleteMataPelajaran from './[id]/delete/+page.svelte';
+	import FormMataPelajaran from './form/+page.svelte';
+
+	let { data } = $props();
 </script>
 
 <div class="mx-auto grid max-w-4xl gap-4">
@@ -8,21 +14,31 @@
 		class="fieldset bg-base-100 rounded-box mx-auto w-full border border-none p-4 shadow-md"
 	>
 		<legend class="fieldset-legend">Daftar Mata Pelajaran</legend>
-		<select class="select bg-base-200 mb-2 w-full dark:border-none" title="Pilih kelas">
-			<option value="" disabled selected> Pilih Kelas</option>
-			<option value=""> Kelas VI </option>
-		</select>
+		<form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
+			<select
+				class="select bg-base-200 mb-2 w-full dark:border-none"
+				title="Pilih kelas"
+				name="kelas_id"
+				value={data.kelasId || ''}
+			>
+				<option value="" disabled selected> Pilih Kelas </option>
+				{#each data.daftarKelas as kelas (kelas)}
+					<option value={kelas.id + ''}>Kelas: {kelas.nama} - Fase: {kelas.fase}</option>
+				{:else}
+					<option value="" disabled selected> Belum ada data kelas </option>
+				{/each}
+			</select>
+		</form>
 		<div class="flex flex-col gap-2 sm:flex-row">
 			<!-- tombol tambah mapel -->
-			<button
+			<a
 				class="btn mb-2 shadow-none sm:max-w-40"
-				type="button"
-				on:click={() =>
-					(document.getElementById('modal-tambah-mapel') as HTMLDialogElement)?.showModal()}
+				href="/mata-pelajaran/form"
+				use:modalRoute={'add-mapel'}
 			>
 				<Icon name="plus" />
 				Tambah
-			</button>
+			</a>
 			<!-- tombol download template -->
 			<button class="btn mb-2 shadow-none">
 				<Icon name="download" />
@@ -55,26 +71,41 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr>
-						<td><input type="checkbox" class="checkbox" /></td>
-						<td>1</td>
-						<td>IPAS</td>
-						<td>76</td>
-						<td class="flex flex-row gap-2">
-							<a href="/mata-pelajaran/tp-rl" class="btn btn-sm btn-soft shadow-none" type="button">
-								<Icon name="edit" />
-								Edit TP
-							</a>
-						</td>
-						<td>
-							<div class="flex flex-row gap-2">
-								<button class="btn btn-sm btn-soft btn-error shadow-none" type="button">
-									<Icon name="del" />
-									Hapus
-								</button>
-							</div>
-						</td>
-					</tr>
+					{#each data.mapel.daftarWajib as mapel, index (mapel)}
+						<tr>
+							<td><input type="checkbox" class="checkbox" /></td>
+							<td>{index + 1}</td>
+							<td>{mapel.nama}</td>
+							<td>{mapel.kkm}</td>
+							<td class="flex flex-row gap-2">
+								<a
+									href="/mata-pelajaran/{mapel.id}/tp-rl"
+									class="btn btn-sm btn-soft shadow-none"
+									type="button"
+								>
+									<Icon name="edit" />
+									Edit TP
+								</a>
+							</td>
+							<td>
+								<div class="flex flex-row gap-2">
+									<a
+										class="btn btn-sm btn-soft btn-error shadow-none"
+										type="button"
+										href="/mata-pelajaran/{mapel.id}/delete"
+										use:modalRoute={'delete-mapel'}
+									>
+										<Icon name="del" />
+										Hapus
+									</a>
+								</div>
+							</td>
+						</tr>
+					{:else}
+						<tr>
+							<td class="text-center italic opacity-50" colspan="6">Belum ada data</td>
+						</tr>
+					{/each}
 				</tbody>
 			</table>
 		</div>
@@ -94,26 +125,41 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr>
-						<td><input type="checkbox" class="checkbox" /></td>
-						<td>1</td>
-						<td>Budidaya Pertanian</td>
-						<td>76</td>
-						<td class="flex flex-row gap-2">
-							<button class="btn btn-sm btn-soft shadow-none" type="button">
-								<Icon name="edit" />
-								Edit TP
-							</button>
-						</td>
-						<td>
-							<div class="flex flex-row gap-2">
-								<button class="btn btn-sm btn-soft btn-error shadow-none" type="button">
-									<Icon name="del" />
-									Hapus
-								</button>
-							</div>
-						</td>
-					</tr>
+					{#each data.mapel.daftarMulok as mapel, index (mapel)}
+						<tr>
+							<td><input type="checkbox" class="checkbox" /></td>
+							<td>{index + 1}</td>
+							<td>{mapel.nama}</td>
+							<td>{mapel.kkm}</td>
+							<td class="flex flex-row gap-2">
+								<a
+									href="/mata-pelajaran/{mapel.id}/tp-rl"
+									class="btn btn-sm btn-soft shadow-none"
+									type="button"
+								>
+									<Icon name="edit" />
+									Edit TP
+								</a>
+							</td>
+							<td>
+								<div class="flex flex-row gap-2">
+									<a
+										class="btn btn-sm btn-soft btn-error shadow-none"
+										type="button"
+										href="/mata-pelajaran/{mapel.id}/delete"
+										use:modalRoute={'delete-mapel'}
+									>
+										<Icon name="del" />
+										Hapus
+									</a>
+								</div>
+							</td>
+						</tr>
+					{:else}
+						<tr>
+							<td class="text-center italic opacity-50" colspan="6">Belum ada data</td>
+						</tr>
+					{/each}
 				</tbody>
 			</table>
 		</div>
@@ -121,42 +167,19 @@
 </div>
 
 <!-- Modal Tambah Data -->
-<dialog id="modal-tambah-mapel" class="modal">
-	<fieldset class="modal-box fieldset p-4">
-		<legend class="fieldset-legend">
-			<code class="bg-base-200 rounded-xl px-2">Tambah Mata Pelajaran</code>
-		</legend>
-		<legend class="fieldset-legend">Nama Mata Pelajaran</legend>
-		<input
-			type="text"
-			class="input validator bg-base-200 w-full dark:border-none"
-			placeholder="Contoh: IPAS"
-		/>
-		<legend class="fieldset-legend">KKM</legend>
-		<input
-			type="text"
-			class="input validator bg-base-200 w-full dark:border-none"
-			placeholder="Contoh: 76"
-		/>
-		<fieldset class="fieldset">
-			<legend class="fieldset-legend">Jenis Mata Pelajaran</legend>
-			<select class="select bg-base-200 w-full dark:border-none">
-				<option disabled selected>Pilih Jenis Mata Pelajaran</option>
-				<option>Mata Pelajaran Wajib</option>
-				<option>Muatan Lokal</option>
-			</select>
-		</fieldset>
-		<div class="mt-4 flex justify-end gap-2">
-			<button
-				type="button"
-				class="btn shadow-none"
-				on:click={() =>
-					(document.getElementById('modal-tambah-mapel') as HTMLDialogElement)?.close()}
-			>
-				<Icon name="close-sm" />
-				Batal
-			</button>
-			<button type="submit" class="btn btn-primary shadow-none">Simpan</button>
+{#if page.state.modal?.name == 'add-mapel'}
+	<dialog class="modal" open>
+		<div class="modal-box p-4">
+			<FormMataPelajaran data={page.state.modal?.data} />
 		</div>
-	</fieldset>
-</dialog>
+	</dialog>
+{/if}
+
+<!-- Modal Hapus Data -->
+{#if page.state.modal?.name == 'delete-mapel'}
+	<dialog class="modal" open>
+		<div class="modal-box p-4">
+			<DeleteMataPelajaran data={page.state.modal?.data} />
+		</div>
+	</dialog>
+{/if}

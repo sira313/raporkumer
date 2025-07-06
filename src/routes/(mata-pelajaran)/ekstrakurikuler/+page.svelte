@@ -1,5 +1,11 @@
 <script lang="ts">
+	import { invalidate } from '$app/navigation';
+	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { autoSubmit } from '$lib/utils';
+
+	let { data } = $props();
+	let deleteEkskulData = $state<Ekstrakurikuler>();
 </script>
 
 <fieldset
@@ -8,10 +14,21 @@
 	<legend class="fieldset-legend">Daftar Extrakurikuler</legend>
 	<!-- tombol tambah mapel -->
 	<div class="flex flex-col gap-2 sm:flex-row">
-		<select class="select bg-base-200 w-full sm:max-w-50 dark:border-none" title="Pilih kelas">
-			<option value="" disabled selected> Pilih Kelas</option>
-			<option value=""> Kelas VI </option>
-		</select>
+		<form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
+			<select
+				class="select bg-base-200 w-full sm:max-w-50 dark:border-none"
+				name="kelas_id"
+				title="Pilih kelas"
+				value={data.kelasId || ''}
+			>
+				<option value="" disabled selected> Pilih Kelas </option>
+				{#each data.daftarKelas as kelas}
+					<option value={kelas.id + ''}>Kelas: {kelas.nama} - Fase: {kelas.fase}</option>
+				{:else}
+					<option value="" disabled selected> Belum ada data kelas </option>
+				{/each}
+			</select>
+		</form>
 
 		<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
 		<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
@@ -19,18 +36,37 @@
 			Hapus
 		</button>
 	</div>
-	<div class="mb-2 flex w-full flex-col gap-2 sm:flex-row">
-		<!-- input ekstrakurikuler -->
-		<input
-			class="input bg-base-200 validator w-full dark:border-none"
-			placeholder="Ketik nama ekstrakurikuler"
-		/>
-		<!-- tambah extrakurikuler -->
-		<button class="btn shadow-none">
-			<Icon name="plus" />
-			Tambah
-		</button>
-	</div>
+
+	<FormEnhance
+		action="?/add"
+		onsuccess={({ form }) => {
+			form.reset();
+			invalidate('app:ekstrakurikuler');
+		}}
+	>
+		{#snippet children({ submitting })}
+			<div class="mb-2 flex w-full flex-col gap-2 sm:flex-row">
+				<input name="kelasId" value={data.kelasId} hidden />
+				<!-- input ekstrakurikuler -->
+				<input
+					class="input bg-base-200 validator w-full dark:border-none"
+					placeholder="Ketik nama ekstrakurikuler"
+					name="nama"
+					required
+				/>
+				<!-- tambah extrakurikuler -->
+				<button class="btn shadow-none" disabled={submitting || !data.kelasId}>
+					{#if submitting}
+						<div class="loading loading-spinner"></div>
+					{:else}
+						<Icon name="plus" />
+					{/if}
+					Tambah
+				</button>
+			</div>
+		{/snippet}
+	</FormEnhance>
+
 	<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
 		<!-- Tabel data -->
 		<table class="border-base-200 table border dark:border-none">
@@ -43,31 +79,64 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td><input type="checkbox" class="checkbox" /></td>
-					<td>1</td>
-					<td>Sepak bola</td>
-					<td>
-						<div class="flex flex-row gap-2">
-							<button class="btn btn-sm btn-ghost btn-circle" type="button">
-								<span class="text-error"><Icon name="del" /></span>
-							</button>
-						</div>
-					</td>
-				</tr>
-				<tr>
-					<td><input type="checkbox" class="checkbox" /></td>
-					<td>1</td>
-					<td>Pramuka</td>
-					<td>
-						<div class="flex flex-row gap-2">
-							<button class="btn btn-sm btn-ghost btn-circle" type="button">
-								<span class="text-error"><Icon name="del" /></span>
-							</button>
-						</div>
-					</td>
-				</tr>
+				{#each data.ekskul as eks, index (eks)}
+					<tr>
+						<td><input type="checkbox" class="checkbox" /></td>
+						<td>{index + 1}</td>
+						<td>{eks.nama}</td>
+						<td>
+							<div class="flex flex-row gap-2">
+								<button
+									class="btn btn-sm btn-ghost btn-circle"
+									type="button"
+									title="Hapus"
+									onclick={() => (deleteEkskulData = eks)}
+								>
+									<span class="text-error"><Icon name="del" /></span>
+								</button>
+							</div>
+						</td>
+					</tr>
+				{:else}
+					<tr>
+						<td class="text-center italic opacity-50" colspan="4">Belum ada data</td>
+					</tr>
+				{/each}
 			</tbody>
 		</table>
 	</div>
 </fieldset>
+
+{#if deleteEkskulData}
+	<dialog class="modal" open>
+		<div class="modal-box p-4">
+			<FormEnhance
+				action="?/delete"
+				onsuccess={() => {
+					deleteEkskulData = undefined;
+					invalidate('app:ekstrakurikuler');
+				}}
+			>
+				{#snippet children({ submitting })}
+					<input name="id" value={deleteEkskulData?.id} hidden />
+
+					<p>Hapus ekstrakurikuler?</p>
+					<p>"{deleteEkskulData?.nama}"</p>
+
+					<button class="btn" type="button" onclick={() => (deleteEkskulData = undefined)}>
+						Batal
+					</button>
+
+					<button class="btn btn-error" disabled={submitting}>
+						{#if submitting}
+							<div class="loading loading-spinner"></div>
+						{:else}
+							<Icon name="del" />
+						{/if}
+						Hapus
+					</button>
+				{/snippet}
+			</FormEnhance>
+		</div>
+	</dialog>
+{/if}

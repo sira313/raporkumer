@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 
 	let { data } = $props();
 </script>
 
-<FormEnhance action="?/save" init={data.kelas}>
+<FormEnhance action="?/save" init={data.kelas} onsuccess={() => goto(`/kelas`)}>
 	{#snippet children({ submitting })}
 		<fieldset
 			class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
