@@ -148,3 +148,12 @@ export const tableTujuanPembelajaranRelations = relations(tableTujuanPembelajara
 		references: [tableMataPelajaran.id]
 	})
 }));
+
+export const tableEkstrakurikuler = sqliteTable('ekstrakurikuler', {
+	id: int().primaryKey({ autoIncrement: true }),
+	nama: text().notNull(),
+	kelasId: int()
+		.references(() => tableKelas.id)
+		.notNull(),
+	...audit
+});

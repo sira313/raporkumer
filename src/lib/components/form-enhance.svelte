@@ -12,7 +12,7 @@
 		id?: string;
 		enctype?: HTMLFormAttributes['enctype'];
 		init?: Record<string, unknown>;
-		onsuccess?: (data?: Record<string, any>) => void;
+		onsuccess?: (params: { form: HTMLFormElement; data?: Record<string, any> }) => void;
 	}
 
 	let { children, action, id, enctype, init, onsuccess }: Props = $props();
@@ -21,12 +21,12 @@
 
 	const enhancedSubmit: SubmitFunction = () => {
 		submitting = true;
-		return async ({ update, result }) => {
+		return async ({ update, formElement, result }) => {
 			try {
 				switch (result.type) {
 					case 'success':
 						toast(result.data?.message || 'Sukses', 'success');
-						onsuccess?.(result.data);
+						onsuccess?.({ form: formElement, data: result.data });
 						break;
 					case 'failure':
 						toast(result.data?.fail || 'Gagal', 'warning');

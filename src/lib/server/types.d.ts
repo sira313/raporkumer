@@ -33,3 +33,5 @@ type TujuanPembelajaran =
 	typeof import('$lib/server/db/schema').tableTujuanPembelajaran.$inferSelect & {
 		mataPelajaran: MataPelajaran;
 	};
+
+type Ekstrakurikuler = typeof import('$lib/server/db/schema').tableEkstrakurikuler.$inferSelect;

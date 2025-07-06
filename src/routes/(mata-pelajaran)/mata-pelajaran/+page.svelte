@@ -19,7 +19,7 @@
 				class="select bg-base-200 mb-2 w-full dark:border-none"
 				title="Pilih kelas"
 				name="kelas_id"
-				value={data.kelasId}
+				value={data.kelasId || ''}
 			>
 				<option value="" disabled selected> Pilih Kelas </option>
 				{#each data.daftarKelas as kelas (kelas)}
