@@ -5,6 +5,7 @@
 	import { autoSubmit } from '$lib/utils';
 
 	let { data } = $props();
+	let deleteEkskulData = $state<Ekstrakurikuler>();
 </script>
 
 <fieldset
@@ -78,14 +79,19 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each data.ekskul as esk, index (esk)}
+				{#each data.ekskul as eks, index (eks)}
 					<tr>
 						<td><input type="checkbox" class="checkbox" /></td>
 						<td>{index + 1}</td>
-						<td>{esk.nama}</td>
+						<td>{eks.nama}</td>
 						<td>
 							<div class="flex flex-row gap-2">
-								<button class="btn btn-sm btn-ghost btn-circle" type="button">
+								<button
+									class="btn btn-sm btn-ghost btn-circle"
+									type="button"
+									title="Hapus"
+									onclick={() => (deleteEkskulData = eks)}
+								>
 									<span class="text-error"><Icon name="del" /></span>
 								</button>
 							</div>
@@ -100,3 +106,37 @@
 		</table>
 	</div>
 </fieldset>
+
+{#if deleteEkskulData}
+	<dialog class="modal" open>
+		<div class="modal-box p-4">
+			<FormEnhance
+				action="?/delete"
+				onsuccess={() => {
+					deleteEkskulData = undefined;
+					invalidate('app:ekstrakurikuler');
+				}}
+			>
+				{#snippet children({ submitting })}
+					<input name="id" value={deleteEkskulData?.id} hidden />
+
+					<p>Hapus ekstrakurikuler?</p>
+					<p>"{deleteEkskulData?.nama}"</p>
+
+					<button class="btn" type="button" onclick={() => (deleteEkskulData = undefined)}>
+						Batal
+					</button>
+
+					<button class="btn btn-error" disabled={submitting}>
+						{#if submitting}
+							<div class="loading loading-spinner"></div>
+						{:else}
+							<Icon name="del" />
+						{/if}
+						Hapus
+					</button>
+				{/snippet}
+			</FormEnhance>
+		</div>
+	</dialog>
+{/if}

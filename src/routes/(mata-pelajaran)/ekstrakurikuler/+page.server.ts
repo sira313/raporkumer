@@ -23,5 +23,13 @@ export const actions = {
 		}
 		await db.insert(tableEkstrakurikuler).values(formEkskul);
 		return { message: `Data ekstrakurikuler berhasil ditambahkan` };
+	},
+
+	async delete({ request }) {
+		const formData = await request.formData();
+		const eksId = formData.get('id')?.toString();
+		if (!eksId) return fail(400, { fail: `ID kosong, ekstrakurikuler gagal dihapus` });
+		await db.delete(tableEkstrakurikuler).where(eq(tableEkstrakurikuler.id, +eksId));
+		return { message: `Data ekstrakurikuler telah dihapus` };
 	}
 };
