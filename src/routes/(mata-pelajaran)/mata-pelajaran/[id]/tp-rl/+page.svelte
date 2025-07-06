@@ -19,7 +19,11 @@
 	class="fieldset bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md"
 >
 	<!-- Judul IPAS bisa berubah dinamis sesuai mata pelajaran yang dipilih -->
-	<legend class="fieldset-legend">Mata Pelajaran: {data.mapel.nama}</legend>
+	<legend class="fieldset-legend text-base">
+		<span class="opacity-50">Mata Pelajaran:</span>
+		{data.mapel.nama} &bullet; Kelas: {data.mapel.kelas.nama}
+	</legend>
+
 	<!-- tombol tambah Tujuan Pembelajaran -->
 	<div class="flex flex-col gap-2 sm:flex-row">
 		<button class="btn shadow-none" type="button" onclick={() => history.back()}>
@@ -106,7 +110,7 @@
 		<td>
 			<textarea
 				form={formId}
-				class="textarea validator h-24 w-full"
+				class="textarea validator h-36 w-full"
 				value={tp?.deskripsi || null}
 				name="deskripsi"
 				required
@@ -115,7 +119,7 @@
 		<td>
 			<textarea
 				form={formId}
-				class="textarea validator h-24 w-full"
+				class="textarea validator h-36 w-full"
 				value={tp?.lingkupMateri || null}
 				name="lingkupMateri"
 				required

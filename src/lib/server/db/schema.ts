@@ -137,8 +137,9 @@ export const tableTujuanPembelajaran = sqliteTable('tujuan_pembelajaran', {
 	...audit
 });
 
-export const tableMataPelajaranRelations = relations(tableMataPelajaran, ({ many }) => ({
-	tujuanPembelajaran: many(tableTujuanPembelajaran)
+export const tableMataPelajaranRelations = relations(tableMataPelajaran, ({ one, many }) => ({
+	tujuanPembelajaran: many(tableTujuanPembelajaran),
+	kelas: one(tableKelas, { fields: [tableMataPelajaran.kelasId], references: [tableKelas.id] })
 }));
 
 export const tableTujuanPembelajaranRelations = relations(tableTujuanPembelajaran, ({ one }) => ({
