@@ -30,14 +30,14 @@
 					</div>
 					<div class="mt-6 text-right">
 						<button
-							class="btn btn-error shadow-none"
+							class="btn btn-error btn-soft shadow-none"
 							type="button"
 							onclick={() => (deleteKelasData = kelas)}
 						>
 							<Icon name="del" />
 							Hapus
 						</button>
-						<a href="/kelas/form/{kelas.id}" class="btn shadow-none">
+						<a href="/kelas/form/{kelas.id}" class="btn btn-soft shadow-none">
 							<Icon name="edit" />
 							Edit
 						</a>
