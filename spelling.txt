@@ -28,6 +28,7 @@ rapkumer
 Rapor
 Ratih
 replacestate
+Rincian
 Silahkan
 Sumatif
 unflatten

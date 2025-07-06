@@ -7,7 +7,7 @@
 </script>
 
 {#if data.isInit}
-	<div role="alert" class="alert alert-success alert-soft">
+	<div role="alert" class="alert alert-success alert-soft mx-auto mb-4 max-w-4xl">
 		<!-- TODO: sesuaikan pesan saat pertama kali setup -->
 		<Icon name="info" />
 		<span>Selamat datang! Pertama-tama, isi formulir sekolah terlebih dahulu!</span>
@@ -90,17 +90,19 @@
 				</div>
 			</div>
 
-			<!-- Alamat Sekolah -->
-			<legend class="fieldset-legend">Alamat Sekolah</legend>
-			<input
-				required
-				type="text"
-				class="input validator bg-base-200 w-full dark:border-none"
-				placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
-				name="alamat.jalan"
-			/>
-
 			<div class="flex-row gap-4 lg:flex">
+				<!-- Alamat Sekolah -->
+				<div class="flex-1">
+					<legend class="fieldset-legend">Alamat Sekolah</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
+						name="alamat.jalan"
+					/>
+				</div>
+
 				<!-- Nama desa atau kelurahan -->
 				<div class="flex-1">
 					<legend class="fieldset-legend">Desa atau Kelurahan</legend>
@@ -112,7 +114,9 @@
 						name="alamat.desa"
 					/>
 				</div>
+			</div>
 
+			<div class="flex-row gap-4 lg:flex">
 				<!-- Kecamatan -->
 				<div class="flex-1">
 					<legend class="fieldset-legend">Kecamatan</legend>
@@ -124,9 +128,7 @@
 						name="alamat.kecamatan"
 					/>
 				</div>
-			</div>
 
-			<div class="flex-row gap-4 lg:flex">
 				<!-- Kabupaten -->
 				<div class="flex-1">
 					<legend class="fieldset-legend">Kabupaten</legend>
@@ -134,8 +136,22 @@
 						required
 						type="text"
 						class="input validator bg-base-200 w-full dark:border-none"
-						placeholder="Contoh: Sanggau"
+						placeholder="Contoh: Kabupaten Sanggau"
 						name="alamat.kabupaten"
+					/>
+				</div>
+			</div>
+
+			<div class="flex-row gap-4 lg:flex">
+				<!-- Provinsi -->
+				<div class="flex-1">
+					<legend class="fieldset-legend">Provinsi</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: Kalimantan Barat"
+						name="alamat.provinsi"
 					/>
 				</div>
 
