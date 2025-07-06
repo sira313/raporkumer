@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { invalidate } from '$app/navigation';
+	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 
 	let { data } = $props();
+	let deleteKelasData = $state<Omit<Kelas, 'sekolah'>>();
 </script>
 
 <div class="mx-auto w-full max-w-4xl">
@@ -26,7 +29,11 @@
 						</div>
 					</div>
 					<div class="mt-6 text-right">
-						<button class="btn btn-error shadow-none">
+						<button
+							class="btn btn-error shadow-none"
+							type="button"
+							onclick={() => (deleteKelasData = kelas)}
+						>
 							<Icon name="del" />
 							Hapus
 						</button>
@@ -64,3 +71,38 @@
 		</a>
 	</div>
 </div>
+
+{#if deleteKelasData}
+	<dialog class="modal" open>
+		<div class="modal-box p-4">
+			<FormEnhance
+				action="?/delete"
+				onsuccess={() => {
+					deleteKelasData = undefined;
+					invalidate('app:kelas');
+				}}
+			>
+				{#snippet children({ submitting })}
+					<input name="id" value={deleteKelasData?.id} hidden />
+
+					<p>Hapus kelas?</p>
+					<p>Kelas: {deleteKelasData?.nama}</p>
+					<p>Fase: {deleteKelasData?.fase}</p>
+
+					<button class="btn" type="button" onclick={() => (deleteKelasData = undefined)}>
+						Batal
+					</button>
+
+					<button class="btn btn-error" disabled={submitting}>
+						{#if submitting}
+							<div class="loading loading-spinner"></div>
+						{:else}
+							<Icon name="del" />
+						{/if}
+						Hapus
+					</button>
+				{/snippet}
+			</FormEnhance>
+		</div>
+	</dialog>
+{/if}
