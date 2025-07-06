@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenjangPendidikan } from '$lib/statics';
@@ -14,7 +15,12 @@
 	</div>
 {/if}
 
-<FormEnhance action="?/save" init={data.sekolah} enctype="multipart/form-data">
+<FormEnhance
+	action="?/save"
+	init={data.sekolah}
+	enctype="multipart/form-data"
+	onsuccess={() => goto('/sekolah')}
+>
 	{#snippet children({ submitting })}
 		{#if data.sekolah?.id}
 			<input name="id" value={data.sekolah.id} hidden />
