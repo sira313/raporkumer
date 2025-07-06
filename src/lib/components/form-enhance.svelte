@@ -33,7 +33,7 @@
 						break;
 					case 'error':
 						const message =
-							`Formulir error. (${result.status}): \n` +
+							`Error (${result.status}): \n` +
 							(result.error?.message || JSON.stringify(result.error));
 						toast(message, 'error');
 						break;

@@ -33,12 +33,18 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 
 export const handle = sequence(cookieParser);
 
+const sqliteErrors = {
+	SQLITE_CONSTRAINT_UNIQUE: 'Terdapat duplikasi data',
+	SQLITE_CONSTRAINT_FOREIGNKEY: 'Data memiliki relasi ke data lainnya yang masih utuh'
+};
+
 export const handleError = ({ error, message, status }) => {
-	// TODO: using error maps when we handle more than this type or error
-	const refinedMessage =
+	console.error(error);
+	if (status >= 500) {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		status >= 500 && (error as any)?.cause?.code == 'SQLITE_CONSTRAINT_UNIQUE'
-			? `Error! Terdapat duplikasi data.`
-			: message;
-	return { message: refinedMessage };
+		const code = (error as any)?.cause?.code as keyof typeof sqliteErrors;
+		const customMessage = sqliteErrors[code] || message;
+		return { message: customMessage };
+	}
+	return { message };
 };
