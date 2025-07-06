@@ -13,14 +13,13 @@
 
 <div class="card bg-base-100 rounded-box mx-auto w-full max-w-4xl">
 	<div class="card-body p-0">
-		<!-- Header Kartu: Logo dan Judul -->
 		<div class="flex items-center space-x-4 p-6">
-			<!-- Placeholder untuk Logo Sekolah -->
 			<div class="avatar">
 				<div class="rounded-box w-18">
 					<img src={data.meta?.logoUrl || '/tutwuri.png'} alt="Logo sekolah" />
 				</div>
 			</div>
+
 			<div>
 				<h2 class="card-title text-2xl font-bold">{sekolah?.nama}</h2>
 				<p class="text-base-content/70">Data Pokok Sekolah</p>
@@ -30,14 +29,12 @@
 		<div class="border-base-300 dark:border-base-200 border"></div>
 
 		<div class="p-6">
-			<!-- Rincian Data Sekolah -->
 			<div class="space-y-4">
-				<!-- Setiap baris data -->
 				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
 					<span class="text-base-content/70 font-semibold">Jenjang Pendidikan</span>
-					<span class="text-base-content md:col-span-2"
-						>{jenjangPendidikan[sekolah!.jenjangPendidikan]}</span
-					>
+					<span class="text-base-content md:col-span-2">
+						{jenjangPendidikan[sekolah!.jenjangPendidikan]}
+					</span>
 				</div>
 
 				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
@@ -56,7 +53,9 @@
 
 				<div class="grid grid-cols-1 items-start gap-2 md:grid-cols-3">
 					<span class="text-base-content/70 font-semibold">Alamat</span>
-					<span class="text-base-content md:col-span-2">{plainAlamat(sekolah?.alamat)}</span>
+					<span class="text-base-content md:col-span-2">
+						{plainAlamat(sekolah?.alamat)}
+					</span>
 				</div>
 
 				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
@@ -78,7 +77,6 @@
 				</div>
 			</div>
 
-			<!-- Aksi Kartu: Tombol Edit -->
 			<div class="card-actions mt-8 justify-end">
 				<a href="/sekolah/form" class="btn btn-primary shadow-none" aria-label="Edit data sekolah">
 					<Icon name="edit" />
