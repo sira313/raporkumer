@@ -73,7 +73,7 @@
 							<td>
 								<div class="flex flex-row gap-2">
 									<button
-										class="btn btn-sm btn-soft btn-secondary shadow-none"
+										class="btn btn-sm btn-soft shadow-none"
 										type="button"
 										title="Edit"
 										onclick={() => (editTpId = tp.id)}
