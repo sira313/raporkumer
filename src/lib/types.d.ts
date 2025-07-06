@@ -2,6 +2,7 @@ interface MenuItem {
 	title: string;
 	path?: string;
 	icon?: IconName;
+	tags?: string[];
 	subMenu?: MenuItem[];
 }
 

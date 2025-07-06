@@ -8,16 +8,18 @@
 	const expanded = new StorageState<boolean>('menu-expanded');
 
 	let search = $state('');
-	let menuItems = $derived(search ? filterMenuByTitle(appMenuItems, search) : appMenuItems);
+	let menuItems = $derived(search ? filterMenu(appMenuItems, search) : appMenuItems);
 
-	function filterMenuByTitle(menu: MenuItem[], search: string): MenuItem[] {
+	function filterMenu(menu: MenuItem[], search: string): MenuItem[] {
 		const lowerSearch = search.toLowerCase();
 		return menu
 			.map((item) => {
-				const isMatch = item.title.toLowerCase().includes(lowerSearch);
+				const isMatch =
+					item.title.toLowerCase().includes(lowerSearch) ||
+					item.tags?.some((t) => t.toLocaleLowerCase().includes(lowerSearch));
 
 				// if it has subMenu, filter recursively
-				const filteredSubMenu = item.subMenu ? filterMenuByTitle(item.subMenu, search) : [];
+				const filteredSubMenu = item.subMenu ? filterMenu(item.subMenu, search) : [];
 
 				// keep this item if it matches or has matching children
 				if (isMatch || filteredSubMenu.length > 0) {
@@ -51,10 +53,7 @@
 		{#if item.subMenu}
 			<details open={expanded.value || !!search}>
 				<summary>
-					{#if item.icon}
-						<Icon name={item.icon} />
-					{/if}
-					<span>{@html searchQueryMarker(search, item.title)}</span>
+					{@render menu_item_label(item)}
 				</summary>
 				<ul>
 					{#each item.subMenu as menu (menu)}
@@ -65,13 +64,20 @@
 		{:else}
 			<!-- `class:menu-active` is shorthand for `class="{active ? 'menu-active': ''}"` -->
 			<a class:menu-active={active} href={item.path}>
-				{#if item.icon}
-					<Icon name={item.icon} />
-				{/if}
-				<span>{@html searchQueryMarker(search, item.title)}</span>
+				{@render menu_item_label(item)}
 			</a>
 		{/if}
 	</li>
+{/snippet}
+
+{#snippet menu_item_label(item: MenuItem)}
+	{#if item.icon}
+		<Icon name={item.icon} />
+	{/if}
+	<span>{@html searchQueryMarker(search, item.title)}</span>
+	{#if search && item.tags?.length}
+		<div class="badge badge-xs badge-accent" title="Termasuk di dalam menu">tag</div>
+	{/if}
 {/snippet}
 
 <div class="flex-1">

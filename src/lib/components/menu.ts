@@ -23,7 +23,8 @@ export const appMenuItems: MenuItem[] = [
 		subMenu: [
 			{
 				title: 'Daftar Mata Pelajaran',
-				path: '/mata-pelajaran'
+				path: '/mata-pelajaran',
+				tags: ['tujuan pembelajaran', 'lingkup materi']
 			},
 			{
 				title: 'Ekstrakurikuler',
@@ -40,11 +41,13 @@ export const appMenuItems: MenuItem[] = [
 				subMenu: [
 					{
 						title: 'Asesmen Formatif',
-						path: '/asesmen-formatif'
+						path: '/asesmen-formatif',
+						tags: ['nilai']
 					},
 					{
 						title: 'Asesmen Sumatif',
-						path: '/asesmen-sumatif'
+						path: '/asesmen-sumatif',
+						tags: ['nilai']
 					},
 					{
 						title: 'Nilai Akhir',
