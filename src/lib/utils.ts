@@ -19,7 +19,10 @@ export function findTitleByPath(path: string, items = appMenuItems): string | un
 	return undefined;
 }
 
-export function unflatten<T = Record<string, unknown>>(obj: Record<string, unknown>): T {
+export function unflatten<T = Record<string, unknown>>(
+	obj: Record<string, unknown>,
+	trim = true
+): T {
 	const result: Record<string, unknown> = {};
 	for (const key in obj) {
 		const parts = key.split('.');
@@ -27,7 +30,8 @@ export function unflatten<T = Record<string, unknown>>(obj: Record<string, unkno
 		for (let i = 0; i < parts.length; i++) {
 			const part = parts[i];
 			if (i === parts.length - 1) {
-				current[part] = obj[key];
+				const value = obj[key];
+				current[part] = trim && typeof value == 'string' ? value.trim() : value;
 			} else {
 				if (!(part in current)) {
 					current[part] = {};
@@ -39,9 +43,9 @@ export function unflatten<T = Record<string, unknown>>(obj: Record<string, unkno
 	return result as T;
 }
 
-export function unflattenFormData<T = Record<string, unknown>>(formData: FormData) {
+export function unflattenFormData<T = Record<string, unknown>>(formData: FormData, trim = true) {
 	const obj = Object.fromEntries(formData);
-	return unflatten<T>(obj);
+	return unflatten<T>(obj, trim);
 }
 
 export function flatten<T = Record<string, unknown>>(obj: T, prefix = ''): Record<string, unknown> {

@@ -151,7 +151,7 @@ export const tableTujuanPembelajaranRelations = relations(tableTujuanPembelajara
 
 export const tableEkstrakurikuler = sqliteTable('ekstrakurikuler', {
 	id: int().primaryKey({ autoIncrement: true }),
-	nama: text().notNull(),
+	nama: text().notNull().unique(),
 	kelasId: int()
 		.references(() => tableKelas.id)
 		.notNull(),

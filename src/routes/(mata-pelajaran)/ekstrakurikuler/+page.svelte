@@ -40,7 +40,7 @@
 	<FormEnhance
 		action="?/add"
 		onsuccess={({ form }) => {
-			form.reset();
+			(form.elements.namedItem('nama') as HTMLInputElement).value = '';
 			invalidate('app:ekstrakurikuler');
 		}}
 	>
@@ -49,7 +49,7 @@
 				<input name="kelasId" value={data.kelasId} hidden />
 				<!-- input ekstrakurikuler -->
 				<input
-					class="input bg-base-200 validator w-full dark:border-none"
+					class="input bg-base-200 w-full dark:border-none"
 					placeholder="Ketik nama ekstrakurikuler"
 					name="nama"
 					required
