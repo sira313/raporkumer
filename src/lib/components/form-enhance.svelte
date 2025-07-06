@@ -9,12 +9,13 @@
 	interface Props {
 		children: Snippet<[{ submitting: boolean; invalid: boolean }]>;
 		action: string;
+		id?: string;
 		enctype?: HTMLFormAttributes['enctype'];
 		init?: Record<string, unknown>;
 		onsuccess?: (data?: Record<string, any>) => void;
 	}
 
-	let { children, action, enctype, init, onsuccess }: Props = $props();
+	let { children, action, id, enctype, init, onsuccess }: Props = $props();
 	let submitting = $state(false);
 	let invalid = $state(true);
 
@@ -22,7 +23,6 @@
 		submitting = true;
 		return async ({ update, result }) => {
 			try {
-				await update({ reset: false, invalidateAll: false });
 				switch (result.type) {
 					case 'success':
 						toast(result.data?.message || 'Sukses', 'success');
@@ -36,7 +36,9 @@
 							`Formulir error. (${result.status}): \n` +
 							(result.error?.message || JSON.stringify(result.error));
 						toast(message, 'error');
+						break;
 					default:
+						await update();
 						break;
 				}
 			} catch (error) {
@@ -59,6 +61,7 @@
 </script>
 
 <form
+	{id}
 	{action}
 	method="POST"
 	{enctype}
