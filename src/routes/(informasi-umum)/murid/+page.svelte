@@ -158,7 +158,7 @@
 
 {#if page.state.modal?.name == 'delete-murid'}
 	<dialog class="modal" onclose={() => history.back()} open>
-		<div class="modal-box p-4 sm:w-full sm:max-w-2xl">
+		<div class="modal-box">
 			<DeleteMurid data={page.state.modal?.data} />
 		</div>
 		<form method="dialog" class="modal-backdrop">
