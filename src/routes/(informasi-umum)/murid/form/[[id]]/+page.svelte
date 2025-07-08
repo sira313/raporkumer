@@ -303,14 +303,19 @@
 					</div>
 
 					<!-- data Wali -->
-					<input type="radio" bind:group={activeTab} value={3} class="tab" aria-label="Data Wali" />
+					<input
+						type="radio"
+						bind:group={activeTab}
+						value={3}
+						class="tab"
+						aria-label="Data Wali (Opsional)"
+					/>
 					<div class="tab-content bg-base-100 p-4">
 						<div class="flex flex-col gap-2 sm:flex-row">
 							<!-- Nama Wali -->
 							<div class="flex-1">
 								<legend class="fieldset-legend">Nama Wali</legend>
 								<input
-									required
 									type="text"
 									class="input validator bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Hendra"
@@ -321,7 +326,6 @@
 							<div class="flex-1">
 								<legend class="fieldset-legend">Pekerjaan Wali</legend>
 								<input
-									required
 									type="text"
 									class="input validator bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: PNS"
@@ -334,7 +338,6 @@
 							<div class="flex-1">
 								<legend class="fieldset-legend">Alamat Wali</legend>
 								<input
-									required
 									type="text"
 									class="input validator bg-base-200 w-full dark:border-none"
 									placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
@@ -345,7 +348,6 @@
 							<div class="flex-1">
 								<legend class="fieldset-legend">Kontak</legend>
 								<input
-									required
 									type="text"
 									class="input validator bg-base-200 w-full dark:border-none"
 									placeholder="Nomor telepon atau WhatsApp"
