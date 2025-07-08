@@ -73,7 +73,7 @@
 </div>
 
 {#if deleteKelasData}
-	<dialog class="modal" open>
+	<dialog class="modal" open onclose={() => (deleteKelasData = undefined)}>
 		<div class="modal-box p-4">
 			<FormEnhance
 				action="?/delete"
@@ -110,5 +110,8 @@
 				{/snippet}
 			</FormEnhance>
 		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
 	</dialog>
 {/if}
