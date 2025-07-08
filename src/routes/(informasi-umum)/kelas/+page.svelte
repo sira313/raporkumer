@@ -85,22 +85,28 @@
 				{#snippet children({ submitting })}
 					<input name="id" value={deleteKelasData?.id} hidden />
 
-					<p>Hapus kelas?</p>
+					<h3 class="mb-4 text-xl font-bold">Hapus kelas?</h3>
 					<p>Kelas: {deleteKelasData?.nama}</p>
-					<p>Fase: {deleteKelasData?.fase}</p>
+					<p class="mb-4">Fase: {deleteKelasData?.fase}</p>
 
-					<button class="btn" type="button" onclick={() => (deleteKelasData = undefined)}>
-						Batal
-					</button>
+					<div class="flex justify-end gap-2">
+						<button
+							class="btn shadow-none"
+							type="button"
+							onclick={() => (deleteKelasData = undefined)}
+						>
+							Batal
+						</button>
 
-					<button class="btn btn-error" disabled={submitting}>
-						{#if submitting}
-							<div class="loading loading-spinner"></div>
-						{:else}
-							<Icon name="del" />
-						{/if}
-						Hapus
-					</button>
+						<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
+							{#if submitting}
+								<div class="loading loading-spinner"></div>
+							{:else}
+								<Icon name="del" />
+							{/if}
+							Hapus
+						</button>
+					</div>
 				{/snippet}
 			</FormEnhance>
 		</div>
