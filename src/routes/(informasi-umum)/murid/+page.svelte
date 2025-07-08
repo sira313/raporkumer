@@ -108,7 +108,7 @@
 						<td>
 							<div class="flex flex-row gap-2">
 								<a
-									class="btn btn-sm btn-ghost btn-circle"
+									class="btn btn-sm shadow-none"
 									href="/murid/{murid.id}"
 									use:modalRoute={'detail-murid'}
 								>
@@ -116,11 +116,11 @@
 								</a>
 
 								<a
-									class="btn btn-sm btn-ghost btn-circle"
+									class="btn btn-sm btn-error btn-soft shadow-none"
 									href="/murid/{murid.id}/delete"
 									use:modalRoute={'delete-murid'}
 								>
-									<span class="text-error"><Icon name="del" /></span>
+									<Icon name="del" />
 								</a>
 							</div>
 						</td>
