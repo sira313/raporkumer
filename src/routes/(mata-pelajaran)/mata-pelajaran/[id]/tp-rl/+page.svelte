@@ -166,8 +166,8 @@
 {/snippet}
 
 {#if deleteTpData}
-	<dialog class="modal" open>
-		<div class="modal-box p-4">
+	<dialog class="modal" open onclose={() => (deleteTpData = undefined)}>
+		<div class="modal-box">
 			<FormEnhance
 				action="?/delete"
 				onsuccess={() => {
@@ -178,23 +178,32 @@
 				{#snippet children({ submitting })}
 					<input name="id" value={deleteTpData?.id} hidden />
 
-					<p>Hapus tujuan pembelajaran?</p>
+					<h3 class="mb-4 text-xl font-bold">Hapus tujuan pembelajaran?</h3>
 					<p>"{deleteTpData?.deskripsi}"</p>
 
-					<button class="btn" type="button" onclick={() => (deleteTpData = undefined)}>
-						Batal
-					</button>
+					<div class="mt-4 flex justify-end gap-2">
+						<button
+							class="btn shadow-none"
+							type="button"
+							onclick={() => (deleteTpData = undefined)}
+						>
+							Batal
+						</button>
 
-					<button class="btn btn-error" disabled={submitting}>
-						{#if submitting}
-							<div class="loading loading-spinner"></div>
-						{:else}
-							<Icon name="del" />
-						{/if}
-						Hapus
-					</button>
+						<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
+							{#if submitting}
+								<div class="loading loading-spinner"></div>
+							{:else}
+								<Icon name="del" />
+							{/if}
+							Hapus
+						</button>
+					</div>
 				{/snippet}
 			</FormEnhance>
 		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
 	</dialog>
 {/if}
