@@ -178,7 +178,7 @@
 <!-- Modal Hapus Data -->
 {#if page.state.modal?.name == 'delete-mapel'}
 	<dialog class="modal" open>
-		<div class="modal-box p-4">
+		<div class="modal-box">
 			<DeleteMataPelajaran data={page.state.modal?.data} />
 		</div>
 	</dialog>

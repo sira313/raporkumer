@@ -12,18 +12,18 @@
 	onsuccess={() => goto('/mata-pelajaran', { invalidate: ['app:mapel_tp-rl'] })}
 >
 	{#snippet children({ submitting })}
-		<p>Hapus data Mata Pelajaran:</p>
+		<h3 class="mb-4 text-xl font-bold">Hapus data Mata Pelajaran:</h3>
 		<p>Nama: {data.mapel.nama}</p>
 		<p>KKM: {data.mapel.kkm}</p>
 		<p>Jenis: {jenisMapel[data.mapel.jenis]}</p>
 
-		<div class="flex gap-3">
-			<button class="btn" type="button" onclick={() => history.back()}>
+		<div class="mt-4 flex justify-end gap-2">
+			<button class="btn shadow-none" type="button" onclick={() => history.back()}>
 				<Icon name="close" />
 				Batal
 			</button>
 
-			<button class="btn btn-error" disabled={submitting}>
+			<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
 				{#if submitting}
 					<div class="loading loading-spinner"></div>
 				{:else}
