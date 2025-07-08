@@ -108,7 +108,7 @@
 						<td>
 							<div class="flex flex-row gap-2">
 								<a
-									class="btn btn-sm shadow-none"
+									class="btn btn-sm btn-soft shadow-none"
 									href="/murid/{murid.id}"
 									use:modalRoute={'detail-murid'}
 								>

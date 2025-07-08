@@ -12,7 +12,7 @@
 	onsuccess={() => goto('/mata-pelajaran', { invalidate: ['app:mapel_tp-rl'] })}
 >
 	{#snippet children({ submitting })}
-		<h3 class="mb-4 text-xl font-bold">Hapus data Mata Pelajaran:</h3>
+		<h3 class="mb-4 text-xl font-bold">Hapus data mata pelajaran:</h3>
 		<p>Nama: {data.mapel.nama}</p>
 		<p>KKM: {data.mapel.kkm}</p>
 		<p>Jenis: {jenisMapel[data.mapel.jenis]}</p>

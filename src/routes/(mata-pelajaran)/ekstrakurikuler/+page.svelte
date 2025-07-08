@@ -74,7 +74,7 @@
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
 					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
 					<th style="width: 50px; min-width: 40px;">No</th>
-					<th class="w-full" style="min-width: 150px;">Mata Pelajaran</th>
+					<th class="w-full" style="min-width: 150px;">Ekstrakurikuler</th>
 					<th>Aksi</th>
 				</tr>
 			</thead>
