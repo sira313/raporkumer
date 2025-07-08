@@ -87,12 +87,12 @@
 						<td>
 							<div class="flex flex-row gap-2">
 								<button
-									class="btn btn-sm btn-ghost btn-circle"
+									class="btn btn-sm btn-error btn-soft shadow-none"
 									type="button"
 									title="Hapus"
 									onclick={() => (deleteEkskulData = eks)}
 								>
-									<span class="text-error"><Icon name="del" /></span>
+									<Icon name="del" />
 								</button>
 							</div>
 						</td>
@@ -108,8 +108,8 @@
 </fieldset>
 
 {#if deleteEkskulData}
-	<dialog class="modal" open>
-		<div class="modal-box p-4">
+	<dialog class="modal" open onclose={() => (deleteEkskulData = undefined)}>
+		<div class="modal-box">
 			<FormEnhance
 				action="?/delete"
 				onsuccess={() => {
@@ -120,23 +120,32 @@
 				{#snippet children({ submitting })}
 					<input name="id" value={deleteEkskulData?.id} hidden />
 
-					<p>Hapus ekstrakurikuler?</p>
+					<h3 class="mb-4 text-xl font-bold">Hapus ekstrakurikuler?</h3>
 					<p>"{deleteEkskulData?.nama}"</p>
 
-					<button class="btn" type="button" onclick={() => (deleteEkskulData = undefined)}>
-						Batal
-					</button>
+					<div class="mt-4 flex justify-end gap-2">
+						<button
+							class="btn shadow-none"
+							type="button"
+							onclick={() => (deleteEkskulData = undefined)}
+						>
+							Batal
+						</button>
 
-					<button class="btn btn-error" disabled={submitting}>
-						{#if submitting}
-							<div class="loading loading-spinner"></div>
-						{:else}
-							<Icon name="del" />
-						{/if}
-						Hapus
-					</button>
+						<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
+							{#if submitting}
+								<div class="loading loading-spinner"></div>
+							{:else}
+								<Icon name="del" />
+							{/if}
+							Hapus
+						</button>
+					</div>
 				{/snippet}
 			</FormEnhance>
 		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
 	</dialog>
 {/if}
