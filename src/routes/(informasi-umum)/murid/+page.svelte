@@ -111,6 +111,7 @@
 									class="btn btn-sm btn-soft shadow-none"
 									href="/murid/{murid.id}"
 									use:modalRoute={'detail-murid'}
+									title="Lihat detail murid"
 								>
 									<Icon name="eye" />
 								</a>
@@ -119,6 +120,7 @@
 									class="btn btn-sm btn-error btn-soft shadow-none"
 									href="/murid/{murid.id}/delete"
 									use:modalRoute={'delete-murid'}
+									title="Hapus data murid"
 								>
 									<Icon name="del" />
 								</a>
