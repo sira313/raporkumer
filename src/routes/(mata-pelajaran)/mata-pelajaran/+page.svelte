@@ -177,9 +177,12 @@
 
 <!-- Modal Hapus Data -->
 {#if page.state.modal?.name == 'delete-mapel'}
-	<dialog class="modal" open>
+	<dialog class="modal" onclose={() => history.back()} open>
 		<div class="modal-box">
 			<DeleteMataPelajaran data={page.state.modal?.data} />
 		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
 	</dialog>
 {/if}
