@@ -16,9 +16,8 @@
 						<h2 class="card-title text-xl font-bold">{kelas.nama}</h2>
 						<div class="badge badge-accent">{kelas.fase}</div>
 					</div>
-					<div
-						class="card-actions border-base-200 mt-auto items-center justify-start border-t pt-4"
-					>
+					<div class="divider m-0"></div>
+					<div class="card-actions border-base-200 mt-auto items-center justify-start pt-4">
 						<div class="avatar">
 							<Icon name="user" class="text-4xl" />
 						</div>
