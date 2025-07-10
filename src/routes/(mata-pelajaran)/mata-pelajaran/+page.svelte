@@ -10,10 +10,8 @@
 
 <div class="mx-auto grid max-w-4xl gap-4">
 	<!-- Data Mapel -->
-	<fieldset
-		class="fieldset bg-base-100 rounded-box mx-auto w-full border border-none p-4 shadow-md"
-	>
-		<legend class="fieldset-legend">Daftar Mata Pelajaran</legend>
+	<div class="card bg-base-100 rounded-box mx-auto w-full border border-none p-4 shadow-md">
+		<h2 class="mb-6 text-xl font-bold">Daftar Mata Pelajaran</h2>
 		<form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
 			<select
 				class="select bg-base-200 mb-2 w-full dark:border-none"
@@ -163,7 +161,7 @@
 				</tbody>
 			</table>
 		</div>
-	</fieldset>
+	</div>
 </div>
 
 <!-- Modal Tambah Data -->

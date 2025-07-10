@@ -15,14 +15,12 @@
 </script>
 
 <!-- Data Mapel Wajib -->
-<fieldset
-	class="fieldset bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md"
->
+<div class="card bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md">
 	<!-- Judul IPAS bisa berubah dinamis sesuai mata pelajaran yang dipilih -->
-	<legend class="fieldset-legend text-base">
+	<h2 class="mb-6 text-xl font-bold">
 		<span class="opacity-50">Mata Pelajaran:</span>
 		{data.mapel.nama} &bullet; Kelas: {data.mapel.kelas.nama}
-	</legend>
+	</h2>
 
 	<!-- tombol tambah Tujuan Pembelajaran -->
 	<div class="flex flex-col gap-2 sm:flex-row">
@@ -100,7 +98,7 @@
 			</tbody>
 		</table>
 	</div>
-</fieldset>
+</div>
 
 {#snippet form_tujuan_pembelajaran(index: number, tp?: Omit<TujuanPembelajaran, 'mataPelajaran'>)}
 	{@const formId = crypto.randomUUID()}
