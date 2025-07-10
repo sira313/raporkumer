@@ -28,7 +28,7 @@
 							<p class="text-base-content/70 text-sm">NIP {kelas.waliKelas?.nip}</p>
 						</div>
 					</div>
-					<div class="mt-6 text-right">
+					<div class="mt-6 flex justify-end gap-2">
 						<button
 							class="btn btn-error btn-soft shadow-none"
 							type="button"
