@@ -8,34 +8,24 @@
 	let deleteEkskulData = $state<Ekstrakurikuler>();
 </script>
 
-<fieldset
-	class="fieldset bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md"
->
-	<legend class="fieldset-legend">Daftar Extrakurikuler</legend>
-	<!-- tombol tambah mapel -->
-	<div class="flex flex-col gap-2 sm:flex-row">
-		<form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
-			<select
-				class="select bg-base-200 w-full sm:max-w-50 dark:border-none"
-				name="kelas_id"
-				title="Pilih kelas"
-				value={data.kelasId || ''}
-			>
-				<option value="" disabled selected> Pilih Kelas </option>
-				{#each data.daftarKelas as kelas}
-					<option value={kelas.id + ''}>Kelas: {kelas.nama} - Fase: {kelas.fase}</option>
-				{:else}
-					<option value="" disabled selected> Belum ada data kelas </option>
-				{/each}
-			</select>
-		</form>
+<div class="card bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md">
+	<h2 class="mb-6 text-xl font-bold">Daftar Extrakurikuler</h2>
 
-		<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
-		<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
-			<Icon name="del" />
-			Hapus
-		</button>
-	</div>
+	<form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
+		<select
+			class="select bg-base-200 mb-2 w-full dark:border-none"
+			name="kelas_id"
+			title="Pilih kelas"
+			value={data.kelasId || ''}
+		>
+			<option value="" disabled selected> Pilih Kelas </option>
+			{#each data.daftarKelas as kelas}
+				<option value={kelas.id + ''}>Kelas: {kelas.nama} - Fase: {kelas.fase}</option>
+			{:else}
+				<option value="" disabled selected> Belum ada data kelas </option>
+			{/each}
+		</select>
+	</form>
 
 	<FormEnhance
 		action="?/add"
@@ -55,6 +45,7 @@
 					required
 				/>
 				<!-- tambah extrakurikuler -->
+				<!-- request feature: tombol berubah menjadi del saat user checklist mapel extrakurikuler -->
 				<button class="btn shadow-none" disabled={submitting || !data.kelasId}>
 					{#if submitting}
 						<div class="loading loading-spinner"></div>
@@ -105,7 +96,7 @@
 			</tbody>
 		</table>
 	</div>
-</fieldset>
+</div>
 
 {#if deleteEkskulData}
 	<dialog class="modal" open onclose={() => (deleteEkskulData = undefined)}>
