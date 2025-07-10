@@ -9,10 +9,8 @@
 	let { data } = $props();
 </script>
 
-<fieldset
-	class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
->
-	<legend class="fieldset-legend">Formulir Dan Tabel Isian Data Murid</legend>
+<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
+	<h2 class="mb-6 text-xl font-bold">Formulir Dan Tabel Isian Data Murid</h2>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
 		<a class="btn flex items-center shadow-none" href="/murid/form" use:modalRoute={'add-murid'}>
@@ -137,7 +135,7 @@
 			</tbody>
 		</table>
 	</div>
-</fieldset>
+</div>
 
 {#if ['add-murid', 'edit-murid'].includes(page.state.modal?.name)}
 	<dialog class="modal" open>
