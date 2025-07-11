@@ -20,6 +20,8 @@ export const actions = {
 		if (logo?.size) {
 			formSekolah.logo = new Uint8Array(await logo.arrayBuffer());
 			formSekolah.logoType = logo.type;
+		} else {
+			formSekolah.logo = null;
 		}
 
 		await db.transaction(async (db) => {
@@ -44,7 +46,8 @@ export const actions = {
 					.set({
 						...formSekolah,
 						alamatId: sekolah.alamatId,
-						kepalaSekolahId: sekolah.kepalaSekolahId
+						kepalaSekolahId: sekolah.kepalaSekolahId,
+						updatedAt: new Date().toISOString()
 					})
 					.where(eq(tableSekolah.id, formSekolah.id));
 			} else {
@@ -64,7 +67,6 @@ export const actions = {
 					formSekolah.kepalaSekolahId = pegawai?.id;
 				}
 
-				formSekolah.updatedAt = new Date().toISOString();
 				const [newSekolah] = await db
 					.insert(tableSekolah)
 					.values(formSekolah)

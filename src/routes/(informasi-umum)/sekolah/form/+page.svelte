@@ -26,10 +26,10 @@
 			<input name="id" value={data.sekolah.id} hidden />
 		{/if}
 
-		<fieldset
-			class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
+		<div
+			class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
 		>
-			<legend class="fieldset-legend"> Formulir Isian Data Sekolah </legend>
+			<h2 class="mb-4 text-xl font-bold">Formulir Isian Data Sekolah</h2>
 
 			<!-- Jenjang Pendidikan -->
 			<legend class="fieldset-legend">Jenjang Pendidikan</legend>
@@ -202,14 +202,23 @@
 			<input type="file" class="file-input file-input-ghost" accept="image/*" name="logo" />
 			<p class="label">Format png, tanpa latar belakang, maksimal 300KB</p>
 
-			<!-- Save -->
-			<button class="btn btn-primary ml-auto shadow-none" disabled={submitting}>
-				{#if submitting}
-					<span class="loading loading-spinner"></span>
+			<!-- Back and Save -->
+			<div class="mt-6 flex justify-end gap-2">
+				{#if !data.isInit}
+					<a class="btn shadow-none" href="/sekolah" aria-label="kembali">
+						<Icon name="left" />
+						Kembali
+					</a>
 				{/if}
-				<Icon name="save" />
-				Simpan
-			</button>
-		</fieldset>
+
+				<button class="btn btn-primary shadow-none" disabled={submitting}>
+					{#if submitting}
+						<span class="loading loading-spinner"></span>
+					{/if}
+					<Icon name="save" />
+					Simpan
+				</button>
+			</div>
+		</div>
 	{/snippet}
 </FormEnhance>

@@ -8,34 +8,24 @@
 	let deleteEkskulData = $state<Ekstrakurikuler>();
 </script>
 
-<fieldset
-	class="fieldset bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md"
->
-	<legend class="fieldset-legend">Daftar Extrakurikuler</legend>
-	<!-- tombol tambah mapel -->
-	<div class="flex flex-col gap-2 sm:flex-row">
-		<form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
-			<select
-				class="select bg-base-200 w-full sm:max-w-50 dark:border-none"
-				name="kelas_id"
-				title="Pilih kelas"
-				value={data.kelasId || ''}
-			>
-				<option value="" disabled selected> Pilih Kelas </option>
-				{#each data.daftarKelas as kelas}
-					<option value={kelas.id + ''}>Kelas: {kelas.nama} - Fase: {kelas.fase}</option>
-				{:else}
-					<option value="" disabled selected> Belum ada data kelas </option>
-				{/each}
-			</select>
-		</form>
+<div class="card bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md">
+	<h2 class="mb-6 text-xl font-bold">Daftar Extrakurikuler</h2>
 
-		<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
-		<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
-			<Icon name="del" />
-			Hapus
-		</button>
-	</div>
+	<form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
+		<select
+			class="select bg-base-200 mb-2 w-full dark:border-none"
+			name="kelas_id"
+			title="Pilih kelas"
+			value={data.kelasId || ''}
+		>
+			<option value="" disabled selected> Pilih Kelas </option>
+			{#each data.daftarKelas as kelas}
+				<option value={kelas.id + ''}>Kelas: {kelas.nama} - Fase: {kelas.fase}</option>
+			{:else}
+				<option value="" disabled selected> Belum ada data kelas </option>
+			{/each}
+		</select>
+	</form>
 
 	<FormEnhance
 		action="?/add"
@@ -55,6 +45,7 @@
 					required
 				/>
 				<!-- tambah extrakurikuler -->
+				<!-- request feature: tombol berubah menjadi del saat user checklist mapel extrakurikuler -->
 				<button class="btn shadow-none" disabled={submitting || !data.kelasId}>
 					{#if submitting}
 						<div class="loading loading-spinner"></div>
@@ -74,7 +65,7 @@
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
 					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
 					<th style="width: 50px; min-width: 40px;">No</th>
-					<th class="w-full" style="min-width: 150px;">Mata Pelajaran</th>
+					<th class="w-full" style="min-width: 150px;">Ekstrakurikuler</th>
 					<th>Aksi</th>
 				</tr>
 			</thead>
@@ -87,12 +78,12 @@
 						<td>
 							<div class="flex flex-row gap-2">
 								<button
-									class="btn btn-sm btn-ghost btn-circle"
+									class="btn btn-sm btn-error btn-soft shadow-none"
 									type="button"
 									title="Hapus"
 									onclick={() => (deleteEkskulData = eks)}
 								>
-									<span class="text-error"><Icon name="del" /></span>
+									<Icon name="del" />
 								</button>
 							</div>
 						</td>
@@ -105,11 +96,11 @@
 			</tbody>
 		</table>
 	</div>
-</fieldset>
+</div>
 
 {#if deleteEkskulData}
-	<dialog class="modal" open>
-		<div class="modal-box p-4">
+	<dialog class="modal" open onclose={() => (deleteEkskulData = undefined)}>
+		<div class="modal-box">
 			<FormEnhance
 				action="?/delete"
 				onsuccess={() => {
@@ -120,23 +111,32 @@
 				{#snippet children({ submitting })}
 					<input name="id" value={deleteEkskulData?.id} hidden />
 
-					<p>Hapus ekstrakurikuler?</p>
+					<h3 class="mb-4 text-xl font-bold">Hapus ekstrakurikuler?</h3>
 					<p>"{deleteEkskulData?.nama}"</p>
 
-					<button class="btn" type="button" onclick={() => (deleteEkskulData = undefined)}>
-						Batal
-					</button>
+					<div class="mt-4 flex justify-end gap-2">
+						<button
+							class="btn shadow-none"
+							type="button"
+							onclick={() => (deleteEkskulData = undefined)}
+						>
+							Batal
+						</button>
 
-					<button class="btn btn-error" disabled={submitting}>
-						{#if submitting}
-							<div class="loading loading-spinner"></div>
-						{:else}
-							<Icon name="del" />
-						{/if}
-						Hapus
-					</button>
+						<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
+							{#if submitting}
+								<div class="loading loading-spinner"></div>
+							{:else}
+								<Icon name="del" />
+							{/if}
+							Hapus
+						</button>
+					</div>
 				{/snippet}
 			</FormEnhance>
 		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
 	</dialog>
 {/if}

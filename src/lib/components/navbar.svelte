@@ -81,7 +81,12 @@
 				<DarkMode />
 			</li>
 			<li class="menu-item">
-				<button class="btn btn-ghost btn-circle" aria-label="Bantuan" onclick={showHelp}>
+				<button
+					class="btn btn-ghost btn-circle"
+					aria-label="Bantuan"
+					title="Petunjuk"
+					onclick={showHelp}
+				>
 					<span class="text-xl">
 						<Icon name="question" />
 					</span>

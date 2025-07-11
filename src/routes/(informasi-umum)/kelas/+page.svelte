@@ -16,9 +16,8 @@
 						<h2 class="card-title text-xl font-bold">{kelas.nama}</h2>
 						<div class="badge badge-accent">{kelas.fase}</div>
 					</div>
-					<div
-						class="card-actions border-base-200 mt-auto items-center justify-start border-t pt-4"
-					>
+					<div class="divider m-0"></div>
+					<div class="card-actions border-base-200 mt-auto items-center justify-start pt-4">
 						<div class="avatar">
 							<Icon name="user" class="text-4xl" />
 						</div>
@@ -28,7 +27,7 @@
 							<p class="text-base-content/70 text-sm">NIP {kelas.waliKelas?.nip}</p>
 						</div>
 					</div>
-					<div class="mt-6 text-right">
+					<div class="mt-6 flex justify-end gap-2">
 						<button
 							class="btn btn-error btn-soft shadow-none"
 							type="button"
@@ -73,7 +72,7 @@
 </div>
 
 {#if deleteKelasData}
-	<dialog class="modal" open>
+	<dialog class="modal" open onclose={() => (deleteKelasData = undefined)}>
 		<div class="modal-box p-4">
 			<FormEnhance
 				action="?/delete"
@@ -85,24 +84,33 @@
 				{#snippet children({ submitting })}
 					<input name="id" value={deleteKelasData?.id} hidden />
 
-					<p>Hapus kelas?</p>
+					<h3 class="mb-4 text-xl font-bold">Hapus kelas?</h3>
 					<p>Kelas: {deleteKelasData?.nama}</p>
-					<p>Fase: {deleteKelasData?.fase}</p>
+					<p class="mb-4">Fase: {deleteKelasData?.fase}</p>
 
-					<button class="btn" type="button" onclick={() => (deleteKelasData = undefined)}>
-						Batal
-					</button>
+					<div class="flex justify-end gap-2">
+						<button
+							class="btn shadow-none"
+							type="button"
+							onclick={() => (deleteKelasData = undefined)}
+						>
+							Batal
+						</button>
 
-					<button class="btn btn-error" disabled={submitting}>
-						{#if submitting}
-							<div class="loading loading-spinner"></div>
-						{:else}
-							<Icon name="del" />
-						{/if}
-						Hapus
-					</button>
+						<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
+							{#if submitting}
+								<div class="loading loading-spinner"></div>
+							{:else}
+								<Icon name="del" />
+							{/if}
+							Hapus
+						</button>
+					</div>
 				{/snippet}
 			</FormEnhance>
 		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
 	</dialog>
 {/if}
