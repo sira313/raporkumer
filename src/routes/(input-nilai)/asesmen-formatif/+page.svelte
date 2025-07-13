@@ -2,7 +2,7 @@
 	import Icon from '$lib/components/icon.svelte';
 </script>
 
-<div role="alert" class="alert alert-info mx-auto mb-4 max-w-4xl">
+<div role="alert" class="alert alert-info alert-soft mx-auto mb-4 max-w-4xl">
 	<Icon name="info" />
 	<span
 		>Isian Asesmen Formatif ini tidak berpengaruh pada nilai rapor, hanya berfungsi untuk memantau
@@ -10,11 +10,7 @@
 	>
 </div>
 
-<fieldset
-	class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
->
-	<legend class="fieldset-legend">Formulir Asesmen Formatif</legend>
-
+<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-2 flex flex-col items-center gap-2 sm:flex-row">
 		<!-- pilih Kelas dan mapel dulu, wajib! -->
 		<select class="select bg-base-200 w-full dark:border-none" title="Pilih kelas">
@@ -76,7 +72,22 @@
 						dalam lingkup materi 3, dan sangat baik dalam lingkup materi 4</td
 					>
 				</tr>
+				<tr>
+					<td>2</td>
+					<td>Beni</td>
+					<td>
+						<a
+							class="btn btn-sm btn-soft shadow-none"
+							title="Edit nilai"
+							href="/asesmen-formatif/formulir-asesmen"
+						>
+							<Icon name="edit" />
+							Nilai
+						</a>
+					</td>
+					<td>Belum ada nilai.</td>
+				</tr>
 			</tbody>
 		</table>
 	</div>
-</fieldset>
+</div>
