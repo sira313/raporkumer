@@ -2,10 +2,7 @@
 	import Icon from '$lib/components/icon.svelte';
 </script>
 
-<fieldset
-	class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
->
-	<legend class="fieldset-legend">Formulir Asesmen Sumatif</legend>
+<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-2 flex flex-col gap-2 sm:flex-row">
 		<button class="btn shadow-none">
 			<!-- download template excel -->
@@ -79,7 +76,7 @@
 			</tbody>
 		</table>
 	</div>
-</fieldset>
+</div>
 
 <!-- Modal Input Ekstrakurikuler -->
 <input type="checkbox" id="input-extrakurikuler" class="modal-toggle" />
