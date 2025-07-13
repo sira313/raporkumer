@@ -2,11 +2,7 @@
 	import Icon from '$lib/components/icon.svelte';
 </script>
 
-<fieldset
-	class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
->
-	<!-- Nama berganti dinamis sesuai pilihan -->
-	<legend class="fieldset-legend">Rekapitulasi Nilai Ananda Ali</legend>
+<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-2 flex flex-col gap-2 sm:flex-row">
 		<a href="/nilai-akhir/" class="btn shadow-none">
 			<!-- download template excel -->
@@ -26,7 +22,7 @@
 			<Icon name="info" />
 		</span>
 		<span>
-			<p class="text-lg">Nilai rata-rata</p>
+			<p class="text-lg">Nilai rata-rata ananda <b>Ali</b></p>
 			<p class="text-2xl font-bold">80,5</p>
 			<p class="text-sm">dari semua mata pelajaran</p>
 		</span>
@@ -59,4 +55,4 @@
 			</tbody>
 		</table>
 	</div>
-</fieldset>
+</div>
