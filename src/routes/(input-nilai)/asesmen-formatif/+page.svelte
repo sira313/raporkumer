@@ -11,6 +11,7 @@
 </div>
 
 <div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
+	<h2 class="mb-6 text-xl font-bold">Daftar Nilai Formatif</h2>
 	<div class="mb-2 flex flex-col items-center gap-2 sm:flex-row">
 		<!-- pilih Kelas dan mapel dulu, wajib! -->
 		<select class="select bg-base-200 w-full dark:border-none" title="Pilih kelas">

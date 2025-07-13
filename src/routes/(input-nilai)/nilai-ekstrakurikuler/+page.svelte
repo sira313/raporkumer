@@ -3,6 +3,7 @@
 </script>
 
 <div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
+	<h2 class="mb-6 text-xl font-bold">Daftar Nilai Extrakurikuler</h2>
 	<div class="mb-2 flex flex-col gap-2 sm:flex-row">
 		<button class="btn shadow-none">
 			<!-- download template excel -->
@@ -52,7 +53,8 @@
 			<thead>
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
 					<th style="width: 50px; min-width: 40px;">No</th>
-					<th class="w-full" style="min-width: 100px;">Nama</th>
+					<th>Nama</th>
+					<th class="w-full flex-1">Deskripsi</th>
 					<th>Nilai Akhir</th>
 					<th>Aksi</th>
 				</tr>
@@ -61,6 +63,7 @@
 				<tr>
 					<td>1</td>
 					<td>Ali</td>
+					<td> Perlu bimbingan dalam mempelajari teknik simpul. </td>
 					<td> C </td>
 					<td>
 						<label
