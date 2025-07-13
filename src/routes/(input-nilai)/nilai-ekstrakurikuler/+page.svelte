@@ -82,7 +82,8 @@
 <input type="checkbox" id="input-extrakurikuler" class="modal-toggle" />
 <div class="modal" role="dialog">
 	<div class="modal-box">
-		<h3 class="mb-4 text-lg font-bold">Input Nilai Ekstrakurikuler</h3>
+		<h3 class="text-lg font-bold">Input Nilai Ekstrakurikuler</h3>
+		<p class="mb-4 text-lg">ananda <b>Ali</b></p>
 		<form>
 			<div class="form-control mb-3">
 				<label class="label" for="nilai-ekstrakurikuler">
