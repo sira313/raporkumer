@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import SelectEnhance from '$lib/components/select-enhance.svelte';
 	import { jenisKelamin } from '$lib/statics';
 
 	let { data } = $props();
@@ -64,21 +65,16 @@
 						<!-- Kelas -->
 						<div class="flex-1">
 							<legend class="fieldset-legend">Kelas</legend>
-							<select
-								class="select bg-base-200 dark:border-none"
-								title="Pilih kelas"
+							<SelectEnhance
+								mode="array"
+								class="input bg-base-200 dark:border-none"
 								name="kelasId"
+								value={data.murid?.kelasId}
+								options={data.daftarKelas}
+								transform={(k) => ({ value: k.id, display: `${k.nama} - ${k.fase}`, data: k })}
+								placeholder="Pilih Kelas"
 								required
-							>
-								<option value="" disabled selected> Pilih Kelas </option>
-								{#each data.daftarKelas as kelas (kelas)}
-									<option value={kelas.id}>
-										{kelas.nama} &bullet; {kelas.fase}
-									</option>
-								{:else}
-									<option value="" disabled selected> Belum ada data kelas </option>
-								{/each}
-							</select>
+							/>
 						</div>
 					</div>
 
@@ -109,16 +105,15 @@
 						<!-- Jenis Kelamin -->
 						<div class="flex-1">
 							<legend class="fieldset-legend">Jenis Kelamin</legend>
-							<select
-								class="select validator bg-base-200 w-full dark:border-none"
+							<SelectEnhance
+								mode="object"
+								class="input validator bg-base-200 w-full dark:border-none"
 								name="jenisKelamin"
+								value={data.murid?.jenisKelamin}
+								options={jenisKelamin}
+								placeholder="Pilih Jenis Kelamin"
 								required
-							>
-								<option value="" disabled selected>Pilih Jenis Kelamin</option>
-								{#each Object.entries(jenisKelamin) as [value, label]}
-									<option {value}>{label}</option>
-								{/each}
-							</select>
+							/>
 						</div>
 						<!-- Agama -->
 						<div class="flex-1">

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import SelectEnhance from '$lib/components/select-enhance.svelte';
 	import { jenjangPendidikan } from '$lib/statics';
 
 	let { data } = $props();
@@ -33,16 +34,15 @@
 
 			<!-- Jenjang Pendidikan -->
 			<legend class="fieldset-legend">Jenjang Pendidikan</legend>
-			<select
-				class="select bg-base-200 validator w-full border dark:border-none"
+			<SelectEnhance
+				mode="object"
+				class="input bg-base-200 validator w-full border dark:border-none"
 				name="jenjangPendidikan"
+				value={data.sekolah?.jenjangPendidikan}
+				options={jenjangPendidikan}
+				placeholder="Pilih Jenjang Pendidikan"
 				required
-			>
-				<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
-				{#each Object.entries(jenjangPendidikan) as [value, label]}
-					<option {value}>{label}</option>
-				{/each}
-			</select>
+			/>
 
 			<div class="flex-row gap-4 lg:flex">
 				<!-- Nama Sekolah -->
