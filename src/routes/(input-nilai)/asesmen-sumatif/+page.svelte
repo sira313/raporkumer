@@ -2,10 +2,8 @@
 	import Icon from '$lib/components/icon.svelte';
 </script>
 
-<fieldset
-	class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
->
-	<legend class="fieldset-legend">Formulir Asesmen Sumatif</legend>
+<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
+	<h2 class="mb-6 text-xl font-bold">Daftar Nilai Sumatif</h2>
 	<div class="mb-2 flex flex-col gap-2 sm:flex-row">
 		<button class="btn shadow-none">
 			<!-- download template excel -->
@@ -76,7 +74,22 @@
 						</a>
 					</td>
 				</tr>
+				<tr>
+					<td>2</td>
+					<td>Benny</td>
+					<td> 0 </td>
+					<td>
+						<a
+							class="btn btn-sm btn-soft shadow-none"
+							title="Edit nilai"
+							href="/asesmen-sumatif/formulir-asesmen"
+						>
+							<Icon name="edit" />
+							Nilai
+						</a>
+					</td>
+				</tr>
 			</tbody>
 		</table>
 	</div>
-</fieldset>
+</div>

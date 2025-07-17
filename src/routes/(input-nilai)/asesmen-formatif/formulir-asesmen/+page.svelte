@@ -2,13 +2,8 @@
 	import Icon from '$lib/components/icon.svelte';
 </script>
 
-<fieldset
-	class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
->
-	<legend class="fieldset-legend">
-		<pre class="bg-base-200 rounded-xl px-2">Formulir Asesmen Formatif</pre>
-	</legend>
-	<div class="flex flex-col gap-2 sm:flex-row">
+<div class="div bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
+	<div class="mb-6 flex flex-col gap-2 sm:flex-row">
 		<a href="/asesmen-formatif/" class="btn shadow-none">
 			<Icon name="left" />
 			Kembali
@@ -65,4 +60,4 @@
 			</tbody>
 		</table>
 	</div>
-</fieldset>
+</div>

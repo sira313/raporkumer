@@ -2,13 +2,7 @@
 	import Icon from '$lib/components/icon.svelte';
 </script>
 
-<fieldset
-	class="fieldset bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
->
-	<legend class="fieldset-legend">
-		<pre class="bg-base-200 rounded-xl px-2">
-Formulir Asesmen Sumatif</pre>
-	</legend>
+<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
 	<div class="flex flex-col gap-2 sm:flex-row">
 		<a href="/asesmen-sumatif/" class="btn shadow-none">
 			<Icon name="left" />
@@ -165,4 +159,4 @@ Formulir Asesmen Sumatif</pre>
 			<p class="text-sm font-bold">Sudah mencapai KKM</p>
 		</span>
 	</div>
-</fieldset>
+</div>
