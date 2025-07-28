@@ -30,7 +30,7 @@
 		<!-- tombol tambah mapel -->
 		<a
 			class="btn mb-2 shadow-none sm:max-w-40"
-			href="/mata-pelajaran/form"
+			href="/intrakurikuler/form"
 			use:modalRoute={'add-mapel'}
 		>
 			<Icon name="plus" />
@@ -75,7 +75,7 @@
 						<td>{mapel.kkm}</td>
 						<td class="flex flex-row gap-2">
 							<a
-								href="/mata-pelajaran/{mapel.id}/tp-rl"
+								href="/intrakurikuler/{mapel.id}/tp-rl"
 								class="btn btn-sm btn-soft shadow-none"
 								type="button"
 							>
@@ -88,7 +88,7 @@
 								<a
 									class="btn btn-sm btn-soft btn-error shadow-none"
 									type="button"
-									href="/mata-pelajaran/{mapel.id}/delete"
+									href="/intrakurikuler/{mapel.id}/delete"
 									use:modalRoute={'delete-mapel'}
 								>
 									<Icon name="del" />
@@ -128,7 +128,7 @@
 						<td>{mapel.kkm}</td>
 						<td class="flex flex-row gap-2">
 							<a
-								href="/mata-pelajaran/{mapel.id}/tp-rl"
+								href="/intrakurikuler/{mapel.id}/tp-rl"
 								class="btn btn-sm btn-soft shadow-none"
 								type="button"
 							>
@@ -141,7 +141,7 @@
 								<a
 									class="btn btn-sm btn-soft btn-error shadow-none"
 									type="button"
-									href="/mata-pelajaran/{mapel.id}/delete"
+									href="/intrakurikuler/{mapel.id}/delete"
 									use:modalRoute={'delete-mapel'}
 								>
 									<Icon name="del" />

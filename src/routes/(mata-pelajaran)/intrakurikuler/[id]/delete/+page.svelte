@@ -9,7 +9,7 @@
 
 <FormEnhance
 	action="?/delete"
-	onsuccess={() => goto('/mata-pelajaran', { invalidate: ['app:mapel_tp-rl'] })}
+	onsuccess={() => goto('/intrakurikuler', { invalidate: ['app:mapel_tp-rl'] })}
 >
 	{#snippet children({ submitting })}
 		<h3 class="mb-4 text-xl font-bold">Hapus data mata pelajaran:</h3>
