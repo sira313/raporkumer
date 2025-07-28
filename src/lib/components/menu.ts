@@ -22,9 +22,13 @@ export const appMenuItems: MenuItem[] = [
 		icon: 'book',
 		subMenu: [
 			{
-				title: 'Daftar Mata Pelajaran',
-				path: '/mata-pelajaran',
+				title: 'Intrakurikuler',
+				path: '/intrakurikuler',
 				tags: ['tujuan pembelajaran', 'lingkup materi']
+			},
+			{
+				title: 'Kokurikuler',
+				path: '/kokurikuler'
 			},
 			{
 				title: 'Ekstrakurikuler',
