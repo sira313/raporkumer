@@ -50,6 +50,10 @@ export const appMenuItems: MenuItem[] = [
 						tags: ['nilai']
 					},
 					{
+						title: 'Asesmen Kokurikuler',
+						path: '/asesmen-kokurikuler'
+					},
+					{
 						title: 'Nilai Akhir',
 						path: '/nilai-akhir'
 					}
