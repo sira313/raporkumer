@@ -17,12 +17,10 @@
 		</button>
 	</div>
 
-	<!-- Tabel daftar murid -->
 	<div
 		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
 	>
 		<table class="border-base-200 table border dark:border-none">
-			<!-- head -->
 			<thead>
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
 					<th style="width: 50px; min-width: 40px;">
@@ -71,7 +69,6 @@
 			if (e.key === 'Escape') showModal = false;
 		}}
 	>
-		<!-- Modal backdrop for closing on click -->
 		<dialog class="modal-box relative z-10" open aria-modal="true">
 			<h3 class="mb-2 text-lg font-bold">Tambah Kokurikuler</h3>
 			<p class="py-4 font-bold">Pilih 8 Dimensi Profil Lulusan</p>
