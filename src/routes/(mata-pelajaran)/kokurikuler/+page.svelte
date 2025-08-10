@@ -50,7 +50,7 @@
 					<td> Kreativitas </td>
 					<td>
 						kemampuan menemukan dan mengembangkan alternatif solusi yang efektif pada pada tema
-						konservasi energi.
+						konservasi energi
 					</td>
 				</tr>
 			</tbody>
