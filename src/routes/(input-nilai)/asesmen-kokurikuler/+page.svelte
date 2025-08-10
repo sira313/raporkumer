@@ -62,7 +62,22 @@
 				<tr>
 					<td>1</td>
 					<td>Ali</td>
-					<td> Perlu bimbingan dalam mempelajari teknik simpul. </td>
+					<td> Sangat baik dalam kolaborasi dan kreativitas </td>
+					<td>
+						<label
+							for="input-kokurikuler"
+							class="btn btn-sm btn-soft shadow-none"
+							title="Edit nilai"
+						>
+							<Icon name="edit" />
+							Nilai
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<td>2</td>
+					<td>Rizki</td>
+					<td> Belum ada nilai </td>
 					<td>
 						<label
 							for="input-kokurikuler"
