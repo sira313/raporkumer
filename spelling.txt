@@ -7,6 +7,7 @@ Dangin
 Dapodik
 datanya
 dexie
+diperjualbelikan
 Extrakurikuler
 FOREIGNKEY
 Formatif
@@ -32,6 +33,7 @@ replacestate
 Rincian
 Silahkan
 Sumatif
+terbantu
 tutwuri
 unflatten
 Zaki

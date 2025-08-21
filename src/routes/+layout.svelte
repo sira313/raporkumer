@@ -4,6 +4,7 @@
 	import Menu from '$lib/components/menu.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
 	import Toast from '$lib/components/toast.svelte';
+	import Donate from '$lib/components/donate.svelte';
 
 	import '../app.css';
 
@@ -36,6 +37,7 @@
 		<!-- Page content -->
 		<div class="card-body flex min-h-[calc(100vh-4.8rem)] flex-1 flex-col">
 			<div class="max-w-none">
+				<Donate />
 				{@render children()}
 			</div>
 		</div>
