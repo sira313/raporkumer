@@ -11,7 +11,7 @@
 	}
 </script>
 
-<div class="card bg-base-100 rounded-box mx-auto w-full max-w-4xl">
+<div class="card bg-base-100 rounded-box mx-auto w-full max-w-4xl shadow-md">
 	<div class="card-body p-0">
 		<div class="flex items-center space-x-4 p-6">
 			<div class="avatar">

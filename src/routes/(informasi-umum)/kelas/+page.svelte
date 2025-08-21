@@ -10,7 +10,7 @@
 <div class="mx-auto w-full max-w-4xl">
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 		{#each data.daftarKelas as kelas (kelas)}
-			<div class="card bg-base-100 shadow-sm">
+			<div class="card bg-base-100 rounded-box shadow-md">
 				<div class="card-body">
 					<div class="flex items-start justify-between">
 						<h2 class="card-title text-xl font-bold">{kelas.nama}</h2>

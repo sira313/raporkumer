@@ -7,7 +7,7 @@
 	<!-- Kolom 1: Data Utama & Progress -->
 	<div class="flex flex-col gap-6">
 		<!-- Widget Data Sekolah -->
-		<div class="card bg-base-100 rounded-box dark:border-none">
+		<div class="card bg-base-100 rounded-box shadow-md dark:border-none">
 			<div class="card-body">
 				<div class="flex items-center gap-4">
 					<div class="avatar">
@@ -25,7 +25,7 @@
 		</div>
 
 		<!-- Statistik Angka -->
-		<div class="stats stats-vertical lg:stats-horizontal bg-base-100 rounded-box w-full">
+		<div class="stats stats-vertical lg:stats-horizontal bg-base-100 rounded-box w-full shadow-md">
 			<div class="stat">
 				<div class="stat-figure">
 					<span class="text-accent text-3xl">
@@ -49,7 +49,7 @@
 			</div>
 		</div>
 
-		<div class="stats stats-vertical lg:stats-horizontal rounded-box bg-base-100 w-full">
+		<div class="stats stats-vertical lg:stats-horizontal rounded-box bg-base-100 w-full shadow-md">
 			<div class="stat">
 				<div class="stat-figure text-primary">
 					<span class="text-3xl">
@@ -77,7 +77,7 @@
 	<!-- Kolom 2: Progress & Aksi -->
 	<div class="flex flex-col gap-6">
 		<!-- Widget Progress Pengisian -->
-		<div class="card bg-base-100 rounded-box">
+		<div class="card bg-base-100 rounded-box shadow-md">
 			<div class="card-body">
 				<h2 class="card-title mb-4">
 					<span class="text-xl">
@@ -127,7 +127,7 @@
 		</div>
 
 		<!-- Widget Aksi -->
-		<div class="card bg-base-100 rounded-box">
+		<div class="card bg-base-100 rounded-box shadow-md">
 			<div class="card-body">
 				<h2 class="card-title mb-4">
 					<span class="text-xl">
