@@ -2,22 +2,26 @@
 	import Icon from './icon.svelte';
 </script>
 
-<div role="alert" class="alert bg-base-100 mx-auto mb-6 w-full max-w-4xl">
-	<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-		<div class="flex items-start gap-2 md:items-center">
-			<Icon name="info" class="text-info text-xl" />
-			<span>
-				Aplikasi ini <span class="font-semibold">gratis dan tidak diperjualbelikan</span>. Jika
-				Bapak/Ibu merasa terbantu, pertimbangkan untuk mendukung kami melalui tombol traktir.
-			</span>
+<div role="alert" class="alert bg-base-100 mx-auto mb-6 max-w-4xl shadow-none">
+	<div class="flex w-full flex-col sm:flex-row sm:items-center sm:gap-4">
+		<div class="flex flex-1 items-center gap-4">
+			<Icon name="info" class="text-info h-5 w-5 shrink-0" />
+			<p class="prose w-full max-w-full">
+				Aplikasi ini <b>gratis dan tidak diperjualbelikan</b>. Jika Bapak/Ibu merasa terbantu,
+				pertimbangkan untuk mendukung kami melalui tombol traktir.
+			</p>
 		</div>
-		<a
-			target="_blank"
-			href="https://trakteer.id/raporkumer/tip"
-			class="btn btn-warning btn-sm ml-auto shadow-none transition-transform hover:scale-105 md:ml-0 md:self-center"
-		>
-			<Icon name="coffee" />
-			Traktir kopi
-		</a>
+
+		<div class="mt-4 self-end sm:mt-0 sm:self-center">
+			<a
+				href="https://trakteer.id/raporkumer/tip"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="btn btn-warning shadow-none"
+			>
+				<Icon name="coffee" />
+				Traktir
+			</a>
+		</div>
 	</div>
 </div>
