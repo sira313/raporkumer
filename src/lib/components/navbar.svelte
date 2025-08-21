@@ -73,7 +73,7 @@
 	</div>
 	<!-- select disabled di menu /sekolah dan /kelas -->
 	<!-- jika kelas hanya ada satu, maka otomatis terpilih kelas yang ada -->
-	<select class="select dark:bg-base-200 dark:border-none">
+	<select class="select bg-base-200 dark:border-none">
 		<option disabled selected>Pilih Kelas</option>
 		<option>Kelas I</option>
 		<option>Kelas IV</option>
