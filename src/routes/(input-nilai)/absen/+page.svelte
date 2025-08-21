@@ -61,4 +61,11 @@
 			</tbody>
 		</table>
 	</div>
+	<!-- pagination -->
+	<div class="join mx-auto mt-4">
+		<button class="join-item btn btn-active">1</button>
+		<button class="join-item btn">2</button>
+		<button class="join-item btn">3</button>
+		<button class="join-item btn">4</button>
+	</div>
 </div>
