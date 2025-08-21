@@ -11,7 +11,9 @@
 <!-- Data Mapel -->
 <div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
 	<h2 class="mb-6 text-xl font-bold">Daftar Mata Pelajaran</h2>
-	<form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
+
+	<!-- Tombol select Kelas akan dihapus dan dipindahkan ke navbar -->
+	<!-- <form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
 		<select
 			class="select bg-base-200 mb-2 w-full dark:border-none"
 			title="Pilih kelas"
@@ -25,7 +27,8 @@
 				<option value="" disabled selected> Belum ada data kelas </option>
 			{/each}
 		</select>
-	</form>
+	</form> -->
+
 	<div class="flex flex-col gap-2 sm:flex-row">
 		<!-- tombol tambah mapel -->
 		<a

@@ -42,7 +42,7 @@
 		use:autoSubmit
 	>
 		<!-- Cari nama murid -->
-		<label class="input bg-base-200 dark:border-none">
+		<label class="input bg-base-200 w-full dark:border-none">
 			<Icon name="search" />
 			<input
 				type="search"
@@ -54,7 +54,8 @@
 			/>
 		</label>
 
-		<select
+		<!-- Pilih kelas akan dihapus dan dipindahkan ke navbar -->
+		<!-- <select
 			class="select bg-base-200 dark:border-none"
 			title="Pilih kelas"
 			name="kelas_id"
@@ -68,7 +69,7 @@
 			{:else}
 				<option value={null} disabled selected> Belum ada data kelas </option>
 			{/each}
-		</select>
+		</select> -->
 
 		<!-- pagination -->
 		<div class="join sm:ml-auto">

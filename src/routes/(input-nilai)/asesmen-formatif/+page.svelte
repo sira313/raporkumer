@@ -2,42 +2,19 @@
 	import Icon from '$lib/components/icon.svelte';
 </script>
 
-<div role="alert" class="alert alert-info alert-soft mx-auto mb-4 max-w-4xl">
-	<Icon name="info" />
-	<span
-		>Isian Asesmen Formatif ini tidak berpengaruh pada nilai rapor, hanya berfungsi untuk memantau
-		kemajuan belajar siswa dan memberikan umpan balik yang membantu perbaikan pembelajaran</span
-	>
-</div>
-
 <div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
 	<h2 class="mb-6 text-xl font-bold">Daftar Nilai Formatif</h2>
-	<div class="mb-2 flex flex-col items-center gap-2 sm:flex-row">
-		<!-- pilih Kelas dan mapel dulu, wajib! -->
-		<select class="select bg-base-200 w-full dark:border-none" title="Pilih kelas">
-			<option value="" disabled selected> Pilih Kelas</option>
-			<option value=""> Kelas VI </option>
-		</select>
-		<select class="select bg-base-200 w-full dark:border-none" title="Pilih kelas">
+
+	<div class="flex flex-col items-center gap-2 sm:flex-row">
+		<select class="select bg-base-200 w-full md:max-w-80 dark:border-none" title="Pilih kelas">
 			<option value="" disabled selected> Pilih Mata Pelajaran</option>
 			<option value=""> IPAS </option>
 		</select>
-	</div>
-
-	<div class="flex flex-col items-center gap-2 sm:flex-row">
 		<!-- Cari nama murid -->
 		<label class="input bg-base-200 w-full dark:border-none">
 			<Icon name="search" />
 			<input type="search" required placeholder="Cari nama murid..." />
 		</label>
-
-		<!-- pagination -->
-		<div class="join sm:ml-auto">
-			<button class="join-item btn btn-active">1</button>
-			<button class="join-item btn">2</button>
-			<button class="join-item btn">3</button>
-			<button class="join-item btn">4</button>
-		</div>
 	</div>
 
 	<!-- Tabel daftar murid -->
@@ -90,5 +67,12 @@
 				</tr>
 			</tbody>
 		</table>
+	</div>
+	<!-- pagination -->
+	<div class="join mx-auto mt-4">
+		<button class="join-item btn btn-active">1</button>
+		<button class="join-item btn">2</button>
+		<button class="join-item btn">3</button>
+		<button class="join-item btn">4</button>
 	</div>
 </div>

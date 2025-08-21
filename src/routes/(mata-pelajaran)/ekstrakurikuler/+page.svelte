@@ -11,7 +11,8 @@
 <div class="card bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md">
 	<h2 class="mb-6 text-xl font-bold">Daftar Extrakurikuler</h2>
 
-	<form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
+	<!-- Select Kelas akan dihapus dan dipindahkan ke navbar -->
+	<!-- <form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
 		<select
 			class="select bg-base-200 mb-2 w-full dark:border-none"
 			name="kelas_id"
@@ -25,7 +26,7 @@
 				<option value="" disabled selected> Belum ada data kelas </option>
 			{/each}
 		</select>
-	</form>
+	</form> -->
 
 	<FormEnhance
 		action="?/add"
