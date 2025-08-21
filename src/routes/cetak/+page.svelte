@@ -13,6 +13,7 @@
 			<option value=""> Rapor </option>
 			<option value=""> Piagam </option>
 		</select>
+		<!-- tombol ini berfungsi untuk mencetak dokumen untuk semua siswa berdasarkan pilihan dokumen -->
 		<button class="btn shadow-none sm:ml-auto">
 			<Icon name="print" />
 			Cetak semua
