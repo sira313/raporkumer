@@ -71,10 +71,18 @@
 			</span>
 		</label>
 	</div>
-	<div class="mx-2 flex-1 px-2">
+	<!-- select disabled di menu /sekolah dan /kelas -->
+	<!-- jika kelas hanya ada satu, maka otomatis terpilih kelas yang ada -->
+	<select class="select dark:bg-base-200 dark:border-none">
+		<option disabled selected>Pilih Kelas</option>
+		<option>Kelas I</option>
+		<option>Kelas IV</option>
+		<option>Kelas VI</option>
+	</select>
+	<div class="mx-2 hidden flex-1 px-2 md:block">
 		<span class="text-lg font-bold">{page.data.meta?.title || ''}</span>
 	</div>
-	<div class="flex-none">
+	<div class="ml-auto flex-none">
 		<ul class="menu menu-horizontal px-1">
 			<!-- tombol dark/light -->
 			<li class="menu-item">
