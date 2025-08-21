@@ -22,9 +22,13 @@ export const appMenuItems: MenuItem[] = [
 		icon: 'book',
 		subMenu: [
 			{
-				title: 'Daftar Mata Pelajaran',
-				path: '/mata-pelajaran',
+				title: 'Intrakurikuler',
+				path: '/intrakurikuler',
 				tags: ['tujuan pembelajaran', 'lingkup materi']
+			},
+			{
+				title: 'Kokurikuler',
+				path: '/kokurikuler'
 			},
 			{
 				title: 'Ekstrakurikuler',
@@ -37,15 +41,15 @@ export const appMenuItems: MenuItem[] = [
 		icon: 'pen',
 		subMenu: [
 			{
-				title: 'Kurikulum Merdeka',
+				title: 'Intrakurikuler',
 				subMenu: [
 					{
-						title: 'Asesmen Formatif',
+						title: 'Formatif',
 						path: '/asesmen-formatif',
 						tags: ['nilai']
 					},
 					{
-						title: 'Asesmen Sumatif',
+						title: 'Sumatif',
 						path: '/asesmen-sumatif',
 						tags: ['nilai']
 					},
@@ -56,12 +60,16 @@ export const appMenuItems: MenuItem[] = [
 				]
 			},
 			{
-				title: 'Absen',
-				path: '/absen'
+				title: 'Kokurikuler',
+				path: '/asesmen-kokurikuler'
 			},
 			{
 				title: 'Nilai Ekstrakurikuler',
 				path: '/nilai-ekstrakurikuler'
+			},
+			{
+				title: 'Absen',
+				path: '/absen'
 			}
 		]
 	},

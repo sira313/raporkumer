@@ -11,7 +11,7 @@
 <FormEnhance
 	action="?/add"
 	onsuccess={async () => {
-		await goto(`/mata-pelajaran?kelas_id=${selectedKelasId}`, {
+		await goto(`/intrakurikuler?kelas_id=${selectedKelasId}`, {
 			invalidate: ['app:mapel']
 		});
 	}}
