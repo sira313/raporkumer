@@ -61,9 +61,7 @@
 	}
 </script>
 
-<div
-	class="navbar bg-base-100 border-base-200 sticky top-0 z-50 border-b lg:border-b-0 lg:border-l"
->
+<div class="navbar bg-base-100 border-base-200 sticky top-0 z-50">
 	<div class="flex-none lg:hidden">
 		<label for="my-drawer-2" class="btn btn-square btn-ghost drawer-button">
 			<span class="text-lg">
@@ -71,24 +69,61 @@
 			</span>
 		</label>
 	</div>
-	<!-- select disabled di menu /sekolah dan /kelas -->
-	<!-- jika kelas hanya ada satu, maka otomatis terpilih kelas yang ada -->
-	<select class="select bg-base-200 dark:border-none">
-		<option disabled selected>Pilih Kelas</option>
-		<option>Kelas I</option>
-		<option>Kelas IV</option>
-		<option>Kelas VI</option>
-	</select>
-	<div class="mx-2 hidden flex-1 px-2 md:block">
+	<!-- dropdown settings -->
+	<button
+		title="Pengaturan"
+		class="btn btn-ghost btn-circle md:hidden"
+		popovertarget="popover-1"
+		style="anchor-name:--anchor-1"
+	>
+		<Icon name="gear" class="text-lg" />
+	</button>
+	<div
+		class="dropdown menu rounded-box bg-base-100 mt-6 w-52 shadow-sm"
+		popover
+		id="popover-1"
+		style="position-anchor:--anchor-1"
+	>
+		<!-- pilih kelas -->
+		<select class="select bg-base-200 dark:border-none">
+			<option disabled selected>Pilih kelas</option>
+			<option>Kelas I</option>
+			<option>Kelas II</option>
+			<option>Kelas III</option>
+		</select>
+		<!-- pilih semester -->
+		<select class="select bg-base-200 mt-2 dark:border-none">
+			<option disabled selected>Pilih semester</option>
+			<option>Semester Ganjil</option>
+			<option>Semester Genap</option>
+		</select>
+	</div>
+
+	<div class="ml-2 hidden gap-2 md:flex">
+		<!-- pilih kelas -->
+		<select class="select bg-base-200 min-w-fit dark:border-none">
+			<option disabled selected>Pilih kelas</option>
+			<option>Kelas I</option>
+			<option>Kelas II</option>
+			<option>Kelas III</option>
+		</select>
+		<!-- pilih semester -->
+		<select class="select bg-base-200 min-w-fit dark:border-none">
+			<option disabled selected>Pilih semester</option>
+			<option>Semester Ganjil</option>
+			<option>Semester Genap</option>
+		</select>
+	</div>
+
+	<div class="mx-2 flex-1 px-2">
 		<span class="text-lg font-bold">{page.data.meta?.title || ''}</span>
 	</div>
 	<div class="ml-auto flex-none">
-		<ul class="menu menu-horizontal px-1">
-			<!-- tombol dark/light -->
-			<li class="menu-item">
+		<ul class="flex items-center px-1">
+			<li>
 				<DarkMode />
 			</li>
-			<li class="menu-item">
+			<li>
 				<button
 					class="btn btn-ghost btn-circle"
 					aria-label="Bantuan"
