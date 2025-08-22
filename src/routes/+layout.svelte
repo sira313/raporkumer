@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import GlobalModal from '$lib/components/global-modal.svelte';
+	import Icon from '$lib/components/icon.svelte';
 	import Menu from '$lib/components/menu.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
 	import Toast from '$lib/components/toast.svelte';
@@ -52,9 +53,15 @@
 
 			<Menu />
 
-			<div class="mt-4 flex flex-col gap-2 pl-3">
-				<a href="/pengaturan"><h2 class="mb-2 font-bold">Pengaturan</h2></a>
-				<a href="/tentang"><h2 class="mb-2 font-bold">Tentang Aplikasi</h2></a>
+			<div class="mt-4 flex flex-col gap-3 pl-3">
+				<a href="/pengaturan" class="flex items-center gap-2">
+					<Icon name="gear" />
+					<h2 class="font-bold">Pengaturan</h2>
+				</a>
+				<a href="/tentang" class="flex items-center gap-2">
+					<Icon name="info" />
+					<h2 class="font-bold">Tentang Aplikasi</h2>
+				</a>
 			</div>
 		</ul>
 	</div>
