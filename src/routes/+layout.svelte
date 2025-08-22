@@ -54,7 +54,8 @@
 
 			<Menu />
 
-			<div class="mt-4 pl-3">
+			<div class="mt-4 flex flex-col gap-2 pl-3">
+				<a href="/pengaturan"><h2 class="mb-2 font-bold">Pengaturan</h2></a>
 				<a href="/tentang"><h2 class="mb-2 font-bold">Tentang Aplikasi</h2></a>
 			</div>
 		</ul>
