@@ -60,8 +60,14 @@
 
 				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
 					<span class="text-base-content/70 font-semibold">Website Sekolah</span>
-					<div class="text-primary break-all underline sm:col-span-2">
-						<a href={sekolah?.website || '#'} target="_blank">{sekolah?.website || '-'}</a>
+					<div class="sm:col-span-2">
+						{#if sekolah?.website}
+							<a href={sekolah.website} target="_blank" class="text-primary break-all underline"
+								>{sekolah.website}</a
+							>
+						{:else}
+							<span class="text-base-content/70 break-all">-</span>
+						{/if}
 					</div>
 				</div>
 
