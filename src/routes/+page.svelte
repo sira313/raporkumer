@@ -26,15 +26,19 @@
 
 		<!-- Statistik Angka -->
 		<div class="stats stats-vertical lg:stats-horizontal bg-base-100 rounded-box w-full shadow-md">
-			<div class="stat">
+			<div class="stat justify-center">
 				<div class="stat-figure">
 					<span class="text-accent text-3xl">
 						<Icon name="user" />
 					</span>
 				</div>
-				<div class="stat-title">Jumlah Kelas</div>
+				<div class="stat-title">Jumlah Rombel</div>
 				<div class="stat-value">6</div>
-				<p class="stat-desc">6 kelas X, 6 kelas XI, 6 kelas XII</p>
+				<div class="stat-desc flex flex-wrap gap-1">
+					<div class="badge badge-sm badge-soft whitespace-nowrap">2 Fase A</div>
+					<div class="badge badge-sm badge-soft whitespace-nowrap">2 Fase B</div>
+					<div class="badge badge-sm badge-soft whitespace-nowrap">2 Fase C</div>
+				</div>
 			</div>
 
 			<div class="stat">
