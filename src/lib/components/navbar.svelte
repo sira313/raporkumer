@@ -90,6 +90,43 @@
 					</span>
 				</button>
 			</li>
+			<li class="ml-2">
+				<div class="dropdown dropdown-end">
+					<div tabindex="0" role="button" title="Ganti kelas" class="btn btn-soft rounded-full">
+						<span class="hidden sm:block"> Kelas I </span>
+						<Icon name="users" class="sm:hidden" />
+						<Icon name="select" class="hidden sm:block" />
+					</div>
+					<ul
+						class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-6 w-52 gap-3 p-2 shadow"
+					>
+						<!-- Elemen ini hidden bila user belum pilih kelas -->
+						<!-- Jika hanya ada satu kelas diinput di database maka otomatis akan aktif ke satu kelas tersebut -->
+						<div class="flex flex-col items-center justify-center gap-2">
+							<div
+								class="bg-base-300 dark:bg-base-200 flex h-14 w-14 items-center justify-center rounded-full"
+							>
+								<Icon name="user" class="text-4xl" />
+							</div>
+							<span class="text-center text-sm">Nama Wali Kelas</span>
+						</div>
+						<!-- Opsi kelas -->
+						<fieldset class="fieldset px-2">
+							<select class="select bg-base-200 w-full dark:border-none">
+								<option disabled selected>Pilih Kelas</option>
+								<option>Kelas I</option>
+								<option>Kelas II</option>
+							</select>
+						</fieldset>
+						<li>
+							<a href="/pengaturan" class="text-md">
+								<Icon name="gear" />
+								Pengaturan
+							</a>
+						</li>
+					</ul>
+				</div>
+			</li>
 		</ul>
 	</div>
 </div>

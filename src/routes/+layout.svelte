@@ -5,6 +5,7 @@
 	import Menu from '$lib/components/menu.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
 	import Toast from '$lib/components/toast.svelte';
+	import Task from '$lib/components/tasks.svelte';
 
 	import '../app.css';
 
@@ -37,8 +38,11 @@
 		<!-- Page content -->
 		<div class="card-body flex min-h-[calc(100vh-4.8rem)] flex-1 flex-col">
 			<div class="max-w-none">
-				<div class="mr-auto w-full max-w-4xl">
-					{@render children()}
+				<div class="mr-auto flex flex-row gap-4">
+					<div class="w-full max-w-4xl">
+						{@render children()}
+					</div>
+					<Task />
 				</div>
 			</div>
 		</div>
@@ -56,10 +60,6 @@
 			<Menu />
 
 			<div class="mt-4 flex flex-col gap-3 pl-3">
-				<a href="/pengaturan" class="flex items-center gap-2">
-					<Icon name="gear" />
-					<h2 class="font-bold">Pengaturan</h2>
-				</a>
 				<a href="/tentang" class="flex items-center gap-2">
 					<Icon name="info" />
 					<h2 class="font-bold">Tentang Aplikasi</h2>

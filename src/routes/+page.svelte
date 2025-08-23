@@ -34,7 +34,7 @@
 				</div>
 				<div class="stat-title">Jumlah Kelas</div>
 				<div class="stat-value">6</div>
-				<div class="stat-desc">6 kelas X, 6 kelas XI, 6 kelas XII</div>
+				<p class="stat-desc">6 kelas X, 6 kelas XI, 6 kelas XII</p>
 			</div>
 
 			<div class="stat">

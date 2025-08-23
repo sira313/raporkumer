@@ -8,6 +8,7 @@ Dangin
 Dapodik
 datanya
 dexie
+diinput
 diperjualbelikan
 Extrakurikuler
 FOREIGNKEY
