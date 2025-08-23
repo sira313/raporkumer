@@ -2,7 +2,7 @@
 	import Icon from '$lib/components/icon.svelte';
 </script>
 
-<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
+<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<h2 class="mb-4 text-xl font-bold">Pengaturan E-rapor Kurikulum Merdeka</h2>
 	<fieldset class="fieldset">
 		<legend class="fieldset-legend">Kelas yang akan dikerjakan</legend>

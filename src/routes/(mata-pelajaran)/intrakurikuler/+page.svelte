@@ -9,7 +9,7 @@
 </script>
 
 <!-- Data Mapel -->
-<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
+<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<h2 class="mb-6 text-xl font-bold">Daftar Mata Pelajaran</h2>
 
 	<!-- Tombol select Kelas akan dihapus dan dipindahkan ke navbar -->

@@ -3,7 +3,7 @@
 	let showModal = false;
 </script>
 
-<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
+<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<h2 class="mb-6 text-xl font-bold">Daftar Kokurikuler</h2>
 
 	<div class="mb-2 flex flex-col gap-2 sm:flex-row">

@@ -7,7 +7,7 @@
 
 <Donate />
 
-<div class="card rounded-box bg-base-100 mx-auto w-full max-w-4xl shadow-sm">
+<div class="card rounded-box bg-base-100 shadow-sm">
 	<div class="card-body text-base">
 		<h2 class="card-title mb-4 text-xl font-bold">Aplikasi E-Rapor Kurikulum Merdeka</h2>
 		<p class="prose max-w-none">

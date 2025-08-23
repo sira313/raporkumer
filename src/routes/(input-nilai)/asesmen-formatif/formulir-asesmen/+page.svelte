@@ -2,7 +2,7 @@
 	import Icon from '$lib/components/icon.svelte';
 </script>
 
-<div class="div bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
+<div class="div bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-6 flex flex-col gap-2 sm:flex-row">
 		<a href="/asesmen-formatif/" class="btn shadow-none">
 			<Icon name="left" />

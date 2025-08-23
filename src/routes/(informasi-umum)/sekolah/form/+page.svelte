@@ -26,9 +26,7 @@
 			<input name="id" value={data.sekolah.id} hidden />
 		{/if}
 
-		<div
-			class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md"
-		>
+		<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 			<h2 class="mb-4 text-xl font-bold">Formulir Isian Data Sekolah</h2>
 
 			<!-- Jenjang Pendidikan -->

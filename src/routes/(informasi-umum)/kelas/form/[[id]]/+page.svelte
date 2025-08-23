@@ -8,7 +8,7 @@
 
 <FormEnhance action="?/save" init={data.kelas} onsuccess={() => goto(`/kelas`)}>
 	{#snippet children({ submitting })}
-		<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg p-4 shadow-md">
+		<div class="card bg-base-100 mx-auto rounded-lg p-4 shadow-md">
 			<h2 class="mb-4 text-xl font-bold">Formulir Isian Data Kelas</h2>
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<!-- Nama Kelas -->

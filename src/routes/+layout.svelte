@@ -37,7 +37,9 @@
 		<!-- Page content -->
 		<div class="card-body flex min-h-[calc(100vh-4.8rem)] flex-1 flex-col">
 			<div class="max-w-none">
-				{@render children()}
+				<div class="mr-auto w-full max-w-4xl">
+					{@render children()}
+				</div>
 			</div>
 		</div>
 	</div>
