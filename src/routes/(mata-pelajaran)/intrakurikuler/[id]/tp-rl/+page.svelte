@@ -105,12 +105,12 @@
 {#snippet form_tujuan_pembelajaran(index: number, tp?: Omit<TujuanPembelajaran, 'mataPelajaran'>)}
 	{@const formId = crypto.randomUUID()}
 	<tr>
-		<td><input type="checkbox" class="checkbox" disabled /></td>
+		<td class="align-top"><input type="checkbox" class="checkbox" disabled /></td>
 		<td class="text-primary animate-pulse align-top font-semibold">{index + 1}</td>
 		<td class="align-top">
 			<textarea
 				form={formId}
-				class="textarea validator h-36 w-full"
+				class="textarea validator bg-base-200 dark:bg-base-300 border-base-300 h-36 w-full"
 				value={tp?.lingkupMateri || null}
 				name="lingkupMateri"
 				required
@@ -119,7 +119,7 @@
 		<td class="align-top">
 			<input
 				type="number"
-				class="input validator"
+				class="input validator bg-base-200 border-base-300 dark:bg-base-300 dark:border-none"
 				required
 				placeholder="10-100"
 				min="10"
@@ -132,13 +132,17 @@
 			<div class="flex flex-col gap-2">
 				<textarea
 					form={formId}
-					class="textarea validator h-36 w-full"
+					class="textarea validator bg-base-200 border-base-300 dark:bg-base-300 h-36 w-full dark:border-none"
 					value={tp?.deskripsi || null}
 					name="deskripsi"
 					required
 				></textarea>
 				<!-- Elemen ini otomatis ada jika user menambah lebih dari 1 input Tujuan pembelajaran -->
-				<textarea class="textarea validator w-full" name="deskripsi" required></textarea>
+				<textarea
+					class="textarea validator dark:bg-base-300 bg-base-200 border-base-300 w-full"
+					name="deskripsi"
+					required
+				></textarea>
 			</div>
 		</td>
 		<td class="align-top">
