@@ -103,6 +103,7 @@
 						<!-- Elemen ini hidden bila user belum pilih kelas -->
 						<!-- Jika hanya ada satu kelas diinput di database maka otomatis akan aktif ke satu kelas tersebut -->
 						<div class="flex flex-col items-center justify-center gap-2">
+							<span class="text-center text-sm">Nama Kelas</span>
 							<div
 								class="bg-base-300 dark:bg-base-200 flex h-14 w-14 items-center justify-center rounded-full"
 							>

@@ -50,6 +50,7 @@
 					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
 					<th style="width: 50px; min-width: 40px;">No</th>
 					<th style="width: 50%;">Lingkup Materi</th>
+					<th style="width: 15%">Bobot</th>
 					<th style="width: 50%">Tujuan Pemelajaran</th>
 					<th>Aksi</th>
 				</tr>
@@ -67,9 +68,10 @@
 							<td class="align-top"><input type="checkbox" class="checkbox" /></td>
 							<td class="align-top">{index + 1}</td>
 							<td class="align-top">{tp.lingkupMateri} </td>
+							<td class="align-top">60</td>
 							<td class="align-top">{tp.deskripsi}</td>
 							<td>
-								<div class="flex flex-row gap-2">
+								<div class="flex gap-2">
 									<button
 										class="btn btn-sm btn-soft shadow-none"
 										type="button"
@@ -115,6 +117,18 @@
 			></textarea>
 		</td>
 		<td class="align-top">
+			<input
+				type="number"
+				class="input validator"
+				required
+				placeholder="10-100"
+				min="10"
+				max="100"
+				title="Masukkan bobot Lingkup Materi"
+			/>
+			<p class="validator-hint">Rentang 10-100</p>
+		</td>
+		<td class="align-top">
 			<div class="flex flex-col gap-2">
 				<textarea
 					form={formId}
@@ -127,7 +141,7 @@
 				<textarea class="textarea validator w-full" name="deskripsi" required></textarea>
 			</div>
 		</td>
-		<td>
+		<td class="align-top">
 			<FormEnhance
 				id={formId}
 				action="?/save"
@@ -140,7 +154,7 @@
 					{#if tp?.id}
 						<input value={tp.id} name="id" hidden />
 					{/if}
-					<div class="flex gap-2">
+					<div class="flex flex-col gap-2">
 						<button
 							class="btn btn-sm btn-soft btn-primary shadow-none"
 							title="Simpan"
