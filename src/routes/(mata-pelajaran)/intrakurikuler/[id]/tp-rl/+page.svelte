@@ -49,8 +49,8 @@
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
 					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
 					<th style="width: 50px; min-width: 40px;">No</th>
-					<th style="width: 50%;">Tujuan Pembelajaran</th>
-					<th style="width: 50%">Lingkup Materi</th>
+					<th style="width: 50%;">Lingkup Materi</th>
+					<th style="width: 50%">Tujuan Pemelajaran</th>
 					<th>Aksi</th>
 				</tr>
 			</thead>
@@ -64,10 +64,10 @@
 						{@render form_tujuan_pembelajaran(index, tp)}
 					{:else}
 						<tr>
-							<td><input type="checkbox" class="checkbox" /></td>
-							<td>{index + 1}</td>
-							<td>{tp.deskripsi}</td>
-							<td class="flex flex-row gap-2"> {tp.lingkupMateri} </td>
+							<td class="align-top"><input type="checkbox" class="checkbox" /></td>
+							<td class="align-top">{index + 1}</td>
+							<td class="align-top">{tp.lingkupMateri} </td>
+							<td class="align-top">{tp.deskripsi}</td>
 							<td>
 								<div class="flex flex-row gap-2">
 									<button
@@ -104,17 +104,8 @@
 	{@const formId = crypto.randomUUID()}
 	<tr>
 		<td><input type="checkbox" class="checkbox" disabled /></td>
-		<td class="text-primary animate-pulse font-semibold">{index + 1}</td>
-		<td>
-			<textarea
-				form={formId}
-				class="textarea validator h-36 w-full"
-				value={tp?.deskripsi || null}
-				name="deskripsi"
-				required
-			></textarea>
-		</td>
-		<td>
+		<td class="text-primary animate-pulse align-top font-semibold">{index + 1}</td>
+		<td class="align-top">
 			<textarea
 				form={formId}
 				class="textarea validator h-36 w-full"
@@ -122,6 +113,19 @@
 				name="lingkupMateri"
 				required
 			></textarea>
+		</td>
+		<td class="align-top">
+			<div class="flex flex-col gap-2">
+				<textarea
+					form={formId}
+					class="textarea validator h-36 w-full"
+					value={tp?.deskripsi || null}
+					name="deskripsi"
+					required
+				></textarea>
+				<!-- Elemen ini otomatis ada jika user menambah lebih dari 1 input Tujuan pembelajaran -->
+				<textarea class="textarea validator w-full" name="deskripsi" required></textarea>
+			</div>
 		</td>
 		<td>
 			<FormEnhance
