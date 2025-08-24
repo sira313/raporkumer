@@ -39,7 +39,7 @@
 		<div class="card-body flex min-h-[calc(100vh-4.8rem)] flex-1 flex-col">
 			<div class="max-w-none">
 				<div class="mr-auto flex flex-row gap-4">
-					<div class="w-full max-w-4xl">
+					<div class="w-full max-w-5xl">
 						{@render children()}
 					</div>
 					<Task />
