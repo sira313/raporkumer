@@ -11,7 +11,7 @@
 		</div>
 	</div>
 	<!-- konten -->
-	<div class="overflow-x-auto">
+	<div class="max-h-60 min-h-60 overflow-y-auto">
 		<table class="table">
 			<tbody>
 				<!-- row 1 -->
@@ -36,5 +36,37 @@
 				</tr>
 			</tbody>
 		</table>
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+		<div class="m-2">
+			<div tabindex="0" class="bg-base-200 border-base-300 collapse border">
+				<div class="collapse-title font-semibold">Daftar tugas sudah selesai</div>
+				<div class="collapse-content p-0">
+					<table class="table">
+						<tbody>
+							<!-- row 1 -->
+							<tr>
+								<th><input type="checkbox" checked class="checkbox" /></th>
+								<td><p class="flex-1"><s>Mengisi Data Kelas</s></p></td>
+								<td>
+									<button class="btn btn-circle btn-ghost" title="Hapus tugas">
+										<Icon name="del" />
+									</button>
+								</td>
+							</tr>
+							<!-- row 2 -->
+							<tr>
+								<th><input type="checkbox" checked class="checkbox" /></th>
+								<td><p class="flex-1"><s>keluarkan Murid an. Jokowi</s></p></td>
+								<td>
+									<button class="btn btn-circle btn-ghost" title="Hapus tugas">
+										<Icon name="del" />
+									</button>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
 	</div>
 </div>
