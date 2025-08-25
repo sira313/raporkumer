@@ -98,29 +98,34 @@
 						<Icon name="select" class="hidden sm:block" />
 					</div>
 					<ul
-						class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-6 w-52 gap-3 p-2 shadow"
+						class="menu dropdown-content bg-base-100 ring-opacity-5 z-[1] mt-6 w-72 origin-top-right rounded-xl p-4 shadow-md focus:outline-none"
 					>
-						<!-- Elemen ini hidden bila user belum pilih kelas -->
-						<!-- Jika hanya ada satu kelas diinput di database maka otomatis akan aktif ke satu kelas tersebut -->
-						<div class="flex flex-col items-center justify-center gap-2">
-							<span class="text-center text-sm">Nama Kelas</span>
+						<div class="flex items-center gap-4">
 							<div
 								class="bg-base-300 dark:bg-base-200 flex h-14 w-14 items-center justify-center rounded-full"
 							>
 								<Icon name="user" class="text-4xl" />
 							</div>
-							<span class="text-center text-sm">Nama Wali Kelas</span>
+							<div class="flex flex-col gap-1">
+								<p class="text-base-content text-sm font-semibold">Aris Wira Pratama, S.Pd.</p>
+								<p class="text-base-content/70 text-xs">Kelas IV - Fase B</p>
+							</div>
 						</div>
-						<!-- Opsi kelas -->
-						<fieldset class="fieldset px-2">
-							<select class="select bg-base-200 w-full dark:border-none">
-								<option disabled selected>Pilih Kelas</option>
-								<option>Kelas I</option>
-								<option>Kelas II</option>
-							</select>
-						</fieldset>
-						<li>
-							<a href="/pengaturan" class="text-md">
+
+						<!-- Pilihan Kelas -->
+						<details class="bg-base-200 collapse mt-6">
+							<summary class="collapse-title font-semibold">Pindah Kelas</summary>
+							<div class="collapse-content text-sm">
+								<li>
+									<a href="?kelas_id=2"> Kelas I - Fase A </a>
+								</li>
+								<li>
+									<a href="?kelas_id=1"> Kelas IV - Fase B</a>
+								</li>
+							</div>
+						</details>
+						<li class="mt-2">
+							<a href="/pengaturan">
 								<Icon name="gear" />
 								Pengaturan
 							</a>
