@@ -98,3 +98,22 @@
 		</div>
 	</div>
 </div>
+
+<a
+	href="/sekolah/form"
+	class="card bg-base-100 rounded-box border-base-300 hover:bg-base-200 mt-6 flex min-h-40 border-2 border-dashed transition-colors duration-300"
+>
+	<div class="my-auto items-center justify-center text-center">
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			class="text-base-content/30 mx-auto h-12 w-12"
+			fill="none"
+			viewBox="0 0 24 24"
+			stroke="currentColor"
+			stroke-width="1"
+		>
+			<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+		</svg>
+		<p class="text-base-content/50 mt-2">Tambah sekolah baru</p>
+	</div>
+</a>
