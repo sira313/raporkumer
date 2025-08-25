@@ -4,6 +4,17 @@
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<h2 class="mb-4 text-xl font-bold">Pengaturan E-rapor Kurikulum Merdeka</h2>
+
+	<!-- Pilih sekolah -->
+	<fieldset class="fieldset">
+		<legend class="fieldset-legend">Ganti sekolah</legend>
+		<select class="select bg-base-200 w-full dark:border-none">
+			<option disabled selected>Pilih Sekolah</option>
+			<option>SD Negeri 19 Periji</option>
+			<option>SD Negeri 17 Sungai Merah</option>
+		</select>
+	</fieldset>
+
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 		<!-- tahun ajaran secara otomatis memilih yang terbaru -->
 		<fieldset class="fieldset">
@@ -14,6 +25,7 @@
 				<option>2025/2026</option>
 			</select>
 		</fieldset>
+
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Semester</legend>
 			<select class="select bg-base-200 w-full dark:border-none">
@@ -22,6 +34,7 @@
 				<option>Genap</option>
 			</select>
 		</fieldset>
+
 		<!-- can we use cally for this? -->
 		<!-- https://daisyui.com/components/calendar/#cally-date-picker-example -->
 		<fieldset class="fieldset">
