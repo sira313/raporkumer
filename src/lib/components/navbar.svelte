@@ -113,7 +113,7 @@
 						</div>
 
 						<!-- Pilihan Kelas -->
-						<details class="bg-base-200 collapse mt-6">
+						<details class="bg-base-300 dark:bg-base-200 collapse mt-6">
 							<summary class="collapse-title font-semibold">Pindah Kelas</summary>
 							<div class="collapse-content text-sm">
 								<li>

@@ -49,7 +49,7 @@
 			</tbody>
 		</table>
 		<div class="m-2">
-			<div class="bg-base-300 dark:bg-base-200 border-base-300 collapse mt-6 border">
+			<div class="bg-base-300 dark:bg-base-200 collapse mt-6">
 				<input type="checkbox" />
 				<div class="collapse-title font-bold">Tugas sudah selesai</div>
 				<div class="collapse-content p-0 text-sm">
