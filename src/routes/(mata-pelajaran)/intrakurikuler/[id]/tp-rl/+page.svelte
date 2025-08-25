@@ -49,9 +49,9 @@
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
 					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
 					<th style="width: 50px; min-width: 40px;">No</th>
-					<th style="width: 50%;">Lingkup Materi</th>
+					<th style="width: 30%;">Lingkup Materi</th>
 					<th style="width: 15%">Bobot</th>
-					<th style="width: 50%">Tujuan Pemelajaran</th>
+					<th style="width: 60%">Tujuan Pemelajaran</th>
 					<th>Aksi</th>
 				</tr>
 			</thead>
