@@ -28,8 +28,7 @@
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
 					<th style="width: 50px; min-width: 40px;">No</th>
 					<th>Nama</th>
-					<th class="w-full flex-1">Deskripsi</th>
-					<th>Nilai Akhir</th>
+					<th class="w-full flex-1">Deskripsi Nilai</th>
 					<th>Aksi</th>
 				</tr>
 			</thead>
@@ -38,16 +37,15 @@
 					<td>1</td>
 					<td>Ali</td>
 					<td> Perlu bimbingan dalam mempelajari teknik simpul. </td>
-					<td> C </td>
 					<td>
-						<label
-							for="input-extrakurikuler"
+						<a
 							class="btn btn-sm btn-soft shadow-none"
 							title="Edit nilai"
+							href="/nilai-ekstrakurikuler/form-asesmen"
 						>
 							<Icon name="edit" />
 							Nilai
-						</label>
+						</a>
 					</td>
 				</tr>
 			</tbody>
@@ -79,16 +77,17 @@
 					required
 				>
 					<option value="" disabled selected>Pilih Nilai</option>
-					<option>A</option>
-					<option>B</option>
-					<option>C</option>
+					<option>Sangat baik</option>
+					<option>Baik</option>
+					<option>Cukup</option>
+					<option>Perlu bimbingan</option>
 				</select>
 			</div>
 			<label class="floating-label">
 				<span class="label-text">Deskripsi</span>
 				<textarea
 					class="textarea dark:bg-base-300 w-full dark:border-none"
-					placeholder="Isi deskripsi nilai ekstrakurikuler di sini validator"
+					placeholder="Isi deskripsi nilai ekstrakurikuler di sini"
 					rows="4"
 					required
 				></textarea>

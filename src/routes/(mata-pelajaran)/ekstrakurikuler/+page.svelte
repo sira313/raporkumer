@@ -78,6 +78,13 @@
 						<td>{eks.nama}</td>
 						<td>
 							<div class="flex flex-row gap-2">
+								<a
+									href="ekstrakurikuler/tp-ekstra"
+									class="btn btn-sm shadow-none"
+									title="Edit Tujuan Pembelajaran"
+								>
+									<Icon name="edit" />
+								</a>
 								<button
 									class="btn btn-sm btn-error btn-soft shadow-none"
 									type="button"
