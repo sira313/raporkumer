@@ -48,14 +48,13 @@
 				</tr>
 			</tbody>
 		</table>
-		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div class="m-2">
-			<div tabindex="0" class="bg-base-200 border-base-300 collapse border">
-				<div class="collapse-title font-semibold">Daftar tugas sudah selesai</div>
-				<div class="collapse-content p-0">
+			<div class="bg-base-300 dark:bg-base-200 border-base-300 collapse mt-6 border">
+				<input type="checkbox" />
+				<div class="collapse-title font-bold">Tugas sudah selesai</div>
+				<div class="collapse-content p-0 text-sm">
 					<table class="table">
 						<tbody>
-							<!-- row 1 -->
 							<tr>
 								<th><input type="checkbox" checked class="checkbox" /></th>
 								<td class="p-2"><p class="flex-1"><s>Mengisi Data Kelas</s></p></td>
@@ -65,7 +64,6 @@
 									</button>
 								</td>
 							</tr>
-							<!-- row 2 -->
 							<tr>
 								<th><input type="checkbox" checked class="checkbox" /></th>
 								<td class="p-2"><p class="flex-1"><s>keluarkan Murid an. Jokowi</s></p></td>
