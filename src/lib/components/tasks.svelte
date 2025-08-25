@@ -6,8 +6,25 @@
 	<div class="flex flex-row items-center justify-center p-4">
 		<h2 class="text-lg font-bold">Daftar tugas</h2>
 		<div class="flex-1"></div>
-		<div class="btn btn-circle btn-ghost">
-			<Icon name="plus" class="text-xl" />
+		<div class="join">
+			<div class="btn join-item shadow-none">
+				<Icon name="plus" />
+			</div>
+			<div class="dropdown dropdown-end">
+				<div
+					tabindex="0"
+					role="button"
+					title="Tombol hapus"
+					class="join-item btn btn-error btn-soft shadow-none"
+				>
+					<Icon name="del" />
+					<Icon name="collapse-all" />
+				</div>
+				<ul class="menu dropdown-content bg-base-100 rounded-box z-1 mt-2 w-40 p-2 shadow-md">
+					<li class="btn btn-ghost btn-sm">Hapus tugas selesai</li>
+					<li class="btn btn-ghost btn-sm">Hapus semua tugas</li>
+				</ul>
+			</div>
 		</div>
 	</div>
 	<!-- konten -->
