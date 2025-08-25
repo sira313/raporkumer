@@ -70,6 +70,10 @@ export const appMenuItems: MenuItem[] = [
 			{
 				title: 'Absen',
 				path: '/absen'
+			},
+			{
+				title: 'Catatan Wali Kelas',
+				path: '/catatan-wali-kelas'
 			}
 		]
 	},
