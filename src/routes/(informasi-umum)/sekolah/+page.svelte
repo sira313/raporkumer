@@ -81,6 +81,12 @@
 						{/if}
 					</div>
 				</div>
+
+				<!-- Tahun ajaran yang sedang aktif -->
+				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
+					<span class="text-base-content/70 font-semibold">Tahun Ajaran</span>
+					<span class="text-base-content md:col-span-2"> 2025/2026 </span>
+				</div>
 			</div>
 
 			<div class="card-actions mt-8 justify-end">
