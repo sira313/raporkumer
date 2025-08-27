@@ -31,7 +31,7 @@
 
 			<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-2">
 				<!-- Jenjang Pendidikan -->
-				<div>
+				<div class="md:col-span-2">
 					<legend class="fieldset-legend">Jenjang Pendidikan</legend>
 					<select
 						class="select bg-base-200 validator w-full border dark:border-none"
@@ -46,182 +46,148 @@
 				</div>
 
 				<div>
-					<!-- Tahun Ajaran -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Tahun Ajaran</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: 2024/2025"
-							name="tahunAjaran"
-						/>
-					</div>
-				</div>
-
-				<div>
 					<!-- Nama Sekolah -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Nama Sekolah</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: SD Negeri 19 Periji"
-							name="nama"
-						/>
-					</div>
+					<legend class="fieldset-legend">Nama Sekolah</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: SD Negeri 19 Periji"
+						name="nama"
+					/>
 				</div>
 
 				<div>
 					<!-- NPSN -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">NPSN</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: 69856875"
-							name="npsn"
-						/>
-					</div>
+					<legend class="fieldset-legend">NPSN</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: 69856875"
+						name="npsn"
+					/>
 				</div>
 
 				<div>
 					<!-- Nama Kepala Sekolah -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Nama Kepala Sekolah</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: Bruce Wayne, Bat"
-							name="kepalaSekolah.nama"
-						/>
-					</div>
+					<legend class="fieldset-legend">Nama Kepala Sekolah</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: Bruce Wayne, Bat"
+						name="kepalaSekolah.nama"
+					/>
 				</div>
 
 				<div>
 					<!-- NIP Kepala Sekolah -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">NIP Kepala Sekolah</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: 19700305 199309 1 009"
-							name="kepalaSekolah.nip"
-						/>
-					</div>
+					<legend class="fieldset-legend">NIP Kepala Sekolah</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: 19700305 199309 1 009"
+						name="kepalaSekolah.nip"
+					/>
 				</div>
 
-				<div>
-					<!-- Alamat Sekolah -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Alamat Sekolah</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
-							name="alamat.jalan"
-						/>
-					</div>
-				</div>
+				<div class="divider mb-0 md:col-span-2"></div>
 
 				<div>
 					<!-- Nama desa atau kelurahan -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Desa atau Kelurahan</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: Desa Sungai Dangin atau Kelurahan Sungai Sengkuang"
-							name="alamat.desa"
-						/>
-					</div>
+					<legend class="fieldset-legend">Desa atau Kelurahan</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: Desa Sungai Dangin atau Kelurahan Sungai Sengkuang"
+						name="alamat.desa"
+					/>
 				</div>
 
 				<div>
 					<!-- Kecamatan -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Kecamatan</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: Kecamatan Noyan"
-							name="alamat.kecamatan"
-						/>
-					</div>
+					<legend class="fieldset-legend">Kecamatan</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: Kecamatan Noyan"
+						name="alamat.kecamatan"
+					/>
 				</div>
 
 				<div>
 					<!-- Kabupaten -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Kabupaten</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: Kabupaten Sanggau"
-							name="alamat.kabupaten"
-						/>
-					</div>
+					<legend class="fieldset-legend">Kabupaten</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: Kabupaten Sanggau"
+						name="alamat.kabupaten"
+					/>
 				</div>
 
 				<div>
 					<!-- Provinsi -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Provinsi</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: Kalimantan Barat"
-							name="alamat.provinsi"
-						/>
-					</div>
+					<legend class="fieldset-legend">Provinsi</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: Kalimantan Barat"
+						name="alamat.provinsi"
+					/>
 				</div>
 
 				<div>
 					<!-- Kode Pos -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Kode POS</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: 78554"
-							name="alamat.kodePos"
-						/>
-					</div>
+					<legend class="fieldset-legend">Kode POS</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: 78554"
+						name="alamat.kodePos"
+					/>
 				</div>
 
 				<div>
+					<!-- Alamat Sekolah -->
+					<legend class="fieldset-legend">Rincian Alamat Sekolah</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: Jalan Raya Noyan, RT 9 / RW 3, Dusun Periji"
+						name="alamat.jalan"
+					/>
+				</div>
+
+				<div class="divider mb-0 md:col-span-2"></div>
+
+				<div>
 					<!-- Website Sekolah -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Website Sekolah</legend>
-						<label class="input bg-base-200 validator w-full dark:border-none">
-							<span class="label">https://</span>
-							<input type="text" placeholder="Kosongkan bila tidak ada" name="website" />
-						</label>
-					</div>
+					<legend class="fieldset-legend">Website Sekolah</legend>
+					<label class="input bg-base-200 validator w-full dark:border-none">
+						<span class="label">https://</span>
+						<input type="text" placeholder="Kosongkan bila tidak ada" name="website" />
+					</label>
 				</div>
 
 				<div>
 					<!-- Email Sekolah -->
-					<div class="flex-1">
-						<legend class="fieldset-legend">Email Sekolah</legend>
-						<input
-							required
-							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
-							placeholder="Contoh: cs@sdn19periji.sch.id"
-							name="email"
-						/>
-					</div>
+					<legend class="fieldset-legend">Email Sekolah</legend>
+					<input
+						required
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: cs@sdn19periji.sch.id"
+						name="email"
+					/>
 				</div>
 			</div>
 
