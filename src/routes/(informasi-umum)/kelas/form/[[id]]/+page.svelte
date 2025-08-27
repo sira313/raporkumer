@@ -25,14 +25,38 @@
 
 				<!-- Fase -->
 				<div>
-					<legend class="fieldset-legend">Fase</legend>
+					<!-- <legend class="fieldset-legend">Fase</legend>
 					<input
 						required
 						type="text"
 						class="input validator bg-base-200 w-full dark:border-none"
 						placeholder="Contoh: Fase C (Kelas 6)"
 						name="fase"
-					/>
+					/> -->
+					<legend class="fieldset-legend">Tingkat pendidikan</legend>
+					<select class="select w-full bg-base-200 dark:border-none">
+					  <option disabled selected>Pilih tingkat pendidikan</option>
+						<!-- Penambahan logika jika: -->
+						<!-- Kelas 1 dan kelas 2 maka Fase A  -->
+					  <option>Kelas 1</option>
+					  <option>Kelas 2</option>
+						<!-- Kelas 3 dan kelas 4 maka Fase B -->
+					  <option>Kelas 3</option>
+						<option>Kelas 4</option>
+						<!-- Kelas 5 dan kelas 6 maka Fase C -->
+					  <option>Kelas 5</option>
+					  <option>Kelas 6</option>
+						<!-- Kelas 7, Kelas 8 dan Kelas 9 maka Fase D -->
+						<option>Kelas 7</option>
+					  <option>Kelas 8</option>
+					  <option>Kelas 9</option>
+						<!-- Kelas 10 maka Fase E -->
+						<option>Kelas 10</option>
+						<!-- Kelas 11 maka Fase F -->
+					  <option>Kelas 11</option>
+						<!-- Kelas 12 maka Fase G -->
+					  <option>Kelas 12</option>
+					</select>
 				</div>
 
 				<!-- Wali Kelas -->
