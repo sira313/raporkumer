@@ -1,10 +1,13 @@
 <script lang="ts">
 	import Masukan from './masukan.svelte';
+	import Donate from '$lib/components/donate.svelte';
 
 	let masukanModal: InstanceType<typeof Masukan>;
 </script>
 
-<div class="card rounded-box bg-base-100 mx-auto w-full max-w-4xl shadow-sm">
+<Donate />
+
+<div class="card rounded-box bg-base-100 shadow-sm">
 	<div class="card-body text-base">
 		<h2 class="card-title mb-4 text-xl font-bold">Aplikasi E-Rapor Kurikulum Merdeka</h2>
 		<p class="prose max-w-none">

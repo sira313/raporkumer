@@ -9,7 +9,7 @@
 	let { data } = $props();
 </script>
 
-<div class="card bg-base-100 mx-auto w-full max-w-4xl rounded-lg border border-none p-4 shadow-md">
+<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<h2 class="mb-6 text-xl font-bold">Formulir Dan Tabel Isian Data Murid</h2>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
@@ -42,7 +42,7 @@
 		use:autoSubmit
 	>
 		<!-- Cari nama murid -->
-		<label class="input bg-base-200 dark:border-none">
+		<label class="input bg-base-200 w-full dark:border-none">
 			<Icon name="search" />
 			<input
 				type="search"
@@ -54,7 +54,8 @@
 			/>
 		</label>
 
-		<select
+		<!-- Pilih kelas akan dihapus dan dipindahkan ke navbar -->
+		<!-- <select
 			class="select bg-base-200 dark:border-none"
 			title="Pilih kelas"
 			name="kelas_id"
@@ -68,7 +69,7 @@
 			{:else}
 				<option value={null} disabled selected> Belum ada data kelas </option>
 			{/each}
-		</select>
+		</select> -->
 
 		<!-- pagination -->
 		<div class="join sm:ml-auto">

@@ -3,19 +3,13 @@
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">Daftar Nilai Sumatif</h2>
+	<h2 class="mb-6 text-xl font-bold">Rekapitulasi Catatan Wali Kelas</h2>
 
-	<div class="flex flex-col items-center gap-2 sm:flex-row">
-		<select class="select bg-base-200 w-full md:max-w-80 dark:border-none" title="Pilih kelas">
-			<option value="" disabled selected> Pilih Mata Pelajaran</option>
-			<option value=""> IPAS </option>
-		</select>
-		<!-- Cari nama murid -->
-		<label class="input bg-base-200 w-full dark:border-none">
-			<Icon name="search" />
-			<input type="search" required placeholder="Cari nama murid..." />
-		</label>
-	</div>
+	<!-- Cari nama murid -->
+	<label class="input bg-base-200 w-full dark:border-none">
+		<Icon name="search" />
+		<input type="search" required placeholder="Cari nama murid..." />
+	</label>
 
 	<!-- Tabel daftar murid -->
 	<div
@@ -26,8 +20,8 @@
 			<thead>
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
 					<th style="width: 50px; min-width: 40px;">No</th>
-					<th class="w-full" style="min-width: 100px;">Nama</th>
-					<th>Nilai Akhir</th>
+					<th>Nama</th>
+					<th class="w-full flex-1">Catatan</th>
 					<th>Aksi</th>
 				</tr>
 			</thead>
@@ -35,31 +29,29 @@
 				<tr>
 					<td>1</td>
 					<td>Ali</td>
-					<td> 78,5 </td>
+					<td> Giatlah belajar, raih cita-citamu. </td>
 					<td>
-						<a
-							class="btn btn-sm btn-soft shadow-none"
-							title="Edit nilai"
-							href="/asesmen-sumatif/formulir-asesmen"
-						>
+						<!-- Ketika tombol ini di-klik maka isian cell berubah menjadi input -->
+						<!-- Request fitur: tombol berubah menjadi tombol save ketika user sedang melakukan input -->
+						<button class="btn btn-sm btn-soft shadow-none">
 							<Icon name="edit" />
-							Nilai
-						</a>
+							Edit
+						</button>
 					</td>
 				</tr>
 				<tr>
-					<td>2</td>
+					<td>1</td>
 					<td>Benny</td>
-					<td> 0 </td>
 					<td>
-						<a
-							class="btn btn-sm btn-soft shadow-none"
-							title="Edit nilai"
-							href="/asesmen-sumatif/formulir-asesmen"
-						>
+						Teruslah menjadi teladan bagi teman-temanmu dengan sikap disiplin dan rajin belajar.
+					</td>
+					<td>
+						<!-- Ketika tombol ini di-klik maka isian cell berubah menjadi input -->
+						<!-- Request fitur: tombol berubah menjadi tombol save ketika user sedang melakukan input -->
+						<button class="btn btn-sm btn-soft shadow-none">
 							<Icon name="edit" />
-							Nilai
-						</a>
+							Edit
+						</button>
 					</td>
 				</tr>
 			</tbody>

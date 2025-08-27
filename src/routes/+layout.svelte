@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import GlobalModal from '$lib/components/global-modal.svelte';
+	import Icon from '$lib/components/icon.svelte';
 	import Menu from '$lib/components/menu.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
 	import Toast from '$lib/components/toast.svelte';
+	import Task from '$lib/components/tasks.svelte';
 
 	import '../app.css';
 
@@ -36,7 +38,12 @@
 		<!-- Page content -->
 		<div class="card-body flex min-h-[calc(100vh-4.8rem)] flex-1 flex-col">
 			<div class="max-w-none">
-				{@render children()}
+				<div class="mr-auto flex flex-row gap-4">
+					<div class="w-full max-w-5xl">
+						{@render children()}
+					</div>
+					<Task />
+				</div>
 			</div>
 		</div>
 	</div>
@@ -52,8 +59,11 @@
 
 			<Menu />
 
-			<div class="mt-4 pl-3">
-				<a href="/tentang"><h2 class="mb-2 font-bold">Tentang Aplikasi</h2></a>
+			<div class="mt-4 flex flex-col gap-3 pl-3">
+				<a href="/tentang" class="flex items-center gap-2">
+					<Icon name="info" />
+					<h2 class="font-bold">Tentang Aplikasi</h2>
+				</a>
 			</div>
 		</ul>
 	</div>

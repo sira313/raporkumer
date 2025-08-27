@@ -7,7 +7,7 @@
 	<!-- Kolom 1: Data Utama & Progress -->
 	<div class="flex flex-col gap-6">
 		<!-- Widget Data Sekolah -->
-		<div class="card bg-base-100 rounded-box dark:border-none">
+		<div class="card bg-base-100 rounded-box shadow-md dark:border-none">
 			<div class="card-body">
 				<div class="flex items-center gap-4">
 					<div class="avatar">
@@ -25,16 +25,20 @@
 		</div>
 
 		<!-- Statistik Angka -->
-		<div class="stats stats-vertical lg:stats-horizontal bg-base-100 rounded-box w-full">
-			<div class="stat">
+		<div class="stats stats-vertical lg:stats-horizontal bg-base-100 rounded-box w-full shadow-md">
+			<div class="stat justify-center">
 				<div class="stat-figure">
 					<span class="text-accent text-3xl">
 						<Icon name="user" />
 					</span>
 				</div>
-				<div class="stat-title">Jumlah Kelas</div>
+				<div class="stat-title">Jumlah Rombel</div>
 				<div class="stat-value">6</div>
-				<div class="stat-desc">6 kelas X, 6 kelas XI, 6 kelas XII</div>
+				<div class="stat-desc flex flex-wrap gap-1">
+					<div class="badge badge-sm badge-soft whitespace-nowrap">2 Fase A</div>
+					<div class="badge badge-sm badge-soft whitespace-nowrap">2 Fase B</div>
+					<div class="badge badge-sm badge-soft whitespace-nowrap">2 Fase C</div>
+				</div>
 			</div>
 
 			<div class="stat">
@@ -49,7 +53,7 @@
 			</div>
 		</div>
 
-		<div class="stats stats-vertical lg:stats-horizontal rounded-box bg-base-100 w-full">
+		<div class="stats stats-vertical lg:stats-horizontal rounded-box bg-base-100 w-full shadow-md">
 			<div class="stat">
 				<div class="stat-figure text-primary">
 					<span class="text-3xl">
@@ -77,7 +81,7 @@
 	<!-- Kolom 2: Progress & Aksi -->
 	<div class="flex flex-col gap-6">
 		<!-- Widget Progress Pengisian -->
-		<div class="card bg-base-100 rounded-box">
+		<div class="card bg-base-100 rounded-box shadow-md">
 			<div class="card-body">
 				<h2 class="card-title mb-4">
 					<span class="text-xl">
@@ -127,7 +131,7 @@
 		</div>
 
 		<!-- Widget Aksi -->
-		<div class="card bg-base-100 rounded-box">
+		<div class="card bg-base-100 rounded-box shadow-md">
 			<div class="card-body">
 				<h2 class="card-title mb-4">
 					<span class="text-xl">
