@@ -24,7 +24,7 @@
 				</div>
 
 				<!-- Fase -->
-				<div>
+				<!-- <div>
 					<legend class="fieldset-legend">Fase</legend>
 					<input
 						required
@@ -33,6 +33,35 @@
 						placeholder="Contoh: Fase C (Kelas 6)"
 						name="fase"
 					/>
+				</div> -->
+
+				<!-- Fase diganti dengan tingkat pendidikan -->
+				<div>
+					<legend class="fieldset-legend">Tingkat Pendidikan</legend>
+					<select class="select bg-base-200 w-full dark:border-none">
+						<!-- Jika pada data sekolah user memilih Jenjang Pendidikan SD Maka opsi ditampilkan hanya kelas 1-6 -->
+						<!-- Jika pada data sekolah user memilih Jenjang Pendidikan SMP Maka opsi ditampilkan hanya kelas 7-9 -->
+						<!-- Jika pada data sekolah user memilih Jenjang Pendidikan SMA Maka opsi ditampilkan hanya kelas 10-12 -->
+						<option disabled selected>Pilih Tingkat Pendidikan</option>
+						<!-- Kelas 1 dan 2 berarti Fase A -->
+						<option>Kelas 1</option>
+						<option>Kelas 2</option>
+						<!-- Kelas 3 dan 4 berarti Fase B -->
+						<option>Kelas 3</option>
+						<option>Kelas 4</option>
+						<!-- Kelas 5 dan 6 berarti Fase C -->
+						<option>Kelas 5</option>
+						<option>Kelas 6</option>
+						<!-- Kelas 7 8 dan 9 berarti Fase D -->
+						<option>Kelas 7</option>
+						<option>Kelas 8</option>
+						<option>Kelas 9</option>
+						<!-- Kelas 10 berarti Fase E -->
+						<option>Kelas 10</option>
+						<!-- Kelas 11 dan 12 berarti Fase F -->
+						<option>Kelas 11</option>
+						<option>Kelas 12</option>
+					</select>
 				</div>
 
 				<!-- Wali Kelas -->
