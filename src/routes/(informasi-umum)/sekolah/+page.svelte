@@ -81,19 +81,20 @@
 						{/if}
 					</div>
 				</div>
-
-				<!-- Tahun ajaran yang sedang aktif -->
-				<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
-					<span class="text-base-content/70 font-semibold">Tahun Ajaran</span>
-					<span class="text-base-content md:col-span-2"> 2025/2026 </span>
-				</div>
 			</div>
 
-			<div class="card-actions mt-8 justify-end">
-				<a href="/sekolah/form" class="btn btn-primary shadow-none" aria-label="Edit data sekolah">
-					<Icon name="edit" />
-					Edit
-				</a>
+			<div class="card-actions mt-8 flex items-center justify-end gap-4">
+				<!-- Kanan: Tombol Actions -->
+				<div class="flex flex-col gap-2 md:flex-row">
+					<a href="/sekolah/tahun-ajaran" class="btn shadow-none" aria-label="Lihat tahun ajaran">
+						<Icon name="calendar" />
+						Tahun Ajaran
+					</a>
+					<a href="/sekolah/form" class="btn shadow-none" aria-label="Edit data sekolah">
+						<Icon name="edit" />
+						Edit Sekolah
+					</a>
+				</div>
 			</div>
 		</div>
 	</div>

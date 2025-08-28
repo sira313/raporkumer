@@ -32,11 +32,13 @@
 
 <main class="drawer lg:drawer-open">
 	<input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-	<div class="drawer-content bg-base-300 dark:bg-base-200">
+	<div class="drawer-content">
 		<Navbar />
 
 		<!-- Page content -->
-		<div class="card-body flex min-h-[calc(100vh-4.8rem)] flex-1 flex-col">
+		<div
+			class="card-body bg-base-300 dark:bg-base-200 flex min-h-[calc(100vh-4rem)] flex-1 flex-col lg:rounded-tl-xl"
+		>
 			<div class="max-w-none">
 				<div class="mr-auto flex flex-row gap-4">
 					<div class="w-full max-w-5xl">

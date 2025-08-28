@@ -55,7 +55,7 @@
 				class="input bg-base-200 join-item w-full dark:border-none"
 				placeholder="Contoh: 5173"
 			/>
-			<p class="label">Kosongkan bila tidak diperlukan</p>
+			<p class="text-base-content/70 mt-1 text-xs">Kosongkan bila tidak diperlukan</p>
 		</fieldset>
 
 		<fieldset class="fieldset">
@@ -70,7 +70,19 @@
 				/>
 				<btn class="btn join-item shadow-none">Copy</btn>
 			</div>
-			<p class="label">Buka alamat ini pada perangkat lain di jaringan lokal yang sama</p>
+			<p class="text-base-content/70 mt-1 text-xs">
+				Buka alamat ini pada perangkat lain di jaringan lokal yang sama
+			</p>
+		</fieldset>
+
+		<!-- Kiri: File Upload -->
+		<fieldset class="fieldset max-w-xs">
+			<legend class="fieldset-legend">Import data siswa dan kelas</legend>
+			<input type="file" class="file-input file-input-ghost" accept=".xlsx, .xls" name="data" />
+			<p class="text-base-content/70 mt-1 text-xs">
+				File daftar siswa dengan format excel dari dapodik. Pastikan file dapat dibuka sebelum
+				import.
+			</p>
 		</fieldset>
 
 		<div class="col-span-1 mt-6 flex justify-end md:col-span-2">
