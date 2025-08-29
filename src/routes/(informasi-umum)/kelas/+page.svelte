@@ -10,12 +10,14 @@
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 	{#each data.daftarKelas as kelas (kelas)}
 		<div class="card bg-base-100 rounded-box shadow-md">
-			<div class="card-body">
+			<div class="p-4">
 				<div class="flex items-start justify-between">
 					<h2 class="card-title text-xl font-bold">{kelas.nama}</h2>
 					<div class="badge badge-accent">{kelas.fase}</div>
 				</div>
-				<div class="divider m-0"></div>
+			</div>
+			<div class="border-base-300 dark:border-base-200 m-0 border"></div>
+			<div class="p-4">
 				<div class="card-actions border-base-200 mt-auto items-center justify-start pt-4">
 					<div class="avatar">
 						<Icon name="user" class="text-4xl" />

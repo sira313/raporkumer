@@ -93,8 +93,6 @@
 					/>
 				</div>
 
-				<div class="divider mb-0 md:col-span-2"></div>
-
 				<div>
 					<!-- Nama desa atau kelurahan -->
 					<legend class="fieldset-legend">Desa atau Kelurahan</legend>
@@ -167,8 +165,6 @@
 					/>
 				</div>
 
-				<div class="divider mb-0 md:col-span-2"></div>
-
 				<div>
 					<!-- Website Sekolah -->
 					<legend class="fieldset-legend">Website Sekolah</legend>
@@ -192,7 +188,7 @@
 			</div>
 
 			<!-- Upload logo sekolah -->
-			<legend class="fieldset-legend">Logo Sekolah</legend>
+			<legend class="fieldset-legend mt-2">Logo Sekolah</legend>
 			<input type="file" class="file-input file-input-ghost" accept="image/*" name="logo" />
 			<p class="label">Format png, tanpa latar belakang, maksimal 300KB</p>
 
