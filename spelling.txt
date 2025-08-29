@@ -1,3 +1,4 @@
+Anistoga
 Anwar
 Benyamin
 Beranda
@@ -11,6 +12,7 @@ dexie
 diinput
 diperjualbelikan
 Extrakurikuler
+Fathonah
 FOREIGNKEY
 Formatif
 Hendra
@@ -21,10 +23,13 @@ keepfocus
 Kembayan
 Kumer
 libsql
+Mandasari
 mdsvex
 Mustofa
 Netanyahu
+Nilawidya
 NOCASE
+Noffie
 Noyan
 NPSN
 penginputan
@@ -37,10 +42,13 @@ Ratih
 replacestate
 Rincian
 Rombel
+Saipul
 Silahkan
 Sumatif
+Suryanti
 terbantu
 Teruslah
+trakteer
 tutwuri
 unflatten
 Zaki
