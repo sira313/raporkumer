@@ -27,7 +27,7 @@
 		<table class="table">
 			<tbody>
 				<!-- row 1 -->
-				<tr>
+				<tr class="border-base-300 dark:border-base-200">
 					<th><input type="checkbox" class="checkbox" /></th>
 					<td class="p-2"><p class="flex-1">Mengisi nilai IPAS untuk semua siswa kelas I</p></td>
 					<td class="p-2">
@@ -37,7 +37,7 @@
 					</td>
 				</tr>
 				<!-- row 2 -->
-				<tr>
+				<tr class="border-base-300 dark:border-base-200">
 					<th><input type="checkbox" class="checkbox" /></th>
 					<td class="p-2"><p class="flex-1">Mengisi nilai IPAS untuk semua siswa kelas I</p></td>
 					<td class="p-2">
@@ -55,7 +55,7 @@
 				<div class="collapse-content p-0 text-sm">
 					<table class="table">
 						<tbody>
-							<tr>
+							<tr class="border-base-100">
 								<th><input type="checkbox" checked class="checkbox" /></th>
 								<td class="p-2"><p class="flex-1"><s>Mengisi Data Kelas</s></p></td>
 								<td class="p-2">
