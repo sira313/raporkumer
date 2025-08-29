@@ -56,4 +56,27 @@
 		</div>
 	</div>
 </div>
+
+<div class="card rounded-box bg-base-100 mt-6 shadow-sm">
+	<div class="card-body text-base">
+		<h2 class="card-title mb-4 text-xl font-bold">Special Thanks</h2>
+		<p class="prose max-w-none">
+			Kami mengucapkan terima kasih kepada semua pihak yang telah berkontribusi dalam pengembangan
+			aplikasi ini, antara lain:
+		</p>
+		<ul class="list-disc pl-5">
+			<li>Noffie Suryanti Mandasari, S.Pd. (Ide dan saran pengembangan UI)</li>
+			<li>Saipul Anam, S.Pd. (Saran alur sumatif)</li>
+			<li>Anistoga, S.Pd (Saran alur sumatif)</li>
+			<li>Fathonah Nilawidya, S.Pd. (Saran alur sumatif)</li>
+			<li>
+				Semua pihak yang telah memberikan donasi untuk aplikasi ini melalui <a
+					href="https://trakteer.id/raporkumer/"
+					target="_blank"
+					class="link link-primary">trakteer</a
+				>.
+			</li>
+		</ul>
+	</div>
+</div>
 <Masukan bind:this={masukanModal} />
