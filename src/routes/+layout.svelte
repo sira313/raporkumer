@@ -44,7 +44,9 @@
 					<div class="w-full max-w-5xl">
 						{@render children()}
 					</div>
-					<Task />
+					<div class="sticky top-20 self-start">
+						<Task />
+					</div>
 				</div>
 			</div>
 		</div>
