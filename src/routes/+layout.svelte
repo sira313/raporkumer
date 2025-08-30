@@ -54,7 +54,7 @@
 	<div class="drawer-side">
 		<label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
 		<ul class="menu bg-base-100 text-base-content min-h-full w-80 p-4">
-			<div class="mt-[4rem] flex items-center gap-2 pb-4 pl-3 lg:mt-1">
+			<div class="mt-[4rem] flex items-center gap-2 pb-4 lg:mt-1">
 				{#if data.meta?.logoUrl}
 					<img class="h-8 rounded" src={data.meta.logoUrl} alt="Brand logo" />
 				{/if}
@@ -63,7 +63,7 @@
 
 			<Menu />
 
-			<div class="mt-4 flex flex-col gap-3 pl-3">
+			<div class="mt-4 flex flex-col gap-3">
 				<a href="/tentang" class="flex items-center gap-2">
 					<Icon name="info" />
 					<h2 class="font-bold">Tentang Aplikasi</h2>
