@@ -71,7 +71,7 @@
 							<td class="align-top">60</td>
 							<td class="align-top">{tp.deskripsi}</td>
 							<td>
-								<div class="flex gap-2">
+								<div class="flex flex-col gap-2">
 									<button
 										class="btn btn-sm btn-soft shadow-none"
 										type="button"
