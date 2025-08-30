@@ -37,14 +37,16 @@
 
 		<!-- Page content -->
 		<div
-			class="card-body bg-base-300 dark:bg-base-200 flex min-h-[calc(100vh-4rem)] flex-1 flex-col lg:rounded-tl-xl"
+			class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:rounded-tl-xl"
 		>
-			<div class="max-w-none">
-				<div class="mr-auto flex flex-row gap-4">
+			<div class="max-h-[calc(100vh-4.3rem)] min-h-[calc(100vh-4.3rem)] max-w-none overflow-y-auto">
+				<div class="m-4 mr-auto flex flex-row gap-4 lg:m-6">
 					<div class="w-full max-w-5xl">
 						{@render children()}
 					</div>
-					<Task />
+					<div class="sticky top-6 self-start">
+						<Task />
+					</div>
 				</div>
 			</div>
 		</div>
@@ -52,7 +54,7 @@
 	<div class="drawer-side">
 		<label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
 		<ul class="menu bg-base-100 text-base-content min-h-full w-80 p-4">
-			<div class="mt-20 flex items-center gap-2 pb-4 pl-3 lg:mt-1">
+			<div class="mt-[4rem] flex items-center gap-2 pb-4 pl-3 lg:mt-1">
 				{#if data.meta?.logoUrl}
 					<img class="h-8 rounded" src={data.meta.logoUrl} alt="Brand logo" />
 				{/if}

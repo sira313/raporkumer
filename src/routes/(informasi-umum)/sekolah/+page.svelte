@@ -90,6 +90,10 @@
 						<Icon name="calendar" />
 						Tahun Ajaran
 					</a>
+					<a href="/pengaturan" class="btn shadow-none" aria-label="Edit data sekolah">
+						<Icon name="gear" />
+						Pengaturan
+					</a>
 					<a href="/sekolah/form" class="btn shadow-none" aria-label="Edit data sekolah">
 						<Icon name="edit" />
 						Edit Sekolah

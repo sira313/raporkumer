@@ -95,12 +95,15 @@
 			<span class="swap-off"><Icon name="collapse-all" /></span>
 		</label>
 	</div>
-
-	{#each menuItems as menu (menu)}
-		{@render menu_item(menu)}
-	{:else}
-		<li>
-			<span class="italic opacity-50 text-sm"> Tidak ada hasil pencarian </span>
-		</li>
-	{/each}
+	<div
+		class="lg:bg-base-200 lg:rounded-box lg:max-h-[calc(100vh-11.5rem)] lg:overflow-y-auto lg:shadow-inner"
+	>
+		{#each menuItems as menu (menu)}
+			{@render menu_item(menu)}
+		{:else}
+			<li>
+				<span class="italic opacity-50 text-sm"> Tidak ada hasil pencarian </span>
+			</li>
+		{/each}
+	</div>
 </div>
