@@ -70,9 +70,7 @@
 		</label>
 	</div>
 
-	<div class="mx-2 flex-1 px-2">
-		<span class="text-lg font-bold">{page.data.meta?.title || ''}</span>
-	</div>
+	<span class="mx-2 flex-1 truncate px-2 text-lg font-bold">{page.data.meta?.title || ''}</span>
 	<div class="ml-auto flex-none">
 		<ul class="flex items-center px-1">
 			<li>
