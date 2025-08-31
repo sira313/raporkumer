@@ -3,9 +3,9 @@
 </script>
 
 <!-- Kontainer Utama Grid -->
-<div class="mx-auto grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-2">
+<div class="grid max-w-5xl grid-cols-1 gap-5 md:grid-cols-2">
 	<!-- Kolom 1: Data Utama & Progress -->
-	<div class="flex flex-col gap-6">
+	<div class="flex flex-col gap-5">
 		<!-- Widget Data Sekolah -->
 		<div class="card bg-base-100 rounded-box shadow-md dark:border-none">
 			<div class="card-body">
@@ -139,14 +139,14 @@
 					</span>
 					Tindakan Cepat
 				</h2>
-				<div class="grid grid-cols-1 gap-4">
+				<div class="grid grid-cols-1 gap-2">
 					<!-- Tombol Export Data -->
 					<button class="btn btn-primary w-full shadow-none">
 						<Icon name="export" />
 						Export Dapodik
 					</button>
 					<!-- Tombol Backup Data -->
-					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+					<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
 						<button class="btn btn-outline btn-accent w-full shadow-none">
 							<Icon name="database" />
 							Backup Data
