@@ -83,22 +83,20 @@
 				</div>
 			</div>
 
-			<div class="card-actions mt-8 flex items-center justify-end gap-4">
-				<!-- Kanan: Tombol Actions -->
-				<div class="flex flex-col gap-2 md:flex-row">
-					<a href="/sekolah/tahun-ajaran" class="btn shadow-none" aria-label="Lihat tahun ajaran">
-						<Icon name="calendar" />
-						Tahun Ajaran
-					</a>
-					<a href="/pengaturan" class="btn shadow-none" aria-label="Edit data sekolah">
-						<Icon name="gear" />
-						Pengaturan
-					</a>
-					<a href="/sekolah/form" class="btn shadow-none" aria-label="Edit data sekolah">
-						<Icon name="edit" />
-						Edit Sekolah
-					</a>
-				</div>
+			<!-- Kanan: Tombol Actions -->
+			<div class="mt-8 flex flex-col justify-end gap-2 md:flex-row">
+				<a href="/sekolah/tahun-ajaran" class="btn shadow-none" aria-label="Lihat tahun ajaran">
+					<Icon name="calendar" />
+					Tahun Ajaran
+				</a>
+				<a href="/pengaturan" class="btn shadow-none" aria-label="Edit data sekolah">
+					<Icon name="gear" />
+					Pengaturan
+				</a>
+				<a href="/sekolah/form" class="btn shadow-none" aria-label="Edit data sekolah">
+					<Icon name="edit" />
+					Edit Sekolah
+				</a>
 			</div>
 		</div>
 	</div>

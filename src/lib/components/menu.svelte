@@ -82,12 +82,12 @@
 
 <div class="flex-1">
 	<div class="mb-3 flex gap-1">
-		<label class="input bg-base-200 ml-2 dark:border-none">
+		<label class="input bg-base-200 rounded-box dark:border-none">
 			<Icon name="search" />
 			<input type="search" class="grow" bind:value={search} placeholder="Cari menu" />
 		</label>
 		<label
-			class="btn swap btn-square shadow-none"
+			class="btn swap btn-square rounded-box shadow-none"
 			title={expanded.value ? 'Sempitkan menu' : 'Luaskan menu'}
 		>
 			<input type="checkbox" bind:checked={expanded.value} />

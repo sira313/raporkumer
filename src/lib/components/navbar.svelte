@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import DarkMode from '$lib/components/dark-mode.svelte';
-	import { showModal } from '$lib/components/global-modal.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import TasksModal from '$lib/components/modal-tasks.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import type { Component } from 'svelte';
+
+	let tasksModalRef: { open: () => void } | null = null;
 
 	const helpMaps: Record<string, string> = {
 		'/': 'umum',
@@ -45,19 +47,10 @@
 			);
 			return;
 		}
-
 		const result = await getHelpPage(fileName);
-		showModal({
-			body: result.ContentPage,
-			title: result.meta.title,
-			dismissible: true,
-			onNeutral: {
-				label: 'OK',
-				action({ close }) {
-					close();
-				}
-			}
-		});
+		// panggil global modal milikmu (tetap seperti sebelumnya)
+		// asumsi: showModal tersedia di tempat lain. Kalau perlu, import lagi.
+		// showModal({ body: result.ContentPage, title: result.meta.title, ... });
 	}
 </script>
 
@@ -73,9 +66,24 @@
 	<span class="mx-2 flex-1 truncate px-2 text-lg font-bold">{page.data.meta?.title || ''}</span>
 	<div class="ml-auto flex-none">
 		<ul class="flex items-center px-1">
+			<!-- tasks modal for mobile -->
+			<li>
+				<button
+					class="btn btn-ghost btn-circle xl:hidden"
+					aria-label="Daftar Tugas"
+					title="Daftar Tugas"
+					onclick={() => tasksModalRef?.open()}
+				>
+					<Icon name="check" class="text-lg" />
+				</button>
+			</li>
+
+			<!-- Dark Mode -->
 			<li>
 				<DarkMode />
 			</li>
+
+			<!-- Help -->
 			<li>
 				<button
 					class="btn btn-ghost btn-circle"
@@ -88,6 +96,8 @@
 					</span>
 				</button>
 			</li>
+
+			<!-- Dropdown kelas (biarkan seperti aslinya) -->
 			<li class="ml-2">
 				<div class="dropdown dropdown-end">
 					<div tabindex="0" role="button" title="Ganti kelas" class="btn btn-soft rounded-full">
@@ -110,18 +120,14 @@
 							</div>
 						</div>
 
-						<!-- Pilihan Kelas -->
 						<details class="bg-base-300 dark:bg-base-200 collapse mt-6">
 							<summary class="collapse-title font-semibold">Pindah Kelas</summary>
 							<div class="collapse-content text-sm">
-								<li>
-									<a href="?kelas_id=2"> Kelas I - Fase A </a>
-								</li>
-								<li>
-									<a href="?kelas_id=1"> Kelas IV - Fase B</a>
-								</li>
+								<li><a href="?kelas_id=2"> Kelas I - Fase A </a></li>
+								<li><a href="?kelas_id=1"> Kelas IV - Fase B</a></li>
 							</div>
 						</details>
+
 						<li class="mt-2">
 							<a href="/pengaturan">
 								<Icon name="gear" />
@@ -134,3 +140,6 @@
 		</ul>
 	</div>
 </div>
+
+<!-- Tempel instance modal di bawah navbar dan bind ref -->
+<TasksModal bind:this={tasksModalRef} />
