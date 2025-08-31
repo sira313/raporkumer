@@ -40,7 +40,7 @@
 			class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:rounded-tl-xl"
 		>
 			<div class="max-h-[calc(100vh-4.3rem)] min-h-[calc(100vh-4.3rem)] max-w-none overflow-y-auto">
-				<div class="m-4 mr-auto flex flex-row gap-4 lg:m-6">
+				<div class="m-4 flex flex-row lg:m-6 xl:gap-5">
 					<div class="w-full max-w-5xl">
 						{@render children()}
 					</div>
