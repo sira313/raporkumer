@@ -42,13 +42,36 @@
 			pendidik dalam menerapkan Kurikulum Merdeka secara efektif, efisien, dan sesuai dengan
 			kebutuhan di lapangan.
 		</p>
-		<p class="prose max-w-none">
-			Pengembang:<br />
-			- <a href="https://apoxi.cam/" target="_blank" class="link link-primary">Aris Pratama</a>
-			(UI Designer)<br />
-			- <a href="https://mustofa.id" target="_blank" class="link link-primary">Habib Mustofa</a>
-			(Database Dev)<br />
-		</p>
+		<h3 class="pt-6">Pengembang:</h3>
+		<ul class="prose max-w-none">
+			<li>
+				- <a href="https://apoxi.cam/" target="_blank" class="link link-primary">Aris Pratama</a>
+				(UI Designer)
+			</li>
+			<li>
+				- <a href="https://mustofa.id" target="_blank" class="link link-primary">Habib Mustofa</a>
+				(Database Dev)
+			</li>
+		</ul>
+		<h3>Referensi:</h3>
+		<ul class="prose max-w-none">
+			<li>
+				-
+				<a
+					href="https://guru.kemendikdasmen.go.id/dokumen/P3J9R5eDYQ"
+					target="_blank"
+					class="link link-primary">Panduan Belajar dan Asesmen revisi 2025</a
+				>
+			</li>
+			<li>
+				-
+				<a
+					href="https://kurikulum.kemdikbud.go.id/file/1753779343_manage_file.pdf"
+					target="_blank"
+					class="link link-primary">Panduan Kokurikuler tahun 2025</a
+				>
+			</li>
+		</ul>
 		<div class="card-actions mt-4 justify-end">
 			<button class="btn btn-primary shadow-none" on:click={() => masukanModal.openModal()}>
 				Kirim Masukan
