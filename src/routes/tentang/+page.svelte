@@ -42,36 +42,36 @@
 			pendidik dalam menerapkan Kurikulum Merdeka secara efektif, efisien, dan sesuai dengan
 			kebutuhan di lapangan.
 		</p>
-		<h3 class="pt-6">Pengembang:</h3>
-		<ul class="prose max-w-none">
-			<li>
-				- <a href="https://apoxi.cam/" target="_blank" class="link link-primary">Aris Pratama</a>
-				(UI Designer)
-			</li>
-			<li>
-				- <a href="https://mustofa.id" target="_blank" class="link link-primary">Habib Mustofa</a>
-				(Database Dev)
-			</li>
-		</ul>
-		<h3>Referensi:</h3>
-		<ul class="prose max-w-none">
-			<li>
-				-
-				<a
-					href="https://kurikulum.kemdikbud.go.id/file/1755668120_manage_file.pdf"
-					target="_blank"
-					class="link link-primary">Panduan Belajar dan Asesmen revisi 2025</a
-				>
-			</li>
-			<li>
-				-
-				<a
-					href="https://kurikulum.kemdikbud.go.id/file/1753779343_manage_file.pdf"
-					target="_blank"
-					class="link link-primary">Panduan Kokurikuler tahun 2025</a
-				>
-			</li>
-		</ul>
+		<div class="prose max-w-none pt-6">
+			<h3 class="font-semibold">Pengembang:</h3>
+			<ul class="list-disc pl-5">
+				<li>
+					<a href="https://apoxi.cam/" target="_blank" class="link link-primary">Aris Pratama</a>
+					(UI Designer)
+				</li>
+				<li>
+					<a href="https://mustofa.id" target="_blank" class="link link-primary">Habib Mustofa</a>
+					(Database Dev)
+				</li>
+			</ul>
+			<h3 class="font-semibold">Referensi:</h3>
+			<ul class="list-disc pl-5">
+				<li>
+					<a
+						href="https://kurikulum.kemdikbud.go.id/file/1755668120_manage_file.pdf"
+						target="_blank"
+						class="link link-primary">Panduan Belajar dan Asesmen revisi 2025</a
+					>
+				</li>
+				<li>
+					<a
+						href="https://kurikulum.kemdikbud.go.id/file/1753779343_manage_file.pdf"
+						target="_blank"
+						class="link link-primary">Panduan Kokurikuler tahun 2025</a
+					>
+				</li>
+			</ul>
+		</div>
 		<div class="card-actions mt-4 justify-end">
 			<button class="btn btn-primary shadow-none" on:click={() => masukanModal.openModal()}>
 				Kirim Masukan
@@ -87,11 +87,13 @@
 			Kami mengucapkan terima kasih kepada semua pihak yang telah berkontribusi dalam pengembangan
 			aplikasi ini, antara lain:
 		</p>
-		<ul class="list-disc pl-5">
-			<li>Noffie Suryanti Mandasari, S.Pd. (Ide dan saran pengembangan UI)</li>
-			<li>Saipul Anam, S.Pd. (Saran alur sumatif)</li>
-			<li>Anistoga, S.Pd (Saran alur sumatif)</li>
-			<li>Fathonah Nilawidya, S.Pd. (Saran alur sumatif)</li>
+		<ul class="prose max-w-none list-disc pl-5">
+			<li>
+				<span class="font-semibold">Suryanti Mandasari, S.Pd.</span> (Ide dan saran pengembangan UI)
+			</li>
+			<li><span class="font-semibold">Saipul Anam, S.Pd.</span> (Saran alur sumatif)</li>
+			<li><span class="font-semibold">Anistoga, S.Pd</span> (Saran alur sumatif)</li>
+			<li><span class="font-semibold">Fathonah Nilawidya, S.Pd.</span> (Saran alur sumatif)</li>
 			<li>
 				Semua pihak yang telah memberikan donasi untuk aplikasi ini melalui <a
 					href="https://trakteer.id/raporkumer/"
