@@ -58,7 +58,7 @@
 			<li>
 				-
 				<a
-					href="https://guru.kemendikdasmen.go.id/dokumen/P3J9R5eDYQ"
+					href="https://kurikulum.kemdikbud.go.id/file/1755668120_manage_file.pdf"
 					target="_blank"
 					class="link link-primary">Panduan Belajar dan Asesmen revisi 2025</a
 				>
