@@ -50,7 +50,6 @@
 					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
 					<th style="width: 50px; min-width: 40px;">No</th>
 					<th style="width: 30%;">Lingkup Materi</th>
-					<th style="width: 15%">Bobot</th>
 					<th style="width: 60%">Tujuan Pemelajaran</th>
 					<th>Aksi</th>
 				</tr>
@@ -68,7 +67,6 @@
 							<td class="align-top"><input type="checkbox" class="checkbox" /></td>
 							<td class="align-top">{index + 1}</td>
 							<td class="align-top">{tp.lingkupMateri} </td>
-							<td class="align-top">60</td>
 							<td class="align-top">{tp.deskripsi}</td>
 							<td>
 								<div class="flex flex-col gap-2">
@@ -115,18 +113,6 @@
 				name="lingkupMateri"
 				required
 			></textarea>
-		</td>
-		<td class="align-top">
-			<input
-				type="number"
-				class="input validator bg-base-200 border-base-300 dark:bg-base-300 dark:border-none"
-				required
-				placeholder="10-100"
-				min="10"
-				max="100"
-				title="Masukkan bobot Lingkup Materi"
-			/>
-			<p class="validator-hint">Rentang 10-100</p>
 		</td>
 		<td class="align-top">
 			<div class="flex flex-col gap-2">
