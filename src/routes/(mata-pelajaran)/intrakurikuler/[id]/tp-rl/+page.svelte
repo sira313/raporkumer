@@ -15,7 +15,7 @@
 </script>
 
 <!-- Data Mapel Wajib -->
-<div class="card bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md">
+<div class="card bg-base-100 rounded-box w-full border border-none p-4 shadow-md">
 	<!-- Judul IPAS bisa berubah dinamis sesuai mata pelajaran yang dipilih -->
 	<h2 class="mb-6 text-xl font-bold">
 		<span class="opacity-50">Mata Pelajaran:</span>
@@ -28,6 +28,7 @@
 			<Icon name="left" />
 			Kembali
 		</button>
+		<!-- Request feature -->
 		<button
 			class="btn mb-2 shadow-none sm:max-w-40"
 			onclick={() => (tambahTpAktif = true)}
@@ -36,6 +37,10 @@
 		>
 			<Icon name="plus" />
 			Tambah TP
+		</button>
+		<button class="btn mb-2 shadow-none sm:max-w-40" type="button">
+			<Icon name="percent" />
+			Atur Bobot
 		</button>
 		<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
 		<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
