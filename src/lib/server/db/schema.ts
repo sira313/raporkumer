@@ -78,13 +78,26 @@ export const tableSemester = sqliteTable(
 	(table) => [unique().on(table.tahunAjaranId, table.tipe)]
 );
 
+export const tableTasks = sqliteTable('tasks', {
+	id: int().primaryKey({ autoIncrement: true }),
+	sekolahId: int()
+		.references(() => tableSekolah.id, { onDelete: 'cascade' })
+		.notNull(),
+	title: text().notNull(),
+	status: text({ enum: ['active', 'completed'] })
+		.default('active')
+		.notNull(),
+	...audit
+});
+
 export const tableSekolahRelations = relations(tableSekolah, ({ one, many }) => ({
 	alamat: one(tableAlamat, { fields: [tableSekolah.alamatId], references: [tableAlamat.id] }),
 	kepalaSekolah: one(tablePegawai, {
 		fields: [tableSekolah.kepalaSekolahId],
 		references: [tablePegawai.id]
 	}),
-	tahunAjaran: many(tableTahunAjaran)
+	tahunAjaran: many(tableTahunAjaran),
+	tasks: many(tableTasks)
 }));
 
 export const tableTahunAjaranRelations = relations(tableTahunAjaran, ({ one, many }) => ({
@@ -99,6 +112,13 @@ export const tableSemesterRelations = relations(tableSemester, ({ one }) => ({
 	tahunAjaran: one(tableTahunAjaran, {
 		fields: [tableSemester.tahunAjaranId],
 		references: [tableTahunAjaran.id]
+	})
+}));
+
+export const tableTasksRelations = relations(tableTasks, ({ one }) => ({
+	sekolah: one(tableSekolah, {
+		fields: [tableTasks.sekolahId],
+		references: [tableSekolah.id]
 	})
 }));
 

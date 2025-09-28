@@ -1,5 +1,11 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
+
+	let { data } = $props();
+	const sekolah = (data.sekolah ?? null) as Sekolah | null;
+	const sekolahLogo = $derived(sekolah?.id ? `/sekolah/logo/${sekolah.id}` : '/sekolah.png');
+	const sekolahNama = $derived(sekolah?.nama ?? 'Belum ada sekolah aktif');
+	const sekolahNpsn = $derived(sekolah?.npsn ?? '-');
 </script>
 
 <!-- Kontainer Utama Grid -->
@@ -9,18 +15,28 @@
 		<!-- Widget Data Sekolah -->
 		<div class="card bg-base-100 rounded-box shadow-md dark:border-none">
 			<div class="card-body">
-				<div class="flex items-center gap-4">
-					<div class="avatar">
-						<div class="w-24 rounded">
-							<img src="/sekolah.png" alt="Logo Sekolah" />
+				{#if sekolah}
+					<div class="flex items-center gap-4">
+						<div class="avatar">
+							<div class="w-24 rounded">
+								<img src={sekolahLogo} alt={`Logo ${sekolahNama}`} />
+							</div>
+						</div>
+						<div class="space-y-1">
+							<h2 class="card-title">Data Sekolah</h2>
+							<p class="text-lg font-bold">{sekolahNama}</p>
+							<p class="text-sm">NPSN: {sekolahNpsn}</p>
 						</div>
 					</div>
-					<div>
+				{:else}
+					<div class="flex flex-col gap-2">
 						<h2 class="card-title">Data Sekolah</h2>
-						<p class="text-lg font-bold">SD Negeri 19 Periji</p>
-						<p class="text-sm">NPSN: 69856875</p>
+						<p class="text-base-content/70">
+							Belum ada sekolah aktif. Silakan pilih atau buat data sekolah melalui menu Data
+							Sekolah.
+						</p>
 					</div>
-				</div>
+				{/if}
 			</div>
 		</div>
 

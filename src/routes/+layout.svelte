@@ -47,7 +47,7 @@
 						{@render children()}
 					</div>
 					<div class="sticky top-6 self-start">
-						<Task />
+						<Task variant="sidebar" />
 					</div>
 				</div>
 			</div>
