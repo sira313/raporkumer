@@ -18,6 +18,27 @@
 	let createFormState = $state({ submitting: false, invalid: true });
 	let editFormState = $state({ submitting: false, invalid: true });
 
+	const syncCreateFormState = (submitting: boolean, invalid: boolean) => {
+		queueMicrotask(() => {
+			if (
+				createFormState.submitting !== submitting ||
+				createFormState.invalid !== invalid
+			) {
+				createFormState = { submitting, invalid };
+			}
+		});
+		return '';
+	};
+
+	const syncEditFormState = (submitting: boolean, invalid: boolean) => {
+		queueMicrotask(() => {
+			if (editFormState.submitting !== submitting || editFormState.invalid !== invalid) {
+				editFormState = { submitting, invalid };
+			}
+		});
+		return '';
+	};
+
 	const selectedIds = $derived([...selectedIdsSet]);
 	const allSelected = $derived(selectedIds.length > 0 && selectedIds.length === tahunAjaranState.length);
 	const hasSelection = $derived(selectedIds.length > 0);
@@ -176,7 +197,7 @@
 									onsuccess={handleCreateSuccess}
 								>
 									{#snippet children({ submitting, invalid })}
-										{@const _state = (createFormState = { submitting, invalid })}
+										{syncCreateFormState(submitting, invalid)}
 										<input type="hidden" name="sekolahId" value={selectedSekolahId} />
 										<input
 											class="input input-sm input-bordered w-full"
@@ -229,7 +250,7 @@
 											onsuccess={handleUpdateSuccess}
 										>
 											{#snippet children({ submitting, invalid })}
-												{@const _editState = (editFormState = { submitting, invalid })}
+												{syncEditFormState(submitting, invalid)}
 												<input type="hidden" name="id" />
 												<input type="hidden" name="sekolahId" value={selectedSekolahId} />
 												<input class="input input-sm input-bordered w-full" name="nama" required />
