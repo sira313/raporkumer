@@ -2,9 +2,42 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { jenjangPendidikan } from '$lib/statics.js';
 
+	type ActiveTahunAjaran = {
+		id: number;
+		nama: string;
+	};
+
+	type ActiveSemester = {
+		id: number;
+		nama: string;
+		tipe: Semester['tipe'];
+		tanggalBagiRaport: string | null;
+	};
+
+	type SekolahCard = Sekolah & {
+		tahunAjaranAktif: ActiveTahunAjaran | null;
+		semesterAktif: ActiveSemester | null;
+	};
+
 	let { data } = $props();
-	const sekolahList = (data.sekolahList ?? []) as Sekolah[];
+	const sekolahList = (data.sekolahList ?? []) as SekolahCard[];
 	const activeSekolahId = data.sekolah?.id ?? null;
+	const sortedSekolahList = $derived(
+		[...sekolahList].sort((a, b) => {
+			if (a.id === activeSekolahId) return -1;
+			if (b.id === activeSekolahId) return 1;
+			return sekolahList.indexOf(a) - sekolahList.indexOf(b);
+		})
+	);
+
+	const formatDate = (value?: string | null) => {
+		if (!value) return '-';
+		return new Date(value).toLocaleDateString('id-ID', {
+			year: 'numeric',
+			month: 'short',
+			day: 'numeric'
+		});
+	};
 
 	function plainAlamat(alamat?: Alamat) {
 		if (!alamat) return '-';
@@ -13,25 +46,55 @@
 </script>
 
 <div class="flex flex-col gap-6">
-	{#if sekolahList.length}
-		{#each sekolahList as sekolah (sekolah.id)}
+	{#if sortedSekolahList.length}
+		{#each sortedSekolahList as sekolah (sekolah.id)}
 			<div class="card bg-base-100 rounded-box shadow-md">
 				<div class="card-body p-0">
-					<div class="flex items-start justify-between gap-4 p-6">
-						<div class="flex items-center gap-4">
-							<div class="avatar">
-								<div class="rounded-box w-18">
-									<img src={`/sekolah/logo/${sekolah.id}`} alt={`Logo ${sekolah.nama}`} />
+					<div class="p-6 pb-0">
+						<div class="flex items-start justify-between gap-4">
+							<div class="flex items-center gap-4">
+								<div class="avatar">
+									<div class="rounded-box w-18">
+										<img src={`/sekolah/logo/${sekolah.id}`} alt={`Logo ${sekolah.nama}`} />
+									</div>
+								</div>
+
+								<div>
+									<h2 class="card-title text-2xl font-bold">{sekolah.nama}</h2>
+									<p class="text-base-content/70">Data Pokok Sekolah</p>
 								</div>
 							</div>
-
-							<div>
-								<h2 class="card-title text-2xl font-bold">{sekolah.nama}</h2>
-								<p class="text-base-content/70">Data Pokok Sekolah</p>
-							</div>
+							{#if sekolah.id === activeSekolahId}
+								<span class="badge badge-primary badge-soft self-start">Aktif</span>
+							{/if}
 						</div>
-						{#if sekolah.id === activeSekolahId}
-							<span class="badge badge-primary badge-soft self-start">Aktif</span>
+						</div>
+						<div class="px-6 pb-6">
+						{#if sekolah.tahunAjaranAktif}
+							<div class="flex flex-wrap items-center gap-2 text-sm text-base-content/80">
+								<span class="badge badge-primary badge-soft">
+									Tahun ajaran: {sekolah.tahunAjaranAktif.nama}
+								</span>
+								{#if sekolah.semesterAktif}
+									<span class="badge badge-info badge-soft">
+										Semester: {sekolah.semesterAktif.nama}
+									</span>
+									{#if sekolah.semesterAktif.tanggalBagiRaport}
+										<span class="text-xs text-base-content/60">
+											Bagi rapor: {formatDate(sekolah.semesterAktif.tanggalBagiRaport)}
+										</span>
+									{/if}
+								{:else}
+									<span class="text-xs text-base-content/60">Belum ada semester aktif</span>
+								{/if}
+							</div>
+						{:else}
+							<div class="flex items-center gap-2 rounded-lg border border-dashed border-warning/60 bg-warning/10 px-4 py-3 text-sm text-warning">
+								<span aria-hidden="true">
+									<Icon name="warning" class="h-4 w-4" />
+								</span>
+								<span>Belum ada tahun ajaran aktif. Atur melalui menu Pengaturan.</span>
+							</div>
 						{/if}
 					</div>
 
@@ -93,7 +156,11 @@
 						</div>
 
 						<div class="mt-8 flex flex-col justify-end gap-2 md:flex-row">
-							<a href="/sekolah/tahun-ajaran" class="btn shadow-none" aria-label="Lihat tahun ajaran">
+							<a
+								href={`/sekolah/tahun-ajaran?sekolahId=${sekolah.id}`}
+								class="btn shadow-none"
+								aria-label="Lihat tahun ajaran"
+							>
 								<Icon name="calendar" />
 								Tahun Ajaran
 							</a>

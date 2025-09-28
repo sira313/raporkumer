@@ -44,11 +44,61 @@ export const tableSekolah = sqliteTable('sekolah', {
 	...audit
 });
 
-export const tableSekolahRelations = relations(tableSekolah, ({ one }) => ({
+export const tableTahunAjaran = sqliteTable(
+	'tahun_ajaran',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id)
+			.notNull(),
+		nama: text().notNull(),
+		tanggalMulai: text(),
+		tanggalSelesai: text(),
+		isAktif: int({ mode: 'boolean' }).default(false).notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.sekolahId, table.nama)]
+);
+
+export const tableSemester = sqliteTable(
+	'semester',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		tahunAjaranId: int()
+			.references(() => tableTahunAjaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		tipe: text({ enum: ['ganjil', 'genap'] }).notNull(),
+		nama: text().notNull(),
+		tanggalMulai: text(),
+		tanggalSelesai: text(),
+		tanggalBagiRaport: text(),
+		isAktif: int({ mode: 'boolean' }).default(false).notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.tahunAjaranId, table.tipe)]
+);
+
+export const tableSekolahRelations = relations(tableSekolah, ({ one, many }) => ({
 	alamat: one(tableAlamat, { fields: [tableSekolah.alamatId], references: [tableAlamat.id] }),
 	kepalaSekolah: one(tablePegawai, {
 		fields: [tableSekolah.kepalaSekolahId],
 		references: [tablePegawai.id]
+	}),
+	tahunAjaran: many(tableTahunAjaran)
+}));
+
+export const tableTahunAjaranRelations = relations(tableTahunAjaran, ({ one, many }) => ({
+	sekolah: one(tableSekolah, {
+		fields: [tableTahunAjaran.sekolahId],
+		references: [tableSekolah.id]
+	}),
+	semester: many(tableSemester)
+}));
+
+export const tableSemesterRelations = relations(tableSemester, ({ one }) => ({
+	tahunAjaran: one(tableTahunAjaran, {
+		fields: [tableSemester.tahunAjaranId],
+		references: [tableTahunAjaran.id]
 	})
 }));
 
@@ -57,6 +107,8 @@ export const tableKelas = sqliteTable('kelas', {
 	sekolahId: int()
 		.references(() => tableSekolah.id)
 		.notNull(),
+	tahunAjaranId: int().references(() => tableTahunAjaran.id),
+	semesterId: int().references(() => tableSemester.id),
 	nama: text().notNull(),
 	fase: text().notNull(),
 	waliKelasId: int()
@@ -67,6 +119,14 @@ export const tableKelas = sqliteTable('kelas', {
 
 export const tableKelasRelations = relations(tableKelas, ({ one }) => ({
 	sekolah: one(tableSekolah, { fields: [tableKelas.sekolahId], references: [tableSekolah.id] }),
+	tahunAjaran: one(tableTahunAjaran, {
+		fields: [tableKelas.tahunAjaranId],
+		references: [tableTahunAjaran.id]
+	}),
+	semester: one(tableSemester, {
+		fields: [tableKelas.semesterId],
+		references: [tableSemester.id]
+	}),
 	waliKelas: one(tablePegawai, { fields: [tableKelas.waliKelasId], references: [tablePegawai.id] })
 }));
 

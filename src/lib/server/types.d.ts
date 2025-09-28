@@ -9,10 +9,22 @@ type Pegawai = typeof import('$lib/server/db/schema').tablePegawai.$inferSelect;
 type Sekolah = typeof import('$lib/server/db/schema').tableSekolah.$inferSelect & {
 	alamat: Alamat;
 	kepalaSekolah: Pegawai;
+	tahunAjaran?: TahunAjaran[];
+};
+
+type TahunAjaran = typeof import('$lib/server/db/schema').tableTahunAjaran.$inferSelect & {
+	sekolah: Sekolah;
+	semester: Semester[];
+};
+
+type Semester = typeof import('$lib/server/db/schema').tableSemester.$inferSelect & {
+	tahunAjaran: TahunAjaran;
 };
 
 type Kelas = typeof import('$lib/server/db/schema').tableKelas.$inferSelect & {
 	sekolah: Sekolah;
+	tahunAjaran?: TahunAjaran | null;
+	semester?: Semester | null;
 	waliKelas: Pegawai;
 };
 
