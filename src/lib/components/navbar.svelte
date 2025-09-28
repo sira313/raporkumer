@@ -4,6 +4,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import TasksModal from '$lib/components/modal-tasks.svelte';
 	import { toast } from '$lib/components/toast.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
 	import type { Component } from 'svelte';
 
 	let tasksModalRef: { open: () => void } | null = null;
@@ -48,9 +49,11 @@
 			return;
 		}
 		const result = await getHelpPage(fileName);
-		// panggil global modal milikmu (tetap seperti sebelumnya)
-		// asumsi: showModal tersedia di tempat lain. Kalau perlu, import lagi.
-		// showModal({ body: result.ContentPage, title: result.meta.title, ... });
+		showModal({
+			title: result.meta.title,
+			body: result.ContentPage,
+			dismissible: true
+		});
 	}
 </script>
 

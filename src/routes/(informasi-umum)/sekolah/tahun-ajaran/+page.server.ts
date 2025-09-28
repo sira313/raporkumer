@@ -1,10 +1,5 @@
 import db from '$lib/server/db';
-import {
-	tableKelas,
-	tableSekolah,
-	tableSemester,
-	tableTahunAjaran
-} from '$lib/server/db/schema';
+import { tableKelas, tableSekolah, tableSemester, tableTahunAjaran } from '$lib/server/db/schema';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
@@ -15,7 +10,7 @@ const meta: PageMeta = {
 };
 
 type TahunAjaranWithMeta = typeof tableTahunAjaran.$inferSelect & {
-	semester: typeof tableSemester.$inferSelect[];
+	semester: (typeof tableSemester.$inferSelect)[];
 	rombel: number;
 };
 
@@ -58,26 +53,26 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	}
 
 	const requestedId = Number(url.searchParams.get('sekolahId'));
-	const validRequested = Number.isFinite(requestedId) &&
-		sekolahList.some((item) => item.id === requestedId);
+	const validRequested =
+		Number.isFinite(requestedId) && sekolahList.some((item) => item.id === requestedId);
 
-	const fallbackId = locals.sekolah?.id &&
-		sekolahList.some((item) => item.id === locals.sekolah?.id)
-		? locals.sekolah?.id
-		: sekolahList[0]?.id;
+	const fallbackId =
+		locals.sekolah?.id && sekolahList.some((item) => item.id === locals.sekolah?.id)
+			? locals.sekolah?.id
+			: sekolahList[0]?.id;
 
-	const selectedSekolahId = validRequested ? requestedId : fallbackId ?? null;
+	const selectedSekolahId = validRequested ? requestedId : (fallbackId ?? null);
 
 	const selectedSekolah = selectedSekolahId
 		? await db.query.tableSekolah.findFirst({
-			columns: {
-				id: true,
-				nama: true,
-				npsn: true,
-				jenjangPendidikan: true
-			},
-			where: eq(tableSekolah.id, selectedSekolahId)
-		})
+				columns: {
+					id: true,
+					nama: true,
+					npsn: true,
+					jenjangPendidikan: true
+				},
+				where: eq(tableSekolah.id, selectedSekolahId)
+			})
 		: null;
 
 	const tahunAjaran = selectedSekolahId ? await getTahunAjaran(selectedSekolahId) : [];
@@ -169,10 +164,7 @@ export const actions: Actions = {
 			return fail(404, { fail: 'Data tahun ajaran tidak ditemukan.' });
 		}
 
-		await db
-			.update(tableTahunAjaran)
-			.set({ nama })
-			.where(eq(tableTahunAjaran.id, tahunAjaranId));
+		await db.update(tableTahunAjaran).set({ nama }).where(eq(tableTahunAjaran.id, tahunAjaranId));
 
 		return {
 			message: 'Tahun ajaran diperbarui.',

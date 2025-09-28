@@ -20,10 +20,7 @@
 
 	const syncCreateFormState = (submitting: boolean, invalid: boolean) => {
 		queueMicrotask(() => {
-			if (
-				createFormState.submitting !== submitting ||
-				createFormState.invalid !== invalid
-			) {
+			if (createFormState.submitting !== submitting || createFormState.invalid !== invalid) {
 				createFormState = { submitting, invalid };
 			}
 		});
@@ -40,9 +37,13 @@
 	};
 
 	const selectedIds = $derived([...selectedIdsSet]);
-	const allSelected = $derived(selectedIds.length > 0 && selectedIds.length === tahunAjaranState.length);
+	const allSelected = $derived(
+		selectedIds.length > 0 && selectedIds.length === tahunAjaranState.length
+	);
 	const hasSelection = $derived(selectedIds.length > 0);
-	const isIndeterminate = $derived(selectedIds.length > 0 && selectedIds.length < tahunAjaranState.length);
+	const isIndeterminate = $derived(
+		selectedIds.length > 0 && selectedIds.length < tahunAjaranState.length
+	);
 
 	$effect(() => {
 		if (masterCheckbox) masterCheckbox.indeterminate = isIndeterminate;
@@ -72,8 +73,10 @@
 		sekolahId: selectedSekolahId
 	});
 
-	const applyLatestList = (payload?: Record<string, any>) => {
-		const next = payload?.tahunAjaran as TahunAjaranItem[] | undefined;
+	type TahunAjaranActionPayload = { tahunAjaran?: TahunAjaranItem[] };
+
+	const applyLatestList = (payload?: TahunAjaranActionPayload) => {
+		const next = payload?.tahunAjaran;
 		if (next) tahunAjaranState = next;
 	};
 
@@ -95,21 +98,21 @@
 		editingId = null;
 	};
 
-	const handleUpdateSuccess = ({ data }: { data?: Record<string, any> }) => {
+	const handleUpdateSuccess = ({ data }: { data?: TahunAjaranActionPayload }) => {
 		applyLatestList(data);
 		selectedIdsSet = new Set();
 		editFormState = { submitting: false, invalid: true };
 		editingId = null;
 	};
 
-	const handleCreateSuccess = ({ data }: { data?: Record<string, any> }) => {
+	const handleCreateSuccess = ({ data }: { data?: TahunAjaranActionPayload }) => {
 		applyLatestList(data);
 		selectedIdsSet = new Set();
 		createFormState = { submitting: false, invalid: true };
 		editingId = null;
 	};
 
-	const handleDeleteSuccess = ({ data }: { data?: Record<string, any> }) => {
+	const handleDeleteSuccess = ({ data }: { data?: TahunAjaranActionPayload }) => {
 		applyLatestList(data);
 		selectedIdsSet = new Set();
 		createFormState = { submitting: false, invalid: true };
@@ -122,8 +125,8 @@
 	<h2 class="mb-4 text-xl font-bold">Daftar tahun ajaran</h2>
 
 	{#if selectedSekolah}
-		<p class="text-sm text-base-content/70">
-			Sekolah: <span class="font-semibold text-base-content">{selectedSekolah.nama}</span>
+		<p class="text-base-content/70 text-sm">
+			Sekolah: <span class="text-base-content font-semibold">{selectedSekolah.nama}</span>
 		</p>
 	{/if}
 
@@ -148,7 +151,11 @@
 						<input type="hidden" name="ids" value={id} />
 					{/each}
 					<input type="hidden" name="sekolahId" value={selectedSekolahId} />
-					<button class="btn btn-error shadow-none sm:max-w-40" type="submit" disabled={!hasSelection || submitting}>
+					<button
+						class="btn btn-error shadow-none sm:max-w-40"
+						type="submit"
+						disabled={!hasSelection || submitting}
+					>
 						<Icon name="del" />
 						{submitting ? 'Menghapus…' : 'Hapus TA'}
 					</button>
@@ -157,7 +164,9 @@
 		</div>
 	</div>
 
-	<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+	<div
+		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+	>
 		<table class="border-base-200 table border dark:border-none">
 			<thead>
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
@@ -179,7 +188,9 @@
 			<tbody>
 				{#if !selectedSekolahId}
 					<tr>
-						<td colspan="5" class="py-8 text-center text-base-content/70">Pilih sekolah terlebih dahulu.</td>
+						<td colspan="5" class="text-base-content/70 py-8 text-center"
+							>Pilih sekolah terlebih dahulu.</td
+						>
 					</tr>
 				{:else}
 					{#if editingId === 'new'}
@@ -211,7 +222,11 @@
 							<td>-</td>
 							<td>
 								<div class="flex justify-end gap-2">
-									<button class="btn btn-sm btn-ghost shadow-none" type="button" onclick={cancelInline}>
+									<button
+										class="btn btn-sm btn-ghost shadow-none"
+										type="button"
+										onclick={cancelInline}
+									>
 										Batal
 									</button>
 									<button
@@ -229,7 +244,7 @@
 
 					{#if !tahunAjaranState.length && editingId !== 'new'}
 						<tr>
-							<td colspan="5" class="py-8 text-center text-base-content/70">
+							<td colspan="5" class="text-base-content/70 py-8 text-center">
 								Belum ada tahun ajaran yang tercatat untuk sekolah ini.
 							</td>
 						</tr>
@@ -260,7 +275,11 @@
 									<td>{item.rombel ?? 0}</td>
 									<td>
 										<div class="flex justify-end gap-2">
-											<button class="btn btn-sm btn-ghost shadow-none" type="button" onclick={cancelInline}>
+											<button
+												class="btn btn-sm btn-ghost shadow-none"
+												type="button"
+												onclick={cancelInline}
+											>
 												Batal
 											</button>
 											<button
@@ -286,11 +305,15 @@
 									</td>
 									<td>{index + 1}</td>
 									<td>
-										<span class="font-semibold text-base-content">{item.nama}</span>
+										<span class="text-base-content font-semibold">{item.nama}</span>
 									</td>
 									<td>{item.rombel ?? 0}</td>
 									<td>
-										<button class="btn btn-sm btn-soft shadow-none" type="button" onclick={() => handleEditRow(item.id)}>
+										<button
+											class="btn btn-sm btn-soft shadow-none"
+											type="button"
+											onclick={() => handleEditRow(item.id)}
+										>
 											<Icon name="edit" />
 											Edit
 										</button>

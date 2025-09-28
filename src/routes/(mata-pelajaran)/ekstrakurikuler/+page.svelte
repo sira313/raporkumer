@@ -2,7 +2,6 @@
 	import { invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import { autoSubmit } from '$lib/utils';
 
 	let { data } = $props();
 	let deleteEkskulData = $state<Ekstrakurikuler>();
@@ -71,7 +70,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each data.ekskul as eks, index (eks)}
+				{#each data.ekskul as eks, index (eks.id)}
 					<tr>
 						<td><input type="checkbox" class="checkbox" /></td>
 						<td>{index + 1}</td>

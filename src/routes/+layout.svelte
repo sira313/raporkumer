@@ -37,9 +37,11 @@
 
 		<!-- Page content -->
 		<div
-			class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:rounded-xl lg:mr-2"
+			class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:mr-2 lg:rounded-xl"
 		>
-			<div class="max-h-[calc(100vh-4.2rem)] min-h-[calc(100vh-4.2rem)] md:max-h-[calc(100vh-4.6rem)] md:min-h-[calc(100vh-4.6rem)] max-w-none overflow-y-auto">
+			<div
+				class="max-h-[calc(100vh-4.2rem)] min-h-[calc(100vh-4.2rem)] max-w-none overflow-y-auto md:max-h-[calc(100vh-4.6rem)] md:min-h-[calc(100vh-4.6rem)]"
+			>
 				<div class="m-4 flex flex-row lg:m-6 xl:gap-5">
 					<div class="w-full max-w-5xl">
 						{@render children()}
@@ -64,6 +66,10 @@
 			<Menu />
 
 			<div class="mt-4 flex flex-col gap-3">
+				<a href="/pengaturan" class="flex items-center gap-2">
+					<Icon name="gear" />
+					<h2 class="font-bold">Pengaturan</h2>
+				</a>
 				<a href="/tentang" class="flex items-center gap-2">
 					<Icon name="info" />
 					<h2 class="font-bold">Tentang Aplikasi</h2>

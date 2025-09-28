@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
-	import { autoSubmit, modalRoute } from '$lib/utils';
+	import { modalRoute } from '$lib/utils';
 	import DeleteMataPelajaran from './[id]/delete/+page.svelte';
 	import FormMataPelajaran from './form/+page.svelte';
 
@@ -70,7 +70,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each data.mapel.daftarWajib as mapel, index (mapel)}
+				{#each data.mapel.daftarWajib as mapel, index (mapel.id)}
 					<tr>
 						<td><input type="checkbox" class="checkbox" /></td>
 						<td>{index + 1}</td>
@@ -123,7 +123,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each data.mapel.daftarMulok as mapel, index (mapel)}
+				{#each data.mapel.daftarMulok as mapel, index (mapel.id)}
 					<tr>
 						<td><input type="checkbox" class="checkbox" /></td>
 						<td>{index + 1}</td>

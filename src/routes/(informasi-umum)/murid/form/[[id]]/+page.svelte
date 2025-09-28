@@ -71,7 +71,7 @@
 								required
 							>
 								<option value="" disabled selected> Pilih Kelas </option>
-								{#each data.daftarKelas as kelas (kelas)}
+								{#each data.daftarKelas as kelas (kelas.id)}
 									<option value={kelas.id}>
 										{kelas.nama} &bullet; {kelas.fase}
 									</option>
@@ -115,7 +115,7 @@
 								required
 							>
 								<option value="" disabled selected>Pilih Jenis Kelamin</option>
-								{#each Object.entries(jenisKelamin) as [value, label]}
+								{#each Object.entries(jenisKelamin) as [value, label] (value)}
 									<option {value}>{label}</option>
 								{/each}
 							</select>

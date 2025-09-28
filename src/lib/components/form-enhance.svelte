@@ -12,7 +12,7 @@
 		id?: string;
 		enctype?: HTMLFormAttributes['enctype'];
 		init?: Record<string, unknown>;
-		onsuccess?: (params: { form: HTMLFormElement; data?: Record<string, any> }) => void;
+		onsuccess?: (params: { form: HTMLFormElement; data?: Record<string, unknown> }) => void;
 	}
 
 	let { children, action, id, enctype, init, onsuccess }: Props = $props();
@@ -24,19 +24,26 @@
 		return async ({ update, formElement, result }) => {
 			try {
 				switch (result.type) {
-					case 'success':
-						toast(result.data?.message || 'Sukses', 'success');
-						onsuccess?.({ form: formElement, data: result.data });
+					case 'success': {
+						const successData = result.data as Record<string, unknown> | undefined;
+						const successMessage =
+							successData && 'message' in successData ? String(successData.message) : 'Sukses';
+						toast(successMessage, 'success');
+						onsuccess?.({ form: formElement, data: successData });
 						break;
-					case 'failure':
-						toast(result.data?.fail || 'Gagal', 'warning');
+					}
+					case 'failure': {
+						const failureData = result.data as { fail?: string } | undefined;
+						toast(failureData?.fail || 'Gagal', 'warning');
 						break;
-					case 'error':
+					}
+					case 'error': {
 						const message =
 							`Error (${result.status}): \n` +
 							(result.error?.message || JSON.stringify(result.error));
 						toast(message, 'error');
 						break;
+					}
 					default:
 						await update();
 						break;

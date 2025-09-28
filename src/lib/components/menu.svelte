@@ -96,7 +96,7 @@
 		</label>
 	</div>
 	<div
-		class="lg:bg-base-200 lg:rounded-box lg:max-h-[calc(100vh-11.5rem)] lg:overflow-y-auto lg:shadow-inner"
+		class="lg:bg-base-200 lg:rounded-box lg:max-h-[calc(100vh-13.5rem)] lg:overflow-y-auto lg:shadow-inner"
 	>
 		{#each menuItems as menu (menu)}
 			{@render menu_item(menu)}

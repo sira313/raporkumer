@@ -27,7 +27,7 @@
 				required
 			>
 				<option disabled selected>Pilih Kelas</option>
-				{#each data.daftarKelas as kelas}
+				{#each data.daftarKelas as kelas (kelas.id)}
 					<option value={kelas.id}>Kelas: {kelas.nama} - Fase: {kelas.fase}</option>
 				{/each}
 			</select>
@@ -52,7 +52,7 @@
 			<legend class="fieldset-legend">Jenis Mata Pelajaran</legend>
 			<select class="select bg-base-200 w-full dark:border-none" name="jenis" required>
 				<option disabled selected>Pilih Jenis Mata Pelajaran</option>
-				{#each Object.entries(jenisMapel) as [value, label]}
+				{#each Object.entries(jenisMapel) as [value, label] (value)}
 					<option {value}>{label}</option>
 				{/each}
 			</select>

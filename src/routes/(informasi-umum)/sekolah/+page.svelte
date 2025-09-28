@@ -68,10 +68,10 @@
 								<span class="badge badge-primary badge-soft self-start">Aktif</span>
 							{/if}
 						</div>
-						</div>
-						<div class="px-6 pb-6">
+					</div>
+					<div class="px-6 pb-6">
 						{#if sekolah.tahunAjaranAktif}
-							<div class="flex flex-wrap items-center gap-2 text-sm text-base-content/80">
+							<div class="text-base-content/80 flex flex-wrap items-center gap-2 text-sm">
 								<span class="badge badge-primary badge-soft">
 									Tahun ajaran: {sekolah.tahunAjaranAktif.nama}
 								</span>
@@ -80,16 +80,18 @@
 										Semester: {sekolah.semesterAktif.nama}
 									</span>
 									{#if sekolah.semesterAktif.tanggalBagiRaport}
-										<span class="text-xs text-base-content/60">
+										<span class="text-base-content/60 text-xs">
 											Bagi rapor: {formatDate(sekolah.semesterAktif.tanggalBagiRaport)}
 										</span>
 									{/if}
 								{:else}
-									<span class="text-xs text-base-content/60">Belum ada semester aktif</span>
+									<span class="text-base-content/60 text-xs">Belum ada semester aktif</span>
 								{/if}
 							</div>
 						{:else}
-							<div class="flex items-center gap-2 rounded-lg border border-dashed border-warning/60 bg-warning/10 px-4 py-3 text-sm text-warning">
+							<div
+								class="border-warning/60 bg-warning/10 text-warning flex items-center gap-2 rounded-lg border border-dashed px-4 py-3 text-sm"
+							>
 								<span aria-hidden="true">
 									<Icon name="warning" class="h-4 w-4" />
 								</span>
@@ -134,8 +136,10 @@
 								<span class="text-base-content/70 font-semibold">Website Sekolah</span>
 								<div class="sm:col-span-2">
 									{#if sekolah.website}
-										<a href={sekolah.website} target="_blank" class="text-primary break-all underline"
-											>{sekolah.website}</a
+										<a
+											href={sekolah.website}
+											target="_blank"
+											class="text-primary break-all underline">{sekolah.website}</a
 										>
 									{:else}
 										<span class="text-base-content/70 break-all">-</span>
@@ -174,9 +178,7 @@
 			</div>
 		{/each}
 	{:else}
-		<div class="alert alert-info">
-			Belum ada data sekolah. Tambahkan sekolah untuk memulai.
-		</div>
+		<div class="alert alert-info">Belum ada data sekolah. Tambahkan sekolah untuk memulai.</div>
 	{/if}
 
 	<a

@@ -22,17 +22,17 @@ export const load: PageServerLoad = async ({ locals }) => {
 			...rest,
 			tahunAjaranAktif: activeTahunAjaran
 				? {
-					id: activeTahunAjaran.id,
-					nama: activeTahunAjaran.nama
-				}
+						id: activeTahunAjaran.id,
+						nama: activeTahunAjaran.nama
+					}
 				: null,
 			semesterAktif: activeSemester
 				? {
-					id: activeSemester.id,
-					nama: activeSemester.nama,
-					tipe: activeSemester.tipe,
-					tanggalBagiRaport: activeSemester.tanggalBagiRaport
-				}
+						id: activeSemester.id,
+						nama: activeSemester.nama,
+						tipe: activeSemester.tipe,
+						tanggalBagiRaport: activeSemester.tanggalBagiRaport
+					}
 				: null
 		};
 	});

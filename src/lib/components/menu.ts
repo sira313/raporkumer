@@ -8,6 +8,10 @@ export const appMenuItems: MenuItem[] = [
 				path: '/sekolah'
 			},
 			{
+				title: 'Data Rapor',
+				path: '/rapor'
+			},
+			{
 				title: 'Data Kelas',
 				path: '/kelas'
 			},

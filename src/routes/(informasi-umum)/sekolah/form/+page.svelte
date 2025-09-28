@@ -47,7 +47,7 @@
 						required
 					>
 						<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
-						{#each Object.entries(jenjangPendidikan) as [value, label]}
+						{#each Object.entries(jenjangPendidikan) as [value, label] (value)}
 							<option {value}>{label}</option>
 						{/each}
 					</select>
