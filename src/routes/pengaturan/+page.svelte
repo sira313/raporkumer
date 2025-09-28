@@ -143,7 +143,7 @@
 	};
 </script>
 
-<div class="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
+<div class="grid grid-cols-1 gap-6">
 	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
 		<div class="space-y-6">
 			<header class="space-y-2">
@@ -298,8 +298,7 @@
 			</FormEnhance>
 		</div>
 	</section>
-
-	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md h-fit">
+	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
 		<div class="space-y-6">
 			<header class="space-y-2">
 				<h2 class="text-xl font-bold">Pengaturan Aplikasi</h2>
