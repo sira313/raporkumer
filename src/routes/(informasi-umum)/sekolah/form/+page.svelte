@@ -5,6 +5,8 @@
 	import { jenjangPendidikan } from '$lib/statics';
 
 	let { data } = $props();
+	const isNew = data.isNew as boolean;
+	const initialSekolah = (isNew ? undefined : data.sekolah) as Sekolah | undefined;
 </script>
 
 {#if data.isInit}
@@ -17,17 +19,23 @@
 
 <FormEnhance
 	action="?/save"
-	init={data.sekolah}
+	init={initialSekolah}
 	enctype="multipart/form-data"
 	onsuccess={() => goto('/sekolah')}
 >
 	{#snippet children({ submitting })}
-		{#if data.sekolah?.id}
-			<input name="id" value={data.sekolah.id} hidden />
+		{#if initialSekolah?.id}
+			<input name="id" value={initialSekolah.id} hidden />
 		{/if}
 
 		<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-			<h2 class="mb-4 text-xl font-bold">Formulir Isian Data Sekolah</h2>
+			<h2 class="mb-4 text-xl font-bold">
+				{#if isNew}
+					Tambah Sekolah Baru
+				{:else}
+					Formulir Isian Data Sekolah
+				{/if}
+			</h2>
 
 			<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-2">
 				<!-- Jenjang Pendidikan -->

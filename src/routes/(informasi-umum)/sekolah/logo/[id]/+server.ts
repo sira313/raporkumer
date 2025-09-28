@@ -1,22 +1,24 @@
-import db from '$lib/server/db/index.js';
-import { tableSekolah } from '$lib/server/db/schema.js';
+import db from '$lib/server/db';
+import { tableSekolah } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import type { RequestHandler } from './$types';
 
 let placeholderCache: Uint8Array | null = null;
 
 async function getPlaceholder() {
 	if (!placeholderCache) {
-		const placeholderPath = path.resolve('static/tutwuri.png');
-		placeholderCache = await fs.readFile(placeholderPath);
+		const filePath = path.resolve('static/tutwuri.png');
+		placeholderCache = await fs.readFile(filePath);
 	}
 	return placeholderCache;
 }
 
-export async function GET({ locals }) {
-	const sekolahId = locals.sekolah?.id;
-	if (!sekolahId) {
+export const GET: RequestHandler = async ({ params }) => {
+	const id = Number(params.id);
+
+	if (!Number.isFinite(id) || id <= 0) {
 		const data = await getPlaceholder();
 		return new Response(Buffer.from(data), {
 			headers: { 'Content-Type': 'image/png' }
@@ -25,7 +27,7 @@ export async function GET({ locals }) {
 
 	const sekolah = await db.query.tableSekolah.findFirst({
 		columns: { logo: true, logoType: true },
-		where: eq(tableSekolah.id, sekolahId)
+		where: eq(tableSekolah.id, id)
 	});
 
 	if (sekolah?.logo?.length) {
@@ -40,4 +42,4 @@ export async function GET({ locals }) {
 	return new Response(Buffer.from(data), {
 		headers: { 'Content-Type': 'image/png' }
 	});
-}
+};
