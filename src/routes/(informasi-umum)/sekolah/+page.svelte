@@ -50,7 +50,7 @@
 		{#each sortedSekolahList as sekolah (sekolah.id)}
 			<div class="card bg-base-100 rounded-box shadow-md">
 				<div class="card-body p-0">
-					<div class="p-6 pb-0">
+					<div class="p-6 pb-2">
 						<div class="flex items-start justify-between gap-4">
 							<div class="flex items-center gap-4">
 								<div class="avatar">
@@ -69,7 +69,7 @@
 							{/if}
 						</div>
 					</div>
-					<div class="px-6 pb-6">
+					<div class="px-6 pb-2">
 						{#if sekolah.tahunAjaranAktif}
 							<div class="text-base-content/80 flex flex-wrap items-center gap-2 text-sm">
 								<span class="badge badge-primary badge-soft">

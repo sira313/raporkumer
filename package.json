@@ -44,10 +44,14 @@
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"esbuild"
+		],
+		"ignoredBuiltDependencies": [
+			"@tailwindcss/oxide"
 		]
 	},
 	"dependencies": {
 		"@libsql/client": "^0.15.9",
-		"drizzle-orm": "^0.44.2"
+		"drizzle-orm": "^0.44.2",
+		"xlsx": "^0.18.5"
 	}
 }

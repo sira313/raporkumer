@@ -25,7 +25,7 @@ type Kelas = typeof import('$lib/server/db/schema').tableKelas.$inferSelect & {
 	sekolah: Sekolah;
 	tahunAjaran?: TahunAjaran | null;
 	semester?: Semester | null;
-	waliKelas: Pegawai;
+	waliKelas?: Pegawai | null;
 };
 
 type WaliMurid = typeof import('$lib/server/db/schema').tableWaliMurid.$inferSelect;

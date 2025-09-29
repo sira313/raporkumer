@@ -130,10 +130,8 @@ export const tableKelas = sqliteTable('kelas', {
 	tahunAjaranId: int().references(() => tableTahunAjaran.id),
 	semesterId: int().references(() => tableSemester.id),
 	nama: text().notNull(),
-	fase: text().notNull(),
-	waliKelasId: int()
-		.references(() => tablePegawai.id)
-		.notNull(),
+	fase: text(),
+	waliKelasId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
 	...audit
 });
 
