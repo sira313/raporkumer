@@ -9,6 +9,13 @@ declare global {
 		}
 		interface PageData {
 			meta: PageMeta;
+			sekolah?: Omit<Sekolah, 'logo'>;
+			daftarKelas?: Array<
+				Pick<Kelas, 'id' | 'nama' | 'fase'> & { waliKelas?: Pick<Pegawai, 'id' | 'nama'> | null }
+			>;
+			kelasAktif?: (Pick<Kelas, 'id' | 'nama' | 'fase'> & {
+				waliKelas?: Pick<Pegawai, 'id' | 'nama'> | null;
+			}) | null;
 		}
 		interface PageState {
 			modal: {

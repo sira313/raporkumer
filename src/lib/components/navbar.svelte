@@ -8,6 +8,19 @@
 	import type { Component } from 'svelte';
 
 	let tasksModalRef: { open: () => void } | null = null;
+	const daftarKelas = $derived(page.data.daftarKelas ?? []);
+	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const kelasAktifLabel = $derived.by(() => {
+		if (!kelasAktif) return 'Pilih Kelas';
+		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
+	});
+
+	function buildKelasHref(kelasId: number) {
+		const params = new URLSearchParams(page.url.search);
+		params.set('kelas_id', String(kelasId));
+		const query = params.toString();
+		return query ? `${page.url.pathname}?${query}` : page.url.pathname;
+	}
 
 	const helpMaps: Record<string, string> = {
 		'/': 'umum',
@@ -100,11 +113,11 @@
 				</button>
 			</li>
 
-			<!-- Dropdown kelas (biarkan seperti aslinya) -->
+			<!-- Dropdown ganti kelas -->
 			<li class="ml-2">
 				<div class="dropdown dropdown-end">
 					<div tabindex="0" role="button" title="Ganti kelas" class="btn btn-soft rounded-full">
-						<span class="hidden sm:block"> Kelas I </span>
+						<span class="hidden sm:block">{kelasAktifLabel}</span>
 						<Icon name="users" class="sm:hidden" />
 						<Icon name="select" class="hidden sm:block" />
 					</div>
@@ -118,18 +131,35 @@
 								<Icon name="user" class="text-4xl" />
 							</div>
 							<div class="flex flex-col gap-1">
-								<p class="text-base-content text-sm font-semibold">Aris Wira Pratama, S.Pd.</p>
-								<p class="text-base-content/70 text-xs">Kelas IV - Fase B</p>
+								<!-- Nama wali kelas -->
+								<p class="text-base-content text-sm font-semibold">
+									{kelasAktif?.waliKelas?.nama ?? 'Belum ada wali kelas'}
+								</p>
+								<!-- Nama kelas -->
+								<p class="text-base-content/70 text-xs">{kelasAktifLabel}</p>
 							</div>
 						</div>
 
-						<details class="bg-base-300 dark:bg-base-200 collapse mt-6">
-							<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-							<div class="collapse-content text-sm">
-								<li><a href="?kelas_id=2"> Kelas I - Fase A </a></li>
-								<li><a href="?kelas_id=1"> Kelas IV - Fase B</a></li>
-							</div>
-						</details>
+						{#if daftarKelas.length}
+							<details class="bg-base-300 dark:bg-base-200 collapse mt-6">
+								<!-- opsi pindah kelas -->
+								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
+								<div class="collapse-content">
+									<ul class="menu m-0 menu-sm">
+										{#each daftarKelas as kelas (kelas.id)}
+											{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
+											<li>
+												<a href={buildKelasHref(kelas.id)} class:active={kelasAktif?.id === kelas.id}>
+													{label}
+												</a>
+											</li>
+										{/each}
+									</ul>
+								</div>
+							</details>
+						{:else}
+							<p class="text-sm text-base-content/70 mt-6">Belum ada data kelas yang dapat dipilih.</p>
+						{/if}
 
 						<li class="mt-2">
 							<a href="/pengaturan">
