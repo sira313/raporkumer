@@ -1,10 +1,10 @@
 <script lang="ts">
-import { goto, invalidate, pushState } from '$app/navigation';
-import { page } from '$app/state';
-import FormEnhance from '$lib/components/form-enhance.svelte';
-import Icon from '$lib/components/icon.svelte';
-import { modalRoute, searchQueryMarker } from '$lib/utils';
-import { onDestroy } from 'svelte';
+	import { goto, invalidate, pushState } from '$app/navigation';
+	import { page } from '$app/state';
+	import FormEnhance from '$lib/components/form-enhance.svelte';
+	import Icon from '$lib/components/icon.svelte';
+	import { modalRoute, searchQueryMarker } from '$lib/utils';
+	import { onDestroy } from 'svelte';
 	import DetailMurid from './[id]/+page.svelte';
 	import DeleteMurid from './[id]/delete/+page.svelte';
 	import FormMurid from './form/[[id]]/+page.svelte';
@@ -22,6 +22,9 @@ import { onDestroy } from 'svelte';
 	let { data } = $props();
 	let searchTerm = $state(data.page.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+	const currentPage = $derived.by(() => data.page.currentPage ?? 1);
+	const totalPages = $derived.by(() => Math.max(1, data.page.totalPages ?? 1));
+	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
 
 	let selectedIds = $state<Set<number>>(new Set());
 	const hasSelection = $derived.by(() => selectedIds.size > 0);
@@ -91,16 +94,22 @@ import { onDestroy } from 'svelte';
 		const params = new URLSearchParams(page.url.search);
 		const cleaned = rawValue.trim();
 		const current = params.get('q') ?? '';
-		if (cleaned === current && (cleaned !== '' || !params.has('q'))) {
-			return null;
-		}
+		const searchChanged = cleaned !== current;
 		if (cleaned) {
 			params.set('q', cleaned);
 		} else {
 			params.delete('q');
 		}
-		const query = params.toString();
-		return `${page.url.pathname}${query ? `?${query}` : ''}`;
+		if (searchChanged) {
+			params.delete('page');
+		}
+		const nextQuery = params.toString();
+		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+		const currentUrl = `${page.url.pathname}${page.url.search}`;
+		if (nextUrl === currentUrl) {
+			return null;
+		}
+		return nextUrl;
 	}
 
 	async function applySearch(rawValue: string) {
@@ -108,6 +117,34 @@ import { onDestroy } from 'svelte';
 		if (!target) return;
 		searchTimer = undefined;
 		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function buildPageUrl(pageNumber: number) {
+		const params = new URLSearchParams(page.url.search);
+		const sanitized = pageNumber < 1 ? 1 : pageNumber;
+		if (sanitized <= 1) {
+			params.delete('page');
+		} else {
+			params.set('page', String(sanitized));
+		}
+		const nextQuery = params.toString();
+		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+		const currentUrl = `${page.url.pathname}${page.url.search}`;
+		if (nextUrl === currentUrl) {
+			return null;
+		}
+		return nextUrl;
+	}
+
+	async function gotoPage(pageNumber: number) {
+		const target = buildPageUrl(pageNumber);
+		if (!target) return;
+		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function handlePageClick(pageNumber: number) {
+		if (pageNumber === currentPage) return;
+		void gotoPage(pageNumber);
 	}
 
 	function handleSearchInput(event: Event) {
@@ -187,7 +224,7 @@ import { onDestroy } from 'svelte';
 		</a>
 
 		<button
-			class="btn shadow-none sm:ml-auto"
+			class="btn shadow-none sm:ml-auto btn-soft btn-error"
 			type="button"
 			disabled={!hasSelection || formSubmitting}
 			onclick={openBulkDeleteModal}
@@ -305,11 +342,18 @@ import { onDestroy } from 'svelte';
 		{/snippet}
 	</FormEnhance>
 	<!-- pagination -->
-	<div class="join sm:mx-auto mt-4">
-		<button type="button" class="join-item btn btn-active">1</button>
-		<button type="button" class="join-item btn">2</button>
-		<button type="button" class="join-item btn">3</button>
-		<button type="button" class="join-item btn">4</button>
+	<div class="join mt-4 sm:mx-auto">
+		{#each pages as pageNumber}
+			<button
+				type="button"
+				class="join-item btn"
+				class:btn-active={pageNumber === currentPage}
+				onclick={() => handlePageClick(pageNumber)}
+				aria-current={pageNumber === currentPage ? 'page' : undefined}
+			>
+				{pageNumber}
+			</button>
+		{/each}
 	</div>
 </div>
 

@@ -1,21 +1,61 @@
 import db from '$lib/server/db/index.js';
 import { tableMurid } from '$lib/server/db/schema.js';
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
 export async function load({ locals, url, depends }) {
 	depends('app:murid');
 	const search = url.searchParams.get('q');
 	const kelasId = url.searchParams.get('kelas_id');
+	const perPage = 20;
+	const requestedPage = Number(url.searchParams.get('page')) || 1;
+	const pageNumber =
+		Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1;
+
+	const filter = and(
+		eq(tableMurid.sekolahId, locals.sekolah!.id),
+		kelasId ? eq(tableMurid.kelasId, +kelasId) : undefined,
+		search ? sql`${tableMurid.nama} LIKE ${'%' + search + '%'} COLLATE NOCASE` : undefined
+	);
+
+	const [{ totalItems }] = await db
+		.select({ totalItems: sql<number>`count(*)` })
+		.from(tableMurid)
+		.where(filter);
+
+	const total = totalItems ?? 0;
+	const totalPages = Math.max(1, Math.ceil(total / perPage));
+	const currentPage = Math.min(Math.max(pageNumber, 1), totalPages);
+	const offset = (currentPage - 1) * perPage;
+
 	const daftarMurid = await db.query.tableMurid.findMany({
-		where: and(
-			eq(tableMurid.sekolahId, locals.sekolah!.id),
-			kelasId ? eq(tableMurid.kelasId, +kelasId) : undefined,
-			search ? sql`${tableMurid.nama} LIKE ${'%' + search + '%'} COLLATE NOCASE` : undefined
-		),
-		orderBy: asc(tableMurid.nama)
+		where: filter,
+		orderBy: asc(tableMurid.nama),
+		limit: perPage,
+		offset
 	});
-	return { daftarMurid, page: { kelasId, search } };
+
+	if (pageNumber !== currentPage) {
+		const params = new URLSearchParams(url.searchParams);
+		if (currentPage <= 1) {
+			params.delete('page');
+		} else {
+			params.set('page', String(currentPage));
+		}
+		throw redirect(303, `${url.pathname}${params.size ? `?${params}` : ''}`);
+	}
+
+	return {
+		daftarMurid,
+		page: {
+			kelasId,
+			search,
+			currentPage,
+			totalPages,
+			totalItems: total,
+			perPage
+		}
+	};
 }
 
 export const actions = {
@@ -27,9 +67,7 @@ export const actions = {
 
 		const formData = await request.formData();
 		const rawIds = formData.getAll('muridIds');
-		const muridIds = rawIds
-			.map((id) => Number(id))
-			.filter((id) => Number.isInteger(id) && id > 0);
+		const muridIds = rawIds.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0);
 
 		if (!muridIds.length) {
 			return fail(400, { fail: 'Pilih minimal satu murid untuk dihapus' });
