@@ -1,5 +1,5 @@
 import db from '$lib/server/db';
-import { tableKelas, tableMurid, tableSekolah } from '$lib/server/db/schema';
+import { tableKelas, tableMurid, tableSekolah, tableTahunAjaran } from '$lib/server/db/schema';
 import { fail } from '@sveltejs/kit';
 import { desc, eq, sql } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
@@ -110,7 +110,10 @@ export const actions: Actions = {
 		}
 
 		try {
-			await db.delete(tableSekolah).where(eq(tableSekolah.id, sekolahId));
+			await db.transaction(async (tx) => {
+				await tx.delete(tableTahunAjaran).where(eq(tableTahunAjaran.sekolahId, sekolahId));
+				await tx.delete(tableSekolah).where(eq(tableSekolah.id, sekolahId));
+			});
 		} catch (error) {
 			console.error('Gagal menghapus sekolah', error);
 			return fail(400, {

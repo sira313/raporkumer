@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	 import { goto, invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenjangPendidikan } from '$lib/statics';
@@ -21,7 +21,10 @@
 	action="?/save"
 	init={initialSekolah}
 	enctype="multipart/form-data"
-	onsuccess={() => goto('/sekolah')}
+	onsuccess={async () => {
+		await invalidate('app:sekolah');
+		await goto('/sekolah');
+	}}
 >
 	{#snippet children({ submitting })}
 		{#if initialSekolah?.id}

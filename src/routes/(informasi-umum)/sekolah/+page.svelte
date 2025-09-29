@@ -24,15 +24,17 @@
 	};
 
 	let { data } = $props();
-	const sekolahList = (data.sekolahList ?? []) as SekolahCard[];
-	const activeSekolahId = data.sekolah?.id ?? null;
-	const sortedSekolahList = $derived(
-		[...sekolahList].sort((a, b) => {
-			if (a.id === activeSekolahId) return -1;
-			if (b.id === activeSekolahId) return 1;
-			return sekolahList.indexOf(a) - sekolahList.indexOf(b);
-		})
-	);
+	const sekolahList = $derived((data.sekolahList ?? []) as SekolahCard[]);
+	const activeSekolahId = $derived(data.sekolah?.id ?? null);
+	const sortedSekolahList = $derived.by(() => {
+		const list = sekolahList;
+		const aktifId = activeSekolahId;
+		return [...list].sort((a, b) => {
+			if (a.id === aktifId) return -1;
+			if (b.id === aktifId) return 1;
+			return list.indexOf(a) - list.indexOf(b);
+		});
+	});
 
 	const formatDate = (value?: string | null) => {
 		if (!value) return '-';
@@ -114,7 +116,7 @@
 								<span aria-hidden="true">
 									<Icon name="warning" class="h-4 w-4" />
 								</span>
-								<span>Belum ada tahun ajaran aktif. Atur melalui menu Pengaturan.</span>
+								<span>Belum ada tahun ajaran aktif. Atur melalui tombol "Tahun Ajaran".</span>
 							</div>
 						{/if}
 					</div>
@@ -231,60 +233,89 @@
 
 	{#if deleteTarget}
 		{@const targetSekolah = deleteTarget}
-		<dialog class="modal" open>
-		<FormEnhance action="?/delete" onsuccess={handleDeleteSuccess}>
-			{#snippet children({ submitting })}
-				<div class="modal-box sm:w-full sm:max-w-md">
-					<h3 class="text-xl font-bold">Hapus Sekolah</h3>
-					<p class="mt-2 text-sm">
-						Anda akan menghapus <b>{targetSekolah.nama}</b> dari daftar sekolah.
-					</p>
-					<div class="bg-base-200 dark:bg-base-300 mt-4 rounded-lg p-4 text-sm">
-						<div class="flex items-center justify-between">
-							<span>Total rombel</span>
-							<span class="font-semibold">{targetSekolah.jumlahRombel}</span>
-						</div>
-						<div class="flex items-center justify-between">
-							<span>Total murid</span>
-							<span class="font-semibold">{targetSekolah.jumlahMurid}</span>
-						</div>
-					</div>
-					{#if targetSekolah.jumlahRombel || targetSekolah.jumlahMurid}
-						<div class="alert alert-warning mt-4">
-							<span class="text-lg"><Icon name="warning" /></span>
-							<span>
-								Sekolah masih memiliki rombel atau murid. Hapus seluruh data rombel dan murid terlebih dahulu sebelum melanjutkan.
-							</span>
-						</div>
-					{:else}
-						<p class="mt-4 text-sm opacity-70">
-							Tindakan ini akan menghapus data sekolah secara permanen dan tidak dapat dibatalkan.
-						</p>
-					{/if}
-					<input type="hidden" name="sekolahId" value={targetSekolah.id} />
-					<div class="mt-6 flex justify-end gap-2">
-						<button
-							type="button"
-							class="btn shadow-none"
-							onclick={closeDeleteModal}
-							disabled={submitting}
-						>
-							Batal
-						</button>
-						<button
-							type="submit"
-							class="btn shadow-none btn-error btn-soft"
-							disabled={submitting}
-						>
-							<Icon name="del" />
-							Ya, hapus sekolah
-						</button>
-					</div>
-				</div>
-			{/snippet}
-		</FormEnhance>
-		<form method="dialog" class="modal-backdrop" onsubmit={() => closeDeleteModal()}>
-			<button>close</button>
-		</form>
-	</dialog>
-{/if}
+		<dialog class="modal" open onclose={closeDeleteModal} aria-modal="true" role="alertdialog">
+			<div class="modal-box sm:w-full sm:max-w-lg">
+				<FormEnhance action="?/delete" onsuccess={handleDeleteSuccess}>
+					{#snippet children({ submitting })}
+						<input type="hidden" name="sekolahId" value={targetSekolah.id} />
+						<section class="space-y-6">
+							<header class="flex items-start gap-3">
+								<span
+									class="bg-error/10 text-error flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full"
+									aria-hidden="true"
+								>
+									<Icon name="warning" class="text-2xl" />
+								</span>
+								<div>
+									<h3 class="text-xl font-bold">Hapus data sekolah?</h3>
+									<p class="text-sm text-base-content/70">
+										Anda akan menghapus <b>{targetSekolah.nama}</b> dari daftar sekolah secara permanen.
+									</p>
+								</div>
+							</header>
+
+							<div class="grid gap-3 sm:grid-cols-2">
+								<div class="bg-base-200/70 dark:bg-base-300/60 rounded-lg border border-base-300/60 p-3">
+									<p class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+										Total Rombel
+									</p>
+									<p class="text-lg font-bold text-base-content">
+										{targetSekolah.jumlahRombel}
+									</p>
+								</div>
+								<div class="bg-base-200/70 dark:bg-base-300/60 rounded-lg border border-base-300/60 p-3">
+									<p class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
+										Total Murid
+									</p>
+									<p class="text-lg font-bold text-base-content">
+										{targetSekolah.jumlahMurid}
+									</p>
+								</div>
+							</div>
+
+							{#if targetSekolah.jumlahRombel || targetSekolah.jumlahMurid}
+								<div class="alert alert-warning">
+									<Icon name="warning" />
+									<span>
+										Sekolah masih memiliki rombel atau murid. Hapus seluruh data terkait terlebih dahulu sebelum melanjutkan.
+									</span>
+								</div>
+							{:else}
+								<p class="text-sm text-base-content/70">
+									Tindakan ini akan menghapus data sekolah secara permanen dan tidak dapat dibatalkan.
+								</p>
+							{/if}
+
+							<footer class="flex justify-end gap-2">
+								<button
+									type="button"
+									class="btn btn-ghost shadow-none"
+									onclick={closeDeleteModal}
+									disabled={submitting}
+								>
+									<Icon name="close" />
+									Batal
+								</button>
+								<button
+									type="submit"
+									class="btn btn-error btn-soft shadow-none"
+									disabled={submitting}
+								>
+									{#if submitting}
+										<span class="loading loading-spinner" aria-hidden="true"></span>
+										<span class="sr-only">Menghapus sekolah...</span>
+									{:else}
+										<Icon name="del" />
+									{/if}
+									Hapus Sekolah
+								</button>
+							</footer>
+						</section>
+					{/snippet}
+				</FormEnhance>
+			</div>
+			<form method="dialog" class="modal-backdrop" onsubmit={closeDeleteModal}>
+				<button>close</button>
+			</form>
+		</dialog>
+	{/if}
