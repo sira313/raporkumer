@@ -5,6 +5,17 @@
 
 	let { data } = $props();
 	let deleteKelasData = $state<Omit<Kelas, 'sekolah'>>();
+
+	const faseBadgeColors: Record<string, string> = {
+		'Fase A': 'badge-primary',
+		'Fase B': 'badge-secondary',
+		'Fase C': 'badge-accent',
+		'Fase D': 'badge-info',
+		'Fase E': 'badge-success',
+		'Fase F': 'badge-warning'
+	};
+
+	const faseBadgeClass = (fase?: string | null) => faseBadgeColors[fase ?? ''] ?? 'badge-neutral';
 </script>
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -13,7 +24,7 @@
 			<div class="p-4">
 				<div class="flex items-start justify-between">
 					<h2 class="card-title text-xl font-bold">{kelas.nama}</h2>
-					<div class="badge badge-accent">{kelas.fase}</div>
+					<div class={`badge ${faseBadgeClass(kelas.fase)}`}>{kelas.fase || 'Belum ditetapkan'}</div>
 				</div>
 			</div>
 			<div class="border-base-300 dark:border-base-200 m-0 border"></div>
