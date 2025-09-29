@@ -144,8 +144,7 @@
 							<details class="bg-base-300 dark:bg-base-200 collapse mt-6">
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-								<div class="collapse-content">
-									<ul class="menu m-0 menu-sm">
+								<ul class="collapse-content">
 										{#each daftarKelas as kelas (kelas.id)}
 											{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
 											<li>
@@ -154,8 +153,7 @@
 												</a>
 											</li>
 										{/each}
-									</ul>
-								</div>
+								</ul>
 							</details>
 						{:else}
 							<p class="text-sm text-base-content/70 mt-6">Belum ada data kelas yang dapat dipilih.</p>
