@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { invalidate } from '$app/navigation';
+	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenjangPendidikan } from '$lib/statics.js';
 
@@ -17,6 +19,8 @@
 	type SekolahCard = Sekolah & {
 		tahunAjaranAktif: ActiveTahunAjaran | null;
 		semesterAktif: ActiveSemester | null;
+		jumlahRombel: number;
+		jumlahMurid: number;
 	};
 
 	let { data } = $props();
@@ -42,6 +46,21 @@
 	function plainAlamat(alamat?: Alamat) {
 		if (!alamat) return '-';
 		return `${alamat.jalan || '-'}, ${alamat.desa || '-'}, ${alamat.kecamatan || '-'}, ${alamat.kabupaten || '-'}, ${alamat.provinsi || '-'}, ${alamat.kodePos || '-'}`;
+	}
+
+	let deleteTarget = $state<SekolahCard | null>(null);
+
+	function openDeleteModal(sekolah: SekolahCard) {
+		deleteTarget = sekolah;
+	}
+
+	function closeDeleteModal() {
+		deleteTarget = null;
+	}
+
+	async function handleDeleteSuccess() {
+		await invalidate('app:sekolah');
+		deleteTarget = null;
 	}
 </script>
 
@@ -160,6 +179,15 @@
 						</div>
 
 						<div class="mt-8 flex flex-col justify-end gap-2 md:flex-row">
+							<button
+								type="button"
+								class="btn shadow-none btn-error btn-soft"
+								aria-label="hapus sekolah"
+								onclick={() => openDeleteModal(sekolah)}
+							>
+								<Icon name="del" />
+								Hapus Sekolah
+							</button>
 							<a
 								href={`/sekolah/tahun-ajaran?sekolahId=${sekolah.id}`}
 								class="btn shadow-none"
@@ -200,3 +228,63 @@
 		</div>
 	</a>
 </div>
+
+	{#if deleteTarget}
+		{@const targetSekolah = deleteTarget}
+		<dialog class="modal" open>
+		<FormEnhance action="?/delete" onsuccess={handleDeleteSuccess}>
+			{#snippet children({ submitting })}
+				<div class="modal-box sm:w-full sm:max-w-md">
+					<h3 class="text-xl font-bold">Hapus Sekolah</h3>
+					<p class="mt-2 text-sm">
+						Anda akan menghapus <b>{targetSekolah.nama}</b> dari daftar sekolah.
+					</p>
+					<div class="bg-base-200 dark:bg-base-300 mt-4 rounded-lg p-4 text-sm">
+						<div class="flex items-center justify-between">
+							<span>Total rombel</span>
+							<span class="font-semibold">{targetSekolah.jumlahRombel}</span>
+						</div>
+						<div class="flex items-center justify-between">
+							<span>Total murid</span>
+							<span class="font-semibold">{targetSekolah.jumlahMurid}</span>
+						</div>
+					</div>
+					{#if targetSekolah.jumlahRombel || targetSekolah.jumlahMurid}
+						<div class="alert alert-warning mt-4">
+							<span class="text-lg"><Icon name="warning" /></span>
+							<span>
+								Sekolah masih memiliki rombel atau murid. Hapus seluruh data rombel dan murid terlebih dahulu sebelum melanjutkan.
+							</span>
+						</div>
+					{:else}
+						<p class="mt-4 text-sm opacity-70">
+							Tindakan ini akan menghapus data sekolah secara permanen dan tidak dapat dibatalkan.
+						</p>
+					{/if}
+					<input type="hidden" name="sekolahId" value={targetSekolah.id} />
+					<div class="mt-6 flex justify-end gap-2">
+						<button
+							type="button"
+							class="btn shadow-none"
+							onclick={closeDeleteModal}
+							disabled={submitting}
+						>
+							Batal
+						</button>
+						<button
+							type="submit"
+							class="btn shadow-none btn-error btn-soft"
+							disabled={submitting}
+						>
+							<Icon name="del" />
+							Ya, hapus sekolah
+						</button>
+					</div>
+				</div>
+			{/snippet}
+		</FormEnhance>
+		<form method="dialog" class="modal-backdrop" onsubmit={() => closeDeleteModal()}>
+			<button>close</button>
+		</form>
+	</dialog>
+{/if}
