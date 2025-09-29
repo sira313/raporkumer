@@ -70,14 +70,15 @@
 	</div>
 </div>
 
-<div class="mt-4 space-x-3">
-	<a class="btn border-none shadow-none sm:ml-auto" href="/murid">
+<div class="mt-4 flex flex-col sm:flex-row gap-2">
+	<a class="btn border-none shadow-none" href="/murid">
 		<Icon name="close" />
 		Tutup
 	</a>
+	<div class="flex-1"></div>
 
 	<a
-		class="btn btn-primary border-none shadow-none sm:ml-auto"
+		class="btn btn-primary border-none shadow-none"
 		href="/murid/form/{data.murid.id}"
 		use:modalRoute={'edit-murid'}
 	>

@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { invalidate, pushState } from '$app/navigation';
-	import { page } from '$app/state';
-	import FormEnhance from '$lib/components/form-enhance.svelte';
-	import Icon from '$lib/components/icon.svelte';
-	import { autoSubmit, modalRoute, searchQueryMarker } from '$lib/utils';
+import { goto, invalidate, pushState } from '$app/navigation';
+import { page } from '$app/state';
+import FormEnhance from '$lib/components/form-enhance.svelte';
+import Icon from '$lib/components/icon.svelte';
+import { modalRoute, searchQueryMarker } from '$lib/utils';
+import { onDestroy } from 'svelte';
 	import DetailMurid from './[id]/+page.svelte';
 	import DeleteMurid from './[id]/delete/+page.svelte';
 	import FormMurid from './form/[[id]]/+page.svelte';
@@ -19,6 +20,8 @@
 	};
 
 	let { data } = $props();
+	let searchTerm = $state(data.page.search ?? '');
+	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 	let selectedIds = $state<Set<number>>(new Set());
 	const hasSelection = $derived.by(() => selectedIds.size > 0);
@@ -34,6 +37,10 @@
 			return modal.data as BulkModalData;
 		}
 		return null;
+	});
+
+	$effect(() => {
+		searchTerm = data.page.search ?? '';
 	});
 
 	let selectAllCheckbox: HTMLInputElement | null = null;
@@ -79,6 +86,55 @@
 			}
 		});
 	}
+
+	function buildSearchUrl(rawValue: string) {
+		const params = new URLSearchParams(page.url.search);
+		const cleaned = rawValue.trim();
+		const current = params.get('q') ?? '';
+		if (cleaned === current && (cleaned !== '' || !params.has('q'))) {
+			return null;
+		}
+		if (cleaned) {
+			params.set('q', cleaned);
+		} else {
+			params.delete('q');
+		}
+		const query = params.toString();
+		return `${page.url.pathname}${query ? `?${query}` : ''}`;
+	}
+
+	async function applySearch(rawValue: string) {
+		const target = buildSearchUrl(rawValue);
+		if (!target) return;
+		searchTimer = undefined;
+		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function handleSearchInput(event: Event) {
+		const value = (event.currentTarget as HTMLInputElement).value;
+		searchTerm = value;
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+		searchTimer = setTimeout(() => {
+			void applySearch(value);
+		}, 400);
+	}
+
+	function submitSearch(event: Event) {
+		event.preventDefault();
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+			searchTimer = undefined;
+		}
+		void applySearch(searchTerm);
+	}
+
+	onDestroy(() => {
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+	});
 
 	function submitBulkDelete(event: Event) {
 		event.preventDefault();
@@ -146,7 +202,7 @@
 		class="flex flex-col items-center gap-2 sm:flex-row"
 		data-sveltekit-keepfocus
 		data-sveltekit-replacestate
-		use:autoSubmit
+		onsubmit={submitSearch}
 	>
 		<!-- Cari nama murid -->
 		<label class="input bg-base-200 w-full dark:border-none">
@@ -154,20 +210,13 @@
 			<input
 				type="search"
 				name="q"
-				value={data.page.search}
+				value={searchTerm}
 				spellcheck="false"
 				placeholder="Cari nama murid..."
 				autocomplete="name"
+				oninput={handleSearchInput}
 			/>
 		</label>
-
-		<!-- pagination -->
-		<div class="join sm:ml-auto">
-			<button type="button" class="join-item btn btn-active">1</button>
-			<button type="button" class="join-item btn">2</button>
-			<button type="button" class="join-item btn">3</button>
-			<button type="button" class="join-item btn">4</button>
-		</div>
 	</form>
 
 	<FormEnhance
@@ -255,6 +304,13 @@
 			</div>
 		{/snippet}
 	</FormEnhance>
+	<!-- pagination -->
+	<div class="join sm:mx-auto mt-4">
+		<button type="button" class="join-item btn btn-active">1</button>
+		<button type="button" class="join-item btn">2</button>
+		<button type="button" class="join-item btn">3</button>
+		<button type="button" class="join-item btn">4</button>
+	</div>
 </div>
 
 {#if ['add-murid', 'edit-murid'].includes(page.state.modal?.name)}
