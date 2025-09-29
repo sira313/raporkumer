@@ -1,12 +1,124 @@
 <script lang="ts">
+	import { invalidate, pushState } from '$app/navigation';
 	import { page } from '$app/state';
+	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { autoSubmit, modalRoute, searchQueryMarker } from '$lib/utils';
 	import DetailMurid from './[id]/+page.svelte';
 	import DeleteMurid from './[id]/delete/+page.svelte';
 	import FormMurid from './form/[[id]]/+page.svelte';
 
+	type BulkModalData = {
+		type: 'bulk';
+		selectedMurids: {
+			id: number;
+			nama: string;
+			nis: string;
+			nisn: string;
+		}[];
+	};
+
 	let { data } = $props();
+
+	let selectedIds = $state<Set<number>>(new Set());
+	const hasSelection = $derived.by(() => selectedIds.size > 0);
+	const semuaDipilih = $derived.by(
+		() => data.daftarMurid.length > 0 && selectedIds.size === data.daftarMurid.length
+	);
+	const selectedMurids = $derived.by(() =>
+		data.daftarMurid.filter((murid) => selectedIds.has(murid.id))
+	);
+	const bulkModalData = $derived.by(() => {
+		const modal = page.state.modal;
+		if (modal?.name === 'delete-murid' && modal.data?.type === 'bulk') {
+			return modal.data as BulkModalData;
+		}
+		return null;
+	});
+
+	let selectAllCheckbox: HTMLInputElement | null = null;
+	let formSubmitting = $state(false);
+
+	function handleSubmittingChange(value: boolean) {
+		formSubmitting = value;
+	}
+
+	function toggleSelect(id: number, checked: boolean) {
+		const next = new Set(selectedIds);
+		if (checked) {
+			next.add(id);
+		} else {
+			next.delete(id);
+		}
+		selectedIds = next;
+	}
+
+	function toggleSelectAll(checked: boolean) {
+		if (!data.daftarMurid.length) {
+			selectedIds = new Set();
+			return;
+		}
+		selectedIds = checked ? new Set(data.daftarMurid.map((murid) => murid.id)) : new Set<number>();
+	}
+
+	function openBulkDeleteModal() {
+		if (!hasSelection) return;
+		const modalData: BulkModalData = {
+			type: 'bulk',
+			selectedMurids: selectedMurids.map((murid) => ({
+				id: murid.id,
+				nama: murid.nama,
+				nis: murid.nis,
+				nisn: murid.nisn
+			}))
+		};
+		pushState(`${page.url.pathname}${page.url.search}`, {
+			modal: {
+				name: 'delete-murid',
+				data: modalData
+			}
+		});
+	}
+
+	function submitBulkDelete(event: Event) {
+		event.preventDefault();
+		const form = document.getElementById('form-bulk-delete') as HTMLFormElement | null;
+		if (!form || formSubmitting) return;
+		form.requestSubmit();
+	}
+
+	async function handleBulkDeleteSuccess() {
+		await invalidate('app:murid');
+		selectedIds = new Set();
+		if (page.state.modal?.name === 'delete-murid') {
+			history.back();
+		}
+	}
+
+	$effect(() => {
+		const validIds = new Set(data.daftarMurid.map((murid) => murid.id));
+		if (!validIds.size && selectedIds.size) {
+			selectedIds = new Set();
+			return;
+		}
+		let changed = false;
+		for (const id of selectedIds) {
+			if (!validIds.has(id)) {
+				changed = true;
+				break;
+			}
+		}
+		if (changed) {
+			selectedIds = new Set([...selectedIds].filter((id) => validIds.has(id)));
+		}
+	});
+
+	$effect(() => {
+		if (selectAllCheckbox) {
+			selectAllCheckbox.indeterminate =
+				selectedIds.size > 0 && selectedIds.size < data.daftarMurid.length;
+		}
+	});
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
@@ -18,20 +130,15 @@
 			Tambah Murid
 		</a>
 
-		<!-- Tombol Download template excel -->
-		<button class="btn shadow-none sm:ml-auto">
-			<Icon name="download" />
-			Download Template
-		</button>
-		<!-- Tombol Import file template yang sudah diisi -->
-		<button class="btn shadow-none">
-			<Icon name="import" />
-			Import
-		</button>
-		<!-- Tombol Export daftar murid dalam bentuk excel -->
-		<button class="btn shadow-none">
-			<Icon name="export" />
-			Export
+		<button
+			class="btn shadow-none sm:ml-auto"
+			type="button"
+			disabled={!hasSelection || formSubmitting}
+			onclick={openBulkDeleteModal}
+			title={hasSelection ? 'Hapus murid terpilih' : 'Pilih murid terlebih dahulu'}
+		>
+			<Icon name="del" />
+			Hapus
 		</button>
 	</div>
 
@@ -54,23 +161,6 @@
 			/>
 		</label>
 
-		<!-- Pilih kelas akan dihapus dan dipindahkan ke navbar -->
-		<!-- <select
-			class="select bg-base-200 dark:border-none"
-			title="Pilih kelas"
-			name="kelas_id"
-			value={data.page.kelasId}
-		>
-			<option value={null} disabled selected> Pilih Kelas </option>
-			{#each data.daftarKelas as kelas (kelas)}
-				<option value={kelas.id + ''}>
-					Kelas: {kelas.nama} &bullet; Fase: {kelas.fase}
-				</option>
-			{:else}
-				<option value={null} disabled selected> Belum ada data kelas </option>
-			{/each}
-		</select> -->
-
 		<!-- pagination -->
 		<div class="join sm:ml-auto">
 			<button type="button" class="join-item btn btn-active">1</button>
@@ -80,62 +170,91 @@
 		</div>
 	</form>
 
-	<!-- Tabel daftar murid -->
-	<div
-		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+	<FormEnhance
+		id="form-bulk-delete"
+		action="?/deleteSelected"
+		submitStateChange={handleSubmittingChange}
+		onsuccess={handleBulkDeleteSuccess}
 	>
-		<table class="border-base-200 table border dark:border-none">
-			<!-- head -->
-			<thead>
-				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-					<th><input type="checkbox" checked={false} class="checkbox" /></th>
-					<th style="width: 50px; min-width: 40px;">No</th>
-					<th style="width: 60%;">Nama</th>
-					<th>Tempat Lahir</th>
-					<th>Tanggal Lahir</th>
-					<th>Aksi</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each data.daftarMurid as murid, index (murid)}
-					<tr>
-						<td><input type="checkbox" checked={false} class="checkbox" /></td>
-						<td>{index + 1}</td>
-						<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
-						<td>{murid.tempatLahir}</td>
-						<td>{murid.tanggalLahir}</td>
-						<td>
-							<div class="flex flex-row gap-2">
-								<a
-									class="btn btn-sm btn-soft shadow-none"
-									href="/murid/{murid.id}"
-									use:modalRoute={'detail-murid'}
-									title="Lihat detail murid"
-								>
-									<Icon name="eye" />
-								</a>
+		{#snippet children({ submitting })}
+			<div
+				class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+			>
+				<table class="border-base-200 table border dark:border-none">
+					<!-- head -->
+					<thead>
+						<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
+							<th>
+								<input
+									type="checkbox"
+									class="checkbox"
+									bind:this={selectAllCheckbox}
+									checked={semuaDipilih}
+									onchange={(event) => toggleSelectAll(event.currentTarget.checked)}
+									aria-label="Pilih semua murid"
+									disabled={submitting}
+								/>
+							</th>
+							<th style="width: 50px; min-width: 40px;">No</th>
+							<th style="width: 60%;">Nama</th>
+							<th>Tempat Lahir</th>
+							<th>Tanggal Lahir</th>
+							<th>Aksi</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each data.daftarMurid as murid, index (murid)}
+							<tr>
+								<td>
+									<input
+										type="checkbox"
+										class="checkbox"
+										name="muridIds"
+										value={murid.id}
+										checked={selectedIds.has(murid.id)}
+										onchange={(event) => toggleSelect(murid.id, event.currentTarget.checked)}
+										aria-label={`Pilih ${murid.nama}`}
+										disabled={submitting}
+									/>
+								</td>
+								<td>{index + 1}</td>
+								<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
+								<td>{murid.tempatLahir}</td>
+								<td>{murid.tanggalLahir}</td>
+								<td>
+									<div class="flex flex-row gap-2">
+										<a
+											class="btn btn-sm btn-soft shadow-none"
+											href="/murid/{murid.id}"
+											use:modalRoute={'detail-murid'}
+											title="Lihat detail murid"
+										>
+											<Icon name="eye" />
+										</a>
 
-								<a
-									class="btn btn-sm btn-error btn-soft shadow-none"
-									href="/murid/{murid.id}/delete"
-									use:modalRoute={'delete-murid'}
-									title="Hapus data murid"
-								>
-									<Icon name="del" />
-								</a>
-							</div>
-						</td>
-					</tr>
-				{:else}
-					<tr>
-						<td class="text-center p-7" colspan="6">
-							<em class="opacity-50">Belum ada data murid</em>
-						</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
+										<a
+											class="btn btn-sm btn-error btn-soft shadow-none"
+											href="/murid/{murid.id}/delete"
+											use:modalRoute={'delete-murid'}
+											title="Hapus data murid"
+										>
+											<Icon name="del" />
+										</a>
+									</div>
+								</td>
+							</tr>
+						{:else}
+							<tr>
+								<td class="text-center p-7" colspan="6">
+									<em class="opacity-50">Belum ada data murid</em>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/snippet}
+	</FormEnhance>
 </div>
 
 {#if ['add-murid', 'edit-murid'].includes(page.state.modal?.name)}
@@ -158,12 +277,56 @@
 {/if}
 
 {#if page.state.modal?.name == 'delete-murid'}
-	<dialog class="modal" onclose={() => history.back()} open>
-		<div class="modal-box">
-			<DeleteMurid data={page.state.modal?.data} />
-		</div>
-		<form method="dialog" class="modal-backdrop">
-			<button>close</button>
-		</form>
-	</dialog>
+	{#if bulkModalData}
+		<dialog class="modal" onclose={() => history.back()} open>
+			<div class="modal-box">
+				<h3 class="mb-4 text-xl font-bold">Hapus data murid terpilih?</h3>
+				<p class="mb-2">
+					Anda akan menghapus <b>{bulkModalData.selectedMurids.length}</b> murid secara permanen.
+				</p>
+				<ul class="list-disc space-y-1 pl-5 text-sm">
+					{#each bulkModalData.selectedMurids.slice(0, 5) as murid}
+						<li>{murid.nama}</li>
+					{/each}
+				</ul>
+				{#if bulkModalData.selectedMurids.length > 5}
+					<p class="mt-2 text-sm opacity-70">
+						dan {bulkModalData.selectedMurids.length - 5} murid lainnya
+					</p>
+				{/if}
+				<p class="mt-4 text-sm opacity-70">Tindakan ini tidak bisa dibatalkan.</p>
+				<div class="mt-6 flex justify-end gap-2">
+					<button class="btn shadow-none" type="button" onclick={() => history.back()}>
+						<Icon name="close" />
+						Batal
+					</button>
+					<button
+						class="btn btn-error btn-soft shadow-none"
+						type="button"
+						onclick={submitBulkDelete}
+						disabled={formSubmitting}
+					>
+						{#if formSubmitting}
+							<div class="loading loading-spinner"></div>
+						{:else}
+							<Icon name="del" />
+						{/if}
+						Hapus
+					</button>
+				</div>
+			</div>
+			<form method="dialog" class="modal-backdrop">
+				<button>close</button>
+			</form>
+		</dialog>
+	{:else}
+		<dialog class="modal" onclose={() => history.back()} open>
+			<div class="modal-box">
+				<DeleteMurid data={page.state.modal?.data} />
+			</div>
+			<form method="dialog" class="modal-backdrop">
+				<button>close</button>
+			</form>
+		</dialog>
+	{/if}
 {/if}

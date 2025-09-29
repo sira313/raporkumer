@@ -13,9 +13,10 @@
 		enctype?: HTMLFormAttributes['enctype'];
 		init?: Record<string, unknown>;
 		onsuccess?: (params: { form: HTMLFormElement; data?: Record<string, unknown> }) => void;
+		submitStateChange?: (submitting: boolean) => void;
 	}
 
-	let { children, action, id, enctype, init, onsuccess }: Props = $props();
+	let { children, action, id, enctype, init, onsuccess, submitStateChange }: Props = $props();
 	let submitting = $state(false);
 	let invalid = $state(true);
 
@@ -65,6 +66,10 @@
 			invalid = !form.checkValidity();
 		}
 	}
+
+	$effect(() => {
+		submitStateChange?.(submitting);
+	});
 </script>
 
 <form

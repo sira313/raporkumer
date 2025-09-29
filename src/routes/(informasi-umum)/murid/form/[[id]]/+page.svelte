@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenisKelamin } from '$lib/statics';
@@ -11,7 +11,10 @@
 <FormEnhance
 	action="?/save"
 	init={data.murid}
-	onsuccess={async () => await goto('/murid', { invalidate: ['app:murid'] })}
+	onsuccess={async () => {
+		await invalidate('app:murid');
+		history.back();
+	}}
 >
 	{#snippet children({ submitting, invalid })}
 		<p class="mb-6 text-xl font-bold">
