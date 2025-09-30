@@ -2,6 +2,15 @@
 // for information about these interfaces
 declare global {
 	namespace App {
+		type DashboardStatistik = {
+			rombel: {
+				total: number;
+				perFase: Array<{ fase: string | null; label: string; jumlah: number }>;
+			};
+			murid: {
+				total: number;
+			};
+		};
 		// interface Error {}
 		interface Locals {
 			sekolah?: Omit<Sekolah, 'logo'>;
@@ -16,6 +25,7 @@ declare global {
 			kelasAktif?: (Pick<Kelas, 'id' | 'nama' | 'fase'> & {
 				waliKelas?: Pick<Pegawai, 'id' | 'nama'> | null;
 			}) | null;
+			statistikDashboard?: DashboardStatistik;
 		}
 		interface PageState {
 			modal: {

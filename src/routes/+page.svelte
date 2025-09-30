@@ -6,6 +6,13 @@
 	const sekolahLogo = $derived(sekolah?.id ? `/sekolah/logo/${sekolah.id}` : '/sekolah.png');
 	const sekolahNama = $derived(sekolah?.nama ?? 'Belum ada sekolah aktif');
 	const sekolahNpsn = $derived(sekolah?.npsn ?? '-');
+	const statistikDashboard = $derived(
+		data.statistikDashboard ?? {
+			rombel: { total: 0, perFase: [] },
+			murid: { total: 0 }
+		}
+	);
+	const rombelBadges = $derived.by(() => statistikDashboard.rombel.perFase);
 </script>
 
 <!-- Kontainer Utama Grid -->
@@ -49,11 +56,17 @@
 					</span>
 				</div>
 				<div class="stat-title">Jumlah Rombel</div>
-				<div class="stat-value">6</div>
+				<div class="stat-value">{statistikDashboard.rombel.total}</div>
 				<div class="stat-desc flex flex-wrap gap-1">
-					<div class="badge badge-sm badge-soft whitespace-nowrap">2 Fase A</div>
-					<div class="badge badge-sm badge-soft whitespace-nowrap">2 Fase B</div>
-					<div class="badge badge-sm badge-soft whitespace-nowrap">2 Fase C</div>
+					{#if rombelBadges.length}
+						{#each rombelBadges as badge (badge.label)}
+							<div class="badge badge-sm badge-soft whitespace-nowrap">
+								{badge.jumlah} {badge.label}
+							</div>
+						{/each}
+					{:else}
+						<div class="badge badge-sm badge-soft whitespace-nowrap">Belum ada data</div>
+					{/if}
 				</div>
 			</div>
 
@@ -64,8 +77,10 @@
 					</span>
 				</div>
 				<div class="stat-title">Jumlah Murid</div>
-				<div class="stat-value">79</div>
-				<div class="stat-desc">Aktif</div>
+				<div class="stat-value">{statistikDashboard.murid.total}</div>
+				<div class="stat-desc">
+					{statistikDashboard.murid.total ? 'Aktif' : 'Belum ada data'}
+				</div>
 			</div>
 		</div>
 
