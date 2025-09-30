@@ -384,6 +384,7 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 					</th>
 					<th style="width: 50px; min-width: 40px;">No</th>
 					<th style="width: 30%;">Lingkup Materi</th>
+					<th>Bobot</th>
 					<th style="width: 60%">Tujuan Pembelajaran</th>
 					<th>Aksi</th>
 				</tr>
@@ -413,6 +414,7 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 								</td>
 								<td class="align-top">{rowNumber}</td>
 								<td class="align-top">{group.lingkupMateri}</td>
+								<td></td>
 								<td class="align-top">
 									<div class="flex flex-col gap-2">
 										{#each group.items as item, itemIndex (item.id)}
@@ -479,6 +481,7 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 					}
 				></textarea>
 			</td>
+			<td></td>
 			<td class="align-top">
 				<div class="flex flex-col gap-2">
 					{#each currentForm.entries as entry, entryIndex (`${entry.id ?? 'new'}-${entryIndex}`)}
