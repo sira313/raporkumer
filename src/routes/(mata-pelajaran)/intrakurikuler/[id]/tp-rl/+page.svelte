@@ -270,14 +270,19 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 				</tr>
 			</thead>
 			<tbody>
+				{#if groupForm && groupForm.mode === 'create'}
+					{@render group_form_row(1)}
+				{/if}
+
 				{#if groupedTujuanPembelajaran.length > 0}
 					{#each groupedTujuanPembelajaran as group, groupIndex (groupKey(group))}
+						{@const rowNumber = groupIndex + 1 + (groupForm && groupForm.mode === 'create' ? 1 : 0)}
 						{#if groupForm && isEditingGroup(group)}
-							{@render group_form_row(groupIndex + 1)}
+							{@render group_form_row(rowNumber)}
 						{:else}
 							<tr>
 								<td class="align-top"><input type="checkbox" class="checkbox" /></td>
-								<td class="align-top">{groupIndex + 1}</td>
+								<td class="align-top">{rowNumber}</td>
 								<td class="align-top">{group.lingkupMateri}</td>
 								<td class="align-top">
 									<div class="flex flex-col gap-2">
@@ -318,10 +323,6 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 					<tr>
 						<td class="text-center italic opacity-50" colspan="5">Belum ada data</td>
 					</tr>
-				{/if}
-
-				{#if groupForm && groupForm.mode === 'create'}
-					{@render group_form_row(groupedTujuanPembelajaran.length + 1)}
 				{/if}
 			</tbody>
 		</table>
