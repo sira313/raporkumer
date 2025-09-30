@@ -60,28 +60,119 @@ export async function load({ depends, params, parent }) {
 
 export const actions = {
 	async save({ params, request }) {
-		const formTpRl = unflattenFormData<TujuanPembelajaran>(await request.formData());
-		formTpRl.mataPelajaranId = +params.id;
+		const formData = await request.formData();
+		const payload = unflattenFormData<{
+			mode?: string;
+			lingkupMateri?: string;
+			entries?:
+				| Array<{ id?: string | number; deskripsi?: string }>
+				| { id?: string | number; deskripsi?: string };
+		}>(formData);
 
-		// TODO: validation
-		if (formTpRl.id) {
-			await db
-				.update(tableTujuanPembelajaran)
-				.set(formTpRl)
-				.where(eq(tableTujuanPembelajaran.id, +formTpRl.id));
-		} else {
-			await db.insert(tableTujuanPembelajaran).values(formTpRl);
+		const mode = payload.mode === 'edit' ? 'edit' : 'create';
+		const mataPelajaranId = Number(params.id);
+		if (!Number.isFinite(mataPelajaranId)) {
+			return fail(400, { fail: 'Mata pelajaran tidak valid.' });
 		}
 
-		return { message: `Tujuan pembelajaran berhasil disimpan` };
+		const lingkupMateri = (payload.lingkupMateri ?? '').trim();
+		if (!lingkupMateri) {
+			return fail(400, { fail: 'Lingkup materi wajib diisi.' });
+		}
+
+		const rawEntries = Array.isArray(payload.entries)
+			? payload.entries
+			: payload.entries
+				? [payload.entries]
+				: [];
+
+		const entries = rawEntries
+			.map((entry) => {
+				const idRaw = typeof entry.id === 'string' ? entry.id.trim() : entry.id;
+				const id =
+					typeof idRaw === 'number'
+						? idRaw
+						: typeof idRaw === 'string' && idRaw !== ''
+						? Number(idRaw)
+						: undefined;
+				return {
+					id: Number.isFinite(id) ? (id as number) : undefined,
+					deskripsi: typeof entry.deskripsi === 'string' ? entry.deskripsi.trim() : ''
+				};
+			})
+			.filter((entry) => entry.deskripsi !== '' || entry.id !== undefined);
+
+		const hasDeskripsi = entries.some((entry) => entry.deskripsi.length > 0);
+		if (!hasDeskripsi) {
+			return fail(400, { fail: 'Minimal satu tujuan pembelajaran harus diisi.' });
+		}
+
+		const toInsert = entries.filter((entry) => !entry.id && entry.deskripsi.length > 0);
+		const toUpdate = entries.filter((entry) => entry.id && entry.deskripsi.length > 0);
+		const toDeleteIds = entries
+			.filter((entry) => entry.id && entry.deskripsi.length === 0)
+			.map((entry) => entry.id as number);
+
+		if (mode === 'create') {
+			if (toInsert.length === 0) {
+				return fail(400, { fail: 'Minimal satu tujuan pembelajaran harus diisi.' });
+			}
+
+			await db.insert(tableTujuanPembelajaran).values(
+				toInsert.map((entry) => ({
+					lingkupMateri,
+					deskripsi: entry.deskripsi,
+					mataPelajaranId
+				}))
+			);
+
+			return { message: `Tujuan pembelajaran berhasil ditambahkan` };
+		}
+
+		if (toUpdate.length > 0) {
+			await Promise.all(
+				toUpdate.map((entry) =>
+					entry.id
+						? db
+								.update(tableTujuanPembelajaran)
+								.set({ lingkupMateri, deskripsi: entry.deskripsi, mataPelajaranId })
+								.where(eq(tableTujuanPembelajaran.id, entry.id))
+						: Promise.resolve()
+				)
+			);
+		}
+
+		if (toInsert.length > 0) {
+			await db.insert(tableTujuanPembelajaran).values(
+				toInsert.map((entry) => ({
+					lingkupMateri,
+					deskripsi: entry.deskripsi,
+					mataPelajaranId
+				}))
+			);
+		}
+
+		if (toDeleteIds.length > 0) {
+			await db
+				.delete(tableTujuanPembelajaran)
+				.where(inArray(tableTujuanPembelajaran.id, toDeleteIds));
+		}
+
+		return { message: `Tujuan pembelajaran berhasil diperbarui` };
 	},
 
 	async delete({ request }) {
 		const formData = await request.formData();
-		const tpId = formData.get('id')?.toString();
-		if (!tpId) return fail(400, { fail: `ID kosong, tujuan pembelajaran gagal dihapus.` });
+		const idsRaw = formData.getAll('ids');
+		const ids = idsRaw
+			.map((value) => Number(value))
+			.filter((value) => Number.isFinite(value));
 
-		await db.delete(tableTujuanPembelajaran).where(eq(tableTujuanPembelajaran.id, +tpId));
-		return { message: `Tujuan pembelajaran telah dihapus` };
+		if (ids.length === 0) {
+			return fail(400, { fail: `Data tujuan pembelajaran tidak ditemukan.` });
+		}
+
+		await db.delete(tableTujuanPembelajaran).where(inArray(tableTujuanPembelajaran.id, ids));
+		return { message: `Lingkup materi dan tujuan pembelajaran telah dihapus.` };
 	}
 };
