@@ -2,13 +2,14 @@
 import { goto, invalidate } from '$app/navigation';
 import FormEnhance from '$lib/components/form-enhance.svelte';
 import Icon from '$lib/components/icon.svelte';
+import { toast } from '$lib/components/toast.svelte';
 
 type TujuanPembelajaranGroup = {
 	lingkupMateri: string;
 	items: Array<Omit<TujuanPembelajaran, 'mataPelajaran'>>;
 };
 
-type GroupEntry = { id?: number; deskripsi: string };
+type GroupEntry = { id?: number; deskripsi: string; deleted?: boolean };
 
 type GroupFormState = {
 	mode: 'create' | 'edit';
@@ -26,6 +27,7 @@ const agamaSelectId = 'agama-select';
 let groupedTujuanPembelajaran = $state<TujuanPembelajaranGroup[]>([]);
 let groupForm = $state<GroupFormState | null>(null);
 let deleteGroup = $state<{ lingkupMateri: string; ids: number[] } | null>(null);
+let deleteEntryDialog = $state<{ index: number } | null>(null);
 
 $effect(() => {
 	selectedAgamaId = data.agamaSelection ?? '';
@@ -55,33 +57,40 @@ async function handleAgamaChange(event: Event) {
 }
 
 function ensureTrailingEntry(entries: GroupEntry[]): GroupEntry[] {
-	const copy = entries.map((entry) => ({
+	const normalized = entries.map((entry) => ({
 		id: entry.id,
-		deskripsi: entry.deskripsi ?? ''
+		deskripsi: entry.deskripsi ?? '',
+		deleted: entry.deleted ?? false
 	}));
 
-	while (copy.length > 1) {
-		const lastIndex = copy.length - 1;
-		const last = copy[lastIndex];
-		const prev = copy[lastIndex - 1];
+	const active = normalized.filter((entry) => !entry.deleted);
+
+	while (active.length > 1) {
+		const last = active[active.length - 1];
+		const prev = active[active.length - 2];
 		if (
 			last.deskripsi.trim() === '' &&
 			last.id === undefined &&
 			prev.deskripsi.trim() === '' &&
 			prev.id === undefined
 		) {
-			copy.pop();
+			active.pop();
 		} else {
 			break;
 		}
 	}
 
-	const last = copy[copy.length - 1];
+	const last = active[active.length - 1];
 	if (!last || last.deskripsi.trim() !== '' || last.id !== undefined) {
-		copy.push({ id: undefined, deskripsi: '' });
+		active.push({ id: undefined, deskripsi: '', deleted: false });
 	}
 
-	return copy;
+	const deletedEntries = normalized.filter((entry) => entry.deleted && entry.id !== undefined);
+
+	return [
+		...active,
+		...deletedEntries.map((entry) => ({ ...entry, deskripsi: '', deleted: true }))
+	];
 }
 
 function openCreateForm() {
@@ -105,6 +114,7 @@ function openEditForm(group: TujuanPembelajaranGroup) {
 
 function closeForm() {
 	groupForm = null;
+	deleteEntryDialog = null;
 }
 
 function handleLingkupMateriInput(value: string) {
@@ -115,9 +125,49 @@ function handleLingkupMateriInput(value: string) {
 function handleEntryInput(index: number, value: string) {
 	if (!groupForm) return;
 	const entries = groupForm.entries.map((entry, entryIndex) =>
-		entryIndex === index ? { ...entry, deskripsi: value } : entry
+		entryIndex === index ? { ...entry, deskripsi: value, deleted: false } : entry
 	);
 	groupForm = { ...groupForm, entries: ensureTrailingEntry(entries) };
+}
+
+function openEntryDeleteDialog(index: number) {
+	deleteEntryDialog = { index };
+}
+
+function closeEntryDeleteDialog() {
+	deleteEntryDialog = null;
+}
+
+function confirmEntryDelete() {
+	if (deleteEntryDialog === null) return;
+	const { index } = deleteEntryDialog;
+	if (!groupForm) {
+		deleteEntryDialog = null;
+		return;
+	}
+	if (!groupForm.entries[index]) {
+		deleteEntryDialog = null;
+		return;
+	}
+	handleEntryDelete(index);
+}
+
+function handleEntryDelete(index: number) {
+	if (!groupForm) return;
+	const target = groupForm.entries[index];
+	if (!target) return;
+
+	let entries: GroupEntry[];
+	if (target.id !== undefined) {
+		entries = groupForm.entries.map((entry, entryIndex) =>
+			entryIndex === index ? { ...entry, deskripsi: '', deleted: true } : entry
+		);
+	} else {
+		entries = groupForm.entries.filter((_, entryIndex) => entryIndex !== index);
+	}
+
+	groupForm = { ...groupForm, entries: ensureTrailingEntry(entries) };
+	deleteEntryDialog = null;
 }
 
 function isEditingGroup(group: TujuanPembelajaranGroup) {
@@ -136,6 +186,32 @@ function openDeleteDialog(group: TujuanPembelajaranGroup) {
 
 function closeDeleteDialog() {
 	deleteGroup = null;
+}
+
+function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
+	const button = event.currentTarget as HTMLButtonElement | null;
+	const formElement = button?.form ?? null;
+	if (!formElement) return;
+
+	const lingkupInput = formElement.elements.namedItem('lingkupMateri') as HTMLTextAreaElement | null;
+	const lingkupValue = lingkupInput?.value.trim() ?? '';
+
+	if (!lingkupValue) {
+		event.preventDefault();
+		event.stopPropagation();
+		toast(
+			'lingkup materi tidak boleh kosong, jika anda ingin menghapusnya, anda bisa melakukannya dengan tombol hapus',
+			'warning'
+		);
+		lingkupInput?.focus();
+		return;
+	}
+
+	if (!formElement.checkValidity()) {
+		event.preventDefault();
+		event.stopPropagation();
+		formElement.reportValidity();
+	}
 }
 </script>
 
@@ -216,7 +292,7 @@ function closeDeleteDialog() {
 									</div>
 								</td>
 								<td class="align-top">
-									<div class="flex gap-2">
+									<div class="flex gap-2 flex-col">
 										<button
 											class="btn btn-sm btn-soft shadow-none"
 											type="button"
@@ -262,7 +338,7 @@ function closeDeleteDialog() {
 			<td class="align-top">
 				<textarea
 					form={formId}
-					class="textarea validator bg-base-200 dark:bg-base-300 border-base-300 h-36 w-full"
+					class="textarea validator bg-base-200 dark:bg-base-300 border-base-300 h-30 w-full"
 					value={currentForm.lingkupMateri}
 					name="lingkupMateri"
 					aria-label="Lingkup materi"
@@ -276,19 +352,52 @@ function closeDeleteDialog() {
 			<td class="align-top">
 				<div class="flex flex-col gap-2">
 					{#each currentForm.entries as entry, entryIndex (`${entry.id ?? 'new'}-${entryIndex}`)}
-						<input name={`entries.${entryIndex}.id`} value={entry.id ?? ''} hidden />
-						<textarea
-							form={formId}
-							class="textarea validator bg-base-200 border-base-300 dark:bg-base-300 w-full dark:border-none"
-							value={entry.deskripsi}
-							name={`entries.${entryIndex}.deskripsi`}
-							aria-label={`Tujuan pembelajaran ${entryIndex + 1}`}
-							placeholder="Tuliskan tujuan pembelajaran"
-							required={currentForm.mode === 'create' && entryIndex === 0}
-							oninput={(event) =>
-								handleEntryInput(entryIndex, (event.currentTarget as HTMLTextAreaElement).value)
-							}
-						></textarea>
+						{#if entry.deleted}
+							<input
+								type="hidden"
+								form={formId}
+								name={`entries.${entryIndex}.id`}
+								value={entry.id ?? ''}
+							/>
+							<input
+								type="hidden"
+								form={formId}
+								name={`entries.${entryIndex}.deskripsi`}
+								value=""
+							/>
+						{:else}
+							{@const trimmedDeskripsi = entry.deskripsi.trim()}
+							<input
+								type="hidden"
+								form={formId}
+								name={`entries.${entryIndex}.id`}
+								value={entry.id ?? ''}
+							/>
+							<div class="flex flex-col gap-2 sm:flex-row">
+								<textarea
+									form={formId}
+									class="textarea validator bg-base-200 border-base-300 dark:bg-base-300 w-full dark:border-none"
+									value={entry.deskripsi}
+									name={`entries.${entryIndex}.deskripsi`}
+									aria-label={`Tujuan pembelajaran ${entryIndex + 1}`}
+									placeholder="Tuliskan tujuan pembelajaran"
+									required={currentForm.mode === 'create' && entryIndex === 0}
+									oninput={(event) =>
+										handleEntryInput(entryIndex, (event.currentTarget as HTMLTextAreaElement).value)
+									}
+								></textarea>
+								{#if (currentForm.mode === 'edit' && !(entry.id === undefined && trimmedDeskripsi === '')) || (currentForm.mode === 'create' && trimmedDeskripsi.length > 0)}
+									<button
+										type="button"
+										class="btn btn-sm btn-soft btn-error shadow-none"
+										title="Hapus tujuan pembelajaran ini"
+										onclick={() => openEntryDeleteDialog(entryIndex)}
+									>
+										<Icon name="del" />
+									</button>
+								{/if}
+							</div>
+						{/if}
 					{/each}
 				</div>
 			</td>
@@ -301,13 +410,18 @@ function closeDeleteDialog() {
 						invalidate('app:mapel_tp-rl');
 					}}
 				>
-					{#snippet children({ submitting, invalid })}
+					{#snippet children({ submitting })}
+						{@const lingkupFilled = currentForm.lingkupMateri.trim().length > 0}
+						{@const hasDeskripsi = currentForm.entries.some((entry) => !entry.deleted && entry.deskripsi.trim().length > 0)}
+						{@const disableSubmit = submitting || (currentForm.mode === 'create' && (!lingkupFilled || !hasDeskripsi))}
 						<input name="mode" value={currentForm.mode} hidden />
 						<div class="flex flex-col gap-2">
 							<button
 								class="btn btn-sm btn-soft btn-primary shadow-none"
 								title="Simpan"
-								disabled={submitting || (currentForm.mode === 'create' && invalid)}
+								type="submit"
+								disabled={disableSubmit}
+								onclick={(event) => handleSaveClick(event, currentForm)}
 							>
 								{#if submitting}
 									<div class="loading loading-spinner loading-xs"></div>
@@ -330,6 +444,39 @@ function closeDeleteDialog() {
 		</tr>
 	{/if}
 {/snippet}
+
+{#if deleteEntryDialog && groupForm}
+	{@const entryToDelete = groupForm.entries[deleteEntryDialog.index]}
+	<dialog class="modal" open onclose={closeEntryDeleteDialog}>
+		<div class="modal-box">
+			<h3 class="mb-3 text-xl font-bold">Hapus tujuan pembelajaran?</h3>
+			<p class="mb-4">
+				{#if entryToDelete}
+					"{entryToDelete.deskripsi.trim() || 'Tujuan pembelajaran tanpa deskripsi'}" akan dihapus.
+				{:else}
+					Tujuan pembelajaran ini tidak ditemukan.
+				{/if}
+			</p>
+			<div class="flex justify-end gap-2">
+				<button class="btn shadow-none" type="button" onclick={closeEntryDeleteDialog}>
+					Batal
+				</button>
+				<button
+					type="button"
+					class="btn btn-error btn-soft shadow-none"
+					disabled={!entryToDelete}
+					onclick={confirmEntryDelete}
+				>
+					<Icon name="del" />
+					Hapus
+				</button>
+			</div>
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button onclick={closeEntryDeleteDialog}>close</button>
+		</form>
+	</dialog>
+{/if}
 
 {#if deleteGroup}
 	<dialog class="modal" open onclose={closeDeleteDialog}>

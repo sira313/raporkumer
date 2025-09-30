@@ -83,7 +83,7 @@ export const actions = {
 		const rawEntries = Array.isArray(payload.entries)
 			? payload.entries
 			: payload.entries
-				? [payload.entries]
+				? Object.values(payload.entries as Record<string, { id?: string | number; deskripsi?: string }>)
 				: [];
 
 		const entries = rawEntries
@@ -102,19 +102,16 @@ export const actions = {
 			})
 			.filter((entry) => entry.deskripsi !== '' || entry.id !== undefined);
 
-		const hasDeskripsi = entries.some((entry) => entry.deskripsi.length > 0);
-		if (!hasDeskripsi) {
-			return fail(400, { fail: 'Minimal satu tujuan pembelajaran harus diisi.' });
-		}
-
 		const toInsert = entries.filter((entry) => !entry.id && entry.deskripsi.length > 0);
 		const toUpdate = entries.filter((entry) => entry.id && entry.deskripsi.length > 0);
 		const toDeleteIds = entries
 			.filter((entry) => entry.id && entry.deskripsi.length === 0)
 			.map((entry) => entry.id as number);
 
+		const hasDeskripsi = entries.some((entry) => entry.deskripsi.length > 0);
+
 		if (mode === 'create') {
-			if (toInsert.length === 0) {
+			if (!hasDeskripsi || toInsert.length === 0) {
 				return fail(400, { fail: 'Minimal satu tujuan pembelajaran harus diisi.' });
 			}
 
@@ -127,6 +124,14 @@ export const actions = {
 			);
 
 			return { message: `Tujuan pembelajaran berhasil ditambahkan` };
+		}
+
+		if (!hasDeskripsi && toDeleteIds.length === 0) {
+			return fail(400, { fail: 'Minimal satu tujuan pembelajaran harus diisi.' });
+		}
+
+		if (toUpdate.length === 0 && toInsert.length === 0 && toDeleteIds.length === 0) {
+			return { message: `Tidak ada perubahan pada tujuan pembelajaran` };
 		}
 
 		if (toUpdate.length > 0) {
