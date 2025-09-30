@@ -1,8 +1,8 @@
 <script lang="ts">
-	const { name, class: classes }: { name: IconName; class?: string } = $props();
+	let { name, class: classes }: { name: IconName; class?: string } = $props();
 
 	const icons = import.meta.glob('/src/lib/icons/*.svg', { query: '?raw', eager: true });
-	const icon = icons[`/src/lib/icons/${name}.svg`] as { default: string } | undefined;
+	const icon = $derived(icons[`/src/lib/icons/${name}.svg`] as { default: string } | undefined);
 </script>
 
 {#if icon}
