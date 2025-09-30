@@ -3,10 +3,15 @@ import { tableMurid } from '$lib/server/db/schema.js';
 import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
-export async function load({ locals, url, depends }) {
+export async function load({ locals, url, depends, parent }) {
 	depends('app:murid');
 	const search = url.searchParams.get('q');
-	const kelasId = url.searchParams.get('kelas_id');
+	const { daftarKelas = [], kelasAktif } = await parent();
+	const kelasParam = url.searchParams.get('kelas_id') ?? (kelasAktif ? String(kelasAktif.id) : null);
+	const kelasId =
+		kelasParam && daftarKelas.some((kelas) => kelas.id === Number(kelasParam))
+			? String(kelasParam)
+			: null;
 	const perPage = 20;
 	const requestedPage = Number(url.searchParams.get('page')) || 1;
 	const pageNumber =

@@ -4,13 +4,20 @@ import { eq } from 'drizzle-orm';
 
 type MataPelajaranList = Omit<MataPelajaran, 'tujuanPembelajaran'>[];
 
-export async function load({ depends, url }) {
+export async function load({ depends, url, parent }) {
 	depends('app:mapel');
-	const kelasId = url.searchParams.get('kelas_id');
+	const { kelasAktif, daftarKelas } = await parent();
+	const fromQuery = url.searchParams.get('kelas_id');
+	const kelasCandidate = fromQuery ? Number(fromQuery) : kelasAktif?.id ?? null;
+	const kelasId =
+		kelasCandidate != null && daftarKelas?.some((kelas) => kelas.id === kelasCandidate)
+			? kelasCandidate
+			: null;
+
 	const mapel = kelasId
 		? await db.query.tableMataPelajaran.findMany({
-				where: eq(tableMataPelajaran.kelasId, +kelasId)
-			})
+			where: eq(tableMataPelajaran.kelasId, kelasId)
+		  })
 		: [];
 
 	const { daftarWajib, daftarMulok } = mapel.reduce(

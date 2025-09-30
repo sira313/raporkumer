@@ -6,11 +6,31 @@
 	import FormMataPelajaran from './form/+page.svelte';
 
 	let { data } = $props();
+	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const kelasAktifLabel = $derived.by(() => {
+		if (!kelasAktif) return null;
+		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
+	});
+	const emptyStateMessage = $derived.by(() =>
+		kelasAktif ? 'Belum ada data' : 'Pilih kelas terlebih dahulu'
+	);
 </script>
 
 <!-- Data Mapel -->
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">Daftar Mata Pelajaran</h2>
+	<h2 class="mb-6 text-xl font-bold">
+		Daftar Mata Pelajaran
+		{#if kelasAktifLabel}
+			<span class="block text-sm font-normal text-base-content/70">Kelas {kelasAktifLabel}</span>
+		{/if}
+	</h2>
+
+	{#if !kelasAktif}
+		<div class="alert bg-base-200 border border-dashed border-base-300 text-base-content/80 mb-6 flex items-center gap-2">
+			<Icon name="info" />
+			<span>Pilih kelas di navbar untuk melihat daftar mata pelajaran.</span>
+		</div>
+	{/if}
 
 	<!-- Tombol select Kelas akan dihapus dan dipindahkan ke navbar -->
 	<!-- <form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
@@ -102,7 +122,7 @@
 					</tr>
 				{:else}
 					<tr>
-						<td class="text-center italic opacity-50" colspan="6">Belum ada data</td>
+						<td class="text-center italic opacity-50" colspan="6">{emptyStateMessage}</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -155,7 +175,7 @@
 					</tr>
 				{:else}
 					<tr>
-						<td class="text-center italic opacity-50" colspan="6">Belum ada data</td>
+						<td class="text-center italic opacity-50" colspan="6">{emptyStateMessage}</td>
 					</tr>
 				{/each}
 			</tbody>

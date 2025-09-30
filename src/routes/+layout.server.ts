@@ -1,9 +1,9 @@
 import db from '$lib/server/db';
 import { tableKelas } from '$lib/server/db/schema';
-import { findTitleByPath } from '$lib/utils.js';
+import { cookieNames, findTitleByPath } from '$lib/utils.js';
 import { asc, eq } from 'drizzle-orm';
 
-export async function load({ url, locals }) {
+export async function load({ url, locals, cookies }) {
 	const meta: PageMeta = {
 		title: url.pathname === '/' ? 'Rapor Kurikulum Merdeka' : findTitleByPath(url.pathname),
 		description: ''
@@ -20,10 +20,26 @@ export async function load({ url, locals }) {
 		: [];
 
 	const kelasIdParam = url.searchParams.get('kelas_id');
-	const kelasAktif =
-		kelasIdParam != null
-			? daftarKelas.find((kelas) => kelas.id === Number(kelasIdParam)) ?? null
-			: null;
+	const kelasCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID);
+	const kelasCandidate = kelasIdParam ?? kelasCookie ?? null;
 
-	return { sekolah, meta, daftarKelas, kelasAktif: kelasAktif ?? daftarKelas[0] ?? null };
+	let kelasAktif: (typeof daftarKelas)[number] | null = null;
+	if (kelasCandidate != null) {
+		const kelasIdNumber = Number(kelasCandidate);
+		if (Number.isInteger(kelasIdNumber)) {
+			kelasAktif = daftarKelas.find((kelas) => kelas.id === kelasIdNumber) ?? null;
+		}
+	}
+
+	if (!kelasAktif && daftarKelas.length) {
+		kelasAktif = daftarKelas[0];
+	}
+
+	if (kelasAktif) {
+		cookies.set(cookieNames.ACTIVE_KELAS_ID, String(kelasAktif.id), { path: '/' });
+	} else {
+		cookies.delete(cookieNames.ACTIVE_KELAS_ID, { path: '/' });
+	}
+
+	return { sekolah, meta, daftarKelas, kelasAktif };
 }

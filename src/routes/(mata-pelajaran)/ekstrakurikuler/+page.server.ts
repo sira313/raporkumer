@@ -4,13 +4,18 @@ import { unflattenFormData } from '$lib/utils.js';
 import { fail } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
-export async function load({ depends, url }) {
+export async function load({ depends, url, parent }) {
 	depends('app:ekstrakurikuler');
-	const kelasId = url.searchParams.get('kelas_id');
+	const { daftarKelas = [], kelasAktif } = await parent();
+	const kelasParam = url.searchParams.get('kelas_id') ?? (kelasAktif ? String(kelasAktif.id) : null);
+	const kelasId =
+		kelasParam && daftarKelas.some((kelas) => kelas.id === Number(kelasParam))
+			? String(kelasParam)
+			: null;
 	const ekskul = kelasId
 		? await db.query.tableEkstrakurikuler.findMany({
-				where: eq(tableEkstrakurikuler.kelasId, +kelasId)
-			})
+			where: eq(tableEkstrakurikuler.kelasId, +kelasId)
+		  })
 		: [];
 	return { kelasId, ekskul };
 }

@@ -2,7 +2,8 @@ import { goto, preloadData, pushState } from '$app/navigation';
 import { appMenuItems } from './components/menu';
 
 export const cookieNames = {
-	ACTIVE_SEKOLAH_ID: 'active-sekolah-id'
+	ACTIVE_SEKOLAH_ID: 'active-sekolah-id',
+	ACTIVE_KELAS_ID: 'active-kelas-id'
 };
 
 export function findTitleByPath(path: string, items = appMenuItems): string | undefined {
