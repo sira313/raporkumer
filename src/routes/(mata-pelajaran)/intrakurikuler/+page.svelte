@@ -1,253 +1,203 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
+	import { toast } from '$lib/components/toast.svelte';
+	import {
+		agamaMapelLabelByName,
+		agamaMapelNames,
+		agamaParentName
+	} from '$lib/statics';
 	import { modalRoute } from '$lib/utils';
 	import DeleteMataPelajaran from './[id]/delete/+page.svelte';
 	import FormMataPelajaran from './form/+page.svelte';
 
-	let { data } = $props();
-	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	let { data }: { data: { kelasId: number | null; mapel: Record<string, MataPelajaran[]> } } = $props();
+
+	const emptyStateMessage = 'Belum ada data mata pelajaran';
+	const agamaMapelNameSet = new Set<string>(agamaMapelNames);
+
 	const kelasAktifLabel = $derived.by(() => {
-		if (!kelasAktif) return null;
-		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
+		const kelas = page.data.kelasAktif ?? null;
+		if (!kelas) return null;
+		return kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama;
 	});
-	const emptyStateMessage = $derived.by(() =>
-		kelasAktif ? 'Belum ada data' : 'Pilih kelas terlebih dahulu'
+
+	const hasKelasAktif = $derived.by(() => !!page.data.kelasAktif);
+	const totalMapel = $derived.by(
+		() =>
+			data.mapel.daftarWajib.length +
+			data.mapel.daftarPilihan.length +
+			data.mapel.daftarMulok.length
 	);
+
+	const formModalData = $derived.by(() => {
+		const modal = page.state.modal;
+		if (!modal) return null;
+		if (modal.name === 'add-mapel') {
+			return { ...modal.data, mode: 'add' } satisfies Record<string, unknown>;
+		}
+		if (modal.name === 'edit-mapel') {
+			return { ...modal.data, mode: 'edit' } satisfies Record<string, unknown>;
+		}
+		return null;
+	});
+
+	function formatKkm(kkm: number | null | undefined) {
+		return typeof kkm === 'number' && Number.isFinite(kkm) ? kkm : '—';
+	}
+
+	function handleDeleteClick(event: MouseEvent, mapel: Pick<MataPelajaran, 'nama'>) {
+		if (event.defaultPrevented) return;
+		if (event.shiftKey || event.metaKey || event.ctrlKey || event.button === 1) return;
+		if (!agamaMapelNameSet.has(mapel.nama)) return;
+
+		const label = agamaMapelLabelByName[mapel.nama];
+		const message =
+			mapel.nama === agamaParentName
+				? `Menghapus "<b>${mapel.nama}</b>" akan menghapus seluruh varian Pendidikan Agama dan Budi Pekerti pada kelas ini.`
+				: `Menghapus "<b>${mapel.nama}</b>" akan menghapus varian Pendidikan Agama <b>${label}</b> beserta seluruh penilaian terkait.`;
+
+		toast({ message, type: 'warning', persist: true });
+	}
 </script>
 
-<!-- Data Mapel -->
-<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">
-		Daftar Mata Pelajaran
-		{#if kelasAktifLabel}
-			<span class="block mt-2 text-lg font-semibold">{kelasAktifLabel}</span>
-		{/if}
-	</h2>
-
-	{#if !kelasAktif}
-		<div class="alert bg-base-200 border border-dashed border-base-300 text-base-content/80 mb-6 flex items-center gap-2">
-			<Icon name="info" />
-			<span>Pilih kelas di navbar untuk melihat daftar mata pelajaran.</span>
-		</div>
-	{/if}
-
-	<!-- Tombol select Kelas akan dihapus dan dipindahkan ke navbar -->
-	<!-- <form data-sveltekit-keepfocus data-sveltekit-replacestate use:autoSubmit>
-		<select
-			class="select bg-base-200 mb-2 w-full dark:border-none"
-			title="Pilih kelas"
-			name="kelas_id"
-			value={data.kelasId || ''}
-		>
-			<option value="" disabled selected> Pilih Kelas </option>
-			{#each data.daftarKelas as kelas (kelas)}
-				<option value={kelas.id + ''}>Kelas: {kelas.nama} - Fase: {kelas.fase}</option>
+<div class="card bg-base-100 rounded-box border border-none p-4 shadow-md">
+	<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+		<div>
+			<h2 class="text-xl font-bold">Daftar Mata Pelajaran Intrakurikuler</h2>
+			{#if kelasAktifLabel}
+				<p class="text-sm text-base-content/70">Kelas aktif: {kelasAktifLabel}</p>
 			{:else}
-				<option value="" disabled selected> Belum ada data kelas </option>
-			{/each}
-		</select>
-	</form> -->
-
-	<div class="flex flex-col gap-2 sm:flex-row">
-		<!-- tombol tambah mapel -->
+				<p class="text-sm text-base-content/60">
+					Pilih kelas di navbar untuk melihat mata pelajaran intrakurikuler.
+				</p>
+			{/if}
+		</div>
 		<a
-			class="btn mb-2 shadow-none sm:max-w-40"
+			class="btn shadow-none"
 			href="/intrakurikuler/form"
+			title="Tambah mata pelajaran"
 			use:modalRoute={'add-mapel'}
 		>
 			<Icon name="plus" />
-			Tambah
+			Tambah Mata Pelajaran
 		</a>
-		<!-- tombol download template -->
-		<button class="btn mb-2 shadow-none">
-			<Icon name="download" />
-			Download Template
-		</button>
-		<!-- tombol import -->
-		<button class="btn mb-2 shadow-none">
-			<Icon name="import" />
-			Import
-		</button>
-		<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
-		<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
-			<Icon name="del" />
-			Hapus
-		</button>
 	</div>
-	<!-- Tabel Mapel Wajib -->
-	<legend class="fieldset-legend"> Mata Pelajaran Wajib </legend>
-	<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
-		<table class="border-base-200 table border dark:border-none">
-			<thead>
-				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
-					<th style="width: 50px; min-width: 40px;">No</th>
-					<th style="width: 50%;">Mata Pelajaran</th>
-					<th>KKM</th>
-					<th>Tujuan Pembelajaran</th>
-					<th>Aksi</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each data.mapel.daftarWajib as mapel, index (mapel.id)}
-					<tr>
-						<td><input type="checkbox" class="checkbox" /></td>
-						<td>{index + 1}</td>
-						<td>{mapel.nama}</td>
-						<td>{mapel.kkm}</td>
-						<td class="flex flex-row gap-2">
-							<a
-								href="/intrakurikuler/{mapel.id}/tp-rl"
-								class="btn btn-sm btn-soft shadow-none"
-								type="button"
-							>
-								<Icon name="edit" />
-								Edit TP
-							</a>
-						</td>
-						<td>
-							<div class="flex flex-row gap-2">
-								<a
-									class="btn btn-sm btn-soft btn-error shadow-none"
-									type="button"
-									href="/intrakurikuler/{mapel.id}/delete"
-									use:modalRoute={'delete-mapel'}
-								>
-									<Icon name="del" />
-									Hapus
-								</a>
-							</div>
-						</td>
-					</tr>
-				{:else}
-					<tr>
-						<td class="text-center italic opacity-50" colspan="6">{emptyStateMessage}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
+
+	<div class="stats stats-horizontal mt-4 w-full border border-base-200 bg-base-100 dark:bg-base-200 text-base-content shadow-md dark:shadow-none">
+		<div class="stat place-items-start">
+			<div class="stat-title">Mapel Wajib</div>
+			<div class="stat-value text-2xl">{data.mapel.daftarWajib.length}</div>
+		</div>
+		<div class="stat place-items-start">
+			<div class="stat-title">Mapel Pilihan</div>
+			<div class="stat-value text-2xl">{data.mapel.daftarPilihan.length}</div>
+		</div>
+		<div class="stat place-items-start">
+			<div class="stat-title">Muatan Lokal</div>
+			<div class="stat-value text-2xl">{data.mapel.daftarMulok.length}</div>
+		</div>
+		<div class="stat place-items-start">
+			<div class="stat-title">Total Mapel</div>
+			<div class="stat-value text-2xl">{totalMapel}</div>
+		</div>
 	</div>
-	<!-- Tabel Mapel Pilihan -->
-	<legend class="fieldset-legend mt-2"> Mata Pelajaran Pilihan </legend>
-	<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
-		<table class="border-base-200 table border dark:border-none">
-			<thead>
-				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
-					<th style="width: 50px; min-width: 40px;">No</th>
-					<th style="width: 50%;">Mata Pelajaran</th>
-					<th>KKM</th>
-					<th>Tujuan Pembelajaran</th>
-					<th>Aksi</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each data.mapel.daftarPilihan as mapel, index (mapel.id)}
-					<tr>
-						<td><input type="checkbox" class="checkbox" /></td>
-						<td>{index + 1}</td>
-						<td>{mapel.nama}</td>
-						<td>{mapel.kkm}</td>
-						<td class="flex flex-row gap-2">
-							<a
-								href="/intrakurikuler/{mapel.id}/tp-rl"
-								class="btn btn-sm btn-soft shadow-none"
-								type="button"
-							>
-								<Icon name="edit" />
-								Edit TP
-							</a>
-						</td>
-						<td>
-							<div class="flex flex-row gap-2">
-								<a
-									class="btn btn-sm btn-soft btn-error shadow-none"
-									type="button"
-									href="/intrakurikuler/{mapel.id}/delete"
-									use:modalRoute={'delete-mapel'}
-								>
-									<Icon name="del" />
-									Hapus
-								</a>
-							</div>
-						</td>
-					</tr>
-				{:else}
-					<tr>
-						<td class="text-center italic opacity-50" colspan="6">{emptyStateMessage}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
-	<!-- Data Muatan lokal -->
-	<legend class="fieldset-legend mt-2"> Muatan Lokal </legend>
-	<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
-		<table class="border-base-200 table border dark:border-none">
-			<thead>
-				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
-					<th style="width: 50px; min-width: 40px;">No</th>
-					<th style="width: 50%;">Mata Pelajaran</th>
-					<th>KKM</th>
-					<th>Tujuan Pembelajaran</th>
-					<th>Aksi</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each data.mapel.daftarMulok as mapel, index (mapel.id)}
-					<tr>
-						<td><input type="checkbox" class="checkbox" /></td>
-						<td>{index + 1}</td>
-						<td>{mapel.nama}</td>
-						<td>{mapel.kkm}</td>
-						<td class="flex flex-row gap-2">
-							<a
-								href="/intrakurikuler/{mapel.id}/tp-rl"
-								class="btn btn-sm btn-soft shadow-none"
-								type="button"
-							>
-								<Icon name="edit" />
-								Edit TP
-							</a>
-						</td>
-						<td>
-							<div class="flex flex-row gap-2">
-								<a
-									class="btn btn-sm btn-soft btn-error shadow-none"
-									type="button"
-									href="/intrakurikuler/{mapel.id}/delete"
-									use:modalRoute={'delete-mapel'}
-								>
-									<Icon name="del" />
-									Hapus
-								</a>
-							</div>
-						</td>
-					</tr>
-				{:else}
-					<tr>
-						<td class="text-center italic opacity-50" colspan="6">{emptyStateMessage}</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
+
+	{#if !hasKelasAktif}
+		<div class="alert mt-6 border border-dashed border-warning/60 bg-warning/10 text-warning-content">
+			<Icon name="info" />
+			<span>Pilih kelas aktif agar daftar mata pelajaran dapat ditampilkan.</span>
+		</div>
+	{/if}
+
+	{#if hasKelasAktif && totalMapel === 0}
+		<div class="alert mt-6 border border-dashed border-info/60 bg-info/10 text-info-content">
+			<Icon name="info" />
+			<span>Belum ada data mata pelajaran untuk kelas ini. Gunakan tombol &ldquo;Tambah Mata Pelajaran&rdquo; di atas.</span>
+		</div>
+	{/if}
+
+	{#each [
+		{ key: 'wajib', title: 'Mata Pelajaran Wajib', items: data.mapel.daftarWajib },
+		{ key: 'pilihan', title: 'Mata Pelajaran Pilihan', items: data.mapel.daftarPilihan },
+		{ key: 'mulok', title: 'Muatan Lokal', items: data.mapel.daftarMulok }
+	] as section (section.key)}
+		<fieldset class="fieldset mt-8">
+			<legend class="fieldset-legend">{section.title}</legend>
+			<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+				<table class="border-base-200 table border dark:border-none">
+					<thead>
+						<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
+							<th style="width: 60px;">No</th>
+							<th style="min-width: 280px;">Mata Pelajaran</th>
+							<th style="width: 100px;">KKM</th>
+							<th style="width: 180px;">Tujuan Pembelajaran</th>
+							<th>Aksi</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each section.items as mapel, index (mapel.id)}
+							<tr>
+								<td>{index + 1}</td>
+								<td class="font-medium">{mapel.nama}</td>
+								<td>{formatKkm(mapel.kkm)}</td>
+								<td>
+									<a
+										class="btn btn-sm btn-soft shadow-none"
+										href={`/intrakurikuler/${mapel.id}/tp-rl`}
+										title="Kelola tujuan &amp; ruang lingkup"
+									>
+										<Icon name="edit" />
+										Edit TP
+									</a>
+								</td>
+								<td>
+									<div class="flex flex-row gap-2">
+										<a
+											class="btn btn-sm btn-soft shadow-none"
+											href={`/intrakurikuler/${mapel.id}/edit`}
+											title="Edit data mata pelajaran"
+											use:modalRoute={'edit-mapel'}
+										>
+											<Icon name="edit" />
+										</a>
+										<a
+											class="btn btn-sm btn-error btn-soft shadow-none"
+											href={`/intrakurikuler/${mapel.id}/delete`}
+											title="Hapus mata pelajaran"
+											use:modalRoute={'delete-mapel'}
+											onclick={(event) => handleDeleteClick(event, mapel)}
+										>
+											<Icon name="del" />
+										</a>
+									</div>
+								</td>
+							</tr>
+						{:else}
+							<tr>
+								<td class="py-6 text-center italic opacity-60" colspan="5">{emptyStateMessage}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</fieldset>
+	{/each}
 </div>
 
-<!-- Modal Tambah Data -->
-{#if page.state.modal?.name == 'add-mapel'}
-	<dialog class="modal" open>
-		<div class="modal-box p-4">
-			<FormMataPelajaran data={page.state.modal?.data} />
+{#if formModalData}
+	<dialog class="modal" open onclose={() => history.back()}>
+		<div class="modal-box p-4 sm:w-full sm:max-w-2xl">
+			<FormMataPelajaran data={formModalData} />
 		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
 	</dialog>
 {/if}
 
-<!-- Modal Hapus Data -->
-{#if page.state.modal?.name == 'delete-mapel'}
-	<dialog class="modal" onclose={() => history.back()} open>
+{#if page.state.modal?.name === 'delete-mapel'}
+	<dialog class="modal" open onclose={() => history.back()}>
 		<div class="modal-box">
 			<DeleteMataPelajaran data={page.state.modal?.data} />
 		</div>

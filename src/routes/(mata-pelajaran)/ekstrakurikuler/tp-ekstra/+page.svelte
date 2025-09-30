@@ -15,12 +15,12 @@
 			<Icon name="left" />
 			Kembali
 		</button>
-		<button class="btn mb-2 shadow-none sm:max-w-40" type="button">
+		<button class="btn shadow-none sm:max-w-40" type="button">
 			<Icon name="plus" />
 			Tambah TP
 		</button>
 		<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
-		<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
+		<button disabled class="btn btn-error shadow-none sm:ml-auto sm:max-w-40">
 			<Icon name="del" />
 			Hapus TP
 		</button>

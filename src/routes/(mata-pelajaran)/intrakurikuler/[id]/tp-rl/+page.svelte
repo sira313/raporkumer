@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { invalidate } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 
@@ -7,6 +7,23 @@
 	let tambahTpAktif = $state(false);
 	let editTpId = $state<number>();
 	let deleteTpData = $state<Omit<TujuanPembelajaran, 'mataPelajaran'>>();
+	const agamaOptions = $derived(data.agamaOptions ?? []);
+	const showAgamaSelect = $derived(agamaOptions.length > 0);
+	let selectedAgamaId = $state(data.agamaSelection ?? '');
+	const agamaSelectId = 'agama-select';
+
+	$effect(() => {
+		selectedAgamaId = data.agamaSelection ?? '';
+	});
+
+	async function handleAgamaChange(event: Event) {
+		const target = event.target as HTMLSelectElement;
+		const value = target.value;
+		if (!value) return;
+		const mapelId = Number(value);
+		if (!Number.isFinite(mapelId) || mapelId === data.mapel.id) return;
+		await goto(`/intrakurikuler/${mapelId}/tp-rl`, { replaceState: true });
+	}
 
 	function closeForm() {
 		tambahTpAktif = false;
@@ -19,18 +36,34 @@
 	<!-- Judul IPAS bisa berubah dinamis sesuai mata pelajaran yang dipilih -->
 	<h2 class="mb-6 text-xl font-bold">
 		<span class="opacity-50">Mata Pelajaran:</span>
-		{data.mapel.nama} &bullet; Kelas: {data.mapel.kelas.nama}
+		{data.mapel.nama} – {data.mapel.kelas.nama}
 	</h2>
 
 	<!-- tombol tambah Tujuan Pembelajaran -->
-	<div class="flex flex-col gap-2 sm:flex-row">
+	<div class="flex flex-col gap-2 sm:flex-row sm:items-center mb-2">
 		<button class="btn shadow-none" type="button" onclick={() => history.back()}>
 			<Icon name="left" />
 			Kembali
 		</button>
+		{#if showAgamaSelect}
+			<div class="form-control sm:w-60">
+				<select
+					class="select bg-base-200 w-full shadow-none dark:border-none"
+					id={agamaSelectId}
+					aria-label="Pilih Agama"
+					bind:value={selectedAgamaId}
+					onchange={handleAgamaChange}
+				>
+					<option value="" disabled>Pilih Agama</option>
+					{#each agamaOptions as option}
+						<option value={option.id.toString()}>{option.label}</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
 		<!-- Request feature -->
 		<button
-			class="btn mb-2 shadow-none sm:max-w-40"
+			class="btn shadow-none sm:max-w-40"
 			onclick={() => (tambahTpAktif = true)}
 			type="button"
 			disabled={tambahTpAktif}
@@ -38,12 +71,12 @@
 			<Icon name="plus" />
 			Tambah TP
 		</button>
-		<button class="btn mb-2 shadow-none sm:max-w-40" type="button">
+		<button class="btn shadow-none sm:max-w-40" type="button">
 			<Icon name="percent" />
 			Atur Bobot
 		</button>
 		<!-- Tombol ini hanya aktif bila user centang mapel untuk hapus -->
-		<button disabled class="btn btn-error mb-2 shadow-none sm:ml-auto sm:max-w-40">
+		<button disabled class="btn btn-error shadow-none sm:ml-auto sm:max-w-40">
 			<Icon name="del" />
 			Hapus TP
 		</button>

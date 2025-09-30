@@ -1,21 +1,55 @@
-<script lang>
-	import { goto } from '$app/navigation';
+<script lang="ts">
+	import { goto, invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import { jenisMapel } from '$lib/statics.js';
+	import {
+		agamaMapelLabelByName,
+		agamaMapelNames,
+		agamaParentName,
+		jenisMapel
+	} from '$lib/statics.js';
 
 	let { data } = $props();
+	const invalidateTargets = ['app:mapel', 'app:mapel_tp-rl'];
+	const AGAMA_MAPEL_NAME_SET = new Set<string>(agamaMapelNames);
+	const isAgamaMapel = AGAMA_MAPEL_NAME_SET.has(data.mapel.nama);
+	const agamaLabel = agamaMapelLabelByName[data.mapel.nama] ?? '';
 </script>
 
 <FormEnhance
 	action="?/delete"
-	onsuccess={() => goto('/intrakurikuler', { invalidate: ['app:mapel_tp-rl'] })}
+	onsuccess={async () => {
+		await Promise.all(invalidateTargets.map((token) => invalidate(token)));
+		if (typeof window !== 'undefined' && window.history?.state?.modal) {
+			history.back();
+		} else {
+			await goto('/intrakurikuler', { replaceState: true });
+		}
+	}}
 >
 	{#snippet children({ submitting })}
 		<h3 class="mb-4 text-xl font-bold">Hapus data mata pelajaran:</h3>
 		<p>Nama: {data.mapel.nama}</p>
 		<p>KKM: {data.mapel.kkm}</p>
 		<p>Jenis: {jenisMapel[data.mapel.jenis]}</p>
+
+		{#if isAgamaMapel}
+			<div class="alert alert-warning mt-4 items-start gap-3" role="alert">
+				<Icon name="warning" />
+				<div class="space-y-1 text-sm">
+					<p class="font-semibold">
+						Perhatian: mata pelajaran ini memiliki perlakuan khusus.
+					</p>
+					<p>
+						Terdapat beberapa sub-mata pelajaran Pendidikan Agama
+						{#if data.mapel.nama !== agamaParentName && agamaLabel}
+							(<strong>{agamaLabel}</strong>)
+						{/if}
+						yang saling terhubung dengan data agama siswa. Menghapus mata pelajaran ini dapat merusak logika nilai dan keterkaitan tersebut.
+					</p>
+				</div>
+			</div>
+		{/if}
 
 		<div class="mt-4 flex justify-end gap-2">
 			<button class="btn shadow-none" type="button" onclick={() => history.back()}>

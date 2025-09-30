@@ -1,16 +1,61 @@
 import db from '$lib/server/db/index.js';
-import { tableTujuanPembelajaran } from '$lib/server/db/schema.js';
+import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama.js';
+import { tableMataPelajaran, tableTujuanPembelajaran } from '$lib/server/db/schema.js';
+import { agamaMapelNames, agamaMapelOptions } from '$lib/statics';
 import { unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 
-export async function load({ depends, params }) {
+export async function load({ depends, params, parent }) {
 	depends('app:mapel_tp-rl');
+	const { mapel } = await parent();
+
+	await ensureAgamaMapelForClasses([mapel.kelasId]);
+
 	const tujuanPembelajaran = await db.query.tableTujuanPembelajaran.findMany({
 		where: eq(tableTujuanPembelajaran.mataPelajaranId, +params.id),
 		orderBy: asc(tableTujuanPembelajaran.createdAt)
 	});
-	return { tujuanPembelajaran, meta: { title: `Tujuan Pembelajaran` } };
+
+	let agamaOptions: Array<{
+		id: number;
+		label: string;
+		name: string;
+		isActive: boolean;
+	}> = [];
+
+	const targetNames: string[] = [...agamaMapelNames];
+	if (targetNames.includes(mapel.nama)) {
+		const kelasAgamaMapel = await db.query.tableMataPelajaran.findMany({
+			columns: { id: true, nama: true },
+			where: and(
+				eq(tableMataPelajaran.kelasId, mapel.kelasId),
+				inArray(tableMataPelajaran.nama, targetNames)
+			)
+		});
+
+		const mapelByName = new Map(kelasAgamaMapel.map((item) => [item.nama, item]));
+		agamaOptions = agamaMapelOptions
+			.filter((option) => option.key !== 'umum')
+			.map((option) => {
+				const variant = mapelByName.get(option.name);
+				if (!variant) return null;
+				return {
+					id: variant.id,
+					label: option.label,
+					name: option.name,
+					isActive: variant.id === mapel.id
+				};
+			})
+			.filter((item): item is NonNullable<typeof item> => Boolean(item));
+	}
+
+	return {
+		tujuanPembelajaran,
+		agamaOptions,
+		agamaSelection: agamaOptions.find((item) => item.isActive)?.id?.toString() ?? '',
+		meta: { title: `Tujuan Pembelajaran - ${mapel.nama}` }
+	};
 }
 
 export const actions = {
