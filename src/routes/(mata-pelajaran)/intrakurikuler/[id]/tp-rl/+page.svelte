@@ -18,6 +18,11 @@ type GroupFormState = {
 	targetIds: number[];
 };
 
+type SelectedGroupState = {
+	lingkupMateri: string;
+	ids: number[];
+};
+
 let { data } = $props();
 const agamaOptions = $derived(data.agamaOptions ?? []);
 const showAgamaSelect = $derived(agamaOptions.length > 0);
@@ -28,6 +33,18 @@ let groupedTujuanPembelajaran = $state<TujuanPembelajaranGroup[]>([]);
 let groupForm = $state<GroupFormState | null>(null);
 let deleteGroup = $state<{ lingkupMateri: string; ids: number[] } | null>(null);
 let deleteEntryDialog = $state<{ index: number } | null>(null);
+let selectedGroups = $state<Record<string, SelectedGroupState>>({});
+let bulkDeleteDialog = $state<{ groups: SelectedGroupState[] } | null>(null);
+let selectAllCheckbox = $state<HTMLInputElement | null>(null);
+
+const selectedGroupList = $derived(Object.values(selectedGroups));
+const selectableGroups = $derived(
+	groupedTujuanPembelajaran.filter((group) => !(groupForm && isEditingGroup(group)))
+);
+const hasSelection = $derived(selectedGroupList.length > 0);
+const allSelected = $derived(
+	selectableGroups.length > 0 && selectedGroupList.length === selectableGroups.length
+);
 
 $effect(() => {
 	selectedAgamaId = data.agamaSelection ?? '';
@@ -44,7 +61,24 @@ $effect(() => {
 			});
 		}
 	}
-	groupedTujuanPembelajaran = Array.from(groups.values());
+	const nextGroups = Array.from(groups.values());
+	groupedTujuanPembelajaran = nextGroups;
+
+	const allowedKeys = new Set(nextGroups.map((group) => groupKey(group)));
+	const filteredEntries = Object.entries(selectedGroups).filter(([key]) => allowedKeys.has(key));
+	if (filteredEntries.length !== Object.keys(selectedGroups).length) {
+		selectedGroups = Object.fromEntries(filteredEntries);
+	}
+
+	if (filteredEntries.length === 0) {
+		bulkDeleteDialog = null;
+	}
+});
+
+$effect(() => {
+	if (selectAllCheckbox) {
+		selectAllCheckbox.indeterminate = hasSelection && !allSelected;
+	}
 });
 
 async function handleAgamaChange(event: Event) {
@@ -93,6 +127,67 @@ function ensureTrailingEntry(entries: GroupEntry[]): GroupEntry[] {
 	];
 }
 
+function groupSelectionPayload(group: TujuanPembelajaranGroup): SelectedGroupState {
+	return {
+		lingkupMateri: group.lingkupMateri,
+		ids: group.items.map((item) => item.id)
+	};
+}
+
+function removeSelectionByKey(key: string) {
+	if (!(key in selectedGroups)) return;
+	const { [key]: _removed, ...rest } = selectedGroups;
+	selectedGroups = rest;
+}
+
+function isGroupSelected(group: TujuanPembelajaranGroup) {
+	return Boolean(selectedGroups[groupKey(group)]);
+}
+
+function toggleGroupSelection(group: TujuanPembelajaranGroup, checked: boolean) {
+	const key = groupKey(group);
+	if (checked) {
+		selectedGroups = {
+			...selectedGroups,
+			[key]: groupSelectionPayload(group)
+		};
+		return;
+	}
+	removeSelectionByKey(key);
+}
+
+function clearSelection() {
+	if (Object.keys(selectedGroups).length === 0) return;
+	selectedGroups = {};
+}
+
+function handleSelectAllChange(checked: boolean) {
+	if (checked) {
+		if (selectableGroups.length === 0) return;
+		selectedGroups = Object.fromEntries(
+			selectableGroups.map((group) => [groupKey(group), groupSelectionPayload(group)] as const)
+		);
+		return;
+	}
+	if (Object.keys(selectedGroups).length > 0) {
+		selectedGroups = {};
+	}
+}
+
+function openBulkDeleteDialog() {
+	if (selectedGroupList.length === 0) return;
+	bulkDeleteDialog = {
+		groups: selectedGroupList.map((group) => ({
+			lingkupMateri: group.lingkupMateri,
+			ids: [...group.ids]
+		}))
+	};
+}
+
+function closeBulkDeleteDialog() {
+	bulkDeleteDialog = null;
+}
+
 function openCreateForm() {
 	groupForm = {
 		mode: 'create',
@@ -103,6 +198,10 @@ function openCreateForm() {
 }
 
 function openEditForm(group: TujuanPembelajaranGroup) {
+	removeSelectionByKey(groupKey(group));
+	if (bulkDeleteDialog) {
+		closeBulkDeleteDialog();
+	}
 	const entries = group.items.map((item) => ({ id: item.id, deskripsi: item.deskripsi }));
 	groupForm = {
 		mode: 'edit',
@@ -181,6 +280,7 @@ function groupKey(group: TujuanPembelajaranGroup) {
 }
 
 function openDeleteDialog(group: TujuanPembelajaranGroup) {
+	removeSelectionByKey(groupKey(group));
 	deleteGroup = { lingkupMateri: group.lingkupMateri, ids: group.items.map((item) => item.id) };
 }
 
@@ -245,24 +345,43 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 				</select>
 			</div>
 		{/if}
-		<button class="btn shadow-none sm:max-w-40" onclick={openCreateForm} type="button" disabled={Boolean(groupForm)}>
-			<Icon name="plus" />
-			Tambah TP
+		<button
+			class="btn shadow-none sm:max-w-40 sm:ml-auto"
+			type="button"
+			onclick={hasSelection ? openBulkDeleteDialog : openCreateForm}
+			disabled={!hasSelection && Boolean(groupForm)}
+			class:btn-error={hasSelection}
+			class:btn-soft={hasSelection}
+		>
+			<Icon name={hasSelection ? 'del' : 'plus'} />
+			{hasSelection ? 'Hapus TP' : 'Tambah TP'}
 		</button>
 		<button class="btn shadow-none sm:max-w-40" type="button">
 			<Icon name="percent" />
 			Atur Bobot
 		</button>
-		<button disabled class="btn btn-error shadow-none sm:ml-auto sm:max-w-40">
-			<Icon name="del" />
-			Hapus TP
+		<button class="btn shadow-none sm:max-w-40" type="button">
+			<Icon name="import" />
+			Import TP
 		</button>
 	</div>
 	<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
 		<table class="border-base-200 table border dark:border-none">
 			<thead>
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
+					<th style="width: 50px; min-width: 40px;">
+						<input
+							type="checkbox"
+							class="checkbox"
+							aria-label="Pilih semua lingkup materi"
+							bind:this={selectAllCheckbox}
+							checked={allSelected}
+							onchange={(event) =>
+								handleSelectAllChange((event.currentTarget as HTMLInputElement).checked)
+							}
+							disabled={selectableGroups.length === 0}
+						/>
+					</th>
 					<th style="width: 50px; min-width: 40px;">No</th>
 					<th style="width: 30%;">Lingkup Materi</th>
 					<th style="width: 60%">Tujuan Pembelajaran</th>
@@ -281,7 +400,17 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 							{@render group_form_row(rowNumber)}
 						{:else}
 							<tr>
-								<td class="align-top"><input type="checkbox" class="checkbox" /></td>
+								<td class="align-top">
+									<input
+										type="checkbox"
+										class="checkbox"
+										aria-label={`Pilih lingkup materi ${group.lingkupMateri}`}
+										checked={isGroupSelected(group)}
+										onchange={(event) =>
+											toggleGroupSelection(group, (event.currentTarget as HTMLInputElement).checked)
+										}
+									/>
+								</td>
 								<td class="align-top">{rowNumber}</td>
 								<td class="align-top">{group.lingkupMateri}</td>
 								<td class="align-top">
@@ -475,6 +604,62 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 		</div>
 		<form method="dialog" class="modal-backdrop">
 			<button onclick={closeEntryDeleteDialog}>close</button>
+		</form>
+	</dialog>
+{/if}
+
+{#if bulkDeleteDialog}
+	{@const groupsToDelete = bulkDeleteDialog.groups}
+	{@const idsToDelete = groupsToDelete.flatMap((group) => group.ids)}
+	{@const totalLingkup = groupsToDelete.length}
+	{@const totalTujuan = groupsToDelete.reduce((total, group) => total + group.ids.length, 0)}
+	<dialog class="modal" open onclose={closeBulkDeleteDialog}>
+		<div class="modal-box">
+			<FormEnhance
+				action="?/delete"
+				onsuccess={() => {
+					closeBulkDeleteDialog();
+					clearSelection();
+					invalidate('app:mapel_tp-rl');
+				}}
+			>
+				{#snippet children({ submitting })}
+					{#each idsToDelete as idValue}
+						<input name="ids" value={idValue} hidden />
+					{/each}
+
+					<h3 class="mb-3 text-xl font-bold">Hapus beberapa lingkup materi?</h3>
+					<p class="mb-2">
+						{totalLingkup} lingkup materi berikut akan dihapus beserta tujuan pembelajarannya:
+					</p>
+					<ul class="mb-4 list-disc space-y-1 pl-5 text-sm">
+						{#each groupsToDelete as group (group.lingkupMateri)}
+							<li>
+								<span class="font-semibold">{group.lingkupMateri}</span>
+								<span class="opacity-70"> – {group.ids.length} tujuan pembelajaran</span>
+							</li>
+						{/each}
+					</ul>
+					<p class="text-sm opacity-70">Total tujuan pembelajaran: {totalTujuan}</p>
+
+					<div class="mt-4 flex justify-end gap-2">
+						<button class="btn shadow-none" type="button" onclick={closeBulkDeleteDialog}>
+							Batal
+						</button>
+						<button class="btn btn-error btn-soft shadow-none" disabled={submitting || idsToDelete.length === 0}>
+							{#if submitting}
+								<div class="loading loading-spinner"></div>
+							{:else}
+								<Icon name="del" />
+							{/if}
+							Hapus
+						</button>
+					</div>
+				{/snippet}
+			</FormEnhance>
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button onclick={closeBulkDeleteDialog}>close</button>
 		</form>
 	</dialog>
 {/if}
