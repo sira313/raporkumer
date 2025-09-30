@@ -224,7 +224,7 @@
 	<h2 class="mb-6 text-xl font-bold">
 		Formulir Dan Tabel Isian Data Murid
 		{#if kelasAktifLabel}
-			<span class="block text-sm font-normal text-base-content/70">Kelas {kelasAktifLabel}</span>
+			<span class="block mt-2 text-lg font-semibold">{kelasAktifLabel}</span>
 		{/if}
 	</h2>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">

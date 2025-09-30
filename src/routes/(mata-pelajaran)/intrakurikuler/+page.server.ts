@@ -20,13 +20,18 @@ export async function load({ depends, url, parent }) {
 		  })
 		: [];
 
-	const { daftarWajib, daftarMulok } = mapel.reduce(
+	const { daftarWajib, daftarPilihan, daftarMulok } = mapel.reduce(
 		(acc, item) => {
-			if (item.jenis == 'wajib') acc.daftarWajib.push(item);
-			else if (item.jenis == 'mulok') acc.daftarMulok.push(item);
+			if (item.jenis === 'wajib') acc.daftarWajib.push(item);
+			else if (item.jenis === 'pilihan') acc.daftarPilihan.push(item);
+			else if (item.jenis === 'mulok') acc.daftarMulok.push(item);
 			return acc;
 		},
-		{ daftarWajib: <MataPelajaranList>[], daftarMulok: <MataPelajaranList>[] }
+		{
+			daftarWajib: <MataPelajaranList>[],
+			daftarPilihan: <MataPelajaranList>[],
+			daftarMulok: <MataPelajaranList>[]
+		}
 	);
-	return { kelasId, mapel: { daftarWajib, daftarMulok } };
+	return { kelasId, mapel: { daftarWajib, daftarPilihan, daftarMulok } };
 }

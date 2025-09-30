@@ -21,7 +21,7 @@
 	<h2 class="mb-6 text-xl font-bold">
 		Daftar Mata Pelajaran
 		{#if kelasAktifLabel}
-			<span class="block text-sm font-normal text-base-content/70">Kelas {kelasAktifLabel}</span>
+			<span class="block mt-2 text-lg font-semibold">{kelasAktifLabel}</span>
 		{/if}
 	</h2>
 
@@ -91,6 +91,59 @@
 			</thead>
 			<tbody>
 				{#each data.mapel.daftarWajib as mapel, index (mapel.id)}
+					<tr>
+						<td><input type="checkbox" class="checkbox" /></td>
+						<td>{index + 1}</td>
+						<td>{mapel.nama}</td>
+						<td>{mapel.kkm}</td>
+						<td class="flex flex-row gap-2">
+							<a
+								href="/intrakurikuler/{mapel.id}/tp-rl"
+								class="btn btn-sm btn-soft shadow-none"
+								type="button"
+							>
+								<Icon name="edit" />
+								Edit TP
+							</a>
+						</td>
+						<td>
+							<div class="flex flex-row gap-2">
+								<a
+									class="btn btn-sm btn-soft btn-error shadow-none"
+									type="button"
+									href="/intrakurikuler/{mapel.id}/delete"
+									use:modalRoute={'delete-mapel'}
+								>
+									<Icon name="del" />
+									Hapus
+								</a>
+							</div>
+						</td>
+					</tr>
+				{:else}
+					<tr>
+						<td class="text-center italic opacity-50" colspan="6">{emptyStateMessage}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
+	<!-- Tabel Mapel Pilihan -->
+	<legend class="fieldset-legend mt-2"> Mata Pelajaran Pilihan </legend>
+	<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+		<table class="border-base-200 table border dark:border-none">
+			<thead>
+				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
+					<th style="width: 50px; min-width: 40px;"><input type="checkbox" class="checkbox" /></th>
+					<th style="width: 50px; min-width: 40px;">No</th>
+					<th style="width: 50%;">Mata Pelajaran</th>
+					<th>KKM</th>
+					<th>Tujuan Pembelajaran</th>
+					<th>Aksi</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.mapel.daftarPilihan as mapel, index (mapel.id)}
 					<tr>
 						<td><input type="checkbox" class="checkbox" /></td>
 						<td>{index + 1}</td>
