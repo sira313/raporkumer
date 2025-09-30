@@ -212,10 +212,21 @@
 				selectedIds.size > 0 && selectedIds.size < data.daftarMurid.length;
 		}
 	});
+
+	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const kelasAktifLabel = $derived.by(() => {
+		if (!kelasAktif) return null;
+		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
+	});
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">Formulir Dan Tabel Isian Data Murid</h2>
+	<h2 class="mb-6 text-xl font-bold">
+		Formulir Dan Tabel Isian Data Murid
+		{#if kelasAktifLabel}
+			<span class="block text-sm font-normal text-base-content/70">Kelas {kelasAktifLabel}</span>
+		{/if}
+	</h2>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
 		<a class="btn flex items-center shadow-none" href="/murid/form" use:modalRoute={'add-murid'}>
