@@ -293,7 +293,8 @@
 								/>
 							</th>
 							<th style="width: 50px; min-width: 40px;">No</th>
-							<th style="width: 60%;">Nama</th>
+							<th style="width: 45%;">Nama</th>
+							<th>Agama</th>
 							<th>Tempat Lahir</th>
 							<th>Tanggal Lahir</th>
 							<th>Aksi</th>
@@ -316,6 +317,7 @@
 								</td>
 								<td>{index + 1}</td>
 								<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
+								<td>{murid.agama}</td>
 								<td>{murid.tempatLahir}</td>
 								<td>{murid.tanggalLahir}</td>
 								<td>
@@ -342,7 +344,7 @@
 							</tr>
 						{:else}
 							<tr>
-								<td class="text-center p-7" colspan="6">
+								<td class="text-center p-7" colspan="7">
 									<em class="opacity-50">Belum ada data murid</em>
 								</td>
 							</tr>
