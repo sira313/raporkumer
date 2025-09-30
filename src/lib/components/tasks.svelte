@@ -26,7 +26,9 @@
 	);
 
 	const listContainerClass = $derived(
-		variant === 'sidebar' ? 'max-h-60 min-h-60 overflow-y-auto' : 'max-h-[60vh] overflow-y-auto'
+		variant === 'sidebar'
+			? 'flex flex-col max-h-60 min-h-60 overflow-hidden'
+			: 'flex flex-col max-h-[60vh] overflow-hidden'
 	);
 
 	const timestamp = (value?: string | null) => {
@@ -283,81 +285,89 @@
 		</div>
 	{/if}
 	<div class={listContainerClass}>
-		<table class="table">
-			<tbody>
-				{#if isLoading && !hasLoaded}
-					<tr>
-						<td colspan="3" class="p-4 text-center text-sm">
-							<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-							<span class="sr-only">Memuat daftar tugas</span>
-						</td>
-					</tr>
-				{:else}
-					{#if isAdding}
-						<tr class="border-base-300 dark:border-base-200">
-							<th></th>
-							<td class="p-2">
-								<div class="flex items-center gap-2">
-									<input
-										bind:this={newTaskInput}
-										bind:value={newTaskTitle}
-										placeholder="Nama tugas"
-										class="input input-sm input-bordered w-full"
-										onkeydown={handleNewTaskKeydown}
-										autocomplete="off"
-										aria-label="Nama tugas baru"
-									/>
-								</div>
-							</td>
-							<td class="p-2 text-right">
-								<button
-									type="button"
-									class="btn btn-primary btn-sm"
-									onclick={saveTask}
-									title="Simpan tugas"
-									disabled={isProcessing || !newTaskTitle.trim()}
-								>
-									<Icon name="save" />
-								</button>
-							</td>
-						</tr>
-					{/if}
-					{#if !isAdding && !hasActiveTasks}
+		{#if isLoading && !hasLoaded}
+			<div class="flex-1 overflow-y-auto">
+				<table class="table w-full">
+					<tbody>
 						<tr>
-							<td colspan="3" class="text-base-content/60 p-4 text-center text-sm">
-								Belum ada tugas aktif. Tambahkan tugas baru untuk memulai.
+							<td colspan="3" class="p-4 text-center text-sm">
+								<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+								<span class="sr-only">Memuat daftar tugas</span>
 							</td>
 						</tr>
-					{/if}
-					{#each activeTasks as task (task.id)}
-						<tr class="border-base-300 dark:border-base-200">
-							<th>
-								<input
-									type="checkbox"
-									class="checkbox"
-									onchange={() => moveToCompleted(task.id)}
-									title="Tandai selesai"
-									disabled={isProcessing}
-								/>
-							</th>
-							<td class="p-2"><p class="flex-1">{task.title}</p></td>
-							<td class="p-2 text-right">
-								<button
-									type="button"
-									class="btn btn-circle btn-ghost"
-									title="Hapus tugas"
-									onclick={() => removeTask(task.id)}
-									disabled={isProcessing}
-								>
-									<Icon name="del" class="text-error" />
-								</button>
-							</td>
-						</tr>
-					{/each}
-				{/if}
-			</tbody>
-		</table>
-		<div class="m-2">
+					</tbody>
+				</table>
+			</div>
+		{:else}
+			{#if isAdding || hasActiveTasks}
+				<div class="flex-1 overflow-y-auto">
+					<table class="table w-full">
+						<tbody>
+							{#if isAdding}
+								<tr class="border-base-300 dark:border-base-200">
+									<th></th>
+									<td class="p-2">
+										<div class="flex items-center gap-2">
+											<input
+												bind:this={newTaskInput}
+												bind:value={newTaskTitle}
+												placeholder="Nama tugas"
+												class="input input-sm input-bordered w-full"
+												onkeydown={handleNewTaskKeydown}
+												autocomplete="off"
+												aria-label="Nama tugas baru"
+											/>
+										</div>
+									</td>
+									<td class="p-2 text-right">
+										<button
+											type="button"
+											class="btn btn-primary btn-sm"
+											onclick={saveTask}
+											title="Simpan tugas"
+											disabled={isProcessing || !newTaskTitle.trim()}
+										>
+											<Icon name="save" />
+										</button>
+									</td>
+								</tr>
+							{/if}
+							{#each activeTasks as task (task.id)}
+								<tr class="border-base-300 dark:border-base-200">
+									<th>
+										<input
+											type="checkbox"
+											class="checkbox"
+											onchange={() => moveToCompleted(task.id)}
+											title="Tandai selesai"
+											disabled={isProcessing}
+										/>
+									</th>
+									<td class="p-2"><p class="flex-1">{task.title}</p></td>
+									<td class="p-2 text-right">
+										<button
+											type="button"
+											class="btn btn-circle btn-ghost"
+											title="Hapus tugas"
+											onclick={() => removeTask(task.id)}
+											disabled={isProcessing}
+										>
+											<Icon name="del" class="text-error" />
+										</button>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
+			{#if !isAdding && !hasActiveTasks}
+				<div class="flex flex-1 items-center justify-center px-4 py-6 text-center text-sm text-base-content/60">
+					Belum ada tugas aktif. Tambahkan tugas baru untuk memulai.
+				</div>
+			{/if}
+		{/if}
+		<div class="m-2 mt-auto">
 			<div class="bg-base-300 dark:bg-base-200 collapse mt-6">
 				<input type="checkbox" />
 				<div class="collapse-title font-bold">Tugas sudah selesai</div>
