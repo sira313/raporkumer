@@ -277,7 +277,7 @@
 	>
 		<dialog class="modal-box relative z-10 max-w-2xl" open aria-modal="true">
 			<h3 class="mb-2 text-lg font-bold">{modalTitle}</h3>
-			<p class="font-semibold">Pilih Dimensi Profil Pelajar Pancasila</p>
+			<p class="font-semibold">Pilih Dimensi Profil Lulusan</p>
 
 			<FormEnhance
 				action={modalAction}
@@ -295,7 +295,7 @@
 
 					<div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
 						{#each data.dimensiPilihan as dimensi (dimensi.key)}
-							<label class="flex cursor-pointer flex-row gap-2 rounded-md border border-base-200 bg-base-200/60 dark:border-none dark:bg-base-300/40">
+							<label class="flex cursor-pointer flex-row gap-2">
 								<input
 									type="checkbox"
 									class="checkbox"
@@ -305,7 +305,7 @@
 									aria-label={dimensi.label}
 								/>
 								<div class="flex flex-col">
-									<span class="font-semibold">{dimensi.label}</span>
+									<span>{dimensi.label}</span>
 								</div>
 							</label>
 						{/each}

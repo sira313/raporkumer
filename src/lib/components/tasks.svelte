@@ -27,8 +27,8 @@
 
 	const listContainerClass = $derived(
 		variant === 'sidebar'
-			? 'flex flex-col max-h-60 min-h-60 overflow-hidden'
-			: 'flex flex-col max-h-[60vh] overflow-hidden'
+			? 'flex flex-col max-h-60 min-h-60 overflow-y-auto'
+			: 'flex flex-col max-h-[60vh] overflow-y-auto'
 	);
 
 	const timestamp = (value?: string | null) => {

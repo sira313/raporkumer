@@ -229,12 +229,25 @@ export const tableTujuanPembelajaranRelations = relations(tableTujuanPembelajara
 	})
 }));
 
-export const tableEkstrakurikuler = sqliteTable('ekstrakurikuler', {
+export const tableEkstrakurikuler = sqliteTable(
+	'ekstrakurikuler',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		nama: text().notNull(),
+		kelasId: int()
+			.references(() => tableKelas.id)
+			.notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.kelasId, table.nama)]
+);
+
+export const tableEkstrakurikulerTujuan = sqliteTable('ekstrakurikuler_tujuan', {
 	id: int().primaryKey({ autoIncrement: true }),
-	nama: text().notNull().unique(),
-	kelasId: int()
-		.references(() => tableKelas.id)
+	ekstrakurikulerId: int()
+		.references(() => tableEkstrakurikuler.id, { onDelete: 'cascade' })
 		.notNull(),
+	deskripsi: text().notNull(),
 	...audit
 });
 
@@ -248,6 +261,24 @@ export const tableKokurikuler = sqliteTable('kokurikuler', {
 	tujuan: text().notNull(),
 	...audit
 });
+
+export const tableEkstrakurikulerRelations = relations(tableEkstrakurikuler, ({ one, many }) => ({
+	kelas: one(tableKelas, {
+		fields: [tableEkstrakurikuler.kelasId],
+		references: [tableKelas.id]
+	}),
+	tujuan: many(tableEkstrakurikulerTujuan)
+}));
+
+export const tableEkstrakurikulerTujuanRelations = relations(
+	tableEkstrakurikulerTujuan,
+	({ one }) => ({
+		ekstrakurikuler: one(tableEkstrakurikuler, {
+			fields: [tableEkstrakurikulerTujuan.ekstrakurikulerId],
+			references: [tableEkstrakurikuler.id]
+		})
+	})
+);
 
 export const tableKokurikulerRelations = relations(tableKokurikuler, ({ one }) => ({
 	kelas: one(tableKelas, {

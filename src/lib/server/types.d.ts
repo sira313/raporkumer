@@ -47,6 +47,7 @@ type TujuanPembelajaran =
 	};
 
 type Ekstrakurikuler = typeof import('$lib/server/db/schema').tableEkstrakurikuler.$inferSelect;
+type EkstrakurikulerTujuan = typeof import('$lib/server/db/schema').tableEkstrakurikulerTujuan.$inferSelect;
 
 type Kokurikuler = typeof import('$lib/server/db/schema').tableKokurikuler.$inferSelect;
 
