@@ -6,6 +6,7 @@ import DeleteEntryDialog from '$lib/components/tp-rl/delete-entry-dialog.svelte'
 import DeleteGroupDialog from '$lib/components/tp-rl/delete-group-dialog.svelte';
 import GroupFormRow from '$lib/components/tp-rl/group-form-row.svelte';
 import type {
+	GroupBobotState,
 	GroupEntry,
 	GroupFormState,
 	SelectedGroupState
@@ -15,7 +16,46 @@ import { toast } from '$lib/components/toast.svelte';
 type TujuanPembelajaranGroup = {
 	lingkupMateri: string;
 	items: Array<Omit<TujuanPembelajaran, 'mataPelajaran'>>;
+	bobot: number | null;
 };
+
+function buildGroupedTujuanPembelajaran(items: Array<Omit<TujuanPembelajaran, 'mataPelajaran'>> = []) {
+	const groups = new Map<string, TujuanPembelajaranGroup>();
+	for (const item of items) {
+		const key = (item.lingkupMateri ?? '').trim().toLowerCase();
+		const existing = groups.get(key);
+		if (existing) {
+			existing.items = [...existing.items, item];
+			if (existing.bobot == null && item.bobot != null) {
+				existing.bobot = item.bobot;
+			}
+			continue;
+		}
+		groups.set(key, {
+			lingkupMateri: item.lingkupMateri,
+			items: [item],
+			bobot: item.bobot ?? null
+		});
+	}
+	return Array.from(groups.values());
+}
+
+function areGroupsEqual(prev: TujuanPembelajaranGroup[], next: TujuanPembelajaranGroup[]) {
+	if (prev.length !== next.length) return false;
+	for (let groupIndex = 0; groupIndex < prev.length; groupIndex += 1) {
+		const a = prev[groupIndex];
+		const b = next[groupIndex];
+		if (a.lingkupMateri !== b.lingkupMateri) return false;
+		if (a.items.length !== b.items.length) return false;
+		for (let itemIndex = 0; itemIndex < a.items.length; itemIndex += 1) {
+			const itemA = a.items[itemIndex];
+			const itemB = b.items[itemIndex];
+			if (itemA.id !== itemB.id) return false;
+			if (itemA.deskripsi !== itemB.deskripsi) return false;
+		}
+	}
+	return true;
+}
 
 let { data } = $props();
 const agamaOptions = $derived(data.agamaOptions ?? []);
@@ -31,6 +71,13 @@ let selectedGroups = $state<Record<string, SelectedGroupState>>({});
 let bulkDeleteDialog = $state<{ groups: SelectedGroupState[] } | null>(null);
 let selectAllCheckbox = $state<HTMLInputElement | null>(null);
 
+const BOBOT_TOTAL = 100;
+let isEditingBobot = $state(false);
+let bobotState = $state<Record<string, GroupBobotState>>({});
+let bobotDrafts = $state<Record<string, string>>({});
+let bobotOverflowActive = false;
+let bobotInfoShown = false;
+
 const selectedGroupList = $derived(Object.values(selectedGroups));
 const selectableGroups = $derived(
 	groupedTujuanPembelajaran.filter((group) => !(groupForm && isEditingGroup(group)))
@@ -39,32 +86,31 @@ const hasSelection = $derived(selectedGroupList.length > 0);
 const allSelected = $derived(
 	selectableGroups.length > 0 && selectedGroupList.length === selectableGroups.length
 );
+const hasGroups = $derived(groupedTujuanPembelajaran.length > 0);
 
 $effect(() => {
-	selectedAgamaId = data.agamaSelection ?? '';
-	const groups = new Map<string, TujuanPembelajaranGroup>();
-	for (const item of data.tujuanPembelajaran ?? []) {
-		const key = (item.lingkupMateri ?? '').trim().toLowerCase();
-		const existing = groups.get(key);
-		if (existing) {
-			existing.items = [...existing.items, item];
-		} else {
-			groups.set(key, {
-				lingkupMateri: item.lingkupMateri,
-				items: [item]
-			});
-		}
+	const nextSelection = data.agamaSelection ?? '';
+	if (selectedAgamaId !== nextSelection) {
+		selectedAgamaId = nextSelection;
 	}
-	const nextGroups = Array.from(groups.values());
-	groupedTujuanPembelajaran = nextGroups;
+});
 
-	const allowedKeys = new Set(nextGroups.map((group) => groupKey(group)));
-	const filteredEntries = Object.entries(selectedGroups).filter(([key]) => allowedKeys.has(key));
-	if (filteredEntries.length !== Object.keys(selectedGroups).length) {
+$effect(() => {
+	const nextGroups = buildGroupedTujuanPembelajaran(data.tujuanPembelajaran ?? []);
+	if (!areGroupsEqual(groupedTujuanPembelajaran, nextGroups)) {
+		groupedTujuanPembelajaran = nextGroups;
+		syncBobotStateWithGroups(nextGroups);
+	}
+});
+
+$effect(() => {
+	const allowedKeys = new Set(groupedTujuanPembelajaran.map((group) => groupKey(group)));
+	const entries = Object.entries(selectedGroups);
+	const filteredEntries = entries.filter(([key]) => allowedKeys.has(key));
+	if (filteredEntries.length !== entries.length) {
 		selectedGroups = Object.fromEntries(filteredEntries);
 	}
-
-	if (filteredEntries.length === 0) {
+	if (filteredEntries.length === 0 && bulkDeleteDialog) {
 		bulkDeleteDialog = null;
 	}
 });
@@ -323,6 +369,225 @@ function handleDeleteGroupSuccess() {
 	closeDeleteDialog();
 	invalidate('app:mapel_tp-rl');
 }
+
+function sanitizeBobotValue(value: number) {
+	if (!Number.isFinite(value)) return 0;
+	return value < 0 ? 0 : value;
+}
+
+function formatBobotValue(value: number) {
+	return sanitizeBobotValue(value).toFixed(2);
+}
+
+type RefreshBobotOptions = {
+	preserveKey?: string;
+	rawValue?: string;
+};
+
+function refreshBobotDrafts(state: Record<string, GroupBobotState>, options: RefreshBobotOptions = {}) {
+	const nextDrafts: Record<string, string> = {};
+	for (const [key, entry] of Object.entries(state)) {
+		if (options.preserveKey === key && options.rawValue !== undefined) {
+			nextDrafts[key] = options.rawValue;
+			continue;
+		}
+
+		const existingDraft = bobotDrafts[key];
+		if (entry.isManual && existingDraft !== undefined) {
+			nextDrafts[key] = existingDraft;
+			continue;
+		}
+
+		nextDrafts[key] = formatBobotValue(entry.value);
+	}
+	bobotDrafts = nextDrafts;
+}
+
+function applyBobotDistribution(state: Record<string, GroupBobotState>) {
+	const next: Record<string, GroupBobotState> = {};
+	const autoKeys: string[] = [];
+	let manualSum = 0;
+
+	for (const [key, entry] of Object.entries(state)) {
+		const sanitizedValue = sanitizeBobotValue(entry?.value ?? 0);
+		const isManual = Boolean(entry?.isManual);
+		if (isManual) {
+			manualSum += sanitizedValue;
+		} else {
+			autoKeys.push(key);
+		}
+		next[key] = { value: sanitizedValue, isManual };
+	}
+
+	if (autoKeys.length > 0) {
+		let average = (BOBOT_TOTAL - manualSum) / autoKeys.length;
+		if (!Number.isFinite(average) || average < 0) {
+			average = 0;
+		}
+		for (const key of autoKeys) {
+			next[key] = { value: average, isManual: false };
+		}
+	}
+
+	return { state: next, manualSum };
+}
+
+function isSameBobotState(
+	prev: Record<string, GroupBobotState>,
+	next: Record<string, GroupBobotState>
+) {
+	const prevKeys = Object.keys(prev);
+	const nextKeys = Object.keys(next);
+	if (prevKeys.length !== nextKeys.length) return false;
+	for (const key of prevKeys) {
+		if (!(key in next)) return false;
+		const left = prev[key];
+		const right = next[key];
+		if (!left || !right) return false;
+		if (Boolean(left.isManual) !== Boolean(right.isManual)) return false;
+		const leftValue = sanitizeBobotValue(left.value);
+		const rightValue = sanitizeBobotValue(right.value);
+		if (Math.abs(leftValue - rightValue) > 0.005) return false;
+	}
+	return true;
+}
+
+function deriveInitialBobotState(groups: TujuanPembelajaranGroup[]) {
+	const initial: Record<string, GroupBobotState> = {};
+	for (const group of groups) {
+		const key = groupKey(group);
+		const rawValue = group.bobot ?? null;
+		const sanitized = sanitizeBobotValue(rawValue ?? 0);
+		if (rawValue === null || sanitized === 0) {
+			initial[key] = { value: 0, isManual: false };
+			continue;
+		}
+		initial[key] = { value: sanitized, isManual: true };
+	}
+	return applyBobotDistribution(initial).state;
+}
+
+function syncBobotStateWithGroups(groups: TujuanPembelajaranGroup[]) {
+	const derived = deriveInitialBobotState(groups);
+	const next: Record<string, GroupBobotState> = {};
+	for (const group of groups) {
+		const key = groupKey(group);
+		const existing = bobotState[key];
+		const derivedEntry = derived[key];
+		if (!existing) {
+			next[key] = derivedEntry ?? { value: 0, isManual: false };
+			continue;
+		}
+		if (!isEditingBobot && derivedEntry && !isSameBobotState({ [key]: existing }, { [key]: derivedEntry })) {
+			next[key] = derivedEntry;
+			continue;
+		}
+		next[key] = {
+			value: sanitizeBobotValue(existing.value ?? 0),
+			isManual: Boolean(existing.isManual)
+		};
+	}
+
+	if (isSameBobotState(bobotState, next)) {
+		maybeShowBobotInfo(bobotState);
+		refreshBobotDrafts(bobotState);
+		return;
+	}
+
+	const { state, manualSum } = applyBobotDistribution(next);
+	bobotState = state;
+	notifyBobotOverflow(manualSum > BOBOT_TOTAL);
+	maybeShowBobotInfo(state);
+	refreshBobotDrafts(state);
+}
+
+function notifyBobotOverflow(active: boolean) {
+	if (active === bobotOverflowActive) return;
+	bobotOverflowActive = active;
+	if (active) {
+		toast('Total bobot tidak boleh melebihi 100%!', 'error');
+	}
+}
+
+function maybeShowBobotInfo(state: Record<string, GroupBobotState>) {
+	if (bobotInfoShown) return;
+	const hasAutomatic = Object.values(state).some((entry) => !entry.isManual);
+	if (hasAutomatic) {
+		toast(
+			'Bobot belum disetel, maka pembobotan akan dilakukan dengan mengambil rata-rata dari semua nilai.',
+			'info'
+		);
+		bobotInfoShown = true;
+	}
+}
+
+function handleBobotInput(group: TujuanPembelajaranGroup, rawValue: string) {
+	const key = groupKey(group);
+	const trimmed = rawValue.trim();
+	const next: Record<string, GroupBobotState> = { ...bobotState };
+
+	if (trimmed === '') {
+		next[key] = { value: 0, isManual: false };
+		const { state, manualSum } = applyBobotDistribution(next);
+		bobotState = state;
+		refreshBobotDrafts(state, { preserveKey: key, rawValue: '' });
+		notifyBobotOverflow(manualSum > BOBOT_TOTAL);
+		return;
+	}
+
+	const parsed = Number.parseFloat(trimmed);
+	const sanitized = sanitizeBobotValue(parsed);
+	next[key] = { value: sanitized, isManual: true };
+	const { state, manualSum } = applyBobotDistribution(next);
+	bobotState = state;
+	refreshBobotDrafts(state, { preserveKey: key, rawValue });
+	notifyBobotOverflow(manualSum > BOBOT_TOTAL);
+}
+
+function getBobotValue(group: TujuanPembelajaranGroup) {
+	return bobotState[groupKey(group)]?.value ?? 0;
+}
+
+function computeTotalBobot(state: Record<string, GroupBobotState> = bobotState) {
+	return Object.values(state).reduce((sum, entry) => sum + sanitizeBobotValue(entry.value), 0);
+}
+
+function toggleBobotEditing() {
+	if (!hasGroups) return;
+	if (!isEditingBobot) {
+		const next: Record<string, GroupBobotState> = {};
+		for (const [key, entry] of Object.entries(bobotState)) {
+			next[key] = {
+				value: sanitizeBobotValue(entry.value ?? 0),
+				isManual: false
+			};
+		}
+		bobotState = next;
+		refreshBobotDrafts(next);
+		isEditingBobot = true;
+		notifyBobotOverflow(false);
+		maybeShowBobotInfo(next);
+		return;
+	}
+
+	const total = computeTotalBobot();
+	if (Math.abs(total - BOBOT_TOTAL) > 0.01) {
+		toast('Total bobot harus tepat 100% untuk menyimpan.', 'warning');
+		isEditingBobot = true;
+		return;
+	}
+
+	const next: Record<string, GroupBobotState> = {};
+	for (const [key, entry] of Object.entries(bobotState)) {
+		next[key] = { value: sanitizeBobotValue(entry.value), isManual: true };
+	}
+	bobotState = next;
+	refreshBobotDrafts(next);
+	bobotOverflowActive = false;
+	isEditingBobot = false;
+	bobotDrafts = {};
+	toast('Bobot berhasil disimpan.', 'success');
+}
 </script>
 
 <!-- Data Mapel Wajib -->
@@ -366,9 +631,16 @@ function handleDeleteGroupSuccess() {
 			<Icon name={hasSelection ? 'del' : 'plus'} />
 			{hasSelection ? 'Hapus TP' : 'Tambah TP'}
 		</button>
-		<button class="btn shadow-none sm:max-w-40" type="button">
+		<button
+			class="btn shadow-none sm:max-w-40"
+			type="button"
+			onclick={toggleBobotEditing}
+			disabled={!hasGroups}
+			class:btn-primary={!isEditingBobot}
+			class:btn-success={isEditingBobot}
+		>
 			<Icon name="percent" />
-			Atur Bobot
+			{isEditingBobot ? 'Simpan Bobot' : 'Atur Bobot'}
 		</button>
 		<button class="btn shadow-none sm:max-w-40" type="button">
 			<Icon name="import" />
@@ -394,7 +666,7 @@ function handleDeleteGroupSuccess() {
 					</th>
 					<th style="width: 50px; min-width: 40px;">No</th>
 					<th style="width: 30%;">Lingkup Materi</th>
-					<th>Bobot</th>
+					<th style="width: 13%">Bobot</th>
 					<th style="width: 60%">Tujuan Pembelajaran</th>
 					<th>Aksi</th>
 				</tr>
@@ -444,7 +716,23 @@ function handleDeleteGroupSuccess() {
 								</td>
 								<td class="align-top">{rowNumber}</td>
 								<td class="align-top">{group.lingkupMateri}</td>
-								<td></td>
+								<td class="align-top">
+									{#if isEditingBobot}
+										<input
+											type="number"
+											class="input input-bordered input-sm w-full shadow-none"
+											min="0"
+											max="100"
+											step="0.01"
+											value={bobotDrafts[groupKey(group)] ?? formatBobotValue(getBobotValue(group))}
+											oninput={(event) =>
+												handleBobotInput(group, (event.currentTarget as HTMLInputElement).value)
+											}
+										/>
+									{:else}
+										<span class="font-semibold">{formatBobotValue(getBobotValue(group))}</span>
+									{/if}
+								</td>
 								<td class="align-top">
 									<div class="flex flex-col gap-2">
 										{#each group.items as item, itemIndex (item.id)}

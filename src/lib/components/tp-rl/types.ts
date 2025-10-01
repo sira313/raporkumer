@@ -15,3 +15,8 @@ export type SelectedGroupState = {
 	lingkupMateri: string;
 	ids: number[];
 };
+
+export type GroupBobotState = {
+	value: number;
+	isManual: boolean;
+};
