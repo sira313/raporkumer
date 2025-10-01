@@ -49,3 +49,29 @@ export const agamaMapelKeyByName = agamaMapelOptions.reduce<Record<string, Agama
 	},
 	{}
 );
+
+export const profilPelajarPancasilaDimensions = [
+	{
+		key: 'ketakwaan',
+		label: 'Keimanan dan Ketakwaan kepada Tuhan Yang Maha Esa'
+	},
+	{ key: 'kewargaan', label: 'Kewargaan' },
+	{ key: 'penalaran-kritis', label: 'Penalaran kritis' },
+	{ key: 'kreativitas', label: 'Kreativitas' },
+	{ key: 'kolaborasi', label: 'Kolaborasi' },
+	{ key: 'kemandirian', label: 'Kemandirian' },
+	{ key: 'kesehatan', label: 'Kesehatan' },
+	{ key: 'komunikasi', label: 'Komunikasi' }
+] as const;
+
+export type ProfilPelajarPancasilaDimensionKey =
+	(typeof profilPelajarPancasilaDimensions)[number]['key'];
+
+export const profilPelajarPancasilaDimensionLabelByKey =
+	profilPelajarPancasilaDimensions.reduce<Record<ProfilPelajarPancasilaDimensionKey, string>>(
+		(acc, dim) => {
+			acc[dim.key] = dim.label;
+			return acc;
+		},
+		{} as Record<ProfilPelajarPancasilaDimensionKey, string>
+	);

@@ -237,3 +237,21 @@ export const tableEkstrakurikuler = sqliteTable('ekstrakurikuler', {
 		.notNull(),
 	...audit
 });
+
+export const tableKokurikuler = sqliteTable('kokurikuler', {
+	id: int().primaryKey({ autoIncrement: true }),
+	kelasId: int()
+		.references(() => tableKelas.id)
+		.notNull(),
+	kode: text().notNull().unique(),
+	dimensi: text({ mode: 'json' }).$type<string[]>().notNull(),
+	tujuan: text().notNull(),
+	...audit
+});
+
+export const tableKokurikulerRelations = relations(tableKokurikuler, ({ one }) => ({
+	kelas: one(tableKelas, {
+		fields: [tableKokurikuler.kelasId],
+		references: [tableKelas.id]
+	})
+}));
