@@ -27,6 +27,7 @@ applyTo: '**'
 - **Tipografi**: gunakan plugin `@tailwindcss/typography` untuk konten Markdown (`src/docs/help/**`).
 - **Aksesibilitas**: pastikan semua tombol, link, dan input memiliki label teks (bahasa Indonesia untuk user-facing copy).
 - **Ikon**: tambahkan SVG ke `src/lib/icons`, generator `scripts/icon.js` akan membuat `__icons.d.ts`. Jangan commit file ini.
+- **Komponen reusable**: pecah halaman yang kompleks menjadi komponen mandiri di `src/lib/components`. Kelompokkan per domain dengan subfolder (mis. `tp-rl/`) dan simpan hanya logika presentasi di sana.
 
 ## Aturan Domain & Data
 

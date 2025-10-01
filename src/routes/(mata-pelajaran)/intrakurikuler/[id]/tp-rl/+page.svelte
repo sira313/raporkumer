@@ -1,26 +1,20 @@
 <script lang="ts">
 import { goto, invalidate } from '$app/navigation';
-import FormEnhance from '$lib/components/form-enhance.svelte';
 import Icon from '$lib/components/icon.svelte';
+import BulkDeleteDialog from '$lib/components/tp-rl/bulk-delete-dialog.svelte';
+import DeleteEntryDialog from '$lib/components/tp-rl/delete-entry-dialog.svelte';
+import DeleteGroupDialog from '$lib/components/tp-rl/delete-group-dialog.svelte';
+import GroupFormRow from '$lib/components/tp-rl/group-form-row.svelte';
+import type {
+	GroupEntry,
+	GroupFormState,
+	SelectedGroupState
+} from '$lib/components/tp-rl/types';
 import { toast } from '$lib/components/toast.svelte';
 
 type TujuanPembelajaranGroup = {
 	lingkupMateri: string;
 	items: Array<Omit<TujuanPembelajaran, 'mataPelajaran'>>;
-};
-
-type GroupEntry = { id?: number; deskripsi: string; deleted?: boolean };
-
-type GroupFormState = {
-	mode: 'create' | 'edit';
-	lingkupMateri: string;
-	entries: GroupEntry[];
-	targetIds: number[];
-};
-
-type SelectedGroupState = {
-	lingkupMateri: string;
-	ids: number[];
 };
 
 let { data } = $props();
@@ -313,6 +307,22 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 		formElement.reportValidity();
 	}
 }
+
+function handleFormSuccess() {
+	closeForm();
+	invalidate('app:mapel_tp-rl');
+}
+
+function handleBulkDeleteSuccess() {
+	closeBulkDeleteDialog();
+	clearSelection();
+	invalidate('app:mapel_tp-rl');
+}
+
+function handleDeleteGroupSuccess() {
+	closeDeleteDialog();
+	invalidate('app:mapel_tp-rl');
+}
 </script>
 
 <!-- Data Mapel Wajib -->
@@ -391,14 +401,34 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 			</thead>
 			<tbody>
 				{#if groupForm && groupForm.mode === 'create'}
-					{@render group_form_row(1)}
+					{@const currentForm = groupForm}
+					<GroupFormRow
+						rowNumber={1}
+						form={currentForm}
+						onLingkupMateriInput={handleLingkupMateriInput}
+						onEntryInput={handleEntryInput}
+						onOpenDeleteEntry={openEntryDeleteDialog}
+						onClose={closeForm}
+						onSaveClick={handleSaveClick}
+						onSubmitSuccess={handleFormSuccess}
+					/>
 				{/if}
 
 				{#if groupedTujuanPembelajaran.length > 0}
 					{#each groupedTujuanPembelajaran as group, groupIndex (groupKey(group))}
 						{@const rowNumber = groupIndex + 1 + (groupForm && groupForm.mode === 'create' ? 1 : 0)}
 						{#if groupForm && isEditingGroup(group)}
-							{@render group_form_row(rowNumber)}
+							{@const currentForm = groupForm}
+							<GroupFormRow
+								rowNumber={rowNumber}
+								form={currentForm}
+								onLingkupMateriInput={handleLingkupMateriInput}
+								onEntryInput={handleEntryInput}
+								onOpenDeleteEntry={openEntryDeleteDialog}
+								onClose={closeForm}
+								onSaveClick={handleSaveClick}
+								onSubmitSuccess={handleFormSuccess}
+							/>
 						{:else}
 							<tr>
 								<td class="align-top">
@@ -460,252 +490,29 @@ function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
 	</div>
 </div>
 
-{#snippet group_form_row(rowNumber: number)}
-	{#if groupForm}
-		{@const currentForm = groupForm}
-		{@const formId = crypto.randomUUID()}
-		<tr>
-			<td class="align-top"><input type="checkbox" class="checkbox" disabled /></td>
-			<td class="text-primary animate-pulse align-top font-semibold">{rowNumber}</td>
-			<td class="align-top">
-				<textarea
-					form={formId}
-					class="textarea validator bg-base-200 dark:bg-base-300 border-base-300 h-30 w-full"
-					value={currentForm.lingkupMateri}
-					name="lingkupMateri"
-					aria-label="Lingkup materi"
-					placeholder="Tuliskan lingkup materi"
-					required
-					oninput={(event) =>
-						handleLingkupMateriInput((event.currentTarget as HTMLTextAreaElement).value)
-					}
-				></textarea>
-			</td>
-			<td></td>
-			<td class="align-top">
-				<div class="flex flex-col gap-2">
-					{#each currentForm.entries as entry, entryIndex (`${entry.id ?? 'new'}-${entryIndex}`)}
-						{#if entry.deleted}
-							<input
-								type="hidden"
-								form={formId}
-								name={`entries.${entryIndex}.id`}
-								value={entry.id ?? ''}
-							/>
-							<input
-								type="hidden"
-								form={formId}
-								name={`entries.${entryIndex}.deskripsi`}
-								value=""
-							/>
-						{:else}
-							{@const trimmedDeskripsi = entry.deskripsi.trim()}
-							<input
-								type="hidden"
-								form={formId}
-								name={`entries.${entryIndex}.id`}
-								value={entry.id ?? ''}
-							/>
-							<div class="flex flex-col gap-2 sm:flex-row">
-								<textarea
-									form={formId}
-									class="textarea validator bg-base-200 border-base-300 dark:bg-base-300 w-full dark:border-none"
-									value={entry.deskripsi}
-									name={`entries.${entryIndex}.deskripsi`}
-									aria-label={`Tujuan pembelajaran ${entryIndex + 1}`}
-									placeholder="Tuliskan tujuan pembelajaran"
-									required={currentForm.mode === 'create' && entryIndex === 0}
-									oninput={(event) =>
-										handleEntryInput(entryIndex, (event.currentTarget as HTMLTextAreaElement).value)
-									}
-								></textarea>
-								{#if (currentForm.mode === 'edit' && !(entry.id === undefined && trimmedDeskripsi === '')) || (currentForm.mode === 'create' && trimmedDeskripsi.length > 0)}
-									<button
-										type="button"
-										class="btn btn-sm btn-soft btn-error shadow-none"
-										title="Hapus tujuan pembelajaran ini"
-										onclick={() => openEntryDeleteDialog(entryIndex)}
-									>
-										<Icon name="del" />
-									</button>
-								{/if}
-							</div>
-						{/if}
-					{/each}
-				</div>
-			</td>
-			<td class="align-top">
-				<FormEnhance
-					id={formId}
-					action="?/save"
-					onsuccess={() => {
-						closeForm();
-						invalidate('app:mapel_tp-rl');
-					}}
-				>
-					{#snippet children({ submitting })}
-						{@const lingkupFilled = currentForm.lingkupMateri.trim().length > 0}
-						{@const hasDeskripsi = currentForm.entries.some((entry) => !entry.deleted && entry.deskripsi.trim().length > 0)}
-						{@const disableSubmit = submitting || (currentForm.mode === 'create' && (!lingkupFilled || !hasDeskripsi))}
-						<input name="mode" value={currentForm.mode} hidden />
-						<div class="flex flex-col gap-2">
-							<button
-								class="btn btn-sm btn-soft btn-primary shadow-none"
-								title="Simpan"
-								type="submit"
-								disabled={disableSubmit}
-								onclick={(event) => handleSaveClick(event, currentForm)}
-							>
-								{#if submitting}
-									<div class="loading loading-spinner loading-xs"></div>
-								{:else}
-									<Icon name="save" />
-								{/if}
-							</button>
-							<button
-								class="btn btn-sm btn-soft shadow-none"
-								type="button"
-								title="Batal"
-								onclick={closeForm}
-							>
-								<Icon name="close" />
-							</button>
-						</div>
-					{/snippet}
-				</FormEnhance>
-			</td>
-		</tr>
+	{#if deleteEntryDialog && groupForm}
+		{@const entryToDelete = groupForm.entries[deleteEntryDialog.index]}
+		<DeleteEntryDialog
+			entry={entryToDelete}
+			onCancel={closeEntryDeleteDialog}
+			onConfirm={confirmEntryDelete}
+		/>
 	{/if}
-{/snippet}
 
-{#if deleteEntryDialog && groupForm}
-	{@const entryToDelete = groupForm.entries[deleteEntryDialog.index]}
-	<dialog class="modal" open onclose={closeEntryDeleteDialog}>
-		<div class="modal-box">
-			<h3 class="mb-3 text-xl font-bold">Hapus tujuan pembelajaran?</h3>
-			<p class="mb-4">
-				{#if entryToDelete}
-					"{entryToDelete.deskripsi.trim() || 'Tujuan pembelajaran tanpa deskripsi'}" akan dihapus.
-				{:else}
-					Tujuan pembelajaran ini tidak ditemukan.
-				{/if}
-			</p>
-			<div class="flex justify-end gap-2">
-				<button class="btn shadow-none" type="button" onclick={closeEntryDeleteDialog}>
-					Batal
-				</button>
-				<button
-					type="button"
-					class="btn btn-error btn-soft shadow-none"
-					disabled={!entryToDelete}
-					onclick={confirmEntryDelete}
-				>
-					<Icon name="del" />
-					Hapus
-				</button>
-			</div>
-		</div>
-		<form method="dialog" class="modal-backdrop">
-			<button onclick={closeEntryDeleteDialog}>close</button>
-		</form>
-	</dialog>
-{/if}
+	{#if bulkDeleteDialog}
+		<BulkDeleteDialog
+			groups={bulkDeleteDialog.groups}
+			onCancel={closeBulkDeleteDialog}
+			onSuccess={handleBulkDeleteSuccess}
+		/>
+	{/if}
 
-{#if bulkDeleteDialog}
-	{@const groupsToDelete = bulkDeleteDialog.groups}
-	{@const idsToDelete = groupsToDelete.flatMap((group) => group.ids)}
-	{@const totalLingkup = groupsToDelete.length}
-	{@const totalTujuan = groupsToDelete.reduce((total, group) => total + group.ids.length, 0)}
-	<dialog class="modal" open onclose={closeBulkDeleteDialog}>
-		<div class="modal-box">
-			<FormEnhance
-				action="?/delete"
-				onsuccess={() => {
-					closeBulkDeleteDialog();
-					clearSelection();
-					invalidate('app:mapel_tp-rl');
-				}}
-			>
-				{#snippet children({ submitting })}
-					{#each idsToDelete as idValue}
-						<input name="ids" value={idValue} hidden />
-					{/each}
+	{#if deleteGroup}
+		<DeleteGroupDialog
+			lingkupMateri={deleteGroup.lingkupMateri}
+			ids={deleteGroup.ids}
+			onCancel={closeDeleteDialog}
+			onSuccess={handleDeleteGroupSuccess}
+		/>
+	{/if}
 
-					<h3 class="mb-3 text-xl font-bold">Hapus beberapa lingkup materi?</h3>
-					<p class="mb-2">
-						{totalLingkup} lingkup materi berikut akan dihapus beserta tujuan pembelajarannya:
-					</p>
-					<ul class="mb-4 list-disc space-y-1 pl-5 text-sm">
-						{#each groupsToDelete as group (group.lingkupMateri)}
-							<li>
-								<span class="font-semibold">{group.lingkupMateri}</span>
-								<span class="opacity-70"> – {group.ids.length} tujuan pembelajaran</span>
-							</li>
-						{/each}
-					</ul>
-					<p class="text-sm opacity-70">Total tujuan pembelajaran: {totalTujuan}</p>
-
-					<div class="mt-4 flex justify-end gap-2">
-						<button class="btn shadow-none" type="button" onclick={closeBulkDeleteDialog}>
-							Batal
-						</button>
-						<button class="btn btn-error btn-soft shadow-none" disabled={submitting || idsToDelete.length === 0}>
-							{#if submitting}
-								<div class="loading loading-spinner"></div>
-							{:else}
-								<Icon name="del" />
-							{/if}
-							Hapus
-						</button>
-					</div>
-				{/snippet}
-			</FormEnhance>
-		</div>
-		<form method="dialog" class="modal-backdrop">
-			<button onclick={closeBulkDeleteDialog}>close</button>
-		</form>
-	</dialog>
-{/if}
-
-{#if deleteGroup}
-	<dialog class="modal" open onclose={closeDeleteDialog}>
-		<div class="modal-box">
-			<FormEnhance
-				action="?/delete"
-				onsuccess={() => {
-					closeDeleteDialog();
-					invalidate('app:mapel_tp-rl');
-				}}
-			>
-				{#snippet children({ submitting })}
-					{#if deleteGroup?.ids}
-						{#each deleteGroup.ids as idValue}
-							<input name="ids" value={idValue} hidden />
-						{/each}
-					{/if}
-
-					<h3 class="mb-4 text-xl font-bold">Hapus lingkup materi?</h3>
-					<p class="mb-2">"{deleteGroup?.lingkupMateri}" beserta seluruh tujuan pembelajaran akan dihapus.</p>
-					<p class="text-sm opacity-70">Jumlah tujuan pembelajaran: {deleteGroup?.ids.length}</p>
-
-					<div class="mt-4 flex justify-end gap-2">
-						<button class="btn shadow-none" type="button" onclick={closeDeleteDialog}>
-							Batal
-						</button>
-						<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
-							{#if submitting}
-								<div class="loading loading-spinner"></div>
-							{:else}
-								<Icon name="del" />
-							{/if}
-							Hapus
-						</button>
-					</div>
-				{/snippet}
-			</FormEnhance>
-		</div>
-		<form method="dialog" class="modal-backdrop">
-			<button>close</button>
-		</form>
-	</dialog>
-{/if}
