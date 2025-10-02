@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
+	import { tick } from 'svelte';
+	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import EkstrakurikulerFormModal from '$lib/components/ekstrakurikuler/form-modal.svelte';
 	import EkstrakurikulerDeleteModal from '$lib/components/ekstrakurikuler/delete-modal.svelte';
 
 	let {
@@ -17,27 +18,35 @@
 	let selectedIds = $state<number[]>([]);
 	let selectAllCheckbox: HTMLInputElement | null = null;
 	let lastTableReady = $state<boolean | null>(null);
-	let modalState = $state<
-		| { mode: 'add' }
-		| { mode: 'edit'; item: Ekstrakurikuler }
-		| null
-	>(null);
 	let deleteDialogState = $state<
 		| { source: 'bulk'; ids: number[] }
 		| { source: 'single'; ids: number[]; item: Ekstrakurikuler }
 		| null
 	>(null);
-	let namaInput = $state('');
+	let addRowVisible = $state(false);
+	let addNamaInput = $state('');
+	let addInputRef = $state<HTMLInputElement | null>(null);
+	let addSubmitting = $state(false);
+	let editingRowId = $state<number | null>(null);
+	let editingNamaInput = $state('');
+	let editingInputRef = $state<HTMLInputElement | null>(null);
+	let editingSubmitting = $state(false);
 
 	const totalData = $derived.by(() => data.ekstrakurikuler.length);
 	const anySelected = $derived.by(() => selectedIds.length > 0);
 	const allSelected = $derived.by(() => totalData > 0 && selectedIds.length === totalData);
 	const canManage = $derived.by(() => data.tableReady && !!data.kelasId);
-	const isModalOpen = $derived.by(() => modalState !== null);
-	const isEditMode = $derived.by(() => modalState?.mode === 'edit');
-	const modalItem = $derived.by(() => (modalState?.mode === 'edit' ? modalState.item : null));
-	const modalTitle = $derived.by(() => (isEditMode ? 'Edit Ekstrakurikuler' : 'Tambah Ekstrakurikuler'));
-	const modalAction = $derived.by(() => (isEditMode ? '?/update' : '?/add'));
+	const addSaveDisabled = $derived.by(
+		() => addSubmitting || !addNamaInput.trim() || !data.kelasId || !data.tableReady
+	);
+	const editingSaveDisabled = $derived.by(
+		() =>
+			editingRowId === null ||
+			editingSubmitting ||
+			!editingNamaInput.trim() ||
+			!data.kelasId ||
+			!data.tableReady
+	);
 	const bulkDeleteDisabled = $derived.by(() => !anySelected || !canManage);
 	const isDeleteModalOpen = $derived.by(() => deleteDialogState !== null);
 	const deleteModalTitle = $derived.by(() => {
@@ -77,9 +86,51 @@
 
 		if (!tableReady) {
 			if (selectedIds.length) selectedIds = [];
-			if (namaInput) namaInput = '';
-			if (modalState) modalState = null;
 			if (deleteDialogState) deleteDialogState = null;
+			if (addNamaInput) addNamaInput = '';
+			if (addRowVisible) addRowVisible = false;
+			addSubmitting = false;
+			editingRowId = null;
+			editingNamaInput = '';
+			editingSubmitting = false;
+		}
+	});
+
+	$effect(() => {
+		if (!canManage && addRowVisible) {
+			addRowVisible = false;
+			addNamaInput = '';
+			addSubmitting = false;
+		}
+	});
+
+	$effect(() => {
+		if (!canManage && editingRowId !== null) {
+			editingRowId = null;
+			editingNamaInput = '';
+			editingSubmitting = false;
+		}
+	});
+
+	$effect(() => {
+		if (addRowVisible) {
+			void tick().then(() => addInputRef?.focus());
+		}
+	});
+
+	$effect(() => {
+		if (editingRowId !== null) {
+			void tick().then(() => editingInputRef?.focus());
+		}
+	});
+
+	$effect(() => {
+		if (editingRowId === null) return;
+		const exists = data.ekstrakurikuler.some((item) => item.id === editingRowId);
+		if (!exists) {
+			editingRowId = null;
+			editingNamaInput = '';
+			editingSubmitting = false;
 		}
 	});
 
@@ -93,16 +144,14 @@
 		selectedIds = checked ? data.ekstrakurikuler.map((item) => item.id) : [];
 	}
 
-	function openAddModal() {
+	function startEditRow(item: Ekstrakurikuler) {
 		if (!canManage) return;
-		namaInput = '';
-		modalState = { mode: 'add' };
-	}
-
-	function openEditModal(item: Ekstrakurikuler) {
-		if (!canManage) return;
-		namaInput = item.nama;
-		modalState = { mode: 'edit', item };
+		addRowVisible = false;
+		addNamaInput = '';
+		addSubmitting = false;
+		editingRowId = item.id;
+		editingNamaInput = item.nama;
+		editingSubmitting = false;
 	}
 
 	function openBulkDeleteModal() {
@@ -116,37 +165,37 @@
 		deleteDialogState = { source: 'single', ids: [item.id], item };
 	}
 
-	function closeModal() {
-		if (modalState === null && !namaInput) return;
-		modalState = null;
-		if (namaInput) namaInput = '';
-	}
-
 	function closeDeleteModal() {
 		if (!deleteDialogState) return;
 		deleteDialogState = null;
 	}
-</script>
 
-<EkstrakurikulerFormModal
-	open={isModalOpen}
-	title={modalTitle}
-	action={modalAction}
-	kelasId={data.kelasId}
-	tableReady={data.tableReady}
-	canManage={canManage}
-	isEditMode={isEditMode}
-	modalItem={modalItem}
-	namaInput={namaInput}
-	onNamaChange={(value) => (namaInput = value)}
-	onClose={closeModal}
-	onSuccess={({ form }) => {
-		form.reset();
-		namaInput = '';
-		closeModal();
-		invalidate('app:ekstrakurikuler');
-	}}
-/>
+	function toggleAddRow() {
+		if (!canManage) return;
+		if (addRowVisible) {
+			addRowVisible = false;
+			addNamaInput = '';
+			addSubmitting = false;
+			return;
+		}
+		cancelEditRow();
+		addNamaInput = '';
+		addRowVisible = true;
+	}
+
+	function cancelAddRow() {
+		addRowVisible = false;
+		addNamaInput = '';
+		addSubmitting = false;
+	}
+
+	function cancelEditRow() {
+		if (editingRowId === null && !editingNamaInput) return;
+		editingRowId = null;
+		editingNamaInput = '';
+		editingSubmitting = false;
+	}
+</script>
 
 <EkstrakurikulerDeleteModal
 	open={isDeleteModalOpen}
@@ -177,7 +226,7 @@
 			{/if}
 		</div>
 		<div class="flex flex-col gap-2 sm:flex-row">
-			<button class="btn shadow-none" disabled={!canManage} onclick={openAddModal}>
+			<button class="btn shadow-none" disabled={!canManage} onclick={toggleAddRow}>
 				<Icon name="plus" />
 				Tambah
 			</button>
@@ -230,19 +279,120 @@
 				</tr>
 			</thead>
 			<tbody>
+				{#if addRowVisible}
+					<tr class="bg-base-200/40">
+						<td></td>
+						<td>
+							<span>1</span>
+						</td>
+						<td class="p-3" colspan="2">
+							<FormEnhance
+								id="add-ekstrakurikuler-form"
+								action="?/add"
+								submitStateChange={(value) => (addSubmitting = value)}
+								onsuccess={({ form }) => {
+									form.reset();
+									addNamaInput = '';
+									addRowVisible = false;
+									invalidate('app:ekstrakurikuler');
+								}}
+							>
+								{#snippet children()}
+									<input name="kelasId" value={data.kelasId ?? ''} hidden />
+									<label class="flex flex-col gap-2">
+										<input
+											bind:this={addInputRef}
+											class="input input-sm bg-base-200 dark:bg-base-100 dark:border-none w-full"
+											placeholder="Masukkan nama ekstrakurikuler"
+											name="nama"
+											value={addNamaInput}
+											oninput={(event) => (addNamaInput = (event.currentTarget as HTMLInputElement).value)}
+											autocomplete="off"
+											required
+										/>
+									</label>
+								{/snippet}
+							</FormEnhance>
+						</td>
+						<td class="flex items-center justify-end gap-2">
+							<button
+								type="button"
+								class="btn btn-soft btn-sm shadow-none"
+								onclick={cancelAddRow}
+								disabled={addSubmitting}
+								title="Batal"
+							>
+								<Icon name="close" />
+							</button>
+							<button
+								class="btn btn-sm btn-primary shadow-none"
+								form="add-ekstrakurikuler-form"
+								type="submit"
+								disabled={addSaveDisabled}
+								title="Simpan"
+							>
+								{#if addSubmitting}
+									<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+								{/if}
+								<Icon name="save" />
+							</button>
+						</td>
+					</tr>
+				{/if}
 				{#each data.ekstrakurikuler as item, index (item.id)}
-					<tr>
+					{@const baseNumber = addRowVisible ? index + 2 : index + 1}
+					{@const formId = `edit-ekstrakurikuler-form-${item.id}`}
+					<tr class={editingRowId === item.id ? 'bg-base-200/30' : undefined}>
 						<td>
 							<input
 								type="checkbox"
 								class="checkbox"
 								checked={selectedIds.includes(item.id)}
-								disabled={!data.tableReady}
+								disabled={!data.tableReady || editingRowId === item.id}
 								onchange={(event) => toggleRowSelection(item.id, event.currentTarget.checked)}
 							/>
 						</td>
-						<td>{index + 1}</td>
-						<td>{item.nama}</td>
+						<td>
+							{#if editingRowId === item.id}
+								<span class="badge badge-primary badge-soft">1</span>
+							{:else}
+								{baseNumber}
+							{/if}
+						</td>
+						<td>
+							{#if editingRowId === item.id}
+								<FormEnhance
+									id={formId}
+									action="?/update"
+									submitStateChange={(value) => (editingSubmitting = value)}
+									onsuccess={({ form }) => {
+										form.reset();
+										editingNamaInput = '';
+										cancelEditRow();
+										invalidate('app:ekstrakurikuler');
+									}}
+								>
+									{#snippet children()}
+										<input name="kelasId" value={data.kelasId ?? ''} hidden />
+										<input name="id" value={item.id} hidden />
+										<label class="flex flex-col gap-2">
+											<input
+												bind:this={editingInputRef}
+												class="input input-sm bg-base-200 dark:bg-base-100 dark:border-none w-full"
+												placeholder="Masukkan nama ekstrakurikuler"
+												name="nama"
+												value={editingNamaInput}
+												oninput={(event) => (editingNamaInput = (event.currentTarget as HTMLInputElement).value)}
+												autocomplete="off"
+												required
+											/>
+										</label>
+									{/snippet}
+								</FormEnhance>
+							{:else}
+								{item.nama}
+							{/if}
+						</td>
 						<td>
 							<a
 								href={`ekstrakurikuler/tp-ekstra?ekstrakurikulerId=${item.id}`}
@@ -256,34 +406,60 @@
 							</a>
 						</td>
 						<td class="flex items-center justify-end gap-2">
-							<button
-								class="btn btn-sm btn-soft shadow-none"
-								type="button"
-								title="Edit ekstrakurikuler"
-								aria-label="Edit ekstrakurikuler"
-								disabled={!canManage}
-								onclick={() => openEditModal(item)}
-							>
-								<Icon name="edit" />
-							</button>
-							<button
-								class="btn btn-sm btn-soft btn-error shadow-none"
-								type="button"
-								title="Hapus ekstrakurikuler"
-								aria-label="Hapus ekstrakurikuler"
-								disabled={!canManage}
-								onclick={() => openSingleDeleteModal(item)}
-							>
-								<Icon name="del" />
-							</button>
+							{#if editingRowId === item.id}
+								<button
+									class="btn btn-soft btn-sm shadow-none"
+									type="button"
+									title="Batalkan edit"
+									onclick={cancelEditRow}
+									disabled={editingSubmitting}
+								>
+									<Icon name="close" />
+								</button>
+								<button
+									class="btn btn-sm btn-primary shadow-none"
+									form={formId}
+									type="submit"
+									disabled={editingSaveDisabled}
+									title="Simpan"
+								>
+									{#if editingSubmitting}
+										<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+									{/if}
+									<Icon name="save" />
+								</button>
+							{:else}
+								<button
+									class="btn btn-sm btn-soft shadow-none"
+									type="button"
+									title="Edit ekstrakurikuler"
+									aria-label="Edit ekstrakurikuler"
+									disabled={!canManage}
+									onclick={() => startEditRow(item)}
+								>
+									<Icon name="edit" />
+								</button>
+								<button
+									class="btn btn-sm btn-soft btn-error shadow-none"
+									type="button"
+									title="Hapus ekstrakurikuler"
+									aria-label="Hapus ekstrakurikuler"
+									disabled={!canManage}
+									onclick={() => openSingleDeleteModal(item)}
+								>
+									<Icon name="del" />
+								</button>
+							{/if}
 						</td>
 					</tr>
 				{:else}
-					<tr>
-						<td class="py-6 text-center italic opacity-60" colspan="4">
-							Belum ada data ekstrakurikuler
-						</td>
-					</tr>
+					{#if !addRowVisible}
+						<tr>
+							<td class="py-6 text-center italic opacity-60" colspan="5">
+								Belum ada data ekstrakurikuler
+							</td>
+						</tr>
+					{/if}
 				{/each}
 			</tbody>
 		</table>
