@@ -86,45 +86,96 @@ async function importKelasDanMuridFromExcel(
  throw fail(400, { fail: 'Header kolom tidak ditemukan pada file.' });
  }
 
- const header = rows[headerIndex].map((cell) => normalize(cell));
+	const header = rows[headerIndex].map((cell) => normalize(cell));
+	const canonicalize = (value: string) =>
+		normalize(value)
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, ' ')
+			.trim();
+	const headerCanonical = header.map((cell) => canonicalize(cell));
 
- const columnIndex = (label: string) => {
-	const idx = header.findIndex((cell) => cell.toLowerCase() === label.toLowerCase());
-	return idx >= 0 ? idx : undefined;
- };
+	const findColumnIndex = (...labels: string[]) => {
+		for (const label of labels) {
+			const canonicalLabel = canonicalize(label);
+			const idx = headerCanonical.findIndex((cell) => cell === canonicalLabel);
+			if (idx !== -1) return idx;
+		}
+		for (const label of labels) {
+			const canonicalLabel = canonicalize(label);
+			const idx = headerCanonical.findIndex((cell) => cell.includes(canonicalLabel));
+			if (idx !== -1) return idx;
+		}
+		return undefined;
+	};
 
- const idxNama = columnIndex('Nama');
- const idxNipd = columnIndex('NIPD');
- const idxRombel = header.findIndex((cell) => cell.toLowerCase().startsWith('rombel'));
- if (idxNama === undefined || idxNipd === undefined || idxRombel === -1) {
- throw fail(400, { fail: 'Kolom Nama, NIPD, atau Rombel tidak lengkap.' });
- }
+	const findColumnByPredicate = (
+		predicate: (canonical: string, original: string, index: number) => boolean
+	): number | undefined => {
+		const idx = header.findIndex((cell, index) => predicate(headerCanonical[index], cell, index));
+		return idx >= 0 ? idx : undefined;
+	};
 
- const idxNisn = columnIndex('NISN');
- const idxTempatLahir = columnIndex('Tempat Lahir');
- const idxTanggalLahir = columnIndex('Tanggal Lahir');
- const idxJk = columnIndex('JK');
- const idxAgama = columnIndex('Agama');
- const idxAlamat = columnIndex('Alamat');
- const idxKelurahan = columnIndex('Kelurahan');
- const idxKecamatan = columnIndex('Kecamatan');
- const idxKabupaten = columnIndex('Kabupaten');
- const idxKodePos = columnIndex('Kode Pos');
- const idxSekolahAsal = columnIndex('Sekolah Asal');
- const idxTelepon = columnIndex('Telepon');
- const idxHp = columnIndex('HP');
- const idxEmail = columnIndex('E-Mail');
+	const idxNama = findColumnIndex('Nama', 'Nama Peserta Didik', 'Nama Siswa');
+	const idxNipd = findColumnIndex('NIPD', 'NIS', 'Nomor Induk', 'No Induk');
+	const idxRombel = findColumnByPredicate((canonical) => canonical.startsWith('rombel'));
+	if (idxNama === undefined || idxNipd === undefined || idxRombel === undefined) {
+		throw fail(400, { fail: 'Kolom Nama, NIPD/NIS, atau Rombel tidak lengkap.' });
+	}
 
- const idxAyahBase = header.findIndex((cell) => cell.toLowerCase() === 'data ayah');
- const idxIbuBase = header.findIndex((cell) => cell.toLowerCase() === 'data ibu');
- const idxWaliBase = header.findIndex((cell) => cell.toLowerCase() === 'data wali');
+	const idxNisn = findColumnIndex('NISN');
+	const idxTempatLahir = findColumnIndex('Tempat Lahir', 'Tempat Lahir Peserta Didik');
+	const idxTanggalLahir = findColumnIndex('Tanggal Lahir', 'Tanggal Lahir Peserta Didik');
+	const idxJk = findColumnIndex('JK', 'Jenis Kelamin');
+	const idxAgama = findColumnIndex('Agama');
+	const idxAlamat = findColumnIndex('Alamat', 'Alamat Jalan', 'Alamat Peserta Didik');
+	const idxKelurahan = findColumnIndex('Kelurahan', 'Kelurahan/Desa', 'Kelurahan / Desa', 'Desa');
+	const idxKecamatan = findColumnIndex('Kecamatan');
+	const idxKabupaten = findColumnIndex('Kabupaten', 'Kabupaten/Kota', 'Kabupaten / Kota');
+	const idxKodePos = findColumnIndex('Kode Pos');
+	const idxSekolahAsal = findColumnIndex('Sekolah Asal', 'Sekolah Asal Siswa');
+	const idxTelepon = findColumnIndex('Telepon', 'No Telepon', 'No. Telepon', 'Telepon Rumah');
+	const idxHp = findColumnIndex('HP', 'No HP', 'No. HP', 'Nomor HP', 'Nomor Hp', 'HP Siswa');
+	const idxEmail = findColumnIndex('E-Mail', 'Email', 'Surel');
+	const idxKontakOrangTua = findColumnIndex(
+		'Kontak',
+		'Kontak Orang Tua',
+		'Kontak Ortu',
+		'Nomor Kontak Orang Tua',
+		'No HP Orang Tua',
+		'No Hp Orang Tua',
+		'No Hp Ortu',
+		'No Telepon Orang Tua',
+		'No Telpon Orang Tua',
+		'No Telepon Ortu',
+		'Telepon Orang Tua',
+		'HP Orang Tua',
+		'HP Ortu'
+	);
 
- const ayahNameIdx = idxAyahBase >= 0 ? idxAyahBase : undefined;
- const ayahJobIdx = idxAyahBase >= 0 ? idxAyahBase + 3 : undefined;
- const ibuNameIdx = idxIbuBase >= 0 ? idxIbuBase : undefined;
- const ibuJobIdx = idxIbuBase >= 0 ? idxIbuBase + 3 : undefined;
- const waliNameIdx = idxWaliBase >= 0 ? idxWaliBase : undefined;
- const waliJobIdx = idxWaliBase >= 0 ? idxWaliBase + 3 : undefined;
+	const idxAyahNama = findColumnIndex('Nama Ayah', 'Nama Ayah Kandung');
+	const idxAyahJob = findColumnIndex('Pekerjaan Ayah', 'Pekerjaan Ayah Kandung');
+	const idxAyahKontak = findColumnIndex('Kontak Ayah', 'No HP Ayah', 'No Hp Ayah', 'Telepon Ayah');
+	const idxAyahBase = findColumnIndex('Data Ayah');
+
+	const idxIbuNama = findColumnIndex('Nama Ibu', 'Nama Ibu Kandung');
+	const idxIbuJob = findColumnIndex('Pekerjaan Ibu', 'Pekerjaan Ibu Kandung');
+	const idxIbuKontak = findColumnIndex('Kontak Ibu', 'No HP Ibu', 'No Hp Ibu', 'Telepon Ibu');
+	const idxIbuBase = findColumnIndex('Data Ibu');
+
+	const idxWaliNama = findColumnIndex('Nama Wali', 'Nama Wali Murid');
+	const idxWaliJob = findColumnIndex('Pekerjaan Wali', 'Pekerjaan Wali Murid');
+	const idxWaliKontak = findColumnIndex('Kontak Wali', 'No HP Wali', 'No Hp Wali', 'Telepon Wali');
+	const idxWaliBase = findColumnIndex('Data Wali');
+
+	const ayahNameIdx = idxAyahNama ?? (idxAyahBase !== undefined && idxAyahBase >= 0 ? idxAyahBase : undefined);
+	const ayahJobIdx =
+		idxAyahJob ?? (idxAyahBase !== undefined && idxAyahBase >= 0 ? idxAyahBase + 3 : undefined);
+	const ibuNameIdx = idxIbuNama ?? (idxIbuBase !== undefined && idxIbuBase >= 0 ? idxIbuBase : undefined);
+	const ibuJobIdx =
+		idxIbuJob ?? (idxIbuBase !== undefined && idxIbuBase >= 0 ? idxIbuBase + 3 : undefined);
+	const waliNameIdx = idxWaliNama ?? (idxWaliBase !== undefined && idxWaliBase >= 0 ? idxWaliBase : undefined);
+	const waliJobIdx =
+		idxWaliJob ?? (idxWaliBase !== undefined && idxWaliBase >= 0 ? idxWaliBase + 3 : undefined);
 
  const dataRows = rows
 	.slice(headerIndex + 1)
@@ -161,14 +212,23 @@ async function importKelasDanMuridFromExcel(
 	 wali: WaliPayload | null;
  };
 
- const chooseKontak = (row: (string | number)[]): string => {
-	 const hp = idxHp !== undefined ? normalize(row[idxHp]) : '';
-	 if (hp) return hp;
-	 const telp = idxTelepon !== undefined ? normalize(row[idxTelepon]) : '';
-	 if (telp) return telp;
-	 const email = idxEmail !== undefined ? normalize(row[idxEmail]) : '';
-	 return email;
- };
+	const chooseKontak = (row: (string | number)[]): string => {
+		const kontakOrtu =
+			idxKontakOrangTua !== undefined ? normalize(row[idxKontakOrangTua]) : '';
+		if (kontakOrtu) return kontakOrtu;
+		const kontakAyah = idxAyahKontak !== undefined ? normalize(row[idxAyahKontak]) : '';
+		if (kontakAyah) return kontakAyah;
+		const kontakIbu = idxIbuKontak !== undefined ? normalize(row[idxIbuKontak]) : '';
+		if (kontakIbu) return kontakIbu;
+		const kontakWali = idxWaliKontak !== undefined ? normalize(row[idxWaliKontak]) : '';
+		if (kontakWali) return kontakWali;
+		const hp = idxHp !== undefined ? normalize(row[idxHp]) : '';
+		if (hp) return hp;
+		const telp = idxTelepon !== undefined ? normalize(row[idxTelepon]) : '';
+		if (telp) return telp;
+		const email = idxEmail !== undefined ? normalize(row[idxEmail]) : '';
+		return email;
+	};
 
  const buildWaliPayload = (
 	 row: (string | number)[],
@@ -209,6 +269,9 @@ async function importKelasDanMuridFromExcel(
 		.join(', ');
 	 const alamatUntukWali = alamatLengkap || (alamat !== 'Belum diisi' ? alamat : null);
 	 const kontakOrangTua = chooseKontak(row);
+	 const kontakAyah = idxAyahKontak !== undefined ? normalize(row[idxAyahKontak]) : '';
+	 const kontakIbu = idxIbuKontak !== undefined ? normalize(row[idxIbuKontak]) : '';
+	 const kontakWali = idxWaliKontak !== undefined ? normalize(row[idxWaliKontak]) : '';
 
 	 return {
 		 nama,
@@ -227,9 +290,27 @@ async function importKelasDanMuridFromExcel(
 		 pendidikanSebelumnya:
 			 normalize(idxSekolahAsal !== undefined ? row[idxSekolahAsal] : '') || 'Belum diisi',
 		 tanggalMasuk: timestamp.slice(0, 10),
-		 ayah: buildWaliPayload(row, ayahNameIdx, ayahJobIdx, kontakOrangTua, alamatUntukWali ?? undefined),
-		 ibu: buildWaliPayload(row, ibuNameIdx, ibuJobIdx, kontakOrangTua, alamatUntukWali ?? undefined),
-		 wali: buildWaliPayload(row, waliNameIdx, waliJobIdx, kontakOrangTua, alamatUntukWali ?? undefined)
+		 ayah: buildWaliPayload(
+			row,
+			ayahNameIdx,
+			ayahJobIdx,
+			kontakAyah || kontakOrangTua,
+			alamatUntukWali ?? undefined
+		 ),
+		 ibu: buildWaliPayload(
+			row,
+			ibuNameIdx,
+			ibuJobIdx,
+			kontakIbu || kontakOrangTua,
+			alamatUntukWali ?? undefined
+		 ),
+		 wali: buildWaliPayload(
+			row,
+			waliNameIdx,
+			waliJobIdx,
+			kontakWali || kontakOrangTua,
+			alamatUntukWali ?? undefined
+		 )
 	 } satisfies StudentPayload;
 	})
 	.filter(Boolean) as StudentPayload[];

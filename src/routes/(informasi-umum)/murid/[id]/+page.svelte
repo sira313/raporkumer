@@ -42,7 +42,10 @@
 					{@render field('Pekerjaan Ayah', data.murid.ayah?.pekerjaan)}
 					{@render field('Nama Ibu', data.murid.ibu?.nama)}
 					{@render field('Pekerjaan Ibu', data.murid.ibu?.pekerjaan)}
-					{@render field('Kontak', data.murid.ayah?.kontak)}
+					{@render field(
+						'Kontak',
+						data.murid.ayah?.kontak || data.murid.ibu?.kontak || data.murid.wali?.kontak
+					)}
 				</div>
 			</div>
 			<!-- data Alamat Murid -->
