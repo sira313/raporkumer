@@ -3,8 +3,33 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 
+	type KelasCard = Omit<Kelas, 'sekolah'> & {
+		jumlahMurid: number;
+		jumlahMapel: number;
+		jumlahEkstrakurikuler: number;
+		jumlahKokurikuler: number;
+	};
+
 	let { data } = $props();
-	let deleteKelasData = $state<Omit<Kelas, 'sekolah'>>();
+	const daftarKelas = $derived((data.daftarKelas ?? []) as KelasCard[]);
+	let deleteKelasData = $state<KelasCard | null>(null);
+	let purgeAck = $state(false);
+
+	const needsPurgeAck = $derived.by(() => {
+		const target = deleteKelasData;
+		if (!target) return false;
+		return (
+			(target.jumlahMurid ?? 0) > 0 ||
+			(target.jumlahMapel ?? 0) > 0 ||
+			(target.jumlahEkstrakurikuler ?? 0) > 0 ||
+			(target.jumlahKokurikuler ?? 0) > 0
+		);
+	});
+
+	$effect(() => {
+		deleteKelasData;
+		purgeAck = false;
+	});
 
 	const faseBadgeColors: Record<string, string> = {
 		'Fase A': 'badge-primary',
@@ -16,10 +41,25 @@
 	};
 
 	const faseBadgeClass = (fase?: string | null) => faseBadgeColors[fase ?? ''] ?? 'badge-neutral';
+
+	function openDeleteModal(kelas: KelasCard) {
+		deleteKelasData = kelas;
+	}
+
+	function closeDeleteModal() {
+		deleteKelasData = null;
+		purgeAck = false;
+	}
+
+	async function handleDeleteSuccess() {
+		await invalidate('app:kelas');
+		deleteKelasData = null;
+		purgeAck = false;
+	}
 </script>
 
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-	{#each data.daftarKelas as kelas (kelas)}
+	{#each daftarKelas as kelas (kelas.id)}
 		<div class="card bg-base-100 rounded-box shadow-md">
 			<div class="p-4">
 				<div class="flex items-start justify-between">
@@ -43,12 +83,12 @@
 					<button
 						class="btn btn-error btn-soft shadow-none"
 						type="button"
-						onclick={() => (deleteKelasData = kelas)}
+						onclick={() => openDeleteModal(kelas)}
 					>
 						<Icon name="del" />
 						Hapus
 					</button>
-					<a href="/kelas/form/{kelas.id}" class="btn btn-soft shadow-none">
+					<a href={`/kelas/form/${kelas.id}`} class="btn btn-soft shadow-none">
 						<Icon name="edit" />
 						Edit
 					</a>
@@ -83,32 +123,80 @@
 </div>
 
 {#if deleteKelasData}
-	<dialog class="modal" open onclose={() => (deleteKelasData = undefined)}>
+	{@const targetKelas = deleteKelasData}
+	<dialog class="modal" open onclose={closeDeleteModal} aria-modal="true" role="alertdialog">
 		<div class="modal-box p-4">
-			<FormEnhance
-				action="?/delete"
-				onsuccess={() => {
-					deleteKelasData = undefined;
-					invalidate('app:kelas');
-				}}
-			>
+			<FormEnhance action="?/delete" onsuccess={handleDeleteSuccess}>
 				{#snippet children({ submitting })}
-					<input name="id" value={deleteKelasData?.id} hidden />
+					<input name="id" value={targetKelas.id} hidden />
 
 					<h3 class="mb-4 text-xl font-bold">Hapus kelas?</h3>
-					<p>Kelas: {deleteKelasData?.nama}</p>
-					<p class="mb-4">Fase: {deleteKelasData?.fase}</p>
+					<p>Kelas: {targetKelas.nama}</p>
+					<p>Fase: {targetKelas.fase ?? '-'}</p>
 
-					<div class="flex justify-end gap-2">
+					<div class="grid gap-3 py-4 sm:grid-cols-2">
+						<div class="bg-base-200/70 dark:bg-base-300/60 rounded-lg border border-base-300/60 p-3">
+							<p class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Jumlah Murid</p>
+							<p class="text-lg font-bold text-base-content">{targetKelas.jumlahMurid}</p>
+						</div>
+						<div class="bg-base-200/70 dark:bg-base-300/60 rounded-lg border border-base-300/60 p-3">
+							<p class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Mata Pelajaran</p>
+							<p class="text-lg font-bold text-base-content">{targetKelas.jumlahMapel}</p>
+						</div>
+						<div class="bg-base-200/70 dark:bg-base-300/60 rounded-lg border border-base-300/60 p-3">
+							<p class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Ekstrakurikuler</p>
+							<p class="text-lg font-bold text-base-content">{targetKelas.jumlahEkstrakurikuler}</p>
+						</div>
+						<div class="bg-base-200/70 dark:bg-base-300/60 rounded-lg border border-base-300/60 p-3">
+							<p class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Kokurikuler</p>
+							<p class="text-lg font-bold text-base-content">{targetKelas.jumlahKokurikuler}</p>
+						</div>
+					</div>
+
+					{#if needsPurgeAck}
+						<div class="alert alert-warning">
+							<Icon name="warning" />
+							<span>
+								Kelas masih memiliki relasi data. Centang persetujuan untuk menghapus seluruh data berikut secara permanen.
+							</span>
+						</div>
+						<div class="bg-base-200/70 dark:bg-base-300/60 space-y-3 rounded-lg border border-base-300/60 p-4 text-sm text-base-content/70">
+							<ul class="ml-5 list-disc space-y-1">
+								<li>Seluruh murid dalam kelas</li>
+								<li>Semua mata pelajaran termasuk Pendidikan Agama dan Budi Pekerti</li>
+								<li>Tujuan pembelajaran, ekstrakurikuler, dan kokurikuler</li>
+							</ul>
+							<label class="flex items-start gap-3 rounded-lg bg-error/5 p-3 text-error">
+								<input
+									type="checkbox"
+									class="checkbox checkbox-error mt-1"
+									name="forceDelete"
+									value="true"
+									bind:checked={purgeAck}
+									required
+								/>
+								<span>Saya paham semua data terkait kelas ini akan dihapus permanen.</span>
+							</label>
+						</div>
+					{:else}
+						<p class="text-sm text-base-content/70">
+							Tindakan ini akan menghapus data kelas secara permanen dan tidak dapat dibatalkan.
+						</p>
+					{/if}
+
+					<div class="flex justify-end gap-2 pt-4">
 						<button
 							class="btn shadow-none"
 							type="button"
-							onclick={() => (deleteKelasData = undefined)}
+							onclick={closeDeleteModal}
 						>
 							Batal
 						</button>
 
-						<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
+						<button
+							class="btn btn-error btn-soft shadow-none"
+							disabled={submitting || (needsPurgeAck && !purgeAck)}
+						>
 							{#if submitting}
 								<div class="loading loading-spinner"></div>
 							{:else}
@@ -120,7 +208,7 @@
 				{/snippet}
 			</FormEnhance>
 		</div>
-		<form method="dialog" class="modal-backdrop">
+		<form method="dialog" class="modal-backdrop" onsubmit={closeDeleteModal}>
 			<button>close</button>
 		</form>
 	</dialog>

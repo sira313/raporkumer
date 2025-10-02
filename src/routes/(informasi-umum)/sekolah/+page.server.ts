@@ -1,7 +1,18 @@
 import db from '$lib/server/db';
-import { tableKelas, tableMurid, tableSekolah, tableTahunAjaran } from '$lib/server/db/schema';
+import {
+	tableEkstrakurikuler,
+	tableEkstrakurikulerTujuan,
+	tableKelas,
+	tableKokurikuler,
+	tableMataPelajaran,
+	tableMurid,
+	tableSekolah,
+	tableTasks,
+	tableTahunAjaran,
+	tableTujuanPembelajaran
+} from '$lib/server/db/schema';
 import { fail } from '@sveltejs/kit';
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
@@ -82,12 +93,14 @@ export const actions: Actions = {
 
 		const sekolah = await db.query.tableSekolah.findFirst({
 			where: eq(tableSekolah.id, sekolahId),
-			columns: { id: true }
+			columns: { id: true, alamatId: true }
 		});
 
 		if (!sekolah) {
 			return fail(404, { fail: 'Sekolah tidak ditemukan.' });
 		}
+
+		const forceDelete = formData.get('forceDelete') === 'true';
 
 		const [{ totalRombel }] = await db
 			.select({ totalRombel: sql<number>`count(*)` })
@@ -102,15 +115,62 @@ export const actions: Actions = {
 		const rombelMasihAda = (totalRombel ?? 0) > 0;
 		const muridMasihAda = (totalMurid ?? 0) > 0;
 
-		if (rombelMasihAda || muridMasihAda) {
-			const message = `Tidak bisa menghapus sekolah karena masih memiliki ${totalRombel ?? 0} rombel dan ${
+		if (!forceDelete && (rombelMasihAda || muridMasihAda)) {
+			const message = `Sekolah masih memiliki ${totalRombel ?? 0} rombel dan ${
 				totalMurid ?? 0
-			} murid. Hapus data rombel dan murid terlebih dahulu.`;
+			} murid. Centang opsi "Hapus semua data sekolah beserta isinya" untuk menghapus permanen.`;
 			return fail(400, { fail: message });
 		}
 
 		try {
 			await db.transaction(async (tx) => {
+				const kelasRows = await tx
+					.select({ id: tableKelas.id })
+					.from(tableKelas)
+					.where(eq(tableKelas.sekolahId, sekolahId));
+				const kelasIds = kelasRows.map((row) => row.id);
+
+				if (kelasIds.length) {
+					const mapelRows = await tx
+						.select({ id: tableMataPelajaran.id })
+						.from(tableMataPelajaran)
+						.where(inArray(tableMataPelajaran.kelasId, kelasIds));
+					const mapelIds = mapelRows.map((row) => row.id);
+
+					if (mapelIds.length) {
+						await tx
+							.delete(tableTujuanPembelajaran)
+							.where(inArray(tableTujuanPembelajaran.mataPelajaranId, mapelIds));
+						await tx.delete(tableMataPelajaran).where(inArray(tableMataPelajaran.id, mapelIds));
+					}
+
+					const ekstrakRows = await tx
+						.select({ id: tableEkstrakurikuler.id })
+						.from(tableEkstrakurikuler)
+						.where(inArray(tableEkstrakurikuler.kelasId, kelasIds));
+					const ekstrakIds = ekstrakRows.map((row) => row.id);
+
+					if (ekstrakIds.length) {
+						await tx
+							.delete(tableEkstrakurikulerTujuan)
+							.where(inArray(tableEkstrakurikulerTujuan.ekstrakurikulerId, ekstrakIds));
+						await tx.delete(tableEkstrakurikuler).where(inArray(tableEkstrakurikuler.id, ekstrakIds));
+					}
+
+					const kokurikulerRows = await tx
+						.select({ id: tableKokurikuler.id })
+						.from(tableKokurikuler)
+						.where(inArray(tableKokurikuler.kelasId, kelasIds));
+					const kokurikulerIds = kokurikulerRows.map((row) => row.id);
+
+					if (kokurikulerIds.length) {
+						await tx.delete(tableKokurikuler).where(inArray(tableKokurikuler.id, kokurikulerIds));
+					}
+				}
+
+				await tx.delete(tableTasks).where(eq(tableTasks.sekolahId, sekolahId));
+				await tx.delete(tableMurid).where(eq(tableMurid.sekolahId, sekolahId));
+				await tx.delete(tableKelas).where(eq(tableKelas.sekolahId, sekolahId));
 				await tx.delete(tableTahunAjaran).where(eq(tableTahunAjaran.sekolahId, sekolahId));
 				await tx.delete(tableSekolah).where(eq(tableSekolah.id, sekolahId));
 			});
@@ -121,6 +181,10 @@ export const actions: Actions = {
 			});
 		}
 
-		return { message: 'Sekolah berhasil dihapus.' };
+		return {
+			message: forceDelete
+				? 'Sekolah beserta seluruh data terkait berhasil dihapus.'
+				: 'Sekolah berhasil dihapus.'
+		};
 	}
 };

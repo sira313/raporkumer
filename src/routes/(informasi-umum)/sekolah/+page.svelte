@@ -51,18 +51,33 @@
 	}
 
 	let deleteTarget = $state<SekolahCard | null>(null);
+	let purgeAck = $state(false);
+
+	const needsPurgeAck = $derived.by(() => {
+		const target = deleteTarget;
+		if (!target) return false;
+		return (target.jumlahRombel ?? 0) > 0 || (target.jumlahMurid ?? 0) > 0;
+	});
+
+	$effect(() => {
+		deleteTarget;
+		purgeAck = false;
+	});
 
 	function openDeleteModal(sekolah: SekolahCard) {
 		deleteTarget = sekolah;
+		purgeAck = false;
 	}
 
 	function closeDeleteModal() {
 		deleteTarget = null;
+		purgeAck = false;
 	}
 
 	async function handleDeleteSuccess() {
 		await invalidate('app:sekolah');
 		deleteTarget = null;
+		purgeAck = false;
 	}
 </script>
 
@@ -273,12 +288,34 @@
 								</div>
 							</div>
 
-							{#if targetSekolah.jumlahRombel || targetSekolah.jumlahMurid}
+							{#if needsPurgeAck}
 								<div class="alert alert-warning">
 									<Icon name="warning" />
 									<span>
-										Sekolah masih memiliki rombel atau murid. Hapus seluruh data terkait terlebih dahulu sebelum melanjutkan.
+										Sekolah masih memiliki rombel atau murid. Anda dapat menghapus semuanya sekaligus dengan opsi di bawah.
 									</span>
+								</div>
+								<div class="bg-base-200/70 dark:bg-base-300/60 space-y-3 rounded-lg border border-base-300/60 p-4 text-sm text-base-content/70">
+									<p>Centang persetujuan untuk menghapus seluruh data berikut secara permanen:</p>
+									<ul class="ml-5 list-disc space-y-1">
+										<li>Semua rombel dan mata pelajaran, termasuk Pendidikan Agama dan Budi Pekerti</li>
+										<li>Tujuan pembelajaran, ekstrakurikuler, dan kokurikuler</li>
+										<li>Seluruh murid beserta data pendukungnya</li>
+										<li>Tahun ajaran aktif dan riwayat tugas terkait sekolah</li>
+									</ul>
+									<label class="flex items-start gap-3 rounded-lg bg-error/5 p-3 text-error">
+										<input
+											type="checkbox"
+											class="checkbox checkbox-error mt-1"
+											name="forceDelete"
+											value="true"
+											bind:checked={purgeAck}
+											required
+										/>
+										<span>
+											Saya paham tindakan ini tidak dapat dibatalkan dan ingin menghapus seluruh data sekolah.
+										</span>
+									</label>
 								</div>
 							{:else}
 								<p class="text-sm text-base-content/70">
@@ -299,7 +336,7 @@
 								<button
 									type="submit"
 									class="btn btn-error btn-soft shadow-none"
-									disabled={submitting}
+									disabled={submitting || (needsPurgeAck && !purgeAck)}
 								>
 									{#if submitting}
 										<span class="loading loading-spinner" aria-hidden="true"></span>
