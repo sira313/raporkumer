@@ -211,12 +211,50 @@
 		}
 	});
 
+	const academicContext = $derived(data.academicContext ?? null);
+	const activeSemester = $derived.by(() => {
+		const context = academicContext;
+		if (!context?.activeSemesterId) return null;
+		for (const tahun of context.tahunAjaranList ?? []) {
+			const match = tahun.semester.find((item) => item.id === context.activeSemesterId);
+			if (match) {
+				return {
+					...match,
+					tahunAjaranNama: tahun.nama
+				};
+			}
+		}
+		return null;
+	});
+
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
 	const kelasAktifLabel = $derived.by(() => {
 		if (!kelasAktif) return null;
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
 	});
 </script>
+
+{#if academicContext}
+	{#if academicContext.activeSemesterId}
+		<div class="alert alert-info alert-soft mb-6 flex items-center gap-3">
+			<Icon name="info" />
+			<span>
+				Menampilkan data murid untuk
+				{#if activeSemester}
+					<strong>{activeSemester.nama}</strong>
+					({activeSemester.tahunAjaranNama})
+				{:else}
+					semester aktif
+				{/if}.
+			</span>
+		</div>
+	{:else}
+		<div class="alert alert-warning mb-6 flex items-center gap-3">
+			<Icon name="warning" />
+			<span>Setel semester aktif di menu Rapor untuk mulai mengelola data kelas per periode.</span>
+		</div>
+	{/if}
+{/if}
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<h2 class="mb-6 text-xl font-bold">

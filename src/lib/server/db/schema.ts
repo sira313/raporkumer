@@ -174,6 +174,9 @@ export const tableMurid = sqliteTable(
 		sekolahId: int()
 			.references(() => tableSekolah.id)
 			.notNull(),
+		semesterId: int()
+			.references(() => tableSemester.id, { onDelete: 'cascade' })
+			.notNull(),
 		kelasId: int()
 			.references(() => tableKelas.id)
 			.notNull(),
@@ -192,11 +195,12 @@ export const tableMurid = sqliteTable(
 		waliId: int().references(() => tableWaliMurid.id),
 		...audit
 	},
-	(t) => [unique().on(t.sekolahId, t.nis)]
+	(t) => [unique().on(t.sekolahId, t.semesterId, t.nis)]
 );
 
 export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
 	kelas: one(tableKelas, { fields: [tableMurid.kelasId], references: [tableKelas.id] }),
+	semester: one(tableSemester, { fields: [tableMurid.semesterId], references: [tableSemester.id] }),
 	alamat: one(tableAlamat, { fields: [tableMurid.alamatId], references: [tableAlamat.id] }),
 	ibu: one(tableWaliMurid, { fields: [tableMurid.ibuId], references: [tableWaliMurid.id] }),
 	ayah: one(tableWaliMurid, { fields: [tableMurid.ayahId], references: [tableWaliMurid.id] }),

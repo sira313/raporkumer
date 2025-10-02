@@ -41,6 +41,24 @@
 	const disableTanggalGenap = $derived(
 		!selectedSemesterRecord || selectedSemesterRecord.tipe !== 'genap'
 	);
+	const canCopySemester = $derived.by(() => {
+		const target = selectedSemesterRecord;
+		if (!target) return false;
+		if (target.tipe !== 'genap') return false;
+		return Boolean(semesterGanjil);
+	});
+	const copyButtonTooltip = $derived.by(() => {
+		if (!selectedSemesterRecord) {
+			return 'Pilih semester terlebih dahulu';
+		}
+		if (selectedSemesterRecord.tipe !== 'genap') {
+			return 'Salin hanya tersedia saat semester genap dipilih';
+		}
+		if (!semesterGanjil) {
+			return 'Semester ganjil belum tersedia untuk disalin';
+		}
+		return null;
+	});
 
 	$effect(() => {
 		const tahunId = Number(selectedTahunAjaranId);
@@ -228,6 +246,12 @@
 							? String(semesterGenap.id)
 							: (formInitPengaturan['genap.id'] ?? '')}
 					/>
+					<input type="hidden" name="targetSemesterId" value={selectedSemesterId} />
+					<input
+						type="hidden"
+						name="sourceSemesterId"
+						value={semesterGanjil ? String(semesterGanjil.id) : ''}
+					/>
 					<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Tahun Ajaran</legend>
@@ -315,7 +339,17 @@
 						</fieldset>
 					</div>
 
-					<div class="mt-6 flex justify-end">
+					<div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-between">
+						<button
+							class="btn shadow-none"
+							type="submit"
+							formaction="?/copy-semester"
+							disabled={submitting || !canCopySemester}
+							title={copyButtonTooltip ?? undefined}
+						>
+							<Icon name="copy" />
+							Salin Semester Ganjil
+						</button>
 						<button
 							class="btn btn-primary shadow-none"
 							type="submit"

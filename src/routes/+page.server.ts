@@ -1,6 +1,7 @@
 import db from '$lib/server/db';
+import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import { tableKelas, tableMurid } from '$lib/server/db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 export async function load(event) {
 	const parentData = await event.parent();
@@ -23,9 +24,16 @@ export async function load(event) {
 		};
 	}
 
+	const academicContext = await resolveSekolahAcademicContext(sekolahId);
+	const activeSemesterId = academicContext?.activeSemesterId ?? null;
+
+	const kelasFilter = activeSemesterId
+		? and(eq(tableKelas.sekolahId, sekolahId), eq(tableKelas.semesterId, activeSemesterId))
+		: eq(tableKelas.sekolahId, sekolahId);
+
 	const daftarKelas = await db.query.tableKelas.findMany({
 		columns: { id: true, fase: true },
-		where: eq(tableKelas.sekolahId, sekolahId)
+		where: kelasFilter
 	});
 
 	statistikDashboard.rombel.total = daftarKelas.length;
@@ -44,10 +52,14 @@ export async function load(event) {
 		}))
 		.sort((a, b) => a.label.localeCompare(b.label, 'id'));
 
+	const muridFilter = activeSemesterId
+		? and(eq(tableMurid.sekolahId, sekolahId), eq(tableMurid.semesterId, activeSemesterId))
+		: eq(tableMurid.sekolahId, sekolahId);
+
 	const muridCountRows = await db
 		.select({ totalMurid: sql<number>`count(*)` })
 		.from(tableMurid)
-		.where(eq(tableMurid.sekolahId, sekolahId));
+		.where(muridFilter);
 
 	statistikDashboard.murid.total = muridCountRows[0]?.totalMurid ?? 0;
 

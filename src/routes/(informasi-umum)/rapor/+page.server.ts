@@ -21,6 +21,15 @@ type SemesterRow = typeof tableSemester.$inferSelect;
 
 type TransactionClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+type CopySummary = {
+	insertedKelas: number;
+	updatedKelas: number;
+	insertedMurid: number;
+	skippedMurid: number;
+	totalSourceMurid: number;
+	totalSourceKelas: number;
+};
+
 const DEFAULT_DATE = '1970-01-01';
 
 function normalize(value: unknown): string {
@@ -404,11 +413,15 @@ const upsertWali = async (
 	}
 
 	const nisList = students.map((s) => s.nis);
-	const existingMurid = nisList.length
-	 ? await tx.query.tableMurid.findMany({
-		 where: and(eq(tableMurid.sekolahId, opts.sekolahId), inArray(tableMurid.nis, nisList))
-		})
-	 : [];
+	 const existingMurid = nisList.length
+		 ? await tx.query.tableMurid.findMany({
+			 where: and(
+				eq(tableMurid.sekolahId, opts.sekolahId),
+				eq(tableMurid.semesterId, opts.semesterId),
+				inArray(tableMurid.nis, nisList)
+			 )
+		 })
+		 : [];
 	const muridByNis = new Map(existingMurid.map((item) => [item.nis, item]));
 
 	for (const student of students) {
@@ -420,9 +433,9 @@ const upsertWali = async (
 	 const ayahId = await upsertWali(tx, existing.ayahId, student.ayah);
 	 const ibuId = await upsertWali(tx, existing.ibuId, student.ibu);
 	 const waliId = await upsertWali(tx, existing.waliId, student.wali);
-		await tx
-		 .update(tableMurid)
-		 .set({
+	 	 await tx
+	 		 .update(tableMurid)
+	 		 .set({
 			nama: student.nama,
 			nisn: student.nisn,
 			tempatLahir: student.tempatLahir,
@@ -435,6 +448,7 @@ const upsertWali = async (
 			ibuId,
 			waliId,
 			kelasId,
+				semesterId: opts.semesterId,
 			updatedAt: timestamp
 		 })
 		 .where(eq(tableMurid.id, existing.id));
@@ -458,9 +472,10 @@ const upsertWali = async (
 	 const ibuId = await upsertWali(tx, null, student.ibu);
 	 const waliId = await upsertWali(tx, null, student.wali);
 
-	 await tx.insert(tableMurid).values({
+ 	 await tx.insert(tableMurid).values({
 		sekolahId: opts.sekolahId,
 		kelasId,
+		semesterId: opts.semesterId,
 		nama: student.nama,
 		nis: student.nis,
 		nisn: student.nisn,
@@ -484,6 +499,173 @@ const upsertWali = async (
 	message: `Impor selesai: ${insertedKelas} kelas baru, ${insertedMurid} murid baru, ${updatedMurid} murid diperbarui.`
  } as const;
 }
+
+	async function copyKelasDanMuridDariGanjilKeGenap(opts: {
+		sekolahId: number;
+		sourceSemester: SemesterRow;
+		targetSemester: SemesterRow;
+	}): Promise<CopySummary> {
+		const timestamp = new Date().toISOString();
+
+		return db.transaction(async (tx) => {
+			const sourceKelas = await tx.query.tableKelas.findMany({
+				where: and(
+					eq(tableKelas.sekolahId, opts.sekolahId),
+					eq(tableKelas.semesterId, opts.sourceSemester.id)
+				),
+				columns: {
+					id: true,
+					nama: true,
+					fase: true,
+					waliKelasId: true
+				}
+			});
+
+			if (!sourceKelas.length) {
+				return {
+					insertedKelas: 0,
+					updatedKelas: 0,
+					updatedMurid: 0,
+					insertedMurid: 0,
+					skippedMurid: 0,
+					totalSourceMurid: 0,
+					totalSourceKelas: 0
+				};
+			}
+
+			const targetKelas = await tx.query.tableKelas.findMany({
+				where: and(
+					eq(tableKelas.sekolahId, opts.sekolahId),
+					eq(tableKelas.semesterId, opts.targetSemester.id)
+				),
+				columns: {
+					id: true,
+					nama: true,
+					fase: true,
+					waliKelasId: true
+				}
+			});
+
+			const targetByName = new Map<string, (typeof targetKelas)[number]>();
+			for (const kelas of targetKelas) {
+				targetByName.set(kelas.nama.toLowerCase(), kelas);
+			}
+
+			const sourceToTarget = new Map<number, number>();
+			let insertedKelas = 0;
+			let updatedKelas = 0;
+
+			for (const kelas of sourceKelas) {
+				const key = kelas.nama.toLowerCase();
+				const existing = targetByName.get(key);
+				if (existing) {
+					const needsUpdate =
+						(existing.fase ?? '') !== (kelas.fase ?? '') ||
+						(existing.waliKelasId ?? null) !== (kelas.waliKelasId ?? null);
+					if (needsUpdate) {
+						await tx
+							.update(tableKelas)
+							.set({
+								fase: kelas.fase,
+								waliKelasId: kelas.waliKelasId,
+								updatedAt: timestamp
+							})
+							.where(eq(tableKelas.id, existing.id));
+						updatedKelas += 1;
+					}
+					sourceToTarget.set(kelas.id, existing.id);
+					continue;
+				}
+
+				const [inserted] = await tx
+					.insert(tableKelas)
+					.values({
+						nama: kelas.nama,
+						fase: kelas.fase,
+						waliKelasId: kelas.waliKelasId,
+						sekolahId: opts.sekolahId,
+						tahunAjaranId: opts.targetSemester.tahunAjaranId,
+						semesterId: opts.targetSemester.id,
+						updatedAt: timestamp
+					})
+					.returning({ id: tableKelas.id });
+
+				if (inserted) {
+					sourceToTarget.set(kelas.id, inserted.id);
+					insertedKelas += 1;
+				}
+			}
+
+			let insertedMurid = 0;
+			let skippedMurid = 0;
+			let totalSourceMurid = 0;
+
+			for (const [sourceId, targetId] of sourceToTarget) {
+				const sourceMuridList = await tx.query.tableMurid.findMany({
+					where: and(
+						eq(tableMurid.sekolahId, opts.sekolahId),
+						eq(tableMurid.semesterId, opts.sourceSemester.id),
+						eq(tableMurid.kelasId, sourceId)
+					)
+				});
+				totalSourceMurid += sourceMuridList.length;
+				if (!sourceMuridList.length) continue;
+
+				const existingTargetMurid = await tx.query.tableMurid.findMany({
+					where: and(
+						eq(tableMurid.sekolahId, opts.sekolahId),
+						eq(tableMurid.semesterId, opts.targetSemester.id),
+						eq(tableMurid.kelasId, targetId)
+					),
+					columns: { nis: true }
+				});
+
+				const existingNis = new Set(existingTargetMurid.map((row) => row.nis));
+				const values: typeof tableMurid.$inferInsert[] = [];
+
+				for (const murid of sourceMuridList) {
+					if (existingNis.has(murid.nis)) {
+						skippedMurid += 1;
+						continue;
+					}
+					existingNis.add(murid.nis);
+					values.push({
+						sekolahId: opts.sekolahId,
+						kelasId: targetId,
+						semesterId: opts.targetSemester.id,
+						nama: murid.nama,
+						nis: murid.nis,
+						nisn: murid.nisn,
+						tempatLahir: murid.tempatLahir,
+						tanggalLahir: murid.tanggalLahir,
+						jenisKelamin: murid.jenisKelamin,
+						agama: murid.agama,
+						pendidikanSebelumnya: murid.pendidikanSebelumnya,
+						tanggalMasuk: murid.tanggalMasuk,
+						alamatId: murid.alamatId,
+						ibuId: murid.ibuId,
+						ayahId: murid.ayahId,
+						waliId: murid.waliId,
+						updatedAt: timestamp
+					});
+				}
+
+				if (values.length) {
+					await tx.insert(tableMurid).values(values);
+					insertedMurid += values.length;
+				}
+			}
+
+			return {
+				insertedKelas,
+				updatedKelas,
+				insertedMurid,
+				skippedMurid,
+				totalSourceMurid,
+				totalSourceKelas: sourceKelas.length
+			};
+		});
+	}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const meta: PageMeta = {
@@ -700,6 +882,105 @@ export const actions: Actions = {
 
 		return {
 			message: importMessage ? `Pengaturan tersimpan. ${importMessage}` : 'Pengaturan tersimpan',
+			activeSekolahId: sekolahId,
+			...context
+		};
+	},
+	'copy-semester': async ({ request, locals }) => {
+		const sekolahId = locals.sekolah?.id;
+		if (!sekolahId) {
+			return fail(400, { fail: 'Pilih sekolah terlebih dahulu' });
+		}
+
+		const formData = await request.formData();
+		const targetSemesterId = Number(formData.get('targetSemesterId'));
+		const sourceSemesterIdRaw = formData.get('sourceSemesterId');
+		const sourceSemesterId = sourceSemesterIdRaw ? Number(sourceSemesterIdRaw) : null;
+
+		if (!Number.isFinite(targetSemesterId) || targetSemesterId <= 0) {
+			return fail(400, { fail: 'Semester tujuan tidak valid.' });
+		}
+
+		const targetSemester = await db.query.tableSemester.findFirst({
+			where: eq(tableSemester.id, targetSemesterId),
+			with: { tahunAjaran: true }
+		});
+
+		if (!targetSemester || targetSemester.tahunAjaran.sekolahId !== sekolahId) {
+			return fail(404, { fail: 'Semester tujuan tidak ditemukan.' });
+		}
+
+		if (targetSemester.tipe !== 'genap') {
+			return fail(400, { fail: 'Penyalinan hanya tersedia untuk semester genap.' });
+		}
+
+		let sourceSemester: (typeof tableSemester.$inferSelect & { tahunAjaran: TahunAjaranRow }) | null = null;
+
+		if (Number.isFinite(sourceSemesterId) && (sourceSemesterId ?? 0) > 0) {
+			const candidate = await db.query.tableSemester.findFirst({
+				where: eq(tableSemester.id, Number(sourceSemesterId)),
+				with: { tahunAjaran: true }
+			});
+
+			if (
+				!candidate ||
+				candidate.tipe !== 'ganjil' ||
+				candidate.tahunAjaranId !== targetSemester.tahunAjaranId ||
+				candidate.tahunAjaran.sekolahId !== sekolahId
+			) {
+				return fail(404, { fail: 'Semester ganjil sumber tidak valid.' });
+			}
+
+			sourceSemester = candidate ?? null;
+		} else {
+			const fetched = await db.query.tableSemester.findFirst({
+				where: and(
+					eq(tableSemester.tahunAjaranId, targetSemester.tahunAjaranId),
+					eq(tableSemester.tipe, 'ganjil')
+				),
+				with: { tahunAjaran: true }
+			});
+			sourceSemester = fetched ?? null;
+		}
+
+		if (!sourceSemester || sourceSemester.tahunAjaran.sekolahId !== sekolahId) {
+			return fail(404, { fail: 'Semester ganjil sumber tidak ditemukan.' });
+		}
+
+		if (sourceSemester.id === targetSemester.id) {
+			return fail(400, { fail: 'Semester tujuan tidak boleh sama dengan semester sumber.' });
+		}
+
+		const summary = await copyKelasDanMuridDariGanjilKeGenap({
+			sekolahId,
+			sourceSemester,
+			targetSemester
+		});
+
+		if (summary.totalSourceKelas === 0) {
+			return fail(400, { fail: 'Tidak ada kelas pada semester ganjil untuk disalin.' });
+		}
+
+		const context = await resolveSekolahAcademicContext(sekolahId);
+
+		const kelasParts: string[] = [];
+		if (summary.insertedKelas) {
+			kelasParts.push(`${summary.insertedKelas} kelas baru`);
+		}
+		if (summary.updatedKelas) {
+			kelasParts.push(`${summary.updatedKelas} kelas diperbarui`);
+		}
+
+		const kelasInfo = kelasParts.length ? kelasParts.join(', ') : 'Tidak ada perubahan kelas';
+		const muridInfo = summary.insertedMurid
+			? `${summary.insertedMurid} murid disalin`
+			: 'Tidak ada murid yang disalin';
+		const skippedInfo = summary.skippedMurid
+			? ` ${summary.skippedMurid} murid dilewati karena sudah ada pada semester genap.`
+			: '';
+
+		return {
+			message: `Penyalinan semester selesai. ${kelasInfo}. ${muridInfo}.${skippedInfo}`,
 			activeSekolahId: sekolahId,
 			...context
 		};
