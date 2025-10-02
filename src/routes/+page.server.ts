@@ -47,7 +47,7 @@ export async function load(event) {
 	statistikDashboard.rombel.perFase = Array.from(perFaseMap.entries())
 		.map(([fase, jumlah]) => ({
 			fase,
-			label: fase ?? 'Belum ditetapkan',
+			label: fase ?? 'Belum diatur',
 			jumlah
 		}))
 		.sort((a, b) => a.label.localeCompare(b.label, 'id'));

@@ -58,7 +58,7 @@
 							{kelas.semester?.nama ?? 'Semester belum ditetapkan'}
 						</p>
 					</div>
-					<div class={`badge ${faseBadgeClass(kelas.fase)}`}>{kelas.fase || 'Belum ditetapkan'}</div>
+					<div class={`badge ${faseBadgeClass(kelas.fase)}`}>{kelas.fase || 'Belum diatur'}</div>
 				</div>
 			</div>
 			<div class="border-base-300 dark:border-base-200 m-0 border"></div>
@@ -73,7 +73,7 @@
 						<p class="text-base-content/70 text-sm">NIP {kelas.waliKelas?.nip}</p>
 					</div>
 				</div>
-				<div class="mt-6 flex justify-end gap-2">
+				<div class="mt-6 flex flex-col sm:flex-row sm:justify-between gap-2">
 					<button
 						class="btn btn-error btn-soft shadow-none"
 						type="button"

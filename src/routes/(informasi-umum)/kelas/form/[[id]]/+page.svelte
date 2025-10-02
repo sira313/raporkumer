@@ -34,7 +34,7 @@
 					</span>
 				</div>
 			{:else}
-				<div class="alert alert-info mb-4 flex items-start gap-3">
+				<div class="alert alert-info mb-4 flex items-center gap-3">
 					<Icon name="info" />
 					<div class="leading-tight">
 						<p>
@@ -75,7 +75,7 @@
 
 				<!-- Fase diganti dengan tingkat pendidikan -->
 				<div>
-					<legend class="fieldset-legend">Fase (opsional)</legend>
+					<legend class="fieldset-legend">Fase</legend>
 					<select
 						class="select bg-base-200 w-full dark:border-none"
 						title="Pilih tingkat pendidikan"
@@ -95,7 +95,7 @@
 
 				<!-- Wali Kelas -->
 				<div>
-					<legend class="fieldset-legend">Wali Kelas (opsional)</legend>
+					<legend class="fieldset-legend">Wali Kelas</legend>
 					<input
 						type="text"
 						class="input validator bg-base-200 w-full dark:border-none"
@@ -106,7 +106,7 @@
 
 				<!-- NIP Wali Kelas -->
 				<div>
-					<legend class="fieldset-legend">NIP Wali Kelas (opsional)</legend>
+					<legend class="fieldset-legend">NIP Wali Kelas</legend>
 					<input
 						type="text"
 						class="input validator bg-base-200 w-full dark:border-none"
