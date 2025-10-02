@@ -1,4 +1,5 @@
 import db from '$lib/server/db';
+import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import {
 	tableAlamat,
 	tableEkstrakurikuler,
@@ -8,7 +9,9 @@ import {
 	tableMataPelajaran,
 	tableMurid,
 	tablePegawai,
+	tableSemester,
 	tableSekolah,
+	tableTahunAjaran,
 	tableTujuanPembelajaran,
 	tableWaliMurid
 } from '$lib/server/db/schema.js';
@@ -17,17 +20,32 @@ import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
 export async function load({ depends, locals }) {
 	depends('app:kelas');
-	const sekolahId = locals.sekolah?.id || 0;
-	const daftarKelas = await db.query.tableKelas.findMany({
-		where: eq(tableKelas.sekolahId, sekolahId),
-		with: { waliKelas: true },
-		orderBy: [asc(tableKelas.nama)]
-	});
+	const sekolahId = locals.sekolah?.id ?? null;
+
+	let academicContext = null;
+	let daftarKelas: (typeof tableKelas.$inferSelect & {
+		waliKelas: (typeof tablePegawai.$inferSelect) | null;
+		semester?: (typeof tableSemester.$inferSelect) | null;
+		tahunAjaran?: (typeof tableTahunAjaran.$inferSelect) | null;
+	})[] = [];
+
+	if (sekolahId) {
+		academicContext = await resolveSekolahAcademicContext(sekolahId);
+		const whereClause = academicContext.activeSemesterId
+			? and(eq(tableKelas.sekolahId, sekolahId), eq(tableKelas.semesterId, academicContext.activeSemesterId))
+			: eq(tableKelas.sekolahId, sekolahId);
+
+		daftarKelas = await db.query.tableKelas.findMany({
+			where: whereClause,
+			with: { waliKelas: true, semester: true, tahunAjaran: true },
+			orderBy: [asc(tableKelas.nama)]
+		});
+	}
 
 	const kelasIds = daftarKelas.map((item) => item.id);
 
 	if (kelasIds.length === 0) {
-		return { daftarKelas: [] };
+		return { daftarKelas: [], academicContext };
 	}
 
 	const [muridCounts, mapelCounts, ekstrakCounts, kokurikulerCounts] = await Promise.all([
@@ -81,7 +99,7 @@ export async function load({ depends, locals }) {
 		jumlahKokurikuler: kokurikulerMap.get(kelas.id) ?? 0
 	}));
 
-	return { daftarKelas: kelasList };
+	return { daftarKelas: kelasList, academicContext };
 }
 
 export const actions = {

@@ -1,7 +1,8 @@
 import db from '$lib/server/db';
+import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import { tableKelas } from '$lib/server/db/schema';
 import { cookieNames, findTitleByPath } from '$lib/utils.js';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 
 export async function load({ url, locals, cookies }) {
 	const meta: PageMeta = {
@@ -10,11 +11,14 @@ export async function load({ url, locals, cookies }) {
 	};
 
 	const sekolah = locals.sekolah;
-	const daftarKelas = sekolah
+	const academicContext = sekolah?.id ? await resolveSekolahAcademicContext(sekolah.id) : null;
+	const daftarKelas = sekolah?.id
 		? await db.query.tableKelas.findMany({
 			columns: { id: true, nama: true, fase: true },
 			with: { waliKelas: { columns: { id: true, nama: true } } },
-			where: eq(tableKelas.sekolahId, sekolah.id),
+			where: academicContext?.activeSemesterId
+				? and(eq(tableKelas.sekolahId, sekolah.id), eq(tableKelas.semesterId, academicContext.activeSemesterId))
+				: eq(tableKelas.sekolahId, sekolah.id),
 			orderBy: asc(tableKelas.nama)
 		  })
 		: [];

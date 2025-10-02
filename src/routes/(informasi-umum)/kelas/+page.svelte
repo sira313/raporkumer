@@ -12,6 +12,21 @@
 
 	let { data } = $props();
 	const daftarKelas = $derived((data.daftarKelas ?? []) as KelasCard[]);
+	const academicContext = $derived(data.academicContext ?? null);
+	const activeSemester = $derived.by(() => {
+		const context = academicContext;
+		if (!context?.activeSemesterId) return null;
+		for (const tahun of context.tahunAjaranList ?? []) {
+			const match = tahun.semester.find((item) => item.id === context.activeSemesterId);
+			if (match) {
+				return {
+					...match,
+					tahunAjaranNama: tahun.nama
+				};
+			}
+		}
+		return null;
+	});
 	let deleteKelasData = $state<KelasCard | null>(null);
 	let purgeAck = $state(false);
 
@@ -59,12 +74,40 @@
 	}
 </script>
 
+{#if academicContext}
+	{#if academicContext.activeSemesterId}
+		<div class="alert alert-info mb-6 flex items-center gap-3">
+			<Icon name="info" />
+			<span>
+				Menampilkan kelas untuk
+				{#if activeSemester}
+					<strong>{activeSemester.nama}</strong>
+					({activeSemester.tahunAjaranNama})
+				{:else}
+					semester aktif
+				{/if}.
+			</span>
+		</div>
+	{:else}
+		<div class="alert alert-warning mb-6 flex items-center gap-3">
+			<Icon name="warning" />
+			<span>Setel semester aktif di menu Rapor untuk mulai mengelola data kelas per periode.</span>
+		</div>
+	{/if}
+{/if}
+
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 	{#each daftarKelas as kelas (kelas.id)}
 		<div class="card bg-base-100 rounded-box shadow-md">
 			<div class="p-4">
-				<div class="flex items-start justify-between">
-					<h2 class="card-title text-xl font-bold">{kelas.nama}</h2>
+				<div class="flex items-start justify-between gap-4">
+					<div>
+						<h2 class="card-title text-xl font-bold">{kelas.nama}</h2>
+						<p class="text-base-content/60 text-sm">
+							{kelas.tahunAjaran?.nama ?? 'Tahun ajaran belum ditetapkan'} •
+							{kelas.semester?.nama ?? 'Semester belum ditetapkan'}
+						</p>
+					</div>
 					<div class={`badge ${faseBadgeClass(kelas.fase)}`}>{kelas.fase || 'Belum ditetapkan'}</div>
 				</div>
 			</div>
@@ -99,7 +142,11 @@
 	{:else}
 		<div class="card bg-base-100 rounded-box flex items-center justify-center min-h-40">
 			<div class="p-6 text-center items-center justify-center">
-				<em class="opacity-50">Belum ada data kelas</em>
+				{#if academicContext && !academicContext.activeSemesterId}
+					<em class="opacity-50">Tentukan semester aktif untuk melihat atau menambahkan data kelas.</em>
+				{:else}
+					<em class="opacity-50">Belum ada data kelas untuk semester ini</em>
+				{/if}
 			</div>
 		</div>
 	{/each}
@@ -134,6 +181,8 @@
 					<h3 class="mb-4 text-xl font-bold">Hapus kelas?</h3>
 					<p>Kelas: {targetKelas.nama}</p>
 					<p>Fase: {targetKelas.fase ?? '-'}</p>
+					<p>Tahun Ajaran: {targetKelas.tahunAjaran?.nama ?? '-'}</p>
+					<p>Semester: {targetKelas.semester?.nama ?? '-'}</p>
 
 					<div class="grid gap-3 py-4 sm:grid-cols-2">
 						<div class="bg-base-200/70 dark:bg-base-300/60 rounded-lg border border-base-300/60 p-3">

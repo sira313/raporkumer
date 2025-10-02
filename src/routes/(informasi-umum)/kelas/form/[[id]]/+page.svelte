@@ -3,7 +3,39 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 
+	type TahunAjaranOption =
+		(typeof import('$lib/server/db/schema').tableTahunAjaran.$inferSelect) & {
+			semester: typeof import('$lib/server/db/schema').tableSemester.$inferSelect[];
+			isAktif: number | boolean;
+		};
+
 	let { data } = $props();
+	const tahunAjaranOptions = $derived((data.tahunAjaranOptions ?? []) as TahunAjaranOption[]);
+	let selectedTahunAjaranId = $state((data.formInit?.tahunAjaranId as string | undefined) ?? '');
+	const semesterOptions = $derived.by(() => {
+		const tahunId = selectedTahunAjaranId;
+		const item = tahunAjaranOptions.find((option) => String(option.id) === tahunId);
+		return item?.semester ?? [];
+	});
+	let selectedSemesterId = $state((data.formInit?.semesterId as string | undefined) ?? '');
+	const disableAcademic = $derived.by(
+		() => tahunAjaranOptions.length === 0 || semesterOptions.length === 0
+	);
+
+	$effect(() => {
+		const options = semesterOptions;
+		if (!options.length) {
+			selectedSemesterId = '';
+			return;
+		}
+		if (!options.some((option) => String(option.id) === selectedSemesterId)) {
+			const fallback =
+				options.find((option) => option.isAktif) ??
+				options.find((option) => option.tipe === 'ganjil') ??
+				options[0];
+			selectedSemesterId = fallback ? String(fallback.id) : '';
+		}
+	});
 </script>
 
 <FormEnhance
@@ -17,7 +49,61 @@
 	{#snippet children({ submitting })}
 		<div class="card bg-base-100 mx-auto rounded-lg p-4 shadow-md">
 			<h2 class="mb-4 text-xl font-bold">Formulir Isian Data Kelas</h2>
+			{#if tahunAjaranOptions.length === 0}
+				<div class="alert alert-warning mb-4 flex items-center gap-3">
+					<Icon name="warning" />
+					<span>Tambahkan tahun ajaran dan semester aktif terlebih dahulu sebelum membuat data kelas.</span>
+				</div>
+			{:else if semesterOptions.length === 0}
+				<div class="alert alert-warning mb-4 flex items-center gap-3">
+					<Icon name="warning" />
+					<span>Pilih tahun ajaran yang memiliki data semester.</span>
+				</div>
+			{/if}
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+				<div>
+					<legend class="fieldset-legend">Tahun Ajaran</legend>
+					<select
+						required
+						name="tahunAjaranId"
+						class="select bg-base-200 w-full dark:border-none"
+						bind:value={selectedTahunAjaranId}
+						disabled={tahunAjaranOptions.length === 0}
+					>
+						<option value="" disabled>Pilih tahun ajaran</option>
+						{#each tahunAjaranOptions as option (option.id)}
+							<option value={String(option.id)}>
+								{option.nama}
+								{option.isAktif ? ' (aktif)' : ''}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<div>
+					<legend class="fieldset-legend">Semester</legend>
+					<select
+						required
+						name="semesterId"
+						class="select bg-base-200 w-full dark:border-none"
+						bind:value={selectedSemesterId}
+						disabled={semesterOptions.length === 0}
+					>
+						<option value="" disabled>Pilih semester</option>
+						{#each semesterOptions as option (option.id)}
+							<option value={String(option.id)}>
+								{option.nama}
+								{option.isAktif ? ' (aktif)' : ''}
+							</option>
+						{/each}
+					</select>
+					{#if selectedTahunAjaranId && semesterOptions.length === 0}
+						<p class="text-xs text-error mt-2">
+							Tahun ajaran ini belum memiliki data semester. Tambahkan semester di menu Rapor.
+						</p>
+					{/if}
+				</div>
+
 				<!-- Nama Rombel -->
 				<div>
 					<legend class="fieldset-legend">Nama Rombel</legend>
@@ -91,7 +177,7 @@
 				</a>
 				<button
 					class="btn shadow-none {data.kelas?.id ? 'btn-secondary' : 'btn-primary'}"
-					disabled={submitting}
+					disabled={submitting || disableAcademic}
 				>
 					{#if submitting}
 						<div class="loading loading-spinner"></div>

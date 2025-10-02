@@ -1,4 +1,6 @@
 import db from '$lib/server/db';
+import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
+import type { AcademicContext } from '$lib/server/db/academic';
 import {
 	tableAlamat,
 	tableKelas,
@@ -16,51 +18,8 @@ import { read, utils } from 'xlsx';
 
 type TahunAjaranRow = typeof tableTahunAjaran.$inferSelect;
 type SemesterRow = typeof tableSemester.$inferSelect;
-type TanggalBagiRaportPayload = {
-	ganjilId?: number;
-	ganjil?: string | null;
-	genapId?: number;
-	genap?: string | null;
-};
 
 type TransactionClient = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-async function resolveSekolahAcademicContext(sekolahId: number) {
-	const tahunAjaranList = await db.query.tableTahunAjaran.findMany({
-		where: eq(tableTahunAjaran.sekolahId, sekolahId),
-		orderBy: [desc(tableTahunAjaran.id)],
-		with: {
-			semester: true
-		}
-	});
-
-	let activeTahunAjaranId: number | null = null;
-	let activeSemesterId: number | null = null;
-	let tanggalBagiRaport: TanggalBagiRaportPayload = {};
-
-	const activeTahunAjaran =
-		tahunAjaranList.find((item) => item.isAktif) ?? tahunAjaranList.at(0) ?? null;
-
-	if (activeTahunAjaran) {
-		activeTahunAjaranId = activeTahunAjaran.id;
-		const activeSemester =
-			activeTahunAjaran.semester.find((item) => item.isAktif) ??
-			activeTahunAjaran.semester.at(0) ??
-			null;
-		activeSemesterId = activeSemester?.id ?? null;
-
-		const ganjil = activeTahunAjaran.semester.find((item) => item.tipe === 'ganjil');
-		const genap = activeTahunAjaran.semester.find((item) => item.tipe === 'genap');
-		tanggalBagiRaport = {
-			ganjilId: ganjil?.id,
-			ganjil: ganjil?.tanggalBagiRaport ?? null,
-			genapId: genap?.id,
-			genap: genap?.tanggalBagiRaport ?? null
-		};
-	}
-
-	return { tahunAjaranList, activeTahunAjaranId, activeSemesterId, tanggalBagiRaport };
-}
 
 const DEFAULT_DATE = '1970-01-01';
 
@@ -92,9 +51,17 @@ function ensureJenisKelamin(value: unknown): 'L' | 'P' {
 }
 
 async function importKelasDanMuridFromExcel(
- file: File,
- opts: { sekolahId: number; kabupatenFallback?: string }
+	file: File,
+	opts: {
+		sekolahId: number;
+		tahunAjaranId: number;
+		semesterId: number;
+		kabupatenFallback?: string;
+	}
 ) {
+ if (!opts.tahunAjaranId || !opts.semesterId) {
+ throw fail(400, { fail: 'Pilih tahun ajaran dan semester sebelum mengimpor data.' });
+ }
  const buffer = await file.arrayBuffer();
  const workbook = read(buffer, { type: 'array' });
  const sheetName = workbook.SheetNames[0];
@@ -313,18 +280,39 @@ const upsertWali = async (
  await db.transaction(async (tx) => {
 	const existingKelas = rombelNames.length
 	 ? await tx.query.tableKelas.findMany({
-		 where: and(eq(tableKelas.sekolahId, opts.sekolahId), inArray(tableKelas.nama, rombelNames))
+		 where: and(
+			eq(tableKelas.sekolahId, opts.sekolahId),
+			eq(tableKelas.tahunAjaranId, opts.tahunAjaranId),
+			eq(tableKelas.semesterId, opts.semesterId),
+			inArray(tableKelas.nama, rombelNames)
+		 )
 		})
 	 : [];
 
 	const kelasMap = new Map<string, number>();
 	for (const item of existingKelas) {
-	 kelasMap.set(item.nama.toLowerCase(), item.id);
+		if (item.tahunAjaranId !== opts.tahunAjaranId || item.semesterId !== opts.semesterId) {
+			await tx
+				.update(tableKelas)
+				.set({
+					tahunAjaranId: opts.tahunAjaranId,
+					semesterId: opts.semesterId,
+					updatedAt: timestamp
+				})
+				.where(eq(tableKelas.id, item.id));
+		}
+		kelasMap.set(item.nama.toLowerCase(), item.id);
 	}
 
 	const newKelasValues = rombelNames
 	 .filter((nama) => !kelasMap.has(nama.toLowerCase()))
-	 .map((nama) => ({ nama, sekolahId: opts.sekolahId, updatedAt: timestamp }));
+	 .map((nama) => ({
+		nama,
+		sekolahId: opts.sekolahId,
+		tahunAjaranId: opts.tahunAjaranId,
+		semesterId: opts.semesterId,
+		updatedAt: timestamp
+	 }));
 	if (newKelasValues.length) {
 	 const inserted = await tx
 		.insert(tableKelas)
@@ -431,7 +419,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	let tahunAjaranList: Array<TahunAjaranRow & { semester: SemesterRow[] }> = [];
 	let activeTahunAjaranId: number | null = null;
 	let activeSemesterId: number | null = null;
-	let tanggalBagiRaport: TanggalBagiRaportPayload = {};
+	let tanggalBagiRaport: AcademicContext['tanggalBagiRaport'] = {};
 
 	if (activeSekolahId) {
 		({ tahunAjaranList, activeTahunAjaranId, activeSemesterId, tanggalBagiRaport } =
@@ -486,63 +474,72 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-		let importMessage: string | null = null;
-		const fileField = (formData.get('data') ?? formData.get('file')) as File | null;
-		if (fileField instanceof File && fileField.size > 0) {
-			const { message } = await importKelasDanMuridFromExcel(fileField, {
-				sekolahId,
-				kabupatenFallback: locals.sekolah?.alamat?.kabupaten ?? undefined
-			});
-			importMessage = message;
-		}
 		const tahunAjaranIdRaw = formData.get('tahunAjaranId');
 		const semesterIdRaw = formData.get('semesterId');
-		const tahunAjaranId = Number(tahunAjaranIdRaw);
-		const semesterId = Number(semesterIdRaw);
-		const hasSemester = Number.isFinite(semesterId) && semesterId > 0;
-		const hasTahunAjaran = Number.isFinite(tahunAjaranId) && tahunAjaranId > 0;
+		const tahunAjaranCandidate = Number(tahunAjaranIdRaw);
+		const semesterCandidate = Number(semesterIdRaw);
+		const hasSemester = Number.isFinite(semesterCandidate) && semesterCandidate > 0;
+		const hasTahunAjaran = Number.isFinite(tahunAjaranCandidate) && tahunAjaranCandidate > 0;
 
-		if (hasSemester) {
-			const semester = await db.query.tableSemester.findFirst({
-				where: eq(tableSemester.id, semesterId),
+		let resolvedTahunAjaranId: number | null = hasTahunAjaran ? tahunAjaranCandidate : null;
+		const resolvedSemesterId: number | null = hasSemester ? semesterCandidate : null;
+
+		let semesterRecord:
+			| (typeof tableSemester.$inferSelect & { tahunAjaran: TahunAjaranRow })
+			| null = null;
+		let tahunAjaranRecord:
+			| (typeof tableTahunAjaran.$inferSelect & { semester: SemesterRow[] })
+			| null = null;
+
+		if (resolvedSemesterId) {
+			const semesterRow = await db.query.tableSemester.findFirst({
+				where: eq(tableSemester.id, resolvedSemesterId),
 				with: { tahunAjaran: true }
 			});
 
-			if (!semester || semester.tahunAjaran.sekolahId !== sekolahId) {
+			if (!semesterRow || semesterRow.tahunAjaran.sekolahId !== sekolahId) {
 				return fail(404, { fail: 'Data semester tidak ditemukan.' });
 			}
 
-			await db.transaction(async (tx) => {
-				await tx
-					.update(tableTahunAjaran)
-					.set({ isAktif: false })
-					.where(eq(tableTahunAjaran.sekolahId, sekolahId));
-				await tx
-					.update(tableTahunAjaran)
-					.set({ isAktif: true })
-					.where(eq(tableTahunAjaran.id, semester.tahunAjaranId));
-				await tx
-					.update(tableSemester)
-					.set({ isAktif: false })
-					.where(eq(tableSemester.tahunAjaranId, semester.tahunAjaranId));
-				await tx
-					.update(tableSemester)
-					.set({ isAktif: true })
-					.where(eq(tableSemester.id, semesterId));
-			});
-		} else if (hasTahunAjaran) {
-			const tahunAjaran = await db.query.tableTahunAjaran.findFirst({
+			if (hasTahunAjaran && semesterRow.tahunAjaranId !== tahunAjaranCandidate) {
+				return fail(400, { fail: 'Semester tidak sesuai dengan tahun ajaran yang dipilih.' });
+			}
+
+			resolvedTahunAjaranId = semesterRow.tahunAjaranId;
+			semesterRecord = semesterRow;
+		} else if (resolvedTahunAjaranId) {
+			const tahunAjaranRow = await db.query.tableTahunAjaran.findFirst({
 				where: and(
-					eq(tableTahunAjaran.id, tahunAjaranId),
+					eq(tableTahunAjaran.id, resolvedTahunAjaranId),
 					eq(tableTahunAjaran.sekolahId, sekolahId)
 				),
 				with: { semester: true }
 			});
 
-			if (!tahunAjaran) {
+			if (!tahunAjaranRow) {
 				return fail(404, { fail: 'Data tahun ajaran tidak ditemukan.' });
 			}
+			tahunAjaranRecord = tahunAjaranRow;
+		}
 
+		let importMessage: string | null = null;
+		const fileField = (formData.get('data') ?? formData.get('file')) as File | null;
+		if (fileField instanceof File && fileField.size > 0) {
+			if (!resolvedTahunAjaranId || !resolvedSemesterId) {
+				return fail(400, { fail: 'Pilih tahun ajaran dan semester sebelum mengimpor data.' });
+			}
+
+			const { message } = await importKelasDanMuridFromExcel(fileField, {
+				sekolahId,
+				tahunAjaranId: resolvedTahunAjaranId,
+				semesterId: resolvedSemesterId,
+				kabupatenFallback: locals.sekolah?.alamat?.kabupaten ?? undefined
+			});
+			importMessage = message;
+		}
+
+		if (semesterRecord) {
+			const semesterRow = semesterRecord;
 			await db.transaction(async (tx) => {
 				await tx
 					.update(tableTahunAjaran)
@@ -551,10 +548,30 @@ export const actions: Actions = {
 				await tx
 					.update(tableTahunAjaran)
 					.set({ isAktif: true })
-					.where(eq(tableTahunAjaran.id, tahunAjaranId));
+					.where(eq(tableTahunAjaran.id, semesterRow.tahunAjaranId));
+				await tx
+					.update(tableSemester)
+					.set({ isAktif: false })
+					.where(eq(tableSemester.tahunAjaranId, semesterRow.tahunAjaranId));
+				await tx
+					.update(tableSemester)
+					.set({ isAktif: true })
+					.where(eq(tableSemester.id, semesterRow.id));
+			});
+		} else if (tahunAjaranRecord) {
+			const tahunRow = tahunAjaranRecord;
+			await db.transaction(async (tx) => {
+				await tx
+					.update(tableTahunAjaran)
+					.set({ isAktif: false })
+					.where(eq(tableTahunAjaran.sekolahId, sekolahId));
+				await tx
+					.update(tableTahunAjaran)
+					.set({ isAktif: true })
+					.where(eq(tableTahunAjaran.id, tahunRow.id));
 
-				if (!tahunAjaran.semester.some((item) => item.isAktif)) {
-					const ganjil = tahunAjaran.semester.find((item) => item.tipe === 'ganjil');
+				if (!tahunRow.semester.some((item) => item.isAktif)) {
+					const ganjil = tahunRow.semester.find((item) => item.tipe === 'ganjil');
 					if (ganjil) {
 						await tx
 							.update(tableSemester)

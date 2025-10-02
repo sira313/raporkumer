@@ -254,6 +254,9 @@
 
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Tanggal bagi rapor semester ganjil</legend>
+							{#if disableTanggalGanjil}
+								<input type="hidden" name="ganjil.tanggalBagiRaport" value={tanggalRaporGanjil} />
+							{/if}
 							<input
 								class="input bg-base-200 w-full dark:border-none"
 								type="date"
@@ -268,6 +271,9 @@
 
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Tanggal bagi rapor semester genap</legend>
+							{#if disableTanggalGenap}
+								<input type="hidden" name="genap.tanggalBagiRaport" value={tanggalRaporGenap} />
+							{/if}
 							<input
 								class="input bg-base-200 w-full dark:border-none"
 								type="date"

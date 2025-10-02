@@ -122,18 +122,26 @@ export const tableTasksRelations = relations(tableTasks, ({ one }) => ({
 	})
 }));
 
-export const tableKelas = sqliteTable('kelas', {
-	id: int().primaryKey({ autoIncrement: true }),
-	sekolahId: int()
-		.references(() => tableSekolah.id)
-		.notNull(),
-	tahunAjaranId: int().references(() => tableTahunAjaran.id),
-	semesterId: int().references(() => tableSemester.id),
-	nama: text().notNull(),
-	fase: text(),
-	waliKelasId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
-	...audit
-});
+export const tableKelas = sqliteTable(
+	'kelas',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id, { onDelete: 'cascade' })
+			.notNull(),
+		tahunAjaranId: int()
+			.references(() => tableTahunAjaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		semesterId: int()
+			.references(() => tableSemester.id, { onDelete: 'cascade' })
+			.notNull(),
+		nama: text().notNull(),
+		fase: text(),
+		waliKelasId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
+		...audit
+	},
+	(table) => [unique().on(table.sekolahId, table.semesterId, table.nama)]
+);
 
 export const tableKelasRelations = relations(tableKelas, ({ one }) => ({
 	sekolah: one(tableSekolah, { fields: [tableKelas.sekolahId], references: [tableSekolah.id] }),
