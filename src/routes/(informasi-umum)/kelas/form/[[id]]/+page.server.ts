@@ -1,5 +1,6 @@
 import db from '$lib/server/db';
 import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
+import type { AcademicContext } from '$lib/server/db/academic';
 import { tableKelas, tablePegawai, tableSemester, tableTahunAjaran } from '$lib/server/db/schema.js';
 import { unflattenFormData } from '$lib/utils.js';
 import { error, fail } from '@sveltejs/kit';
@@ -23,10 +24,55 @@ const tingkatOptionsByJenjang: Record<'sd' | 'smp' | 'sma', TingkatOption[]> = {
 type KelasFormInput = {
 	rombel?: string;
 	fase?: string;
-	tahunAjaranId?: string;
-	semesterId?: string;
 	waliKelas?: Partial<Pick<Pegawai, 'nama' | 'nip'>>;
 };
+
+type TahunAjaranOption = (typeof tableTahunAjaran.$inferSelect & {
+	semester: typeof tableSemester.$inferSelect[];
+});
+
+function resolveEffectiveTahunAjaranId(
+	existingId: number | null | undefined,
+	academicContext: AcademicContext,
+	options: TahunAjaranOption[]
+): number | null {
+	return (
+		existingId ??
+		academicContext.activeTahunAjaranId ??
+		options.find((item) => item.isAktif)?.id ??
+		options[0]?.id ??
+		null
+	);
+}
+
+function resolveEffectiveSemesterId(
+	tahunAjaranId: number | null,
+	preferredSemesterId: number | null | undefined,
+	academicContext: AcademicContext,
+	options: TahunAjaranOption[]
+): number | null {
+	if (!tahunAjaranId) return null;
+	const tahun = options.find((item) => item.id === tahunAjaranId);
+	if (!tahun) return null;
+
+	if (
+		preferredSemesterId &&
+		tahun.semester.some((semester) => semester.id === preferredSemesterId)
+	) {
+		return preferredSemesterId;
+	}
+
+	const candidates = [
+		academicContext.activeSemesterId,
+		tahun.semester.find((item) => item.isAktif)?.id,
+		tahun.semester.find((item) => item.tipe === 'ganjil')?.id,
+		tahun.semester[0]?.id ?? null
+	].filter((value): value is number => typeof value === 'number');
+
+	return candidates.find((value) =>
+		tahun.semester.some((semester) => semester.id === value)
+	) ?? null;
+}
 
 export async function load({ params, locals }) {
 	const meta: PageMeta = { title: 'Form Kelas' };
@@ -37,24 +83,7 @@ export async function load({ params, locals }) {
 
 	const sekolahId = locals.sekolah.id;
 	const academicContext = await resolveSekolahAcademicContext(sekolahId);
-	const tahunAjaranOptions = academicContext.tahunAjaranList.map((item) => ({
-		id: item.id,
-		nama: item.nama,
-		isAktif: item.isAktif,
-		semester: item.semester
-	}));
-
-	const findSemesterFallback = (tahunId: number | null | undefined) => {
-		if (!tahunId) return null;
-		const tahun = tahunAjaranOptions.find((option) => option.id === tahunId);
-		if (!tahun) return null;
-		const kandidat =
-			tahun.semester.find((item) => item.isAktif) ??
-			tahun.semester.find((item) => item.tipe === 'ganjil') ??
-			tahun.semester[0] ??
-			null;
-		return kandidat?.id ?? null;
-	};
+	const tahunAjaranOptions = academicContext.tahunAjaranList as TahunAjaranOption[];
 
 	let kelas = null as (typeof tableKelas.$inferSelect & {
 		waliKelas: Pegawai | null;
@@ -71,23 +100,40 @@ export async function load({ params, locals }) {
 		kelas = kelasRow;
 	}
 
-	const defaultTahunAjaranId =
-		kelas?.tahunAjaranId ??
-		academicContext.activeTahunAjaranId ??
-		tahunAjaranOptions.find((item) => item.isAktif)?.id ??
-		tahunAjaranOptions[0]?.id ??
-		null;
+	const defaultTahunAjaranId = resolveEffectiveTahunAjaranId(
+		kelas?.tahunAjaranId,
+		academicContext,
+		tahunAjaranOptions
+	);
 
-	const defaultSemesterId =
-		kelas?.semesterId ??
-		academicContext.activeSemesterId ??
-		findSemesterFallback(defaultTahunAjaranId);
+	const defaultSemesterId = resolveEffectiveSemesterId(
+		defaultTahunAjaranId,
+		kelas?.semesterId,
+		academicContext,
+		tahunAjaranOptions
+	);
+
+	const selectedTahunAjaran = tahunAjaranOptions.find(
+		(option) => option.id === defaultTahunAjaranId
+	);
+	const selectedSemester = selectedTahunAjaran?.semester.find(
+		(item) => item.id === defaultSemesterId
+	);
+
+	const academicLock = {
+		tahunAjaranId: defaultTahunAjaranId,
+		semesterId: defaultSemesterId,
+		tahunAjaranLabel: selectedTahunAjaran
+			? `${selectedTahunAjaran.nama}${selectedTahunAjaran.isAktif ? ' (aktif)' : ''}`
+			: null,
+		semesterLabel: selectedSemester
+			? `${selectedSemester.nama}${selectedSemester.isAktif ? ' (aktif)' : ''}`
+			: null
+	};
 
 	const formInit: Record<string, unknown> = {
 		rombel: kelas?.nama ?? '',
-		fase: kelas?.fase ?? '',
-		tahunAjaranId: defaultTahunAjaranId ? String(defaultTahunAjaranId) : '',
-		semesterId: defaultSemesterId ? String(defaultSemesterId) : ''
+		fase: kelas?.fase ?? ''
 	};
 	if (kelas?.waliKelas) {
 		formInit.waliKelas = {
@@ -96,7 +142,7 @@ export async function load({ params, locals }) {
 		};
 	}
 
-	return { meta, tingkatOptions, kelas, tahunAjaranOptions, formInit };
+	return { meta, tingkatOptions, kelas, academicLock, formInit };
 }
 
 export const actions = {
@@ -106,23 +152,11 @@ export const actions = {
 		const formData = unflattenFormData<KelasFormInput>(await request.formData());
 		const rombel = formData.rombel?.trim();
 		const fase = formData.fase?.trim() || null;
-		const tahunAjaranIdRaw = formData.tahunAjaranId?.trim() || '';
-		const semesterIdRaw = formData.semesterId?.trim() || '';
 		const waliNama = formData.waliKelas?.nama?.trim() || '';
 		const waliNip = formData.waliKelas?.nip?.trim() || '';
 
 		if (!rombel) {
 			return fail(400, { fail: `Nama rombel wajib diisi.` });
-		}
-
-		const tahunAjaranId = Number(tahunAjaranIdRaw);
-		if (!Number.isInteger(tahunAjaranId) || tahunAjaranId <= 0) {
-			return fail(400, { fail: `Tahun ajaran wajib dipilih.` });
-		}
-
-		const semesterId = Number(semesterIdRaw);
-		if (!Number.isInteger(semesterId) || semesterId <= 0) {
-			return fail(400, { fail: `Semester wajib dipilih.` });
 		}
 
 		if ((waliNama && !waliNip) || (!waliNama && waliNip)) {
@@ -135,6 +169,55 @@ export const actions = {
 
 		const timestamp = new Date().toISOString();
 		const sekolahId = locals.sekolah.id;
+
+		const academicContext = await resolveSekolahAcademicContext(sekolahId);
+		const tahunAjaranOptions = academicContext.tahunAjaranList as TahunAjaranOption[];
+
+		let existingKelas: {
+			id: number;
+			waliKelasId: number | null;
+			tahunAjaranId: number | null;
+			semesterId: number | null;
+		} | null = null;
+
+		if (params.id) {
+			existingKelas =
+				(await db.query.tableKelas.findFirst({
+					columns: {
+						id: true,
+						waliKelasId: true,
+						tahunAjaranId: true,
+						semesterId: true
+					},
+					where: and(eq(tableKelas.id, +params.id), eq(tableKelas.sekolahId, sekolahId))
+				})) ?? null;
+			if (!existingKelas) error(404, `Data kelas tidak ditemukan`);
+		}
+
+		const tahunAjaranId = resolveEffectiveTahunAjaranId(
+			existingKelas?.tahunAjaranId,
+			academicContext,
+			tahunAjaranOptions
+		);
+
+		if (!tahunAjaranId) {
+			return fail(400, {
+				fail: `Tahun ajaran aktif belum diatur. Atur melalui menu Rapor sebelum menyimpan data kelas.`
+			});
+		}
+
+		const semesterId = resolveEffectiveSemesterId(
+			tahunAjaranId,
+			existingKelas?.semesterId,
+			academicContext,
+			tahunAjaranOptions
+		);
+
+		if (!semesterId) {
+			return fail(400, {
+				fail: `Semester aktif belum diatur pada tahun ajaran terpilih. Atur melalui menu Rapor sebelum menyimpan data kelas.`
+			});
+		}
 
 		const semester = await db.query.tableSemester.findFirst({
 			where: and(eq(tableSemester.id, semesterId), eq(tableSemester.tahunAjaranId, tahunAjaranId)),
@@ -201,8 +284,8 @@ export const actions = {
 					nama: rombel,
 					fase,
 					sekolahId,
-				tahunAjaranId,
-				semesterId,
+					tahunAjaranId,
+					semesterId,
 					waliKelasId,
 					updatedAt: timestamp
 				});
