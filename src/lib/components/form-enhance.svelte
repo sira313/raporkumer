@@ -14,9 +14,19 @@
 		init?: Record<string, unknown>;
 		onsuccess?: (params: { form: HTMLFormElement; data?: Record<string, unknown> }) => void;
 		submitStateChange?: (submitting: boolean) => void;
+		showToast?: boolean;
 	}
 
-	let { children, action, id, enctype, init, onsuccess, submitStateChange }: Props = $props();
+	let {
+		children,
+		action,
+		id,
+		enctype,
+		init,
+		onsuccess,
+		submitStateChange,
+		showToast = true
+	}: Props = $props();
 	let submitting = $state(false);
 	let invalid = $state(true);
 
@@ -29,20 +39,26 @@
 						const successData = result.data as Record<string, unknown> | undefined;
 						const successMessage =
 							successData && 'message' in successData ? String(successData.message) : 'Sukses';
-						toast(successMessage, 'success');
+						if (showToast) {
+							toast(successMessage, 'success');
+						}
 						onsuccess?.({ form: formElement, data: successData });
 						break;
 					}
 					case 'failure': {
 						const failureData = result.data as { fail?: string } | undefined;
-						toast(failureData?.fail || 'Gagal', 'warning');
+						if (showToast) {
+							toast(failureData?.fail || 'Gagal', 'warning');
+						}
 						break;
 					}
 					case 'error': {
 						const message =
 							`Error (${result.status}): \n` +
 							(result.error?.message || JSON.stringify(result.error));
-						toast(message, 'error');
+						if (showToast) {
+							toast(message, 'error');
+						}
 						break;
 					}
 					default:

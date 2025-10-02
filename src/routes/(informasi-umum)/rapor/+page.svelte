@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import type { PageData } from './$types';
@@ -92,6 +91,7 @@
 		sekolahId: activeSekolahId ? String(activeSekolahId) : ''
 	});
 
+
 	let formInitPengaturan = $state<Record<string, string>>({
 		tahunAjaranId: activeTahunAjaranId ? String(activeTahunAjaranId) : '',
 		semesterId: activeSemesterId ? String(activeSemesterId) : '',
@@ -101,15 +101,11 @@
 		'genap.tanggalBagiRaport': tanggalBagiRaport.genap ?? ''
 	});
 
-	const refreshPengaturan = async () => {
-		await goto('/rapor', { invalidateAll: true, replaceState: true });
-	};
-
-	type SwitchPayload = {
+	type AcademicPayload = {
 		tahunAjaranList?: TahunAjaranWithSemester[];
 		activeSekolahId?: number;
-		activeTahunAjaranId?: number;
-		activeSemesterId?: number;
+		activeTahunAjaranId?: number | null;
+		activeSemesterId?: number | null;
 		tanggalBagiRaport?: {
 			ganjilId?: number;
 			ganjil?: string | null;
@@ -118,34 +114,52 @@
 		};
 	};
 
-	const handleSwitchSuccess = ({ data }: { data?: SwitchPayload }) => {
-		const payload = data?.tahunAjaranList ?? [];
-		tahunAjaranOptions = payload;
+	const applyAcademicContext = (data?: AcademicPayload) => {
+		if (!data) return;
 
-		const nextSekolahId = data?.activeSekolahId ? String(data.activeSekolahId) : selectedSekolahId;
-		const nextTahunId = data?.activeTahunAjaranId ? String(data.activeTahunAjaranId) : '';
-		const nextSemesterId = data?.activeSemesterId ? String(data.activeSemesterId) : '';
-		const rapor = data?.tanggalBagiRaport;
+		if (data.tahunAjaranList) {
+			tahunAjaranOptions = data.tahunAjaranList;
+		}
 
-		selectedSekolahId = nextSekolahId;
-		selectedTahunAjaranId = nextTahunId;
-		selectedSemesterId = nextSemesterId;
-		tanggalRaporGanjil = rapor?.ganjil ?? '';
-		tanggalRaporGenap = rapor?.genap ?? '';
+		if (data.activeSekolahId !== undefined) {
+			selectedSekolahId = data.activeSekolahId ? String(data.activeSekolahId) : '';
+		}
 
-		formInitSekolah = { sekolahId: nextSekolahId };
+		if ('activeTahunAjaranId' in data) {
+			selectedTahunAjaranId = data.activeTahunAjaranId ? String(data.activeTahunAjaranId) : '';
+		}
+
+		if ('activeSemesterId' in data) {
+			selectedSemesterId = data.activeSemesterId ? String(data.activeSemesterId) : '';
+		}
+
+		const rapor = data.tanggalBagiRaport ?? {
+			ganjilId: formInitPengaturan['ganjil.id'] ? Number(formInitPengaturan['ganjil.id']) : undefined,
+			ganjil: tanggalRaporGanjil || null,
+			genapId: formInitPengaturan['genap.id'] ? Number(formInitPengaturan['genap.id']) : undefined,
+			genap: tanggalRaporGenap || null
+		};
+
+		tanggalRaporGanjil = rapor.ganjil ?? '';
+		tanggalRaporGenap = rapor.genap ?? '';
+
+		formInitSekolah = { sekolahId: selectedSekolahId };
 		formInitPengaturan = {
-			tahunAjaranId: nextTahunId,
-			semesterId: nextSemesterId,
-			'ganjil.id': rapor?.ganjilId ? String(rapor.ganjilId) : '',
-			'ganjil.tanggalBagiRaport': rapor?.ganjil ?? '',
-			'genap.id': rapor?.genapId ? String(rapor.genapId) : '',
-			'genap.tanggalBagiRaport': rapor?.genap ?? ''
+			tahunAjaranId: selectedTahunAjaranId,
+			semesterId: selectedSemesterId,
+			'ganjil.id': rapor.ganjilId ? String(rapor.ganjilId) : '',
+			'ganjil.tanggalBagiRaport': rapor.ganjil ?? '',
+			'genap.id': rapor.genapId ? String(rapor.genapId) : '',
+			'genap.tanggalBagiRaport': rapor.genap ?? ''
 		};
 	};
 
-	const handleSaveSuccess = async () => {
-		await refreshPengaturan();
+	const handleSwitchSuccess = ({ data }: { data?: AcademicPayload }) => {
+		applyAcademicContext(data);
+	};
+
+	const handleSaveSuccess = ({ data }: { data?: AcademicPayload }) => {
+		applyAcademicContext(data);
 	};
 </script>
 

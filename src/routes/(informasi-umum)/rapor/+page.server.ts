@@ -615,8 +615,12 @@ export const actions: Actions = {
 			});
 		}
 
+		const context = await resolveSekolahAcademicContext(sekolahId);
+
 		return {
-			message: importMessage ? `Pengaturan tersimpan. ${importMessage}` : 'Pengaturan tersimpan'
+			message: importMessage ? `Pengaturan tersimpan. ${importMessage}` : 'Pengaturan tersimpan',
+			activeSekolahId: sekolahId,
+			...context
 		};
 	},
 	'set-tahun-ajaran': async ({ request, locals }) => {

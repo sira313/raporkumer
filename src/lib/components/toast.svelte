@@ -1,11 +1,41 @@
 <script lang="ts" module>
-	export const toasts = $state<Toast[]>([]);
+	type ToastInstance = Toast & { id: string };
+
+	export const toasts = $state<ToastInstance[]>([]);
+
+	let seed = 0;
+
+	function nextId(requested?: string): string {
+		if (requested) {
+			const exists = toasts.some((item) => item.id === requested);
+			if (!exists) return requested;
+		}
+		seed = (seed + 1) % Number.MAX_SAFE_INTEGER;
+		return `toast-${Date.now()}-${seed.toString(36)}`;
+	}
 
 	export function toast(data: Toast | string, type?: Toast['type']) {
-		if (typeof data == 'string') {
-			data = { message: data, type };
+		const payload: Toast =
+			typeof data === 'string'
+				? { message: data, type }
+				: { ...data, type: data.type ?? type };
+
+		const id = nextId(payload.id);
+		const entry: ToastInstance = {
+			...payload,
+			id,
+			type: payload.type ?? 'info'
+		};
+
+		toasts.push(entry);
+		return id;
+	}
+
+	export function dismissToast(id: string) {
+		const targetIndex = toasts.findIndex((item) => item.id === id);
+		if (targetIndex > -1) {
+			toasts.splice(targetIndex, 1);
 		}
-		toasts.push(data);
 	}
 </script>
 
@@ -16,49 +46,65 @@
 	let interact = $state(false);
 
 	const autoCloseAfter = 5; // seconds
-	const typesMaps: Record<NonNullable<Toast['type']>, [string, IconName]> = {
-		info: ['alert-info', 'info'],
-		success: ['alert-success', 'success'],
-		warning: ['alert-warning', 'warning'],
-		error: ['alert-error', 'error']
+	const typesMaps: Record<NonNullable<Toast['type']>, {
+		alertClass: string;
+		icon: IconName;
+		iconClass: string;
+	}> = {
+		info: {
+			alertClass: 'alert-info',
+			icon: 'info',
+			iconClass: 'text-info-content'
+		},
+		success: {
+			alertClass: 'alert-success',
+			icon: 'success',
+			iconClass: 'text-success-content'
+		},
+		warning: {
+			alertClass: 'alert-warning',
+			icon: 'warning',
+			iconClass: 'text-warning-content'
+		},
+		error: {
+			alertClass: 'alert-error',
+			icon: 'error',
+			iconClass: 'text-error-content'
+		}
 	};
 
-	function close(toast: Toast) {
-		const target = toasts.indexOf(toast);
-		if (target > -1) toasts.splice(target, 1);
+	function close(id: string) {
+		dismissToast(id);
 	}
 
 	$effect(() => {
-		if (!toasts.length) return;
-		let timer;
-		if (interact) {
-			clearTimeout(timer);
-			return;
-		}
-		timer = setTimeout(() => toasts.shift(), autoCloseAfter * 1000);
-		return () => clearInterval(timer);
+		if (!toasts.length || interact) return;
+		const nextClosable = toasts.find((item) => !item.persist);
+		if (!nextClosable) return;
+		const timer = setTimeout(() => close(nextClosable.id), autoCloseAfter * 1000);
+		return () => clearTimeout(timer);
 	});
 </script>
 
 <div class="toast toast-top toast-center toast-center z-50">
-	{#each toasts as t (t)}
-		{@const [color, icon] = typesMaps[t.type || 'info']}
+	{#each toasts as t (t.id)}
+		{@const config = typesMaps[t.type || 'info']}
 		<div
 			animate:flip={{ duration: 200, delay: 80 }}
-			class="alert relative {color}"
+			class="alert relative {config.alertClass}"
 			role="alert"
 			onmouseover={() => (interact = true)}
 			onfocus={() => (interact = true)}
 			onmouseleave={() => (interact = false)}
 			onblur={() => (interact = false)}
 		>
-			<span class="text-lg">
-				<Icon name={icon} />
+			<span class="flex h-9 w-9 items-center justify-center {config.iconClass}">
+				<Icon name={config.icon} class="h-5 w-5" />
 			</span>
-			<span>{@html t.message}</span>
-			<button class="btn btn-circle btn-ghost" type="button" title="Tutup" onclick={() => close(t)}>
-				<span class="text-lg">
-					<Icon name="close" />
+			<span class="flex-1">{@html t.message}</span>
+			<button class="btn btn-circle btn-ghost" type="button" title="Tutup" onclick={() => close(t.id)}>
+				<span class="text-lg text-base-content">
+					<Icon name="close" class="h-4 w-4" />
 				</span>
 				<span class="sr-only">Tutup</span>
 			</button>

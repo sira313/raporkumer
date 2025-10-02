@@ -1,18 +1,21 @@
-<script lang>
+<script lang="ts">
 	import { invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 
 	let { data } = $props();
-</script>
 
-<FormEnhance
-	action="?/delete"
-	onsuccess={async () => {
+	const handleDeleteSuccess = async ({ data: payload }: { data?: Record<string, unknown> }) => {
 		await invalidate('app:murid');
 		history.back();
-	}}
->
+		const message =
+			typeof payload?.message === 'string' ? payload.message : 'Data murid berhasil dihapus';
+		toast({ message, type: 'success', persist: true });
+	};
+</script>
+
+<FormEnhance action="?/delete" onsuccess={handleDeleteSuccess} showToast={false}>
 	{#snippet children({ submitting })}
 		<h3 class="mb-4 text-xl font-bold">Hapus data murid?</h3>
 		<p>NIS: {data.murid.nis}</p>

@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 	import { modalRoute, searchQueryMarker } from '$lib/utils';
 	import { onDestroy } from 'svelte';
 	import DetailMurid from './[id]/+page.svelte';
@@ -180,9 +181,15 @@
 		form.requestSubmit();
 	}
 
-	async function handleBulkDeleteSuccess() {
+	async function handleBulkDeleteSuccess({ data }: { data?: Record<string, unknown> }) {
+		const countBefore = selectedIds.size;
 		await invalidate('app:murid');
 		selectedIds = new Set();
+		const message =
+			typeof data?.message === 'string'
+				? data.message
+				: `${countBefore || 1} murid berhasil dihapus`;
+		toast({ message, type: 'success', persist: true });
 		if (page.state.modal?.name === 'delete-murid') {
 			history.back();
 		}
@@ -272,6 +279,7 @@
 		action="?/deleteSelected"
 		submitStateChange={handleSubmittingChange}
 		onsuccess={handleBulkDeleteSuccess}
+		showToast={false}
 	>
 		{#snippet children({ submitting })}
 			<div
