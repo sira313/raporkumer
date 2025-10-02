@@ -13,7 +13,7 @@
 </script>
 
 <dialog class="modal" bind:this={dialogEl}>
-	<div class="modal-box max-w-lg p-4">
+	<div class="modal-box max-w-lg p-0">
 		<Task variant="modal" />
 	</div>
 	<form method="dialog" class="modal-backdrop">
