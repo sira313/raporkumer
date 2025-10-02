@@ -25,17 +25,9 @@
 			tersedia agar proses integrasi data menjadi lebih efisien dan mengurangi risiko kesalahan input.
 		</p>
 		<p class="prose max-w-none">
-			Pengembangan aplikasi ini terinspirasi dari <a
-				href="https://e-raport.vercel.app/contact"
-				target="_blank"
-				class="link link-primary">aplikasi E-Rapor</a
-			>
-			karya
-			<a target="_blank" class="link link-primary" href="https://zakirafi.vercel.app/">Zaki Rafi</a
-			>, yang memberikan banyak ide dan referensi dalam membangun sistem ini. Dalam proses
-			pengembangan, kami juga mendapatkan dukungan dari
+			Dalam proses pengembangan, kami menyampaikan rasa terima kasih kepada
 			<a href="https://mustofa.id" target="_blank" class="link link-primary">Habib Mustofa</a>
-			yang turut membantu dalam menyempurnakan fitur dan antarmuka pengguna.
+			yang telah banyak membantu dalam pengembangan aplikasi ini.
 		</p>
 		<p class="prose max-w-none">
 			Harapan kami, aplikasi ini dapat menjadi solusi praktis dan bermanfaat bagi seluruh tenaga
@@ -47,11 +39,11 @@
 			<ul class="list-disc pl-5">
 				<li>
 					<a href="https://apoxi.cam/" target="_blank" class="link link-primary">Aris Pratama</a>
-					(UI Designer)
+					(Founder & Maintainer)
 				</li>
 				<li>
 					<a href="https://mustofa.id" target="_blank" class="link link-primary">Habib Mustofa</a>
-					(Database Dev)
+					(Mentor & Advisor)
 				</li>
 			</ul>
 			<h3 class="font-semibold">Referensi:</h3>
@@ -87,21 +79,30 @@
 			Kami mengucapkan terima kasih kepada semua pihak yang telah berkontribusi dalam pengembangan
 			aplikasi ini, antara lain:
 		</p>
+
+		<p class="prose max-w-none">
+			Ide dan saran pengembangan UI
+		</p>
 		<ul class="prose max-w-none list-disc pl-5">
 			<li>
-				<span class="font-semibold">Suryanti Mandasari, S.Pd.</span> (Ide dan saran pengembangan UI)
-			</li>
-			<li><span class="font-semibold">Saipul Anam, S.Pd.</span> (Saran alur sumatif)</li>
-			<li><span class="font-semibold">Anistoga, S.Pd</span> (Saran alur sumatif)</li>
-			<li><span class="font-semibold">Fathonah Nilawidya, S.Pd.</span> (Saran alur sumatif)</li>
-			<li>
-				Semua pihak yang telah memberikan donasi untuk aplikasi ini melalui <a
-					href="https://trakteer.id/raporkumer/"
-					target="_blank"
-					class="link link-primary">trakteer</a
-				>.
+				<span class="font-semibold">Suryanti Mandasari, S.Pd.</span>
 			</li>
 		</ul>
+		<p class="prose max-w-none">
+			Ide dan saran alur asesemen
+		</p>
+		<ul class="prose max-w-none list-disc pl-5">
+			<li><span class="font-semibold">Saipul Anam, S.Pd.</span></li>
+			<li><span class="font-semibold">Anistoga, S.Pd</span></li>
+			<li><span class="font-semibold">Fathonah Nilawidya, S.Pd.</span></li>
+		</ul>
+		<p class="prose max-w-none">
+			Semua pihak yang telah memberikan donasi untuk aplikasi ini melalui <a
+				href="https://trakteer.id/raporkumer/"
+				target="_blank"
+				class="link link-primary">trakteer</a
+			>.
+		</p>
 	</div>
 </div>
 <Masukan bind:this={masukanModal} />
