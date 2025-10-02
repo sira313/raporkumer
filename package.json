@@ -6,6 +6,7 @@
 	"scripts": {
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
+		"db:cleanup": "node scripts/cleanup-orphans.mjs",
 		"dev": "node scripts/dev.js",
 		"build": "vite build",
 		"preview": "vite preview",

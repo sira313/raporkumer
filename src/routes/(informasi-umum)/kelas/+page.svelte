@@ -22,7 +22,8 @@
 			(target.jumlahMurid ?? 0) > 0 ||
 			(target.jumlahMapel ?? 0) > 0 ||
 			(target.jumlahEkstrakurikuler ?? 0) > 0 ||
-			(target.jumlahKokurikuler ?? 0) > 0
+			(target.jumlahKokurikuler ?? 0) > 0 ||
+			Boolean(target.waliKelas)
 		);
 	});
 
@@ -165,6 +166,8 @@
 								<li>Seluruh murid dalam kelas</li>
 								<li>Semua mata pelajaran termasuk Pendidikan Agama dan Budi Pekerti</li>
 								<li>Tujuan pembelajaran, ekstrakurikuler, dan kokurikuler</li>
+								<li>Wali kelas (pegawai) jika tidak digunakan di kelas atau sekolah lain</li>
+								<li>Data orang tua/wali murid beserta alamat yang hanya dimiliki kelas ini</li>
 							</ul>
 							<label class="flex items-start gap-3 rounded-lg bg-error/5 p-3 text-error">
 								<input
@@ -180,7 +183,7 @@
 						</div>
 					{:else}
 						<p class="text-sm text-base-content/70">
-							Tindakan ini akan menghapus data kelas secara permanen dan tidak dapat dibatalkan.
+							Tindakan ini akan menghapus data kelas secara permanen, termasuk wali kelas, data orang tua/wali murid, serta alamat yang hanya dimiliki kelas ini.
 						</p>
 					{/if}
 

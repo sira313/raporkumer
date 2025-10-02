@@ -1,12 +1,16 @@
 import db from '$lib/server/db';
 import {
+	tableAlamat,
 	tableEkstrakurikuler,
 	tableEkstrakurikulerTujuan,
 	tableKelas,
 	tableKokurikuler,
 	tableMataPelajaran,
 	tableMurid,
-	tableTujuanPembelajaran
+	tablePegawai,
+	tableSekolah,
+	tableTujuanPembelajaran,
+	tableWaliMurid
 } from '$lib/server/db/schema.js';
 import { fail } from '@sveltejs/kit';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
@@ -100,7 +104,7 @@ export const actions = {
 
 		const kelas = await db.query.tableKelas.findFirst({
 			where: and(eq(tableKelas.id, kelasIdNumber), eq(tableKelas.sekolahId, sekolahId)),
-			columns: { id: true }
+			columns: { id: true, waliKelasId: true }
 		});
 
 		if (!kelas) {
@@ -108,6 +112,7 @@ export const actions = {
 		}
 
 		const forceDelete = formData.get('forceDelete') === 'true';
+	const hasWaliPegawai = Boolean(kelas.waliKelasId);
 
 		const [muridRows, mapelRows, ekstrakRows, kokurikulerRows] = await Promise.all([
 			db
@@ -134,17 +139,56 @@ export const actions = {
 		const totalKokurikuler = kokurikulerRows[0]?.total ?? 0;
 
 		const masihAdaRelasi =
-			totalMurid > 0 || totalMapel > 0 || totalEkstrak > 0 || totalKokurikuler > 0;
+			totalMurid > 0 ||
+			totalMapel > 0 ||
+			totalEkstrak > 0 ||
+			totalKokurikuler > 0 ||
+			hasWaliPegawai;
+
+		const dependencyList: string[] = [];
+		if (totalMurid > 0) dependencyList.push(`${totalMurid} murid`);
+		if (totalMapel > 0) dependencyList.push(`${totalMapel} mata pelajaran`);
+		if (totalEkstrak > 0) dependencyList.push(`${totalEkstrak} ekstrakurikuler`);
+		if (totalKokurikuler > 0) dependencyList.push(`${totalKokurikuler} kokurikuler`);
+		if (hasWaliPegawai) dependencyList.push('wali kelas yang terhubung');
+		const dependencyText = dependencyList.join(', ');
 
 		if (!forceDelete && masihAdaRelasi) {
 			return fail(400, {
 				fail:
-					`Kelas masih memiliki ${totalMurid} murid, ${totalMapel} mata pelajaran, ${totalEkstrak} ekstrakurikuler, dan ${totalKokurikuler} kokurikuler. Centang opsi "Hapus semua data kelas beserta isinya" untuk melanjutkan.`
+					`Kelas masih memiliki ${dependencyText}. Centang opsi "Hapus semua data kelas beserta isinya" untuk melanjutkan.`
 			});
 		}
 
 		try {
 			await db.transaction(async (tx) => {
+				const muridDetails = await tx
+					.select({
+						alamatId: tableMurid.alamatId,
+						ibuId: tableMurid.ibuId,
+						ayahId: tableMurid.ayahId,
+						waliId: tableMurid.waliId
+					})
+					.from(tableMurid)
+					.where(eq(tableMurid.kelasId, kelasIdNumber));
+
+				const alamatIds = new Set<number>();
+				const waliMuridIds = new Set<number>();
+				for (const row of muridDetails) {
+					if (row.alamatId) {
+						alamatIds.add(row.alamatId);
+					}
+					if (row.ibuId) {
+						waliMuridIds.add(row.ibuId);
+					}
+					if (row.ayahId) {
+						waliMuridIds.add(row.ayahId);
+					}
+					if (row.waliId) {
+						waliMuridIds.add(row.waliId);
+					}
+				}
+
 				const mataPelajaranIds = await tx
 					.select({ id: tableMataPelajaran.id })
 					.from(tableMataPelajaran)
@@ -178,6 +222,83 @@ export const actions = {
 				await tx.delete(tableKokurikuler).where(eq(tableKokurikuler.kelasId, kelasIdNumber));
 				await tx.delete(tableMurid).where(eq(tableMurid.kelasId, kelasIdNumber));
 				await tx.delete(tableKelas).where(eq(tableKelas.id, kelasIdNumber));
+
+				const waliIdsArray = Array.from(waliMuridIds);
+				if (waliIdsArray.length) {
+					const stillReferencedParents = new Set<number>();
+					const ibuRefs = await tx
+						.selectDistinct({ id: tableMurid.ibuId })
+						.from(tableMurid)
+						.where(inArray(tableMurid.ibuId, waliIdsArray));
+					for (const row of ibuRefs) {
+						if (row.id) stillReferencedParents.add(row.id);
+					}
+					const ayahRefs = await tx
+						.selectDistinct({ id: tableMurid.ayahId })
+						.from(tableMurid)
+						.where(inArray(tableMurid.ayahId, waliIdsArray));
+					for (const row of ayahRefs) {
+						if (row.id) stillReferencedParents.add(row.id);
+					}
+					const waliRefs = await tx
+						.selectDistinct({ id: tableMurid.waliId })
+						.from(tableMurid)
+						.where(inArray(tableMurid.waliId, waliIdsArray));
+					for (const row of waliRefs) {
+						if (row.id) stillReferencedParents.add(row.id);
+					}
+					const parentIdsToDelete = waliIdsArray.filter((id) => !stillReferencedParents.has(id));
+					if (parentIdsToDelete.length) {
+						await tx
+							.delete(tableWaliMurid)
+							.where(inArray(tableWaliMurid.id, parentIdsToDelete));
+					}
+				}
+
+				if (kelas.waliKelasId) {
+					const pegawaiCandidate = kelas.waliKelasId;
+					const pegawaiStillUsed = new Set<number>();
+					const kepalaRefs = await tx
+						.selectDistinct({ id: tableSekolah.kepalaSekolahId })
+						.from(tableSekolah)
+						.where(inArray(tableSekolah.kepalaSekolahId, [pegawaiCandidate]));
+					for (const row of kepalaRefs) {
+						if (row.id) pegawaiStillUsed.add(row.id);
+					}
+					const waliRefs = await tx
+						.selectDistinct({ id: tableKelas.waliKelasId })
+						.from(tableKelas)
+						.where(inArray(tableKelas.waliKelasId, [pegawaiCandidate]));
+					for (const row of waliRefs) {
+						if (row.id) pegawaiStillUsed.add(row.id);
+					}
+					if (!pegawaiStillUsed.has(pegawaiCandidate)) {
+						await tx.delete(tablePegawai).where(eq(tablePegawai.id, pegawaiCandidate));
+					}
+				}
+
+				const alamatIdsArray = Array.from(alamatIds);
+				if (alamatIdsArray.length) {
+					const alamatStillDigunakan = new Set<number>();
+					const sekolahAlamatRefs = await tx
+						.selectDistinct({ alamatId: tableSekolah.alamatId })
+						.from(tableSekolah)
+						.where(inArray(tableSekolah.alamatId, alamatIdsArray));
+					for (const row of sekolahAlamatRefs) {
+						if (row.alamatId) alamatStillDigunakan.add(row.alamatId);
+					}
+					const muridAlamatRefs = await tx
+						.selectDistinct({ alamatId: tableMurid.alamatId })
+						.from(tableMurid)
+						.where(inArray(tableMurid.alamatId, alamatIdsArray));
+					for (const row of muridAlamatRefs) {
+						if (row.alamatId) alamatStillDigunakan.add(row.alamatId);
+					}
+					const alamatToDelete = alamatIdsArray.filter((id) => !alamatStillDigunakan.has(id));
+					if (alamatToDelete.length) {
+						await tx.delete(tableAlamat).where(inArray(tableAlamat.id, alamatToDelete));
+					}
+				}
 			});
 		} catch (error) {
 			console.error('Gagal menghapus kelas', error);

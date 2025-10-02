@@ -302,6 +302,8 @@
 										<li>Tujuan pembelajaran, ekstrakurikuler, dan kokurikuler</li>
 										<li>Seluruh murid beserta data pendukungnya</li>
 										<li>Tahun ajaran aktif dan riwayat tugas terkait sekolah</li>
+										<li>Kepala sekolah dan wali kelas (pegawai) yang tidak digunakan di sekolah lain</li>
+										<li>Data orang tua/wali murid serta alamat sekolah dan alamat murid yang hanya dimiliki sekolah ini</li>
 									</ul>
 									<label class="flex items-start gap-3 rounded-lg bg-error/5 p-3 text-error">
 										<input
@@ -319,7 +321,7 @@
 								</div>
 							{:else}
 								<p class="text-sm text-base-content/70">
-									Tindakan ini akan menghapus data sekolah secara permanen dan tidak dapat dibatalkan.
+									Tindakan ini akan menghapus data sekolah secara permanen, termasuk kepala sekolah, wali kelas, alamat terkait, serta data orang tua/wali murid yang masih terhubung.
 								</p>
 							{/if}
 

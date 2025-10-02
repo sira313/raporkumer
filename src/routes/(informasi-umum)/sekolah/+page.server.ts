@@ -1,15 +1,18 @@
 import db from '$lib/server/db';
 import {
+	tableAlamat,
 	tableEkstrakurikuler,
 	tableEkstrakurikulerTujuan,
 	tableKelas,
 	tableKokurikuler,
 	tableMataPelajaran,
 	tableMurid,
+	tablePegawai,
 	tableSekolah,
 	tableTasks,
 	tableTahunAjaran,
-	tableTujuanPembelajaran
+	tableTujuanPembelajaran,
+	tableWaliMurid
 } from '$lib/server/db/schema';
 import { fail } from '@sveltejs/kit';
 import { desc, eq, inArray, sql } from 'drizzle-orm';
@@ -93,7 +96,7 @@ export const actions: Actions = {
 
 		const sekolah = await db.query.tableSekolah.findFirst({
 			where: eq(tableSekolah.id, sekolahId),
-			columns: { id: true, alamatId: true }
+			columns: { id: true, alamatId: true, kepalaSekolahId: true }
 		});
 
 		if (!sekolah) {
@@ -125,10 +128,55 @@ export const actions: Actions = {
 		try {
 			await db.transaction(async (tx) => {
 				const kelasRows = await tx
-					.select({ id: tableKelas.id })
+					.select({ id: tableKelas.id, waliKelasId: tableKelas.waliKelasId })
 					.from(tableKelas)
 					.where(eq(tableKelas.sekolahId, sekolahId));
 				const kelasIds = kelasRows.map((row) => row.id);
+				const waliPegawaiIds = new Set<number>();
+				for (const row of kelasRows) {
+					if (row.waliKelasId) {
+						waliPegawaiIds.add(row.waliKelasId);
+					}
+				}
+
+				const muridRows = await tx
+					.select({
+						alamatId: tableMurid.alamatId,
+						ibuId: tableMurid.ibuId,
+						ayahId: tableMurid.ayahId,
+						waliId: tableMurid.waliId
+					})
+					.from(tableMurid)
+					.where(eq(tableMurid.sekolahId, sekolahId));
+
+				const alamatIds = new Set<number>();
+				if (sekolah.alamatId) {
+					alamatIds.add(sekolah.alamatId);
+				}
+
+				const waliMuridIds = new Set<number>();
+				for (const row of muridRows) {
+					if (row.alamatId) {
+						alamatIds.add(row.alamatId);
+					}
+					if (row.ibuId) {
+						waliMuridIds.add(row.ibuId);
+					}
+					if (row.ayahId) {
+						waliMuridIds.add(row.ayahId);
+					}
+					if (row.waliId) {
+						waliMuridIds.add(row.waliId);
+					}
+				}
+
+				const pegawaiIds = new Set<number>();
+				if (sekolah.kepalaSekolahId) {
+					pegawaiIds.add(sekolah.kepalaSekolahId);
+				}
+				for (const id of waliPegawaiIds) {
+					pegawaiIds.add(id);
+				}
 
 				if (kelasIds.length) {
 					const mapelRows = await tx
@@ -173,6 +221,84 @@ export const actions: Actions = {
 				await tx.delete(tableKelas).where(eq(tableKelas.sekolahId, sekolahId));
 				await tx.delete(tableTahunAjaran).where(eq(tableTahunAjaran.sekolahId, sekolahId));
 				await tx.delete(tableSekolah).where(eq(tableSekolah.id, sekolahId));
+
+				const waliIdsArray = Array.from(waliMuridIds);
+				if (waliIdsArray.length) {
+					const stillReferencedParents = new Set<number>();
+					const ibuRefs = await tx
+						.selectDistinct({ id: tableMurid.ibuId })
+						.from(tableMurid)
+						.where(inArray(tableMurid.ibuId, waliIdsArray));
+					for (const row of ibuRefs) {
+						if (row.id) stillReferencedParents.add(row.id);
+					}
+					const ayahRefs = await tx
+						.selectDistinct({ id: tableMurid.ayahId })
+						.from(tableMurid)
+						.where(inArray(tableMurid.ayahId, waliIdsArray));
+					for (const row of ayahRefs) {
+						if (row.id) stillReferencedParents.add(row.id);
+					}
+					const waliRefs = await tx
+						.selectDistinct({ id: tableMurid.waliId })
+						.from(tableMurid)
+						.where(inArray(tableMurid.waliId, waliIdsArray));
+					for (const row of waliRefs) {
+						if (row.id) stillReferencedParents.add(row.id);
+					}
+					const parentIdsToDelete = waliIdsArray.filter((id) => !stillReferencedParents.has(id));
+					if (parentIdsToDelete.length) {
+						await tx
+							.delete(tableWaliMurid)
+							.where(inArray(tableWaliMurid.id, parentIdsToDelete));
+					}
+				}
+
+				const pegawaiIdsArray = Array.from(pegawaiIds);
+				if (pegawaiIdsArray.length) {
+					const pegawaiStillUsed = new Set<number>();
+					const kepalaRefs = await tx
+						.selectDistinct({ id: tableSekolah.kepalaSekolahId })
+						.from(tableSekolah)
+						.where(inArray(tableSekolah.kepalaSekolahId, pegawaiIdsArray));
+					for (const row of kepalaRefs) {
+						if (row.id) pegawaiStillUsed.add(row.id);
+					}
+					const waliRefs = await tx
+						.selectDistinct({ id: tableKelas.waliKelasId })
+						.from(tableKelas)
+						.where(inArray(tableKelas.waliKelasId, pegawaiIdsArray));
+					for (const row of waliRefs) {
+						if (row.id) pegawaiStillUsed.add(row.id);
+					}
+					const pegawaiToDelete = pegawaiIdsArray.filter((id) => !pegawaiStillUsed.has(id));
+					if (pegawaiToDelete.length) {
+						await tx.delete(tablePegawai).where(inArray(tablePegawai.id, pegawaiToDelete));
+					}
+				}
+
+				const alamatIdsArray = Array.from(alamatIds);
+				if (alamatIdsArray.length) {
+					const alamatStillDigunakan = new Set<number>();
+					const sekolahAlamatRefs = await tx
+						.selectDistinct({ alamatId: tableSekolah.alamatId })
+						.from(tableSekolah)
+						.where(inArray(tableSekolah.alamatId, alamatIdsArray));
+					for (const row of sekolahAlamatRefs) {
+						if (row.alamatId) alamatStillDigunakan.add(row.alamatId);
+					}
+					const muridAlamatRefs = await tx
+						.selectDistinct({ alamatId: tableMurid.alamatId })
+						.from(tableMurid)
+						.where(inArray(tableMurid.alamatId, alamatIdsArray));
+					for (const row of muridAlamatRefs) {
+						if (row.alamatId) alamatStillDigunakan.add(row.alamatId);
+					}
+					const alamatToDelete = alamatIdsArray.filter((id) => !alamatStillDigunakan.has(id));
+					if (alamatToDelete.length) {
+						await tx.delete(tableAlamat).where(inArray(tableAlamat.id, alamatToDelete));
+					}
+				}
 			});
 		} catch (error) {
 			console.error('Gagal menghapus sekolah', error);
