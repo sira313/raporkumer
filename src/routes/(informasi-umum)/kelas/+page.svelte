@@ -26,7 +26,7 @@
 
 {#if academicContext}
 	{#if academicContext.activeSemesterId}
-		<div class="alert alert-info mb-6 flex items-center gap-3">
+		<div class="alert alert-info alert-soft mb-6 flex items-center gap-3">
 			<Icon name="info" />
 			<span>
 				Menampilkan kelas untuk

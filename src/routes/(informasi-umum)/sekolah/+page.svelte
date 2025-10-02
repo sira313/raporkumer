@@ -1,27 +1,10 @@
 <script lang="ts">
-	import { invalidate } from '$app/navigation';
-	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import DeleteSekolahModal, {
+		type DeleteSekolahModalHandle
+	} from '$lib/components/sekolah/delete-sekolah-modal.svelte';
+	import type { SekolahCard } from '$lib/components/sekolah/types';
 	import { jenjangPendidikan } from '$lib/statics.js';
-
-	type ActiveTahunAjaran = {
-		id: number;
-		nama: string;
-	};
-
-	type ActiveSemester = {
-		id: number;
-		nama: string;
-		tipe: Semester['tipe'];
-		tanggalBagiRaport: string | null;
-	};
-
-	type SekolahCard = Sekolah & {
-		tahunAjaranAktif: ActiveTahunAjaran | null;
-		semesterAktif: ActiveSemester | null;
-		jumlahRombel: number;
-		jumlahMurid: number;
-	};
 
 	let { data } = $props();
 	const sekolahList = $derived((data.sekolahList ?? []) as SekolahCard[]);
@@ -45,40 +28,12 @@
 		});
 	};
 
-	function plainAlamat(alamat?: Alamat) {
+	function plainAlamat(alamat?: Alamat | null) {
 		if (!alamat) return '-';
 		return `${alamat.jalan || '-'}, ${alamat.desa || '-'}, ${alamat.kecamatan || '-'}, ${alamat.kabupaten || '-'}, ${alamat.provinsi || '-'}, ${alamat.kodePos || '-'}`;
 	}
 
-	let deleteTarget = $state<SekolahCard | null>(null);
-	let purgeAck = $state(false);
-
-	const needsPurgeAck = $derived.by(() => {
-		const target = deleteTarget;
-		if (!target) return false;
-		return (target.jumlahRombel ?? 0) > 0 || (target.jumlahMurid ?? 0) > 0;
-	});
-
-	$effect(() => {
-		deleteTarget;
-		purgeAck = false;
-	});
-
-	function openDeleteModal(sekolah: SekolahCard) {
-		deleteTarget = sekolah;
-		purgeAck = false;
-	}
-
-	function closeDeleteModal() {
-		deleteTarget = null;
-		purgeAck = false;
-	}
-
-	async function handleDeleteSuccess() {
-		await invalidate('app:sekolah');
-		deleteTarget = null;
-		purgeAck = false;
-	}
+	let deleteModalRef: DeleteSekolahModalHandle | null = null;
 </script>
 
 <div class="flex flex-col gap-6">
@@ -200,7 +155,7 @@
 								type="button"
 								class="btn shadow-none btn-error btn-soft"
 								aria-label="hapus sekolah"
-								onclick={() => openDeleteModal(sekolah)}
+								onclick={() => deleteModalRef?.open(sekolah)}
 							>
 								<Icon name="del" />
 								Hapus Sekolah
@@ -246,115 +201,4 @@
 	</a>
 </div>
 
-	{#if deleteTarget}
-		{@const targetSekolah = deleteTarget}
-		<dialog class="modal" open onclose={closeDeleteModal} aria-modal="true" role="alertdialog">
-			<div class="modal-box sm:w-full sm:max-w-lg">
-				<FormEnhance action="?/delete" onsuccess={handleDeleteSuccess}>
-					{#snippet children({ submitting })}
-						<input type="hidden" name="sekolahId" value={targetSekolah.id} />
-						<section class="space-y-6">
-							<header class="flex items-start gap-3">
-								<span
-									class="bg-error/10 text-error flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full"
-									aria-hidden="true"
-								>
-									<Icon name="warning" class="text-2xl" />
-								</span>
-								<div>
-									<h3 class="text-xl font-bold">Hapus data sekolah?</h3>
-									<p class="text-sm text-base-content/70">
-										Anda akan menghapus <b>{targetSekolah.nama}</b> dari daftar sekolah secara permanen.
-									</p>
-								</div>
-							</header>
-
-							<div class="grid gap-3 sm:grid-cols-2">
-								<div class="bg-base-200/70 dark:bg-base-300/60 rounded-lg border border-base-300/60 p-3">
-									<p class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
-										Total Rombel
-									</p>
-									<p class="text-lg font-bold text-base-content">
-										{targetSekolah.jumlahRombel}
-									</p>
-								</div>
-								<div class="bg-base-200/70 dark:bg-base-300/60 rounded-lg border border-base-300/60 p-3">
-									<p class="text-xs font-semibold uppercase tracking-wide text-base-content/60">
-										Total Murid
-									</p>
-									<p class="text-lg font-bold text-base-content">
-										{targetSekolah.jumlahMurid}
-									</p>
-								</div>
-							</div>
-
-							{#if needsPurgeAck}
-								<div class="alert alert-warning">
-									<Icon name="warning" />
-									<span>
-										Sekolah masih memiliki rombel atau murid. Anda dapat menghapus semuanya sekaligus dengan opsi di bawah.
-									</span>
-								</div>
-								<div class="bg-base-200/70 dark:bg-base-300/60 space-y-3 rounded-lg border border-base-300/60 p-4 text-sm text-base-content/70">
-									<p>Centang persetujuan untuk menghapus seluruh data berikut secara permanen:</p>
-									<ul class="ml-5 list-disc space-y-1">
-										<li>Semua rombel dan mata pelajaran, termasuk Pendidikan Agama dan Budi Pekerti</li>
-										<li>Tujuan pembelajaran, ekstrakurikuler, dan kokurikuler</li>
-										<li>Seluruh murid beserta data pendukungnya</li>
-										<li>Tahun ajaran aktif dan riwayat tugas terkait sekolah</li>
-										<li>Kepala sekolah dan wali kelas (pegawai) yang tidak digunakan di sekolah lain</li>
-										<li>Data orang tua/wali murid serta alamat sekolah dan alamat murid yang hanya dimiliki sekolah ini</li>
-									</ul>
-									<label class="flex items-start gap-3 rounded-lg bg-error/5 p-3 text-error">
-										<input
-											type="checkbox"
-											class="checkbox checkbox-error mt-1"
-											name="forceDelete"
-											value="true"
-											bind:checked={purgeAck}
-											required
-										/>
-										<span>
-											Saya paham tindakan ini tidak dapat dibatalkan dan ingin menghapus seluruh data sekolah.
-										</span>
-									</label>
-								</div>
-							{:else}
-								<p class="text-sm text-base-content/70">
-									Tindakan ini akan menghapus data sekolah secara permanen, termasuk kepala sekolah, wali kelas, alamat terkait, serta data orang tua/wali murid yang masih terhubung.
-								</p>
-							{/if}
-
-							<footer class="flex justify-end gap-2">
-								<button
-									type="button"
-									class="btn btn-ghost shadow-none"
-									onclick={closeDeleteModal}
-									disabled={submitting}
-								>
-									<Icon name="close" />
-									Batal
-								</button>
-								<button
-									type="submit"
-									class="btn btn-error btn-soft shadow-none"
-									disabled={submitting || (needsPurgeAck && !purgeAck)}
-								>
-									{#if submitting}
-										<span class="loading loading-spinner" aria-hidden="true"></span>
-										<span class="sr-only">Menghapus sekolah...</span>
-									{:else}
-										<Icon name="del" />
-									{/if}
-									Hapus Sekolah
-								</button>
-							</footer>
-						</section>
-					{/snippet}
-				</FormEnhance>
-			</div>
-			<form method="dialog" class="modal-backdrop" onsubmit={closeDeleteModal}>
-				<button>close</button>
-			</form>
-		</dialog>
-	{/if}
+<DeleteSekolahModal bind:this={deleteModalRef} />

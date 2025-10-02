@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
-	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import EkstrakurikulerFormModal from '$lib/components/ekstrakurikuler/form-modal.svelte';
+	import EkstrakurikulerDeleteModal from '$lib/components/ekstrakurikuler/delete-modal.svelte';
 
 	let {
 		data
@@ -50,6 +51,9 @@
 	);
 	const deleteModalIds = $derived.by(() => deleteDialogState?.ids ?? []);
 	const deleteModalDisabled = $derived.by(() => deleteModalIds.length === 0 || !canManage);
+	const deleteModalMode = $derived.by(() =>
+		deleteDialogState?.source === 'single' ? 'single' : 'bulk'
+	);
 
 	$effect(() => {
 		if (selectAllCheckbox) {
@@ -124,6 +128,46 @@
 	}
 </script>
 
+<EkstrakurikulerFormModal
+	open={isModalOpen}
+	title={modalTitle}
+	action={modalAction}
+	kelasId={data.kelasId}
+	tableReady={data.tableReady}
+	canManage={canManage}
+	isEditMode={isEditMode}
+	modalItem={modalItem}
+	namaInput={namaInput}
+	onNamaChange={(value) => (namaInput = value)}
+	onClose={closeModal}
+	onSuccess={({ form }) => {
+		form.reset();
+		namaInput = '';
+		closeModal();
+		invalidate('app:ekstrakurikuler');
+	}}
+/>
+
+<EkstrakurikulerDeleteModal
+	open={isDeleteModalOpen}
+	title={deleteModalTitle}
+	action="?/delete"
+	ids={deleteModalIds}
+	mode={deleteModalMode}
+	item={deleteModalItem}
+	canManage={canManage}
+	disabled={deleteModalDisabled}
+	onClose={closeDeleteModal}
+	onSuccess={() => {
+		const ids = deleteDialogState?.ids ?? [];
+		if (ids.length) {
+			selectedIds = selectedIds.filter((selectedId) => !ids.includes(selectedId));
+		}
+		closeDeleteModal();
+		invalidate('app:ekstrakurikuler');
+	}}
+/>
+
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 		<div>
@@ -160,8 +204,7 @@
 		<div class="alert mt-4 border border-dashed border-error/60 bg-error/10 text-error-content">
 			<Icon name="warning" />
 			<span>
-				Database ekstrakurikuler belum siap. Jalankan <code>pnpm db:push</code> untuk menerapkan migrasi
-				terbaru.
+				Database ekstrakurikuler belum siap. Jalankan <code>pnpm db:push</code> untuk menerapkan migrasi terbaru.
 			</span>
 		</div>
 	{/if}
@@ -246,157 +289,3 @@
 		</table>
 	</div>
 </div>
-
-{#if isModalOpen}
-	<div
-		class="modal modal-open"
-		tabindex="-1"
-		role="dialog"
-		aria-modal="true"
-		onkeydown={(event) => {
-			if (event.key === 'Escape') closeModal();
-		}}
-	>
-		<dialog class="modal-box relative z-10 max-w-md" open aria-modal="true">
-			<h3 class="text-lg font-bold">{modalTitle}</h3>
-			<p class="mt-2 text-sm text-base-content/70">
-				Isi nama ekstrakurikuler sesuai kegiatan yang berjalan di kelas.
-			</p>
-
-			<FormEnhance
-				action={modalAction}
-				onsuccess={({ form }) => {
-					form.reset();
-					namaInput = '';
-					closeModal();
-					invalidate('app:ekstrakurikuler');
-				}}
-			>
-				{#snippet children({ submitting })}
-					<input name="kelasId" value={data.kelasId ?? ''} hidden />
-					{#if isEditMode && modalItem}
-						<input name="id" value={modalItem.id} hidden />
-					{/if}
-
-					<label class="mt-4 flex flex-col gap-2">
-						<span class="font-semibold">Nama Ekstrakurikuler</span>
-						<input
-							class="input bg-base-200 dark:border-none w-full"
-							placeholder="Masukkan nama ekstrakurikuler"
-							name="nama"
-							bind:value={namaInput}
-							required
-							disabled={!canManage}
-						/>
-					</label>
-
-					<div class="modal-action mt-6 flex gap-2">
-						<button class="btn shadow-none" type="button" onclick={closeModal}>
-							<Icon name="close" />
-							Batal
-						</button>
-						<button
-							class="btn shadow-none"
-							disabled={
-								submitting || !namaInput.trim() || !data.kelasId || !data.tableReady
-							}
-						>
-							{#if submitting}
-								<div class="loading loading-spinner"></div>
-							{:else}
-								<Icon name="save" />
-							{/if}
-							{isEditMode ? 'Simpan Perubahan' : 'Simpan'}
-						</button>
-					</div>
-				{/snippet}
-			</FormEnhance>
-		</dialog>
-		<form method="dialog" class="modal-backdrop">
-			<button
-				type="submit"
-				onclick={(event) => {
-					event.preventDefault();
-					closeModal();
-				}}
-			>
-				tutup
-			</button>
-		</form>
-	</div>
-{/if}
-
-{#if isDeleteModalOpen}
-	<div
-		class="modal modal-open"
-		tabindex="-1"
-		role="dialog"
-		aria-modal="true"
-		onkeydown={(event) => {
-			if (event.key === 'Escape') closeDeleteModal();
-		}}
-	>
-		<dialog class="modal-box relative z-10 max-w-md" open aria-modal="true">
-			<Icon name="warning" class="text-error" />
-			<h3 class="mt-2 text-lg font-bold">{deleteModalTitle}</h3>
-			{#if deleteDialogState?.source === 'single' && deleteModalItem}
-				<p class="mt-2 text-sm">
-					Yakin ingin menghapus ekstrakurikuler
-					<span class="font-semibold">{deleteModalItem.nama}</span>?
-				</p>
-			{:else if deleteDialogState}
-				<p class="mt-2 text-sm">
-					Yakin ingin menghapus {deleteModalIds.length} ekstrakurikuler terpilih?
-				</p>
-			{/if}
-
-			<FormEnhance
-				action="?/delete"
-				onsuccess={() => {
-					const ids = deleteDialogState?.ids ?? [];
-					if (ids.length) {
-						selectedIds = selectedIds.filter((selectedId) => !ids.includes(selectedId));
-					}
-					closeDeleteModal();
-					invalidate('app:ekstrakurikuler');
-				}}
-			>
-				{#snippet children({ submitting })}
-					{#each deleteModalIds as id (id)}
-						<input name="ids" value={id} hidden />
-					{/each}
-
-					<div class="modal-action mt-6 flex gap-2">
-						<button class="btn shadow-none" type="button" onclick={closeDeleteModal}>
-							<Icon name="close" />
-							Batal
-						</button>
-						<button
-							class="btn btn-error btn-soft shadow-none"
-							type="submit"
-							disabled={submitting || deleteModalDisabled}
-						>
-							{#if submitting}
-								<div class="loading loading-spinner"></div>
-							{:else}
-								<Icon name="del" />
-							{/if}
-							Hapus
-						</button>
-					</div>
-				{/snippet}
-			</FormEnhance>
-		</dialog>
-		<form method="dialog" class="modal-backdrop">
-			<button
-				type="submit"
-				onclick={(event) => {
-					event.preventDefault();
-					closeDeleteModal();
-				}}
-			>
-				tutup
-			</button>
-		</form>
-	</div>
-{/if}

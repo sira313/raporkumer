@@ -8,8 +8,7 @@
 		agamaParentName
 	} from '$lib/statics';
 	import { modalRoute } from '$lib/utils';
-	import DeleteMataPelajaran from './[id]/delete/+page.svelte';
-	import FormMataPelajaran from './form/+page.svelte';
+	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
 
 	let { data }: { data: { kelasId: number | null; mapel: Record<string, MataPelajaran[]> } } = $props();
 
@@ -30,17 +29,6 @@
 			data.mapel.daftarMulok.length
 	);
 
-	const formModalData = $derived.by(() => {
-		const modal = page.state.modal;
-		if (!modal) return null;
-		if (modal.name === 'add-mapel') {
-			return { ...modal.data, mode: 'add' } satisfies Record<string, unknown>;
-		}
-		if (modal.name === 'edit-mapel') {
-			return { ...modal.data, mode: 'edit' } satisfies Record<string, unknown>;
-		}
-		return null;
-	});
 
 	function formatKkm(kkm: number | null | undefined) {
 		return typeof kkm === 'number' && Number.isFinite(kkm) ? kkm : '—';
@@ -185,24 +173,4 @@
 	{/each}
 </div>
 
-{#if formModalData}
-	<dialog class="modal" open onclose={() => history.back()}>
-		<div class="modal-box p-4 sm:w-full sm:max-w-2xl">
-			<FormMataPelajaran data={formModalData} />
-		</div>
-		<form method="dialog" class="modal-backdrop">
-			<button>close</button>
-		</form>
-	</dialog>
-{/if}
-
-{#if page.state.modal?.name === 'delete-mapel'}
-	<dialog class="modal" open onclose={() => history.back()}>
-		<div class="modal-box">
-			<DeleteMataPelajaran data={page.state.modal?.data} />
-		</div>
-		<form method="dialog" class="modal-backdrop">
-			<button>close</button>
-		</form>
-	</dialog>
-{/if}
+<IntrakurikulerModals />

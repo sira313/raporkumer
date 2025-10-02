@@ -1,7 +1,9 @@
+
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
-	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import KokurikulerFormModal from '$lib/components/kokurikuler/form-modal.svelte';
+	import KokurikulerDeleteModal from '$lib/components/kokurikuler/delete-modal.svelte';
 	import {
 		profilPelajarPancasilaDimensionLabelByKey,
 		profilPelajarPancasilaDimensions,
@@ -20,6 +22,7 @@
 			tableReady: boolean;
 		};
 	} = $props();
+
 	let selectedIds = $state<number[]>([]);
 	let selectedDimensions = $state<ProfilPelajarPancasilaDimensionKey[]>([]);
 	let selectAllCheckbox: HTMLInputElement | null = null;
@@ -30,15 +33,8 @@
 		| null
 	>(null);
 	let deleteDialogState = $state<
-		| {
-				ids: number[];
-				source: 'bulk';
-			}
-		| {
-				ids: number[];
-				source: 'single';
-				item: Kokurikuler & { dimensi: ProfilPelajarPancasilaDimensionKey[] };
-			}
+		| { source: 'bulk'; ids: number[] }
+		| { source: 'single'; ids: number[]; item: Kokurikuler & { dimensi: ProfilPelajarPancasilaDimensionKey[] } }
 		| null
 	>(null);
 	let tujuanInput = $state('');
@@ -49,6 +45,7 @@
 	const anySelected = $derived.by(() => selectedIds.length > 0);
 	const allSelected = $derived.by(() => totalData > 0 && selectedIds.length === totalData);
 	const canManage = $derived.by(() => data.tableReady && !!data.kelasId);
+	const dimensionOptions = $derived.by(() => [...data.dimensiPilihan]);
 	const isModalOpen = $derived.by(() => modalState !== null);
 	const isEditMode = $derived.by(() => modalState?.mode === 'edit');
 	const modalItem = $derived.by(() => (modalState?.mode === 'edit' ? modalState.item : null));
@@ -67,6 +64,9 @@
 	);
 	const deleteModalIds = $derived.by(() => deleteDialogState?.ids ?? []);
 	const deleteModalDisabled = $derived.by(() => deleteModalIds.length === 0 || !canManage);
+	const deleteModalMode = $derived.by(() =>
+		deleteDialogState?.source === 'single' ? 'single' : 'bulk'
+	);
 
 	$effect(() => {
 		if (selectAllCheckbox) {
@@ -143,296 +143,177 @@
 		if (!deleteDialogState) return;
 		deleteDialogState = null;
 	}
+
+	function toggleDimension(dimension: ProfilPelajarPancasilaDimensionKey, checked: boolean) {
+		selectedDimensions = checked
+			? [...new Set([...selectedDimensions, dimension])]
+			: selectedDimensions.filter((existing) => existing !== dimension);
+	}
+
+	function handleTujuanChange(value: string) {
+		tujuanInput = value;
+	}
 </script>
 
-<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-		<div>
-			<h2 class="text-xl font-bold">Daftar Kokurikuler</h2>
-			{#if !data.kelasId}
-				<p class="text-sm text-base-content/60">Pilih kelas aktif agar data kokurikuler tampil.</p>
-			{/if}
-		</div>
-		<div class="flex flex-col gap-2 sm:flex-row">
-			<button class="btn shadow-none" disabled={!canManage} onclick={openAddModal}>
-				<Icon name="plus" />
-				Tambah
-			</button>
-			<button
-				type="button"
-				class={`btn shadow-none w-full sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
-				disabled={bulkDeleteDisabled}
-				onclick={openBulkDeleteModal}
-			>
-				<Icon name="del" />
-				Hapus
-			</button>
-		</div>
-	</div>
+<KokurikulerFormModal
+		open={isModalOpen}
+		title={modalTitle}
+		action={modalAction}
+		kelasId={data.kelasId}
+		tableReady={data.tableReady}
+		canManage={canManage}
+		isEditMode={isEditMode}
+		modalItem={modalItem}
+		dimensionOptions={dimensionOptions}
+		selectedDimensions={selectedDimensions}
+		onToggleDimension={toggleDimension}
+		tujuanInput={tujuanInput}
+		onTujuanChange={handleTujuanChange}
+		onClose={closeModal}
+		onSuccess={({ form }) => {
+			form.reset();
+			selectedDimensions = [];
+			tujuanInput = '';
+			closeModal();
+			invalidate('app:kokurikuler');
+		}}
+	/>
 
-	{#if !data.kelasId}
-		<div class="alert mt-6 border border-dashed border-warning/60 bg-warning/10 text-warning-content">
-			<Icon name="info" />
-			<span>Silakan pilih kelas di navbar sebelum menambah kokurikuler.</span>
-		</div>
-	{/if}
+	<KokurikulerDeleteModal
+		open={isDeleteModalOpen}
+		title={deleteModalTitle}
+		action="?/delete"
+		ids={deleteModalIds}
+		mode={deleteModalMode}
+		item={deleteModalItem}
+		canManage={canManage}
+		disabled={deleteModalDisabled}
+		onClose={closeDeleteModal}
+		onSuccess={() => {
+			const ids = deleteDialogState?.ids ?? [];
+			if (ids.length) {
+				selectedIds = selectedIds.filter((selectedId) => !ids.includes(selectedId));
+			}
+			closeDeleteModal();
+			invalidate('app:kokurikuler');
+		}}
+	/>
 
-	{#if !data.tableReady}
-		<div class="alert mt-4 border border-dashed border-error/60 bg-error/10 text-error-content">
-			<Icon name="warning" />
-			<span>
-				Database kokurikuler belum siap. Jalankan <code>pnpm db:push</code> untuk menerapkan migrasi
-				terbaru.
-			</span>
+	<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
+		<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+			<div>
+				<h2 class="text-xl font-bold">Daftar Kokurikuler</h2>
+				{#if !data.kelasId}
+					<p class="text-sm text-base-content/60">Pilih kelas aktif agar data kokurikuler tampil.</p>
+				{/if}
+			</div>
+			<div class="flex flex-col gap-2 sm:flex-row">
+				<button class="btn shadow-none" disabled={!canManage} onclick={openAddModal}>
+					<Icon name="plus" />
+					Tambah
+				</button>
+				<button
+					type="button"
+					class={`btn shadow-none w-full sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
+					disabled={bulkDeleteDisabled}
+					onclick={openBulkDeleteModal}
+				>
+					<Icon name="del" />
+					Hapus
+				</button>
+			</div>
 		</div>
-	{/if}
 
-	<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
-		<table class="border-base-200 table min-w-[720px] border dark:border-none">
-			<thead>
-				<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
-					<th style="width: 50px; min-width: 40px;">
-						<input
-							type="checkbox"
-							class="checkbox"
-							bind:this={selectAllCheckbox}
-							disabled={!data.kokurikuler.length || !data.tableReady}
-							checked={allSelected}
-							onchange={(event) => handleSelectAll(event.currentTarget.checked)}
-						/>
-					</th>
-					<th style="width: 60px;">No</th>
-					<th style="min-width: 200px;">8 DPL</th>
-					<th class="w-full" style="min-width: 260px;">Kegiatan Kokurikuler</th>
-					<th style="width: 140px; min-width: 120px;">Aksi</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each data.kokurikuler as item, index (item.id)}
-					<tr>
-						<td>
+		{#if !data.kelasId}
+			<div class="alert mt-6 border border-dashed border-warning/60 bg-warning/10 text-warning-content">
+				<Icon name="info" />
+				<span>Silakan pilih kelas di navbar sebelum menambah kokurikuler.</span>
+			</div>
+		{/if}
+
+		{#if !data.tableReady}
+			<div class="alert mt-4 border border-dashed border-error/60 bg-error/10 text-error-content">
+				<Icon name="warning" />
+				<span>
+					Database kokurikuler belum siap. Jalankan <code>pnpm db:push</code> untuk menerapkan migrasi terbaru.
+				</span>
+			</div>
+		{/if}
+
+		<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+			<table class="border-base-200 table min-w-[720px] border dark:border-none">
+				<thead>
+					<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
+						<th style="width: 50px; min-width: 40px;">
 							<input
 								type="checkbox"
 								class="checkbox"
-								checked={selectedIds.includes(item.id)}
-								disabled={!data.tableReady}
-								onchange={(event) => toggleRowSelection(item.id, event.currentTarget.checked)}
+								bind:this={selectAllCheckbox}
+								disabled={!data.kokurikuler.length || !data.tableReady}
+								checked={allSelected}
+								onchange={(event) => handleSelectAll(event.currentTarget.checked)}
 							/>
-						</td>
-						<td>{index + 1}</td>
-						<td>
-							{#if item.dimensi.length}
-								{item.dimensi
-									.map((key) => labelByKey[key as ProfilPelajarPancasilaDimensionKey] ?? key)
-									.join(', ')}
-							{:else}
-								<span class="italic opacity-60">Belum ada dimensi</span>
-							{/if}
-						</td>
-						<td>{item.tujuan}</td>
-						<td class="flex items-center justify-end gap-2">
-							<button
-								class="btn btn-sm btn-soft shadow-none"
-								type="button"
-								title="Edit kokurikuler"
-								disabled={!canManage}
-								onclick={() => openEditModal(item)}
-							>
-								<Icon name="edit" />
-							</button>
-							<button
-								class="btn btn-sm btn-soft btn-error shadow-none"
-								type="button"
-								title="Hapus kokurikuler"
-								aria-label="Hapus kokurikuler"
-								name="fungsi tombol"
-								disabled={!canManage}
-								onclick={() => openSingleDeleteModal(item)}
-							>
-								<Icon name="del" />
-							</button>
-						</td>
+						</th>
+						<th style="width: 60px;">No</th>
+						<th style="min-width: 200px;">8 DPL</th>
+						<th class="w-full" style="min-width: 260px;">Kegiatan Kokurikuler</th>
+						<th style="width: 140px; min-width: 120px;">Aksi</th>
 					</tr>
-				{:else}
-					<tr>
-						<td class="py-6 text-center italic opacity-60" colspan="5">
-							Belum ada data kokurikuler
-						</td>
-					</tr>
-				{/each}
-			</tbody>
-		</table>
-	</div>
-</div>
-
-	{#if isModalOpen}
-	<div
-		class="modal modal-open"
-		tabindex="-1"
-		role="dialog"
-		aria-modal="true"
-		onkeydown={(event) => {
-			if (event.key === 'Escape') closeModal();
-		}}
-	>
-		<dialog class="modal-box relative z-10 max-w-2xl" open aria-modal="true">
-			<h3 class="mb-2 text-lg font-bold">{modalTitle}</h3>
-			<p class="font-semibold">Pilih Dimensi Profil Lulusan</p>
-
-			<FormEnhance
-				action={modalAction}
-				onsuccess={({ form }) => {
-					form.reset();
-					closeModal();
-					invalidate('app:kokurikuler');
-				}}
-			>
-				{#snippet children({ submitting })}
-					<input name="kelasId" value={data.kelasId ?? ''} hidden />
-					{#if isEditMode && modalItem}
-						<input name="id" value={modalItem.id} hidden />
-					{/if}
-
-					<div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-						{#each data.dimensiPilihan as dimensi (dimensi.key)}
-							<label class="flex cursor-pointer flex-row gap-2">
+				</thead>
+				<tbody>
+					{#each data.kokurikuler as item, index (item.id)}
+						<tr>
+							<td>
 								<input
 									type="checkbox"
 									class="checkbox"
-									value={dimensi.key}
-									name="dimensi"
-									bind:group={selectedDimensions}
-									aria-label={dimensi.label}
+									checked={selectedIds.includes(item.id)}
+									disabled={!data.tableReady}
+									onchange={(event) => toggleRowSelection(item.id, event.currentTarget.checked)}
 								/>
-								<div class="flex flex-col">
-									<span>{dimensi.label}</span>
-								</div>
-							</label>
-						{/each}
-					</div>
-
-					<p class="mt-4 font-semibold">Kegiatan Kokurikuler</p>
-					<textarea
-						class="textarea dark:bg-base-200 mt-2 h-28 w-full dark:border-none"
-						placeholder="Ketik Kegiatan Kokurikuler"
-						name="kokurikuler"
-						bind:value={tujuanInput}
-						required
-						disabled={!canManage}
-					></textarea>
-
-					<div class="modal-action mt-6 flex gap-2">
-						<button class="btn shadow-none" type="button" onclick={closeModal}>
-							<Icon name="close" />
-							Batal
-						</button>
-						<button
-							class="btn shadow-none"
-							disabled={
-								submitting ||
-								!selectedDimensions.length ||
-								!data.kelasId ||
-								!data.tableReady ||
-								!tujuanInput.trim()
-							}
-						>
-							{#if submitting}
-								<div class="loading loading-spinner"></div>
-							{:else}
-								<Icon name="save" />
-							{/if}
-							{isEditMode ? 'Simpan Perubahan' : 'Simpan'}
-						</button>
-					</div>
-				{/snippet}
-			</FormEnhance>
-		</dialog>
-		<form method="dialog" class="modal-backdrop">
-			<button
-				type="submit"
-				onclick={(event) => {
-					event.preventDefault();
-					closeModal();
-				}}
-			>
-				tutup
-			</button>
-		</form>
-	</div>
-{/if}
-
-{#if isDeleteModalOpen}
-	<div
-		class="modal modal-open"
-		tabindex="-1"
-		role="dialog"
-		aria-modal="true"
-		onkeydown={(event) => {
-			if (event.key === 'Escape') closeDeleteModal();
-		}}
-	>
-		<dialog class="modal-box relative z-10 max-w-md" open aria-modal="true">
-			<Icon name="warning" class="text-error" />
-			<h3 class="mt-2 text-lg font-bold">{deleteModalTitle}</h3>
-			{#if deleteDialogState?.source === 'single' && deleteModalItem}
-				<p class="mt-2 text-sm">
-					Yakin ingin menghapus kokurikuler
-					<span class="font-semibold">{deleteModalItem.tujuan}</span>?
-				</p>
-			{:else if deleteDialogState}
-				<p class="mt-2 text-sm">
-					Yakin ingin menghapus {deleteModalIds.length} kokurikuler terpilih?
-				</p>
-			{/if}
-
-			<FormEnhance
-				action="?/delete"
-				onsuccess={() => {
-					const ids = deleteDialogState?.ids ?? [];
-					if (ids.length) {
-						selectedIds = selectedIds.filter((selectedId) => !ids.includes(selectedId));
-					}
-					closeDeleteModal();
-					invalidate('app:kokurikuler');
-				}}
-			>
-				{#snippet children({ submitting })}
-					{#each deleteModalIds as id (id)}
-						<input name="ids" value={id} hidden />
+							</td>
+							<td>{index + 1}</td>
+							<td>
+								{#if item.dimensi.length}
+									{item.dimensi
+										.map((key) => labelByKey[key as ProfilPelajarPancasilaDimensionKey] ?? key)
+										.join(', ')}
+								{:else}
+									<span class="italic opacity-60">Belum ada dimensi</span>
+								{/if}
+							</td>
+							<td>{item.tujuan}</td>
+							<td class="flex items-center justify-end gap-2">
+								<button
+									class="btn btn-sm btn-soft shadow-none"
+									type="button"
+									title="Edit kokurikuler"
+									aria-label="Edit kokurikuler"
+									disabled={!canManage}
+									onclick={() => openEditModal(item)}
+								>
+									<Icon name="edit" />
+								</button>
+								<button
+									class="btn btn-sm btn-soft btn-error shadow-none"
+									type="button"
+									title="Hapus kokurikuler"
+									aria-label="Hapus kokurikuler"
+									disabled={!canManage}
+									onclick={() => openSingleDeleteModal(item)}
+								>
+									<Icon name="del" />
+								</button>
+							</td>
+						</tr>
+					{:else}
+						<tr>
+							<td class="py-6 text-center italic opacity-60" colspan="5">
+								Belum ada data kokurikuler
+							</td>
+						</tr>
 					{/each}
-
-					<div class="modal-action mt-6 flex gap-2">
-						<button class="btn shadow-none" type="button" onclick={closeDeleteModal}>
-							<Icon name="close" />
-							Batal
-						</button>
-						<button
-							class="btn btn-error btn-soft shadow-none"
-							type="submit"
-							name="fungsi tombol"
-							disabled={submitting || deleteModalDisabled}
-						>
-							{#if submitting}
-								<div class="loading loading-spinner"></div>
-							{:else}
-								<Icon name="del" />
-							{/if}
-							Hapus
-						</button>
-					</div>
-				{/snippet}
-			</FormEnhance>
-		</dialog>
-		<form method="dialog" class="modal-backdrop">
-			<button
-				type="submit"
-				onclick={(event) => {
-					event.preventDefault();
-					closeDeleteModal();
-				}}
-			>
-				tutup
-			</button>
-		</form>
+				</tbody>
+			</table>
+		</div>
 	</div>
-{/if}
