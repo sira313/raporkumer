@@ -35,12 +35,12 @@
 				</div>
 				<div class="flex flex-wrap gap-3">
 					<button
-						class="btn btn-primary btn-lg shadow-md shadow-primary/30"
+						class="btn btn-primary btn-lg shadow-none shadow-primary/30"
 						on:click={() => masukanModal.openModal()}>
 						Kirim Masukan
 					</button>
 					<a
-						class="btn btn-outline btn-lg"
+						class="btn btn-outline shadow-none btn-lg"
 						href="https://kurikulum.kemdikbud.go.id/"
 						target="_blank"
 						rel="noreferrer">
@@ -117,6 +117,14 @@
 								target="_blank"
 								class="link link-primary"
 								>Panduan Kokurikuler tahun 2025</a
+							>
+						</li>
+						<li>
+							<a
+								href="https://drive.google.com/file/d/1sXqkrCqU_2L4BPKi0fLo3FgOnXdxFt4v/view?usp=sharing"
+								target="_blank"
+								class="link link-primary"
+								>Capaian pembelajaran</a
 							>
 						</li>
 					</ul>

@@ -305,19 +305,16 @@
 						<tbody>
 							{#if isAdding}
 								<tr class="border-base-300 dark:border-base-200">
-									<th></th>
-									<td class="p-2">
-										<div class="flex items-center gap-2">
-											<input
-												bind:this={newTaskInput}
-												bind:value={newTaskTitle}
-												placeholder="Nama tugas"
-												class="input input-sm input-bordered w-full"
-												onkeydown={handleNewTaskKeydown}
-												autocomplete="off"
-												aria-label="Nama tugas baru"
-											/>
-										</div>
+									<td class="p-2" colspan="2">
+										<input
+											bind:this={newTaskInput}
+											bind:value={newTaskTitle}
+											placeholder="Nama tugas"
+											class="input input-sm input-bordered w-full"
+											onkeydown={handleNewTaskKeydown}
+											autocomplete="off"
+											aria-label="Nama tugas baru"
+										/>
 									</td>
 									<td class="p-2 text-right">
 										<button

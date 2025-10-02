@@ -103,9 +103,7 @@
 			</span>
 			<span class="flex-1">{@html t.message}</span>
 			<button class="btn btn-circle btn-ghost" type="button" title="Tutup" onclick={() => close(t.id)}>
-				<span class="text-lg text-base-content">
-					<Icon name="close" class="h-4 w-4" />
-				</span>
+				<Icon name="close" class="h-4 w-4" />
 				<span class="sr-only">Tutup</span>
 			</button>
 		</div>
