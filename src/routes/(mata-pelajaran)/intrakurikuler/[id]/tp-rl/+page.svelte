@@ -60,7 +60,24 @@ function areGroupsEqual(prev: TujuanPembelajaranGroup[], next: TujuanPembelajara
 let { data } = $props();
 const agamaOptions = $derived(data.agamaOptions ?? []);
 const showAgamaSelect = $derived(agamaOptions.length > 0);
+const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
+const activeAgamaOption = $derived.by(() => {
+	if (data.mapel.nama !== AGAMA_PARENT_NAME) {
+		return agamaOptions.find((option) => option.id === data.mapel.id);
+	}
+	const selectionId = Number.parseInt(selectedAgamaId, 10);
+	return Number.isFinite(selectionId)
+		? agamaOptions.find((option) => option.id === selectionId)
+		: undefined;
+});
+const mapelDisplayName = $derived.by(() => {
+	if (data.mapel.nama !== AGAMA_PARENT_NAME) {
+		return data.mapel.nama;
+	}
+	return activeAgamaOption?.name ?? data.mapel.nama;
+});
 let selectedAgamaId = $state(data.agamaSelection ?? '');
+let lastAgamaSelection = $state(data.agamaSelection ?? '');
 const agamaSelectId = 'agama-select';
 
 let groupedTujuanPembelajaran = $state<TujuanPembelajaranGroup[]>([]);
@@ -90,9 +107,9 @@ const hasGroups = $derived(groupedTujuanPembelajaran.length > 0);
 
 $effect(() => {
 	const nextSelection = data.agamaSelection ?? '';
-	if (selectedAgamaId !== nextSelection) {
-		selectedAgamaId = nextSelection;
-	}
+	if (nextSelection === lastAgamaSelection) return;
+	lastAgamaSelection = nextSelection;
+	selectedAgamaId = nextSelection;
 });
 
 $effect(() => {
@@ -595,7 +612,7 @@ function toggleBobotEditing() {
 	<!-- Judul IPAS bisa berubah dinamis sesuai mata pelajaran yang dipilih -->
 	<h2 class="mb-6 text-xl font-bold">
 		<span class="opacity-50">Mata Pelajaran:</span>
-		{data.mapel.nama} – {data.mapel.kelas.nama}
+		{mapelDisplayName} – {data.mapel.kelas.nama}
 	</h2>
 
 	<!-- tombol tambah Tujuan Pembelajaran -->
