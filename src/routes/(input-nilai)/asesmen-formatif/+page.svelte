@@ -6,7 +6,7 @@
 	<h2 class="mb-6 text-xl font-bold">Daftar Nilai Formatif</h2>
 
 	<div class="flex flex-col items-center gap-2 sm:flex-row">
-		<select class="select bg-base-200 w-full md:max-w-80 dark:border-none" title="Pilih kelas">
+		<select class="select bg-base-200 w-full md:max-w-80 dark:border-none" title="Pilih mata pelajaran">
 			<option value="" disabled selected> Pilih Mata Pelajaran</option>
 			<option value=""> IPAS </option>
 		</select>
