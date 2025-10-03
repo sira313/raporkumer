@@ -229,6 +229,27 @@ export const tableTujuanPembelajaran = sqliteTable('tujuan_pembelajaran', {
 	...audit
 });
 
+export const tableAsesmenFormatif = sqliteTable(
+	'asesmen_formatif',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		muridId: int()
+			.references(() => tableMurid.id, { onDelete: 'cascade' })
+			.notNull(),
+		mataPelajaranId: int()
+			.references(() => tableMataPelajaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		tujuanPembelajaranId: int()
+			.references(() => tableTujuanPembelajaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		tuntas: int({ mode: 'boolean' }).default(false).notNull(),
+		catatan: text(),
+		dinilaiPada: text(),
+		...audit
+	},
+	(table) => [unique().on(table.muridId, table.tujuanPembelajaranId)]
+);
+
 export const tableMataPelajaranRelations = relations(tableMataPelajaran, ({ one, many }) => ({
 	tujuanPembelajaran: many(tableTujuanPembelajaran),
 	kelas: one(tableKelas, { fields: [tableMataPelajaran.kelasId], references: [tableKelas.id] })
@@ -238,6 +259,21 @@ export const tableTujuanPembelajaranRelations = relations(tableTujuanPembelajara
 	mataPelajaran: one(tableMataPelajaran, {
 		fields: [tableTujuanPembelajaran.mataPelajaranId],
 		references: [tableMataPelajaran.id]
+	})
+}));
+
+export const tableAsesmenFormatifRelations = relations(tableAsesmenFormatif, ({ one }) => ({
+	murid: one(tableMurid, {
+		fields: [tableAsesmenFormatif.muridId],
+		references: [tableMurid.id]
+	}),
+	mataPelajaran: one(tableMataPelajaran, {
+		fields: [tableAsesmenFormatif.mataPelajaranId],
+		references: [tableMataPelajaran.id]
+	}),
+	tujuanPembelajaran: one(tableTujuanPembelajaran, {
+		fields: [tableAsesmenFormatif.tujuanPembelajaranId],
+		references: [tableTujuanPembelajaran.id]
 	})
 }));
 

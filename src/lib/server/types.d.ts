@@ -46,6 +46,12 @@ type TujuanPembelajaran =
 		mataPelajaran: MataPelajaran;
 	};
 
+type AsesmenFormatif = typeof import('$lib/server/db/schema').tableAsesmenFormatif.$inferSelect & {
+	murid?: Murid;
+	mataPelajaran?: MataPelajaran;
+	tujuanPembelajaran?: TujuanPembelajaran;
+};
+
 type Ekstrakurikuler = typeof import('$lib/server/db/schema').tableEkstrakurikuler.$inferSelect;
 type EkstrakurikulerTujuan = typeof import('$lib/server/db/schema').tableEkstrakurikulerTujuan.$inferSelect;
 
