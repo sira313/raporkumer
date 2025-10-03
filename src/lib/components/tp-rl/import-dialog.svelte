@@ -61,10 +61,6 @@
 						<td>Tujuan 2</td>
 					</tr>
 					<tr>
-						<td></td>
-						<td>Tujuan 3</td>
-					</tr>
-					<tr>
 						<td>Lingkup Materi 2</td>
 						<td>Tujuan A</td>
 					</tr>
@@ -86,10 +82,8 @@
 			}}
 		>
 			{#snippet children({ submitting })}
-				<div class="form-control">
-					<label class="label" for={fileInputId}>
-						<span class="label-text font-semibold">Pilih File Excel (.xlsx)</span>
-					</label>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend font-semibold">Pilih File Excel (.xlsx)</legend>
 					<input
 						type="file"
 						name="file"
@@ -100,13 +94,17 @@
 						onchange={handleFileChange}
 						bind:this={fileInput}
 					/>
-					<div class="mt-2 text-xs text-base-content/60">
-						<span>Maksimal 2MB. Pastikan kolom <strong>Lingkup Materi</strong> dan <strong>Tujuan Pembelajaran</strong> tersedia.</span>
+					<label class="label" for={fileInputId}>
+						<span class="label-text-alt text-xs text-wrap text-base-content/60">
+							Maksimal 2MB. Pastikan kolom <strong>Lingkup Materi</strong> dan <strong>Tujuan Pembelajaran</strong> tersedia.
+						</span>
 						{#if fileName}
-							<p class="mt-1">File dipilih: <span class="font-semibold">{fileName}</span></p>
+							<span class="label-text-alt text-xs text-base-content/60">
+								File dipilih: <span class="font-semibold text-base-content">{fileName}</span>
+							</span>
 						{/if}
-					</div>
-				</div>
+					</label>
+				</fieldset>
 
 				<div class="mt-6 flex justify-end gap-2">
 					<button class="btn shadow-none" type="button" onclick={handleCancel} disabled={submitting}>
