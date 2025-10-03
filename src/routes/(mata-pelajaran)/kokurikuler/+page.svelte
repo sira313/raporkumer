@@ -263,7 +263,7 @@
 				<tbody>
 					{#each data.kokurikuler as item, index (item.id)}
 						<tr>
-							<td>
+							<td class="align-top">
 								<input
 									type="checkbox"
 									class="checkbox"
@@ -272,8 +272,8 @@
 									onchange={(event) => toggleRowSelection(item.id, event.currentTarget.checked)}
 								/>
 							</td>
-							<td>{index + 1}</td>
-							<td>
+							<td class="align-top">{index + 1}</td>
+							<td class="align-top">
 								{#if item.dimensi.length}
 									{item.dimensi
 										.map((key) => labelByKey[key as ProfilPelajarPancasilaDimensionKey] ?? key)
@@ -282,7 +282,7 @@
 									<span class="italic opacity-60">Belum ada dimensi</span>
 								{/if}
 							</td>
-							<td>{item.tujuan}</td>
+							<td class="align-top">{item.tujuan}</td>
 							<td class="flex items-center justify-end gap-2">
 								<button
 									class="btn btn-sm btn-soft shadow-none"
