@@ -5,6 +5,21 @@ import { agamaMapelNames, agamaMapelOptions } from '$lib/statics';
 import { unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
+import { read, utils } from 'xlsx';
+
+const MAX_IMPORT_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+function normalizeCell(value: unknown) {
+	if (value == null) return '';
+	if (typeof value === 'string') return value.trim();
+	if (typeof value === 'number') return value.toString().trim();
+	return String(value).trim();
+}
+
+function isXlsxMime(type: string | null | undefined) {
+	if (!type) return false;
+	return type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+}
 
 export async function load({ depends, params, parent }) {
 	depends('app:mapel_tp-rl');
@@ -179,5 +194,165 @@ export const actions = {
 
 		await db.delete(tableTujuanPembelajaran).where(inArray(tableTujuanPembelajaran.id, ids));
 		return { message: `Lingkup materi dan tujuan pembelajaran telah dihapus.` };
+		},
+
+	async import({ params, request }) {
+		const mataPelajaranId = Number(params.id);
+		if (!Number.isFinite(mataPelajaranId)) {
+			return fail(400, { fail: 'Mata pelajaran tidak valid.' });
+		}
+
+		const formData = await request.formData();
+		const file = formData.get('file');
+		if (!(file instanceof File) || file.size === 0) {
+			return fail(400, { fail: 'File Excel belum dipilih.' });
+		}
+
+		if (file.size > MAX_IMPORT_FILE_SIZE) {
+			return fail(400, { fail: 'Ukuran file melebihi 2MB.' });
+		}
+
+		const filename = (file.name ?? '').toLowerCase();
+		if (!filename.endsWith('.xlsx') && !isXlsxMime(file.type)) {
+			return fail(400, { fail: 'Format file harus .xlsx.' });
+		}
+
+		let workbook;
+		try {
+			const buffer = Buffer.from(await file.arrayBuffer());
+			workbook = read(buffer, { type: 'buffer' });
+		} catch (error) {
+			console.error('Gagal membaca file Excel', error);
+			return fail(400, { fail: 'Gagal membaca file Excel. Pastikan format sesuai.' });
+		}
+
+		const firstSheetName = workbook.SheetNames[0];
+		if (!firstSheetName) {
+			return fail(400, { fail: 'File Excel kosong.' });
+		}
+
+		const worksheet = workbook.Sheets[firstSheetName];
+		const rawRows = utils.sheet_to_json<(string | number | null | undefined)[]>(worksheet, {
+			header: 1,
+			blankrows: false
+		});
+
+		if (!Array.isArray(rawRows) || rawRows.length === 0) {
+			return fail(400, { fail: 'File Excel tidak berisi data.' });
+		}
+
+		let headerIndex = -1;
+		for (let index = 0; index < rawRows.length; index += 1) {
+			const row = rawRows[index];
+			const colA = normalizeCell(row?.[0] ?? '');
+			const colB = normalizeCell(row?.[1] ?? '');
+			if (colA.toLowerCase().includes('lingkup') && colB.toLowerCase().includes('tujuan')) {
+				headerIndex = index;
+				break;
+			}
+		}
+
+		if (headerIndex === -1) {
+			return fail(400, {
+				fail: 'Template tidak valid. Pastikan terdapat kolom "Lingkup Materi" dan "Tujuan Pembelajaran".'
+			});
+		}
+
+		const dataRows = rawRows.slice(headerIndex + 1);
+		let currentLingkup = '';
+		const groupOrder: Array<{ lingkupMateri: string; deskripsi: string[] }> = [];
+		const groupMap = new Map<string, { lingkupMateri: string; deskripsi: string[] }>();
+
+		for (const row of dataRows) {
+			if (!row) continue;
+			const lingkupValue = normalizeCell(row[0] ?? '');
+			const tujuanValue = normalizeCell(row[1] ?? '');
+
+			if (lingkupValue) {
+				currentLingkup = lingkupValue;
+			}
+
+			if (!currentLingkup) {
+				continue;
+			}
+
+			if (!tujuanValue) {
+				continue;
+			}
+
+			const key = currentLingkup.toLowerCase();
+			let group = groupMap.get(key);
+			if (!group) {
+				group = { lingkupMateri: currentLingkup, deskripsi: [] };
+				groupMap.set(key, group);
+				groupOrder.push(group);
+			}
+
+			if (!group.deskripsi.some((entry) => entry.toLowerCase() === tujuanValue.toLowerCase())) {
+				group.deskripsi.push(tujuanValue);
+			}
+		}
+
+		const cleanedGroups = groupOrder
+			.map((group) => ({
+				lingkupMateri: group.lingkupMateri,
+				deskripsi: group.deskripsi.filter((entry) => entry.length > 0)
+			}))
+			.filter((group) => group.deskripsi.length > 0);
+
+		if (cleanedGroups.length === 0) {
+			return fail(400, { fail: 'Tidak ada tujuan pembelajaran yang ditemukan dalam file.' });
+		}
+
+		const existingEntries = await db.query.tableTujuanPembelajaran.findMany({
+			columns: { lingkupMateri: true, deskripsi: true },
+			where: eq(tableTujuanPembelajaran.mataPelajaranId, mataPelajaranId)
+		});
+
+		const existingKeys = new Set(
+			existingEntries.map((entry) =>
+				`${normalizeCell(entry.lingkupMateri).toLowerCase()}::${normalizeCell(entry.deskripsi).toLowerCase()}`
+			)
+		);
+
+		const toInsert: Array<{ lingkupMateri: string; deskripsi: string; mataPelajaranId: number }> = [];
+		let duplicateCount = 0;
+
+		for (const group of cleanedGroups) {
+			const normalizedLingkup = normalizeCell(group.lingkupMateri);
+			for (const deskripsi of group.deskripsi) {
+				const normalizedDeskripsi = normalizeCell(deskripsi);
+				const key = `${normalizedLingkup.toLowerCase()}::${normalizedDeskripsi.toLowerCase()}`;
+				if (existingKeys.has(key)) {
+					duplicateCount += 1;
+					continue;
+				}
+				existingKeys.add(key);
+				toInsert.push({
+					lingkupMateri: normalizedLingkup,
+					deskripsi: normalizedDeskripsi,
+					mataPelajaranId
+				});
+			}
+		}
+
+		if (toInsert.length === 0) {
+			return {
+				message:
+					duplicateCount > 0
+						? 'Semua tujuan pembelajaran pada file sudah tersedia.'
+						: 'Tidak ada tujuan pembelajaran baru yang ditemukan.'
+			};
+		}
+
+		await db.insert(tableTujuanPembelajaran).values(toInsert);
+
+		const parts = [`Berhasil mengimpor ${toInsert.length} tujuan pembelajaran.`];
+		if (duplicateCount > 0) {
+			parts.push(`${duplicateCount} data diabaikan karena sudah ada.`);
+		}
+
+		return { message: parts.join(' ') };
 	}
+
 };

@@ -5,6 +5,7 @@ import BobotInfoAlert from '$lib/components/tp-rl/bobot-info-alert.svelte';
 import BulkDeleteDialog from '$lib/components/tp-rl/bulk-delete-dialog.svelte';
 import DeleteEntryDialog from '$lib/components/tp-rl/delete-entry-dialog.svelte';
 import DeleteGroupDialog from '$lib/components/tp-rl/delete-group-dialog.svelte';
+import ImportDialog from '$lib/components/tp-rl/import-dialog.svelte';
 import GroupDisplayRow from '$lib/components/tp-rl/group-display-row.svelte';
 import GroupFormRow from '$lib/components/tp-rl/group-form-row.svelte';
 import type {
@@ -88,6 +89,7 @@ let selectedGroups = $state<Record<string, SelectedGroupState>>({});
 let bulkDeleteDialog = $state<{ groups: SelectedGroupState[] } | null>(null);
 let selectAllCheckbox = $state<HTMLInputElement | null>(null);
 let agamaSelectElement = $state<HTMLSelectElement | null>(null);
+let importDialogOpen = $state(false);
 
 const BOBOT_TOTAL = 100;
 let isEditingBobot = $state(false);
@@ -119,6 +121,13 @@ const tambahTpTooltip = $derived.by(() => {
 	}
 	if (groupForm) {
 		return 'Form tujuan pembelajaran sedang dibuka.';
+	}
+	return undefined;
+});
+const isImportDisabled = $derived(requiresAgamaSelection && !hasActiveAgamaSelection);
+const importTooltip = $derived.by(() => {
+	if (requiresAgamaSelection && !hasActiveAgamaSelection) {
+		return 'Pilih agama terlebih dahulu sebelum mengimpor tujuan pembelajaran.';
 	}
 	return undefined;
 });
@@ -279,6 +288,24 @@ function openCreateForm() {
 		entries: ensureTrailingEntry([{ deskripsi: '' }]),
 		targetIds: []
 	};
+}
+
+function openImportDialog() {
+	if (requiresAgamaSelection && !hasActiveAgamaSelection) {
+		toast('Pilih agama terlebih dahulu sebelum mengimpor tujuan pembelajaran.', 'warning');
+		agamaSelectElement?.focus();
+		return;
+	}
+	importDialogOpen = true;
+}
+
+function handleImportCancel() {
+	importDialogOpen = false;
+}
+
+async function handleImportSuccess() {
+	importDialogOpen = false;
+	await invalidate('app:mapel_tp-rl');
 }
 
 function openEditForm(group: TujuanPembelajaranGroup) {
@@ -693,7 +720,13 @@ function toggleBobotEditing() {
 			<Icon name="percent" />
 			{isEditingBobot ? 'Simpan Bobot' : 'Atur Bobot'}
 		</button>
-		<button class="btn shadow-none sm:max-w-40" type="button">
+		<button
+			class="btn shadow-none sm:max-w-40"
+			type="button"
+			onclick={openImportDialog}
+			disabled={isImportDisabled}
+			title={importTooltip}
+		>
 			<Icon name="import" />
 			Import TP
 		</button>
@@ -782,6 +815,10 @@ function toggleBobotEditing() {
 		</table>
 	</div>
 </div>
+
+		{#if importDialogOpen}
+			<ImportDialog onCancel={handleImportCancel} onSuccess={handleImportSuccess} />
+		{/if}
 
 	{#if deleteEntryDialog && groupForm}
 		{@const entryToDelete = groupForm.entries[deleteEntryDialog.index]}
