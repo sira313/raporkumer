@@ -1,23 +1,20 @@
 <script lang="ts">
 import { goto, invalidate } from '$app/navigation';
 import Icon from '$lib/components/icon.svelte';
+import BobotInfoAlert from '$lib/components/tp-rl/bobot-info-alert.svelte';
 import BulkDeleteDialog from '$lib/components/tp-rl/bulk-delete-dialog.svelte';
 import DeleteEntryDialog from '$lib/components/tp-rl/delete-entry-dialog.svelte';
 import DeleteGroupDialog from '$lib/components/tp-rl/delete-group-dialog.svelte';
+import GroupDisplayRow from '$lib/components/tp-rl/group-display-row.svelte';
 import GroupFormRow from '$lib/components/tp-rl/group-form-row.svelte';
 import type {
 	GroupBobotState,
 	GroupEntry,
 	GroupFormState,
-	SelectedGroupState
+	SelectedGroupState,
+	TujuanPembelajaranGroup
 } from '$lib/components/tp-rl/types';
 import { toast } from '$lib/components/toast.svelte';
-
-type TujuanPembelajaranGroup = {
-	lingkupMateri: string;
-	items: Array<Omit<TujuanPembelajaran, 'mataPelajaran'>>;
-	bobot: number | null;
-};
 
 function buildGroupedTujuanPembelajaran(items: Array<Omit<TujuanPembelajaran, 'mataPelajaran'>> = []) {
 	const groups = new Map<string, TujuanPembelajaranGroup>();
@@ -58,11 +55,16 @@ function areGroupsEqual(prev: TujuanPembelajaranGroup[], next: TujuanPembelajara
 }
 
 let { data } = $props();
+const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
+const isAgamaParentMapel = $derived(data.mapel.nama === AGAMA_PARENT_NAME);
 const agamaOptions = $derived(data.agamaOptions ?? []);
 const showAgamaSelect = $derived(agamaOptions.length > 0);
-const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
+const requiresAgamaSelection = $derived(isAgamaParentMapel && showAgamaSelect);
+let selectedAgamaId = $state(data.agamaSelection ?? '');
+let lastAgamaSelection = $state(data.agamaSelection ?? '');
+const agamaSelectId = 'agama-select';
 const activeAgamaOption = $derived.by(() => {
-	if (data.mapel.nama !== AGAMA_PARENT_NAME) {
+	if (!isAgamaParentMapel) {
 		return agamaOptions.find((option) => option.id === data.mapel.id);
 	}
 	const selectionId = Number.parseInt(selectedAgamaId, 10);
@@ -70,15 +72,13 @@ const activeAgamaOption = $derived.by(() => {
 		? agamaOptions.find((option) => option.id === selectionId)
 		: undefined;
 });
+const hasActiveAgamaSelection = $derived(Boolean(activeAgamaOption));
 const mapelDisplayName = $derived.by(() => {
-	if (data.mapel.nama !== AGAMA_PARENT_NAME) {
+	if (!isAgamaParentMapel) {
 		return data.mapel.nama;
 	}
 	return activeAgamaOption?.name ?? data.mapel.nama;
 });
-let selectedAgamaId = $state(data.agamaSelection ?? '');
-let lastAgamaSelection = $state(data.agamaSelection ?? '');
-const agamaSelectId = 'agama-select';
 
 let groupedTujuanPembelajaran = $state<TujuanPembelajaranGroup[]>([]);
 let groupForm = $state<GroupFormState | null>(null);
@@ -87,6 +87,7 @@ let deleteEntryDialog = $state<{ index: number } | null>(null);
 let selectedGroups = $state<Record<string, SelectedGroupState>>({});
 let bulkDeleteDialog = $state<{ groups: SelectedGroupState[] } | null>(null);
 let selectAllCheckbox = $state<HTMLInputElement | null>(null);
+let agamaSelectElement = $state<HTMLSelectElement | null>(null);
 
 const BOBOT_TOTAL = 100;
 let isEditingBobot = $state(false);
@@ -94,6 +95,7 @@ let bobotState = $state<Record<string, GroupBobotState>>({});
 let bobotDrafts = $state<Record<string, string>>({});
 let bobotOverflowActive = false;
 let bobotInfoShown = false;
+let shouldShowBobotInfoAlert = $state(false);
 
 const selectedGroupList = $derived(Object.values(selectedGroups));
 const selectableGroups = $derived(
@@ -104,6 +106,22 @@ const allSelected = $derived(
 	selectableGroups.length > 0 && selectedGroupList.length === selectableGroups.length
 );
 const hasGroups = $derived(groupedTujuanPembelajaran.length > 0);
+const isTambahTpDisabled = $derived.by(() => {
+	if (hasSelection) return false;
+	if (groupForm) return true;
+	if (requiresAgamaSelection && !hasActiveAgamaSelection) return true;
+	return false;
+});
+const tambahTpTooltip = $derived.by(() => {
+	if (hasSelection) return undefined;
+	if (requiresAgamaSelection && !hasActiveAgamaSelection) {
+		return 'Pilih agama terlebih dahulu sebelum menambahkan tujuan pembelajaran.';
+	}
+	if (groupForm) {
+		return 'Form tujuan pembelajaran sedang dibuka.';
+	}
+	return undefined;
+});
 
 $effect(() => {
 	const nextSelection = data.agamaSelection ?? '';
@@ -197,6 +215,10 @@ function removeSelectionByKey(key: string) {
 	selectedGroups = rest;
 }
 
+function dismissBobotInfoAlert() {
+	shouldShowBobotInfoAlert = false;
+}
+
 function isGroupSelected(group: TujuanPembelajaranGroup) {
 	return Boolean(selectedGroups[groupKey(group)]);
 }
@@ -246,6 +268,11 @@ function closeBulkDeleteDialog() {
 }
 
 function openCreateForm() {
+	if (requiresAgamaSelection && !hasActiveAgamaSelection) {
+		toast('Pilih agama terlebih dahulu sebelum menambahkan tujuan pembelajaran.', 'warning');
+		agamaSelectElement?.focus();
+		return;
+	}
 	groupForm = {
 		mode: 'create',
 		lingkupMateri: '',
@@ -530,10 +557,7 @@ function maybeShowBobotInfo(state: Record<string, GroupBobotState>) {
 	if (bobotInfoShown) return;
 	const hasAutomatic = Object.values(state).some((entry) => !entry.isManual);
 	if (hasAutomatic) {
-		toast(
-			'Bobot belum disetel, maka pembobotan akan dilakukan dengan mengambil rata-rata dari semua nilai.',
-			'info'
-		);
+		shouldShowBobotInfoAlert = true;
 		bobotInfoShown = true;
 	}
 }
@@ -603,9 +627,17 @@ function toggleBobotEditing() {
 	bobotOverflowActive = false;
 	isEditingBobot = false;
 	bobotDrafts = {};
+	shouldShowBobotInfoAlert = false;
 	toast('Bobot berhasil disimpan.', 'success');
 }
 </script>
+
+{#if shouldShowBobotInfoAlert}
+	<BobotInfoAlert
+		message="Bobot belum disetel, maka pembobotan akan dilakukan dengan mengambil rata-rata dari semua nilai."
+		onDismiss={dismissBobotInfoAlert}
+	/>
+{/if}
 
 <!-- Data Mapel Wajib -->
 <div class="card bg-base-100 rounded-box w-full border border-none p-4 shadow-md">
@@ -626,6 +658,7 @@ function toggleBobotEditing() {
 				<select
 					class="select bg-base-200 w-full shadow-none dark:border-none"
 					id={agamaSelectId}
+					bind:this={agamaSelectElement}
 					aria-label="Pilih Agama"
 					bind:value={selectedAgamaId}
 					onchange={handleAgamaChange}
@@ -641,7 +674,8 @@ function toggleBobotEditing() {
 			class="btn shadow-none sm:max-w-40 sm:ml-auto"
 			type="button"
 			onclick={hasSelection ? openBulkDeleteDialog : openCreateForm}
-			disabled={!hasSelection && Boolean(groupForm)}
+			disabled={isTambahTpDisabled}
+			title={tambahTpTooltip}
 			class:btn-error={hasSelection}
 			class:btn-soft={hasSelection}
 		>
@@ -664,6 +698,12 @@ function toggleBobotEditing() {
 			Import TP
 		</button>
 	</div>
+	{#if requiresAgamaSelection && !hasActiveAgamaSelection}
+		<div class="alert alert-warning alert-soft my-2 flex items-center gap-2 text-sm">
+			<Icon name="warning" />
+			<span>Pilih agama terlebih dahulu sebelum menambahkan tujuan pembelajaran.</span>
+		</div>
+	{/if}
 	<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
 		<table class="border-base-200 table border dark:border-none">
 			<thead>
@@ -719,70 +759,18 @@ function toggleBobotEditing() {
 								onSubmitSuccess={handleFormSuccess}
 							/>
 						{:else}
-							<tr>
-								<td class="align-top">
-									<input
-										type="checkbox"
-										class="checkbox"
-										aria-label={`Pilih lingkup materi ${group.lingkupMateri}`}
-										checked={isGroupSelected(group)}
-										onchange={(event) =>
-											toggleGroupSelection(group, (event.currentTarget as HTMLInputElement).checked)
-										}
-									/>
-								</td>
-								<td class="align-top">{rowNumber}</td>
-								<td class="align-top">{group.lingkupMateri}</td>
-								<td class="align-top">
-									{#if isEditingBobot}
-										<input
-											type="number"
-											class="input input-bordered input-sm w-full shadow-none"
-											min="0"
-											max="100"
-											step="0.01"
-											value={bobotDrafts[groupKey(group)] ?? formatBobotValue(getBobotValue(group))}
-											oninput={(event) =>
-												handleBobotInput(group, (event.currentTarget as HTMLInputElement).value)
-											}
-										/>
-									{:else}
-										<span class="font-semibold">{formatBobotValue(getBobotValue(group))}</span>
-									{/if}
-								</td>
-								<td class="align-top">
-									<div class="flex flex-col gap-2">
-										{#each group.items as item, itemIndex (item.id)}
-											<div class="flex items-start gap-2">
-												<span class="text-base-content/70 w-5 shrink-0 text-sm font-semibold">
-													{itemIndex + 1}.
-												</span>
-												<span class="leading-snug">{item.deskripsi}</span>
-											</div>
-										{/each}
-									</div>
-								</td>
-								<td class="align-top">
-									<div class="flex gap-2 flex-col">
-										<button
-											class="btn btn-sm btn-soft shadow-none"
-											type="button"
-											title="Edit lingkup dan tujuan pembelajaran"
-											onclick={() => openEditForm(group)}
-										>
-											<Icon name="edit" />
-										</button>
-										<button
-											class="btn btn-sm btn-soft btn-error shadow-none"
-											type="button"
-											title="Hapus lingkup dan tujuan pembelajaran"
-											onclick={() => openDeleteDialog(group)}
-										>
-											<Icon name="del" />
-										</button>
-									</div>
-								</td>
-							</tr>
+							<GroupDisplayRow
+								rowNumber={rowNumber}
+								group={group}
+								isSelected={isGroupSelected(group)}
+								isEditingBobot={isEditingBobot}
+								bobotDraftValue={bobotDrafts[groupKey(group)] ?? formatBobotValue(getBobotValue(group))}
+								bobotDisplayValue={formatBobotValue(getBobotValue(group))}
+								onToggleSelection={(checked) => toggleGroupSelection(group, checked)}
+								onBobotInput={(value) => handleBobotInput(group, value)}
+								onEdit={() => openEditForm(group)}
+								onDelete={() => openDeleteDialog(group)}
+							/>
 						{/if}
 					{/each}
 				{:else if !(groupForm && groupForm.mode === 'create')}

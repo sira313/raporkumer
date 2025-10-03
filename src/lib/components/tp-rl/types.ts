@@ -20,3 +20,14 @@ export type GroupBobotState = {
 	value: number;
 	isManual: boolean;
 };
+
+export type TujuanPembelajaranGroup = {
+	lingkupMateri: string;
+	items: Array<{
+		id: number;
+		deskripsi: string;
+		bobot?: number | null;
+		lingkupMateri?: string | null;
+	}>;
+	bobot: number | null;
+};
