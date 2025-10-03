@@ -51,7 +51,7 @@
 <tr>
 	<td class="align-top"><input type="checkbox" class="checkbox" disabled /></td>
 	<td class="text-primary animate-pulse align-top font-semibold">{rowNumber}</td>
-	<td class="align-top">
+	<td class="align-top" colspan="2">
 		<textarea
 			form={formId}
 			class="textarea validator bg-base-200 dark:bg-base-300 border-base-300 h-30 w-full"
@@ -65,7 +65,6 @@
 			}
 		></textarea>
 	</td>
-	<td></td>
 	<td class="align-top" colspan="2">
 		<div class="flex flex-col gap-2">
 			{#each form.entries as entry, entryIndex (`${entry.id ?? 'new'}-${entryIndex}`)}
