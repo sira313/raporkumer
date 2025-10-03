@@ -1,6 +1,7 @@
 <script lang="ts">
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import type { GroupFormState } from './types';
 
 	interface Props {
@@ -9,9 +10,9 @@
 		onLingkupMateriInput: (value: string) => void;
 		onEntryInput: (index: number, value: string) => void;
 		onOpenDeleteEntry: (index: number) => void;
-		onClose: () => void;
-		onSaveClick: (event: MouseEvent, form: GroupFormState) => void;
 		onSubmitSuccess: () => void;
+		onFormRegistered: (formId: string) => void;
+		onSubmittingChange: (submitting: boolean) => void;
 	}
 
 	let {
@@ -20,12 +21,31 @@
 		onLingkupMateriInput,
 		onEntryInput,
 		onOpenDeleteEntry,
-		onClose,
-		onSaveClick,
-		onSubmitSuccess
+		onSubmitSuccess,
+		onFormRegistered,
+		onSubmittingChange
 	}: Props = $props();
 
 	const formId = crypto.randomUUID();
+
+	onMount(() => {
+		onFormRegistered(formId);
+		onSubmittingChange(false);
+	});
+
+	onDestroy(() => {
+		onFormRegistered('');
+		onSubmittingChange(false);
+	});
+
+	function shouldShowDeleteButton(entry: GroupFormState['entries'][number]) {
+		if (entry.deleted) return false;
+		const trimmedDeskripsi = entry.deskripsi.trim();
+		if (form.mode === 'edit') {
+			return !(entry.id === undefined && trimmedDeskripsi === '');
+		}
+		return trimmedDeskripsi.length > 0;
+	}
 </script>
 
 <tr>
@@ -46,15 +66,13 @@
 		></textarea>
 	</td>
 	<td></td>
-	<td class="align-top">
+	<td class="align-top" colspan="2">
 		<div class="flex flex-col gap-2">
 			{#each form.entries as entry, entryIndex (`${entry.id ?? 'new'}-${entryIndex}`)}
+				<input type="hidden" form={formId} name={`entries.${entryIndex}.id`} value={entry.id ?? ''} />
 				{#if entry.deleted}
-					<input type="hidden" form={formId} name={`entries.${entryIndex}.id`} value={entry.id ?? ''} />
 					<input type="hidden" form={formId} name={`entries.${entryIndex}.deskripsi`} value="" />
 				{:else}
-					{@const trimmedDeskripsi = entry.deskripsi.trim()}
-					<input type="hidden" form={formId} name={`entries.${entryIndex}.id`} value={entry.id ?? ''} />
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<textarea
 							form={formId}
@@ -68,7 +86,7 @@
 								onEntryInput(entryIndex, (event.currentTarget as HTMLTextAreaElement).value)
 							}
 						></textarea>
-						{#if (form.mode === 'edit' && !(entry.id === undefined && trimmedDeskripsi === '')) || (form.mode === 'create' && trimmedDeskripsi.length > 0)}
+						{#if shouldShowDeleteButton(entry)}
 							<button
 								type="button"
 								class="btn btn-sm btn-soft btn-error shadow-none"
@@ -82,41 +100,15 @@
 				{/if}
 			{/each}
 		</div>
-	</td>
-	<td class="align-top">
 		<FormEnhance
 			id={formId}
 			action="?/save"
 			onsuccess={onSubmitSuccess}
+			submitStateChange={onSubmittingChange}
 		>
 			{#snippet children({ submitting })}
-				{@const lingkupFilled = form.lingkupMateri.trim().length > 0}
-				{@const hasDeskripsi = form.entries.some((entry) => !entry.deleted && entry.deskripsi.trim().length > 0)}
-				{@const disableSubmit = submitting || (form.mode === 'create' && (!lingkupFilled || !hasDeskripsi))}
 				<input name="mode" value={form.mode} hidden />
-				<div class="flex flex-col gap-2">
-					<button
-						class="btn btn-sm btn-soft btn-primary shadow-none"
-						title="Simpan"
-						type="submit"
-						disabled={disableSubmit}
-						onclick={(event) => onSaveClick(event, form)}
-					>
-						{#if submitting}
-							<div class="loading loading-spinner loading-xs"></div>
-						{:else}
-							<Icon name="save" />
-						{/if}
-					</button>
-					<button
-						class="btn btn-sm btn-soft shadow-none"
-						type="button"
-						title="Batal"
-						onclick={onClose}
-					>
-						<Icon name="close" />
-					</button>
-				</div>
+				<button type="submit" class="hidden" aria-hidden="true" disabled={submitting}></button>
 			{/snippet}
 		</FormEnhance>
 	</td>

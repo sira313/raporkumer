@@ -91,25 +91,34 @@ let selectAllCheckbox = $state<HTMLInputElement | null>(null);
 let agamaSelectElement = $state<HTMLSelectElement | null>(null);
 let importDialogOpen = $state(false);
 
+let activeFormId = $state<string | null>(null);
+let isFormSubmitting = $state(false);
+
 const BOBOT_TOTAL = 100;
 let isEditingBobot = $state(false);
 let bobotState = $state<Record<string, GroupBobotState>>({});
+let bobotStateBeforeEditing = $state<Record<string, GroupBobotState> | null>(null);
 let bobotDrafts = $state<Record<string, string>>({});
 let bobotOverflowActive = false;
 let bobotInfoShown = false;
 let shouldShowBobotInfoAlert = $state(false);
 
+const isCreateModeActive = $derived(groupForm?.mode === 'create');
+const isEditModeActive = $derived(groupForm?.mode === 'edit');
+const isInteractionLocked = $derived(isCreateModeActive || isEditingBobot || isEditModeActive);
+
 const selectedGroupList = $derived(Object.values(selectedGroups));
 const selectableGroups = $derived(
 	groupedTujuanPembelajaran.filter((group) => !(groupForm && isEditingGroup(group)))
 );
-const hasSelection = $derived(selectedGroupList.length > 0);
+const hasSelection = $derived(!isInteractionLocked && selectedGroupList.length > 0);
 const allSelected = $derived(
 	selectableGroups.length > 0 && selectedGroupList.length === selectableGroups.length
 );
 const hasGroups = $derived(groupedTujuanPembelajaran.length > 0);
 const isTambahTpDisabled = $derived.by(() => {
 	if (hasSelection) return false;
+	if (isInteractionLocked) return false;
 	if (groupForm) return true;
 	if (requiresAgamaSelection && !hasActiveAgamaSelection) return true;
 	return false;
@@ -119,13 +128,33 @@ const tambahTpTooltip = $derived.by(() => {
 	if (requiresAgamaSelection && !hasActiveAgamaSelection) {
 		return 'Pilih agama terlebih dahulu sebelum menambahkan tujuan pembelajaran.';
 	}
+	if (isEditingBobot) {
+		return 'Batalkan pengaturan bobot.';
+	}
+	if (isEditModeActive) {
+		return 'Batalkan perubahan tujuan pembelajaran.';
+	}
+	if (isCreateModeActive) {
+		return 'Batalkan penambahan tujuan pembelajaran.';
+	}
 	if (groupForm) {
 		return 'Form tujuan pembelajaran sedang dibuka.';
 	}
 	return undefined;
 });
-const isImportDisabled = $derived(requiresAgamaSelection && !hasActiveAgamaSelection);
+const isImportDisabled = $derived(
+	(requiresAgamaSelection && !hasActiveAgamaSelection) || isInteractionLocked
+);
 const importTooltip = $derived.by(() => {
+	if (isEditingBobot) {
+		return 'Selesaikan pengaturan bobot terlebih dahulu sebelum mengimpor tujuan pembelajaran.';
+	}
+	if (isEditModeActive) {
+		return 'Selesaikan perubahan tujuan pembelajaran terlebih dahulu sebelum mengimpor.';
+	}
+	if (isCreateModeActive) {
+		return 'Batalkan form tambah tujuan pembelajaran terlebih dahulu sebelum mengimpor.';
+	}
 	if (requiresAgamaSelection && !hasActiveAgamaSelection) {
 		return 'Pilih agama terlebih dahulu sebelum mengimpor tujuan pembelajaran.';
 	}
@@ -233,6 +262,7 @@ function isGroupSelected(group: TujuanPembelajaranGroup) {
 }
 
 function toggleGroupSelection(group: TujuanPembelajaranGroup, checked: boolean) {
+	if (isInteractionLocked) return;
 	const key = groupKey(group);
 	if (checked) {
 		selectedGroups = {
@@ -250,6 +280,7 @@ function clearSelection() {
 }
 
 function handleSelectAllChange(checked: boolean) {
+	if (isInteractionLocked) return;
 	if (checked) {
 		if (selectableGroups.length === 0) return;
 		selectedGroups = Object.fromEntries(
@@ -276,11 +307,38 @@ function closeBulkDeleteDialog() {
 	bulkDeleteDialog = null;
 }
 
+function handlePrimaryActionClick() {
+	if (hasSelection) {
+		openBulkDeleteDialog();
+		return;
+	}
+	if (isCreateModeActive) {
+		closeForm();
+		return;
+	}
+	if (isEditingBobot) {
+		cancelBobotEditing();
+		return;
+	}
+	if (isEditModeActive) {
+		closeForm();
+		return;
+	}
+	openCreateForm();
+}
+
 function openCreateForm() {
+	if (isEditModeActive) return;
 	if (requiresAgamaSelection && !hasActiveAgamaSelection) {
 		toast('Pilih agama terlebih dahulu sebelum menambahkan tujuan pembelajaran.', 'warning');
 		agamaSelectElement?.focus();
 		return;
+	}
+	if (selectedGroupList.length > 0) {
+		clearSelection();
+	}
+	if (bulkDeleteDialog) {
+		closeBulkDeleteDialog();
 	}
 	groupForm = {
 		mode: 'create',
@@ -291,6 +349,21 @@ function openCreateForm() {
 }
 
 function openImportDialog() {
+	if (isEditingBobot) {
+		toast(
+			'Selesaikan pengaturan bobot terlebih dahulu sebelum mengimpor tujuan pembelajaran.',
+			'warning'
+		);
+		return;
+	}
+	if (isCreateModeActive) {
+		toast('Batalkan form tambah tujuan pembelajaran terlebih dahulu sebelum mengimpor.', 'warning');
+		return;
+	}
+	if (isEditModeActive) {
+		toast('Selesaikan perubahan tujuan pembelajaran terlebih dahulu sebelum mengimpor.', 'warning');
+		return;
+	}
 	if (requiresAgamaSelection && !hasActiveAgamaSelection) {
 		toast('Pilih agama terlebih dahulu sebelum mengimpor tujuan pembelajaran.', 'warning');
 		agamaSelectElement?.focus();
@@ -309,6 +382,11 @@ async function handleImportSuccess() {
 }
 
 function openEditForm(group: TujuanPembelajaranGroup) {
+	if (isEditingBobot || isCreateModeActive) return;
+	if (isEditModeActive && !isEditingGroup(group)) return;
+	if (selectedGroupList.length > 0) {
+		clearSelection();
+	}
 	removeSelectionByKey(groupKey(group));
 	if (bulkDeleteDialog) {
 		closeBulkDeleteDialog();
@@ -325,6 +403,41 @@ function openEditForm(group: TujuanPembelajaranGroup) {
 function closeForm() {
 	groupForm = null;
 	deleteEntryDialog = null;
+	activeFormId = null;
+	isFormSubmitting = false;
+}
+
+function handleFormRegistered(formId: string) {
+	activeFormId = formId ? formId : null;
+}
+
+function handleFormSubmittingChange(submitting: boolean) {
+	isFormSubmitting = submitting;
+}
+
+function submitActiveForm() {
+	if (!activeFormId || isFormSubmitting) return;
+	const formElement = document.getElementById(activeFormId) as HTMLFormElement | null;
+	if (!formElement) return;
+
+	const lingkupInput = formElement.elements.namedItem('lingkupMateri') as HTMLTextAreaElement | null;
+	const lingkupValue = lingkupInput?.value.trim() ?? '';
+
+	if (!lingkupValue) {
+		toast(
+			'lingkup materi tidak boleh kosong, jika anda ingin menghapusnya, anda bisa melakukannya dengan tombol hapus',
+			'warning'
+		);
+		lingkupInput?.focus();
+		return;
+	}
+
+	if (!formElement.checkValidity()) {
+		formElement.reportValidity();
+		return;
+	}
+
+	formElement.requestSubmit();
 }
 
 function handleLingkupMateriInput(value: string) {
@@ -391,38 +504,13 @@ function groupKey(group: TujuanPembelajaranGroup) {
 }
 
 function openDeleteDialog(group: TujuanPembelajaranGroup) {
+	if (isEditingBobot || isEditModeActive) return;
 	removeSelectionByKey(groupKey(group));
 	deleteGroup = { lingkupMateri: group.lingkupMateri, ids: group.items.map((item) => item.id) };
 }
 
 function closeDeleteDialog() {
 	deleteGroup = null;
-}
-
-function handleSaveClick(event: MouseEvent, currentForm: GroupFormState) {
-	const button = event.currentTarget as HTMLButtonElement | null;
-	const formElement = button?.form ?? null;
-	if (!formElement) return;
-
-	const lingkupInput = formElement.elements.namedItem('lingkupMateri') as HTMLTextAreaElement | null;
-	const lingkupValue = lingkupInput?.value.trim() ?? '';
-
-	if (!lingkupValue) {
-		event.preventDefault();
-		event.stopPropagation();
-		toast(
-			'lingkup materi tidak boleh kosong, jika anda ingin menghapusnya, anda bisa melakukannya dengan tombol hapus',
-			'warning'
-		);
-		lingkupInput?.focus();
-		return;
-	}
-
-	if (!formElement.checkValidity()) {
-		event.preventDefault();
-		event.stopPropagation();
-		formElement.reportValidity();
-	}
 }
 
 function handleFormSuccess() {
@@ -620,9 +708,42 @@ function computeTotalBobot(state: Record<string, GroupBobotState> = bobotState) 
 	return Object.values(state).reduce((sum, entry) => sum + sanitizeBobotValue(entry.value), 0);
 }
 
+function cloneBobotState(state: Record<string, GroupBobotState>) {
+	const next: Record<string, GroupBobotState> = {};
+	for (const [key, entry] of Object.entries(state)) {
+		next[key] = {
+			value: sanitizeBobotValue(entry.value ?? 0),
+			isManual: Boolean(entry.isManual)
+		};
+	}
+	return next;
+}
+
+function cancelBobotEditing() {
+	if (!isEditingBobot) return;
+	const next =
+		bobotStateBeforeEditing !== null
+			? cloneBobotState(bobotStateBeforeEditing)
+			: deriveInitialBobotState(groupedTujuanPembelajaran);
+	bobotState = next;
+	refreshBobotDrafts(next);
+	notifyBobotOverflow(false);
+	maybeShowBobotInfo(next);
+	isEditingBobot = false;
+	bobotStateBeforeEditing = null;
+	shouldShowBobotInfoAlert = false;
+}
+
 function toggleBobotEditing() {
-	if (!hasGroups) return;
+	if (!hasGroups || isEditModeActive) return;
 	if (!isEditingBobot) {
+		bobotStateBeforeEditing = cloneBobotState(bobotState);
+		if (selectedGroupList.length > 0) {
+			clearSelection();
+		}
+		if (bulkDeleteDialog) {
+			closeBulkDeleteDialog();
+		}
 		const next: Record<string, GroupBobotState> = {};
 		for (const [key, entry] of Object.entries(bobotState)) {
 			next[key] = {
@@ -655,6 +776,7 @@ function toggleBobotEditing() {
 	isEditingBobot = false;
 	bobotDrafts = {};
 	shouldShowBobotInfoAlert = false;
+	bobotStateBeforeEditing = null;
 	toast('Bobot berhasil disimpan.', 'success');
 }
 </script>
@@ -700,26 +822,39 @@ function toggleBobotEditing() {
 		<button
 			class="btn shadow-none sm:max-w-40 sm:ml-auto"
 			type="button"
-			onclick={hasSelection ? openBulkDeleteDialog : openCreateForm}
+			onclick={handlePrimaryActionClick}
 			disabled={isTambahTpDisabled}
 			title={tambahTpTooltip}
 			class:btn-error={hasSelection}
 			class:btn-soft={hasSelection}
+			class:btn-warning={isInteractionLocked}
 		>
-			<Icon name={hasSelection ? 'del' : 'plus'} />
-			{hasSelection ? 'Hapus TP' : 'Tambah TP'}
+			<Icon name={hasSelection ? 'del' : isInteractionLocked ? 'close' : 'plus'} />
+			{hasSelection ? 'Hapus TP' : isInteractionLocked ? 'Batalkan' : 'Tambah TP'}
 		</button>
-		<button
-			class="btn shadow-none sm:max-w-40"
-			type="button"
-			onclick={toggleBobotEditing}
-			disabled={!hasGroups}
-			class:btn-primary={!isEditingBobot}
-			class:btn-success={isEditingBobot}
-		>
-			<Icon name="percent" />
-			{isEditingBobot ? 'Simpan Bobot' : 'Atur Bobot'}
-		</button>
+		{#if isCreateModeActive || isEditModeActive}
+			<button
+				class="btn btn-success shadow-none sm:max-w-40"
+				type="button"
+				onclick={submitActiveForm}
+				disabled={!activeFormId || isFormSubmitting}
+				aria-busy={isFormSubmitting}
+			>
+				<Icon name="save" />
+				Simpan
+			</button>
+		{:else}
+			<button
+				class="btn shadow-none sm:max-w-40"
+				type="button"
+				onclick={toggleBobotEditing}
+				disabled={!hasGroups}
+				class:btn-success={isEditingBobot}
+			>
+				<Icon name="percent" />
+				{isEditingBobot ? 'Simpan Bobot' : 'Atur Bobot'}
+			</button>
+		{/if}
 		<button
 			class="btn shadow-none sm:max-w-40"
 			type="button"
@@ -751,7 +886,7 @@ function toggleBobotEditing() {
 							onchange={(event) =>
 								handleSelectAllChange((event.currentTarget as HTMLInputElement).checked)
 							}
-							disabled={selectableGroups.length === 0}
+							disabled={selectableGroups.length === 0 || isInteractionLocked}
 						/>
 					</th>
 					<th style="width: 50px; min-width: 40px;">No</th>
@@ -770,9 +905,9 @@ function toggleBobotEditing() {
 						onLingkupMateriInput={handleLingkupMateriInput}
 						onEntryInput={handleEntryInput}
 						onOpenDeleteEntry={openEntryDeleteDialog}
-						onClose={closeForm}
-						onSaveClick={handleSaveClick}
 						onSubmitSuccess={handleFormSuccess}
+						onFormRegistered={handleFormRegistered}
+						onSubmittingChange={handleFormSubmittingChange}
 					/>
 				{/if}
 
@@ -787,9 +922,9 @@ function toggleBobotEditing() {
 								onLingkupMateriInput={handleLingkupMateriInput}
 								onEntryInput={handleEntryInput}
 								onOpenDeleteEntry={openEntryDeleteDialog}
-								onClose={closeForm}
-								onSaveClick={handleSaveClick}
 								onSubmitSuccess={handleFormSuccess}
+								onFormRegistered={handleFormRegistered}
+								onSubmittingChange={handleFormSubmittingChange}
 							/>
 						{:else}
 							<GroupDisplayRow
@@ -803,6 +938,7 @@ function toggleBobotEditing() {
 								onBobotInput={(value) => handleBobotInput(group, value)}
 								onEdit={() => openEditForm(group)}
 								onDelete={() => openDeleteDialog(group)}
+								areActionsDisabled={isInteractionLocked}
 							/>
 						{/if}
 					{/each}

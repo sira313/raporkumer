@@ -13,6 +13,7 @@
 		onBobotInput: (value: string) => void;
 		onEdit: () => void;
 		onDelete: () => void;
+		areActionsDisabled: boolean;
 	}
 
 	let {
@@ -25,7 +26,8 @@
 		onToggleSelection,
 		onBobotInput,
 		onEdit,
-		onDelete
+		onDelete,
+		areActionsDisabled
 	}: Props = $props();
 
 	function handleSelectionChange(event: Event) {
@@ -45,6 +47,7 @@
 			aria-label={`Pilih lingkup materi ${group.lingkupMateri}`}
 			checked={isSelected}
 			onchange={handleSelectionChange}
+			disabled={areActionsDisabled}
 		/>
 	</td>
 	<td class="align-top">{rowNumber}</td>
@@ -83,6 +86,7 @@
 				type="button"
 				title="Edit lingkup dan tujuan pembelajaran"
 				onclick={onEdit}
+				disabled={areActionsDisabled}
 			>
 				<Icon name="edit" />
 			</button>
@@ -91,6 +95,7 @@
 				type="button"
 				title="Hapus lingkup dan tujuan pembelajaran"
 				onclick={onDelete}
+				disabled={areActionsDisabled}
 			>
 				<Icon name="del" />
 			</button>
