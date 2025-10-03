@@ -18,10 +18,23 @@
 	<script>
 		(function () {
 			try {
-				var dark = localStorage.getItem('dark-mode');
-				if (dark) dark = JSON.parse(dark);
-				else dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-				document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+				var stored = localStorage.getItem('dark-mode');
+				var theme;
+				if (stored === 'dark' || stored === 'light') {
+					theme = stored;
+				} else if (stored === 'true' || stored === 'false') {
+					theme = stored === 'true' ? 'dark' : 'light';
+				} else if (stored) {
+					try {
+						var parsed = JSON.parse(stored);
+						theme = parsed ? 'dark' : 'light';
+					} catch (err) {
+						theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+					}
+				} else {
+					theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+				}
+				document.documentElement.setAttribute('data-theme', theme);
 			} catch (e) {
 				console.error('failed initialize dark mode:', e);
 			}

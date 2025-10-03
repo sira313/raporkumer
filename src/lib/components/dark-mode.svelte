@@ -1,53 +1,79 @@
-<script>
+<script lang="ts">
 	import { onMount } from 'svelte';
 	import Icon from './icon.svelte';
 
-	let dark_mode = false;
+	const STORAGE_KEY = 'dark-mode';
+	const LIGHT_THEME = 'light';
+	const DARK_THEME = 'dark';
 
-	function toggle() {
-		dark_mode = !dark_mode;
-		// Set localStorage hanya setelah user klik toggle
-		localStorage.setItem('dark-mode', JSON.stringify(dark_mode));
-		set_class();
+	let isDark = false;
+	let hasStoredPreference = false;
+	let mediaQuery: MediaQueryList | null = null;
+
+	function resolveStoredTheme(raw: string | null) {
+		if (!raw) return null;
+		if (raw === DARK_THEME || raw === LIGHT_THEME) return raw;
+		if (raw === 'true' || raw === 'false') {
+			return raw === 'true' ? DARK_THEME : LIGHT_THEME;
+		}
+		return null;
 	}
 
-	function set_class() {
-		document.documentElement.setAttribute('data-theme', dark_mode ? 'dark' : 'light');
+	function applyTheme(theme: string, persist: boolean) {
+		document.documentElement.setAttribute('data-theme', theme);
+		if (persist) {
+			localStorage.setItem(STORAGE_KEY, theme);
+		} else if (!hasStoredPreference) {
+			localStorage.removeItem(STORAGE_KEY);
+		}
+	}
+
+	function handleSystemChange(event: MediaQueryListEvent) {
+		if (hasStoredPreference) return;
+		const theme = event.matches ? DARK_THEME : LIGHT_THEME;
+		isDark = theme === DARK_THEME;
+		applyTheme(theme, false);
+	}
+
+	function handleToggle(event: Event) {
+		isDark = (event.currentTarget as HTMLInputElement).checked;
+		hasStoredPreference = true;
+		applyTheme(isDark ? DARK_THEME : LIGHT_THEME, true);
 	}
 
 	onMount(() => {
-		const mq = window.matchMedia('(prefers-color-scheme: dark)');
-		let pref = window.localStorage.getItem('dark-mode');
-		if (pref === null) {
-			// Pertama kali load, ikut sistem
-			dark_mode = mq.matches;
-			mq.addEventListener('change', (e) => {
-				// Hanya update jika user belum override dengan localStorage
-				if (window.localStorage.getItem('dark-mode') === null) {
-					dark_mode = e.matches;
-					set_class();
-				}
-			});
+		const storedTheme = resolveStoredTheme(localStorage.getItem(STORAGE_KEY));
+		if (storedTheme) {
+			hasStoredPreference = true;
+			isDark = storedTheme === DARK_THEME;
 		} else {
-			// Jika sudah pernah toggle, pakai preferensi user
-			dark_mode = pref === 'true';
+			mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+			isDark = mediaQuery.matches;
+			mediaQuery.addEventListener('change', handleSystemChange);
 		}
-		set_class();
+		applyTheme(isDark ? DARK_THEME : LIGHT_THEME, hasStoredPreference);
+		return () => {
+			mediaQuery?.removeEventListener('change', handleSystemChange);
+		};
 	});
 </script>
 
-<button
-	class="btn btn-ghost btn-circle"
-	title={dark_mode ? 'Light mode' : 'Dark mode'}
-	onclick={toggle}
+<label
+	class="btn btn-ghost btn-circle swap swap-rotate"
+	title={isDark ? 'Light mode' : 'Dark mode'}
+	aria-label="Toggle color theme"
 >
-	{#if dark_mode}
-		<span class="text-xl">
-			<Icon name="sun" />
-		</span>
-	{:else}
-		<span class="text-xl">
-			<Icon name="moon" />
-		</span>
-	{/if}
-</button>
+	<input
+		type="checkbox"
+		class="theme-controller"
+		value={DARK_THEME}
+		bind:checked={isDark}
+		on:change={handleToggle}
+	/>
+	<span class="swap-on text-xl">
+		<Icon name="sun" />
+	</span>
+	<span class="swap-off text-xl">
+		<Icon name="moon" />
+	</span>
+</label>
