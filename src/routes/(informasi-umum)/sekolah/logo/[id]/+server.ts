@@ -17,11 +17,15 @@ async function getPlaceholder() {
 
 export const GET: RequestHandler = async ({ params }) => {
 	const id = Number(params.id);
+	const noCacheHeaders = {
+		'Cache-Control': 'no-store, max-age=0',
+		Pragma: 'no-cache'
+	};
 
 	if (!Number.isFinite(id) || id <= 0) {
 		const data = await getPlaceholder();
 		return new Response(Buffer.from(data), {
-			headers: { 'Content-Type': 'image/png' }
+			headers: { 'Content-Type': 'image/png', ...noCacheHeaders }
 		});
 	}
 
@@ -33,13 +37,14 @@ export const GET: RequestHandler = async ({ params }) => {
 	if (sekolah?.logo?.length) {
 		return new Response(Buffer.from(sekolah.logo), {
 			headers: {
-				'Content-Type': sekolah.logoType || 'image/png'
+				'Content-Type': sekolah.logoType || 'image/png',
+				...noCacheHeaders
 			}
 		});
 	}
 
 	const data = await getPlaceholder();
 	return new Response(Buffer.from(data), {
-		headers: { 'Content-Type': 'image/png' }
+		headers: { 'Content-Type': 'image/png', ...noCacheHeaders }
 	});
 };

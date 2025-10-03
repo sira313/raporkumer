@@ -16,10 +16,15 @@ async function getPlaceholder() {
 
 export async function GET({ locals }) {
 	const sekolahId = locals.sekolah?.id;
+	const noCacheHeaders = {
+		'Cache-Control': 'no-store, max-age=0',
+		Pragma: 'no-cache'
+	};
+
 	if (!sekolahId) {
 		const data = await getPlaceholder();
 		return new Response(Buffer.from(data), {
-			headers: { 'Content-Type': 'image/png' }
+			headers: { 'Content-Type': 'image/png', ...noCacheHeaders }
 		});
 	}
 
@@ -38,6 +43,6 @@ export async function GET({ locals }) {
 
 	const data = await getPlaceholder();
 	return new Response(Buffer.from(data), {
-		headers: { 'Content-Type': 'image/png' }
+		headers: { 'Content-Type': 'image/png', ...noCacheHeaders }
 	});
 }
