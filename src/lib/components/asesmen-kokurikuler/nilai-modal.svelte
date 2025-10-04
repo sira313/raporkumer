@@ -2,19 +2,19 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import type { NilaiKategori } from '$lib/kokurikuler';
-	import type { ProfilPelajarPancasilaDimensionKey } from '$lib/statics';
+	import type { DimensiProfilLulusanKey } from '$lib/statics';
 
 	type MuridRow = {
 		id: number;
 		nama: string;
-		nilaiByDimensi: Record<ProfilPelajarPancasilaDimensionKey, NilaiKategori | null>;
+		nilaiByDimensi: Record<DimensiProfilLulusanKey, NilaiKategori | null>;
 	};
 
 	type KokurikulerDetail = {
 		id: number;
 		kode: string;
 		tujuan: string;
-		dimensi: Array<{ key: ProfilPelajarPancasilaDimensionKey; label: string }>;
+		dimensi: Array<{ key: DimensiProfilLulusanKey; label: string }>;
 	};
 
 	let {
@@ -39,7 +39,7 @@
 		if (!murid || !kokurikuler) return undefined;
 		const nilai: Record<string, NilaiKategori> = {};
 		for (const [key, value] of Object.entries(murid.nilaiByDimensi) as Array<[
-			ProfilPelajarPancasilaDimensionKey,
+			DimensiProfilLulusanKey,
 			NilaiKategori | null
 		]>) {
 			if (value) {

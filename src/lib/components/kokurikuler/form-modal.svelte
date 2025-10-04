@@ -1,11 +1,11 @@
 <script lang="ts">
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import type { ProfilPelajarPancasilaDimensionKey } from '$lib/statics';
+	import type { DimensiProfilLulusanKey } from '$lib/statics';
 	import type { KokurikulerRow } from './types';
 
 	type DimensionOption = {
-		key: ProfilPelajarPancasilaDimensionKey;
+		key: DimensiProfilLulusanKey;
 		label: string;
 	};
 
@@ -33,10 +33,10 @@
 		tableReady: boolean;
 		canManage: boolean;
 		isEditMode: boolean;
-		modalItem: (KokurikulerRow & { dimensi: ProfilPelajarPancasilaDimensionKey[] }) | null;
+		modalItem: (KokurikulerRow & { dimensi: DimensiProfilLulusanKey[] }) | null;
 		dimensionOptions: DimensionOption[];
-		selectedDimensions: ProfilPelajarPancasilaDimensionKey[];
-		onToggleDimension: (dimension: ProfilPelajarPancasilaDimensionKey, checked: boolean) => void;
+		selectedDimensions: DimensiProfilLulusanKey[];
+		onToggleDimension: (dimension: DimensiProfilLulusanKey, checked: boolean) => void;
 		tujuanInput: string;
 		onTujuanChange: (value: string) => void;
 		onClose: () => void;

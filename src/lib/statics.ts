@@ -64,14 +64,13 @@ export const profilPelajarPancasilaDimensions = [
 	{ key: 'komunikasi', label: 'Komunikasi' }
 ] as const;
 
-export type ProfilPelajarPancasilaDimensionKey =
-	(typeof profilPelajarPancasilaDimensions)[number]['key'];
+export type DimensiProfilLulusanKey = (typeof profilPelajarPancasilaDimensions)[number]['key'];
 
 export const profilPelajarPancasilaDimensionLabelByKey =
-	profilPelajarPancasilaDimensions.reduce<Record<ProfilPelajarPancasilaDimensionKey, string>>(
+	profilPelajarPancasilaDimensions.reduce<Record<DimensiProfilLulusanKey, string>>(
 		(acc, dim) => {
 			acc[dim.key] = dim.label;
 			return acc;
 		},
-		{} as Record<ProfilPelajarPancasilaDimensionKey, string>
+		{} as Record<DimensiProfilLulusanKey, string>
 	);

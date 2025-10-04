@@ -7,7 +7,7 @@
 	import {
 		profilPelajarPancasilaDimensionLabelByKey,
 		profilPelajarPancasilaDimensions,
-		type ProfilPelajarPancasilaDimensionKey
+		type DimensiProfilLulusanKey
 	} from '$lib/statics';
 
 	let {
@@ -16,7 +16,7 @@
 		data: {
 			kelasId: number | null;
 			kokurikuler: Array<
-				Kokurikuler & { dimensi: ProfilPelajarPancasilaDimensionKey[] }
+				Kokurikuler & { dimensi: DimensiProfilLulusanKey[] }
 			>;
 			dimensiPilihan: typeof profilPelajarPancasilaDimensions;
 			tableReady: boolean;
@@ -24,17 +24,17 @@
 	} = $props();
 
 	let selectedIds = $state<number[]>([]);
-	let selectedDimensions = $state<ProfilPelajarPancasilaDimensionKey[]>([]);
+	let selectedDimensions = $state<DimensiProfilLulusanKey[]>([]);
 	let selectAllCheckbox: HTMLInputElement | null = null;
 	let lastTableReady = $state<boolean | null>(null);
 	let modalState = $state<
 		| { mode: 'add' }
-		| { mode: 'edit'; item: Kokurikuler & { dimensi: ProfilPelajarPancasilaDimensionKey[] } }
+		| { mode: 'edit'; item: Kokurikuler & { dimensi: DimensiProfilLulusanKey[] } }
 		| null
 	>(null);
 	let deleteDialogState = $state<
 		| { source: 'bulk'; ids: number[] }
-		| { source: 'single'; ids: number[]; item: Kokurikuler & { dimensi: ProfilPelajarPancasilaDimensionKey[] } }
+		| { source: 'single'; ids: number[]; item: Kokurikuler & { dimensi: DimensiProfilLulusanKey[] } }
 		| null
 	>(null);
 	let tujuanInput = $state('');
@@ -114,7 +114,7 @@
 		modalState = { mode: 'add' };
 	}
 
-	function openEditModal(item: Kokurikuler & { dimensi: ProfilPelajarPancasilaDimensionKey[] }) {
+	function openEditModal(item: Kokurikuler & { dimensi: DimensiProfilLulusanKey[] }) {
 		if (!canManage) return;
 		selectedDimensions = [...item.dimensi];
 		tujuanInput = item.tujuan;
@@ -127,7 +127,7 @@
 		deleteDialogState = { source: 'bulk', ids: [...selectedIds] };
 	}
 
-	function openSingleDeleteModal(item: Kokurikuler & { dimensi: ProfilPelajarPancasilaDimensionKey[] }) {
+	function openSingleDeleteModal(item: Kokurikuler & { dimensi: DimensiProfilLulusanKey[] }) {
 		if (!canManage) return;
 		deleteDialogState = { source: 'single', ids: [item.id], item };
 	}
@@ -144,7 +144,7 @@
 		deleteDialogState = null;
 	}
 
-	function toggleDimension(dimension: ProfilPelajarPancasilaDimensionKey, checked: boolean) {
+	function toggleDimension(dimension: DimensiProfilLulusanKey, checked: boolean) {
 		selectedDimensions = checked
 			? [...new Set([...selectedDimensions, dimension])]
 			: selectedDimensions.filter((existing) => existing !== dimension);
@@ -276,7 +276,7 @@
 							<td class="align-top">
 								{#if item.dimensi.length}
 									{item.dimensi
-										.map((key) => labelByKey[key as ProfilPelajarPancasilaDimensionKey] ?? key)
+										.map((key) => labelByKey[key as DimensiProfilLulusanKey] ?? key)
 										.join(', ')}
 								{:else}
 									<span class="italic opacity-60">Belum ada dimensi</span>

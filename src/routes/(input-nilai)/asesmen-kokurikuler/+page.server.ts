@@ -16,7 +16,7 @@ import {
 } from '$lib/kokurikuler';
 import {
 	profilPelajarPancasilaDimensionLabelByKey,
-	type ProfilPelajarPancasilaDimensionKey
+	type DimensiProfilLulusanKey
 } from '$lib/statics';
 import { unflattenFormData } from '$lib/utils';
 import { fail, redirect } from '@sveltejs/kit';
@@ -29,7 +29,7 @@ type KokurikulerOption = {
 	kode: string;
 	tujuan: string;
 	dimensi: Array<{
-		key: ProfilPelajarPancasilaDimensionKey;
+		key: DimensiProfilLulusanKey;
 		label: string;
 	}>;
 };
@@ -37,7 +37,7 @@ type KokurikulerOption = {
 type NilaiRecordMap = Map<
 	number,
 	Map<
-		ProfilPelajarPancasilaDimensionKey,
+		DimensiProfilLulusanKey,
 		{ kategori: NilaiKategori; timestamp: string | null }
 	>
 >;
@@ -89,7 +89,7 @@ export async function load({ parent, url, depends }) {
 				nama: string;
 				no: number;
 				deskripsi: string | null;
-				nilaiByDimensi: Record<ProfilPelajarPancasilaDimensionKey, NilaiKategori | null>;
+				nilaiByDimensi: Record<DimensiProfilLulusanKey, NilaiKategori | null>;
 				hasNilai: boolean;
 				lastUpdated: string | null;
 			}>,
@@ -200,10 +200,10 @@ export async function load({ parent, url, depends }) {
 	const daftarMurid = paginatedMurid.map((murid, index) => {
 		const nilaiMap = nilaiByMurid.get(murid.id) ?? new Map();
 		const nilaiByDimensi = Object.create(null) as Record<
-			ProfilPelajarPancasilaDimensionKey,
+			DimensiProfilLulusanKey,
 			NilaiKategori | null
 		>;
-		const parts: Array<{ kategori: NilaiKategori; dimensi: ProfilPelajarPancasilaDimensionKey }> = [];
+		const parts: Array<{ kategori: NilaiKategori; dimensi: DimensiProfilLulusanKey }> = [];
 		let lastUpdated: string | null = null;
 
 		if (selectedKokurikuler) {
@@ -309,7 +309,7 @@ export const actions = {
 		const nilaiEntries = payload.nilai ?? {};
 
 		const sanitizedEntries: Array<{
-			dimensi: ProfilPelajarPancasilaDimensionKey;
+			dimensi: DimensiProfilLulusanKey;
 			kategori: NilaiKategori;
 		}> = [];
 

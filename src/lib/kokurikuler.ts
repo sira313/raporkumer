@@ -1,4 +1,4 @@
-import type { ProfilPelajarPancasilaDimensionKey } from '$lib/statics';
+import type { DimensiProfilLulusanKey } from '$lib/statics';
 import {
 	profilPelajarPancasilaDimensionLabelByKey,
 	profilPelajarPancasilaDimensions
@@ -28,15 +28,11 @@ export function isNilaiKategori(value: unknown): value is NilaiKategori {
 
 const dimensionKeySet = new Set(profilPelajarPancasilaDimensions.map((dimension) => dimension.key));
 
-export function isProfilDimensionKey(
-	value: unknown
-): value is ProfilPelajarPancasilaDimensionKey {
-	return typeof value === 'string' && dimensionKeySet.has(value as ProfilPelajarPancasilaDimensionKey);
+export function isProfilDimensionKey(value: unknown): value is DimensiProfilLulusanKey {
+	return typeof value === 'string' && dimensionKeySet.has(value as DimensiProfilLulusanKey);
 }
 
-export function sanitizeDimensionList(
-	value: unknown
-): ProfilPelajarPancasilaDimensionKey[] {
+export function sanitizeDimensionList(value: unknown): DimensiProfilLulusanKey[] {
 	if (!value) return [];
 	const list: unknown[] = Array.isArray(value)
 		? value
@@ -52,7 +48,7 @@ export function sanitizeDimensionList(
 		})()
 		: [];
 
-	const unique = new Set<ProfilPelajarPancasilaDimensionKey>();
+	const unique = new Set<DimensiProfilLulusanKey>();
 	for (const item of list) {
 		if (isProfilDimensionKey(item)) {
 			unique.add(item);
@@ -63,7 +59,7 @@ export function sanitizeDimensionList(
 
 export function buildKokurikulerDeskripsi(parts: Array<{
 	kategori: NilaiKategori;
-	dimensi: ProfilPelajarPancasilaDimensionKey;
+	dimensi: DimensiProfilLulusanKey;
 }>): string | null {
 	if (!parts.length) return null;
 

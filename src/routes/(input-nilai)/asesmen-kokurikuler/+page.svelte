@@ -5,11 +5,11 @@
 	import NilaiModal from '$lib/components/asesmen-kokurikuler/nilai-modal.svelte';
 	import { searchQueryMarker } from '$lib/utils';
 	import { onDestroy } from 'svelte';
-	import type { ProfilPelajarPancasilaDimensionKey } from '$lib/statics';
+	import type { DimensiProfilLulusanKey } from '$lib/statics';
 	import type { NilaiKategori } from '$lib/kokurikuler';
 
 	type DimensiDetail = {
-		key: ProfilPelajarPancasilaDimensionKey;
+		key: DimensiProfilLulusanKey;
 		label: string;
 	};
 
@@ -25,7 +25,7 @@
 		nama: string;
 		no: number;
 		deskripsi: string | null;
-		nilaiByDimensi: Record<ProfilPelajarPancasilaDimensionKey, NilaiKategori | null>;
+		nilaiByDimensi: Record<DimensiProfilLulusanKey, NilaiKategori | null>;
 		hasNilai: boolean;
 		lastUpdated: string | null;
 	};

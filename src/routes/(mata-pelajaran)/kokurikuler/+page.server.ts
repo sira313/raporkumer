@@ -2,24 +2,25 @@ import db from '$lib/server/db';
 import { tableKokurikuler } from '$lib/server/db/schema';
 import {
 	profilPelajarPancasilaDimensions,
-	type ProfilPelajarPancasilaDimensionKey
+	type DimensiProfilLulusanKey
 } from '$lib/statics';
 import { fail } from '@sveltejs/kit';
 import { randomBytes } from 'node:crypto';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 
-const DIMENSION_KEY_SET = new Set<ProfilPelajarPancasilaDimensionKey>(
+const DIMENSION_KEY_SET = new Set<DimensiProfilLulusanKey>(
 	profilPelajarPancasilaDimensions.map((dimension) => dimension.key)
 );
 
 const TABLE_MISSING_MESSAGE =
 	'Tabel kokurikuler belum tersedia. Jalankan "pnpm db:push" untuk menerapkan migrasi terbaru.';
 
-function sanitizeDimensions(values: string[]): ProfilPelajarPancasilaDimensionKey[] {
-	const unique = new Set<ProfilPelajarPancasilaDimensionKey>();
+
+function sanitizeDimensions(values: string[]): DimensiProfilLulusanKey[] {
+	const unique = new Set<DimensiProfilLulusanKey>();
 	for (const value of values) {
-		if (DIMENSION_KEY_SET.has(value as ProfilPelajarPancasilaDimensionKey)) {
-			unique.add(value as ProfilPelajarPancasilaDimensionKey);
+		if (DIMENSION_KEY_SET.has(value as DimensiProfilLulusanKey)) {
+			unique.add(value as DimensiProfilLulusanKey);
 		}
 	}
 	return Array.from(unique);
@@ -82,7 +83,7 @@ export async function load({ depends, parent }) {
 			...item,
 			dimensi:
 				Array.isArray(item.dimensi)
-					? (item.dimensi as ProfilPelajarPancasilaDimensionKey[])
+					? (item.dimensi as DimensiProfilLulusanKey[])
 					: sanitizeDimensions(
 							typeof item.dimensi === 'string'
 								? (() => {
