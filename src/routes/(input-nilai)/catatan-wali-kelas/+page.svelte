@@ -1,67 +1,334 @@
-<script>
+<script lang="ts">
+	import { goto, invalidate } from '$app/navigation';
+	import { page } from '$app/state';
+	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { searchQueryMarker } from '$lib/utils';
+	import { onDestroy, tick } from 'svelte';
+
+	let { data } = $props();
+	let searchTerm = $state(data.page.search ?? '');
+	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+	let editingRowId = $state<number | null>(null);
+	let editingTextarea = $state<HTMLTextAreaElement | null>(null);
+	let editingCatatan = $state('');
+	let editingOriginal = $state('');
+	let editingSubmitting = $state(false);
+
+	const currentPage = $derived.by(() => data.page.currentPage ?? 1);
+	const totalPages = $derived.by(() => Math.max(1, data.page.totalPages ?? 1));
+	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
+	const academicContext = $derived(data.academicContext ?? null);
+	const activeSemester = $derived.by(() => {
+		const context = academicContext;
+		if (!context?.activeSemesterId) return null;
+		for (const tahun of context.tahunAjaranList ?? []) {
+			const match = tahun.semester.find((item) => item.id === context.activeSemesterId);
+			if (match) {
+				return { ...match, tahunAjaranNama: tahun.nama };
+			}
+		}
+		return null;
+	});
+
+	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const kelasAktifLabel = $derived.by(() => {
+		if (!kelasAktif) return null;
+		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
+	});
+
+	const editingSaveDisabled = $derived.by(
+		() =>
+			editingRowId === null ||
+			editingSubmitting ||
+			editingCatatan.trim() === editingOriginal.trim()
+	);
+
+	$effect(() => {
+		searchTerm = data.page.search ?? '';
+	});
+
+	$effect(() => {
+		if (editingRowId === null) return;
+		const row = data.daftarCatatan.find((item) => item.id === editingRowId);
+		if (!row) {
+			cancelEdit();
+		}
+	});
+
+	$effect(() => {
+		if (editingRowId !== null) {
+			void tick().then(() => editingTextarea?.focus());
+		}
+	});
+
+	function buildSearchUrl(rawValue: string) {
+		const params = new URLSearchParams(page.url.search);
+		const cleaned = rawValue.trim();
+		const current = params.get('q') ?? '';
+		const searchChanged = cleaned !== current;
+		if (cleaned) {
+			params.set('q', cleaned);
+		} else {
+			params.delete('q');
+		}
+		if (searchChanged) {
+			params.delete('page');
+		}
+		const nextQuery = params.toString();
+		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+		const currentUrl = `${page.url.pathname}${page.url.search}`;
+		if (nextUrl === currentUrl) {
+			return null;
+		}
+		return nextUrl;
+	}
+
+	async function applySearch(rawValue: string) {
+		const target = buildSearchUrl(rawValue);
+		if (!target) return;
+		searchTimer = undefined;
+		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function buildPageUrl(pageNumber: number) {
+		const params = new URLSearchParams(page.url.search);
+		const sanitized = pageNumber < 1 ? 1 : pageNumber;
+		if (sanitized <= 1) {
+			params.delete('page');
+		} else {
+			params.set('page', String(sanitized));
+		}
+		const nextQuery = params.toString();
+		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+		const currentUrl = `${page.url.pathname}${page.url.search}`;
+		if (nextUrl === currentUrl) {
+			return null;
+		}
+		return nextUrl;
+	}
+
+	async function gotoPage(pageNumber: number) {
+		const target = buildPageUrl(pageNumber);
+		if (!target) return;
+		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function handlePageClick(pageNumber: number) {
+		if (pageNumber === currentPage) return;
+		void gotoPage(pageNumber);
+	}
+
+	function handleSearchInput(event: Event) {
+		const value = (event.currentTarget as HTMLInputElement).value;
+		searchTerm = value;
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+		searchTimer = setTimeout(() => {
+			void applySearch(value);
+		}, 400);
+	}
+
+	function submitSearch(event: Event) {
+		event.preventDefault();
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+			searchTimer = undefined;
+		}
+		void applySearch(searchTerm);
+	}
+
+	onDestroy(() => {
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+	});
+
+	function startEdit(row: { id: number; catatan: string | null }) {
+		if (editingRowId === row.id) return;
+		editingRowId = row.id;
+		editingOriginal = row.catatan ?? '';
+		editingCatatan = editingOriginal;
+		editingSubmitting = false;
+	}
+
+	function cancelEdit() {
+		editingRowId = null;
+		editingOriginal = '';
+		editingCatatan = '';
+		editingSubmitting = false;
+	}
+
+	async function handleSaveSuccess() {
+		cancelEdit();
+		await invalidate('app:catatan-wali-kelas');
+	}
 </script>
 
+{#if academicContext}
+	{#if academicContext.activeSemesterId}
+		<div class="alert alert-info alert-soft mb-6 flex items-center gap-3">
+			<Icon name="info" />
+			<span>
+				Menampilkan catatan wali kelas untuk
+				{#if activeSemester}
+					<strong>{activeSemester.nama}</strong>
+					({activeSemester.tahunAjaranNama})
+				{:else}
+					semester aktif
+				{/if}.
+			</span>
+		</div>
+	{:else}
+		<div class="alert alert-warning mb-6 flex items-center gap-3">
+			<Icon name="warning" />
+			<span>Setel semester aktif di menu Rapor agar catatan tersimpan per periode.</span>
+		</div>
+	{/if}
+{/if}
+
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">Rekapitulasi Catatan Wali Kelas</h2>
+	<h2 class="mb-6 text-xl font-bold">
+		Rekapitulasi Catatan Wali Kelas
+		{#if kelasAktifLabel}
+			<span class="mt-2 block text-lg font-semibold">{kelasAktifLabel}</span>
+		{/if}
+	</h2>
 
-	<!-- Cari nama murid -->
-	<label class="input bg-base-200 w-full dark:border-none">
-		<Icon name="search" />
-		<input type="search" required placeholder="Cari nama murid..." />
-	</label>
-
-	<!-- Tabel daftar murid -->
-	<div
-		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+	<form
+		class="flex flex-col items-center gap-2 sm:flex-row"
+		data-sveltekit-keepfocus
+		data-sveltekit-replacestate
+		onsubmit={submitSearch}
 	>
-		<table class="border-base-200 table min-w-150 border dark:border-none">
-			<!-- head -->
+		<label class="input bg-base-200 w-full dark:border-none">
+			<Icon name="search" />
+			<input
+				type="search"
+				name="q"
+				value={searchTerm}
+				spellcheck="false"
+				placeholder="Cari nama murid..."
+				autocomplete="name"
+				oninput={handleSearchInput}
+			/>
+		</label>
+	</form>
+
+	<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+		<table class="border-base-200 table min-w-[720px] border dark:border-none">
 			<thead>
-				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-					<th style="width: 50px; min-width: 40px;">No</th>
-					<th>Nama</th>
-					<th class="w-full flex-1">Catatan</th>
-					<th>Aksi</th>
+				<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
+					<th style="width: 60px;">No</th>
+					<th style="width: 30%;">Nama</th>
+					<th class="w-full">Catatan</th>
+					<th style="width: 160px; min-width: 120px;">Aksi</th>
 				</tr>
 			</thead>
 			<tbody>
-				<tr>
-					<td>1</td>
-					<td>Ali</td>
-					<td> Giatlah belajar, raih cita-citamu. </td>
-					<td>
-						<!-- Ketika tombol ini di-klik maka isian cell berubah menjadi input -->
-						<!-- Request fitur: tombol berubah menjadi tombol save ketika user sedang melakukan input -->
-						<button class="btn btn-sm btn-soft shadow-none">
-							<Icon name="edit" />
-							Edit
-						</button>
-					</td>
-				</tr>
-				<tr>
-					<td>1</td>
-					<td>Benny</td>
-					<td>
-						Teruslah menjadi teladan bagi teman-temanmu dengan sikap disiplin dan rajin belajar.
-					</td>
-					<td>
-						<!-- Ketika tombol ini di-klik maka isian cell berubah menjadi input -->
-						<!-- Request fitur: tombol berubah menjadi tombol save ketika user sedang melakukan input -->
-						<button class="btn btn-sm btn-soft shadow-none">
-							<Icon name="edit" />
-							Edit
-						</button>
-					</td>
-				</tr>
+				{#each data.daftarCatatan as item (item.id)}
+					{@const formId = `edit-catatan-form-${item.id}`}
+					<tr class={editingRowId === item.id ? 'bg-base-200/40' : undefined}>
+						<td class="align-top">{item.no}</td>
+						<td class="align-top">{@html searchQueryMarker(data.page.search, item.nama)}</td>
+						<td class="align-top">
+							{#if editingRowId === item.id}
+								<FormEnhance
+									id={formId}
+									action="?/save"
+									submitStateChange={(value) => (editingSubmitting = value)}
+									onsuccess={() => {
+										void handleSaveSuccess();
+									}}
+								>
+									{#snippet children()}
+										<input name="muridId" value={item.id} hidden />
+										<label class="flex flex-col gap-2">
+											<textarea
+												bind:this={editingTextarea}
+												class="textarea textarea-bordered bg-base-200 dark:bg-base-100 dark:border-none w-full"
+												name="catatan"
+												rows="4"
+												bind:value={editingCatatan}
+												placeholder={`Tuliskan catatan untuk ${item.nama}`}
+												spellcheck="false"
+											></textarea>
+											<small class="text-xs text-base-content/60">
+												Kosongkan catatan dan simpan untuk menghapus.
+											</small>
+										</label>
+									{/snippet}
+								</FormEnhance>
+							{:else}
+								{#if item.catatan}
+									<p class="whitespace-pre-line">{item.catatan}</p>
+								{:else}
+									<span class="italic opacity-60">Belum ada catatan</span>
+								{/if}
+							{/if}
+						</td>
+						<td class="align-top">
+							{#if editingRowId === item.id}
+								<div class="flex justify-end gap-2">
+									<button
+										type="button"
+										class="btn btn-soft btn-sm shadow-none"
+										onclick={cancelEdit}
+										disabled={editingSubmitting}
+										title="Batalkan edit catatan"
+									>
+										<Icon name="close" />
+									</button>
+									<button
+										class="btn btn-sm btn-primary shadow-none"
+										form={formId}
+										type="submit"
+										disabled={editingSaveDisabled}
+										title="Simpan catatan"
+									>
+										{#if editingSubmitting}
+											<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+										{/if}
+										<Icon name="save" />
+									</button>
+								</div>
+							{:else}
+								<div class="flex justify-end">
+									<button
+										type="button"
+										class="btn btn-sm btn-soft shadow-none"
+										onclick={() => startEdit(item)}
+										disabled={editingRowId !== null}
+										title="Edit catatan wali"
+									>
+										<Icon name="edit" />
+										Edit
+									</button>
+								</div>
+							{/if}
+						</td>
+					</tr>
+				{:else}
+					<tr>
+						<td class="p-7 text-center italic opacity-60" colspan="4">Belum ada murid pada kelas ini</td>
+					</tr>
+				{/each}
 			</tbody>
 		</table>
 	</div>
-	<!-- pagination -->
-	<div class="join mx-auto mt-4">
-		<button class="join-item btn btn-active">1</button>
-		<button class="join-item btn">2</button>
-		<button class="join-item btn">3</button>
-		<button class="join-item btn">4</button>
+
+	<div class="join mt-4 sm:mx-auto">
+		{#each pages as pageNumber}
+			<button
+				type="button"
+				class="join-item btn"
+				class:btn-active={pageNumber === currentPage}
+				onclick={() => handlePageClick(pageNumber)}
+				aria-current={pageNumber === currentPage ? 'page' : undefined}
+			>
+				{pageNumber}
+			</button>
+		{/each}
 	</div>
 </div>

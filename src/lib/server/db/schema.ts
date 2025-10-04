@@ -198,6 +198,19 @@ export const tableMurid = sqliteTable(
 	(t) => [unique().on(t.sekolahId, t.semesterId, t.nis)]
 );
 
+export const tableCatatanWaliKelas = sqliteTable(
+	'catatan_wali_kelas',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		muridId: int()
+			.references(() => tableMurid.id, { onDelete: 'cascade' })
+			.notNull(),
+		catatan: text(),
+		...audit
+	},
+	(table) => [unique().on(table.muridId), index('catatan_wali_kelas_murid_idx').on(table.muridId)]
+);
+
 export const tableKehadiranMurid = sqliteTable(
 	'kehadiran_murid',
 	{
@@ -223,6 +236,17 @@ export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
 	kehadiran: one(tableKehadiranMurid, {
 		fields: [tableMurid.id],
 		references: [tableKehadiranMurid.muridId]
+	}),
+	catatanWali: one(tableCatatanWaliKelas, {
+		fields: [tableMurid.id],
+		references: [tableCatatanWaliKelas.muridId]
+	})
+}));
+
+export const tableCatatanWaliKelasRelations = relations(tableCatatanWaliKelas, ({ one }) => ({
+	murid: one(tableMurid, {
+		fields: [tableCatatanWaliKelas.muridId],
+		references: [tableMurid.id]
 	})
 }));
 
