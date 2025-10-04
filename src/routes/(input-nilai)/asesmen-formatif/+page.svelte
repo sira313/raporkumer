@@ -6,6 +6,13 @@
 	import { onDestroy } from 'svelte';
 
 	type ProgressCategory = 'sangat-baik' | 'baik' | 'perlu-pendalaman' | 'perlu-bimbingan';
+	type PaginationState = {
+		currentPage: number;
+		totalPages: number;
+		totalItems: number;
+		perPage: number;
+		search: string | null;
+	};
 	type PageData = {
 		mapelList: Array<{ value: string; nama: string }>;
 		selectedMapelValue: string | null;
@@ -27,6 +34,7 @@
 		jumlahTujuan: number;
 		selectedMapel?: { id: number | null; nama: string } | null;
 		search: string | null;
+		page: PaginationState;
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -41,6 +49,9 @@
 	let selectedMapelValue = $state(data.selectedMapelValue ?? '');
 	let searchTerm = $state(data.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+	const currentPage = $derived.by(() => data.page?.currentPage ?? 1);
+	const totalPages = $derived.by(() => Math.max(1, data.page?.totalPages ?? 1));
+	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
 
 	$effect(() => {
 		selectedMapelValue = data.selectedMapelValue ?? '';
@@ -74,6 +85,34 @@
 		if (!target) return;
 		searchTimer = undefined;
 		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function buildPageUrl(pageNumber: number) {
+		const params = new URLSearchParams(page.url.search);
+		const sanitized = pageNumber < 1 ? 1 : pageNumber;
+		if (sanitized <= 1) {
+			params.delete('page');
+		} else {
+			params.set('page', String(sanitized));
+		}
+		const nextQuery = params.toString();
+		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+		const currentUrl = `${page.url.pathname}${page.url.search}`;
+		if (nextUrl === currentUrl) {
+			return null;
+		}
+		return nextUrl;
+	}
+
+	async function gotoPage(pageNumber: number) {
+		const target = buildPageUrl(pageNumber);
+		if (!target) return;
+		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function handlePageClick(pageNumber: number) {
+		if (pageNumber === currentPage) return;
+		void gotoPage(pageNumber);
 	}
 
 	function handleSearchInput(event: Event) {
@@ -250,6 +289,19 @@
 					{/each}
 				</tbody>
 			</table>
+		</div>
+		<div class="join mt-4 sm:mx-auto">
+			{#each pages as pageNumber}
+				<button
+					type="button"
+					class="join-item btn"
+					class:btn-active={pageNumber === currentPage}
+					onclick={() => handlePageClick(pageNumber)}
+					aria-current={pageNumber === currentPage ? 'page' : undefined}
+				>
+					{pageNumber}
+				</button>
+			{/each}
 		</div>
 	{/if}
 </div>

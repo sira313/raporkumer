@@ -7,6 +7,7 @@ import {
 } from '$lib/server/db/schema';
 import { ensureAsesmenFormatifSchema } from '$lib/server/db/ensure-asesmen-formatif';
 import { asc, and, eq, inArray } from 'drizzle-orm';
+import { redirect } from '@sveltejs/kit';
 
 const CATEGORY_LABEL: Record<ProgressCategory, string> = {
 	'sangat-baik': 'Sangat baik',
@@ -90,6 +91,10 @@ export async function load({ parent, url, depends }) {
 	depends('app:asesmen-formatif');
 	const { kelasAktif } = await parent();
 	const meta: PageMeta = { title: 'Asesmen Formatif' };
+	const perPage = 20;
+	const requestedPage = Number(url.searchParams.get('page')) || 1;
+	const pageNumber =
+		Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1;
 
 	if (!kelasAktif?.id) {
 		return {
@@ -100,7 +105,14 @@ export async function load({ parent, url, depends }) {
 			tujuanGroups: [] as Array<{ lingkupMateri: string; totalTujuan: number }>,
 			jumlahTujuan: 0,
 			daftarMurid: [],
-			search: null
+			search: null,
+			page: {
+				currentPage: 1,
+				totalPages: 1,
+				totalItems: 0,
+				perPage,
+				search: null
+			}
 		};
 	}
 
@@ -170,6 +182,22 @@ export async function load({ parent, url, depends }) {
 		? muridRecords.filter((murid) => murid.nama.toLowerCase().includes(searchLower))
 		: muridRecords;
 
+	const totalItems = filteredMuridRecords.length;
+	const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+	const currentPage = Math.min(Math.max(pageNumber, 1), totalPages);
+	const offset = (currentPage - 1) * perPage;
+	const paginatedMuridRecords = filteredMuridRecords.slice(offset, offset + perPage);
+
+	if (pageNumber !== currentPage) {
+		const params = new URLSearchParams(url.searchParams);
+		if (currentPage <= 1) {
+			params.delete('page');
+		} else {
+			params.set('page', String(currentPage));
+		}
+		throw redirect(303, `${url.pathname}${params.size ? `?${params}` : ''}`);
+	}
+
 	if (!selectedMapelValue) {
 		return {
 			meta,
@@ -178,16 +206,23 @@ export async function load({ parent, url, depends }) {
 			selectedMapel: null,
 			tujuanGroups: [] as Array<{ lingkupMateri: string; totalTujuan: number }>,
 			jumlahTujuan: 0,
-			daftarMurid: filteredMuridRecords.map((murid, index) => ({
+			daftarMurid: paginatedMuridRecords.map((murid, index) => ({
 				id: murid.id,
 				nama: murid.nama,
-				no: index + 1,
+				no: offset + index + 1,
 				progressText: null,
 				progressSummaryParts: [] as ProgressSummaryPart[],
 				hasPenilaian: false,
 				nilaiHref: null
 			})),
-			search: searchTerm
+			search: searchTerm,
+			page: {
+				currentPage,
+				totalPages,
+				totalItems,
+				perPage,
+				search: searchTerm
+			}
 		};
 	}
 
@@ -282,7 +317,7 @@ export async function load({ parent, url, depends }) {
 		return agamaVariantRecords[0]?.id ?? null;
 	};
 
-	const daftarMurid = filteredMuridRecords.map((murid, index) => {
+	const daftarMurid = paginatedMuridRecords.map((murid, index) => {
 		const targetMapelId = pickMapelIdForMurid(murid.agama);
 		const asesmen = asesmenByMurid.get(murid.id) ?? new Map();
 		const tujuanList = targetMapelId ? tujuanByMapel.get(targetMapelId) ?? [] : [];
@@ -331,7 +366,7 @@ export async function load({ parent, url, depends }) {
 		return {
 			id: murid.id,
 			nama: murid.nama,
-			no: index + 1,
+			no: offset + index + 1,
 			progressText,
 			progressSummaryParts,
 			hasPenilaian,
@@ -363,6 +398,13 @@ export async function load({ parent, url, depends }) {
 		tujuanGroups,
 		jumlahTujuan,
 		daftarMurid,
-		search: searchTerm
+		search: searchTerm,
+		page: {
+			currentPage,
+			totalPages,
+			totalItems,
+			perPage,
+			search: searchTerm
+		}
 	};
 }
