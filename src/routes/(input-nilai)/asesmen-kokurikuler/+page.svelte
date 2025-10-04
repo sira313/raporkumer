@@ -1,124 +1,342 @@
-<script>
+<script lang="ts">
+	import { goto, invalidate } from '$app/navigation';
+	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
+	import NilaiModal from '$lib/components/asesmen-kokurikuler/nilai-modal.svelte';
+	import { searchQueryMarker } from '$lib/utils';
+	import { onDestroy } from 'svelte';
+	import type { ProfilPelajarPancasilaDimensionKey } from '$lib/statics';
+	import type { NilaiKategori } from '$lib/kokurikuler';
+
+	type DimensiDetail = {
+		key: ProfilPelajarPancasilaDimensionKey;
+		label: string;
+	};
+
+	type KokurikulerDetail = {
+		id: number;
+		kode: string;
+		tujuan: string;
+		dimensi: DimensiDetail[];
+	};
+
+	type MuridRow = {
+		id: number;
+		nama: string;
+		no: number;
+		deskripsi: string | null;
+		nilaiByDimensi: Record<ProfilPelajarPancasilaDimensionKey, NilaiKategori | null>;
+		hasNilai: boolean;
+		lastUpdated: string | null;
+	};
+
+	type PaginationState = {
+		currentPage: number;
+		totalPages: number;
+		totalItems: number;
+		perPage: number;
+		search: string | null;
+	};
+
+	type PageData = {
+		kokurikulerList: KokurikulerDetail[];
+		selectedKokurikulerId: number | null;
+		selectedKokurikuler: KokurikulerDetail | null;
+		kategoriOptions: Array<{ value: NilaiKategori; label: string }>;
+		daftarMurid: MuridRow[];
+		search: string | null;
+		totalMurid: number;
+		muridCount: number;
+		summary: { dimensiCount: number; deskripsi: string } | null;
+		page: PaginationState;
+	};
+
+	let { data }: { data: PageData } = $props();
+
+	const hasKokurikuler = $derived.by(() => data.kokurikulerList.length > 0);
+	const selectedKokurikuler = $derived.by(() => data.selectedKokurikuler);
+	const selectedKokurikulerLabel = $derived.by(() =>
+		selectedKokurikuler ? capitalizeSentence(selectedKokurikuler.tujuan) : null
+	);
+	const currentPage = $derived.by(() => data.page?.currentPage ?? 1);
+	const totalPages = $derived.by(() => Math.max(1, data.page?.totalPages ?? 1));
+	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
+
+	let selectedKokurikulerValue = $state(
+		data.selectedKokurikulerId ? String(data.selectedKokurikulerId) : ''
+	);
+	let searchTerm = $state(data.search ?? '');
+	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+	let modalOpen = $state(false);
+	let activeMurid = $state<MuridRow | null>(null);
+
+	$effect(() => {
+		selectedKokurikulerValue = data.selectedKokurikulerId
+			? String(data.selectedKokurikulerId)
+			: '';
+		searchTerm = data.search ?? '';
+	});
+
+	$effect(() => {
+		if (!hasKokurikuler) return;
+		if (data.kokurikulerList.length !== 1) return;
+		const onlyId = String(data.kokurikulerList[0].id);
+		if (selectedKokurikulerValue === onlyId) return;
+		selectedKokurikulerValue = onlyId;
+		handleKokurikulerChange(onlyId);
+	});
+
+	function buildUrl(updateParams: (params: URLSearchParams) => void) {
+		const params = new URLSearchParams(page.url.search);
+		updateParams(params);
+		const nextQuery = params.toString();
+		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+		const currentUrl = `${page.url.pathname}${page.url.search}`;
+		return nextUrl === currentUrl ? null : nextUrl;
+	}
+
+	async function applyNavigation(updateParams: (params: URLSearchParams) => void) {
+		const target = buildUrl(updateParams);
+		if (!target) return;
+		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function handleKokurikulerChange(value: string) {
+		void applyNavigation((params) => {
+			if (value) {
+				params.set('kokurikuler_id', value);
+			} else {
+				params.delete('kokurikuler_id');
+			}
+			params.delete('page');
+		});
+	}
+
+	async function applySearch(value: string) {
+		await applyNavigation((params) => {
+			const cleaned = value.trim();
+			if (cleaned) {
+				params.set('q', cleaned);
+			} else {
+				params.delete('q');
+			}
+			params.delete('page');
+		});
+	}
+
+	function handleSearchInput(event: Event) {
+		const value = (event.currentTarget as HTMLInputElement).value;
+		searchTerm = value;
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+		searchTimer = setTimeout(() => {
+			void applySearch(value);
+		}, 400);
+	}
+
+	function submitSearch(event: Event) {
+		event.preventDefault();
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+			searchTimer = undefined;
+		}
+		void applySearch(searchTerm);
+	}
+
+	onDestroy(() => {
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+	});
+
+	function openModalFor(murid: MuridRow) {
+		activeMurid = murid;
+		modalOpen = true;
+	}
+
+	function closeModal() {
+		modalOpen = false;
+		activeMurid = null;
+	}
+
+	async function handleModalSuccess() {
+		closeModal();
+		await invalidate('app:asesmen-kokurikuler');
+	}
+
+	function gotoPage(pageNumber: number) {
+		const sanitized = pageNumber < 1 ? 1 : pageNumber;
+		void applyNavigation((params) => {
+			if (sanitized <= 1) {
+				params.delete('page');
+			} else {
+				params.set('page', String(sanitized));
+			}
+		});
+	}
+
+	function handlePageClick(pageNumber: number) {
+		if (pageNumber === currentPage) return;
+		gotoPage(pageNumber);
+	}
+
+	function capitalizeSentence(value: string | null | undefined) {
+		if (!value) return '';
+		const trimmed = value.trimStart();
+		if (!trimmed) return '';
+		return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+	}
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">Daftar Nilai Kokurikuler</h2>
-
-	<select class="select bg-base-200 mb-2 w-full dark:border-none" title="Pilih kelas">
-		<option value="" disabled selected> Pilih Kokurikuler</option>
-		<option value="">
-			<!-- Need styling for this long option like wrap text -->
-			bekerja sama dengan sesama teman pada beberapa projek pembelajaran interdisipliner
-		</option>
-		<option value="">
-			kemampuan menemukan dan mengembangkan alternatif solusi yang efektif pada pada tema konservasi
-			energi
-		</option>
-	</select>
+	<div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+		<h2 class="text-xl font-bold">Daftar Nilai Kokurikuler</h2>
+		{#if selectedKokurikuler}
+			<div class="flex flex-col items-start gap-1 sm:items-end">
+				<p class="max-w-xl text-sm text-base-content/80 sm:text-right">
+					{capitalizeSentence(selectedKokurikuler.tujuan)}
+				</p>
+			</div>
+		{/if}
+	</div>
 
 	<div class="flex flex-col items-center gap-2 sm:flex-row">
-		<!-- Cari nama murid -->
-		<label class="input bg-base-200 w-full dark:border-none">
-			<Icon name="search" />
-			<input type="search" required placeholder="Cari nama murid..." />
+		<label class="w-full md:max-w-80">
+			<span class="sr-only">Pilih kokurikuler</span>
+			<select
+				class="select bg-base-200 w-full truncate dark:border-none"
+				title={selectedKokurikulerLabel ?? 'Pilih kokurikuler'}
+				bind:value={selectedKokurikulerValue}
+				onchange={(event) =>
+					handleKokurikulerChange((event.currentTarget as HTMLSelectElement).value)}
+				disabled={!hasKokurikuler}
+			>
+				{#if !hasKokurikuler}
+					<option value="">Belum ada kokurikuler</option>
+				{:else}
+					<option value="" disabled selected={selectedKokurikulerValue === ''}>
+						Pilih Kokurikuler
+					</option>
+					{#each data.kokurikulerList as item}
+						<option value={String(item.id)}>{capitalizeSentence(item.tujuan)}</option>
+					{/each}
+				{/if}
+			</select>
 		</label>
-	</div>
-
-	<!-- Tabel daftar murid -->
-	<div
-		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
-	>
-		<table class="border-base-200 table min-w-150 border dark:border-none">
-			<!-- head -->
-			<thead>
-				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-					<th style="width: 50px; min-width: 40px;">No</th>
-					<th>Nama</th>
-					<th class="w-full flex-1">Deskripsi</th>
-					<th>Aksi</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>1</td>
-					<td>Ali</td>
-					<td> Sangat baik dalam kolaborasi dan kreativitas </td>
-					<td>
-						<label
-							for="input-kokurikuler"
-							class="btn btn-sm btn-soft shadow-none"
-							title="Edit nilai"
-						>
-							<Icon name="edit" />
-							Nilai
-						</label>
-					</td>
-				</tr>
-				<tr>
-					<td>2</td>
-					<td>Rizki</td>
-					<td> Belum ada nilai </td>
-					<td>
-						<label
-							for="input-kokurikuler"
-							class="btn btn-sm btn-soft shadow-none"
-							title="Edit nilai"
-						>
-							<Icon name="edit" />
-							Nilai
-						</label>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-	<!-- pagination -->
-	<div class="join mx-auto mt-4">
-		<button class="join-item btn btn-active">1</button>
-		<button class="join-item btn">2</button>
-		<button class="join-item btn">3</button>
-		<button class="join-item btn">4</button>
-	</div>
-</div>
-
-<!-- Modal Input Kokurikuler -->
-<input type="checkbox" id="input-kokurikuler" class="modal-toggle" />
-<div class="modal" role="dialog">
-	<div class="modal-box">
-		<h3 class="text-lg font-bold">Input Nilai Kokurikuler</h3>
-		<p class="mb-4 text-lg">ananda <b>Ali</b></p>
-		<p class="mb-2 text-lg">Pilih nilai berdasarkan 8 DPL yang dimunculkan</p>
-		<!-- 8 DPL muncul yang muncul saat input kokurikuler di menu mapel -->
-		<fieldset class="fieldset">
-			<legend class="fieldset-legend text-lg">Kolaborasi</legend>
-			<select class="select w-full">
-				<option disabled selected>Pilih nilai</option>
-				<option>Kurang</option>
-				<option>Cukup</option>
-				<option>Baik</option>
-				<option>Sangat Baik</option>
-			</select>
-		</fieldset>
-		<fieldset class="fieldset">
-			<legend class="fieldset-legend text-lg">Kreativitas</legend>
-			<select class="select w-full">
-				<option disabled selected>Pilih nilai</option>
-				<option>Kurang</option>
-				<option>Cukup</option>
-				<option>Baik</option>
-				<option>Sangat Baik</option>
-			</select>
-		</fieldset>
-		<div class="modal-action">
-			<label for="input-kokurikuler" class="btn cursor-pointer shadow-none">
-				<Icon name="close" />
-				Batal
+		<form
+			class="w-full"
+			data-sveltekit-keepfocus
+			data-sveltekit-replacestate
+			autocomplete="off"
+			onsubmit={submitSearch}
+		>
+			<label class="input bg-base-200 w-full dark:border-none">
+				<Icon name="search" />
+				<input
+					type="search"
+					name="q"
+					value={searchTerm}
+					autocomplete="name"
+					placeholder="Cari nama murid..."
+					oninput={handleSearchInput}
+				/>
 			</label>
-			<button class="btn btn-primary shadow-none">
-				<Icon name="save" />
-				Simpan
-			</button>
-		</div>
+		</form>
 	</div>
+
+	{#if !hasKokurikuler}
+		<div class="alert alert-soft alert-info mt-6">
+			<Icon name="info" />
+			<span>
+				Belum ada data kokurikuler untuk kelas ini. Tambahkan terlebih dahulu di menu
+				<strong>Kokurikuler</strong>.
+			</span>
+		</div>
+	{:else if !selectedKokurikuler}
+		<div class="alert alert-soft alert-warning mt-6">
+			<Icon name="alert" />
+			<span>Pilih kokurikuler untuk mulai menilai.</span>
+		</div>
+	{:else if data.muridCount === 0}
+		<div class="alert alert-soft alert-warning mt-6">
+			<Icon name="alert" />
+			<span>
+				Belum ada data murid di kelas ini. Tambahkan murid terlebih dahulu melalui menu
+				<strong>Murid</strong>.
+			</span>
+		</div>
+	{:else if data.totalMurid === 0}
+		<div class="alert alert-soft alert-info mt-6">
+			<Icon name="info" />
+			<span>Tidak ada murid yang cocok dengan pencarian.</span>
+		</div>
+	{:else}
+		<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+			<table class="border-base-200 table min-w-150 border dark:border-none">
+				<thead>
+					<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
+						<th style="width: 50px; min-width: 40px;">No</th>
+						<th class="min-w-44">Nama</th>
+						<th>Aksi</th>
+						<th class="w-full" style="min-width: 240px;">Deskripsi</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each data.daftarMurid as murid}
+						<tr>
+							<td class="align-top">{murid.no}</td>
+							<td class="align-top">
+								{@html searchQueryMarker(data.search, murid.nama)}
+							</td>
+							<td class="align-top">
+								<button
+									type="button"
+									class="btn btn-sm btn-soft shadow-none"
+									title={`Nilai ${murid.nama}`}
+									onclick={() => openModalFor(murid)}
+								>
+									<Icon name="edit" />
+									Nilai
+								</button>
+							</td>
+							<td class="align-top">
+								{#if murid.deskripsi}
+									<p class="text-sm text-base-content">{murid.deskripsi}</p>
+								{:else}
+									<span class="text-sm italic text-base-content/70">
+										Belum ada nilai
+									</span>
+								{/if}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+		<div class="join mt-4 sm:mx-auto">
+			{#each pages as pageNumber}
+				<button
+					type="button"
+					class="join-item btn"
+					class:btn-active={pageNumber === currentPage}
+					onclick={() => handlePageClick(pageNumber)}
+					aria-current={pageNumber === currentPage ? 'page' : undefined}
+				>
+					{pageNumber}
+				</button>
+			{/each}
+		</div>
+	{/if}
 </div>
+
+<NilaiModal
+	open={modalOpen}
+	murid={activeMurid}
+	kokurikuler={selectedKokurikuler}
+	kategoriOptions={data.kategoriOptions}
+	action="?/nilai"
+	onClose={closeModal}
+	onSuccess={handleModalSuccess}
+/>

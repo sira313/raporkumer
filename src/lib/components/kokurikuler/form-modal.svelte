@@ -87,7 +87,7 @@
 					<p class="mt-4 font-semibold">Kegiatan Kokurikuler</p>
 					<textarea
 						class="textarea dark:bg-base-200 mt-2 h-28 w-full dark:border-none"
-						placeholder="Ketik Kegiatan Kokurikuler"
+						placeholder="Ketik kegiatan atau tema kegiatan kokurikuler"
 						name="kokurikuler"
 						value={tujuanInput}
 						oninput={(event) => onTujuanChange((event.currentTarget as HTMLTextAreaElement).value)}
@@ -101,7 +101,7 @@
 							Batal
 						</button>
 						<button
-							class="btn shadow-none"
+							class="btn btn-primary shadow-none"
 							disabled={
 								submitting ||
 								!selectedDimensions.length ||

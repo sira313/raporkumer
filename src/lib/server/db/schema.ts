@@ -414,3 +414,36 @@ export const tableKokurikulerRelations = relations(tableKokurikuler, ({ one }) =
 		references: [tableKelas.id]
 	})
 }));
+
+export const tableAsesmenKokurikuler = sqliteTable(
+	'asesmen_kokurikuler',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		muridId: int()
+			.references(() => tableMurid.id, { onDelete: 'cascade' })
+			.notNull(),
+		kokurikulerId: int()
+			.references(() => tableKokurikuler.id, { onDelete: 'cascade' })
+			.notNull(),
+		dimensi: text().notNull(),
+		kategori: text({ enum: ['sangat-baik', 'baik', 'cukup', 'kurang'] }).notNull(),
+		dinilaiPada: text(),
+		...audit
+	},
+	(table) => [
+		unique().on(table.muridId, table.kokurikulerId, table.dimensi),
+		index('asesmen_kokurikuler_murid_idx').on(table.muridId),
+		index('asesmen_kokurikuler_kokurikuler_idx').on(table.kokurikulerId)
+	]
+);
+
+export const tableAsesmenKokurikulerRelations = relations(tableAsesmenKokurikuler, ({ one }) => ({
+	murid: one(tableMurid, {
+		fields: [tableAsesmenKokurikuler.muridId],
+		references: [tableMurid.id]
+	}),
+	kokurikuler: one(tableKokurikuler, {
+		fields: [tableAsesmenKokurikuler.kokurikulerId],
+		references: [tableKokurikuler.id]
+	})
+}));

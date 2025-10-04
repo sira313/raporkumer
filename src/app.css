@@ -16,3 +16,16 @@
 a[data-preloading] {
 	@apply cursor-wait opacity-50;
 }
+
+@layer components {
+	.select-ellipsis {
+		max-width: min(100vw, 20rem);
+	}
+
+	.select-ellipsis option {
+		max-width: min(100vw, 20rem);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}

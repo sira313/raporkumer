@@ -74,7 +74,7 @@
 							Batal
 						</button>
 						<button
-							class="btn shadow-none"
+							class="btn btn-primary shadow-none"
 							disabled={
 								submitting ||
 								!namaInput.trim() ||
