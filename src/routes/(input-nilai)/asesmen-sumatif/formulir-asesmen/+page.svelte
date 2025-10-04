@@ -1,22 +1,25 @@
+
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
-	import Icon from '$lib/components/icon.svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
-
-	type Entry = {
-		index: number;
-		tujuanPembelajaranId: number;
-		deskripsi: string;
-		lingkupMateri: string;
-		bobot: number | null;
-		nilai: number | null;
-	};
+	import Icon from '$lib/components/icon.svelte';
+	import LingkupSummaryCard from '$lib/components/asesmen-sumatif/lingkup-summary-card.svelte';
+	import NilaiAkhirCard from '$lib/components/asesmen-sumatif/nilai-akhir-card.svelte';
+	import SasInputTable from '$lib/components/asesmen-sumatif/sas-input-table.svelte';
+	import SasSummaryCard from '$lib/components/asesmen-sumatif/sas-summary-card.svelte';
+	import TujuanTable from '$lib/components/asesmen-sumatif/tujuan-table.svelte';
+	import type {
+		EntryDraft,
+		LingkupSummary,
+		NilaiAkhirCategory,
+		TujuanEntry
+	} from '$lib/components/asesmen-sumatif/types';
 
 	type PageData = {
 		murid: { id: number; nama: string };
 		mapel: { id: number; nama: string; kkm: number };
 		hasTujuan: boolean;
-		entries: Entry[];
+		entries: TujuanEntry[];
 		initialScores: {
 			naLingkup: number | null;
 			sasTes: number | null;
@@ -26,12 +29,6 @@
 		};
 	};
 
-	type EntryDraft = Entry & { nilaiText: string };
- 	type LingkupSummary = {
- 		lingkupMateri: string;
- 		bobot: number | null;
- 		rataRata: number | null;
- 	};
 	type SavePayload = {
 		tujuanScores: { tujuanPembelajaranId: number; nilai: number | null }[];
 		aggregates: {
@@ -41,13 +38,6 @@
 			sas: number | null;
 			nilaiAkhir: number | null;
 		};
-	};
-	type NilaiAkhirCategory = {
-		key: 'perlu-bimbingan' | 'cukup' | 'baik' | 'sangat-baik';
-		label: string;
-		className: string;
-		icon: 'error' | 'alert' | 'check' | 'info';
-		description: string;
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -61,7 +51,7 @@
 		return value != null ? value.toFixed(2) : '';
 	}
 
-	function toDraft(entry: Entry): EntryDraft {
+	function toDraft(entry: TujuanEntry): EntryDraft {
 		const nilaiText = toInputText(entry.nilai);
 		return { ...entry, nilaiText };
 	}
@@ -251,6 +241,22 @@
 			: 'input input-error dark:bg-base-300 dark:border-none';
 	}
 
+	function handleEntryNilaiChange(event: CustomEvent<{ index: number; value: string }>) {
+		const { index, value } = event.detail;
+		entries = entries.map((entry, idx) =>
+			idx === index ? { ...entry, nilaiText: value } : entry
+		);
+	}
+
+	function handleSasChange(event: CustomEvent<{ target: 'tes' | 'nonTes'; value: string }>) {
+		const { target, value } = event.detail;
+		if (target === 'tes') {
+			sasTesText = value;
+			return;
+		}
+		sasNonTesText = value;
+	}
+
 	async function handleSuccess({ data: result }: { data?: Record<string, unknown> }) {
 		const payload = (result?.payload ?? null) as SavePayload | null;
 		if (payload) {
@@ -308,183 +314,39 @@
 					</span>
 				</div>
 			{:else}
-				<div
-					class="bg-base-100 dark:bg-base-200 border-base-200 mt-2 overflow-x-auto rounded-md shadow-md dark:shadow-none"
-				>
-					<table class="border-base-200 table min-w-160 border dark:border-none">
-						<thead>
-							<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-								<th style="width: 40px; min-width: 40px;">No</th>
-								<th class="w-full" style="min-width: 260px;">Tujuan Pembelajaran</th>
-								<th style="min-width: 140px;">Nilai</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each entries as entry, index}
-								<tr>
-									<td>{entry.index}</td>
-									<td>
-										<p class="font-medium first-letter:uppercase">{entry.deskripsi}</p>
-										<p class="text-base-content/60 mt-2 text-xs tracking-wide uppercase">
-											{entry.lingkupMateri}
-											{#if entry.bobot != null}
-												<span class="ml-1 font-semibold">• Bobot {formatScore(entry.bobot)}%</span>
-											{/if}
-										</p>
-										<input
-											type="hidden"
-											name={`entries.${index}.tujuanPembelajaranId`}
-											value={entry.tujuanPembelajaranId}
-										/>
-									</td>
-									<td>
-										<input
-											type="number"
-											name={`entries.${index}.nilai`}
-											class={getInputClass(entry.nilaiText)}
-											bind:value={entries[index].nilaiText}
-											placeholder="Isi nilai"
-											min="0"
-											max="100"
-											step="0.01"
-											required
-											inputmode="decimal"
-											title="Rentang 0-100 dengan maksimal 2 angka desimal"
-											spellcheck="false"
-										/>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+				<TujuanTable
+					{entries}
+					{formatScore}
+					{getInputClass}
+					on:nilaiChange={handleEntryNilaiChange}
+				/>
 			{/if}
 
-			<div role="alert" class="alert rounded-box alert-soft alert-info mt-4">
-				<span class="text-2xl">
-					<Icon name="info" />
-				</span>
-				<span class="w-full">
-					<p class="text-lg">NA Sumatif Lingkup Materi</p>
-					<p class="text-2xl font-bold">{formatScore(naSumatifLingkup)}</p>
-					<p class="text-sm">
-						Rata-rata dari {lingkupSummaries.length} lingkup materi
-						{#if totalBobot > 0}
-							(dengan total bobot {totalBobot}%)
-						{/if}
-					</p>
-					{#if lingkupSummaries.length}
-						<ul class="text-base-content/70 mt-2 space-y-1 text-xs">
-							{#each lingkupSummaries as summary}
-								<li>
-									<strong>{summary.lingkupMateri}</strong> — {formatScore(summary.rataRata)}
-									{#if summary.bobot != null}
-										<span class="ml-1">(Bobot {formatScore(summary.bobot)}%)</span>
-									{/if}
-								</li>
-							{/each}
-						</ul>
-					{/if}
-				</span>
-			</div>
+			<LingkupSummaryCard
+				{naSumatifLingkup}
+				{lingkupSummaries}
+				{totalBobot}
+				{formatScore}
+			/>
 
 			<h3 class="mt-6 pb-2 text-lg font-bold">
 				Isi Sumatif Akhir Semester di bawah ini untuk {data.murid.nama}.
 			</h3>
-			<div
-				class="bg-base-100 dark:bg-base-200 border-base-200 mt-2 overflow-x-auto rounded-md shadow-md dark:shadow-none"
-			>
-				<table class="border-base-200 table border dark:border-none">
-					<thead>
-						<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-							<th style="width: 40px; min-width: 40px;">No</th>
-							<th class="w-full" style="min-width: 220px;">Jenis Tes</th>
-							<th style="min-width: 140px;">Nilai</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td>1</td>
-							<td>Nilai Tes Sumatif Akhir Semester (SAS)</td>
-							<td>
-								<input
-									type="number"
-									name="sasTes"
-									class={getInputClass(sasTesText)}
-									bind:value={sasTesText}
-									placeholder="Isi nilai"
-									min="0"
-									max="100"
-									step="0.01"
-									required
-									inputmode="decimal"
-									title="Rentang 0-100 dengan maksimal 2 angka desimal"
-									spellcheck="false"
-								/>
-							</td>
-						</tr>
-						<tr>
-							<td>2</td>
-							<td>Nilai Non Tes Sumatif Akhir Semester (SAS)</td>
-							<td>
-								<input
-									type="number"
-									name="sasNonTes"
-									class={getInputClass(sasNonTesText)}
-									bind:value={sasNonTesText}
-									placeholder="Isi nilai"
-									min="0"
-									max="100"
-									step="0.01"
-									required
-									inputmode="decimal"
-									title="Rentang 0-100 dengan maksimal 2 angka desimal"
-									spellcheck="false"
-								/>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
+			<SasInputTable
+				{sasTesText}
+				{sasNonTesText}
+				{getInputClass}
+				on:sasChange={handleSasChange}
+			/>
 
-			<div role="alert" class="alert rounded-box alert-soft alert-info mt-4">
-				<span class="text-2xl">
-					<Icon name="info" />
-				</span>
-				<span>
-					<p class="text-lg">NA Sumatif Akhir Semester</p>
-					<p class="text-2xl font-bold">{formatScore(nilaiSas)}</p>
-					<p class="text-sm">Rata-rata dari nilai Tes dan Non Tes SAS</p>
-				</span>
-			</div>
+			<SasSummaryCard {nilaiSas} {formatScore} />
 
-			<div
-				class={`alert rounded-box ${
-					nilaiAkhirCategory ? nilaiAkhirCategory.className : 'alert-soft alert-warning'
-				} mt-6`}
-			>
-				<span class="text-2xl">
-					<Icon name={nilaiAkhirCategory ? nilaiAkhirCategory.icon : 'alert'} />
-				</span>
-				<span>
-					<p class="text-lg">Nilai Akhir</p>
-					<p class="text-2xl font-bold">{formatScore(nilaiAkhir)}</p>
-					<p class="text-sm">
-						Rata-rata dari NA Sumatif Lingkup Materi dan NA Sumatif Akhir Semester
-					</p>
-					<p class="text-sm font-semibold">
-						KKM {kkm}
-						{#if nilaiAkhir == null}
-							— Lengkapi penilaian untuk menghitung nilai akhir
-						{:else}
-							— {nilaiAkhirCategory?.label}
-						{/if}
-					</p>
-					{#if nilaiAkhirCategory}
-						<p class="text-sm">{nilaiAkhirCategory.description}</p>
-					{/if}
-				</span>
-			</div>
+			<NilaiAkhirCard
+				{nilaiAkhir}
+				{nilaiAkhirCategory}
+				{kkm}
+				{formatScore}
+			/>
 		{/snippet}
 	</FormEnhance>
 </div>
