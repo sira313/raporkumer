@@ -28,10 +28,12 @@
 					{@render field('NISN', data.murid.nisn)}
 					{@render field('Nama', data.murid.nama)}
 					{@render field('Kelas', kelas)}
-					{@render field('Jenis Kelamin', jenisKelamin[data.murid.jenisKelamin])}
 					{@render field('Tempat Lahir', data.murid.tempatLahir)}
 					{@render field('Tanggal Lahir', data.murid.tanggalLahir)}
+					{@render field('Jenis Kelamin', jenisKelamin[data.murid.jenisKelamin])}
 					{@render field('Agama', data.murid.agama)}
+					{@render field('Pendidikan Sebelumnya', data.murid.pendidikanSebelumnya)}
+					{@render field('Tanggal Masuk Sekolah Ini', data.murid.tanggalMasuk)}
 				</div>
 			</div>
 			<!-- data Orang Tua -->

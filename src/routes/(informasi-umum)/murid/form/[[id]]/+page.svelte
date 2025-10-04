@@ -360,28 +360,27 @@
 
 			{#if invalid}
 				<button
-					class="btn btn-neutral border-none shadow-none sm:ml-auto"
+					class="btn btn-neutral border-none shadow-none"
 					type="button"
 					onclick={() => (activeTab = (activeTab + 1) % 4)}
 				>
 					<Icon name="double-arrow" class="h-4 w-4" />
 					Selanjutnya
 				</button>
-			{:else}
-				<button
-					class="btn {data.murid?.id
-						? 'btn-secondary'
-						: 'btn-primary'} border-none shadow-none sm:ml-auto"
-					disabled={submitting || invalid}
-				>
-					{#if submitting}
-						<span class="loading loading-spinner"></span>
-					{:else}
-						<Icon name="save" />
-					{/if}
-					Simpan
-				</button>
 			{/if}
+
+			<button
+				class="btn {data.murid?.id ? 'btn-secondary' : 'btn-primary'} border-none shadow-none sm:ml-auto"
+				type="submit"
+				disabled={submitting || invalid}
+			>
+				{#if submitting}
+					<span class="loading loading-spinner"></span>
+				{:else}
+					<Icon name="save" />
+				{/if}
+				Simpan
+			</button>
 		</div>
 	{/snippet}
 </FormEnhance>
