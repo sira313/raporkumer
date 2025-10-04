@@ -198,13 +198,39 @@ export const tableMurid = sqliteTable(
 	(t) => [unique().on(t.sekolahId, t.semesterId, t.nis)]
 );
 
+export const tableKehadiranMurid = sqliteTable(
+	'kehadiran_murid',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		muridId: int()
+			.references(() => tableMurid.id, { onDelete: 'cascade' })
+			.notNull(),
+		sakit: int().default(0).notNull(),
+		izin: int().default(0).notNull(),
+		alfa: int().default(0).notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.muridId), index('kehadiran_murid_murid_idx').on(table.muridId)]
+);
+
 export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
 	kelas: one(tableKelas, { fields: [tableMurid.kelasId], references: [tableKelas.id] }),
 	semester: one(tableSemester, { fields: [tableMurid.semesterId], references: [tableSemester.id] }),
 	alamat: one(tableAlamat, { fields: [tableMurid.alamatId], references: [tableAlamat.id] }),
 	ibu: one(tableWaliMurid, { fields: [tableMurid.ibuId], references: [tableWaliMurid.id] }),
 	ayah: one(tableWaliMurid, { fields: [tableMurid.ayahId], references: [tableWaliMurid.id] }),
-	wali: one(tableWaliMurid, { fields: [tableMurid.waliId], references: [tableWaliMurid.id] })
+	wali: one(tableWaliMurid, { fields: [tableMurid.waliId], references: [tableWaliMurid.id] }),
+	kehadiran: one(tableKehadiranMurid, {
+		fields: [tableMurid.id],
+		references: [tableKehadiranMurid.muridId]
+	})
+}));
+
+export const tableKehadiranMuridRelations = relations(tableKehadiranMurid, ({ one }) => ({
+	murid: one(tableMurid, {
+		fields: [tableKehadiranMurid.muridId],
+		references: [tableMurid.id]
+	})
 }));
 
 export const tableMataPelajaran = sqliteTable('mata_pelajaran', {
