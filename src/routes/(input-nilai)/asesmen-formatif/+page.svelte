@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
-	import { autoSubmit } from '$lib/utils';
+	import { autoSubmit, searchQueryMarker } from '$lib/utils';
+	import { onDestroy } from 'svelte';
 
 	type ProgressCategory = 'sangat-baik' | 'baik' | 'perlu-pendalaman' | 'perlu-bimbingan';
 	type PageData = {
@@ -23,6 +26,7 @@
 		}>;
 		jumlahTujuan: number;
 		selectedMapel?: { id: number | null; nama: string } | null;
+		search: string | null;
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -35,9 +39,67 @@
 	};
 
 	let selectedMapelValue = $state(data.selectedMapelValue ?? '');
+	let searchTerm = $state(data.search ?? '');
+	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 	$effect(() => {
 		selectedMapelValue = data.selectedMapelValue ?? '';
+		searchTerm = data.search ?? '';
+	});
+
+	function buildSearchUrl(rawValue: string) {
+		const params = new URLSearchParams(page.url.search);
+		const cleaned = rawValue.trim();
+		const current = params.get('q') ?? '';
+		const searchChanged = cleaned !== current;
+		if (cleaned) {
+			params.set('q', cleaned);
+		} else {
+			params.delete('q');
+		}
+		if (searchChanged) {
+			params.delete('page');
+		}
+		const nextQuery = params.toString();
+		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+		const currentUrl = `${page.url.pathname}${page.url.search}`;
+		if (nextUrl === currentUrl) {
+			return null;
+		}
+		return nextUrl;
+	}
+
+	async function applySearch(rawValue: string) {
+		const target = buildSearchUrl(rawValue);
+		if (!target) return;
+		searchTimer = undefined;
+		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function handleSearchInput(event: Event) {
+		const value = (event.currentTarget as HTMLInputElement).value;
+		searchTerm = value;
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+		searchTimer = setTimeout(() => {
+			void applySearch(value);
+		}, 400);
+	}
+
+	function submitSearch(event: Event) {
+		event.preventDefault();
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+			searchTimer = undefined;
+		}
+		void applySearch(searchTerm);
+	}
+
+	onDestroy(() => {
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
 	});
 
 	function escapeHtml(value: string) {
@@ -103,11 +165,27 @@
 				{/if}
 			</select>
 		</form>
-		<!-- Cari nama murid -->
-		<label class="input bg-base-200 w-full dark:border-none">
-			<Icon name="search" />
-			<input type="search" required placeholder="Cari nama murid..." />
-		</label>
+		<form
+			class="w-full"
+			data-sveltekit-keepfocus
+			data-sveltekit-replacestate
+			autocomplete="off"
+			onsubmit={submitSearch}
+		>
+			<!-- Cari nama murid -->
+			<label class="input bg-base-200 w-full dark:border-none">
+				<Icon name="search" />
+				<input
+					type="search"
+					name="q"
+					value={searchTerm}
+					spellcheck="false"
+					autocomplete="name"
+					placeholder="Cari nama murid..."
+					oninput={handleSearchInput}
+				/>
+			</label>
+		</form>
 	</div>
 
 	{#if data.mapelList.length === 0}
@@ -142,7 +220,7 @@
 					{#each data.daftarMurid as murid}
 						<tr>
 							<td class="align-top">{murid.no}</td>
-							<td class="align-top">{murid.nama}</td>
+							<td class="align-top">{@html searchQueryMarker(data.search, murid.nama)}</td>
 							<td class="align-top">
 								{#if murid.nilaiHref}
 									<a

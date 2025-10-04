@@ -99,7 +99,8 @@ export async function load({ parent, url, depends }) {
 			selectedMapel: null,
 			tujuanGroups: [] as Array<{ lingkupMateri: string; totalTujuan: number }>,
 			jumlahTujuan: 0,
-			daftarMurid: []
+			daftarMurid: [],
+			search: null
 		};
 	}
 
@@ -162,6 +163,13 @@ export async function load({ parent, url, depends }) {
 		orderBy: asc(tableMurid.nama)
 	});
 
+	const rawSearch = url.searchParams.get('q')?.trim() ?? '';
+	const searchTerm = rawSearch ? rawSearch : null;
+	const searchLower = searchTerm ? searchTerm.toLowerCase() : null;
+	const filteredMuridRecords = searchLower
+		? muridRecords.filter((murid) => murid.nama.toLowerCase().includes(searchLower))
+		: muridRecords;
+
 	if (!selectedMapelValue) {
 		return {
 			meta,
@@ -170,7 +178,7 @@ export async function load({ parent, url, depends }) {
 			selectedMapel: null,
 			tujuanGroups: [] as Array<{ lingkupMateri: string; totalTujuan: number }>,
 			jumlahTujuan: 0,
-			daftarMurid: muridRecords.map((murid, index) => ({
+			daftarMurid: filteredMuridRecords.map((murid, index) => ({
 				id: murid.id,
 				nama: murid.nama,
 				no: index + 1,
@@ -178,7 +186,8 @@ export async function load({ parent, url, depends }) {
 				progressSummaryParts: [] as ProgressSummaryPart[],
 				hasPenilaian: false,
 				nilaiHref: null
-			}))
+			})),
+			search: searchTerm
 		};
 	}
 
@@ -227,7 +236,7 @@ export async function load({ parent, url, depends }) {
 	}
 
 	const tujuanIds = tujuanRecords.map((record) => record.id);
-	const muridIds = muridRecords.map((murid) => murid.id);
+	const muridIds = filteredMuridRecords.map((murid) => murid.id);
 
 	const asesmenRecords =
 		relevantMapelIds.length && tujuanIds.length && muridIds.length
@@ -273,7 +282,7 @@ export async function load({ parent, url, depends }) {
 		return agamaVariantRecords[0]?.id ?? null;
 	};
 
-	const daftarMurid = muridRecords.map((murid, index) => {
+	const daftarMurid = filteredMuridRecords.map((murid, index) => {
 		const targetMapelId = pickMapelIdForMurid(murid.agama);
 		const asesmen = asesmenByMurid.get(murid.id) ?? new Map();
 		const tujuanList = targetMapelId ? tujuanByMapel.get(targetMapelId) ?? [] : [];
@@ -335,12 +344,12 @@ export async function load({ parent, url, depends }) {
 	const tujuanGroups =
 		!isAgamaSelected && selectedMapelRecord
 			? Array.from(
-					(groupedTujuanByMapel.get(selectedMapelRecord.id) ?? new Map()).entries(),
-					([lingkupMateri, tujuan]) => ({
-						lingkupMateri,
-						totalTujuan: tujuan.length
-					})
-				)
+				(groupedTujuanByMapel.get(selectedMapelRecord.id) ?? new Map()).entries(),
+				([lingkupMateri, tujuan]) => ({
+					lingkupMateri,
+					totalTujuan: tujuan.length
+				})
+			  )
 			: [];
 
 	const jumlahTujuan =
@@ -353,6 +362,7 @@ export async function load({ parent, url, depends }) {
 		selectedMapel,
 		tujuanGroups,
 		jumlahTujuan,
-		daftarMurid
+		daftarMurid,
+		search: searchTerm
 	};
 }
