@@ -101,7 +101,7 @@
 			<tbody>
 				<tr>
 					<td>1</td>
-					<td>Nilai Tes Akhir Semester (SAS)</td>
+					<td>Nilai tes Sumatif Akhir Semester (SAS)</td>
 					<td>
 						<!-- Limit rentang 1-100, 2 angka belakang koma. Munculkan toast error jika user melakukan kesalahan -->
 						<input
@@ -118,7 +118,7 @@
 				<tr>
 					<td>1</td>
 					<!-- Semua tujuan pembelajaran dari semua lingkup materi yang di-input ditampilkan -->
-					<td>Nilai Non Tes Akhir Semester (SAS)</td>
+					<td>Nilai Non Tes Sumatif Akhir Semester (SAS)</td>
 					<td>
 						<!-- Limit rentang 1-100, 2 angka belakang koma. Munculkan toast error jika user melakukan kesalahan -->
 						<input
