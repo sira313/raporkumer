@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Masukan from './masukan.svelte';
 	import Donate from '$lib/components/donate.svelte';
+	import Icon from '$lib/components/icon.svelte';
 
 	let masukanModal: InstanceType<typeof Masukan>;
 </script>
@@ -45,6 +46,14 @@
 						target="_blank"
 						rel="noreferrer">
 						Pelajari Kurikulum
+					</a>
+					<a
+						class="btn shadow-none btn-outline sm:ml-auto btn-lg"
+						href="https://t.me/+zj3h_zjBAC02YjZl"
+						target="_blank"
+						rel="noreferrer">
+						<Icon name="telegram" class="text-xl" />
+						Gabung Grup Telegram
 					</a>
 				</div>
 			</div>
