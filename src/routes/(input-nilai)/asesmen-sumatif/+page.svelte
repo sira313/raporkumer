@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
-	import { autoSubmit } from '$lib/utils';
+	import { autoSubmit, searchQueryMarker } from '$lib/utils';
+	import { onDestroy } from 'svelte';
 
 	type MapelOption = { value: string; nama: string };
 	type MuridRow = {
@@ -13,29 +16,131 @@
 		nilaiHref: string | null;
 	};
 
+	type PageState = {
+		search: string | null;
+		currentPage: number;
+		totalPages: number;
+		totalItems: number;
+		perPage: number;
+	};
+
 	type PageData = {
 		mapelList: MapelOption[];
 		selectedMapelValue: string | null;
 		selectedMapel: { id: number | null; nama: string } | null;
 		daftarMurid: MuridRow[];
+		page: PageState;
 	};
 
 	let { data }: { data: PageData } = $props();
 
 	let selectedMapelValue = $state(data.selectedMapelValue ?? '');
+	let searchTerm = $state(data.page.search ?? '');
+	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 	$effect(() => {
 		selectedMapelValue = data.selectedMapelValue ?? '';
 	});
 
+	$effect(() => {
+		searchTerm = data.page.search ?? '';
+	});
+
 	const selectedMapelLabel = $derived.by(() => data.selectedMapel?.nama ?? null);
 	const hasMapel = $derived(data.mapelList.length > 0);
-	const hasMurid = $derived(data.daftarMurid.length > 0);
+	const currentPage = $derived.by(() => data.page.currentPage ?? 1);
+	const totalPages = $derived.by(() => Math.max(1, data.page.totalPages ?? 1));
+	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
+	const searchActive = $derived(Boolean(data.page.search));
+	const hasResults = $derived(data.daftarMurid.length > 0);
 
 	function formatScore(value: number | null) {
 		if (value == null || Number.isNaN(value)) return '—';
 		return value.toFixed(2);
 	}
+
+	function buildSearchUrl(rawValue: string) {
+		const params = new URLSearchParams(page.url.search);
+		const cleaned = rawValue.trim();
+		const current = params.get('q') ?? '';
+		const searchChanged = cleaned !== current;
+		if (cleaned) {
+			params.set('q', cleaned);
+		} else {
+			params.delete('q');
+		}
+		if (searchChanged) {
+			params.delete('page');
+		}
+		const nextQuery = params.toString();
+		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+		const currentUrl = `${page.url.pathname}${page.url.search}`;
+		if (nextUrl === currentUrl) {
+			return null;
+		}
+		return nextUrl;
+	}
+
+	async function applySearch(rawValue: string) {
+		const target = buildSearchUrl(rawValue);
+		if (!target) return;
+		searchTimer = undefined;
+		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function buildPageUrl(pageNumber: number) {
+		const params = new URLSearchParams(page.url.search);
+		const sanitized = pageNumber < 1 ? 1 : pageNumber;
+		if (sanitized <= 1) {
+			params.delete('page');
+		} else {
+			params.set('page', String(sanitized));
+		}
+		const nextQuery = params.toString();
+		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+		const currentUrl = `${page.url.pathname}${page.url.search}`;
+		if (nextUrl === currentUrl) {
+			return null;
+		}
+		return nextUrl;
+	}
+
+	async function gotoPageNumber(pageNumber: number) {
+		const target = buildPageUrl(pageNumber);
+		if (!target) return;
+		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function handlePageClick(pageNumber: number) {
+		if (pageNumber === currentPage) return;
+		void gotoPageNumber(pageNumber);
+	}
+
+	function handleSearchInput(event: Event) {
+		const value = (event.currentTarget as HTMLInputElement).value;
+		searchTerm = value;
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+		searchTimer = setTimeout(() => {
+			void applySearch(value);
+		}, 400);
+	}
+
+	function submitSearch(event: Event) {
+		event.preventDefault();
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+			searchTimer = undefined;
+		}
+		void applySearch(searchTerm);
+	}
+
+	onDestroy(() => {
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+	});
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
@@ -70,12 +175,29 @@
 					{/each}
 				{/if}
 			</select>
+			{#if searchTerm.trim().length}
+				<input type="hidden" name="q" value={searchTerm.trim()} />
+			{/if}
 		</form>
-		<!-- Cari nama murid -->
-		<label class="input bg-base-200 w-full dark:border-none">
-			<Icon name="search" />
-			<input type="search" required placeholder="Cari nama murid..." />
-		</label>
+		<form
+			class="w-full"
+			data-sveltekit-keepfocus
+			data-sveltekit-replacestate
+			onsubmit={submitSearch}
+		>
+			<label class="input bg-base-200 w-full dark:border-none">
+				<Icon name="search" />
+				<input
+					type="search"
+					name="q"
+					value={searchTerm}
+					spellcheck="false"
+					autocomplete="name"
+					placeholder="Cari nama murid..."
+					oninput={handleSearchInput}
+				/>
+			</label>
+		</form>
 	</div>
 
 	{#if !hasMapel}
@@ -86,13 +208,23 @@
 				<strong>Intrakurikuler</strong>.
 			</span>
 		</div>
-	{:else if !hasMurid}
-		<div class="alert alert-soft alert-warning mt-6">
-			<Icon name="alert" />
-			<span>
-				Belum ada data murid untuk kelas ini. Silakan tambah murid di menu <strong>Murid</strong>.
-			</span>
-		</div>
+	{:else if !hasResults}
+		{#if searchActive}
+			<div class="alert alert-soft alert-warning mt-6">
+				<Icon name="alert" />
+				<span>
+					Tidak ditemukan murid dengan kata kunci
+					<strong>"{data.page.search}"</strong>. Coba gunakan nama lain atau hapus pencarian.
+				</span>
+			</div>
+		{:else}
+			<div class="alert alert-soft alert-warning mt-6">
+				<Icon name="alert" />
+				<span>
+					Belum ada data murid untuk kelas ini. Silakan tambah murid di menu <strong>Murid</strong>.
+				</span>
+			</div>
+		{/if}
 	{:else}
 		<div
 			class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
@@ -110,7 +242,7 @@
 					{#each data.daftarMurid as murid}
 						<tr>
 							<td>{murid.no}</td>
-							<td>{murid.nama}</td>
+							<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
 							<td>
 								{#if murid.nilaiAkhir != null}
 									<p class="font-semibold">{formatScore(murid.nilaiAkhir)}</p>
@@ -145,12 +277,18 @@
 				</tbody>
 			</table>
 		</div>
-		<!-- pagination -->
-		<div class="join mx-auto mt-4">
-			<button class="join-item btn btn-active">1</button>
-			<button class="join-item btn">2</button>
-			<button class="join-item btn">3</button>
-			<button class="join-item btn">4</button>
+		<div class="join mt-4 sm:mx-auto">
+			{#each pages as pageNumber}
+				<button
+					type="button"
+					class="join-item btn"
+					class:btn-active={pageNumber === currentPage}
+					onclick={() => handlePageClick(pageNumber)}
+					aria-current={pageNumber === currentPage ? 'page' : undefined}
+				>
+					{pageNumber}
+				</button>
+			{/each}
 		</div>
 	{/if}
 </div>

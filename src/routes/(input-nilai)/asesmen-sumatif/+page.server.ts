@@ -1,7 +1,8 @@
 import db from '$lib/server/db';
 import { ensureAsesmenSumatifSchema } from '$lib/server/db/ensure-asesmen-sumatif';
 import { tableAsesmenSumatif, tableMataPelajaran, tableMurid } from '$lib/server/db/schema';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { redirect } from '@sveltejs/kit';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
 const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
 const AGAMA_MAPEL_VALUE = 'agama';
@@ -51,18 +52,42 @@ type MuridRow = {
 	nilaiHref: string | null;
 };
 
+type PageState = {
+	search: string | null;
+	currentPage: number;
+	totalPages: number;
+	totalItems: number;
+	perPage: number;
+};
+
 export async function load({ parent, url, depends }) {
 	depends('app:asesmen-sumatif');
 	const { kelasAktif } = await parent();
 	const meta: PageMeta = { title: 'Asesmen Sumatif' };
 
+	const searchParam = url.searchParams.get('q');
+	const searchTrimmed = searchParam ? searchParam.trim() : '';
+	const search = searchTrimmed.length ? searchTrimmed : null;
+	const perPage = 20;
+	const requestedPage = Number(url.searchParams.get('page')) || 1;
+	const pageNumber =
+		Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1;
+
 	if (!kelasAktif?.id) {
+		const pageState: PageState = {
+			search,
+			currentPage: 1,
+			totalPages: 1,
+			totalItems: 0,
+			perPage
+		};
 		return {
 			meta,
 			mapelList: [] as MapelOption[],
 			selectedMapelValue: null as string | null,
 			selectedMapel: null as { id: number | null; nama: string } | null,
-			daftarMurid: [] as MuridRow[]
+			daftarMurid: [] as MuridRow[],
+			page: pageState
 		};
 	}
 
@@ -125,23 +150,65 @@ export async function load({ parent, url, depends }) {
 			? { id: selectedMapelRecord.id, nama: selectedMapelRecord.nama }
 			: null;
 
+	const muridFilter = and(
+		eq(tableMurid.kelasId, kelasAktif.id),
+		search ? sql`${tableMurid.nama} LIKE ${'%' + search + '%'} COLLATE NOCASE` : undefined
+	);
+
+	const [{ totalItems }] = await db
+		.select({ totalItems: sql<number>`count(*)` })
+		.from(tableMurid)
+		.where(muridFilter);
+
+	const total = totalItems ?? 0;
+	const totalPages = Math.max(1, Math.ceil(total / perPage));
+	const currentPage = Math.min(Math.max(pageNumber, 1), totalPages);
+	const offset = (currentPage - 1) * perPage;
+	const pageState: PageState = {
+		search,
+		currentPage,
+		totalPages,
+		totalItems: total,
+		perPage
+	};
+
 	const muridRecords = await db.query.tableMurid.findMany({
 		columns: { id: true, nama: true, agama: true },
-		where: eq(tableMurid.kelasId, kelasAktif.id),
-		orderBy: asc(tableMurid.nama)
+		where: muridFilter,
+		orderBy: asc(tableMurid.nama),
+		limit: perPage,
+		offset
 	});
 
+	if (pageNumber !== currentPage) {
+		const params = new URLSearchParams(url.searchParams);
+		if (currentPage <= 1) {
+			params.delete('page');
+		} else {
+			params.set('page', String(currentPage));
+		}
+		throw redirect(303, `${url.pathname}${params.size ? `?${params}` : ''}`);
+	}
+
+	const baseList: MuridRow[] = muridRecords.map((murid, index) => ({
+		id: murid.id,
+		no: offset + index + 1,
+		nama: murid.nama,
+		nilaiAkhir: null,
+		naLingkup: null,
+		sas: null,
+		nilaiHref: null
+	}));
+
 	if (!selectedMapelValue) {
-		const daftarMurid = muridRecords.map((murid, index) => ({
-			id: murid.id,
-			no: index + 1,
-			nama: murid.nama,
-			nilaiAkhir: null,
-			naLingkup: null,
-			sas: null,
-			nilaiHref: null
-		}));
-		return { meta, mapelList: mapelOptions, selectedMapelValue, selectedMapel, daftarMurid };
+		return {
+			meta,
+			mapelList: mapelOptions,
+			selectedMapelValue,
+			selectedMapel,
+			daftarMurid: baseList,
+			page: pageState
+		};
 	}
 
 	await ensureAsesmenSumatifSchema();
@@ -210,7 +277,7 @@ export async function load({ parent, url, depends }) {
 
 		return {
 			id: murid.id,
-			no: index + 1,
+			no: offset + index + 1,
 			nama: murid.nama,
 			nilaiAkhir: formatScore(sumatif?.nilaiAkhir),
 			naLingkup: formatScore(sumatif?.naLingkup),
@@ -221,5 +288,12 @@ export async function load({ parent, url, depends }) {
 		};
 	});
 
-	return { meta, mapelList: mapelOptions, selectedMapelValue, selectedMapel, daftarMurid };
+	return {
+		meta,
+		mapelList: mapelOptions,
+		selectedMapelValue,
+		selectedMapel,
+		daftarMurid,
+		page: pageState
+	};
 }
