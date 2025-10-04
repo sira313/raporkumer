@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { blob, int, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
+import { blob, int, real, sqliteTable, text, unique, index } from 'drizzle-orm/sqlite-core';
 
 const audit = {
 	createdAt: text()
@@ -229,6 +229,54 @@ export const tableTujuanPembelajaran = sqliteTable('tujuan_pembelajaran', {
 	...audit
 });
 
+export const tableAsesmenSumatif = sqliteTable(
+	'asesmen_sumatif',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		muridId: int()
+			.references(() => tableMurid.id, { onDelete: 'cascade' })
+			.notNull(),
+		mataPelajaranId: int()
+			.references(() => tableMataPelajaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		naLingkup: real(),
+		sasTes: real(),
+		sasNonTes: real(),
+		sas: real(),
+		nilaiAkhir: real(),
+		...audit
+	},
+	(table) => [
+		unique().on(table.muridId, table.mataPelajaranId),
+		index('asesmen_sumatif_murid_idx').on(table.muridId),
+		index('asesmen_sumatif_mapel_idx').on(table.mataPelajaranId)
+	]
+);
+
+export const tableAsesmenSumatifTujuan = sqliteTable(
+	'asesmen_sumatif_tujuan',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		muridId: int()
+			.references(() => tableMurid.id, { onDelete: 'cascade' })
+			.notNull(),
+		mataPelajaranId: int()
+			.references(() => tableMataPelajaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		tujuanPembelajaranId: int()
+			.references(() => tableTujuanPembelajaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		nilai: real(),
+		...audit
+	},
+	(table) => [
+		unique().on(table.muridId, table.tujuanPembelajaranId),
+		index('asesmen_sumatif_tujuan_murid_idx').on(table.muridId),
+		index('asesmen_sumatif_tujuan_mapel_idx').on(table.mataPelajaranId),
+		index('asesmen_sumatif_tujuan_tp_idx').on(table.tujuanPembelajaranId)
+	]
+);
+
 export const tableAsesmenFormatif = sqliteTable(
 	'asesmen_formatif',
 	{
@@ -252,6 +300,9 @@ export const tableAsesmenFormatif = sqliteTable(
 
 export const tableMataPelajaranRelations = relations(tableMataPelajaran, ({ one, many }) => ({
 	tujuanPembelajaran: many(tableTujuanPembelajaran),
+	asesmenFormatif: many(tableAsesmenFormatif),
+	asesmenSumatif: many(tableAsesmenSumatif),
+	asesmenSumatifTujuan: many(tableAsesmenSumatifTujuan),
 	kelas: one(tableKelas, { fields: [tableMataPelajaran.kelasId], references: [tableKelas.id] })
 }));
 
@@ -276,6 +327,35 @@ export const tableAsesmenFormatifRelations = relations(tableAsesmenFormatif, ({ 
 		references: [tableTujuanPembelajaran.id]
 	})
 }));
+
+export const tableAsesmenSumatifRelations = relations(tableAsesmenSumatif, ({ one }) => ({
+	murid: one(tableMurid, {
+		fields: [tableAsesmenSumatif.muridId],
+		references: [tableMurid.id]
+	}),
+	mataPelajaran: one(tableMataPelajaran, {
+		fields: [tableAsesmenSumatif.mataPelajaranId],
+		references: [tableMataPelajaran.id]
+	})
+}));
+
+export const tableAsesmenSumatifTujuanRelations = relations(
+	tableAsesmenSumatifTujuan,
+	({ one }) => ({
+		murid: one(tableMurid, {
+			fields: [tableAsesmenSumatifTujuan.muridId],
+			references: [tableMurid.id]
+		}),
+		mataPelajaran: one(tableMataPelajaran, {
+			fields: [tableAsesmenSumatifTujuan.mataPelajaranId],
+			references: [tableMataPelajaran.id]
+		}),
+		tujuanPembelajaran: one(tableTujuanPembelajaran, {
+			fields: [tableAsesmenSumatifTujuan.tujuanPembelajaranId],
+			references: [tableTujuanPembelajaran.id]
+		})
+	})
+);
 
 export const tableEkstrakurikuler = sqliteTable(
 	'ekstrakurikuler',

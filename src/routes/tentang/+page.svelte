@@ -159,6 +159,7 @@
 							<li><span class="font-semibold text-base-content">Saipul Anam, S.Pd.</span></li>
 							<li><span class="font-semibold text-base-content">Anistoga, S.Pd., Gr.</span></li>
 							<li><span class="font-semibold text-base-content">Fathonah Nilawidya, S.Pd.</span></li>
+							<li><span class="font-semibold text-base-content">Rudiansyah, S.Pd., Gr.</span></li>
 						</ul>
 					</div>
 				</article>
