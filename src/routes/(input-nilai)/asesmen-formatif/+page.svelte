@@ -4,8 +4,8 @@
 
 	type ProgressCategory = 'sangat-baik' | 'baik' | 'perlu-pendalaman' | 'perlu-bimbingan';
 	type PageData = {
-		mapelList: Array<{ id: number; nama: string }>;
-		selectedMapelId: number | null;
+		mapelList: Array<{ value: string; nama: string }>;
+		selectedMapelValue: string | null;
 		daftarMurid: Array<{
 			id: number;
 			nama: string;
@@ -22,7 +22,7 @@
 			nilaiHref: string | null;
 		}>;
 		jumlahTujuan: number;
-		selectedMapel?: { id: number; nama: string } | null;
+		selectedMapel?: { id: number | null; nama: string } | null;
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -34,12 +34,10 @@
 		'perlu-bimbingan': 'text-error'
 	};
 
-	let selectedMapelValue = $state(
-		data.selectedMapelId == null ? '' : String(data.selectedMapelId)
-	);
+	let selectedMapelValue = $state(data.selectedMapelValue ?? '');
 
 	$effect(() => {
-		selectedMapelValue = data.selectedMapelId == null ? '' : String(data.selectedMapelId);
+		selectedMapelValue = data.selectedMapelValue ?? '';
 	});
 
 	function escapeHtml(value: string) {
@@ -100,10 +98,7 @@
 						Pilih Mata Pelajaran
 					</option>
 					{#each data.mapelList as mapel}
-						{@const optionValue = String(mapel.id)}
-						<option value={optionValue} selected={selectedMapelValue === optionValue}>
-							{mapel.nama}
-						</option>
+						<option value={mapel.value}>{mapel.nama}</option>
 					{/each}
 				{/if}
 			</select>

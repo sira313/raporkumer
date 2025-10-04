@@ -17,6 +17,37 @@ const CATEGORY_LABEL: Record<ProgressCategory, string> = {
 
 const DEFAULT_LINGKUP = 'Tanpa lingkup materi';
 
+const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
+const AGAMA_MAPEL_VALUE = 'agama';
+
+const AGAMA_VARIANT_MAP: Record<string, string> = {
+	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
+	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
+	protestan: 'Pendidikan Agama Kristen dan Budi Pekerti',
+	katolik: 'Pendidikan Agama Katolik dan Budi Pekerti',
+	katholik: 'Pendidikan Agama Katolik dan Budi Pekerti',
+	hindu: 'Pendidikan Agama Hindu dan Budi Pekerti',
+	budha: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
+	'khong hu cu': 'Pendidikan Agama Khonghucu dan Budi Pekerti',
+	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
+};
+
+function normalizeText(value: string | null | undefined) {
+	return value?.trim().toLowerCase() ?? '';
+}
+
+function isAgamaSubject(name: string) {
+	return normalizeText(name).startsWith('pendidikan agama');
+}
+
+function resolveAgamaVariantName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return AGAMA_VARIANT_MAP[normalized] ?? null;
+}
+
 type ProgressCategory = 'sangat-baik' | 'baik' | 'perlu-pendalaman' | 'perlu-bimbingan';
 
 type ProgressSummaryPart = {
@@ -55,7 +86,6 @@ function buildSummarySentence(parts: ProgressSummaryPart[]): string | null {
 	const capitalized = sentence.charAt(0).toUpperCase() + sentence.slice(1);
 	return capitalized.endsWith('.') ? capitalized : `${capitalized}.`;
 }
-
 export async function load({ parent, url, depends }) {
 	depends('app:asesmen-formatif');
 	const { kelasAktif } = await parent();
@@ -65,7 +95,7 @@ export async function load({ parent, url, depends }) {
 		return {
 			meta,
 			mapelList: [],
-			selectedMapelId: null,
+			selectedMapelValue: null,
 			selectedMapel: null,
 			tujuanGroups: [] as Array<{ lingkupMateri: string; totalTujuan: number }>,
 			jumlahTujuan: 0,
@@ -73,37 +103,74 @@ export async function load({ parent, url, depends }) {
 		};
 	}
 
-	const mapelList = await db.query.tableMataPelajaran.findMany({
+	const mapelRecords = await db.query.tableMataPelajaran.findMany({
 		columns: { id: true, nama: true },
 		where: eq(tableMataPelajaran.kelasId, kelasAktif.id),
 		orderBy: asc(tableMataPelajaran.nama)
 	});
 
-	const requestedMapelId = Number(url.searchParams.get('mapel_id'));
-	let selectedMapel = Number.isInteger(requestedMapelId)
-		? mapelList.find((item) => item.id === requestedMapelId) ?? null
-		: null;
-	if (!selectedMapel && mapelList.length) {
-		selectedMapel = mapelList[0];
+	const mapelByName = new Map(mapelRecords.map((record) => [normalizeText(record.nama), record]));
+
+	let agamaBaseMapel: (typeof mapelRecords)[number] | null = null;
+	const agamaVariantRecords: typeof mapelRecords = [];
+	const regularOptions: Array<{ value: string; nama: string }> = [];
+
+	for (const record of mapelRecords) {
+		if (isAgamaSubject(record.nama)) {
+			if (normalizeText(record.nama) === normalizeText(AGAMA_BASE_SUBJECT)) {
+				agamaBaseMapel = record;
+			} else {
+				agamaVariantRecords.push(record);
+			}
+		} else {
+			regularOptions.push({ value: String(record.id), nama: record.nama });
+		}
 	}
 
-	const selectedMapelId = selectedMapel?.id ?? null;
+	regularOptions.sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
 
-	const muridList = await db.query.tableMurid.findMany({
-		columns: { id: true, nama: true },
+	const mapelOptions = [...regularOptions];
+	if (agamaBaseMapel || agamaVariantRecords.length) {
+		const exists = mapelOptions.some((option) => normalizeText(option.nama) === normalizeText(AGAMA_BASE_SUBJECT));
+		if (!exists) {
+			mapelOptions.unshift({ value: AGAMA_MAPEL_VALUE, nama: AGAMA_BASE_SUBJECT });
+		}
+	}
+
+	const requestedValue = url.searchParams.get('mapel_id');
+	let selectedMapelValue = requestedValue ?? null;
+	if (selectedMapelValue && !mapelOptions.some((option) => option.value === selectedMapelValue)) {
+		selectedMapelValue = null;
+	}
+	if (!selectedMapelValue && mapelOptions.length) {
+		selectedMapelValue = mapelOptions[0].value;
+	}
+
+	const isAgamaSelected = selectedMapelValue === AGAMA_MAPEL_VALUE;
+	const selectedMapelRecord = !isAgamaSelected && selectedMapelValue
+		? mapelRecords.find((record) => String(record.id) === selectedMapelValue) ?? null
+		: null;
+	const selectedMapel = isAgamaSelected
+		? agamaBaseMapel
+			? { id: agamaBaseMapel.id, nama: agamaBaseMapel.nama }
+			: { id: null, nama: AGAMA_BASE_SUBJECT }
+		: selectedMapelRecord;
+
+	const muridRecords = await db.query.tableMurid.findMany({
+		columns: { id: true, nama: true, agama: true },
 		where: eq(tableMurid.kelasId, kelasAktif.id),
 		orderBy: asc(tableMurid.nama)
 	});
 
-	if (!selectedMapel) {
+	if (!selectedMapelValue) {
 		return {
 			meta,
-			mapelList,
-			selectedMapelId,
+			mapelList: mapelOptions,
+			selectedMapelValue: null,
 			selectedMapel: null,
 			tujuanGroups: [] as Array<{ lingkupMateri: string; totalTujuan: number }>,
 			jumlahTujuan: 0,
-			daftarMurid: muridList.map((murid, index) => ({
+			daftarMurid: muridRecords.map((murid, index) => ({
 				id: murid.id,
 				nama: murid.nama,
 				no: index + 1,
@@ -117,39 +184,62 @@ export async function load({ parent, url, depends }) {
 
 	await ensureAsesmenFormatifSchema();
 
-	const tujuanPembelajaran = await db.query.tableTujuanPembelajaran.findMany({
-		columns: { id: true, lingkupMateri: true },
-		where: eq(tableTujuanPembelajaran.mataPelajaranId, selectedMapel.id),
-		orderBy: [asc(tableTujuanPembelajaran.lingkupMateri), asc(tableTujuanPembelajaran.id)]
-	});
+	const agamaMapelIds = [...agamaVariantRecords.map((record) => record.id), ...(agamaBaseMapel ? [agamaBaseMapel.id] : [])];
+	const relevantMapelIds = isAgamaSelected
+		? Array.from(new Set(agamaMapelIds))
+		: selectedMapelRecord
+		? [selectedMapelRecord.id]
+		: [];
 
-	const groupedTujuan = tujuanPembelajaran.reduce(
-		(groups, tujuan) => {
-			const lingkup = tujuan.lingkupMateri?.trim() || DEFAULT_LINGKUP;
-			let group = groups.get(lingkup);
-			if (!group) {
-				group = [];
-				groups.set(lingkup, group);
-			}
-			group.push(tujuan);
-			return groups;
-		},
-		new Map<string, typeof tujuanPembelajaran>()
-	);
+	const tujuanRecords = relevantMapelIds.length
+		? await db.query.tableTujuanPembelajaran.findMany({
+			columns: { id: true, lingkupMateri: true, mataPelajaranId: true },
+			where: inArray(tableTujuanPembelajaran.mataPelajaranId, relevantMapelIds),
+			orderBy: [
+				asc(tableTujuanPembelajaran.mataPelajaranId),
+				asc(tableTujuanPembelajaran.lingkupMateri),
+				asc(tableTujuanPembelajaran.id)
+			]
+		})
+		: [];
 
-	const tujuanIds = tujuanPembelajaran.map((item) => item.id);
-	const muridIds = muridList.map((murid) => murid.id);
+	const tujuanByMapel = new Map<number, typeof tujuanRecords>();
+	const groupedTujuanByMapel = new Map<number, Map<string, typeof tujuanRecords>>();
+	for (const tujuan of tujuanRecords) {
+		const list = tujuanByMapel.get(tujuan.mataPelajaranId);
+		if (list) {
+			list.push(tujuan);
+		} else {
+			tujuanByMapel.set(tujuan.mataPelajaranId, [tujuan]);
+		}
+		const lingkup = tujuan.lingkupMateri?.trim() || DEFAULT_LINGKUP;
+		let map = groupedTujuanByMapel.get(tujuan.mataPelajaranId);
+		if (!map) {
+			map = new Map();
+			groupedTujuanByMapel.set(tujuan.mataPelajaranId, map);
+		}
+		const groupList = map.get(lingkup);
+		if (groupList) {
+			groupList.push(tujuan);
+		} else {
+			map.set(lingkup, [tujuan]);
+		}
+	}
+
+	const tujuanIds = tujuanRecords.map((record) => record.id);
+	const muridIds = muridRecords.map((murid) => murid.id);
 
 	const asesmenRecords =
-		muridIds.length && tujuanIds.length
+		relevantMapelIds.length && tujuanIds.length && muridIds.length
 			? await db.query.tableAsesmenFormatif.findMany({
 				columns: {
 					muridId: true,
+					mataPelajaranId: true,
 					tujuanPembelajaranId: true,
 					tuntas: true
 				},
 				where: and(
-					eq(tableAsesmenFormatif.mataPelajaranId, selectedMapel.id),
+					inArray(tableAsesmenFormatif.mataPelajaranId, relevantMapelIds),
 					inArray(tableAsesmenFormatif.muridId, muridIds),
 					inArray(tableAsesmenFormatif.tujuanPembelajaranId, tujuanIds)
 				)
@@ -166,8 +256,30 @@ export async function load({ parent, url, depends }) {
 		muridMap.set(record.tujuanPembelajaranId, Boolean(record.tuntas));
 	}
 
-	const daftarMurid = muridList.map((murid, index) => {
+	const pickMapelIdForMurid = (muridAgama: string | null | undefined): number | null => {
+		if (!isAgamaSelected) {
+			return selectedMapelRecord?.id ?? null;
+		}
+		const variantName = resolveAgamaVariantName(muridAgama);
+		if (variantName) {
+			const variantRecord = mapelByName.get(normalizeText(variantName));
+			if (variantRecord) {
+				return variantRecord.id;
+			}
+		}
+		if (agamaBaseMapel) {
+			return agamaBaseMapel.id;
+		}
+		return agamaVariantRecords[0]?.id ?? null;
+	};
+
+	const daftarMurid = muridRecords.map((murid, index) => {
+		const targetMapelId = pickMapelIdForMurid(murid.agama);
 		const asesmen = asesmenByMurid.get(murid.id) ?? new Map();
+		const tujuanList = targetMapelId ? tujuanByMapel.get(targetMapelId) ?? [] : [];
+		const groupedTujuan = targetMapelId
+			? groupedTujuanByMapel.get(targetMapelId) ?? new Map<string, typeof tujuanRecords>()
+			: new Map<string, typeof tujuanRecords>();
 		const parts: ProgressSummaryPart[] = [];
 
 		for (const [lingkupMateri, tujuan] of groupedTujuan.entries()) {
@@ -186,11 +298,14 @@ export async function load({ parent, url, depends }) {
 			});
 		}
 
-		const hasPenilaian = asesmen.size > 0;
+		const hasPenilaian = tujuanList.some((tujuan) => asesmen.has(tujuan.id));
 		let progressText: string | null = null;
 		let progressSummaryParts = parts.filter((part) => part.totalTujuan > 0);
 
-		if (!tujuanPembelajaran.length) {
+		if (!targetMapelId) {
+			progressText = `Mata pelajaran agama untuk agama ${murid.agama ?? 'tidak diketahui'} belum tersedia.`;
+			progressSummaryParts = [];
+		} else if (!tujuanList.length) {
 			progressText = 'Belum ada tujuan pembelajaran pada mata pelajaran ini.';
 			progressSummaryParts = [];
 		} else if (!hasPenilaian) {
@@ -211,20 +326,33 @@ export async function load({ parent, url, depends }) {
 			progressText,
 			progressSummaryParts,
 			hasPenilaian,
-			nilaiHref: `/asesmen-formatif/formulir-asesmen?murid_id=${murid.id}&mapel_id=${selectedMapel.id}`
+			nilaiHref: targetMapelId
+				? `/asesmen-formatif/formulir-asesmen?murid_id=${murid.id}&mapel_id=${targetMapelId}`
+				: null
 		};
 	});
 
+	const tujuanGroups =
+		!isAgamaSelected && selectedMapelRecord
+			? Array.from(
+					(groupedTujuanByMapel.get(selectedMapelRecord.id) ?? new Map()).entries(),
+					([lingkupMateri, tujuan]) => ({
+						lingkupMateri,
+						totalTujuan: tujuan.length
+					})
+				)
+			: [];
+
+	const jumlahTujuan =
+		!isAgamaSelected && selectedMapelRecord ? tujuanByMapel.get(selectedMapelRecord.id)?.length ?? 0 : 0;
+
 	return {
 		meta,
-		mapelList,
-		selectedMapelId,
+		mapelList: mapelOptions,
+		selectedMapelValue,
 		selectedMapel,
-		tujuanGroups: Array.from(groupedTujuan.entries(), ([lingkupMateri, tujuan]) => ({
-			lingkupMateri,
-			totalTujuan: tujuan.length
-		})),
-		jumlahTujuan: tujuanPembelajaran.length,
+		tujuanGroups,
+		jumlahTujuan,
 		daftarMurid
 	};
 }
