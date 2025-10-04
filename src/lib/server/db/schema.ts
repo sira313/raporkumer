@@ -379,6 +379,31 @@ export const tableEkstrakurikulerTujuan = sqliteTable('ekstrakurikuler_tujuan', 
 	...audit
 });
 
+export const tableAsesmenEkstrakurikuler = sqliteTable(
+	'asesmen_ekstrakurikuler',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		muridId: int()
+			.references(() => tableMurid.id, { onDelete: 'cascade' })
+			.notNull(),
+		ekstrakurikulerId: int()
+			.references(() => tableEkstrakurikuler.id, { onDelete: 'cascade' })
+			.notNull(),
+		tujuanId: int()
+			.references(() => tableEkstrakurikulerTujuan.id, { onDelete: 'cascade' })
+			.notNull(),
+		kategori: text({ enum: ['sangat-baik', 'baik', 'cukup', 'perlu-bimbingan'] }).notNull(),
+		dinilaiPada: text(),
+		...audit
+	},
+	(table) => [
+		unique().on(table.muridId, table.ekstrakurikulerId, table.tujuanId),
+		index('asesmen_ekstrakurikuler_murid_idx').on(table.muridId),
+		index('asesmen_ekstrakurikuler_ekstrak_idx').on(table.ekstrakurikulerId),
+		index('asesmen_ekstrakurikuler_tujuan_idx').on(table.tujuanId)
+	]
+);
+
 export const tableKokurikuler = sqliteTable('kokurikuler', {
 	id: int().primaryKey({ autoIncrement: true }),
 	kelasId: int()
@@ -395,15 +420,35 @@ export const tableEkstrakurikulerRelations = relations(tableEkstrakurikuler, ({ 
 		fields: [tableEkstrakurikuler.kelasId],
 		references: [tableKelas.id]
 	}),
-	tujuan: many(tableEkstrakurikulerTujuan)
+	tujuan: many(tableEkstrakurikulerTujuan),
+	asesmen: many(tableAsesmenEkstrakurikuler)
 }));
 
 export const tableEkstrakurikulerTujuanRelations = relations(
 	tableEkstrakurikulerTujuan,
-	({ one }) => ({
+	({ one, many }) => ({
 		ekstrakurikuler: one(tableEkstrakurikuler, {
 			fields: [tableEkstrakurikulerTujuan.ekstrakurikulerId],
 			references: [tableEkstrakurikuler.id]
+		}),
+		asesmen: many(tableAsesmenEkstrakurikuler)
+	})
+);
+
+export const tableAsesmenEkstrakurikulerRelations = relations(
+	tableAsesmenEkstrakurikuler,
+	({ one }) => ({
+		murid: one(tableMurid, {
+			fields: [tableAsesmenEkstrakurikuler.muridId],
+			references: [tableMurid.id]
+		}),
+		ekstrakurikuler: one(tableEkstrakurikuler, {
+			fields: [tableAsesmenEkstrakurikuler.ekstrakurikulerId],
+			references: [tableEkstrakurikuler.id]
+		}),
+		tujuan: one(tableEkstrakurikulerTujuan, {
+			fields: [tableAsesmenEkstrakurikuler.tujuanId],
+			references: [tableEkstrakurikulerTujuan.id]
 		})
 	})
 );
