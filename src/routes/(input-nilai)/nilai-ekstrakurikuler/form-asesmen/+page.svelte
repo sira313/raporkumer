@@ -4,7 +4,7 @@
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="flex flex-col gap-2 sm:flex-row">
-		<a href="/asesmen-sumatif/" class="btn shadow-none">
+		<a href="/nilai-ekstrakurikuler" class="btn shadow-none">
 			<Icon name="left" />
 			Kembali
 		</a>
