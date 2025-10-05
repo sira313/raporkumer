@@ -17,6 +17,9 @@
 	const ttd = $derived.by(() => rapor?.ttd ?? null);
 	const printTitle = $derived.by(() => data.meta?.title ?? 'Rapor Murid');
 
+	type IntrakurikulerEntry = NonNullable<RaporPrintData['nilaiIntrakurikuler']>[number];
+	type IntrakRow = { index: number; nomor: number; entry: IntrakurikulerEntry };
+
 	let firstCardContent = $state<HTMLDivElement | null>(null);
 	let firstTableSection = $state<HTMLElement | null>(null);
 	let continuationPrototypeContent = $state<HTMLDivElement | null>(null);
@@ -26,8 +29,8 @@
 	let finalTailAnchor = $state<HTMLElement | null>(null);
 
 	const intrakurikulerRows = $derived.by(() => {
-		const items = rapor?.nilaiIntrakurikuler ?? [];
-		return items.map((entry, index) => ({ index, nomor: index + 1, entry }));
+		const items: IntrakurikulerEntry[] = rapor?.nilaiIntrakurikuler ?? [];
+		return items.map<IntrakRow>((entry, index) => ({ index, nomor: index + 1, entry }));
 	});
 
 	const intrakRowElements = new Map<number, HTMLTableRowElement>();
@@ -48,7 +51,7 @@
 	}
 
 	type IntrakPage = {
-		rows: { index: number; nomor: number; entry: (typeof intrakurikulerRows)[number]['entry'] }[];
+		rows: IntrakRow[];
 	};
 
 	let intrakPages = $state<IntrakPage[]>([]);
@@ -75,7 +78,7 @@
 	async function splitIntrakRows() {
 		splitQueued = false;
 		await tick();
-		const rows = intrakurikulerRows;
+		const rows: IntrakRow[] = intrakurikulerRows;
 		if (rows.length === 0) {
 			intrakPages = [];
 			return;
