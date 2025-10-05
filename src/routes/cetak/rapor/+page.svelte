@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import PrintTip from '$lib/components/alerts/print-tip.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import { printElement } from '$lib/utils';
@@ -17,9 +17,161 @@
 	const ttd = $derived.by(() => rapor?.ttd ?? null);
 	const printTitle = $derived.by(() => data.meta?.title ?? 'Rapor Murid');
 
-	const intrakurikuler = $derived.by(() => {
+	let firstCardContent = $state<HTMLDivElement | null>(null);
+	let firstTableSection = $state<HTMLElement | null>(null);
+	let continuationPrototypeContent = $state<HTMLDivElement | null>(null);
+	let continuationPrototypeTableSection = $state<HTMLElement | null>(null);
+	let finalCardContent = $state<HTMLDivElement | null>(null);
+	let finalTableSection = $state<HTMLElement | null>(null);
+	let finalTailAnchor = $state<HTMLElement | null>(null);
+
+	const intrakurikulerRows = $derived.by(() => {
 		const items = rapor?.nilaiIntrakurikuler ?? [];
-		return items.map((entry, index) => ({ nomor: index + 1, entry }));
+		return items.map((entry, index) => ({ index, nomor: index + 1, entry }));
+	});
+
+	const intrakRowElements = new Map<number, HTMLTableRowElement>();
+	function intrakRow(node: HTMLTableRowElement, index: number) {
+		intrakRowElements.set(index, node);
+		let currentIndex = index;
+		return {
+			update(newIndex: number) {
+				if (newIndex === currentIndex) return;
+				intrakRowElements.delete(currentIndex);
+				currentIndex = newIndex;
+				intrakRowElements.set(currentIndex, node);
+			},
+			destroy() {
+				intrakRowElements.delete(currentIndex);
+			}
+		};
+	}
+
+	type IntrakPage = {
+		rows: { index: number; nomor: number; entry: (typeof intrakurikulerRows)[number]['entry'] }[];
+	};
+
+	let intrakPages = $state<IntrakPage[]>([]);
+	const intrakurikulerCount = $derived.by(() => intrakurikulerRows.length);
+	const intrakFirstPageRows = $derived.by(() => {
+		if (intrakPages.length > 0) return intrakPages[0]?.rows ?? [];
+		return intrakurikulerRows;
+	});
+	const intrakIntermediatePageRows = $derived.by(() => {
+		if (intrakPages.length <= 1) return [] as IntrakPage['rows'][];
+		const start = 1;
+		const end = Math.max(1, intrakPages.length - 1);
+		return intrakPages.slice(start, end).map((page) => page.rows);
+	});
+	const intrakFinalPageRows = $derived.by(() => {
+		if (intrakPages.length > 1) {
+			return intrakPages.at(-1)?.rows ?? [];
+		}
+		return [] as IntrakPage['rows'];
+	});
+
+	let splitQueued = false;
+
+	async function splitIntrakRows() {
+		splitQueued = false;
+		await tick();
+		const rows = intrakurikulerRows;
+		if (rows.length === 0) {
+			intrakPages = [];
+			return;
+		}
+		if (
+			!firstCardContent ||
+			!firstTableSection ||
+			!continuationPrototypeContent ||
+			!continuationPrototypeTableSection ||
+			!finalCardContent ||
+			!finalTailAnchor
+		) {
+			return;
+		}
+
+		const firstContentRect = firstCardContent.getBoundingClientRect();
+		const firstTableRect = firstTableSection.getBoundingClientRect();
+		const firstHeaderHeight = firstTableSection.querySelector('thead')?.getBoundingClientRect().height ?? 0;
+		const firstCapacity = Math.max(0, firstContentRect.bottom - firstTableRect.top - firstHeaderHeight);
+
+		const continuationContentRect = continuationPrototypeContent.getBoundingClientRect();
+		const continuationTableRect = continuationPrototypeTableSection.getBoundingClientRect();
+		const continuationHeaderHeight = continuationPrototypeTableSection
+			.querySelector('thead')
+			?.getBoundingClientRect().height ?? 0;
+		const continuationCapacity = Math.max(
+			0,
+			continuationContentRect.bottom - continuationTableRect.top - continuationHeaderHeight
+		);
+
+		let finalCapacity = continuationCapacity;
+		const finalTableRect = finalTableSection?.getBoundingClientRect();
+		const finalHeaderHeight = finalTableSection?.querySelector('thead')?.getBoundingClientRect().height ?? continuationHeaderHeight;
+		const finalTailRect = finalTailAnchor?.getBoundingClientRect();
+		if (finalTableRect && finalTailRect) {
+			finalCapacity = Math.max(0, finalTailRect.top - finalTableRect.top - finalHeaderHeight);
+		}
+
+		const subsequentCapacity = Math.max(0, Math.min(continuationCapacity, finalCapacity));
+
+		const rowHeights = rows.map((row) => intrakRowElements.get(row.index)?.getBoundingClientRect().height ?? 0);
+		if (rowHeights.some((height) => height === 0)) {
+			queueSplit();
+			return;
+		}
+
+		const newPages: IntrakPage[] = [];
+		let currentCapacity = firstCapacity;
+		let accumulated = 0;
+		let pageRows: IntrakPage['rows'] = [];
+		const tolerance = 0.5;
+
+		rows.forEach((row, idx) => {
+			const rowHeight = rowHeights[idx];
+			if (pageRows.length > 0 && accumulated + rowHeight > currentCapacity + tolerance) {
+				newPages.push({ rows: pageRows });
+				currentCapacity = subsequentCapacity;
+				accumulated = 0;
+				pageRows = [];
+			}
+			pageRows.push(row);
+			accumulated += rowHeight;
+		});
+
+		if (pageRows.length > 0) {
+			newPages.push({ rows: pageRows });
+		}
+
+		intrakPages = newPages;
+	}
+
+	function queueSplit() {
+		if (splitQueued) return;
+		splitQueued = true;
+		queueMicrotask(splitIntrakRows);
+	}
+
+	function triggerSplitOnMount(_node: Element) {
+		queueSplit();
+		return {
+			destroy() {
+				queueSplit();
+			}
+		};
+	}
+
+	$effect(() => {
+		intrakurikulerRows;
+		queueSplit();
+	});
+
+	onMount(() => {
+		queueSplit();
+		const handleResize = () => queueSplit();
+		window.addEventListener('resize', handleResize);
+		return () => window.removeEventListener('resize', handleResize);
 	});
 
 	function formatValue(value: string | null | undefined) {
@@ -69,7 +221,11 @@
 		style="break-inside: avoid-page; break-after: page;"
 	>
 		<div class="min-w-[210mm] max-w-[210mm] min-h-[297mm] max-h-[297mm] mx-auto bg-base-100 text-base-content flex flex-col">
-			<div class="m-[20mm] flex flex-1 flex-col text-[12px]">
+			<div
+				class="m-[20mm] flex flex-1 flex-col text-[12px]"
+				bind:this={firstCardContent}
+				use:triggerSplitOnMount
+			>
 				<header class="text-center">
 					<h1 class="text-2xl font-bold uppercase tracking-wide">Laporan Hasil Belajar</h1>
 					<h2 class="font-semibold uppercase tracking-wide">(Rapor)</h2>
@@ -114,7 +270,7 @@
 					</table>
 				</section>
 
-				<section class="mt-8">
+				<section class="mt-8" bind:this={firstTableSection} use:triggerSplitOnMount>
 					<table class="w-full border border-base-300">
 						<thead class="bg-base-300">
 							<tr>
@@ -125,13 +281,13 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#if intrakurikuler.length === 0}
+							{#if intrakurikulerCount === 0}
 								<tr>
 									<td class="border border-base-300 px-3 py-2 text-center" colspan="4">Belum ada data intrakurikuler.</td>
 								</tr>
 							{:else}
-								{#each intrakurikuler as row}
-									<tr>
+								{#each intrakFirstPageRows as row (row.index)}
+									<tr use:intrakRow={row.index}>
 										<td class="border border-base-300 px-3 py-2 align-top">{row.nomor}</td>
 										<td class="border border-base-300 px-3 py-2 align-top">
 											<span class="font-semibold">{row.entry.mataPelajaran}</span>
@@ -151,13 +307,93 @@
 		</div>
 	</div>
 
+	{#each intrakIntermediatePageRows as pageRows, pageIndex}
+		<div
+			class="card bg-base-100 rounded-lg border border-none shadow-md print:shadow-none print:border-none print:bg-transparent"
+			style="break-inside: avoid-page; break-after: page;"
+		>
+			<div class="min-w-[210mm] max-w-[210mm] min-h-[297mm] max-h-[297mm] mx-auto bg-base-100 text-base-content flex flex-col">
+				<div class="m-[20mm] flex flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
+					<header class="text-center">
+						<h2 class="text-xl font-semibold uppercase tracking-wide">Muatan Pelajaran (Lanjutan)</h2>
+						<p class="text-sm text-base-content/70">Halaman lanjutan #{pageIndex + 2}</p>
+					</header>
+
+					<section class="mt-6">
+						<table class="w-full border border-base-300">
+							<thead class="bg-base-300">
+								<tr>
+									<th class="border border-base-300 px-3 py-2 text-left">No.</th>
+									<th class="border border-base-300 px-3 py-2 text-left">Muatan Pelajaran</th>
+									<th class="border border-base-300 px-3 py-2 text-center">Nilai Akhir</th>
+									<th class="border border-base-300 px-3 py-2 text-left">Capaian Kompetensi</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each pageRows as row (row.index)}
+									<tr use:intrakRow={row.index}>
+										<td class="border border-base-300 px-3 py-2 align-top">{row.nomor}</td>
+										<td class="border border-base-300 px-3 py-2 align-top">
+											<span class="font-semibold">{row.entry.mataPelajaran}</span>
+											{#if row.entry.kelompok}
+												<div class="text-xs text-base-content/70">{formatValue(row.entry.kelompok)}</div>
+											{/if}
+										</td>
+										<td class="border border-base-300 px-3 py-2 align-top text-center font-semibold">{formatValue(row.entry.nilaiAkhir)}</td>
+										<td class="border border-base-300 px-3 py-2 align-top whitespace-pre-line">{formatValue(row.entry.deskripsi)}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</section>
+				</div>
+			</div>
+		</div>
+	{/each}
+
 	<div
 		class="card bg-base-100 rounded-lg border border-none shadow-md print:shadow-none print:border-none print:bg-transparent"
 		style="break-inside: avoid-page;"
 	>
 		<div class="min-w-[210mm] max-w-[210mm] min-h-[297mm] max-h-[297mm] mx-auto bg-base-100 text-base-content flex flex-col">
-			<div class="m-[20mm] flex flex-1 flex-col text-[12px]">
-				<section>
+			<div
+				class="m-[20mm] flex flex-1 flex-col text-[12px]"
+				bind:this={finalCardContent}
+				use:triggerSplitOnMount
+			>
+				{#if intrakFinalPageRows.length > 0}
+					<section bind:this={finalTableSection} use:triggerSplitOnMount>
+						<table class="w-full border border-base-300">
+							<thead class="bg-base-300">
+								<tr>
+									<th class="border border-base-300 px-3 py-2 text-left">No.</th>
+									<th class="border border-base-300 px-3 py-2 text-left">Muatan Pelajaran</th>
+									<th class="border border-base-300 px-3 py-2 text-center">Nilai Akhir</th>
+									<th class="border border-base-300 px-3 py-2 text-left">Capaian Kompetensi</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each intrakFinalPageRows as row (row.index)}
+									<tr use:intrakRow={row.index}>
+										<td class="border border-base-300 px-3 py-2 align-top">{row.nomor}</td>
+										<td class="border border-base-300 px-3 py-2 align-top">
+											<span class="font-semibold">{row.entry.mataPelajaran}</span>
+											{#if row.entry.kelompok}
+												<div class="text-xs text-base-content/70">{formatValue(row.entry.kelompok)}</div>
+											{/if}
+										</td>
+										<td class="border border-base-300 px-3 py-2 align-top text-center font-semibold">{formatValue(row.entry.nilaiAkhir)}</td>
+										<td class="border border-base-300 px-3 py-2 align-top whitespace-pre-line">{formatValue(row.entry.deskripsi)}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</section>
+				{/if}
+
+				<div bind:this={finalTailAnchor} class="h-0" aria-hidden="true" use:triggerSplitOnMount></div>
+
+				<section class="mt-6" class:mt-8={intrakFinalPageRows.length > 0}>
 					<table class="w-full border border-base-300">
 						<thead class="bg-base-300">
 							<tr>
@@ -196,7 +432,7 @@
 										<td class="border border-base-300 px-3 py-2 align-top whitespace-pre-line">{formatValue(ekskul.deskripsi)}</td>
 									</tr>
 								{/each}
-						{/if}
+							{/if}
 						</tbody>
 					</table>
 				</section>
@@ -285,6 +521,31 @@
 						</div>
 					</div>
 				</footer>
+			</div>
+		</div>
+	</div>
+
+	<div
+		class="pointer-events-none"
+		style="position: absolute; width: 0; height: 0; overflow: hidden;"
+		aria-hidden="true"
+	>
+		<div class="card bg-base-100 rounded-lg border border-none shadow-md">
+			<div class="min-w-[210mm] max-w-[210mm] min-h-[297mm] max-h-[297mm] mx-auto bg-base-100 text-base-content flex flex-col">
+				<div class="m-[20mm] flex flex-1 flex-col text-[12px]" bind:this={continuationPrototypeContent}>
+					<section class="mt-6" bind:this={continuationPrototypeTableSection} use:triggerSplitOnMount>
+						<table class="w-full border border-base-300">
+							<thead class="bg-base-300">
+								<tr>
+									<th class="border border-base-300 px-3 py-2 text-left">No.</th>
+									<th class="border border-base-300 px-3 py-2 text-left">Muatan Pelajaran</th>
+									<th class="border border-base-300 px-3 py-2 text-center">Nilai Akhir</th>
+									<th class="border border-base-300 px-3 py-2 text-left">Capaian Kompetensi</th>
+								</tr>
+							</thead>
+						</table>
+					</section>
+				</div>
 			</div>
 		</div>
 	</div>
