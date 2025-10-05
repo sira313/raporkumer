@@ -29,3 +29,15 @@ a[data-preloading] {
 		white-space: nowrap;
 	}
 }
+
+@media print {
+	body {
+		margin: 0;
+		background: transparent;
+	}
+	#header,
+	#footer,
+	.navbar {
+		display: none !important;
+	}
+}
