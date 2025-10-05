@@ -28,8 +28,8 @@ type PredikatKey = 'perlu-bimbingan' | 'cukup' | 'baik' | 'sangat-baik';
 
 const PREDIKAT_ORDER: Record<PredikatKey, number> = {
 	'perlu-bimbingan': 0,
-	'cukup': 1,
-	'baik': 2,
+	cukup: 1,
+	baik: 2,
 	'sangat-baik': 3
 };
 
@@ -219,42 +219,42 @@ export const load = (async ({ locals, url, depends }) => {
 
 	const [asesmenSumatif, asesmenEkstrakurikuler, asesmenKokurikuler, asesmenSumatifTujuan] =
 		await Promise.all([
-		db.query.tableAsesmenSumatif.findMany({
-			where: eq(tableAsesmenSumatif.muridId, murid.id),
-			with: {
-				mataPelajaran: true
-			},
-			orderBy: [asc(tableAsesmenSumatif.mataPelajaranId)]
-		}),
-		db.query.tableAsesmenEkstrakurikuler.findMany({
-			where: eq(tableAsesmenEkstrakurikuler.muridId, murid.id),
-			with: {
-				ekstrakurikuler: true,
-				tujuan: true
-			},
-			orderBy: [
-				asc(tableAsesmenEkstrakurikuler.ekstrakurikulerId),
-				asc(tableAsesmenEkstrakurikuler.tujuanId)
-			]
-		}),
-		db.query.tableAsesmenKokurikuler.findMany({
-			where: eq(tableAsesmenKokurikuler.muridId, murid.id)
-		}),
-		db.query.tableAsesmenSumatifTujuan.findMany({
-			where: eq(tableAsesmenSumatifTujuan.muridId, murid.id),
-			with: {
-				tujuanPembelajaran: {
-					columns: {
-						deskripsi: true
+			db.query.tableAsesmenSumatif.findMany({
+				where: eq(tableAsesmenSumatif.muridId, murid.id),
+				with: {
+					mataPelajaran: true
+				},
+				orderBy: [asc(tableAsesmenSumatif.mataPelajaranId)]
+			}),
+			db.query.tableAsesmenEkstrakurikuler.findMany({
+				where: eq(tableAsesmenEkstrakurikuler.muridId, murid.id),
+				with: {
+					ekstrakurikuler: true,
+					tujuan: true
+				},
+				orderBy: [
+					asc(tableAsesmenEkstrakurikuler.ekstrakurikulerId),
+					asc(tableAsesmenEkstrakurikuler.tujuanId)
+				]
+			}),
+			db.query.tableAsesmenKokurikuler.findMany({
+				where: eq(tableAsesmenKokurikuler.muridId, murid.id)
+			}),
+			db.query.tableAsesmenSumatifTujuan.findMany({
+				where: eq(tableAsesmenSumatifTujuan.muridId, murid.id),
+				with: {
+					tujuanPembelajaran: {
+						columns: {
+							deskripsi: true
+						}
 					}
-				}
-			},
-			orderBy: [
-				asc(tableAsesmenSumatifTujuan.mataPelajaranId),
-				asc(tableAsesmenSumatifTujuan.tujuanPembelajaranId)
-			]
-		})
-	]);
+				},
+				orderBy: [
+					asc(tableAsesmenSumatifTujuan.mataPelajaranId),
+					asc(tableAsesmenSumatifTujuan.tujuanPembelajaranId)
+				]
+			})
+		]);
 
 	const tujuanScoresByMapel = new Map<number, TujuanScoreEntry[]>();
 
@@ -326,8 +326,7 @@ export const load = (async ({ locals, url, depends }) => {
 	}
 
 	const kokurikuler =
-		buildKokurikulerDeskripsi(kokurikulerParts) ??
-		'Belum ada catatan kokurikuler.';
+		buildKokurikulerDeskripsi(kokurikulerParts) ?? 'Belum ada catatan kokurikuler.';
 
 	const ttdTanggal = formatTanggal(murid.semester?.tanggalBagiRaport);
 
@@ -347,8 +346,7 @@ export const load = (async ({ locals, url, depends }) => {
 			fase: murid.kelas?.fase ?? ''
 		},
 		periode: {
-			tahunPelajaran:
-				murid.kelas?.tahunAjaran?.nama ?? murid.semester?.nama ?? '',
+			tahunPelajaran: murid.kelas?.tahunAjaran?.nama ?? murid.semester?.nama ?? '',
 			semester: murid.semester?.nama ?? murid.semester?.tipe ?? ''
 		},
 		waliKelas: {

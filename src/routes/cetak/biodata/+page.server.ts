@@ -78,7 +78,10 @@ function mapAlamat(alamat: GenericAlamatRecord | null | undefined): AlamatPayloa
 	};
 }
 
-function composeOrangTuaAlamat(raw: string | null | undefined, fallback: AlamatPayload): OrangTuaAlamatPayload {
+function composeOrangTuaAlamat(
+	raw: string | null | undefined,
+	fallback: AlamatPayload
+): OrangTuaAlamatPayload {
 	if (!raw) {
 		return { ...fallback };
 	}

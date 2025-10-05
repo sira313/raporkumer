@@ -17,6 +17,12 @@ a[data-preloading] {
 	@apply cursor-wait opacity-50;
 }
 
+@layer base {
+	.modal:not([open]) {
+		display: none;
+	}
+}
+
 @layer components {
 	.select-ellipsis {
 		max-width: min(100vw, 20rem);

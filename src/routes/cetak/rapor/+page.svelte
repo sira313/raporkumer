@@ -1,8 +1,12 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import PrintTip from '$lib/components/alerts/print-tip.svelte';
+	import TailSection from '$lib/components/cetak/rapor/TailSection.svelte';
+	import { tailBlockOrder, type TailBlockKey } from '$lib/components/cetak/rapor/tail-blocks';
 	import { toast } from '$lib/components/toast.svelte';
 	import { printElement } from '$lib/utils';
+
+	const tailContentKeys = tailBlockOrder.filter((key) => key !== 'footer');
 
 	let { data } = $props();
 	let printable: HTMLDivElement | null = null;
@@ -26,7 +30,6 @@
 	let continuationPrototypeTableSection = $state<HTMLElement | null>(null);
 	let finalCardContent = $state<HTMLDivElement | null>(null);
 	let finalTableSection = $state<HTMLElement | null>(null);
-	let finalTailAnchor = $state<HTMLElement | null>(null);
 
 	const intrakurikulerRows = $derived.by(() => {
 		const items: IntrakurikulerEntry[] = rapor?.nilaiIntrakurikuler ?? [];
@@ -73,56 +76,75 @@
 		return [] as IntrakPage['rows'];
 	});
 
+	const showTailOnFirstPage = $derived.by(() => intrakPages.length <= 1);
+
+	let footerOnSeparatePage = $state(false);
+
+	const tailMeasurementElements = new Map<TailBlockKey, HTMLElement>();
+	function tailMeasurement(node: HTMLElement, key: TailBlockKey) {
+		tailMeasurementElements.set(key, node);
+		queueSplit();
+		return {
+			destroy() {
+				tailMeasurementElements.delete(key);
+				queueSplit();
+			}
+		};
+	}
+
 	let splitQueued = false;
+
+	function computeTableCapacity(content: HTMLElement, tableSection: HTMLElement) {
+		const contentRect = content.getBoundingClientRect();
+		const tableRect = tableSection.getBoundingClientRect();
+		const headerHeight = tableSection.querySelector('thead')?.getBoundingClientRect().height ?? 0;
+		return Math.max(0, contentRect.bottom - tableRect.top - headerHeight);
+	}
 
 	async function splitIntrakRows() {
 		splitQueued = false;
 		await tick();
-		const rows: IntrakRow[] = intrakurikulerRows;
-		if (rows.length === 0) {
-			intrakPages = [];
-			return;
-		}
 		if (
 			!firstCardContent ||
 			!firstTableSection ||
 			!continuationPrototypeContent ||
 			!continuationPrototypeTableSection ||
-			!finalCardContent ||
-			!finalTailAnchor
+			tailMeasurementElements.size !== tailBlockOrder.length
 		) {
 			return;
 		}
 
-		const firstContentRect = firstCardContent.getBoundingClientRect();
-		const firstTableRect = firstTableSection.getBoundingClientRect();
-		const firstHeaderHeight =
-			firstTableSection.querySelector('thead')?.getBoundingClientRect().height ?? 0;
-		const firstCapacity = Math.max(
-			0,
-			firstContentRect.bottom - firstTableRect.top - firstHeaderHeight
+		const rows: IntrakRow[] = intrakurikulerRows;
+		const firstCapacity = computeTableCapacity(firstCardContent, firstTableSection);
+		const continuationCapacity = computeTableCapacity(
+			continuationPrototypeContent,
+			continuationPrototypeTableSection
 		);
-
-		const continuationContentRect = continuationPrototypeContent.getBoundingClientRect();
-		const continuationTableRect = continuationPrototypeTableSection.getBoundingClientRect();
-		const continuationHeaderHeight =
-			continuationPrototypeTableSection.querySelector('thead')?.getBoundingClientRect().height ?? 0;
-		const continuationCapacity = Math.max(
-			0,
-			continuationContentRect.bottom - continuationTableRect.top - continuationHeaderHeight
-		);
-
-		let finalCapacity = continuationCapacity;
-		const finalTableRect = finalTableSection?.getBoundingClientRect();
-		const finalHeaderHeight =
-			finalTableSection?.querySelector('thead')?.getBoundingClientRect().height ??
-			continuationHeaderHeight;
-		const finalTailRect = finalTailAnchor?.getBoundingClientRect();
-		if (finalTableRect && finalTailRect) {
-			finalCapacity = Math.max(0, finalTailRect.top - finalTableRect.top - finalHeaderHeight);
+		const tailHeightMap = new Map<TailBlockKey, number>();
+		for (const key of tailBlockOrder) {
+			const element = tailMeasurementElements.get(key);
+			if (!element) {
+				queueSplit();
+				return;
+			}
+			const rect = element.getBoundingClientRect();
+			if (rect.height === 0) {
+				queueSplit();
+				return;
+			}
+			const styles = getComputedStyle(element);
+			const marginTop = Number.parseFloat(styles.marginTop) || 0;
+			const marginBottom = Number.parseFloat(styles.marginBottom) || 0;
+			tailHeightMap.set(key, rect.height + marginTop + marginBottom);
 		}
 
-		const subsequentCapacity = Math.max(0, Math.min(continuationCapacity, finalCapacity));
+		const tailContentHeight = tailContentKeys.reduce(
+			(total, key) => total + (tailHeightMap.get(key) ?? 0),
+			0
+		);
+		const footerHeight = tailHeightMap.get('footer') ?? 0;
+		const footerTolerance = 8;
+		const finalCapacityBase = Math.max(0, continuationCapacity - tailContentHeight);
 
 		const rowHeights = rows.map(
 			(row) => intrakRowElements.get(row.index)?.getBoundingClientRect().height ?? 0
@@ -132,29 +154,120 @@
 			return;
 		}
 
-		const newPages: IntrakPage[] = [];
-		let currentCapacity = firstCapacity;
-		let accumulated = 0;
-		let pageRows: IntrakPage['rows'] = [];
 		const tolerance = 0.5;
 
-		rows.forEach((row, idx) => {
-			const rowHeight = rowHeights[idx];
-			if (pageRows.length > 0 && accumulated + rowHeight > currentCapacity + tolerance) {
-				newPages.push({ rows: pageRows });
-				currentCapacity = subsequentCapacity;
-				accumulated = 0;
-				pageRows = [];
-			}
-			pageRows.push(row);
-			accumulated += rowHeight;
-		});
+		function buildPages(firstCapacityOverride?: number) {
+			const pages: IntrakPage[] = [];
+			const firstLimit = Math.max(0, firstCapacityOverride ?? firstCapacity);
+			let cursor = 0;
+			let finalRowsHeightUsed = 0;
 
-		if (pageRows.length > 0) {
-			newPages.push({ rows: pageRows });
+			function takeRows(capacity: number) {
+				const pageRows: IntrakPage['rows'] = [];
+				let used = 0;
+				while (cursor < rows.length) {
+					const rowHeight = rowHeights[cursor];
+					if (pageRows.length > 0 && used + rowHeight > capacity + tolerance) {
+						break;
+					}
+					if (pageRows.length === 0 && capacity <= 0) {
+						pageRows.push(rows[cursor]);
+						cursor += 1;
+						break;
+					}
+					if (pageRows.length === 0 && rowHeight > capacity + tolerance) {
+						pageRows.push(rows[cursor]);
+						cursor += 1;
+						break;
+					}
+					pageRows.push(rows[cursor]);
+					used += rowHeight;
+					cursor += 1;
+				}
+				return pageRows;
+			}
+
+			function takeFinalRows(capacity: number) {
+				const pageRows: IntrakPage['rows'] = [];
+				let used = 0;
+				while (cursor < rows.length) {
+					const rowHeight = rowHeights[cursor];
+					if (pageRows.length > 0 && used + rowHeight > capacity + tolerance) {
+						break;
+					}
+					pageRows.push(rows[cursor]);
+					used += rowHeight;
+					cursor += 1;
+				}
+				if (pageRows.length === 0 && cursor < rows.length) {
+					pageRows.push(rows[cursor]);
+					cursor += 1;
+				}
+				finalRowsHeightUsed = used;
+				return pageRows;
+			}
+
+			function remainingFitsFinal(startIndex: number) {
+				if (startIndex >= rows.length) return true;
+				if (finalCapacityBase <= 0) return false;
+				let used = 0;
+				for (let i = startIndex; i < rows.length; i += 1) {
+					const height = rowHeights[i];
+					if (i > startIndex && used + height > finalCapacityBase + tolerance) {
+						return false;
+					}
+					used += height;
+				}
+				return (
+					used <= finalCapacityBase + tolerance ||
+					rowHeights[startIndex] > finalCapacityBase + tolerance
+				);
+			}
+
+			const firstPageRows = takeRows(firstLimit);
+			if (firstPageRows.length > 0) {
+				pages.push({ rows: firstPageRows });
+			}
+
+			while (cursor < rows.length) {
+				if (remainingFitsFinal(cursor)) {
+					const finalRows = takeFinalRows(finalCapacityBase);
+					if (finalRows.length > 0) {
+						pages.push({ rows: finalRows });
+					}
+					break;
+				}
+				const pageRows = takeRows(continuationCapacity);
+				if (pageRows.length === 0) {
+					pageRows.push(rows[cursor]);
+					cursor += 1;
+				}
+				pages.push({ rows: pageRows });
+			}
+
+			if (pages.length === 0) {
+				finalRowsHeightUsed = 0;
+			} else if (pages.length === 1 && finalRowsHeightUsed === 0) {
+				finalRowsHeightUsed = pages[0].rows.reduce((sum, row) => sum + rowHeights[row.index], 0);
+			} else if (finalRowsHeightUsed === 0) {
+				const lastPage = pages.at(-1);
+				if (lastPage) {
+					finalRowsHeightUsed = lastPage.rows.reduce((sum, row) => sum + rowHeights[row.index], 0);
+				}
+			}
+
+			return { pages, finalRowsHeightUsed };
 		}
 
-		intrakPages = newPages;
+		let { pages, finalRowsHeightUsed } = buildPages();
+		if (pages.length === 1 && finalRowsHeightUsed > finalCapacityBase + tolerance) {
+			({ pages, finalRowsHeightUsed } = buildPages(finalCapacityBase));
+		}
+
+		intrakPages = pages;
+
+		const leftoverForFooter = finalCapacityBase - finalRowsHeightUsed;
+		footerOnSeparatePage = leftoverForFooter < footerHeight + footerTolerance;
 	}
 
 	function queueSplit() {
@@ -227,16 +340,16 @@
 
 <PrintTip onPrint={handlePrint} buttonLabel="Cetak rapor" />
 
-<div class="flex flex-col gap-4 print:gap-0" bind:this={printable}>
+<div class="flex flex-col gap-4 overflow-visible print:gap-0" bind:this={printable}>
 	<div
-		class="card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none"
-		style="break-inside: avoid-page; break-after: page;"
+		class="card bg-base-100 rounded-lg border border-none shadow-md print:break-after-page print:border-none print:bg-transparent print:shadow-none"
+		style="break-inside: avoid-page;"
 	>
 		<div
-			class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col"
+			class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
 		>
 			<div
-				class="m-[20mm] flex flex-1 flex-col text-[12px]"
+				class="flex min-h-0 flex-1 flex-col text-[12px]"
 				bind:this={firstCardContent}
 				use:triggerSplitOnMount
 			>
@@ -326,19 +439,47 @@
 						</tbody>
 					</table>
 				</section>
+
+				{#if showTailOnFirstPage}
+					{#each tailContentKeys as tailKey (tailKey)}
+						<TailSection
+							{tailKey}
+							{rapor}
+							{formatValue}
+							{formatUpper}
+							{formatHari}
+							{waliKelas}
+							{kepalaSekolah}
+							{ttd}
+						/>
+					{/each}
+
+					{#if !footerOnSeparatePage}
+						<TailSection
+							tailKey="footer"
+							{rapor}
+							{formatValue}
+							{formatUpper}
+							{formatHari}
+							{waliKelas}
+							{kepalaSekolah}
+							{ttd}
+						/>
+					{/if}
+				{/if}
 			</div>
 		</div>
 	</div>
 
 	{#each intrakIntermediatePageRows as pageRows, pageIndex (pageIndex)}
 		<div
-			class="card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none"
-			style="break-inside: avoid-page; break-after: page;"
+			class="card bg-base-100 rounded-lg border border-none shadow-md print:break-after-page print:border-none print:bg-transparent print:shadow-none"
+			style="break-inside: avoid-page;"
 		>
 			<div
-				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col"
+				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
 			>
-				<div class="m-[20mm] flex flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
+				<div class="flex min-h-0 flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
 					<header class="text-center">
 						<h2 class="text-xl font-semibold tracking-wide uppercase">
 							Muatan Pelajaran (Lanjutan)
@@ -384,19 +525,20 @@
 		</div>
 	{/each}
 
-	<div
-		class="card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none"
-		style="break-inside: avoid-page;"
-	>
+	{#if intrakFinalPageRows.length > 0}
 		<div
-			class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col"
+			class="card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none"
+			style="break-inside: avoid-page;"
+			class:print\:break-after-page={footerOnSeparatePage}
 		>
 			<div
-				class="m-[20mm] flex flex-1 flex-col text-[12px]"
-				bind:this={finalCardContent}
-				use:triggerSplitOnMount
+				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
 			>
-				{#if intrakFinalPageRows.length > 0}
+				<div
+					class="flex min-h-0 flex-1 flex-col text-[12px]"
+					bind:this={finalCardContent}
+					use:triggerSplitOnMount
+				>
 					<section bind:this={finalTableSection} use:triggerSplitOnMount>
 						<table class="border-base-300 w-full border">
 							<thead class="bg-base-300">
@@ -430,178 +572,74 @@
 							</tbody>
 						</table>
 					</section>
-				{/if}
 
-				<div
-					bind:this={finalTailAnchor}
-					class="h-0"
-					aria-hidden="true"
-					use:triggerSplitOnMount
-				></div>
+					{#if !showTailOnFirstPage}
+						{#each tailContentKeys as tailKey (tailKey)}
+							<TailSection
+								{tailKey}
+								{rapor}
+								{formatValue}
+								{formatUpper}
+								{formatHari}
+								{waliKelas}
+								{kepalaSekolah}
+								{ttd}
+							/>
+						{/each}
 
-				<section class="mt-6" class:mt-8={intrakFinalPageRows.length > 0}>
-					<table class="border-base-300 w-full border">
-						<thead class="bg-base-300">
-							<tr>
-								<th class="border-base-300 border px-3 py-2 text-left">Kokurikuler</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="border-base-300 border px-3 py-3 whitespace-pre-line">
-									{formatValue(rapor?.kokurikuler)}
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</section>
-
-				<section class="mt-6">
-					<table class="border-base-300 w-full border">
-						<thead class="bg-base-300">
-							<tr>
-								<th class="border-base-300 border px-3 py-2 text-left" style="width: 40px;">No.</th>
-								<th class="border-base-300 border px-3 py-2 text-left">Ekstrakurikuler</th>
-								<th class="border-base-300 border px-3 py-2 text-left">Keterangan</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#if (rapor?.ekstrakurikuler?.length ?? 0) === 0}
-								<tr>
-									<td class="border-base-300 border px-3 py-2 text-center" colspan="3"
-										>Belum ada data ekstrakurikuler.</td
-									>
-								</tr>
-							{:else}
-								{#each rapor?.ekstrakurikuler ?? [] as ekskul, index (index)}
-									<tr>
-										<td class="border-base-300 border px-3 py-2 align-top">{index + 1}</td>
-										<td class="border-base-300 border px-3 py-2 align-top"
-											>{formatValue(ekskul.nama)}</td
-										>
-										<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
-											>{formatValue(ekskul.deskripsi)}</td
-										>
-									</tr>
-								{/each}
-							{/if}
-						</tbody>
-					</table>
-				</section>
-
-				<section class="mt-8 grid gap-6 md:grid-cols-2 print:grid-cols-2">
-					<table class="border-base-300 w-full border">
-						<thead class="bg-base-300">
-							<tr>
-								<th class="border-base-300 border px-3 py-2 text-left" colspan="2"
-									>Ketidakhadiran</th
-								>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="border-base-300 border px-3 py-2">Sakit</td>
-								<td class="border-base-300 border px-3 py-2 text-center"
-									>{formatHari(rapor?.ketidakhadiran?.sakit)}</td
-								>
-							</tr>
-							<tr>
-								<td class="border-base-300 border px-3 py-2">Izin</td>
-								<td class="border-base-300 border px-3 py-2 text-center"
-									>{formatHari(rapor?.ketidakhadiran?.izin)}</td
-								>
-							</tr>
-							<tr>
-								<td class="border-base-300 border px-3 py-2">Tanpa Keterangan</td>
-								<td class="border-base-300 border px-3 py-2 text-center"
-									>{formatHari(rapor?.ketidakhadiran?.tanpaKeterangan)}</td
-								>
-							</tr>
-						</tbody>
-					</table>
-					<table class="border-base-300 w-full border">
-						<thead class="bg-base-300">
-							<tr>
-								<th class="border-base-300 border px-3 py-2 text-left">Catatan Wali Kelas</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="border-base-300 min-h-[80px] border px-3 py-3 whitespace-pre-line">
-									{formatValue(rapor?.catatanWali)}
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</section>
-
-				<section class="mt-6">
-					<table class="border-base-300 w-full border">
-						<thead class="bg-base-300">
-							<tr>
-								<th class="border-base-300 border px-3 py-2 text-left"
-									>Tanggapan Orang Tua/Wali Murid</th
-								>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="border-base-300 border px-3 py-4 align-top">
-									<div class="min-h-[70px] whitespace-pre-line">
-										{rapor?.tanggapanOrangTua?.trim() || ''}
-									</div>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</section>
-
-				<footer class="pt-12">
-					<div class="flex flex-col gap-10">
-						<div class="grid gap-8 md:grid-cols-2 print:grid-cols-2">
-							<div class="flex flex-col items-center text-center">
-								<p>Orang Tua/Wali Murid</p>
-								<div
-									class="border-base-300 mt-16 h-[1px] w-full max-w-[220px] border-b border-dashed"
-									aria-hidden="true"
-								></div>
-								<div class="text-base-content/70 mt-1 text-sm">Nama Orang Tua/Wali</div>
-							</div>
-							<div class="relative flex flex-col items-center text-center">
-								<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-									{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
-								</p>
-								<p>Wali Kelas</p>
-								<div class="mt-16 font-semibold tracking-wide uppercase">
-									{formatUpper(waliKelas?.nama)}
-								</div>
-								<div class="mt-1">NIP. {formatValue(waliKelas?.nip)}</div>
-							</div>
-						</div>
-						<div class="text-center">
-							<p>Kepala Sekolah</p>
-							<div class="mt-16 font-semibold tracking-wide uppercase">
-								{formatUpper(kepalaSekolah?.nama)}
-							</div>
-							<div class="mt-1">NIP. {formatValue(kepalaSekolah?.nip)}</div>
-						</div>
-					</div>
-				</footer>
+						{#if !footerOnSeparatePage}
+							<TailSection
+								tailKey="footer"
+								{rapor}
+								{formatValue}
+								{formatUpper}
+								{formatHari}
+								{waliKelas}
+								{kepalaSekolah}
+								{ttd}
+							/>
+						{/if}
+					{/if}
+				</div>
 			</div>
 		</div>
-	</div>
+	{/if}
+
+	{#if footerOnSeparatePage}
+		<div
+			class="card bg-base-100 rounded-lg border border-none shadow-md print:break-after-page print:border-none print:bg-transparent print:shadow-none"
+			style="break-inside: avoid-page;"
+		>
+			<div
+				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
+			>
+				<div class="flex min-h-0 flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
+					<TailSection
+						tailKey="footer"
+						{rapor}
+						{formatValue}
+						{formatUpper}
+						{formatHari}
+						{waliKelas}
+						{kepalaSekolah}
+						{ttd}
+					/>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<div
 		class="pointer-events-none"
-		style="position: absolute; width: 0; height: 0; overflow: hidden;"
+		style="position: fixed; top: -10000px; left: -10000px; width: 210mm; pointer-events: none; opacity: 0;"
 		aria-hidden="true"
 	>
 		<div class="card bg-base-100 rounded-lg border border-none shadow-md">
 			<div
-				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col"
+				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
 			>
 				<div
-					class="m-[20mm] flex flex-1 flex-col text-[12px]"
+					class="flex min-h-0 flex-1 flex-col text-[12px]"
 					bind:this={continuationPrototypeContent}
 				>
 					<section
@@ -620,6 +658,66 @@
 							</thead>
 						</table>
 					</section>
+
+					<TailSection
+						tailKey="kokurikuler"
+						{rapor}
+						{formatValue}
+						{formatUpper}
+						{formatHari}
+						{waliKelas}
+						{kepalaSekolah}
+						{ttd}
+						measure={tailMeasurement}
+					/>
+
+					<TailSection
+						tailKey="ekstrakurikuler"
+						{rapor}
+						{formatValue}
+						{formatUpper}
+						{formatHari}
+						{waliKelas}
+						{kepalaSekolah}
+						{ttd}
+						measure={tailMeasurement}
+					/>
+
+					<TailSection
+						tailKey="ketidakhadiran"
+						{rapor}
+						{formatValue}
+						{formatUpper}
+						{formatHari}
+						{waliKelas}
+						{kepalaSekolah}
+						{ttd}
+						measure={tailMeasurement}
+					/>
+
+					<TailSection
+						tailKey="tanggapan"
+						{rapor}
+						{formatValue}
+						{formatUpper}
+						{formatHari}
+						{waliKelas}
+						{kepalaSekolah}
+						{ttd}
+						measure={tailMeasurement}
+					/>
+
+					<TailSection
+						tailKey="footer"
+						{rapor}
+						{formatValue}
+						{formatUpper}
+						{formatHari}
+						{waliKelas}
+						{kepalaSekolah}
+						{ttd}
+						measure={tailMeasurement}
+					/>
 				</div>
 			</div>
 		</div>

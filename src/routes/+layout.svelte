@@ -45,15 +45,14 @@
 
 <main class="drawer lg:drawer-open">
 	<input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-	<div class="drawer-content">
+	<div class="drawer-content flex min-h-screen flex-col">
 		<Navbar />
 
-		<!-- Page content -->
 		<div
-			class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:mr-2 lg:rounded-xl"
+			class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:mr-2 lg:mb-2 lg:rounded-xl"
 		>
 			<div
-				class="max-h-[calc(100vh-4.2rem)] min-h-[calc(100vh-4.2rem)] max-w-none overflow-y-auto md:max-h-[calc(100vh-4.6rem)] md:min-h-[calc(100vh-4.6rem)]"
+				class="max-h-[calc(100vh-4.2rem)] min-h-[calc(100vh-4.2rem)] max-w-none overflow-y-auto md:max-h-[calc(100vh-4.6rem)] md:min-h-[calc(100vh-4.6rem)] print:overflow-visible"
 			>
 				<div class="m-4 flex flex-row lg:m-6 xl:gap-5">
 					<div class="w-full max-w-5xl">

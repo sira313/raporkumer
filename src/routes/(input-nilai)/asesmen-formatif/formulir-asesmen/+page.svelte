@@ -19,21 +19,36 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let entries = $state(structuredClone(data.entries) as PageData['entries']);
+	type EntryOverrideMap = Record<number, EntryStatus | undefined>;
 
-	$effect(() => {
-		entries = structuredClone(data.entries) as PageData['entries'];
-	});
+	let overrides = $state<EntryOverrideMap>({});
+
+	const entries = $derived.by(
+		() =>
+			data.entries.map<PageData['entries'][number]>((entry, index) => {
+				const override = overrides[index];
+				return {
+					...entry,
+					status: override === undefined ? entry.status : override
+				};
+			}) as PageData['entries']
+	);
 
 	const kembaliHref = `/asesmen-formatif?mapel_id=${data.mapel.id}`;
 
 	function toggleEntry(index: number, value: Exclude<EntryStatus, null>) {
-		const current = entries[index];
-		if (!current) return;
-		const nextStatus: EntryStatus = current.status === value ? null : value;
-		entries = entries.map((entry, idx) =>
-			idx === index ? { ...entry, status: nextStatus } : entry
-		) as typeof data.entries;
+		const base = data.entries[index];
+		if (!base) return;
+		const currentStatus = overrides[index] ?? base.status ?? null;
+		const nextStatus: EntryStatus = currentStatus === value ? null : value;
+		const updated: EntryOverrideMap = { ...overrides };
+		const baseStatus = base.status ?? null;
+		if (nextStatus === baseStatus) {
+			delete updated[index];
+		} else {
+			updated[index] = nextStatus;
+		}
+		overrides = updated;
 	}
 
 	function isChecked(status: EntryStatus, value: 'ya' | 'tidak') {
@@ -43,6 +58,7 @@
 	async function handleSuccess() {
 		await invalidate('app:asesmen-formatif');
 		await invalidate('app:asesmen-formatif/formulir');
+		overrides = {};
 	}
 </script>
 

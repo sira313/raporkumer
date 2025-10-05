@@ -1,20 +1,26 @@
 <script lang="ts" module>
-	let modal: HTMLDialogElement;
-	let modalProps = $state<ModalProps>();
+	let modal = $state<HTMLDialogElement | null>(null);
+	let modalProps = $state<ModalProps | null>(null);
+
+	function clearModal() {
+		modalProps = null;
+	}
 
 	export function showModal(props: ModalProps) {
 		modalProps = props;
-		requestAnimationFrame(() => modal.showModal());
+		requestAnimationFrame(() => modal?.showModal());
 	}
 
 	export function hideModal() {
+		if (!modal) return;
 		modal.close();
+		clearModal();
 	}
 </script>
 
-<dialog bind:this={modal} class="modal">
-	{#if modalProps}
-		{@const props = modalProps}
+{#if modalProps}
+	{@const props = modalProps}
+	<dialog bind:this={modal} class="modal" oncancel={clearModal} onclose={clearModal}>
 		<div class="modal-box sm:w-full sm:max-w-2xl">
 			{#if props.title}
 				<h3 class="text-lg font-bold">{props.title}</h3>
@@ -67,5 +73,5 @@
 				<button>close</button>
 			</form>
 		{/if}
-	{/if}
-</dialog>
+	</dialog>
+{/if}
