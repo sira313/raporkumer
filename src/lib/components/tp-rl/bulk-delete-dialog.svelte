@@ -18,17 +18,16 @@
 
 <dialog class="modal" open onclose={onCancel}>
 	<div class="modal-box">
-		<FormEnhance
-			action="?/delete"
-			onsuccess={onSuccess}
-		>
+		<FormEnhance action="?/delete" onsuccess={onSuccess}>
 			{#snippet children({ submitting })}
-				{#each idsToDelete as idValue}
+				{#each idsToDelete as idValue (idValue)}
 					<input name="ids" value={idValue} hidden />
 				{/each}
 
 				<h3 class="mb-3 text-xl font-bold">Hapus beberapa lingkup materi?</h3>
-				<p class="mb-2">{totalLingkup} lingkup materi berikut akan dihapus beserta tujuan pembelajarannya:</p>
+				<p class="mb-2">
+					{totalLingkup} lingkup materi berikut akan dihapus beserta tujuan pembelajarannya:
+				</p>
 				<ul class="mb-4 list-disc space-y-1 pl-5 text-sm">
 					{#each groups as group (group.lingkupMateri)}
 						<li>
@@ -40,10 +39,11 @@
 				<p class="text-sm opacity-70">Total tujuan pembelajaran: {totalTujuan}</p>
 
 				<div class="mt-4 flex justify-end gap-2">
-					<button class="btn shadow-none" type="button" onclick={onCancel}>
-						Batal
-					</button>
-					<button class="btn btn-error btn-soft shadow-none" disabled={submitting || idsToDelete.length === 0}>
+					<button class="btn shadow-none" type="button" onclick={onCancel}> Batal </button>
+					<button
+						class="btn btn-error btn-soft shadow-none"
+						disabled={submitting || idsToDelete.length === 0}
+					>
 						{#if submitting}
 							<div class="loading loading-spinner"></div>
 						{:else}

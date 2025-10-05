@@ -22,7 +22,11 @@
 	});
 
 	$effect(() => {
-		searchTerm = data.page.search ?? '';
+		if (searchTimer) return;
+		const latestSearchTerm = data.page.search ?? '';
+		if (searchTerm !== latestSearchTerm) {
+			searchTerm = latestSearchTerm;
+		}
 	});
 
 	function buildSearchUrl(rawValue: string) {
@@ -61,6 +65,7 @@
 			clearTimeout(searchTimer);
 		}
 		searchTimer = setTimeout(() => {
+			searchTimer = undefined;
 			void applySearch(value);
 		}, 400);
 	}
@@ -69,8 +74,8 @@
 		event.preventDefault();
 		if (searchTimer) {
 			clearTimeout(searchTimer);
-			searchTimer = undefined;
 		}
+		searchTimer = undefined;
 		void applySearch(searchTerm);
 	}
 
@@ -114,6 +119,7 @@
 		if (searchTimer) {
 			clearTimeout(searchTimer);
 		}
+		searchTimer = undefined;
 	});
 </script>
 
@@ -128,7 +134,7 @@
 	<h2 class="mb-2 text-xl font-bold">
 		Rekapitulasi Nilai Akhir
 		{#if kelasAktifLabel}
-			<span class="block mt-1 text-base font-semibold text-base-content/80">{kelasAktifLabel}</span>
+			<span class="text-base-content/80 mt-1 block text-base font-semibold">{kelasAktifLabel}</span>
 		{/if}
 	</h2>
 
@@ -166,11 +172,13 @@
 				placeholder="Cari nama murid..."
 				autocomplete="name"
 				oninput={handleSearchInput}
-		/>
+			/>
 		</label>
 	</form>
 
-	<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+	<div
+		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+	>
 		<table class="border-base-200 table border dark:border-none">
 			<thead>
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
@@ -183,7 +191,7 @@
 			</thead>
 			<tbody>
 				{#if hasRows}
-					{#each daftarNilai as murid}
+					{#each daftarNilai as murid (murid.id)}
 						<tr>
 							<td>{murid.peringkat}</td>
 							<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
@@ -191,7 +199,7 @@
 							<td>
 								{murid.jumlahMapelDinilai}
 								{#if murid.totalMapelRelevan}
-									<span class="text-sm text-base-content/70">
+									<span class="text-base-content/70 text-sm">
 										/&nbsp;{murid.totalMapelRelevan}
 									</span>
 								{/if}
@@ -220,7 +228,7 @@
 	</div>
 
 	<div class="join mx-auto mt-4">
-		{#each pages as pageNumber}
+		{#each pages as pageNumber (pageNumber)}
 			<button
 				type="button"
 				class="join-item btn"

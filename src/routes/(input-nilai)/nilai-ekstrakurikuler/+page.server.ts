@@ -35,7 +35,10 @@ function mapNilaiRecords(records: NilaiRecord[]) {
 		if (!isEkstrakurikulerNilaiKategori(record.kategori)) continue;
 		let muridMap = nilaiByMurid.get(record.muridId);
 		if (!muridMap) {
-			muridMap = new Map<number, { kategori: EkstrakurikulerNilaiKategori; timestamp: string | null }>();
+			muridMap = new Map<
+				number,
+				{ kategori: EkstrakurikulerNilaiKategori; timestamp: string | null }
+			>();
 			nilaiByMurid.set(record.muridId, muridMap);
 		}
 		const timestamp = record.dinilaiPada ?? record.updatedAt ?? null;
@@ -240,7 +243,7 @@ function emptyPayload(meta: PageMeta) {
 		ekstrakurikulerList: [],
 		selectedEkstrakurikulerId: null,
 		selectedEkstrakurikuler: null,
-			daftarMurid: [] as Array<{
+		daftarMurid: [] as Array<{
 			id: number;
 			nama: string;
 			no: number;

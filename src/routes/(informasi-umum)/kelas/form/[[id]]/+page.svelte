@@ -7,12 +7,8 @@
 	const disableAcademic = $derived.by(
 		() => !data.academicLock?.tahunAjaranId || !data.academicLock?.semesterId
 	);
-	const tahunAjaranLabel = $derived.by(
-		() => data.academicLock?.tahunAjaranLabel ?? 'Belum diatur'
-	);
-	const semesterLabel = $derived.by(
-		() => data.academicLock?.semesterLabel ?? 'Belum diatur'
-	);
+	const tahunAjaranLabel = $derived.by(() => data.academicLock?.tahunAjaranLabel ?? 'Belum diatur');
+	const semesterLabel = $derived.by(() => data.academicLock?.semesterLabel ?? 'Belum diatur');
 </script>
 
 <FormEnhance
@@ -30,7 +26,8 @@
 				<div class="alert alert-warning mb-4 flex items-center gap-3">
 					<Icon name="warning" />
 					<span>
-						Atur tahun ajaran dan semester aktif melalui menu Rapor sebelum membuat atau mengubah data kelas.
+						Atur tahun ajaran dan semester aktif melalui menu Rapor sebelum membuat atau mengubah
+						data kelas.
 					</span>
 				</div>
 			{:else}

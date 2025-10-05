@@ -54,8 +54,7 @@ async function main() {
 		for (const deskripsi of group.tujuan) {
 			await client.execute({
 				sql: `INSERT INTO tujuan_pembelajaran (mata_pelajaran_id, lingkup_materi, deskripsi, bobot, created_at)
-				VALUES (?, ?, ?, ?, ?)`
-			,
+				VALUES (?, ?, ?, ?, ?)`,
 				args: [mapelId, group.lingkupMateri, deskripsi, group.bobot, now]
 			});
 			inserted += 1;

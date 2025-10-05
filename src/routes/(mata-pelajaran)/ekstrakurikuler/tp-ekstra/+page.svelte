@@ -16,11 +16,9 @@
 
 	let selectedIds = $state<number[]>([]);
 	let selectAllCheckbox: HTMLInputElement | null = null;
-	let formState = $state<
-		| { mode: 'create' }
-		| { mode: 'edit'; item: EkstrakurikulerTujuan }
-		| null
-	>(null);
+	let formState = $state<{ mode: 'create' } | { mode: 'edit'; item: EkstrakurikulerTujuan } | null>(
+		null
+	);
 	let deskripsiInput = $state('');
 	let createFormSubmitting = $state(false);
 	let editFormSubmitting = $state(false);
@@ -37,7 +35,6 @@
 	const formOpen = $derived.by(() => formState !== null);
 	const isCreateMode = $derived.by(() => formState?.mode === 'create');
 	const isEditMode = $derived.by(() => formState?.mode === 'edit');
-	const editItem = $derived.by(() => (formState?.mode === 'edit' ? formState.item : null));
 	const isDeleteModalOpen = $derived.by(() => deleteDialogState !== null);
 	const deleteModalIds = $derived.by(() => deleteDialogState?.ids ?? []);
 	const deleteModalItem = $derived.by(() =>
@@ -53,8 +50,7 @@
 
 	$effect(() => {
 		if (selectAllCheckbox) {
-			selectAllCheckbox.indeterminate =
-				selectedIds.length > 0 && selectedIds.length < totalData;
+			selectAllCheckbox.indeterminate = selectedIds.length > 0 && selectedIds.length < totalData;
 		}
 	});
 
@@ -155,11 +151,11 @@
 	</div>
 
 	{#if !data.tujuanTableReady}
-		<div class="alert mb-4 border border-dashed border-error/60 bg-error/10 text-error-content">
+		<div class="alert border-error/60 bg-error/10 text-error-content mb-4 border border-dashed">
 			<Icon name="warning" />
 			<span>
-				Database tujuan ekstrakurikuler belum siap. Jalankan <code>pnpm db:push</code> untuk menerapkan migrasi
-				terbaru.
+				Database tujuan ekstrakurikuler belum siap. Jalankan <code>pnpm db:push</code> untuk menerapkan
+				migrasi terbaru.
 			</span>
 		</div>
 	{/if}
@@ -204,7 +200,7 @@
 								}}
 								submitStateChange={(value) => (createFormSubmitting = value)}
 							>
-								{#snippet children({ submitting: _submitting })}
+								{#snippet children({ submitting, invalid })}
 									<input name="ekstrakurikulerId" value={data.ekstrakurikuler.id} hidden />
 									<textarea
 										class="textarea dark:bg-base-200 w-full dark:border-none"
@@ -213,6 +209,8 @@
 										bind:value={deskripsiInput}
 										required
 										disabled={!canManage}
+										aria-invalid={invalid}
+										aria-busy={submitting}
 									></textarea>
 								{/snippet}
 							</FormEnhance>
@@ -244,7 +242,12 @@
 							{@const editFormId = `tp-ekstra-edit-${item.id}`}
 							<tr class="bg-base-200/40">
 								<td class="align-top">
-									<input type="checkbox" class="checkbox" disabled checked={selectedIds.includes(item.id)} />
+									<input
+										type="checkbox"
+										class="checkbox"
+										disabled
+										checked={selectedIds.includes(item.id)}
+									/>
 								</td>
 								<td class="align-top">{rowNumber}</td>
 								<td class="align-top">
@@ -260,7 +263,7 @@
 										}}
 										submitStateChange={(value) => (editFormSubmitting = value)}
 									>
-										{#snippet children({ submitting: _submitting })}
+										{#snippet children({ submitting, invalid })}
 											<input name="ekstrakurikulerId" value={data.ekstrakurikuler.id} hidden />
 											<input name="id" value={item.id} hidden />
 											<textarea
@@ -270,13 +273,20 @@
 												bind:value={deskripsiInput}
 												required
 												disabled={!canManage}
+												aria-invalid={invalid}
+												aria-busy={submitting}
 											></textarea>
 										{/snippet}
 									</FormEnhance>
 								</td>
 								<td class="align-top">
 									<div class="flex gap-2">
-										<button class="btn btn-sm btn-soft shadow-none" type="button" title="Batal" onclick={closeForm}>
+										<button
+											class="btn btn-sm btn-soft shadow-none"
+											type="button"
+											title="Batal"
+											onclick={closeForm}
+										>
 											<Icon name="close" />
 										</button>
 										<button
@@ -392,10 +402,7 @@
 							<Icon name="close" />
 							Batal
 						</button>
-						<button
-							class="btn btn-error shadow-none"
-							disabled={submitting || deleteModalDisabled}
-						>
+						<button class="btn btn-error shadow-none" disabled={submitting || deleteModalDisabled}>
 							{#if submitting}
 								<div class="loading loading-spinner"></div>
 							{:else}

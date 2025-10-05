@@ -57,7 +57,11 @@
 	let editingSubmitting = $state(false);
 
 	$effect(() => {
-		searchTerm = data.page.search ?? '';
+		if (searchTimer) return;
+		const latestSearchTerm = data.page.search ?? '';
+		if (searchTerm !== latestSearchTerm) {
+			searchTerm = latestSearchTerm;
+		}
 	});
 
 	$effect(() => {
@@ -88,6 +92,7 @@
 			clearTimeout(searchTimer);
 		}
 		searchTimer = setTimeout(() => {
+			searchTimer = undefined;
 			void applyNavigation((params) => {
 				const cleaned = value.trim();
 				if (cleaned) {
@@ -120,6 +125,7 @@
 	onDestroy(() => {
 		if (searchTimer) {
 			clearTimeout(searchTimer);
+			searchTimer = undefined;
 		}
 	});
 
@@ -175,13 +181,14 @@
 		alfa: parseEditingValue(editingValues.alfa)
 	}));
 
-	const editingInvalid = $derived.by(() =>
-		editingRowId != null &&
-		(editingNumbers.sakit == null || editingNumbers.izin == null || editingNumbers.alfa == null)
+	const editingInvalid = $derived.by(
+		() =>
+			editingRowId != null &&
+			(editingNumbers.sakit == null || editingNumbers.izin == null || editingNumbers.alfa == null)
 	);
 
-	const editingSaveDisabled = $derived.by(() =>
-		editingRowId == null || editingInvalid || editingSubmitting
+	const editingSaveDisabled = $derived.by(
+		() => editingRowId == null || editingInvalid || editingSubmitting
 	);
 
 	async function handleUpdateSuccess() {
@@ -247,7 +254,9 @@
 			<span>Tidak ada murid yang cocok dengan pencarian.</span>
 		</div>
 	{:else}
-		<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+		<div
+			class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+		>
 			<table class="border-base-200 table border dark:border-none">
 				<thead>
 					<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
@@ -269,11 +278,12 @@
 							<td class="text-center">
 								{#if isEditing}
 									<input
-										class="input input-sm bg-base-200 dark:bg-base-100 dark:border-none w-full text-center"
+										class="input input-sm bg-base-200 dark:bg-base-100 w-full text-center dark:border-none"
 										type="text"
 										inputmode="numeric"
 										value={editingValues.sakit}
-										oninput={(event) => updateEditingValue('sakit', (event.currentTarget as HTMLInputElement).value)}
+										oninput={(event) =>
+											updateEditingValue('sakit', (event.currentTarget as HTMLInputElement).value)}
 										placeholder="0"
 										maxlength="3"
 									/>
@@ -284,11 +294,12 @@
 							<td class="text-center">
 								{#if isEditing}
 									<input
-										class="input input-sm bg-base-200 dark:bg-base-100 dark:border-none w-full text-center"
+										class="input input-sm bg-base-200 dark:bg-base-100 w-full text-center dark:border-none"
 										type="text"
 										inputmode="numeric"
 										value={editingValues.izin}
-										oninput={(event) => updateEditingValue('izin', (event.currentTarget as HTMLInputElement).value)}
+										oninput={(event) =>
+											updateEditingValue('izin', (event.currentTarget as HTMLInputElement).value)}
 										placeholder="0"
 										maxlength="3"
 									/>
@@ -299,11 +310,12 @@
 							<td class="text-center">
 								{#if isEditing}
 									<input
-										class="input input-sm bg-base-200 dark:bg-base-100 dark:border-none w-full text-center"
+										class="input input-sm bg-base-200 dark:bg-base-100 w-full text-center dark:border-none"
 										type="text"
 										inputmode="numeric"
 										value={editingValues.alfa}
-										oninput={(event) => updateEditingValue('alfa', (event.currentTarget as HTMLInputElement).value)}
+										oninput={(event) =>
+											updateEditingValue('alfa', (event.currentTarget as HTMLInputElement).value)}
 										placeholder="0"
 										maxlength="3"
 									/>
@@ -321,8 +333,13 @@
 											onsuccess={handleUpdateSuccess}
 											showToast
 										>
-											{#snippet children()}
-												<input type="hidden" name="muridId" value={murid.id} />
+											{#snippet children({ submitting })}
+												<input
+													type="hidden"
+													name="muridId"
+													value={murid.id}
+													data-submitting={submitting ? '1' : '0'}
+												/>
 												<input type="hidden" name="sakit" value={editingNumbers.sakit ?? ''} />
 												<input type="hidden" name="izin" value={editingNumbers.izin ?? ''} />
 												<input type="hidden" name="alfa" value={editingNumbers.alfa ?? ''} />
@@ -367,7 +384,7 @@
 		</div>
 
 		<div class="join mt-4 sm:mx-auto">
-			{#each pages as pageNumber}
+			{#each pages as pageNumber (pageNumber)}
 				<button
 					type="button"
 					class="join-item btn"

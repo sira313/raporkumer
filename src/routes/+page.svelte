@@ -61,7 +61,8 @@
 					{#if rombelBadges.length}
 						{#each rombelBadges as badge (badge.label)}
 							<div class="badge badge-sm badge-soft whitespace-nowrap">
-								{badge.jumlah} {badge.label}
+								{badge.jumlah}
+								{badge.label}
 							</div>
 						{/each}
 					{:else}

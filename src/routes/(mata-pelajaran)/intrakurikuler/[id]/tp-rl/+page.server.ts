@@ -98,7 +98,9 @@ export const actions = {
 		const rawEntries = Array.isArray(payload.entries)
 			? payload.entries
 			: payload.entries
-				? Object.values(payload.entries as Record<string, { id?: string | number; deskripsi?: string }>)
+				? Object.values(
+						payload.entries as Record<string, { id?: string | number; deskripsi?: string }>
+					)
 				: [];
 
 		const entries = rawEntries
@@ -108,8 +110,8 @@ export const actions = {
 					typeof idRaw === 'number'
 						? idRaw
 						: typeof idRaw === 'string' && idRaw !== ''
-						? Number(idRaw)
-						: undefined;
+							? Number(idRaw)
+							: undefined;
 				return {
 					id: Number.isFinite(id) ? (id as number) : undefined,
 					deskripsi: typeof entry.deskripsi === 'string' ? entry.deskripsi.trim() : ''
@@ -184,9 +186,7 @@ export const actions = {
 	async delete({ request }) {
 		const formData = await request.formData();
 		const idsRaw = formData.getAll('ids');
-		const ids = idsRaw
-			.map((value) => Number(value))
-			.filter((value) => Number.isFinite(value));
+		const ids = idsRaw.map((value) => Number(value)).filter((value) => Number.isFinite(value));
 
 		if (ids.length === 0) {
 			return fail(400, { fail: `Data tujuan pembelajaran tidak ditemukan.` });
@@ -194,7 +194,7 @@ export const actions = {
 
 		await db.delete(tableTujuanPembelajaran).where(inArray(tableTujuanPembelajaran.id, ids));
 		return { message: `Lingkup materi dan tujuan pembelajaran telah dihapus.` };
-		},
+	},
 
 	async import({ params, request }) {
 		const mataPelajaranId = Number(params.id);
@@ -310,12 +310,14 @@ export const actions = {
 		});
 
 		const existingKeys = new Set(
-			existingEntries.map((entry) =>
-				`${normalizeCell(entry.lingkupMateri).toLowerCase()}::${normalizeCell(entry.deskripsi).toLowerCase()}`
+			existingEntries.map(
+				(entry) =>
+					`${normalizeCell(entry.lingkupMateri).toLowerCase()}::${normalizeCell(entry.deskripsi).toLowerCase()}`
 			)
 		);
 
-		const toInsert: Array<{ lingkupMateri: string; deskripsi: string; mataPelajaranId: number }> = [];
+		const toInsert: Array<{ lingkupMateri: string; deskripsi: string; mataPelajaranId: number }> =
+			[];
 		let duplicateCount = 0;
 
 		for (const group of cleanedGroups) {
@@ -354,5 +356,4 @@ export const actions = {
 
 		return { message: parts.join(' ') };
 	}
-
 };

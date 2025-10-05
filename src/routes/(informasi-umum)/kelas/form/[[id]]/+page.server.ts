@@ -1,7 +1,12 @@
 import db from '$lib/server/db';
 import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import type { AcademicContext } from '$lib/server/db/academic';
-import { tableKelas, tablePegawai, tableSemester, tableTahunAjaran } from '$lib/server/db/schema.js';
+import {
+	tableKelas,
+	tablePegawai,
+	tableSemester,
+	tableTahunAjaran
+} from '$lib/server/db/schema.js';
 import { unflattenFormData } from '$lib/utils.js';
 import { error, fail } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
@@ -27,9 +32,9 @@ type KelasFormInput = {
 	waliKelas?: Partial<Pick<Pegawai, 'nama' | 'nip'>>;
 };
 
-type TahunAjaranOption = (typeof tableTahunAjaran.$inferSelect & {
-	semester: typeof tableSemester.$inferSelect[];
-});
+type TahunAjaranOption = typeof tableTahunAjaran.$inferSelect & {
+	semester: (typeof tableSemester.$inferSelect)[];
+};
 
 function resolveEffectiveTahunAjaranId(
 	existingId: number | null | undefined,
@@ -69,14 +74,16 @@ function resolveEffectiveSemesterId(
 		tahun.semester[0]?.id ?? null
 	].filter((value): value is number => typeof value === 'number');
 
-	return candidates.find((value) =>
-		tahun.semester.some((semester) => semester.id === value)
-	) ?? null;
+	return (
+		candidates.find((value) => tahun.semester.some((semester) => semester.id === value)) ?? null
+	);
 }
 
 export async function load({ params, locals }) {
 	const meta: PageMeta = { title: 'Form Kelas' };
-	const jenjang = locals.sekolah?.jenjangPendidikan as keyof typeof tingkatOptionsByJenjang | undefined;
+	const jenjang = locals.sekolah?.jenjangPendidikan as
+		| keyof typeof tingkatOptionsByJenjang
+		| undefined;
 	const tingkatOptions = jenjang ? tingkatOptionsByJenjang[jenjang] : [];
 
 	if (!locals.sekolah?.id) error(400, `Sekolah aktif tidak ditemukan`);
@@ -85,11 +92,13 @@ export async function load({ params, locals }) {
 	const academicContext = await resolveSekolahAcademicContext(sekolahId);
 	const tahunAjaranOptions = academicContext.tahunAjaranList as TahunAjaranOption[];
 
-	let kelas = null as (typeof tableKelas.$inferSelect & {
-		waliKelas: Pegawai | null;
-		semester?: typeof tableSemester.$inferSelect | null;
-		tahunAjaran?: typeof tableTahunAjaran.$inferSelect | null;
-	}) | null;
+	let kelas = null as
+		| (typeof tableKelas.$inferSelect & {
+				waliKelas: Pegawai | null;
+				semester?: typeof tableSemester.$inferSelect | null;
+				tahunAjaran?: typeof tableTahunAjaran.$inferSelect | null;
+		  })
+		| null;
 
 	if (params?.id) {
 		const kelasRow = await db.query.tableKelas.findFirst({

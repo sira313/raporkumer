@@ -93,14 +93,17 @@
 
 		const firstContentRect = firstCardContent.getBoundingClientRect();
 		const firstTableRect = firstTableSection.getBoundingClientRect();
-		const firstHeaderHeight = firstTableSection.querySelector('thead')?.getBoundingClientRect().height ?? 0;
-		const firstCapacity = Math.max(0, firstContentRect.bottom - firstTableRect.top - firstHeaderHeight);
+		const firstHeaderHeight =
+			firstTableSection.querySelector('thead')?.getBoundingClientRect().height ?? 0;
+		const firstCapacity = Math.max(
+			0,
+			firstContentRect.bottom - firstTableRect.top - firstHeaderHeight
+		);
 
 		const continuationContentRect = continuationPrototypeContent.getBoundingClientRect();
 		const continuationTableRect = continuationPrototypeTableSection.getBoundingClientRect();
-		const continuationHeaderHeight = continuationPrototypeTableSection
-			.querySelector('thead')
-			?.getBoundingClientRect().height ?? 0;
+		const continuationHeaderHeight =
+			continuationPrototypeTableSection.querySelector('thead')?.getBoundingClientRect().height ?? 0;
 		const continuationCapacity = Math.max(
 			0,
 			continuationContentRect.bottom - continuationTableRect.top - continuationHeaderHeight
@@ -108,7 +111,9 @@
 
 		let finalCapacity = continuationCapacity;
 		const finalTableRect = finalTableSection?.getBoundingClientRect();
-		const finalHeaderHeight = finalTableSection?.querySelector('thead')?.getBoundingClientRect().height ?? continuationHeaderHeight;
+		const finalHeaderHeight =
+			finalTableSection?.querySelector('thead')?.getBoundingClientRect().height ??
+			continuationHeaderHeight;
 		const finalTailRect = finalTailAnchor?.getBoundingClientRect();
 		if (finalTableRect && finalTailRect) {
 			finalCapacity = Math.max(0, finalTailRect.top - finalTableRect.top - finalHeaderHeight);
@@ -116,7 +121,9 @@
 
 		const subsequentCapacity = Math.max(0, Math.min(continuationCapacity, finalCapacity));
 
-		const rowHeights = rows.map((row) => intrakRowElements.get(row.index)?.getBoundingClientRect().height ?? 0);
+		const rowHeights = rows.map(
+			(row) => intrakRowElements.get(row.index)?.getBoundingClientRect().height ?? 0
+		);
 		if (rowHeights.some((height) => height === 0)) {
 			queueSplit();
 			return;
@@ -153,7 +160,8 @@
 		queueMicrotask(splitIntrakRows);
 	}
 
-	function triggerSplitOnMount(_node: Element) {
+	function triggerSplitOnMount(node: Element) {
+		void node;
 		queueSplit();
 		return {
 			destroy() {
@@ -163,8 +171,9 @@
 	}
 
 	$effect(() => {
-		intrakurikulerRows;
-		queueSplit();
+		if (intrakurikulerRows.length >= 0) {
+			queueSplit();
+		}
 	});
 
 	onMount(() => {
@@ -217,18 +226,20 @@
 
 <div class="flex flex-col gap-4 print:gap-0" bind:this={printable}>
 	<div
-		class="card bg-base-100 rounded-lg border border-none shadow-md print:shadow-none print:border-none print:bg-transparent"
+		class="card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none"
 		style="break-inside: avoid-page; break-after: page;"
 	>
-		<div class="min-w-[210mm] max-w-[210mm] min-h-[297mm] max-h-[297mm] mx-auto bg-base-100 text-base-content flex flex-col">
+		<div
+			class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col"
+		>
 			<div
 				class="m-[20mm] flex flex-1 flex-col text-[12px]"
 				bind:this={firstCardContent}
 				use:triggerSplitOnMount
 			>
 				<header class="text-center">
-					<h1 class="text-2xl font-bold uppercase tracking-wide">Laporan Hasil Belajar</h1>
-					<h2 class="font-semibold uppercase tracking-wide">(Rapor)</h2>
+					<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
+					<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
 				</header>
 
 				<section class="mt-6">
@@ -245,7 +256,8 @@
 							<tr>
 								<td class="align-top">NISN / NIS</td>
 								<td class="align-top">:</td>
-								<td class="font-semibold">{formatValue(murid?.nisn)} / {formatValue(murid?.nis)}</td>
+								<td class="font-semibold">{formatValue(murid?.nisn)} / {formatValue(murid?.nis)}</td
+								>
 								<td class="align-top">Fase</td>
 								<td class="align-top">:</td>
 								<td class="font-semibold uppercase">{formatUpper(rombel?.fase)}</td>
@@ -264,39 +276,47 @@
 								<td>{formatValue(sekolah?.alamat)}</td>
 								<td class="align-top">Tahun Pelajaran</td>
 								<td class="align-top">:</td>
-								<td class="font-semibold align-top">{formatValue(periode?.tahunPelajaran)}</td>
+								<td class="align-top font-semibold">{formatValue(periode?.tahunPelajaran)}</td>
 							</tr>
 						</tbody>
 					</table>
 				</section>
 
 				<section class="mt-8" bind:this={firstTableSection} use:triggerSplitOnMount>
-					<table class="w-full border border-base-300">
+					<table class="border-base-300 w-full border">
 						<thead class="bg-base-300">
 							<tr>
-								<th class="border border-base-300 px-3 py-2 text-left">No.</th>
-								<th class="border border-base-300 px-3 py-2 text-left">Muatan Pelajaran</th>
-								<th class="border border-base-300 px-3 py-2 text-center">Nilai Akhir</th>
-								<th class="border border-base-300 px-3 py-2 text-left">Capaian Kompetensi</th>
+								<th class="border-base-300 border px-3 py-2 text-left">No.</th>
+								<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
+								<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
+								<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
 							</tr>
 						</thead>
 						<tbody>
 							{#if intrakurikulerCount === 0}
 								<tr>
-									<td class="border border-base-300 px-3 py-2 text-center" colspan="4">Belum ada data intrakurikuler.</td>
+									<td class="border-base-300 border px-3 py-2 text-center" colspan="4"
+										>Belum ada data intrakurikuler.</td
+									>
 								</tr>
 							{:else}
 								{#each intrakFirstPageRows as row (row.index)}
 									<tr use:intrakRow={row.index}>
-										<td class="border border-base-300 px-3 py-2 align-top">{row.nomor}</td>
-										<td class="border border-base-300 px-3 py-2 align-top">
+										<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
+										<td class="border-base-300 border px-3 py-2 align-top">
 											<span class="font-semibold">{row.entry.mataPelajaran}</span>
 											{#if row.entry.kelompok}
-												<div class="text-xs text-base-content/70">{formatValue(row.entry.kelompok)}</div>
+												<div class="text-base-content/70 text-xs">
+													{formatValue(row.entry.kelompok)}
+												</div>
 											{/if}
 										</td>
-										<td class="border border-base-300 px-3 py-2 align-top text-center font-semibold">{formatValue(row.entry.nilaiAkhir)}</td>
-										<td class="border border-base-300 px-3 py-2 align-top whitespace-pre-line">{formatValue(row.entry.deskripsi)}</td>
+										<td class="border-base-300 border px-3 py-2 text-center align-top font-semibold"
+											>{formatValue(row.entry.nilaiAkhir)}</td
+										>
+										<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
+											>{formatValue(row.entry.deskripsi)}</td
+										>
 									</tr>
 								{/each}
 							{/if}
@@ -307,40 +327,50 @@
 		</div>
 	</div>
 
-	{#each intrakIntermediatePageRows as pageRows, pageIndex}
+	{#each intrakIntermediatePageRows as pageRows, pageIndex (pageIndex)}
 		<div
-			class="card bg-base-100 rounded-lg border border-none shadow-md print:shadow-none print:border-none print:bg-transparent"
+			class="card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none"
 			style="break-inside: avoid-page; break-after: page;"
 		>
-			<div class="min-w-[210mm] max-w-[210mm] min-h-[297mm] max-h-[297mm] mx-auto bg-base-100 text-base-content flex flex-col">
+			<div
+				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col"
+			>
 				<div class="m-[20mm] flex flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
 					<header class="text-center">
-						<h2 class="text-xl font-semibold uppercase tracking-wide">Muatan Pelajaran (Lanjutan)</h2>
-						<p class="text-sm text-base-content/70">Halaman lanjutan #{pageIndex + 2}</p>
+						<h2 class="text-xl font-semibold tracking-wide uppercase">
+							Muatan Pelajaran (Lanjutan)
+						</h2>
+						<p class="text-base-content/70 text-sm">Halaman lanjutan #{pageIndex + 2}</p>
 					</header>
 
 					<section class="mt-6">
-						<table class="w-full border border-base-300">
+						<table class="border-base-300 w-full border">
 							<thead class="bg-base-300">
 								<tr>
-									<th class="border border-base-300 px-3 py-2 text-left">No.</th>
-									<th class="border border-base-300 px-3 py-2 text-left">Muatan Pelajaran</th>
-									<th class="border border-base-300 px-3 py-2 text-center">Nilai Akhir</th>
-									<th class="border border-base-300 px-3 py-2 text-left">Capaian Kompetensi</th>
+									<th class="border-base-300 border px-3 py-2 text-left">No.</th>
+									<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
+									<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
+									<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
 								</tr>
 							</thead>
 							<tbody>
 								{#each pageRows as row (row.index)}
 									<tr use:intrakRow={row.index}>
-										<td class="border border-base-300 px-3 py-2 align-top">{row.nomor}</td>
-										<td class="border border-base-300 px-3 py-2 align-top">
+										<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
+										<td class="border-base-300 border px-3 py-2 align-top">
 											<span class="font-semibold">{row.entry.mataPelajaran}</span>
 											{#if row.entry.kelompok}
-												<div class="text-xs text-base-content/70">{formatValue(row.entry.kelompok)}</div>
+												<div class="text-base-content/70 text-xs">
+													{formatValue(row.entry.kelompok)}
+												</div>
 											{/if}
 										</td>
-										<td class="border border-base-300 px-3 py-2 align-top text-center font-semibold">{formatValue(row.entry.nilaiAkhir)}</td>
-										<td class="border border-base-300 px-3 py-2 align-top whitespace-pre-line">{formatValue(row.entry.deskripsi)}</td>
+										<td class="border-base-300 border px-3 py-2 text-center align-top font-semibold"
+											>{formatValue(row.entry.nilaiAkhir)}</td
+										>
+										<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
+											>{formatValue(row.entry.deskripsi)}</td
+										>
 									</tr>
 								{/each}
 							</tbody>
@@ -352,10 +382,12 @@
 	{/each}
 
 	<div
-		class="card bg-base-100 rounded-lg border border-none shadow-md print:shadow-none print:border-none print:bg-transparent"
+		class="card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none"
 		style="break-inside: avoid-page;"
 	>
-		<div class="min-w-[210mm] max-w-[210mm] min-h-[297mm] max-h-[297mm] mx-auto bg-base-100 text-base-content flex flex-col">
+		<div
+			class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col"
+		>
 			<div
 				class="m-[20mm] flex flex-1 flex-col text-[12px]"
 				bind:this={finalCardContent}
@@ -363,27 +395,33 @@
 			>
 				{#if intrakFinalPageRows.length > 0}
 					<section bind:this={finalTableSection} use:triggerSplitOnMount>
-						<table class="w-full border border-base-300">
+						<table class="border-base-300 w-full border">
 							<thead class="bg-base-300">
 								<tr>
-									<th class="border border-base-300 px-3 py-2 text-left">No.</th>
-									<th class="border border-base-300 px-3 py-2 text-left">Muatan Pelajaran</th>
-									<th class="border border-base-300 px-3 py-2 text-center">Nilai Akhir</th>
-									<th class="border border-base-300 px-3 py-2 text-left">Capaian Kompetensi</th>
+									<th class="border-base-300 border px-3 py-2 text-left">No.</th>
+									<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
+									<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
+									<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
 								</tr>
 							</thead>
 							<tbody>
 								{#each intrakFinalPageRows as row (row.index)}
 									<tr use:intrakRow={row.index}>
-										<td class="border border-base-300 px-3 py-2 align-top">{row.nomor}</td>
-										<td class="border border-base-300 px-3 py-2 align-top">
+										<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
+										<td class="border-base-300 border px-3 py-2 align-top">
 											<span class="font-semibold">{row.entry.mataPelajaran}</span>
 											{#if row.entry.kelompok}
-												<div class="text-xs text-base-content/70">{formatValue(row.entry.kelompok)}</div>
+												<div class="text-base-content/70 text-xs">
+													{formatValue(row.entry.kelompok)}
+												</div>
 											{/if}
 										</td>
-										<td class="border border-base-300 px-3 py-2 align-top text-center font-semibold">{formatValue(row.entry.nilaiAkhir)}</td>
-										<td class="border border-base-300 px-3 py-2 align-top whitespace-pre-line">{formatValue(row.entry.deskripsi)}</td>
+										<td class="border-base-300 border px-3 py-2 text-center align-top font-semibold"
+											>{formatValue(row.entry.nilaiAkhir)}</td
+										>
+										<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
+											>{formatValue(row.entry.deskripsi)}</td
+										>
 									</tr>
 								{/each}
 							</tbody>
@@ -391,18 +429,23 @@
 					</section>
 				{/if}
 
-				<div bind:this={finalTailAnchor} class="h-0" aria-hidden="true" use:triggerSplitOnMount></div>
+				<div
+					bind:this={finalTailAnchor}
+					class="h-0"
+					aria-hidden="true"
+					use:triggerSplitOnMount
+				></div>
 
 				<section class="mt-6" class:mt-8={intrakFinalPageRows.length > 0}>
-					<table class="w-full border border-base-300">
+					<table class="border-base-300 w-full border">
 						<thead class="bg-base-300">
 							<tr>
-								<th class="border border-base-300 px-3 py-2 text-left">Kokurikuler</th>
+								<th class="border-base-300 border px-3 py-2 text-left">Kokurikuler</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr>
-								<td class="border border-base-300 px-3 py-3 whitespace-pre-line">
+								<td class="border-base-300 border px-3 py-3 whitespace-pre-line">
 									{formatValue(rapor?.kokurikuler)}
 								</td>
 							</tr>
@@ -411,25 +454,31 @@
 				</section>
 
 				<section class="mt-6">
-					<table class="w-full border border-base-300">
+					<table class="border-base-300 w-full border">
 						<thead class="bg-base-300">
 							<tr>
-								<th class="border border-base-300 px-3 py-2 text-left" style="width: 40px;">No.</th>
-								<th class="border border-base-300 px-3 py-2 text-left">Ekstrakurikuler</th>
-								<th class="border border-base-300 px-3 py-2 text-left">Keterangan</th>
+								<th class="border-base-300 border px-3 py-2 text-left" style="width: 40px;">No.</th>
+								<th class="border-base-300 border px-3 py-2 text-left">Ekstrakurikuler</th>
+								<th class="border-base-300 border px-3 py-2 text-left">Keterangan</th>
 							</tr>
 						</thead>
 						<tbody>
 							{#if (rapor?.ekstrakurikuler?.length ?? 0) === 0}
 								<tr>
-									<td class="border border-base-300 px-3 py-2 text-center" colspan="3">Belum ada data ekstrakurikuler.</td>
+									<td class="border-base-300 border px-3 py-2 text-center" colspan="3"
+										>Belum ada data ekstrakurikuler.</td
+									>
 								</tr>
 							{:else}
-								{#each rapor?.ekstrakurikuler ?? [] as ekskul, index}
+								{#each rapor?.ekstrakurikuler ?? [] as ekskul, index (index)}
 									<tr>
-										<td class="border border-base-300 px-3 py-2 align-top">{index + 1}</td>
-										<td class="border border-base-300 px-3 py-2 align-top">{formatValue(ekskul.nama)}</td>
-										<td class="border border-base-300 px-3 py-2 align-top whitespace-pre-line">{formatValue(ekskul.deskripsi)}</td>
+										<td class="border-base-300 border px-3 py-2 align-top">{index + 1}</td>
+										<td class="border-base-300 border px-3 py-2 align-top"
+											>{formatValue(ekskul.nama)}</td
+										>
+										<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
+											>{formatValue(ekskul.deskripsi)}</td
+										>
 									</tr>
 								{/each}
 							{/if}
@@ -437,37 +486,45 @@
 					</table>
 				</section>
 
-				<section class="mt-8 grid gap-6 print:grid-cols-2 md:grid-cols-2">
-					<table class="w-full border border-base-300">
+				<section class="mt-8 grid gap-6 md:grid-cols-2 print:grid-cols-2">
+					<table class="border-base-300 w-full border">
 						<thead class="bg-base-300">
 							<tr>
-								<th class="border border-base-300 px-3 py-2 text-left" colspan="2">Ketidakhadiran</th>
+								<th class="border-base-300 border px-3 py-2 text-left" colspan="2"
+									>Ketidakhadiran</th
+								>
 							</tr>
 						</thead>
 						<tbody>
 							<tr>
-								<td class="border border-base-300 px-3 py-2">Sakit</td>
-								<td class="border border-base-300 px-3 py-2 text-center">{formatHari(rapor?.ketidakhadiran?.sakit)}</td>
+								<td class="border-base-300 border px-3 py-2">Sakit</td>
+								<td class="border-base-300 border px-3 py-2 text-center"
+									>{formatHari(rapor?.ketidakhadiran?.sakit)}</td
+								>
 							</tr>
 							<tr>
-								<td class="border border-base-300 px-3 py-2">Izin</td>
-								<td class="border border-base-300 px-3 py-2 text-center">{formatHari(rapor?.ketidakhadiran?.izin)}</td>
+								<td class="border-base-300 border px-3 py-2">Izin</td>
+								<td class="border-base-300 border px-3 py-2 text-center"
+									>{formatHari(rapor?.ketidakhadiran?.izin)}</td
+								>
 							</tr>
 							<tr>
-								<td class="border border-base-300 px-3 py-2">Tanpa Keterangan</td>
-								<td class="border border-base-300 px-3 py-2 text-center">{formatHari(rapor?.ketidakhadiran?.tanpaKeterangan)}</td>
+								<td class="border-base-300 border px-3 py-2">Tanpa Keterangan</td>
+								<td class="border-base-300 border px-3 py-2 text-center"
+									>{formatHari(rapor?.ketidakhadiran?.tanpaKeterangan)}</td
+								>
 							</tr>
 						</tbody>
 					</table>
-					<table class="w-full border border-base-300">
+					<table class="border-base-300 w-full border">
 						<thead class="bg-base-300">
 							<tr>
-								<th class="border border-base-300 px-3 py-2 text-left">Catatan Wali Kelas</th>
+								<th class="border-base-300 border px-3 py-2 text-left">Catatan Wali Kelas</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr>
-								<td class="border border-base-300 px-3 py-3 min-h-[80px] whitespace-pre-line">
+								<td class="border-base-300 min-h-[80px] border px-3 py-3 whitespace-pre-line">
 									{formatValue(rapor?.catatanWali)}
 								</td>
 							</tr>
@@ -476,15 +533,17 @@
 				</section>
 
 				<section class="mt-6">
-					<table class="w-full border border-base-300">
+					<table class="border-base-300 w-full border">
 						<thead class="bg-base-300">
 							<tr>
-								<th class="border border-base-300 px-3 py-2 text-left">Tanggapan Orang Tua/Wali Murid</th>
+								<th class="border-base-300 border px-3 py-2 text-left"
+									>Tanggapan Orang Tua/Wali Murid</th
+								>
 							</tr>
 						</thead>
 						<tbody>
 							<tr>
-								<td class="border border-base-300 px-3 py-4 align-top">
+								<td class="border-base-300 border px-3 py-4 align-top">
 									<div class="min-h-[70px] whitespace-pre-line">
 										{rapor?.tanggapanOrangTua?.trim() || ''}
 									</div>
@@ -496,27 +555,31 @@
 
 				<footer class="pt-12">
 					<div class="flex flex-col gap-10">
-						<div class="grid gap-8 print:grid-cols-2 md:grid-cols-2">
+						<div class="grid gap-8 md:grid-cols-2 print:grid-cols-2">
 							<div class="flex flex-col items-center text-center">
 								<p>Orang Tua/Wali Murid</p>
 								<div
-									class="mt-16 h-[1px] w-full max-w-[220px] border-b border-dashed border-base-300"
+									class="border-base-300 mt-16 h-[1px] w-full max-w-[220px] border-b border-dashed"
 									aria-hidden="true"
 								></div>
-								<div class="mt-1 text-sm text-base-content/70">Nama Orang Tua/Wali</div>
+								<div class="text-base-content/70 mt-1 text-sm">Nama Orang Tua/Wali</div>
 							</div>
 							<div class="relative flex flex-col items-center text-center">
 								<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
 									{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
 								</p>
 								<p>Wali Kelas</p>
-								<div class="mt-16 font-semibold uppercase tracking-wide">{formatUpper(waliKelas?.nama)}</div>
+								<div class="mt-16 font-semibold tracking-wide uppercase">
+									{formatUpper(waliKelas?.nama)}
+								</div>
 								<div class="mt-1">NIP. {formatValue(waliKelas?.nip)}</div>
 							</div>
 						</div>
 						<div class="text-center">
 							<p>Kepala Sekolah</p>
-							<div class="mt-16 font-semibold uppercase tracking-wide">{formatUpper(kepalaSekolah?.nama)}</div>
+							<div class="mt-16 font-semibold tracking-wide uppercase">
+								{formatUpper(kepalaSekolah?.nama)}
+							</div>
 							<div class="mt-1">NIP. {formatValue(kepalaSekolah?.nip)}</div>
 						</div>
 					</div>
@@ -531,16 +594,25 @@
 		aria-hidden="true"
 	>
 		<div class="card bg-base-100 rounded-lg border border-none shadow-md">
-			<div class="min-w-[210mm] max-w-[210mm] min-h-[297mm] max-h-[297mm] mx-auto bg-base-100 text-base-content flex flex-col">
-				<div class="m-[20mm] flex flex-1 flex-col text-[12px]" bind:this={continuationPrototypeContent}>
-					<section class="mt-6" bind:this={continuationPrototypeTableSection} use:triggerSplitOnMount>
-						<table class="w-full border border-base-300">
+			<div
+				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col"
+			>
+				<div
+					class="m-[20mm] flex flex-1 flex-col text-[12px]"
+					bind:this={continuationPrototypeContent}
+				>
+					<section
+						class="mt-6"
+						bind:this={continuationPrototypeTableSection}
+						use:triggerSplitOnMount
+					>
+						<table class="border-base-300 w-full border">
 							<thead class="bg-base-300">
 								<tr>
-									<th class="border border-base-300 px-3 py-2 text-left">No.</th>
-									<th class="border border-base-300 px-3 py-2 text-left">Muatan Pelajaran</th>
-									<th class="border border-base-300 px-3 py-2 text-center">Nilai Akhir</th>
-									<th class="border border-base-300 px-3 py-2 text-left">Capaian Kompetensi</th>
+									<th class="border-base-300 border px-3 py-2 text-left">No.</th>
+									<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
+									<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
+									<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
 								</tr>
 							</thead>
 						</table>

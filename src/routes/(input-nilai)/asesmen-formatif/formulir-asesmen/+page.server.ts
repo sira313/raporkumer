@@ -59,22 +59,20 @@ export async function load({ url, locals, depends }) {
 
 	const asesmen = tujuanIds.length
 		? await db.query.tableAsesmenFormatif.findMany({
-			columns: { tujuanPembelajaranId: true, tuntas: true },
-			where: and(
-				eq(tableAsesmenFormatif.muridId, murid.id),
-				inArray(tableAsesmenFormatif.tujuanPembelajaranId, tujuanIds)
-			)
-		})
+				columns: { tujuanPembelajaranId: true, tuntas: true },
+				where: and(
+					eq(tableAsesmenFormatif.muridId, murid.id),
+					inArray(tableAsesmenFormatif.tujuanPembelajaranId, tujuanIds)
+				)
+			})
 		: [];
 
-	const asesmenMap = new Map(asesmen.map((item) => [item.tujuanPembelajaranId, Boolean(item.tuntas)]));
+	const asesmenMap = new Map(
+		asesmen.map((item) => [item.tujuanPembelajaranId, Boolean(item.tuntas)])
+	);
 
 	const entries = tujuanPembelajaran.map((item, index) => {
-		const status = asesmenMap.has(item.id)
-			? asesmenMap.get(item.id)
-				? 'ya'
-				: 'tidak'
-			: null;
+		const status = asesmenMap.has(item.id) ? (asesmenMap.get(item.id) ? 'ya' : 'tidak') : null;
 		return {
 			index: index + 1,
 			tujuanPembelajaranId: item.id,

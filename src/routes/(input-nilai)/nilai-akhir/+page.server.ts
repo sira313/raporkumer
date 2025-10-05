@@ -1,10 +1,6 @@
 import db from '$lib/server/db';
 import { ensureAsesmenSumatifSchema } from '$lib/server/db/ensure-asesmen-sumatif';
-import {
-	tableAsesmenSumatif,
-	tableMataPelajaran,
-	tableMurid
-} from '$lib/server/db/schema';
+import { tableAsesmenSumatif, tableMataPelajaran, tableMurid } from '$lib/server/db/schema';
 import { redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 
@@ -201,9 +197,7 @@ export async function load({ parent, locals, url, depends }) {
 			}
 		}
 
-		const rataRata = relevantMapel.length
-			? formatScore(total / relevantMapel.length)
-			: null;
+		const rataRata = relevantMapel.length ? formatScore(total / relevantMapel.length) : null;
 
 		return {
 			id: murid.id,

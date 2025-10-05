@@ -15,10 +15,7 @@
 		}[];
 	};
 
-	let {
-		formSubmitting,
-		submitBulkDelete
-	} = $props<{
+	let { formSubmitting, submitBulkDelete } = $props<{
 		formSubmitting: boolean;
 		submitBulkDelete: (event: Event) => void;
 	}>();
@@ -60,7 +57,7 @@
 					Anda akan menghapus <b>{bulkModalData.selectedMurids.length}</b> murid secara permanen.
 				</p>
 				<ul class="list-disc space-y-1 pl-5 text-sm">
-					{#each bulkModalData.selectedMurids.slice(0, 5) as murid}
+					{#each bulkModalData.selectedMurids.slice(0, 5) as murid (murid.id)}
 						<li>{murid.nama}</li>
 					{/each}
 				</ul>

@@ -27,7 +27,7 @@
 		</p>
 		{#if lingkupSummaries.length}
 			<ul class="text-base-content/70 mt-2 space-y-1 text-xs">
-				{#each lingkupSummaries as summary}
+				{#each lingkupSummaries as summary (summary.lingkupMateri)}
 					<li>
 						<strong>{summary.lingkupMateri}</strong> — {formatScore(summary.rataRata)}
 						{#if summary.bobot != null}

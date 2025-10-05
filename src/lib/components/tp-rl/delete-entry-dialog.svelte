@@ -19,9 +19,7 @@
 		<h3 class="mb-3 text-xl font-bold">Hapus tujuan pembelajaran?</h3>
 		<p class="mb-4">"{label}" akan dihapus.</p>
 		<div class="flex justify-end gap-2">
-			<button class="btn shadow-none" type="button" onclick={onCancel}>
-				Batal
-			</button>
+			<button class="btn shadow-none" type="button" onclick={onCancel}> Batal </button>
 			<button
 				type="button"
 				class="btn btn-error btn-soft shadow-none"

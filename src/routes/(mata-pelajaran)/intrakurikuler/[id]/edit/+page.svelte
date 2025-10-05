@@ -2,7 +2,7 @@
 	import FormMataPelajaran from '../../form/+page.svelte';
 
 	let { data } = $props();
-	const editData = $derived({ ...data, mode: 'edit' });
+	const editData = $derived.by(() => ({ ...data, mode: 'edit' as const }));
 </script>
 
 <FormMataPelajaran data={editData} />

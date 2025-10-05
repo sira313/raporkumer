@@ -2,15 +2,12 @@
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
-	import {
-		agamaMapelLabelByName,
-		agamaMapelNames,
-		agamaParentName
-	} from '$lib/statics';
+	import { agamaMapelLabelByName, agamaMapelNames, agamaParentName } from '$lib/statics';
 	import { modalRoute } from '$lib/utils';
 	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
 
-	let { data }: { data: { kelasId: number | null; mapel: Record<string, MataPelajaran[]> } } = $props();
+	let { data }: { data: { kelasId: number | null; mapel: Record<string, MataPelajaran[]> } } =
+		$props();
 
 	const emptyStateMessage = 'Belum ada data mata pelajaran';
 	const agamaMapelNameSet = new Set<string>(agamaMapelNames);
@@ -28,7 +25,6 @@
 			data.mapel.daftarPilihan.length +
 			data.mapel.daftarMulok.length
 	);
-
 
 	function formatKkm(kkm: number | null | undefined) {
 		return typeof kkm === 'number' && Number.isFinite(kkm) ? kkm : '—';
@@ -54,9 +50,9 @@
 		<div>
 			<h2 class="text-xl font-bold">Daftar Mata Pelajaran Intrakurikuler</h2>
 			{#if kelasAktifLabel}
-				<p class="text-sm text-base-content/70">Kelas aktif: {kelasAktifLabel}</p>
+				<p class="text-base-content/70 text-sm">Kelas aktif: {kelasAktifLabel}</p>
 			{:else}
-				<p class="text-sm text-base-content/60">
+				<p class="text-base-content/60 text-sm">
 					Pilih kelas di navbar untuk melihat mata pelajaran intrakurikuler.
 				</p>
 			{/if}
@@ -72,7 +68,9 @@
 		</a>
 	</div>
 
-	<div class="stats stats-horizontal mt-4 w-full border border-base-200 bg-base-100 dark:bg-base-200 text-base-content shadow-md dark:shadow-none">
+	<div
+		class="stats stats-horizontal border-base-200 bg-base-100 dark:bg-base-200 text-base-content mt-4 w-full border shadow-md dark:shadow-none"
+	>
 		<div class="stat place-items-start">
 			<div class="stat-title">Mapel Wajib</div>
 			<div class="stat-value text-2xl">{data.mapel.daftarWajib.length}</div>
@@ -92,27 +90,30 @@
 	</div>
 
 	{#if !hasKelasAktif}
-		<div class="alert mt-6 border border-dashed border-warning/60 bg-warning/10 text-warning-content">
+		<div
+			class="alert border-warning/60 bg-warning/10 text-warning-content mt-6 border border-dashed"
+		>
 			<Icon name="info" />
 			<span>Pilih kelas aktif agar daftar mata pelajaran dapat ditampilkan.</span>
 		</div>
 	{/if}
 
 	{#if hasKelasAktif && totalMapel === 0}
-		<div class="alert mt-6 border border-dashed border-info/60 bg-info/10 text-info-content">
+		<div class="alert border-info/60 bg-info/10 text-info-content mt-6 border border-dashed">
 			<Icon name="info" />
-			<span>Belum ada data mata pelajaran untuk kelas ini. Gunakan tombol &ldquo;Tambah Mata Pelajaran&rdquo; di atas.</span>
+			<span
+				>Belum ada data mata pelajaran untuk kelas ini. Gunakan tombol &ldquo;Tambah Mata
+				Pelajaran&rdquo; di atas.</span
+			>
 		</div>
 	{/if}
 
-	{#each [
-		{ key: 'wajib', title: 'Mata Pelajaran Wajib', items: data.mapel.daftarWajib },
-		{ key: 'pilihan', title: 'Mata Pelajaran Pilihan', items: data.mapel.daftarPilihan },
-		{ key: 'mulok', title: 'Muatan Lokal', items: data.mapel.daftarMulok }
-	] as section (section.key)}
+	{#each [{ key: 'wajib', title: 'Mata Pelajaran Wajib', items: data.mapel.daftarWajib }, { key: 'pilihan', title: 'Mata Pelajaran Pilihan', items: data.mapel.daftarPilihan }, { key: 'mulok', title: 'Muatan Lokal', items: data.mapel.daftarMulok }] as section (section.key)}
 		<fieldset class="fieldset mt-8">
 			<legend class="fieldset-legend">{section.title}</legend>
-			<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+			<div
+				class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+			>
 				<table class="border-base-200 table border dark:border-none">
 					<thead>
 						<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">

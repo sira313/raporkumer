@@ -24,15 +24,18 @@ export async function load({ depends, locals }) {
 
 	let academicContext = null;
 	let daftarKelas: (typeof tableKelas.$inferSelect & {
-		waliKelas: (typeof tablePegawai.$inferSelect) | null;
-		semester?: (typeof tableSemester.$inferSelect) | null;
-		tahunAjaran?: (typeof tableTahunAjaran.$inferSelect) | null;
+		waliKelas: typeof tablePegawai.$inferSelect | null;
+		semester?: typeof tableSemester.$inferSelect | null;
+		tahunAjaran?: typeof tableTahunAjaran.$inferSelect | null;
 	})[] = [];
 
 	if (sekolahId) {
 		academicContext = await resolveSekolahAcademicContext(sekolahId);
 		const whereClause = academicContext.activeSemesterId
-			? and(eq(tableKelas.sekolahId, sekolahId), eq(tableKelas.semesterId, academicContext.activeSemesterId))
+			? and(
+					eq(tableKelas.sekolahId, sekolahId),
+					eq(tableKelas.semesterId, academicContext.activeSemesterId)
+				)
 			: eq(tableKelas.sekolahId, sekolahId);
 
 		daftarKelas = await db.query.tableKelas.findMany({
@@ -130,7 +133,7 @@ export const actions = {
 		}
 
 		const forceDelete = formData.get('forceDelete') === 'true';
-	const hasWaliPegawai = Boolean(kelas.waliKelasId);
+		const hasWaliPegawai = Boolean(kelas.waliKelasId);
 
 		const [muridRows, mapelRows, ekstrakRows, kokurikulerRows] = await Promise.all([
 			db
@@ -173,8 +176,7 @@ export const actions = {
 
 		if (!forceDelete && masihAdaRelasi) {
 			return fail(400, {
-				fail:
-					`Kelas masih memiliki ${dependencyText}. Centang opsi "Hapus semua data kelas beserta isinya" untuk melanjutkan.`
+				fail: `Kelas masih memiliki ${dependencyText}. Centang opsi "Hapus semua data kelas beserta isinya" untuk melanjutkan.`
 			});
 		}
 
@@ -217,9 +219,7 @@ export const actions = {
 					await tx
 						.delete(tableTujuanPembelajaran)
 						.where(inArray(tableTujuanPembelajaran.mataPelajaranId, mapelIds));
-					await tx
-						.delete(tableMataPelajaran)
-						.where(inArray(tableMataPelajaran.id, mapelIds));
+					await tx.delete(tableMataPelajaran).where(inArray(tableMataPelajaran.id, mapelIds));
 				}
 
 				const ekstrakIdsRows = await tx
@@ -232,9 +232,7 @@ export const actions = {
 					await tx
 						.delete(tableEkstrakurikulerTujuan)
 						.where(inArray(tableEkstrakurikulerTujuan.ekstrakurikulerId, ekstrakIds));
-					await tx
-						.delete(tableEkstrakurikuler)
-						.where(inArray(tableEkstrakurikuler.id, ekstrakIds));
+					await tx.delete(tableEkstrakurikuler).where(inArray(tableEkstrakurikuler.id, ekstrakIds));
 				}
 
 				await tx.delete(tableKokurikuler).where(eq(tableKokurikuler.kelasId, kelasIdNumber));
@@ -267,9 +265,7 @@ export const actions = {
 					}
 					const parentIdsToDelete = waliIdsArray.filter((id) => !stillReferencedParents.has(id));
 					if (parentIdsToDelete.length) {
-						await tx
-							.delete(tableWaliMurid)
-							.where(inArray(tableWaliMurid.id, parentIdsToDelete));
+						await tx.delete(tableWaliMurid).where(inArray(tableWaliMurid.id, parentIdsToDelete));
 					}
 				}
 

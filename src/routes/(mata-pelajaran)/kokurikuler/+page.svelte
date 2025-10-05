@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
 	import Icon from '$lib/components/icon.svelte';
@@ -15,9 +14,7 @@
 	}: {
 		data: {
 			kelasId: number | null;
-			kokurikuler: Array<
-				Kokurikuler & { dimensi: DimensiProfilLulusanKey[] }
-			>;
+			kokurikuler: Array<Kokurikuler & { dimensi: DimensiProfilLulusanKey[] }>;
 			dimensiPilihan: typeof profilPelajarPancasilaDimensions;
 			tableReady: boolean;
 		};
@@ -34,7 +31,11 @@
 	>(null);
 	let deleteDialogState = $state<
 		| { source: 'bulk'; ids: number[] }
-		| { source: 'single'; ids: number[]; item: Kokurikuler & { dimensi: DimensiProfilLulusanKey[] } }
+		| {
+				source: 'single';
+				ids: number[];
+				item: Kokurikuler & { dimensi: DimensiProfilLulusanKey[] };
+		  }
 		| null
 	>(null);
 	let tujuanInput = $state('');
@@ -156,164 +157,169 @@
 </script>
 
 <KokurikulerFormModal
-		open={isModalOpen}
-		title={modalTitle}
-		action={modalAction}
-		kelasId={data.kelasId}
-		tableReady={data.tableReady}
-		canManage={canManage}
-		isEditMode={isEditMode}
-		modalItem={modalItem}
-		dimensionOptions={dimensionOptions}
-		selectedDimensions={selectedDimensions}
-		onToggleDimension={toggleDimension}
-		tujuanInput={tujuanInput}
-		onTujuanChange={handleTujuanChange}
-		onClose={closeModal}
-		onSuccess={({ form }) => {
-			form.reset();
-			selectedDimensions = [];
-			tujuanInput = '';
-			closeModal();
-			invalidate('app:kokurikuler');
-		}}
-	/>
+	open={isModalOpen}
+	title={modalTitle}
+	action={modalAction}
+	kelasId={data.kelasId}
+	tableReady={data.tableReady}
+	{canManage}
+	{isEditMode}
+	{modalItem}
+	{dimensionOptions}
+	{selectedDimensions}
+	onToggleDimension={toggleDimension}
+	{tujuanInput}
+	onTujuanChange={handleTujuanChange}
+	onClose={closeModal}
+	onSuccess={({ form }) => {
+		form.reset();
+		selectedDimensions = [];
+		tujuanInput = '';
+		closeModal();
+		invalidate('app:kokurikuler');
+	}}
+/>
 
-	<KokurikulerDeleteModal
-		open={isDeleteModalOpen}
-		title={deleteModalTitle}
-		action="?/delete"
-		ids={deleteModalIds}
-		mode={deleteModalMode}
-		item={deleteModalItem}
-		canManage={canManage}
-		disabled={deleteModalDisabled}
-		onClose={closeDeleteModal}
-		onSuccess={() => {
-			const ids = deleteDialogState?.ids ?? [];
-			if (ids.length) {
-				selectedIds = selectedIds.filter((selectedId) => !ids.includes(selectedId));
-			}
-			closeDeleteModal();
-			invalidate('app:kokurikuler');
-		}}
-	/>
+<KokurikulerDeleteModal
+	open={isDeleteModalOpen}
+	title={deleteModalTitle}
+	action="?/delete"
+	ids={deleteModalIds}
+	mode={deleteModalMode}
+	item={deleteModalItem}
+	{canManage}
+	disabled={deleteModalDisabled}
+	onClose={closeDeleteModal}
+	onSuccess={() => {
+		const ids = deleteDialogState?.ids ?? [];
+		if (ids.length) {
+			selectedIds = selectedIds.filter((selectedId) => !ids.includes(selectedId));
+		}
+		closeDeleteModal();
+		invalidate('app:kokurikuler');
+	}}
+/>
 
-	<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-		<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-			<div>
-				<h2 class="text-xl font-bold">Daftar Kokurikuler</h2>
-				{#if !data.kelasId}
-					<p class="text-sm text-base-content/60">Pilih kelas aktif agar data kokurikuler tampil.</p>
-				{/if}
-			</div>
-			<div class="flex flex-col gap-2 sm:flex-row">
-				<button class="btn shadow-none" disabled={!canManage} onclick={openAddModal}>
-					<Icon name="plus" />
-					Tambah
-				</button>
-				<button
-					type="button"
-					class={`btn shadow-none w-full sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
-					disabled={bulkDeleteDisabled}
-					onclick={openBulkDeleteModal}
-				>
-					<Icon name="del" />
-					Hapus
-				</button>
-			</div>
+<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
+	<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+		<div>
+			<h2 class="text-xl font-bold">Daftar Kokurikuler</h2>
+			{#if !data.kelasId}
+				<p class="text-base-content/60 text-sm">Pilih kelas aktif agar data kokurikuler tampil.</p>
+			{/if}
 		</div>
+		<div class="flex flex-col gap-2 sm:flex-row">
+			<button class="btn shadow-none" disabled={!canManage} onclick={openAddModal}>
+				<Icon name="plus" />
+				Tambah
+			</button>
+			<button
+				type="button"
+				class={`btn w-full shadow-none sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
+				disabled={bulkDeleteDisabled}
+				onclick={openBulkDeleteModal}
+			>
+				<Icon name="del" />
+				Hapus
+			</button>
+		</div>
+	</div>
 
-		{#if !data.kelasId}
-			<div class="alert mt-6 border border-dashed border-warning/60 bg-warning/10 text-warning-content">
-				<Icon name="info" />
-				<span>Silakan pilih kelas di navbar sebelum menambah kokurikuler.</span>
-			</div>
-		{/if}
+	{#if !data.kelasId}
+		<div
+			class="alert border-warning/60 bg-warning/10 text-warning-content mt-6 border border-dashed"
+		>
+			<Icon name="info" />
+			<span>Silakan pilih kelas di navbar sebelum menambah kokurikuler.</span>
+		</div>
+	{/if}
 
-		{#if !data.tableReady}
-			<div class="alert mt-4 border border-dashed border-error/60 bg-error/10 text-error-content">
-				<Icon name="warning" />
-				<span>
-					Database kokurikuler belum siap. Jalankan <code>pnpm db:push</code> untuk menerapkan migrasi terbaru.
-				</span>
-			</div>
-		{/if}
+	{#if !data.tableReady}
+		<div class="alert border-error/60 bg-error/10 text-error-content mt-4 border border-dashed">
+			<Icon name="warning" />
+			<span>
+				Database kokurikuler belum siap. Jalankan <code>pnpm db:push</code> untuk menerapkan migrasi
+				terbaru.
+			</span>
+		</div>
+	{/if}
 
-		<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
-			<table class="border-base-200 table min-w-[720px] border dark:border-none">
-				<thead>
-					<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
-						<th style="width: 50px; min-width: 40px;">
+	<div
+		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+	>
+		<table class="border-base-200 table min-w-[720px] border dark:border-none">
+			<thead>
+				<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
+					<th style="width: 50px; min-width: 40px;">
+						<input
+							type="checkbox"
+							class="checkbox"
+							bind:this={selectAllCheckbox}
+							disabled={!data.kokurikuler.length || !data.tableReady}
+							checked={allSelected}
+							onchange={(event) => handleSelectAll(event.currentTarget.checked)}
+						/>
+					</th>
+					<th style="width: 60px;">No</th>
+					<th style="min-width: 200px;">8 DPL</th>
+					<th class="w-full" style="min-width: 260px;">Kegiatan Kokurikuler</th>
+					<th style="width: 140px; min-width: 120px;">Aksi</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each data.kokurikuler as item, index (item.id)}
+					<tr>
+						<td class="align-top">
 							<input
 								type="checkbox"
 								class="checkbox"
-								bind:this={selectAllCheckbox}
-								disabled={!data.kokurikuler.length || !data.tableReady}
-								checked={allSelected}
-								onchange={(event) => handleSelectAll(event.currentTarget.checked)}
+								checked={selectedIds.includes(item.id)}
+								disabled={!data.tableReady}
+								onchange={(event) => toggleRowSelection(item.id, event.currentTarget.checked)}
 							/>
-						</th>
-						<th style="width: 60px;">No</th>
-						<th style="min-width: 200px;">8 DPL</th>
-						<th class="w-full" style="min-width: 260px;">Kegiatan Kokurikuler</th>
-						<th style="width: 140px; min-width: 120px;">Aksi</th>
+						</td>
+						<td class="align-top">{index + 1}</td>
+						<td class="align-top">
+							{#if item.dimensi.length}
+								{item.dimensi
+									.map((key) => labelByKey[key as DimensiProfilLulusanKey] ?? key)
+									.join(', ')}
+							{:else}
+								<span class="italic opacity-60">Belum ada dimensi</span>
+							{/if}
+						</td>
+						<td class="align-top">{item.tujuan}</td>
+						<td class="flex items-center justify-end gap-2">
+							<button
+								class="btn btn-sm btn-soft shadow-none"
+								type="button"
+								title="Edit kokurikuler"
+								aria-label="Edit kokurikuler"
+								disabled={!canManage}
+								onclick={() => openEditModal(item)}
+							>
+								<Icon name="edit" />
+							</button>
+							<button
+								class="btn btn-sm btn-soft btn-error shadow-none"
+								type="button"
+								title="Hapus kokurikuler"
+								aria-label="Hapus kokurikuler"
+								disabled={!canManage}
+								onclick={() => openSingleDeleteModal(item)}
+							>
+								<Icon name="del" />
+							</button>
+						</td>
 					</tr>
-				</thead>
-				<tbody>
-					{#each data.kokurikuler as item, index (item.id)}
-						<tr>
-							<td class="align-top">
-								<input
-									type="checkbox"
-									class="checkbox"
-									checked={selectedIds.includes(item.id)}
-									disabled={!data.tableReady}
-									onchange={(event) => toggleRowSelection(item.id, event.currentTarget.checked)}
-								/>
-							</td>
-							<td class="align-top">{index + 1}</td>
-							<td class="align-top">
-								{#if item.dimensi.length}
-									{item.dimensi
-										.map((key) => labelByKey[key as DimensiProfilLulusanKey] ?? key)
-										.join(', ')}
-								{:else}
-									<span class="italic opacity-60">Belum ada dimensi</span>
-								{/if}
-							</td>
-							<td class="align-top">{item.tujuan}</td>
-							<td class="flex items-center justify-end gap-2">
-								<button
-									class="btn btn-sm btn-soft shadow-none"
-									type="button"
-									title="Edit kokurikuler"
-									aria-label="Edit kokurikuler"
-									disabled={!canManage}
-									onclick={() => openEditModal(item)}
-								>
-									<Icon name="edit" />
-								</button>
-								<button
-									class="btn btn-sm btn-soft btn-error shadow-none"
-									type="button"
-									title="Hapus kokurikuler"
-									aria-label="Hapus kokurikuler"
-									disabled={!canManage}
-									onclick={() => openSingleDeleteModal(item)}
-								>
-									<Icon name="del" />
-								</button>
-							</td>
-						</tr>
-					{:else}
-						<tr>
-							<td class="py-6 text-center italic opacity-60" colspan="5">
-								Belum ada data kokurikuler
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
+				{:else}
+					<tr>
+						<td class="py-6 text-center italic opacity-60" colspan="5">
+							Belum ada data kokurikuler
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
 	</div>
+</div>

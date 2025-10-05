@@ -35,9 +35,10 @@ export async function load({ depends, url, parent }) {
 	let tujuanTableReady = true;
 
 	try {
-		ekstrakurikuler = (await db.query.tableEkstrakurikuler.findFirst({
-			where: eq(tableEkstrakurikuler.id, ekstrakurikulerId)
-		})) ?? null;
+		ekstrakurikuler =
+			(await db.query.tableEkstrakurikuler.findFirst({
+				where: eq(tableEkstrakurikuler.id, ekstrakurikulerId)
+			})) ?? null;
 	} catch (err) {
 		if (isTableMissingError(err, 'ekstrakurikuler')) {
 			throw error(500, TABLE_EKSTRA_MISSING_MESSAGE);
@@ -180,7 +181,9 @@ export const actions = {
 		}
 
 		try {
-			await db.delete(tableEkstrakurikulerTujuan).where(inArray(tableEkstrakurikulerTujuan.id, ids));
+			await db
+				.delete(tableEkstrakurikulerTujuan)
+				.where(inArray(tableEkstrakurikulerTujuan.id, ids));
 		} catch (err) {
 			if (isTableMissingError(err, 'ekstrakurikuler_tujuan')) {
 				return fail(500, { fail: TABLE_TUJUAN_MISSING_MESSAGE });

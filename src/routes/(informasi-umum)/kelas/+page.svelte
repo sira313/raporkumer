@@ -73,7 +73,7 @@
 						<p class="text-base-content/70 text-sm">NIP {kelas.waliKelas?.nip}</p>
 					</div>
 				</div>
-				<div class="mt-6 flex flex-col sm:flex-row sm:justify-between gap-2">
+				<div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-between">
 					<button
 						class="btn btn-error btn-soft shadow-none"
 						type="button"
@@ -93,7 +93,9 @@
 		<div class="card bg-base-100 rounded-box flex items-center justify-center min-h-40">
 			<div class="p-6 text-center items-center justify-center">
 				{#if academicContext && !academicContext.activeSemesterId}
-					<em class="opacity-50">Tentukan semester aktif untuk melihat atau menambahkan data kelas.</em>
+					<em class="opacity-50"
+						>Tentukan semester aktif untuk melihat atau menambahkan data kelas.</em
+					>
 				{:else}
 					<em class="opacity-50">Belum ada data kelas untuk semester ini</em>
 				{/if}

@@ -16,7 +16,8 @@ export async function load({ locals, url, depends, parent }) {
 	const kelasAktif = (parentData.kelasAktif ?? null) as { id: number } | null;
 	const sekolahId = locals.sekolah?.id ?? null;
 	const academicContext = sekolahId ? await resolveSekolahAcademicContext(sekolahId) : null;
-	const kelasParam = url.searchParams.get('kelas_id') ?? (kelasAktif ? String(kelasAktif.id) : null);
+	const kelasParam =
+		url.searchParams.get('kelas_id') ?? (kelasAktif ? String(kelasAktif.id) : null);
 	const kelasId =
 		kelasParam && daftarKelas.some((kelas) => kelas.id === Number(kelasParam))
 			? String(kelasParam)
@@ -25,7 +26,8 @@ export async function load({ locals, url, depends, parent }) {
 	const searchRaw = url.searchParams.get('q')?.trim() ?? '';
 	const search = searchRaw || null;
 	const requestedPage = Number(url.searchParams.get('page')) || 1;
-	const pageNumber = Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1;
+	const pageNumber =
+		Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1;
 
 	if (!sekolahId || !kelasIds.length) {
 		return {

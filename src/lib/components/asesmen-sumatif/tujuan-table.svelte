@@ -20,7 +20,9 @@
 	}
 </script>
 
-<div class="bg-base-100 dark:bg-base-200 border-base-200 mt-2 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+<div
+	class="bg-base-100 dark:bg-base-200 border-base-200 mt-2 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+>
 	<table class="border-base-200 table min-w-160 border dark:border-none">
 		<thead>
 			<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
@@ -30,7 +32,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each entries as entry, index}
+			{#each entries as entry, index (entry.tujuanPembelajaranId)}
 				<tr>
 					<td>{entry.index}</td>
 					<td>

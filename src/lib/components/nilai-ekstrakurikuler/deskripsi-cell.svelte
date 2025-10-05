@@ -4,7 +4,7 @@
 </script>
 
 {#if content}
-	<span class="text-sm text-base-content">{content}</span>
+	<span class="text-base-content text-sm">{content}</span>
 {:else}
-	<span class="text-sm italic text-base-content/70">Belum ada nilai</span>
+	<span class="text-base-content/70 text-sm italic">Belum ada nilai</span>
 {/if}

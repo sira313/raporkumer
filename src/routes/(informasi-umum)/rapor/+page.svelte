@@ -109,7 +109,6 @@
 		sekolahId: activeSekolahId ? String(activeSekolahId) : ''
 	});
 
-
 	let formInitPengaturan = $state<Record<string, string>>({
 		tahunAjaranId: activeTahunAjaranId ? String(activeTahunAjaranId) : '',
 		semesterId: activeSemesterId ? String(activeSemesterId) : '',
@@ -152,7 +151,9 @@
 		}
 
 		const rapor = data.tanggalBagiRaport ?? {
-			ganjilId: formInitPengaturan['ganjil.id'] ? Number(formInitPengaturan['ganjil.id']) : undefined,
+			ganjilId: formInitPengaturan['ganjil.id']
+				? Number(formInitPengaturan['ganjil.id'])
+				: undefined,
 			ganjil: tanggalRaporGanjil || null,
 			genapId: formInitPengaturan['genap.id'] ? Number(formInitPengaturan['genap.id']) : undefined,
 			genap: tanggalRaporGenap || null

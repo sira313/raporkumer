@@ -4,7 +4,7 @@ import { desc, eq } from 'drizzle-orm';
 
 export type AcademicContext = {
 	tahunAjaranList: (typeof tableTahunAjaran.$inferSelect & {
-		semester: typeof tableSemester.$inferSelect[];
+		semester: (typeof tableSemester.$inferSelect)[];
 	})[];
 	activeTahunAjaranId: number | null;
 	activeSemesterId: number | null;

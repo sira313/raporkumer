@@ -3,18 +3,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import type { KokurikulerRow } from './types';
 
-	let {
-		open,
-		title,
-		action,
-		ids,
-		mode,
-		item,
-		canManage,
-		disabled,
-		onClose,
-		onSuccess
-	} = $props<{
+	let { open, title, action, ids, mode, item, canManage, disabled, onClose, onSuccess } = $props<{
 		open: boolean;
 		title: string;
 		action: string;
@@ -53,7 +42,7 @@
 			{/if}
 
 			<FormEnhance
-				action={action}
+				{action}
 				onsuccess={() => {
 					onSuccess();
 				}}

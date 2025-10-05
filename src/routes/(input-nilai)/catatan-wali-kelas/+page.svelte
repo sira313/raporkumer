@@ -39,13 +39,15 @@
 
 	const editingSaveDisabled = $derived.by(
 		() =>
-			editingRowId === null ||
-			editingSubmitting ||
-			editingCatatan.trim() === editingOriginal.trim()
+			editingRowId === null || editingSubmitting || editingCatatan.trim() === editingOriginal.trim()
 	);
 
 	$effect(() => {
-		searchTerm = data.page.search ?? '';
+		if (searchTimer) return;
+		const latestSearchTerm = data.page.search ?? '';
+		if (searchTerm !== latestSearchTerm) {
+			searchTerm = latestSearchTerm;
+		}
 	});
 
 	$effect(() => {
@@ -126,6 +128,7 @@
 			clearTimeout(searchTimer);
 		}
 		searchTimer = setTimeout(() => {
+			searchTimer = undefined;
 			void applySearch(value);
 		}, 400);
 	}
@@ -142,6 +145,7 @@
 	onDestroy(() => {
 		if (searchTimer) {
 			clearTimeout(searchTimer);
+			searchTimer = undefined;
 		}
 	});
 
@@ -216,7 +220,9 @@
 		</label>
 	</form>
 
-	<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+	<div
+		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+	>
 		<table class="border-base-200 table min-w-[720px] border dark:border-none">
 			<thead>
 				<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
@@ -242,30 +248,29 @@
 										void handleSaveSuccess();
 									}}
 								>
-									{#snippet children()}
+									{#snippet children({ submitting, invalid })}
 										<input name="muridId" value={item.id} hidden />
-										<label class="flex flex-col gap-2">
+										<label class="flex flex-col gap-2" aria-busy={submitting}>
 											<textarea
 												bind:this={editingTextarea}
-												class="textarea textarea-bordered bg-base-200 dark:bg-base-100 dark:border-none w-full"
+												class="textarea textarea-bordered bg-base-200 dark:bg-base-100 w-full dark:border-none"
 												name="catatan"
 												rows="4"
 												bind:value={editingCatatan}
 												placeholder={`Tuliskan catatan untuk ${item.nama}`}
 												spellcheck="false"
+												aria-invalid={invalid}
 											></textarea>
-											<small class="text-xs text-base-content/60">
+											<small class="text-base-content/60 text-xs">
 												Kosongkan catatan dan simpan untuk menghapus.
 											</small>
 										</label>
 									{/snippet}
 								</FormEnhance>
+							{:else if item.catatan}
+								<p class="whitespace-pre-line">{item.catatan}</p>
 							{:else}
-								{#if item.catatan}
-									<p class="whitespace-pre-line">{item.catatan}</p>
-								{:else}
-									<span class="italic opacity-60">Belum ada catatan</span>
-								{/if}
+								<span class="italic opacity-60">Belum ada catatan</span>
 							{/if}
 						</td>
 						<td class="align-top">
@@ -311,7 +316,9 @@
 					</tr>
 				{:else}
 					<tr>
-						<td class="p-7 text-center italic opacity-60" colspan="4">Belum ada murid pada kelas ini</td>
+						<td class="p-7 text-center italic opacity-60" colspan="4"
+							>Belum ada murid pada kelas ini</td
+						>
 					</tr>
 				{/each}
 			</tbody>
@@ -319,7 +326,7 @@
 	</div>
 
 	<div class="join mt-4 sm:mx-auto">
-		{#each pages as pageNumber}
+		{#each pages as pageNumber (pageNumber)}
 			<button
 				type="button"
 				class="join-item btn"

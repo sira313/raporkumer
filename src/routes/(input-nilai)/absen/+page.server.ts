@@ -62,12 +62,12 @@ export async function load({ parent, locals, url, depends }) {
 		};
 	}
 
-	const baseFilter = and(eq(tableMurid.sekolahId, sekolahId), eq(tableMurid.kelasId, kelasAktif.id));
+	const baseFilter = and(
+		eq(tableMurid.sekolahId, sekolahId),
+		eq(tableMurid.kelasId, kelasAktif.id)
+	);
 	const searchFilter = search
-		? and(
-			baseFilter,
-			sql`${tableMurid.nama} LIKE ${'%' + search + '%'} COLLATE NOCASE`
-		  )
+		? and(baseFilter, sql`${tableMurid.nama} LIKE ${'%' + search + '%'} COLLATE NOCASE`)
 		: baseFilter;
 
 	const [{ muridCount }] = await db

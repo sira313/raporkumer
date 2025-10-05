@@ -144,7 +144,9 @@ export async function load({ parent, url, depends }) {
 
 	const mapelOptions = [...regularOptions];
 	if (agamaBaseMapel || agamaVariantRecords.length) {
-		const exists = mapelOptions.some((option) => normalizeText(option.nama) === normalizeText(AGAMA_BASE_SUBJECT));
+		const exists = mapelOptions.some(
+			(option) => normalizeText(option.nama) === normalizeText(AGAMA_BASE_SUBJECT)
+		);
 		if (!exists) {
 			mapelOptions.unshift({ value: AGAMA_MAPEL_VALUE, nama: AGAMA_BASE_SUBJECT });
 		}
@@ -160,9 +162,10 @@ export async function load({ parent, url, depends }) {
 	}
 
 	const isAgamaSelected = selectedMapelValue === AGAMA_MAPEL_VALUE;
-	const selectedMapelRecord = !isAgamaSelected && selectedMapelValue
-		? mapelRecords.find((record) => String(record.id) === selectedMapelValue) ?? null
-		: null;
+	const selectedMapelRecord =
+		!isAgamaSelected && selectedMapelValue
+			? (mapelRecords.find((record) => String(record.id) === selectedMapelValue) ?? null)
+			: null;
 	const selectedMapel = isAgamaSelected
 		? agamaBaseMapel
 			? { id: agamaBaseMapel.id, nama: agamaBaseMapel.nama }
@@ -228,23 +231,26 @@ export async function load({ parent, url, depends }) {
 
 	await ensureAsesmenFormatifSchema();
 
-	const agamaMapelIds = [...agamaVariantRecords.map((record) => record.id), ...(agamaBaseMapel ? [agamaBaseMapel.id] : [])];
+	const agamaMapelIds = [
+		...agamaVariantRecords.map((record) => record.id),
+		...(agamaBaseMapel ? [agamaBaseMapel.id] : [])
+	];
 	const relevantMapelIds = isAgamaSelected
 		? Array.from(new Set(agamaMapelIds))
 		: selectedMapelRecord
-		? [selectedMapelRecord.id]
-		: [];
+			? [selectedMapelRecord.id]
+			: [];
 
 	const tujuanRecords = relevantMapelIds.length
 		? await db.query.tableTujuanPembelajaran.findMany({
-			columns: { id: true, lingkupMateri: true, mataPelajaranId: true },
-			where: inArray(tableTujuanPembelajaran.mataPelajaranId, relevantMapelIds),
-			orderBy: [
-				asc(tableTujuanPembelajaran.mataPelajaranId),
-				asc(tableTujuanPembelajaran.lingkupMateri),
-				asc(tableTujuanPembelajaran.id)
-			]
-		})
+				columns: { id: true, lingkupMateri: true, mataPelajaranId: true },
+				where: inArray(tableTujuanPembelajaran.mataPelajaranId, relevantMapelIds),
+				orderBy: [
+					asc(tableTujuanPembelajaran.mataPelajaranId),
+					asc(tableTujuanPembelajaran.lingkupMateri),
+					asc(tableTujuanPembelajaran.id)
+				]
+			})
 		: [];
 
 	const tujuanByMapel = new Map<number, typeof tujuanRecords>();
@@ -276,18 +282,18 @@ export async function load({ parent, url, depends }) {
 	const asesmenRecords =
 		relevantMapelIds.length && tujuanIds.length && muridIds.length
 			? await db.query.tableAsesmenFormatif.findMany({
-				columns: {
-					muridId: true,
-					mataPelajaranId: true,
-					tujuanPembelajaranId: true,
-					tuntas: true
-				},
-				where: and(
-					inArray(tableAsesmenFormatif.mataPelajaranId, relevantMapelIds),
-					inArray(tableAsesmenFormatif.muridId, muridIds),
-					inArray(tableAsesmenFormatif.tujuanPembelajaranId, tujuanIds)
-				)
-			})
+					columns: {
+						muridId: true,
+						mataPelajaranId: true,
+						tujuanPembelajaranId: true,
+						tuntas: true
+					},
+					where: and(
+						inArray(tableAsesmenFormatif.mataPelajaranId, relevantMapelIds),
+						inArray(tableAsesmenFormatif.muridId, muridIds),
+						inArray(tableAsesmenFormatif.tujuanPembelajaranId, tujuanIds)
+					)
+				})
 			: [];
 
 	const asesmenByMurid = new Map<number, Map<number, boolean>>();
@@ -320,18 +326,15 @@ export async function load({ parent, url, depends }) {
 	const daftarMurid = paginatedMuridRecords.map((murid, index) => {
 		const targetMapelId = pickMapelIdForMurid(murid.agama);
 		const asesmen = asesmenByMurid.get(murid.id) ?? new Map();
-		const tujuanList = targetMapelId ? tujuanByMapel.get(targetMapelId) ?? [] : [];
+		const tujuanList = targetMapelId ? (tujuanByMapel.get(targetMapelId) ?? []) : [];
 		const groupedTujuan = targetMapelId
-			? groupedTujuanByMapel.get(targetMapelId) ?? new Map<string, typeof tujuanRecords>()
+			? (groupedTujuanByMapel.get(targetMapelId) ?? new Map<string, typeof tujuanRecords>())
 			: new Map<string, typeof tujuanRecords>();
 		const parts: ProgressSummaryPart[] = [];
 
 		for (const [lingkupMateri, tujuan] of groupedTujuan.entries()) {
 			const totalTujuan = tujuan.length;
-			const tuntas = tujuan.reduce(
-				(count, item) => count + (asesmen.get(item.id) ? 1 : 0),
-				0
-			);
+			const tuntas = tujuan.reduce((count, item) => count + (asesmen.get(item.id) ? 1 : 0), 0);
 			const kategori = resolveCategory(tuntas, totalTujuan);
 			parts.push({
 				kategori,
@@ -379,16 +382,18 @@ export async function load({ parent, url, depends }) {
 	const tujuanGroups =
 		!isAgamaSelected && selectedMapelRecord
 			? Array.from(
-				(groupedTujuanByMapel.get(selectedMapelRecord.id) ?? new Map()).entries(),
-				([lingkupMateri, tujuan]) => ({
-					lingkupMateri,
-					totalTujuan: tujuan.length
-				})
-			  )
+					(groupedTujuanByMapel.get(selectedMapelRecord.id) ?? new Map()).entries(),
+					([lingkupMateri, tujuan]) => ({
+						lingkupMateri,
+						totalTujuan: tujuan.length
+					})
+				)
 			: [];
 
 	const jumlahTujuan =
-		!isAgamaSelected && selectedMapelRecord ? tujuanByMapel.get(selectedMapelRecord.id)?.length ?? 0 : 0;
+		!isAgamaSelected && selectedMapelRecord
+			? (tujuanByMapel.get(selectedMapelRecord.id)?.length ?? 0)
+			: 0;
 
 	return {
 		meta,

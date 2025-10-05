@@ -144,17 +144,23 @@
 							<details class="bg-base-300 dark:bg-base-200 collapse mt-6">
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-								<div class="px-2 flex flex-col collapse-content">
-								{#each daftarKelas as kelas (kelas.id)}
-									{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
-										<a class="btn btn-ghost justify-start btn-sm" href={buildKelasHref(kelas.id)} class:active={kelasAktif?.id === kelas.id}>
+								<div class="collapse-content flex flex-col px-2">
+									{#each daftarKelas as kelas (kelas.id)}
+										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
+										<a
+											class="btn btn-ghost btn-sm justify-start"
+											href={buildKelasHref(kelas.id)}
+											class:active={kelasAktif?.id === kelas.id}
+										>
 											{label}
 										</a>
-								{/each}
+									{/each}
 								</div>
 							</details>
 						{:else}
-							<p class="text-sm text-base-content/70 mt-6">Belum ada data kelas yang dapat dipilih.</p>
+							<p class="text-base-content/70 mt-6 text-sm">
+								Belum ada data kelas yang dapat dipilih.
+							</p>
 						{/if}
 
 						<li class="mt-2">

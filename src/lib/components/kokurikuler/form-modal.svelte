@@ -58,7 +58,7 @@
 			<h3 class="mb-2 text-lg font-bold">{title}</h3>
 			<p class="font-semibold">Pilih Dimensi Profil Lulusan</p>
 
-			<FormEnhance action={action} onsuccess={onSuccess}>
+			<FormEnhance {action} onsuccess={onSuccess}>
 				{#snippet children({ submitting })}
 					<input name="kelasId" value={kelasId ?? ''} hidden />
 					{#if isEditMode && modalItem}
@@ -102,13 +102,11 @@
 						</button>
 						<button
 							class="btn btn-primary shadow-none"
-							disabled={
-								submitting ||
+							disabled={submitting ||
 								!selectedDimensions.length ||
 								!kelasId ||
 								!tableReady ||
-								!tujuanInput.trim()
-							}
+								!tujuanInput.trim()}
 						>
 							{#if submitting}
 								<div class="loading loading-spinner"></div>

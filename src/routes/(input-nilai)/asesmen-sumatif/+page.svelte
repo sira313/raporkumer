@@ -39,11 +39,18 @@
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
 	$effect(() => {
-		selectedMapelValue = data.selectedMapelValue ?? '';
+		const latestSelected = data.selectedMapelValue ?? '';
+		if (selectedMapelValue !== latestSelected) {
+			selectedMapelValue = latestSelected;
+		}
 	});
 
 	$effect(() => {
-		searchTerm = data.page.search ?? '';
+		if (searchTimer) return;
+		const latestSearch = data.page.search ?? '';
+		if (searchTerm !== latestSearch) {
+			searchTerm = latestSearch;
+		}
 	});
 
 	const selectedMapelLabel = $derived.by(() => data.selectedMapel?.nama ?? null);
@@ -123,6 +130,7 @@
 			clearTimeout(searchTimer);
 		}
 		searchTimer = setTimeout(() => {
+			searchTimer = undefined;
 			void applySearch(value);
 		}, 400);
 	}
@@ -139,6 +147,7 @@
 	onDestroy(() => {
 		if (searchTimer) {
 			clearTimeout(searchTimer);
+			searchTimer = undefined;
 		}
 	});
 </script>
@@ -170,7 +179,7 @@
 					<option value="" disabled selected={selectedMapelValue === ''}>
 						Pilih Mata Pelajaran
 					</option>
-					{#each data.mapelList as mapel}
+					{#each data.mapelList as mapel (mapel.value)}
 						<option value={mapel.value}>{mapel.nama}</option>
 					{/each}
 				{/if}
@@ -239,7 +248,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.daftarMurid as murid}
+					{#each data.daftarMurid as murid (murid.id)}
 						<tr>
 							<td>{murid.no}</td>
 							<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
@@ -278,7 +287,7 @@
 			</table>
 		</div>
 		<div class="join mt-4 sm:mx-auto">
-			{#each pages as pageNumber}
+			{#each pages as pageNumber (pageNumber)}
 				<button
 					type="button"
 					class="join-item btn"

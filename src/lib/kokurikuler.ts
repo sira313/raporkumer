@@ -13,12 +13,13 @@ export const nilaiKategoriOptions = [
 
 export type NilaiKategori = (typeof nilaiKategoriOptions)[number]['value'];
 
-export const nilaiKategoriLabelByValue = nilaiKategoriOptions.reduce<
-	Record<NilaiKategori, string>
->((acc, option) => {
-	acc[option.value] = option.label;
-	return acc;
-}, {} as Record<NilaiKategori, string>);
+export const nilaiKategoriLabelByValue = nilaiKategoriOptions.reduce<Record<NilaiKategori, string>>(
+	(acc, option) => {
+		acc[option.value] = option.label;
+		return acc;
+	},
+	{} as Record<NilaiKategori, string>
+);
 
 const kategoriSet = new Set(nilaiKategoriOptions.map((option) => option.value));
 
@@ -37,16 +38,16 @@ export function sanitizeDimensionList(value: unknown): DimensiProfilLulusanKey[]
 	const list: unknown[] = Array.isArray(value)
 		? value
 		: typeof value === 'string'
-		? (() => {
-			try {
-				const parsed = JSON.parse(value);
-				return Array.isArray(parsed) ? parsed : [];
-			} catch (error) {
-				console.error('Gagal mengurai dimensi kokurikuler', error);
-				return [];
-			}
-		})()
-		: [];
+			? (() => {
+					try {
+						const parsed = JSON.parse(value);
+						return Array.isArray(parsed) ? parsed : [];
+					} catch (error) {
+						console.error('Gagal mengurai dimensi kokurikuler', error);
+						return [];
+					}
+				})()
+			: [];
 
 	const unique = new Set<DimensiProfilLulusanKey>();
 	for (const item of list) {
@@ -57,10 +58,12 @@ export function sanitizeDimensionList(value: unknown): DimensiProfilLulusanKey[]
 	return Array.from(unique);
 }
 
-export function buildKokurikulerDeskripsi(parts: Array<{
-	kategori: NilaiKategori;
-	dimensi: DimensiProfilLulusanKey;
-}>): string | null {
+export function buildKokurikulerDeskripsi(
+	parts: Array<{
+		kategori: NilaiKategori;
+		dimensi: DimensiProfilLulusanKey;
+	}>
+): string | null {
 	if (!parts.length) return null;
 
 	const locale = 'id-ID';
@@ -68,11 +71,11 @@ export function buildKokurikulerDeskripsi(parts: Array<{
 	const phrases = parts
 		.map((part, index) => {
 			const kategoriLabel = nilaiKategoriLabelByValue[part.kategori];
-			const dimensiLabel =
-				profilPelajarPancasilaDimensionLabelByKey[part.dimensi] ?? part.dimensi;
-			const kategoriText = index === 0
-				? capitalizeLocale(kategoriLabel, locale)
-				: kategoriLabel.toLocaleLowerCase(locale);
+			const dimensiLabel = profilPelajarPancasilaDimensionLabelByKey[part.dimensi] ?? part.dimensi;
+			const kategoriText =
+				index === 0
+					? capitalizeLocale(kategoriLabel, locale)
+					: kategoriLabel.toLocaleLowerCase(locale);
 			const dimensiText = dimensiLabel.toLocaleLowerCase(locale);
 			return `${kategoriText} dalam ${dimensiText}`.trim();
 		})

@@ -18,21 +18,23 @@
 	}: Props = $props();
 </script>
 
-<div class="alert alert-info shadow-md mb-4 items-start gap-4 print:hidden">
-	<span class="flex h-10 w-10 items-center justify-center rounded-full bg-info-content/10 text-info-content">
+<div class="alert alert-info mb-4 items-start gap-4 shadow-md print:hidden">
+	<span
+		class="bg-info-content/10 text-info-content flex h-10 w-10 items-center justify-center rounded-full"
+	>
 		<Icon name="info" class="h-5 w-5" />
 	</span>
 	<div class="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<div class="space-y-1">
-			<h3 class="font-semibold text-base">{title}</h3>
+			<h3 class="text-base font-semibold">{title}</h3>
 			<p class="text-sm leading-relaxed">{message}</p>
 			{#if subMessage}
-				<p class="text-xs text-base-content/70">{subMessage}</p>
+				<p class="text-base-content/70 text-xs">{subMessage}</p>
 			{/if}
 		</div>
 		<button
 			type="button"
-			class="btn btn-primary shadow-none sm:btn-sm"
+			class="btn btn-primary sm:btn-sm shadow-none"
 			onclick={() => onPrint?.()}
 			title="Mulai cetak"
 			aria-label="Mulai cetak"

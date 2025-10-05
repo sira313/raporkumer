@@ -7,4 +7,5 @@ const faseBadgeColors: Record<string, string> = {
 	'Fase F': 'badge-warning'
 };
 
-export const faseBadgeClass = (fase?: string | null) => faseBadgeColors[fase ?? ''] ?? 'badge-neutral';
+export const faseBadgeClass = (fase?: string | null) =>
+	faseBadgeColors[fase ?? ''] ?? 'badge-neutral';

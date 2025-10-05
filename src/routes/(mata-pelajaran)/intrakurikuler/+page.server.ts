@@ -13,7 +13,7 @@ export async function load({ depends, url, parent }) {
 	const { kelasAktif, daftarKelas } = await parent();
 	await ensureAgamaMapelForClasses(daftarKelas?.map((kelas) => kelas.id) ?? []);
 	const fromQuery = url.searchParams.get('kelas_id');
-	const kelasCandidate = fromQuery ? Number(fromQuery) : kelasAktif?.id ?? null;
+	const kelasCandidate = fromQuery ? Number(fromQuery) : (kelasAktif?.id ?? null);
 	const kelasId =
 		kelasCandidate != null && daftarKelas?.some((kelas) => kelas.id === kelasCandidate)
 			? kelasCandidate
@@ -21,8 +21,8 @@ export async function load({ depends, url, parent }) {
 
 	const mapel = kelasId
 		? await db.query.tableMataPelajaran.findMany({
-			where: eq(tableMataPelajaran.kelasId, kelasId)
-		  })
+				where: eq(tableMataPelajaran.kelasId, kelasId)
+			})
 		: [];
 
 	const mapelTampil = mapel.filter((item) => !AGAMA_VARIANT_NAME_SET.has(item.nama));

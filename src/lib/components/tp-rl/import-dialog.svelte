@@ -40,10 +40,13 @@
 	<div class="modal-box max-w-2xl">
 		<h3 class="mb-2 text-xl font-bold">Import Tujuan Pembelajaran</h3>
 		<p class="text-base-content/70 mb-4 text-sm">
-			Unggah file Excel berekstensi <code>.xlsx</code> dengan format seperti contoh berikut. Baris kosong akan diabaikan otomatis.
+			Unggah file Excel berekstensi <code>.xlsx</code> dengan format seperti contoh berikut. Baris kosong
+			akan diabaikan otomatis.
 		</p>
 
-		<div class="bg-base-200 border-base-300 dark:bg-base-300 mb-4 overflow-x-auto rounded-lg border p-3 text-sm">
+		<div
+			class="bg-base-200 border-base-300 dark:bg-base-300 mb-4 overflow-x-auto rounded-lg border p-3 text-sm"
+		>
 			<table class="table-compact table">
 				<thead>
 					<tr>
@@ -95,22 +98,32 @@
 						bind:this={fileInput}
 					/>
 					<label class="label" for={fileInputId}>
-						<span class="label-text-alt text-xs text-wrap text-base-content/60">
-							Maksimal 2MB. Pastikan kolom <strong>Lingkup Materi</strong> dan <strong>Tujuan Pembelajaran</strong> tersedia.
+						<span class="label-text-alt text-base-content/60 text-xs text-wrap">
+							Maksimal 2MB. Pastikan kolom <strong>Lingkup Materi</strong> dan
+							<strong>Tujuan Pembelajaran</strong> tersedia.
 						</span>
 						{#if fileName}
-							<span class="label-text-alt text-xs text-base-content/60">
-								File dipilih: <span class="font-semibold text-base-content">{fileName}</span>
+							<span class="label-text-alt text-base-content/60 text-xs">
+								File dipilih: <span class="text-base-content font-semibold">{fileName}</span>
 							</span>
 						{/if}
 					</label>
 				</fieldset>
 
 				<div class="mt-6 flex justify-end gap-2">
-					<button class="btn shadow-none" type="button" onclick={handleCancel} disabled={submitting}>
+					<button
+						class="btn shadow-none"
+						type="button"
+						onclick={handleCancel}
+						disabled={submitting}
+					>
 						Batal
 					</button>
-					<button class="btn btn-primary shadow-none" type="submit" disabled={submitting || !hasFile}>
+					<button
+						class="btn btn-primary shadow-none"
+						type="submit"
+						disabled={submitting || !hasFile}
+					>
 						{#if submitting}
 							<span class="loading loading-spinner"></span>
 						{:else}

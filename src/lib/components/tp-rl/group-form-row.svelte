@@ -60,15 +60,18 @@
 			aria-label="Lingkup materi"
 			placeholder="Tuliskan lingkup materi"
 			required
-			oninput={(event) =>
-				onLingkupMateriInput((event.currentTarget as HTMLTextAreaElement).value)
-			}
+			oninput={(event) => onLingkupMateriInput((event.currentTarget as HTMLTextAreaElement).value)}
 		></textarea>
 	</td>
 	<td class="align-top" colspan="2">
 		<div class="flex flex-col gap-2">
 			{#each form.entries as entry, entryIndex (`${entry.id ?? 'new'}-${entryIndex}`)}
-				<input type="hidden" form={formId} name={`entries.${entryIndex}.id`} value={entry.id ?? ''} />
+				<input
+					type="hidden"
+					form={formId}
+					name={`entries.${entryIndex}.id`}
+					value={entry.id ?? ''}
+				/>
 				{#if entry.deleted}
 					<input type="hidden" form={formId} name={`entries.${entryIndex}.deskripsi`} value="" />
 				{:else}
@@ -82,8 +85,7 @@
 							placeholder="Tuliskan tujuan pembelajaran"
 							required={form.mode === 'create' && entryIndex === 0}
 							oninput={(event) =>
-								onEntryInput(entryIndex, (event.currentTarget as HTMLTextAreaElement).value)
-							}
+								onEntryInput(entryIndex, (event.currentTarget as HTMLTextAreaElement).value)}
 						></textarea>
 						{#if shouldShowDeleteButton(entry)}
 							<button

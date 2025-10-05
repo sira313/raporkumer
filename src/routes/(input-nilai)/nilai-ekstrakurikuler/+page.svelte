@@ -60,8 +60,8 @@
 
 	const hasEkstrakurikuler = $derived.by(() => data.ekstrakurikulerList.length > 0);
 	const selectedEkstrak = $derived.by(() => data.selectedEkstrakurikuler);
-	const selectedEkstrakHasTujuan = $derived.by(
-		() => selectedEkstrak ? selectedEkstrak.tujuan.length > 0 : false
+	const selectedEkstrakHasTujuan = $derived.by(() =>
+		selectedEkstrak ? selectedEkstrak.tujuan.length > 0 : false
 	);
 	const currentPage = $derived.by(() => data.page?.currentPage ?? 1);
 	const totalPages = $derived.by(() => Math.max(1, data.page?.totalPages ?? 1));
@@ -188,7 +188,7 @@
 		<h2 class="text-xl font-bold">Daftar Nilai Ekstrakurikuler</h2>
 		{#if selectedEkstrak}
 			<div class="flex flex-col items-start gap-1 sm:items-end">
-				<p class="text-sm font-semibold text-base-content">
+				<p class="text-base-content text-sm font-semibold">
 					{capitalizeSentence(selectedEkstrak.nama)}
 				</p>
 			</div>
@@ -202,8 +202,7 @@
 				class="select bg-base-200 w-full truncate dark:border-none"
 				title="Pilih ekstrakurikuler"
 				bind:value={selectedEkstrakValue}
-				onchange={(event) =>
-					handleEkstrakChange((event.currentTarget as HTMLSelectElement).value)}
+				onchange={(event) => handleEkstrakChange((event.currentTarget as HTMLSelectElement).value)}
 				disabled={!hasEkstrakurikuler}
 			>
 				{#if !hasEkstrakurikuler}
@@ -212,7 +211,7 @@
 					<option value="" disabled selected={selectedEkstrakValue === ''}>
 						Pilih Ekstrakurikuler
 					</option>
-					{#each data.ekstrakurikulerList as item}
+					{#each data.ekstrakurikulerList as item (item.id)}
 						<option value={String(item.id)}>{capitalizeSentence(item.nama)}</option>
 					{/each}
 				{/if}
@@ -256,8 +255,8 @@
 		<div class="alert alert-soft alert-warning mt-6">
 			<Icon name="alert" />
 			<span>
-				Ekstrakurikuler ini belum memiliki tujuan pembelajaran. Tambahkan tujuan terlebih
-				dahulu melalui menu <strong>Ekstrakurikuler &gt; Tujuan</strong>.
+				Ekstrakurikuler ini belum memiliki tujuan pembelajaran. Tambahkan tujuan terlebih dahulu
+				melalui menu <strong>Ekstrakurikuler &gt; Tujuan</strong>.
 			</span>
 		</div>
 	{:else if data.muridCount === 0}
@@ -274,7 +273,9 @@
 			<span>Tidak ada murid yang cocok dengan pencarian.</span>
 		</div>
 	{:else}
-		<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+		<div
+			class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+		>
 			<table class="border-base-200 table min-w-150 border dark:border-none">
 				<thead>
 					<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
@@ -285,7 +286,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.daftarMurid as murid}
+					{#each data.daftarMurid as murid (murid.id)}
 						<tr>
 							<td class="align-top">{murid.no}</td>
 							<td class="align-top">
@@ -312,7 +313,7 @@
 			</table>
 		</div>
 		<div class="join mt-4 sm:mx-auto">
-			{#each pages as pageNumber}
+			{#each pages as pageNumber (pageNumber)}
 				<button
 					type="button"
 					class="join-item btn"

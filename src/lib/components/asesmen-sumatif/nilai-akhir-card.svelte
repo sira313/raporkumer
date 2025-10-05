@@ -23,9 +23,7 @@
 	<span>
 		<p class="text-lg">Nilai Akhir</p>
 		<p class="text-2xl font-bold">{formatScore(nilaiAkhir)}</p>
-		<p class="text-sm">
-			Rata-rata dari NA Sumatif Lingkup Materi dan NA Sumatif Akhir Semester
-		</p>
+		<p class="text-sm">Rata-rata dari NA Sumatif Lingkup Materi dan NA Sumatif Akhir Semester</p>
 		<p class="text-sm font-semibold">
 			KKM {kkm}
 			{#if nilaiAkhir == null}

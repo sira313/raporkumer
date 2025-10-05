@@ -1,10 +1,6 @@
 import db from '$lib/server/db';
 import { ensureAsesmenKokurikulerSchema } from '$lib/server/db/ensure-asesmen-kokurikuler';
-import {
-	tableAsesmenKokurikuler,
-	tableKokurikuler,
-	tableMurid
-} from '$lib/server/db/schema';
+import { tableAsesmenKokurikuler, tableKokurikuler, tableMurid } from '$lib/server/db/schema';
 import {
 	buildKokurikulerDeskripsi,
 	isNilaiKategori,
@@ -36,10 +32,7 @@ type KokurikulerOption = {
 
 type NilaiRecordMap = Map<
 	number,
-	Map<
-		DimensiProfilLulusanKey,
-		{ kategori: NilaiKategori; timestamp: string | null }
-	>
+	Map<DimensiProfilLulusanKey, { kategori: NilaiKategori; timestamp: string | null }>
 >;
 
 function mapNilaiRecords(
@@ -141,7 +134,7 @@ export async function load({ parent, url, depends }) {
 	}
 
 	const selectedKokurikuler = selectedKokurikulerId
-		? kokurikulerList.find((item) => item.id === selectedKokurikulerId) ?? null
+		? (kokurikulerList.find((item) => item.id === selectedKokurikulerId) ?? null)
 		: null;
 
 	const muridRaw = await db.query.tableMurid.findMany({
@@ -246,9 +239,9 @@ export async function load({ parent, url, depends }) {
 		muridCount: muridRaw.length,
 		summary: selectedKokurikuler
 			? {
-				dimensiCount: selectedKokurikuler.dimensi.length,
-				deskripsi: selectedKokurikuler.tujuan
-			}
+					dimensiCount: selectedKokurikuler.dimensi.length,
+					deskripsi: selectedKokurikuler.tujuan
+				}
 			: null,
 		page: {
 			currentPage,

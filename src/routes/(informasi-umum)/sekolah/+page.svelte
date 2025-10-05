@@ -153,7 +153,7 @@
 						<div class="mt-8 flex flex-col justify-end gap-2 md:flex-row">
 							<button
 								type="button"
-								class="btn shadow-none btn-error btn-soft"
+								class="btn btn-error btn-soft shadow-none"
 								aria-label="hapus sekolah"
 								onclick={() => deleteModalRef?.open(sekolah)}
 							>

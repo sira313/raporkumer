@@ -1,9 +1,6 @@
 import db from '$lib/server/db';
 import { tableKokurikuler } from '$lib/server/db/schema';
-import {
-	profilPelajarPancasilaDimensions,
-	type DimensiProfilLulusanKey
-} from '$lib/statics';
+import { profilPelajarPancasilaDimensions, type DimensiProfilLulusanKey } from '$lib/statics';
 import { fail } from '@sveltejs/kit';
 import { randomBytes } from 'node:crypto';
 import { and, asc, eq, inArray } from 'drizzle-orm';
@@ -14,7 +11,6 @@ const DIMENSION_KEY_SET = new Set<DimensiProfilLulusanKey>(
 
 const TABLE_MISSING_MESSAGE =
 	'Tabel kokurikuler belum tersedia. Jalankan "pnpm db:push" untuk menerapkan migrasi terbaru.';
-
 
 function sanitizeDimensions(values: string[]): DimensiProfilLulusanKey[] {
 	const unique = new Set<DimensiProfilLulusanKey>();
@@ -81,12 +77,11 @@ export async function load({ depends, parent }) {
 		tableReady,
 		kokurikuler: kokurikulerRaw.map((item) => ({
 			...item,
-			dimensi:
-				Array.isArray(item.dimensi)
-					? (item.dimensi as DimensiProfilLulusanKey[])
-					: sanitizeDimensions(
-							typeof item.dimensi === 'string'
-								? (() => {
+			dimensi: Array.isArray(item.dimensi)
+				? (item.dimensi as DimensiProfilLulusanKey[])
+				: sanitizeDimensions(
+						typeof item.dimensi === 'string'
+							? (() => {
 									try {
 										return JSON.parse(item.dimensi) as string[];
 									} catch (error) {
@@ -95,7 +90,7 @@ export async function load({ depends, parent }) {
 									}
 								})()
 							: []
-					  )
+					)
 		})),
 		dimensiPilihan: profilPelajarPancasilaDimensions
 	};

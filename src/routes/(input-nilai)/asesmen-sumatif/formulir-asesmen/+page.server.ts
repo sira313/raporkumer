@@ -85,8 +85,7 @@ function deriveLingkupBobot(
 		remaining = 0;
 	}
 
-	const autoValue =
-		autoKeys.length > 0 ? Math.round((remaining / autoKeys.length) * 100) / 100 : 0;
+	const autoValue = autoKeys.length > 0 ? Math.round((remaining / autoKeys.length) * 100) / 100 : 0;
 
 	const result = new Map<string, number>();
 

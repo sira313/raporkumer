@@ -60,16 +60,20 @@
 
 <PrintTip onPrint={handlePrint} buttonLabel="Cetak biodata" />
 
-<div class="card bg-base-100 rounded-lg border border-none shadow-md print:bg-transparent print:shadow-none print:border-none">
+<div
+	class="card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none"
+>
 	<div
-		class="min-w-[210mm] max-w-[210mm] min-h-[297mm] max-h-[297mm] mx-auto bg-base-100 text-base-content flex flex-col"
+		class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col"
 		bind:this={printable}
 	>
 		<div class="m-[20mm] flex flex-1 flex-col">
 			<header class="text-center">
 				<h1 class="text-xl font-bold tracking-wide uppercase">Identitas Peserta Didik</h1>
 				{#if sekolah}
-					<p class="mt-1 text-sm uppercase tracking-wide text-base-content/70">{formatUpper(sekolah?.nama)}</p>
+					<p class="text-base-content/70 mt-1 text-sm tracking-wide uppercase">
+						{formatUpper(sekolah?.nama)}
+					</p>
 				{/if}
 			</header>
 
@@ -92,7 +96,9 @@
 							<td class="align-top">3.</td>
 							<td class="align-top">Tempat / Tanggal Lahir</td>
 							<td class="align-top">:</td>
-							<td class="font-semibold">{combinePlaceDate(murid?.tempatLahir, murid?.tanggalLahir)}</td>
+							<td class="font-semibold"
+								>{combinePlaceDate(murid?.tempatLahir, murid?.tanggalLahir)}</td
+							>
 						</tr>
 						<tr>
 							<td class="align-top">4.</td>
@@ -117,8 +123,9 @@
 							<td class="align-top">Alamat Peserta Didik</td>
 							<td class="align-top">:</td>
 							<td class="font-semibold">
-								{formatValue(murid?.alamat?.jalan)}, {formatValue(murid?.alamat?.kelurahan)},
-								Kec. {formatValue(murid?.alamat?.kecamatan)}, Kab. {formatValue(murid?.alamat?.kabupaten)},
+								{formatValue(murid?.alamat?.jalan)}, {formatValue(murid?.alamat?.kelurahan)}, Kec. {formatValue(
+									murid?.alamat?.kecamatan
+								)}, Kab. {formatValue(murid?.alamat?.kabupaten)},
 								{formatValue(murid?.alamat?.provinsi)}
 							</td>
 						</tr>
@@ -222,17 +229,21 @@
 				</table>
 			</section>
 
-			<footer class="mt-auto flex justify-end gap-8 text-sm leading-relaxed pt-12">
-        <div class="flex flex-col items-center gap-3 text-center">
-					<div class="flex h-[40mm] w-[30mm] flex-col items-center justify-center gap-1 border border-base-content">
-						<span class="text-xs uppercase tracking-wide">Pas Foto</span>
+			<footer class="mt-auto flex justify-end gap-8 pt-12 text-sm leading-relaxed">
+				<div class="flex flex-col items-center gap-3 text-center">
+					<div
+						class="border-base-content flex h-[40mm] w-[30mm] flex-col items-center justify-center gap-1 border"
+					>
+						<span class="text-xs tracking-wide uppercase">Pas Foto</span>
 						<span class="text-xs">3 x 4</span>
 					</div>
 				</div>
 				<div class="text-left">
 					<p>{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}</p>
 					<p>Kepala Sekolah,</p>
-					<div class="mt-12 font-semibold uppercase tracking-wide">{formatValue(ttd?.kepalaSekolah)}</div>
+					<div class="mt-12 font-semibold tracking-wide uppercase">
+						{formatValue(ttd?.kepalaSekolah)}
+					</div>
 					<div class="mt-1">NIP. {formatValue(ttd?.nip)}</div>
 				</div>
 			</footer>

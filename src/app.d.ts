@@ -22,9 +22,11 @@ declare global {
 			daftarKelas?: Array<
 				Pick<Kelas, 'id' | 'nama' | 'fase'> & { waliKelas?: Pick<Pegawai, 'id' | 'nama'> | null }
 			>;
-			kelasAktif?: (Pick<Kelas, 'id' | 'nama' | 'fase'> & {
-				waliKelas?: Pick<Pegawai, 'id' | 'nama'> | null;
-			}) | null;
+			kelasAktif?:
+				| (Pick<Kelas, 'id' | 'nama' | 'fase'> & {
+						waliKelas?: Pick<Pegawai, 'id' | 'nama'> | null;
+				  })
+				| null;
 			statistikDashboard?: DashboardStatistik;
 			coverData?: CoverPrintData;
 			biodataData?: BiodataPrintData;

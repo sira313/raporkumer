@@ -177,7 +177,9 @@
 	<div class="mb-2 flex flex-wrap items-center justify-between gap-2">
 		<h2 class="text-xl font-bold">Daftar Nilai Formatif</h2>
 		{#if data.selectedMapel}
-			<span class="badge badge-outline border-base-300 bg-base-200/60 text-xs font-medium uppercase tracking-wide">
+			<span
+				class="badge badge-outline border-base-300 bg-base-200/60 text-xs font-medium tracking-wide uppercase"
+			>
 				{data.selectedMapel.nama}
 			</span>
 		{/if}
@@ -198,7 +200,7 @@
 					<option value="" disabled selected={selectedMapelValue === ''}>
 						Pilih Mata Pelajaran
 					</option>
-					{#each data.mapelList as mapel}
+					{#each data.mapelList as mapel (mapel.value)}
 						<option value={mapel.value}>{mapel.nama}</option>
 					{/each}
 				{/if}
@@ -256,7 +258,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.daftarMurid as murid}
+					{#each data.daftarMurid as murid (murid.id)}
 						<tr>
 							<td class="align-top">{murid.no}</td>
 							<td class="align-top">{@html searchQueryMarker(data.search, murid.nama)}</td>
@@ -271,16 +273,20 @@
 										Nilai
 									</a>
 								{:else}
-									<span class="text-xs italic text-base-content/60">Pilih mata pelajaran</span>
+									<span class="text-base-content/60 text-xs italic">Pilih mata pelajaran</span>
 								{/if}
 							</td>
 							<td class="align-top">
 								{#if murid.progressText}
-									<p class={murid.progressSummaryParts.length ? 'text-sm text-base-content' : 'text-sm italic text-base-content/70'}>
+									<p
+										class={murid.progressSummaryParts.length
+											? 'text-base-content text-sm'
+											: 'text-base-content/70 text-sm italic'}
+									>
 										{@html summaryWithHighlights(murid)}
 									</p>
 								{:else}
-									<span class="text-sm italic text-base-content/70"
+									<span class="text-base-content/70 text-sm italic"
 										>Pilih mata pelajaran untuk melihat progres</span
 									>
 								{/if}
@@ -291,7 +297,7 @@
 			</table>
 		</div>
 		<div class="join mt-4 sm:mx-auto">
-			{#each pages as pageNumber}
+			{#each pages as pageNumber (pageNumber)}
 				<button
 					type="button"
 					class="join-item btn"

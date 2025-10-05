@@ -146,7 +146,9 @@ export const actions = {
 		const ids = Array.from(
 			new Set(
 				[
-					...rawIds.map((value) => Number(value)).filter((id): id is number => Number.isInteger(id) && id > 0),
+					...rawIds
+						.map((value) => Number(value))
+						.filter((id): id is number => Number.isInteger(id) && id > 0),
 					...(fallbackId ? [Number(fallbackId)] : [])
 				].filter((id): id is number => Number.isInteger(id) && id > 0)
 			)

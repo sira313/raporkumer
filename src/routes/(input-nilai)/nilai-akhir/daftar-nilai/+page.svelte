@@ -5,10 +5,12 @@
 	let { data } = $props();
 	const status = $derived(data.status ?? 'empty');
 	const murid = $derived(data.murid ?? null);
-	const daftarNilai = $derived(status === 'ready' ? data.daftarNilai ?? [] : []);
-	const ringkasan = $derived(status === 'ready'
-		? data.ringkasan ?? { rataRata: null, mapelDinilai: 0, totalMapel: 0 }
-		: { rataRata: null, mapelDinilai: 0, totalMapel: 0 });
+	const daftarNilai = $derived(status === 'ready' ? (data.daftarNilai ?? []) : []);
+	const ringkasan = $derived(
+		status === 'ready'
+			? (data.ringkasan ?? { rataRata: null, mapelDinilai: 0, totalMapel: 0 })
+			: { rataRata: null, mapelDinilai: 0, totalMapel: 0 }
+	);
 	const hasNilai = $derived(status === 'ready' && ringkasan.totalMapel > 0);
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
 	const kelasAktifLabel = $derived.by(() => {
@@ -48,22 +50,22 @@
 	</div>
 
 	{#if status === 'ready' && murid}
-		<div class="flex flex-col gap-2 border-b border-base-200 pb-4 sm:flex-row sm:items-center">
+		<div class="border-base-200 flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center">
 			<div>
 				<h2 class="text-xl font-bold">Rekap Nilai Akhir Murid</h2>
 				<p class="text-base-content/80">{murid.nama}</p>
 				{#if kelasAktifLabel}
-					<p class="text-sm text-base-content/60">Kelas {kelasAktifLabel}</p>
+					<p class="text-base-content/60 text-sm">Kelas {kelasAktifLabel}</p>
 				{/if}
 			</div>
 			<div class="divider sm:divider-horizontal"></div>
 			<div class="flex flex-wrap gap-4">
 				<div>
-					<p class="text-sm uppercase tracking-wide text-base-content/60">Rata-rata</p>
+					<p class="text-base-content/60 text-sm tracking-wide uppercase">Rata-rata</p>
 					<p class="text-3xl font-semibold">{@html rataRataDisplay}</p>
 				</div>
 				<div>
-					<p class="text-sm uppercase tracking-wide text-base-content/60">Mapel Dinilai</p>
+					<p class="text-base-content/60 text-sm tracking-wide uppercase">Mapel Dinilai</p>
 					<p class="text-xl font-semibold">{coverageDisplay}</p>
 				</div>
 			</div>
@@ -78,13 +80,15 @@
 					Nilai rata-rata ananda <b>{murid.nama}</b>
 				</p>
 				<p class="text-2xl font-bold">{@html rataRataDisplay}</p>
-				<p class="text-sm text-base-content/70">
+				<p class="text-base-content/70 text-sm">
 					Menggunakan nilai akhir seluruh mata pelajaran yang tersedia.
 				</p>
 			</span>
 		</div>
 
-		<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+		<div
+			class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+		>
 			<table class="border-base-200 table border dark:border-none">
 				<thead>
 					<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
@@ -95,11 +99,13 @@
 				</thead>
 				<tbody>
 					{#if hasNilai}
-						{#each daftarNilai as nilai}
+						{#each daftarNilai as nilai (nilai.mataPelajaranId)}
 							<tr>
 								<td>{nilai.no}</td>
 								<td>{nilai.mataPelajaran}</td>
-								<td class={`font-semibold${nilai.sudahDinilai ? '' : ' text-base-content/60 italic'}`}>
+								<td
+									class={`font-semibold${nilai.sudahDinilai ? '' : ' text-base-content/60 italic'}`}
+								>
 									{@html formatScore(nilai.nilaiAkhir)}
 								</td>
 							</tr>
@@ -120,10 +126,14 @@
 			<span>
 				{#if status === 'not-found'}
 					<p class="font-semibold">Murid tidak ditemukan.</p>
-					<p class="text-sm text-base-content/70">Pastikan Anda memilih murid dari daftar rekap yang sama.</p>
+					<p class="text-base-content/70 text-sm">
+						Pastikan Anda memilih murid dari daftar rekap yang sama.
+					</p>
 				{:else}
 					<p class="font-semibold">Pilih murid terlebih dahulu.</p>
-					<p class="text-sm text-base-content/70">Gunakan tombol "Lihat" pada halaman Rekap Nilai Akhir untuk membuka rincian.</p>
+					<p class="text-base-content/70 text-sm">
+						Gunakan tombol "Lihat" pada halaman Rekap Nilai Akhir untuk membuka rincian.
+					</p>
 				{/if}
 			</span>
 		</div>

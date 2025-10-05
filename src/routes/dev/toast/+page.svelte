@@ -32,19 +32,35 @@
 			</header>
 
 			<div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
-				<button class="btn btn-info btn-soft shadow-none" type="button" onclick={() => triggerToast('info')}>
+				<button
+					class="btn btn-info btn-soft shadow-none"
+					type="button"
+					onclick={() => triggerToast('info')}
+				>
 					<Icon name="info" />
 					Info
 				</button>
-				<button class="btn btn-success btn-soft shadow-none" type="button" onclick={() => triggerToast('success')}>
+				<button
+					class="btn btn-success btn-soft shadow-none"
+					type="button"
+					onclick={() => triggerToast('success')}
+				>
 					<Icon name="success" />
 					Success
 				</button>
-				<button class="btn btn-warning btn-soft shadow-none" type="button" onclick={() => triggerToast('warning')}>
+				<button
+					class="btn btn-warning btn-soft shadow-none"
+					type="button"
+					onclick={() => triggerToast('warning')}
+				>
 					<Icon name="warning" />
 					Warning
 				</button>
-				<button class="btn btn-error btn-soft shadow-none" type="button" onclick={() => triggerToast('error')}>
+				<button
+					class="btn btn-error btn-soft shadow-none"
+					type="button"
+					onclick={() => triggerToast('error')}
+				>
 					<Icon name="error" />
 					Error
 				</button>
@@ -54,9 +70,10 @@
 
 	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow">
 		<h2 class="text-lg font-semibold">Trigger melalui console</h2>
-		<p class="text-sm text-base-content/70">
-			Buka DevTools &rarr; Console, jalankan perintah seperti <code>window.__toast('Pesan','success')</code> untuk
-			menguji langsung. Halaman ini menyiapkan helper yang sama.
+		<p class="text-base-content/70 text-sm">
+			Buka DevTools &rarr; Console, jalankan perintah seperti <code
+				>window.__toast('Pesan','success')</code
+			> untuk menguji langsung. Halaman ini menyiapkan helper yang sama.
 		</p>
 	</section>
 </div>

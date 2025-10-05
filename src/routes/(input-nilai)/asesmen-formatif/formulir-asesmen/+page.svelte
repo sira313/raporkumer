@@ -75,7 +75,8 @@
 				<div class="alert alert-soft alert-info mt-4">
 					<Icon name="info" />
 					<span>
-						Belum ada tujuan pembelajaran untuk mata pelajaran ini. Tambahkan tujuan pembelajaran di menu
+						Belum ada tujuan pembelajaran untuk mata pelajaran ini. Tambahkan tujuan pembelajaran di
+						menu
 						<strong>Intrakurikuler</strong> terlebih dahulu.
 					</span>
 				</div>
@@ -93,7 +94,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each entries as entry, index}
+							{#each entries as entry, index (entry.tujuanPembelajaranId)}
 								<tr
 									class:border-l-success={entry.status === 'ya'}
 									class:border-l-error={entry.status === 'tidak'}
@@ -102,7 +103,7 @@
 									<td>{entry.index}</td>
 									<td>
 										<p class="font-medium">{entry.deskripsi}</p>
-										<p class="mt-2 text-xs uppercase tracking-wide text-base-content/60">
+										<p class="text-base-content/60 mt-2 text-xs tracking-wide uppercase">
 											{entry.lingkupMateri}
 										</p>
 										<input

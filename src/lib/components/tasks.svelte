@@ -182,14 +182,11 @@
 		isProcessing = true;
 		errorMessage = '';
 		try {
-			const { response, payload: result } = await requestJson<{ deleted: number }>(
-				'/api/tasks',
-				{
-					method: 'DELETE',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify(payload)
-				}
-			);
+			const { response, payload: result } = await requestJson<{ deleted: number }>('/api/tasks', {
+				method: 'DELETE',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify(payload)
+			});
 			if (!response.ok) {
 				throw new Error(result.message ?? 'Gagal menghapus tugas.');
 			}
@@ -359,7 +356,9 @@
 				</div>
 			{/if}
 			{#if !isAdding && !hasActiveTasks}
-				<div class="flex flex-1 items-center justify-center px-4 py-6 text-center text-sm text-base-content/60">
+				<div
+					class="text-base-content/60 flex flex-1 items-center justify-center px-4 py-6 text-center text-sm"
+				>
 					Belum ada tugas aktif. Tambahkan tugas baru untuk memulai.
 				</div>
 			{/if}

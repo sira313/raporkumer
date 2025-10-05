@@ -62,7 +62,7 @@
 				Isi nilai untuk tiap tujuan pembelajaran ekstrakurikuler di bawah ini untuk Ananda
 				<span class="text-primary">{capitalizeSentence(data.murid.nama)}</span>.
 			</h3>
-			<p class="text-sm text-base-content/70">
+			<p class="text-base-content/70 text-sm">
 				Ekstrakurikuler: <strong>{capitalizeSentence(data.ekstrakurikuler.nama)}</strong>
 			</p>
 
@@ -75,7 +75,9 @@
 					</span>
 				</div>
 			{:else}
-				<div class="bg-base-100 dark:bg-base-200 border-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+				<div
+					class="bg-base-100 dark:bg-base-200 border-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+				>
 					<table class="border-base-200 table border dark:border-none">
 						<thead>
 							<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
@@ -88,7 +90,7 @@
 							{#each data.tujuan as tujuan, index (tujuan.id)}
 								<tr>
 									<td class="align-top">{index + 1}</td>
-									<td class="align-top text-sm text-base-content">
+									<td class="text-base-content align-top text-sm">
 										{formatTujuan(tujuan.deskripsi)}
 									</td>
 									<td class="align-top">
@@ -97,7 +99,7 @@
 											name={`nilai.${tujuan.id}`}
 										>
 											<option value="">Belum dinilai</option>
-											{#each data.kategoriOptions as option}
+											{#each data.kategoriOptions as option (option.value)}
 												<option value={option.value}>{option.label}</option>
 											{/each}
 										</select>

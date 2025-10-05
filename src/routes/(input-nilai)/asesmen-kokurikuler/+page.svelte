@@ -72,9 +72,7 @@
 	let activeMurid = $state<MuridRow | null>(null);
 
 	$effect(() => {
-		selectedKokurikulerValue = data.selectedKokurikulerId
-			? String(data.selectedKokurikulerId)
-			: '';
+		selectedKokurikulerValue = data.selectedKokurikulerId ? String(data.selectedKokurikulerId) : '';
 		searchTerm = data.search ?? '';
 	});
 
@@ -195,7 +193,7 @@
 		<h2 class="text-xl font-bold">Daftar Nilai Kokurikuler</h2>
 		{#if selectedKokurikuler}
 			<div class="flex flex-col items-start gap-1 sm:items-end">
-				<p class="max-w-xl text-sm text-base-content/80 sm:text-right">
+				<p class="text-base-content/80 max-w-xl text-sm sm:text-right">
 					{capitalizeSentence(selectedKokurikuler.tujuan)}
 				</p>
 			</div>
@@ -219,7 +217,7 @@
 					<option value="" disabled selected={selectedKokurikulerValue === ''}>
 						Pilih Kokurikuler
 					</option>
-					{#each data.kokurikulerList as item}
+					{#each data.kokurikulerList as item (item.id)}
 						<option value={String(item.id)}>{capitalizeSentence(item.tujuan)}</option>
 					{/each}
 				{/if}
@@ -273,7 +271,9 @@
 			<span>Tidak ada murid yang cocok dengan pencarian.</span>
 		</div>
 	{:else}
-		<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+		<div
+			class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+		>
 			<table class="border-base-200 table min-w-150 border dark:border-none">
 				<thead>
 					<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
@@ -284,7 +284,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each data.daftarMurid as murid}
+					{#each data.daftarMurid as murid (murid.id)}
 						<tr>
 							<td class="align-top">{murid.no}</td>
 							<td class="align-top">
@@ -303,11 +303,9 @@
 							</td>
 							<td class="align-top">
 								{#if murid.deskripsi}
-									<p class="text-sm text-base-content">{murid.deskripsi}</p>
+									<p class="text-base-content text-sm">{murid.deskripsi}</p>
 								{:else}
-									<span class="text-sm italic text-base-content/70">
-										Belum ada nilai
-									</span>
+									<span class="text-base-content/70 text-sm italic"> Belum ada nilai </span>
 								{/if}
 							</td>
 						</tr>
@@ -316,7 +314,7 @@
 			</table>
 		</div>
 		<div class="join mt-4 sm:mx-auto">
-			{#each pages as pageNumber}
+			{#each pages as pageNumber (pageNumber)}
 				<button
 					type="button"
 					class="join-item btn"

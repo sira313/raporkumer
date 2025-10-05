@@ -69,7 +69,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 						id: activeSemester.id,
 						nama: activeSemester.nama,
 						tipe: activeSemester.tipe,
-					tanggalBagiRaport: activeSemester.tanggalBagiRaport
+						tanggalBagiRaport: activeSemester.tanggalBagiRaport
 					}
 				: null,
 			jumlahRombel: kelasCountMap.get(rest.id) ?? 0,
@@ -202,7 +202,9 @@ export const actions: Actions = {
 						await tx
 							.delete(tableEkstrakurikulerTujuan)
 							.where(inArray(tableEkstrakurikulerTujuan.ekstrakurikulerId, ekstrakIds));
-						await tx.delete(tableEkstrakurikuler).where(inArray(tableEkstrakurikuler.id, ekstrakIds));
+						await tx
+							.delete(tableEkstrakurikuler)
+							.where(inArray(tableEkstrakurikuler.id, ekstrakIds));
 					}
 
 					const kokurikulerRows = await tx
@@ -248,9 +250,7 @@ export const actions: Actions = {
 					}
 					const parentIdsToDelete = waliIdsArray.filter((id) => !stillReferencedParents.has(id));
 					if (parentIdsToDelete.length) {
-						await tx
-							.delete(tableWaliMurid)
-							.where(inArray(tableWaliMurid.id, parentIdsToDelete));
+						await tx.delete(tableWaliMurid).where(inArray(tableWaliMurid.id, parentIdsToDelete));
 					}
 				}
 

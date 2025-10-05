@@ -1,10 +1,6 @@
 import db from '$lib/server/db';
 import { ensureAsesmenSumatifSchema } from '$lib/server/db/ensure-asesmen-sumatif';
-import {
-	tableAsesmenSumatif,
-	tableMataPelajaran,
-	tableMurid
-} from '$lib/server/db/schema';
+import { tableAsesmenSumatif, tableMataPelajaran, tableMurid } from '$lib/server/db/schema';
 import { error } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 
@@ -183,7 +179,7 @@ export async function load({ parent, url, locals, depends }) {
 					eq(tableAsesmenSumatif.muridId, murid.id),
 					inArray(tableAsesmenSumatif.mataPelajaranId, mapelIds)
 				)
-		  })
+			})
 		: [];
 
 	const nilaiByMapel = new Map<number, { nilaiAkhir: number | null }>();

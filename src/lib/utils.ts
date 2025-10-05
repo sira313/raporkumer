@@ -177,12 +177,7 @@ export interface PrintElementOptions {
 
 export function printElement(
 	element: HTMLElement | null,
-	{
-		title,
-		pageWidth = '210mm',
-		pageHeight = '297mm',
-		pageMargin
-	}: PrintElementOptions = {}
+	{ title, pageWidth = '210mm', pageHeight = '297mm', pageMargin }: PrintElementOptions = {}
 ): boolean {
 	if (!element || typeof window === 'undefined') {
 		console.warn('[printElement] target element tidak tersedia');
@@ -220,7 +215,9 @@ export function printElement(
 			pageDeclarations.push('margin: 0;');
 		}
 	}
-	const pageRule = pageDeclarations.length ? `@page {\n\t\t${pageDeclarations.join('\n\t\t')}\n\t}\n` : '';
+	const pageRule = pageDeclarations.length
+		? `@page {\n\t\t${pageDeclarations.join('\n\t\t')}\n\t}\n`
+		: '';
 
 	const targetWidthRule = pageWidth ? `\t\t\tmax-width: ${pageWidth};\n` : '';
 	const targetHeightRule = pageHeight ? `\t\t\tmin-height: ${pageHeight};\n` : '';

@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
@@ -124,9 +123,6 @@
 	const naSumatifLingkup = $derived.by(() => {
 		const summaries = lingkupSummaries;
 		if (!summaries.length) return null;
-		const totalWeight = summaries
-			.map((item) => item.bobot ?? 0)
-			.reduce((sum, value) => sum + value, 0);
 		const weighted = summaries.reduce(
 			(
 				acc,
@@ -170,17 +166,13 @@
 	const sasNonTesValue = $derived.by(() => normalizeScoreText(sasNonTesText));
 
 	const nilaiSas = $derived.by(() => {
-		const values = [sasTesValue, sasNonTesValue].filter(
-			(value): value is number => value != null
-		);
+		const values = [sasTesValue, sasNonTesValue].filter((value): value is number => value != null);
 		if (!values.length) return null;
 		return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 100) / 100;
 	});
 
 	const nilaiAkhir = $derived.by(() => {
-		const values = [naSumatifLingkup, nilaiSas].filter(
-			(value): value is number => value != null
-		);
+		const values = [naSumatifLingkup, nilaiSas].filter((value): value is number => value != null);
 		if (!values.length) return null;
 		return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 100) / 100;
 	});
@@ -243,9 +235,7 @@
 
 	function handleEntryNilaiChange(event: CustomEvent<{ index: number; value: string }>) {
 		const { index, value } = event.detail;
-		entries = entries.map((entry, idx) =>
-			idx === index ? { ...entry, nilaiText: value } : entry
-		);
+		entries = entries.map((entry, idx) => (idx === index ? { ...entry, nilaiText: value } : entry));
 	}
 
 	function handleSasChange(event: CustomEvent<{ target: 'tes' | 'nonTes'; value: string }>) {
@@ -260,10 +250,12 @@
 	async function handleSuccess({ data: result }: { data?: Record<string, unknown> }) {
 		const payload = (result?.payload ?? null) as SavePayload | null;
 		if (payload) {
-			const scoreMap = new Map(payload.tujuanScores.map((item) => [item.tujuanPembelajaranId, item.nilai]));
+			const scoreMap = new Map(
+				payload.tujuanScores.map((item) => [item.tujuanPembelajaranId, item.nilai])
+			);
 			entries = entries.map((entry) => {
 				const nilai = scoreMap.has(entry.tujuanPembelajaranId)
-					? scoreMap.get(entry.tujuanPembelajaranId) ?? null
+					? (scoreMap.get(entry.tujuanPembelajaranId) ?? null)
 					: normalizeScoreText(entry.nilaiText);
 				return {
 					...entry,
@@ -322,31 +314,16 @@
 				/>
 			{/if}
 
-			<LingkupSummaryCard
-				{naSumatifLingkup}
-				{lingkupSummaries}
-				{totalBobot}
-				{formatScore}
-			/>
+			<LingkupSummaryCard {naSumatifLingkup} {lingkupSummaries} {totalBobot} {formatScore} />
 
 			<h3 class="mt-6 pb-2 text-lg font-bold">
 				Isi Sumatif Akhir Semester di bawah ini untuk {data.murid.nama}.
 			</h3>
-			<SasInputTable
-				{sasTesText}
-				{sasNonTesText}
-				{getInputClass}
-				on:sasChange={handleSasChange}
-			/>
+			<SasInputTable {sasTesText} {sasNonTesText} {getInputClass} on:sasChange={handleSasChange} />
 
 			<SasSummaryCard {nilaiSas} {formatScore} />
 
-			<NilaiAkhirCard
-				{nilaiAkhir}
-				{nilaiAkhirCategory}
-				{kkm}
-				{formatScore}
-			/>
+			<NilaiAkhirCard {nilaiAkhir} {nilaiAkhirCategory} {kkm} {formatScore} />
 		{/snippet}
 	</FormEnhance>
 </div>

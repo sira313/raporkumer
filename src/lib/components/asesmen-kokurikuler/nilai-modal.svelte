@@ -17,15 +17,7 @@
 		dimensi: Array<{ key: DimensiProfilLulusanKey; label: string }>;
 	};
 
-	let {
-		open,
-		murid,
-		kokurikuler,
-		kategoriOptions,
-		action,
-		onClose,
-		onSuccess
-	} = $props<{
+	let { open, murid, kokurikuler, kategoriOptions, action, onClose, onSuccess } = $props<{
 		open: boolean;
 		murid: MuridRow | null;
 		kokurikuler: KokurikulerDetail | null;
@@ -38,10 +30,9 @@
 	const initValue = $derived.by(() => {
 		if (!murid || !kokurikuler) return undefined;
 		const nilai: Record<string, NilaiKategori> = {};
-		for (const [key, value] of Object.entries(murid.nilaiByDimensi) as Array<[
-			DimensiProfilLulusanKey,
-			NilaiKategori | null
-		]>) {
+		for (const [key, value] of Object.entries(murid.nilaiByDimensi) as Array<
+			[DimensiProfilLulusanKey, NilaiKategori | null]
+		>) {
 			if (value) {
 				nilai[key] = value;
 			}
@@ -77,11 +68,11 @@
 	>
 		<div class="modal-box max-w-2xl">
 			<h3 class="text-lg font-bold">Nilai Kokurikuler</h3>
-			<p class="mt-1 text-sm text-base-content/80">
+			<p class="text-base-content/80 mt-1 text-sm">
 				Ananda <span class="font-semibold">{murid.nama}</span>
 			</p>
 			<label class="form-control mt-4">
-				<span class="label-text text-sm font-semibold text-base-content/80">
+				<span class="label-text text-base-content/80 text-sm font-semibold">
 					Kegiatan Kokurikuler
 				</span>
 				<select class="select bg-base-200 mt-2 w-full dark:border-none" disabled>
@@ -97,7 +88,7 @@
 					<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
 						{#each kokurikuler.dimensi as dim (dim.key)}
 							<fieldset class="fieldset">
-								<legend class="fieldset-legend text-sm font-semibold text-base-content/80">
+								<legend class="fieldset-legend text-base-content/80 text-sm font-semibold">
 									{dim.label}
 								</legend>
 								<select
@@ -106,7 +97,7 @@
 									aria-label={`Nilai ${dim.label}`}
 								>
 									<option value="">Belum dinilai</option>
-									{#each kategoriOptions as option}
+									{#each kategoriOptions as option (option.value)}
 										<option value={option.value}>{option.label}</option>
 									{/each}
 								</select>

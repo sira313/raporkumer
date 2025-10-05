@@ -44,11 +44,11 @@
 	>
 		<dialog class="modal-box relative z-10 max-w-md" open aria-modal="true">
 			<h3 class="text-lg font-bold">{title}</h3>
-			<p class="mt-2 text-sm text-base-content/70">
+			<p class="text-base-content/70 mt-2 text-sm">
 				Isi nama ekstrakurikuler sesuai kegiatan yang berjalan di kelas.
 			</p>
 
-			<FormEnhance action={action} onsuccess={onSuccess}>
+			<FormEnhance {action} onsuccess={onSuccess}>
 				{#snippet children({ submitting })}
 					<input name="kelasId" value={kelasId ?? ''} hidden />
 					{#if isEditMode && modalItem}
@@ -58,7 +58,7 @@
 					<label class="mt-4 flex flex-col gap-2">
 						<span class="font-semibold">Nama Ekstrakurikuler</span>
 						<input
-							class="input bg-base-200 dark:border-none w-full"
+							class="input bg-base-200 w-full dark:border-none"
 							placeholder="Masukkan nama ekstrakurikuler"
 							name="nama"
 							value={namaInput}
@@ -75,12 +75,7 @@
 						</button>
 						<button
 							class="btn btn-primary shadow-none"
-							disabled={
-								submitting ||
-								!namaInput.trim() ||
-								!kelasId ||
-								!tableReady
-							}
+							disabled={submitting || !namaInput.trim() || !kelasId || !tableReady}
 						>
 							{#if submitting}
 								<div class="loading loading-spinner"></div>

@@ -33,30 +33,30 @@ type CopySummary = {
 const DEFAULT_DATE = '1970-01-01';
 
 function normalize(value: unknown): string {
- if (typeof value === 'string') return value.trim();
- if (typeof value === 'number') return String(value).trim();
- return '';
+	if (typeof value === 'string') return value.trim();
+	if (typeof value === 'number') return String(value).trim();
+	return '';
 }
 
 function ensureDate(value: unknown): string {
- if (value instanceof Date && !Number.isNaN(value.getTime())) {
-	return value.toISOString().slice(0, 10);
- }
- const str = normalize(value);
- if (!str) return DEFAULT_DATE;
- if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
- const numeric = Number(str);
- if (!Number.isNaN(numeric) && numeric > 0) {
-	const excelEpoch = new Date(Math.round((numeric - 25569) * 86400 * 1000));
-	if (!Number.isNaN(excelEpoch.getTime())) return excelEpoch.toISOString().slice(0, 10);
- }
- const parsed = new Date(str);
- return Number.isNaN(parsed.getTime()) ? DEFAULT_DATE : parsed.toISOString().slice(0, 10);
+	if (value instanceof Date && !Number.isNaN(value.getTime())) {
+		return value.toISOString().slice(0, 10);
+	}
+	const str = normalize(value);
+	if (!str) return DEFAULT_DATE;
+	if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+	const numeric = Number(str);
+	if (!Number.isNaN(numeric) && numeric > 0) {
+		const excelEpoch = new Date(Math.round((numeric - 25569) * 86400 * 1000));
+		if (!Number.isNaN(excelEpoch.getTime())) return excelEpoch.toISOString().slice(0, 10);
+	}
+	const parsed = new Date(str);
+	return Number.isNaN(parsed.getTime()) ? DEFAULT_DATE : parsed.toISOString().slice(0, 10);
 }
 
 function ensureJenisKelamin(value: unknown): 'L' | 'P' {
- const str = normalize(value).toUpperCase();
- return str === 'P' ? 'P' : 'L';
+	const str = normalize(value).toUpperCase();
+	return str === 'P' ? 'P' : 'L';
 }
 
 async function importKelasDanMuridFromExcel(
@@ -68,32 +68,33 @@ async function importKelasDanMuridFromExcel(
 		kabupatenFallback?: string;
 	}
 ) {
- if (!opts.tahunAjaranId || !opts.semesterId) {
- throw fail(400, { fail: 'Pilih tahun ajaran dan semester sebelum mengimpor data.' });
- }
- const buffer = await file.arrayBuffer();
- const workbook = read(buffer, { type: 'array' });
- const sheetName = workbook.SheetNames[0];
- const sheet = sheetName ? workbook.Sheets[sheetName] : undefined;
- if (!sheet) {
- throw fail(400, { fail: 'Sheet pertama pada file tidak ditemukan.' });
- }
+	if (!opts.tahunAjaranId || !opts.semesterId) {
+		throw fail(400, { fail: 'Pilih tahun ajaran dan semester sebelum mengimpor data.' });
+	}
+	const buffer = await file.arrayBuffer();
+	const workbook = read(buffer, { type: 'array' });
+	const sheetName = workbook.SheetNames[0];
+	const sheet = sheetName ? workbook.Sheets[sheetName] : undefined;
+	if (!sheet) {
+		throw fail(400, { fail: 'Sheet pertama pada file tidak ditemukan.' });
+	}
 
- const rows = utils.sheet_to_json<(string | number)[]>(sheet, {
-	header: 1,
-	blankrows: false,
-	defval: ''
- });
+	const rows = utils.sheet_to_json<(string | number)[]>(sheet, {
+		header: 1,
+		blankrows: false,
+		defval: ''
+	});
 
- const headerIndex = rows.findIndex((row) =>
-	row.some((cell) => normalize(cell).toLowerCase() === 'nama') &&
-	row.some((cell) => normalize(cell).toLowerCase() === 'nipd') &&
-	row.some((cell) => normalize(cell).toLowerCase().startsWith('rombel'))
- );
+	const headerIndex = rows.findIndex(
+		(row) =>
+			row.some((cell) => normalize(cell).toLowerCase() === 'nama') &&
+			row.some((cell) => normalize(cell).toLowerCase() === 'nipd') &&
+			row.some((cell) => normalize(cell).toLowerCase().startsWith('rombel'))
+	);
 
- if (headerIndex === -1) {
- throw fail(400, { fail: 'Header kolom tidak ditemukan pada file.' });
- }
+	if (headerIndex === -1) {
+		throw fail(400, { fail: 'Header kolom tidak ditemukan pada file.' });
+	}
 
 	const header = rows[headerIndex].map((cell) => normalize(cell));
 	const canonicalize = (value: string) =>
@@ -176,54 +177,56 @@ async function importKelasDanMuridFromExcel(
 	const idxWaliKontak = findColumnIndex('Kontak Wali', 'No HP Wali', 'No Hp Wali', 'Telepon Wali');
 	const idxWaliBase = findColumnIndex('Data Wali');
 
-	const ayahNameIdx = idxAyahNama ?? (idxAyahBase !== undefined && idxAyahBase >= 0 ? idxAyahBase : undefined);
+	const ayahNameIdx =
+		idxAyahNama ?? (idxAyahBase !== undefined && idxAyahBase >= 0 ? idxAyahBase : undefined);
 	const ayahJobIdx =
 		idxAyahJob ?? (idxAyahBase !== undefined && idxAyahBase >= 0 ? idxAyahBase + 3 : undefined);
-	const ibuNameIdx = idxIbuNama ?? (idxIbuBase !== undefined && idxIbuBase >= 0 ? idxIbuBase : undefined);
+	const ibuNameIdx =
+		idxIbuNama ?? (idxIbuBase !== undefined && idxIbuBase >= 0 ? idxIbuBase : undefined);
 	const ibuJobIdx =
 		idxIbuJob ?? (idxIbuBase !== undefined && idxIbuBase >= 0 ? idxIbuBase + 3 : undefined);
-	const waliNameIdx = idxWaliNama ?? (idxWaliBase !== undefined && idxWaliBase >= 0 ? idxWaliBase : undefined);
+	const waliNameIdx =
+		idxWaliNama ?? (idxWaliBase !== undefined && idxWaliBase >= 0 ? idxWaliBase : undefined);
 	const waliJobIdx =
 		idxWaliJob ?? (idxWaliBase !== undefined && idxWaliBase >= 0 ? idxWaliBase + 3 : undefined);
 
- const dataRows = rows
-	.slice(headerIndex + 1)
-	.filter((row) => idxNama !== undefined && normalize(row[idxNama]) !== '');
+	const dataRows = rows
+		.slice(headerIndex + 1)
+		.filter((row) => idxNama !== undefined && normalize(row[idxNama]) !== '');
 
- const timestamp = new Date().toISOString();
- const rombelMap = new Map<string, string>();
+	const timestamp = new Date().toISOString();
+	const rombelMap = new Map<string, string>();
 
- type WaliPayload = {
-	 nama: string;
-	 pekerjaan: string;
-	 kontak?: string | null;
-	 alamat?: string | null;
- };
+	type WaliPayload = {
+		nama: string;
+		pekerjaan: string;
+		kontak?: string | null;
+		alamat?: string | null;
+	};
 
- type StudentPayload = {
-	 nama: string;
-	 nis: string;
-	 rombel: string;
-	 nisn: string;
-	 tempatLahir: string;
-	 tanggalLahir: string;
-	 jk: 'L' | 'P';
-	 agama: string;
-	 alamat: string;
-	 desa: string;
-	 kecamatan: string;
-	 kabupaten: string;
-	 kodePos?: string;
-	 pendidikanSebelumnya: string;
-	 tanggalMasuk: string;
-	 ayah: WaliPayload | null;
-	 ibu: WaliPayload | null;
-	 wali: WaliPayload | null;
- };
+	type StudentPayload = {
+		nama: string;
+		nis: string;
+		rombel: string;
+		nisn: string;
+		tempatLahir: string;
+		tanggalLahir: string;
+		jk: 'L' | 'P';
+		agama: string;
+		alamat: string;
+		desa: string;
+		kecamatan: string;
+		kabupaten: string;
+		kodePos?: string;
+		pendidikanSebelumnya: string;
+		tanggalMasuk: string;
+		ayah: WaliPayload | null;
+		ibu: WaliPayload | null;
+		wali: WaliPayload | null;
+	};
 
 	const chooseKontak = (row: (string | number)[]): string => {
-		const kontakOrtu =
-			idxKontakOrangTua !== undefined ? normalize(row[idxKontakOrangTua]) : '';
+		const kontakOrtu = idxKontakOrangTua !== undefined ? normalize(row[idxKontakOrangTua]) : '';
 		if (kontakOrtu) return kontakOrtu;
 		const kontakAyah = idxAyahKontak !== undefined ? normalize(row[idxAyahKontak]) : '';
 		if (kontakAyah) return kontakAyah;
@@ -239,433 +242,434 @@ async function importKelasDanMuridFromExcel(
 		return email;
 	};
 
- const buildWaliPayload = (
-	 row: (string | number)[],
-	 nameIdx?: number,
-	 jobIdx?: number,
-	 kontak?: string,
-	 alamatLengkap?: string
- ): WaliPayload | null => {
-	 if (nameIdx === undefined) return null;
-	 const nama = normalize(row[nameIdx]);
-	 if (!nama) return null;
-	 const pekerjaan = jobIdx !== undefined ? normalize(row[jobIdx]) : '';
-	 return {
-		 nama,
-		 pekerjaan: pekerjaan || 'Belum diisi',
-		 kontak: kontak || null,
-		 alamat: alamatLengkap || null
-	 };
- };
+	const buildWaliPayload = (
+		row: (string | number)[],
+		nameIdx?: number,
+		jobIdx?: number,
+		kontak?: string,
+		alamatLengkap?: string
+	): WaliPayload | null => {
+		if (nameIdx === undefined) return null;
+		const nama = normalize(row[nameIdx]);
+		if (!nama) return null;
+		const pekerjaan = jobIdx !== undefined ? normalize(row[jobIdx]) : '';
+		return {
+			nama,
+			pekerjaan: pekerjaan || 'Belum diisi',
+			kontak: kontak || null,
+			alamat: alamatLengkap || null
+		};
+	};
 
- const students = dataRows
-	.map((row) => {
-	 const nama = normalize(row[idxNama]).trim();
-	 const nis = normalize(row[idxNipd]).replace(/\.0$/, '').trim();
-	 const rombel = normalize(row[idxRombel]).trim();
-	 if (!nama || !nis || !rombel) return null;
-	 rombelMap.set(rombel.toLowerCase(), rombel);
+	const students = dataRows
+		.map((row) => {
+			const nama = normalize(row[idxNama]).trim();
+			const nis = normalize(row[idxNipd]).replace(/\.0$/, '').trim();
+			const rombel = normalize(row[idxRombel]).trim();
+			if (!nama || !nis || !rombel) return null;
+			rombelMap.set(rombel.toLowerCase(), rombel);
 
-	 const alamat = normalize(idxAlamat !== undefined ? row[idxAlamat] : '') || 'Belum diisi';
-	 const desa = normalize(idxKelurahan !== undefined ? row[idxKelurahan] : '') || 'Belum diisi';
-	 const kecamatan = normalize(idxKecamatan !== undefined ? row[idxKecamatan] : '') || 'Belum diisi';
-	 const kabupaten =
-		 normalize(idxKabupaten !== undefined ? row[idxKabupaten] : '') ||
-		 opts.kabupatenFallback ||
-		 'Belum diisi';
-	 const alamatLengkap = [alamat, desa, kecamatan, kabupaten]
-		.filter((value) => !!value && value !== 'Belum diisi')
-		.join(', ');
-	 const alamatUntukWali = alamatLengkap || (alamat !== 'Belum diisi' ? alamat : null);
-	 const kontakOrangTua = chooseKontak(row);
-	 const kontakAyah = idxAyahKontak !== undefined ? normalize(row[idxAyahKontak]) : '';
-	 const kontakIbu = idxIbuKontak !== undefined ? normalize(row[idxIbuKontak]) : '';
-	 const kontakWali = idxWaliKontak !== undefined ? normalize(row[idxWaliKontak]) : '';
-
-	 return {
-		 nama,
-		 nis,
-		 rombel,
-		 nisn: normalize(idxNisn !== undefined ? row[idxNisn] : '').trim() || `BELUM-${nis}`,
-		 tempatLahir: normalize(idxTempatLahir !== undefined ? row[idxTempatLahir] : '') || 'Tidak diketahui',
-		 tanggalLahir: ensureDate(idxTanggalLahir !== undefined ? row[idxTanggalLahir] : DEFAULT_DATE),
-		 jk: ensureJenisKelamin(idxJk !== undefined ? row[idxJk] : 'L'),
-		 agama: normalize(idxAgama !== undefined ? row[idxAgama] : '') || 'Belum diisi',
-		 alamat,
-		 desa,
-		 kecamatan,
-		 kabupaten,
-		 kodePos: normalize(idxKodePos !== undefined ? row[idxKodePos] : '') || undefined,
-		 pendidikanSebelumnya:
-			 normalize(idxSekolahAsal !== undefined ? row[idxSekolahAsal] : '') || 'Belum diisi',
-		 tanggalMasuk: timestamp.slice(0, 10),
-		 ayah: buildWaliPayload(
-			row,
-			ayahNameIdx,
-			ayahJobIdx,
-			kontakAyah || kontakOrangTua,
-			alamatUntukWali ?? undefined
-		 ),
-		 ibu: buildWaliPayload(
-			row,
-			ibuNameIdx,
-			ibuJobIdx,
-			kontakIbu || kontakOrangTua,
-			alamatUntukWali ?? undefined
-		 ),
-		 wali: buildWaliPayload(
-			row,
-			waliNameIdx,
-			waliJobIdx,
-			kontakWali || kontakOrangTua,
-			alamatUntukWali ?? undefined
-		 )
-	 } satisfies StudentPayload;
-	})
-	.filter(Boolean) as StudentPayload[];
-
-const upsertWali = async (
-	 tx: TransactionClient,
-	 existingId: number | null | undefined,
-	 payload: WaliPayload | null
- ): Promise<number | null> => {
-	 if (!payload || !payload.nama) {
-		 return existingId ?? null;
-	 }
-
-	 const values = {
-		 nama: payload.nama,
-		 pekerjaan: payload.pekerjaan || 'Belum diisi',
-		 kontak: payload.kontak && payload.kontak.length ? payload.kontak : null,
-		 alamat: payload.alamat && payload.alamat.length ? payload.alamat : null,
-		 updatedAt: timestamp
-	 };
-
-	 if (existingId) {
-		 await tx
-			 .update(tableWaliMurid)
-			 .set(values)
-			 .where(eq(tableWaliMurid.id, existingId));
-		 return existingId;
-	 }
-
-	 const [inserted] = await tx
-		 .insert(tableWaliMurid)
-		 .values(values)
-		 .returning({ id: tableWaliMurid.id });
-
-	 return inserted?.id ?? null;
- };
-
- if (!students.length) {
- throw fail(400, { fail: 'Tidak ada baris data valid pada file.' });
- }
-
- const rombelNames = Array.from(rombelMap.values());
-
- let insertedKelas = 0;
- let insertedMurid = 0;
- let updatedMurid = 0;
-
- await db.transaction(async (tx) => {
-	const existingKelas = rombelNames.length
-	 ? await tx.query.tableKelas.findMany({
-		 where: and(
-			eq(tableKelas.sekolahId, opts.sekolahId),
-			eq(tableKelas.tahunAjaranId, opts.tahunAjaranId),
-			eq(tableKelas.semesterId, opts.semesterId),
-			inArray(tableKelas.nama, rombelNames)
-		 )
-		})
-	 : [];
-
-	const kelasMap = new Map<string, number>();
-	for (const item of existingKelas) {
-		if (item.tahunAjaranId !== opts.tahunAjaranId || item.semesterId !== opts.semesterId) {
-			await tx
-				.update(tableKelas)
-				.set({
-					tahunAjaranId: opts.tahunAjaranId,
-					semesterId: opts.semesterId,
-					updatedAt: timestamp
-				})
-				.where(eq(tableKelas.id, item.id));
-		}
-		kelasMap.set(item.nama.toLowerCase(), item.id);
-	}
-
-	const newKelasValues = rombelNames
-	 .filter((nama) => !kelasMap.has(nama.toLowerCase()))
-	 .map((nama) => ({
-		nama,
-		sekolahId: opts.sekolahId,
-		tahunAjaranId: opts.tahunAjaranId,
-		semesterId: opts.semesterId,
-		updatedAt: timestamp
-	 }));
-	if (newKelasValues.length) {
-	 const inserted = await tx
-		.insert(tableKelas)
-		.values(newKelasValues)
-		.returning({ id: tableKelas.id, nama: tableKelas.nama });
-	 inserted.forEach((item) => kelasMap.set(item.nama.toLowerCase(), item.id));
-	 insertedKelas += inserted.length;
-	}
-
-	const nisList = students.map((s) => s.nis);
-	 const existingMurid = nisList.length
-		 ? await tx.query.tableMurid.findMany({
-			 where: and(
-				eq(tableMurid.sekolahId, opts.sekolahId),
-				eq(tableMurid.semesterId, opts.semesterId),
-				inArray(tableMurid.nis, nisList)
-			 )
-		 })
-		 : [];
-	const muridByNis = new Map(existingMurid.map((item) => [item.nis, item]));
-
-	for (const student of students) {
-	 const kelasId = kelasMap.get(student.rombel.toLowerCase());
-	 if (!kelasId) continue;
-
-	 const existing = muridByNis.get(student.nis);
-	 if (existing) {
-	 const ayahId = await upsertWali(tx, existing.ayahId, student.ayah);
-	 const ibuId = await upsertWali(tx, existing.ibuId, student.ibu);
-	 const waliId = await upsertWali(tx, existing.waliId, student.wali);
-	 	 await tx
-	 		 .update(tableMurid)
-	 		 .set({
-			nama: student.nama,
-			nisn: student.nisn,
-			tempatLahir: student.tempatLahir,
-			tanggalLahir: student.tanggalLahir,
-			jenisKelamin: student.jk,
-			agama: student.agama,
-			pendidikanSebelumnya: student.pendidikanSebelumnya,
-			tanggalMasuk: student.tanggalMasuk,
-			ayahId,
-			ibuId,
-			waliId,
-			kelasId,
-				semesterId: opts.semesterId,
-			updatedAt: timestamp
-		 })
-		 .where(eq(tableMurid.id, existing.id));
-		updatedMurid += 1;
-		continue;
-	 }
-
-	 const [alamat] = await tx
-		.insert(tableAlamat)
-		.values({
-		 jalan: student.alamat,
-		 desa: student.desa,
-		 kecamatan: student.kecamatan,
-		 kabupaten: student.kabupaten,
-		 kodePos: student.kodePos,
-		 updatedAt: timestamp
-		})
-		.returning({ id: tableAlamat.id });
-
-	 const ayahId = await upsertWali(tx, null, student.ayah);
-	 const ibuId = await upsertWali(tx, null, student.ibu);
-	 const waliId = await upsertWali(tx, null, student.wali);
-
- 	 await tx.insert(tableMurid).values({
-		sekolahId: opts.sekolahId,
-		kelasId,
-		semesterId: opts.semesterId,
-		nama: student.nama,
-		nis: student.nis,
-		nisn: student.nisn,
-		tempatLahir: student.tempatLahir,
-		tanggalLahir: student.tanggalLahir,
-		jenisKelamin: student.jk,
-		agama: student.agama,
-		pendidikanSebelumnya: student.pendidikanSebelumnya,
-		tanggalMasuk: student.tanggalMasuk,
-		alamatId: alamat.id,
-		ayahId,
-		ibuId,
-		waliId,
-		updatedAt: timestamp
-	 });
-	 insertedMurid += 1;
-	}
- });
-
- return {
-	message: `Impor selesai: ${insertedKelas} kelas baru, ${insertedMurid} murid baru, ${updatedMurid} murid diperbarui.`
- } as const;
-}
-
-	async function copyKelasDanMuridDariGanjilKeGenap(opts: {
-		sekolahId: number;
-		sourceSemester: SemesterRow;
-		targetSemester: SemesterRow;
-	}): Promise<CopySummary> {
-		const timestamp = new Date().toISOString();
-
-		return db.transaction(async (tx) => {
-			const sourceKelas = await tx.query.tableKelas.findMany({
-				where: and(
-					eq(tableKelas.sekolahId, opts.sekolahId),
-					eq(tableKelas.semesterId, opts.sourceSemester.id)
-				),
-				columns: {
-					id: true,
-					nama: true,
-					fase: true,
-					waliKelasId: true
-				}
-			});
-
-			if (!sourceKelas.length) {
-				return {
-					insertedKelas: 0,
-					updatedKelas: 0,
-					updatedMurid: 0,
-					insertedMurid: 0,
-					skippedMurid: 0,
-					totalSourceMurid: 0,
-					totalSourceKelas: 0
-				};
-			}
-
-			const targetKelas = await tx.query.tableKelas.findMany({
-				where: and(
-					eq(tableKelas.sekolahId, opts.sekolahId),
-					eq(tableKelas.semesterId, opts.targetSemester.id)
-				),
-				columns: {
-					id: true,
-					nama: true,
-					fase: true,
-					waliKelasId: true
-				}
-			});
-
-			const targetByName = new Map<string, (typeof targetKelas)[number]>();
-			for (const kelas of targetKelas) {
-				targetByName.set(kelas.nama.toLowerCase(), kelas);
-			}
-
-			const sourceToTarget = new Map<number, number>();
-			let insertedKelas = 0;
-			let updatedKelas = 0;
-
-			for (const kelas of sourceKelas) {
-				const key = kelas.nama.toLowerCase();
-				const existing = targetByName.get(key);
-				if (existing) {
-					const needsUpdate =
-						(existing.fase ?? '') !== (kelas.fase ?? '') ||
-						(existing.waliKelasId ?? null) !== (kelas.waliKelasId ?? null);
-					if (needsUpdate) {
-						await tx
-							.update(tableKelas)
-							.set({
-								fase: kelas.fase,
-								waliKelasId: kelas.waliKelasId,
-								updatedAt: timestamp
-							})
-							.where(eq(tableKelas.id, existing.id));
-						updatedKelas += 1;
-					}
-					sourceToTarget.set(kelas.id, existing.id);
-					continue;
-				}
-
-				const [inserted] = await tx
-					.insert(tableKelas)
-					.values({
-						nama: kelas.nama,
-						fase: kelas.fase,
-						waliKelasId: kelas.waliKelasId,
-						sekolahId: opts.sekolahId,
-						tahunAjaranId: opts.targetSemester.tahunAjaranId,
-						semesterId: opts.targetSemester.id,
-						updatedAt: timestamp
-					})
-					.returning({ id: tableKelas.id });
-
-				if (inserted) {
-					sourceToTarget.set(kelas.id, inserted.id);
-					insertedKelas += 1;
-				}
-			}
-
-			let insertedMurid = 0;
-			let skippedMurid = 0;
-			let totalSourceMurid = 0;
-
-			for (const [sourceId, targetId] of sourceToTarget) {
-				const sourceMuridList = await tx.query.tableMurid.findMany({
-					where: and(
-						eq(tableMurid.sekolahId, opts.sekolahId),
-						eq(tableMurid.semesterId, opts.sourceSemester.id),
-						eq(tableMurid.kelasId, sourceId)
-					)
-				});
-				totalSourceMurid += sourceMuridList.length;
-				if (!sourceMuridList.length) continue;
-
-				const existingTargetMurid = await tx.query.tableMurid.findMany({
-					where: and(
-						eq(tableMurid.sekolahId, opts.sekolahId),
-						eq(tableMurid.semesterId, opts.targetSemester.id),
-						eq(tableMurid.kelasId, targetId)
-					),
-					columns: { nis: true }
-				});
-
-				const existingNis = new Set(existingTargetMurid.map((row) => row.nis));
-				const values: typeof tableMurid.$inferInsert[] = [];
-
-				for (const murid of sourceMuridList) {
-					if (existingNis.has(murid.nis)) {
-						skippedMurid += 1;
-						continue;
-					}
-					existingNis.add(murid.nis);
-					values.push({
-						sekolahId: opts.sekolahId,
-						kelasId: targetId,
-						semesterId: opts.targetSemester.id,
-						nama: murid.nama,
-						nis: murid.nis,
-						nisn: murid.nisn,
-						tempatLahir: murid.tempatLahir,
-						tanggalLahir: murid.tanggalLahir,
-						jenisKelamin: murid.jenisKelamin,
-						agama: murid.agama,
-						pendidikanSebelumnya: murid.pendidikanSebelumnya,
-						tanggalMasuk: murid.tanggalMasuk,
-						alamatId: murid.alamatId,
-						ibuId: murid.ibuId,
-						ayahId: murid.ayahId,
-						waliId: murid.waliId,
-						updatedAt: timestamp
-					});
-				}
-
-				if (values.length) {
-					await tx.insert(tableMurid).values(values);
-					insertedMurid += values.length;
-				}
-			}
+			const alamat = normalize(idxAlamat !== undefined ? row[idxAlamat] : '') || 'Belum diisi';
+			const desa = normalize(idxKelurahan !== undefined ? row[idxKelurahan] : '') || 'Belum diisi';
+			const kecamatan =
+				normalize(idxKecamatan !== undefined ? row[idxKecamatan] : '') || 'Belum diisi';
+			const kabupaten =
+				normalize(idxKabupaten !== undefined ? row[idxKabupaten] : '') ||
+				opts.kabupatenFallback ||
+				'Belum diisi';
+			const alamatLengkap = [alamat, desa, kecamatan, kabupaten]
+				.filter((value) => !!value && value !== 'Belum diisi')
+				.join(', ');
+			const alamatUntukWali = alamatLengkap || (alamat !== 'Belum diisi' ? alamat : null);
+			const kontakOrangTua = chooseKontak(row);
+			const kontakAyah = idxAyahKontak !== undefined ? normalize(row[idxAyahKontak]) : '';
+			const kontakIbu = idxIbuKontak !== undefined ? normalize(row[idxIbuKontak]) : '';
+			const kontakWali = idxWaliKontak !== undefined ? normalize(row[idxWaliKontak]) : '';
 
 			return {
-				insertedKelas,
-				updatedKelas,
-				insertedMurid,
-				skippedMurid,
-				totalSourceMurid,
-				totalSourceKelas: sourceKelas.length
-			};
-		});
+				nama,
+				nis,
+				rombel,
+				nisn: normalize(idxNisn !== undefined ? row[idxNisn] : '').trim() || `BELUM-${nis}`,
+				tempatLahir:
+					normalize(idxTempatLahir !== undefined ? row[idxTempatLahir] : '') || 'Tidak diketahui',
+				tanggalLahir: ensureDate(
+					idxTanggalLahir !== undefined ? row[idxTanggalLahir] : DEFAULT_DATE
+				),
+				jk: ensureJenisKelamin(idxJk !== undefined ? row[idxJk] : 'L'),
+				agama: normalize(idxAgama !== undefined ? row[idxAgama] : '') || 'Belum diisi',
+				alamat,
+				desa,
+				kecamatan,
+				kabupaten,
+				kodePos: normalize(idxKodePos !== undefined ? row[idxKodePos] : '') || undefined,
+				pendidikanSebelumnya:
+					normalize(idxSekolahAsal !== undefined ? row[idxSekolahAsal] : '') || 'Belum diisi',
+				tanggalMasuk: timestamp.slice(0, 10),
+				ayah: buildWaliPayload(
+					row,
+					ayahNameIdx,
+					ayahJobIdx,
+					kontakAyah || kontakOrangTua,
+					alamatUntukWali ?? undefined
+				),
+				ibu: buildWaliPayload(
+					row,
+					ibuNameIdx,
+					ibuJobIdx,
+					kontakIbu || kontakOrangTua,
+					alamatUntukWali ?? undefined
+				),
+				wali: buildWaliPayload(
+					row,
+					waliNameIdx,
+					waliJobIdx,
+					kontakWali || kontakOrangTua,
+					alamatUntukWali ?? undefined
+				)
+			} satisfies StudentPayload;
+		})
+		.filter(Boolean) as StudentPayload[];
+
+	const upsertWali = async (
+		tx: TransactionClient,
+		existingId: number | null | undefined,
+		payload: WaliPayload | null
+	): Promise<number | null> => {
+		if (!payload || !payload.nama) {
+			return existingId ?? null;
+		}
+
+		const values = {
+			nama: payload.nama,
+			pekerjaan: payload.pekerjaan || 'Belum diisi',
+			kontak: payload.kontak && payload.kontak.length ? payload.kontak : null,
+			alamat: payload.alamat && payload.alamat.length ? payload.alamat : null,
+			updatedAt: timestamp
+		};
+
+		if (existingId) {
+			await tx.update(tableWaliMurid).set(values).where(eq(tableWaliMurid.id, existingId));
+			return existingId;
+		}
+
+		const [inserted] = await tx
+			.insert(tableWaliMurid)
+			.values(values)
+			.returning({ id: tableWaliMurid.id });
+
+		return inserted?.id ?? null;
+	};
+
+	if (!students.length) {
+		throw fail(400, { fail: 'Tidak ada baris data valid pada file.' });
 	}
+
+	const rombelNames = Array.from(rombelMap.values());
+
+	let insertedKelas = 0;
+	let insertedMurid = 0;
+	let updatedMurid = 0;
+
+	await db.transaction(async (tx) => {
+		const existingKelas = rombelNames.length
+			? await tx.query.tableKelas.findMany({
+					where: and(
+						eq(tableKelas.sekolahId, opts.sekolahId),
+						eq(tableKelas.tahunAjaranId, opts.tahunAjaranId),
+						eq(tableKelas.semesterId, opts.semesterId),
+						inArray(tableKelas.nama, rombelNames)
+					)
+				})
+			: [];
+
+		const kelasMap = new Map<string, number>();
+		for (const item of existingKelas) {
+			if (item.tahunAjaranId !== opts.tahunAjaranId || item.semesterId !== opts.semesterId) {
+				await tx
+					.update(tableKelas)
+					.set({
+						tahunAjaranId: opts.tahunAjaranId,
+						semesterId: opts.semesterId,
+						updatedAt: timestamp
+					})
+					.where(eq(tableKelas.id, item.id));
+			}
+			kelasMap.set(item.nama.toLowerCase(), item.id);
+		}
+
+		const newKelasValues = rombelNames
+			.filter((nama) => !kelasMap.has(nama.toLowerCase()))
+			.map((nama) => ({
+				nama,
+				sekolahId: opts.sekolahId,
+				tahunAjaranId: opts.tahunAjaranId,
+				semesterId: opts.semesterId,
+				updatedAt: timestamp
+			}));
+		if (newKelasValues.length) {
+			const inserted = await tx
+				.insert(tableKelas)
+				.values(newKelasValues)
+				.returning({ id: tableKelas.id, nama: tableKelas.nama });
+			inserted.forEach((item) => kelasMap.set(item.nama.toLowerCase(), item.id));
+			insertedKelas += inserted.length;
+		}
+
+		const nisList = students.map((s) => s.nis);
+		const existingMurid = nisList.length
+			? await tx.query.tableMurid.findMany({
+					where: and(
+						eq(tableMurid.sekolahId, opts.sekolahId),
+						eq(tableMurid.semesterId, opts.semesterId),
+						inArray(tableMurid.nis, nisList)
+					)
+				})
+			: [];
+		const muridByNis = new Map(existingMurid.map((item) => [item.nis, item]));
+
+		for (const student of students) {
+			const kelasId = kelasMap.get(student.rombel.toLowerCase());
+			if (!kelasId) continue;
+
+			const existing = muridByNis.get(student.nis);
+			if (existing) {
+				const ayahId = await upsertWali(tx, existing.ayahId, student.ayah);
+				const ibuId = await upsertWali(tx, existing.ibuId, student.ibu);
+				const waliId = await upsertWali(tx, existing.waliId, student.wali);
+				await tx
+					.update(tableMurid)
+					.set({
+						nama: student.nama,
+						nisn: student.nisn,
+						tempatLahir: student.tempatLahir,
+						tanggalLahir: student.tanggalLahir,
+						jenisKelamin: student.jk,
+						agama: student.agama,
+						pendidikanSebelumnya: student.pendidikanSebelumnya,
+						tanggalMasuk: student.tanggalMasuk,
+						ayahId,
+						ibuId,
+						waliId,
+						kelasId,
+						semesterId: opts.semesterId,
+						updatedAt: timestamp
+					})
+					.where(eq(tableMurid.id, existing.id));
+				updatedMurid += 1;
+				continue;
+			}
+
+			const [alamat] = await tx
+				.insert(tableAlamat)
+				.values({
+					jalan: student.alamat,
+					desa: student.desa,
+					kecamatan: student.kecamatan,
+					kabupaten: student.kabupaten,
+					kodePos: student.kodePos,
+					updatedAt: timestamp
+				})
+				.returning({ id: tableAlamat.id });
+
+			const ayahId = await upsertWali(tx, null, student.ayah);
+			const ibuId = await upsertWali(tx, null, student.ibu);
+			const waliId = await upsertWali(tx, null, student.wali);
+
+			await tx.insert(tableMurid).values({
+				sekolahId: opts.sekolahId,
+				kelasId,
+				semesterId: opts.semesterId,
+				nama: student.nama,
+				nis: student.nis,
+				nisn: student.nisn,
+				tempatLahir: student.tempatLahir,
+				tanggalLahir: student.tanggalLahir,
+				jenisKelamin: student.jk,
+				agama: student.agama,
+				pendidikanSebelumnya: student.pendidikanSebelumnya,
+				tanggalMasuk: student.tanggalMasuk,
+				alamatId: alamat.id,
+				ayahId,
+				ibuId,
+				waliId,
+				updatedAt: timestamp
+			});
+			insertedMurid += 1;
+		}
+	});
+
+	return {
+		message: `Impor selesai: ${insertedKelas} kelas baru, ${insertedMurid} murid baru, ${updatedMurid} murid diperbarui.`
+	} as const;
+}
+
+async function copyKelasDanMuridDariGanjilKeGenap(opts: {
+	sekolahId: number;
+	sourceSemester: SemesterRow;
+	targetSemester: SemesterRow;
+}): Promise<CopySummary> {
+	const timestamp = new Date().toISOString();
+
+	return db.transaction(async (tx) => {
+		const sourceKelas = await tx.query.tableKelas.findMany({
+			where: and(
+				eq(tableKelas.sekolahId, opts.sekolahId),
+				eq(tableKelas.semesterId, opts.sourceSemester.id)
+			),
+			columns: {
+				id: true,
+				nama: true,
+				fase: true,
+				waliKelasId: true
+			}
+		});
+
+		if (!sourceKelas.length) {
+			return {
+				insertedKelas: 0,
+				updatedKelas: 0,
+				updatedMurid: 0,
+				insertedMurid: 0,
+				skippedMurid: 0,
+				totalSourceMurid: 0,
+				totalSourceKelas: 0
+			};
+		}
+
+		const targetKelas = await tx.query.tableKelas.findMany({
+			where: and(
+				eq(tableKelas.sekolahId, opts.sekolahId),
+				eq(tableKelas.semesterId, opts.targetSemester.id)
+			),
+			columns: {
+				id: true,
+				nama: true,
+				fase: true,
+				waliKelasId: true
+			}
+		});
+
+		const targetByName = new Map<string, (typeof targetKelas)[number]>();
+		for (const kelas of targetKelas) {
+			targetByName.set(kelas.nama.toLowerCase(), kelas);
+		}
+
+		const sourceToTarget = new Map<number, number>();
+		let insertedKelas = 0;
+		let updatedKelas = 0;
+
+		for (const kelas of sourceKelas) {
+			const key = kelas.nama.toLowerCase();
+			const existing = targetByName.get(key);
+			if (existing) {
+				const needsUpdate =
+					(existing.fase ?? '') !== (kelas.fase ?? '') ||
+					(existing.waliKelasId ?? null) !== (kelas.waliKelasId ?? null);
+				if (needsUpdate) {
+					await tx
+						.update(tableKelas)
+						.set({
+							fase: kelas.fase,
+							waliKelasId: kelas.waliKelasId,
+							updatedAt: timestamp
+						})
+						.where(eq(tableKelas.id, existing.id));
+					updatedKelas += 1;
+				}
+				sourceToTarget.set(kelas.id, existing.id);
+				continue;
+			}
+
+			const [inserted] = await tx
+				.insert(tableKelas)
+				.values({
+					nama: kelas.nama,
+					fase: kelas.fase,
+					waliKelasId: kelas.waliKelasId,
+					sekolahId: opts.sekolahId,
+					tahunAjaranId: opts.targetSemester.tahunAjaranId,
+					semesterId: opts.targetSemester.id,
+					updatedAt: timestamp
+				})
+				.returning({ id: tableKelas.id });
+
+			if (inserted) {
+				sourceToTarget.set(kelas.id, inserted.id);
+				insertedKelas += 1;
+			}
+		}
+
+		let insertedMurid = 0;
+		let skippedMurid = 0;
+		let totalSourceMurid = 0;
+
+		for (const [sourceId, targetId] of sourceToTarget) {
+			const sourceMuridList = await tx.query.tableMurid.findMany({
+				where: and(
+					eq(tableMurid.sekolahId, opts.sekolahId),
+					eq(tableMurid.semesterId, opts.sourceSemester.id),
+					eq(tableMurid.kelasId, sourceId)
+				)
+			});
+			totalSourceMurid += sourceMuridList.length;
+			if (!sourceMuridList.length) continue;
+
+			const existingTargetMurid = await tx.query.tableMurid.findMany({
+				where: and(
+					eq(tableMurid.sekolahId, opts.sekolahId),
+					eq(tableMurid.semesterId, opts.targetSemester.id),
+					eq(tableMurid.kelasId, targetId)
+				),
+				columns: { nis: true }
+			});
+
+			const existingNis = new Set(existingTargetMurid.map((row) => row.nis));
+			const values: (typeof tableMurid.$inferInsert)[] = [];
+
+			for (const murid of sourceMuridList) {
+				if (existingNis.has(murid.nis)) {
+					skippedMurid += 1;
+					continue;
+				}
+				existingNis.add(murid.nis);
+				values.push({
+					sekolahId: opts.sekolahId,
+					kelasId: targetId,
+					semesterId: opts.targetSemester.id,
+					nama: murid.nama,
+					nis: murid.nis,
+					nisn: murid.nisn,
+					tempatLahir: murid.tempatLahir,
+					tanggalLahir: murid.tanggalLahir,
+					jenisKelamin: murid.jenisKelamin,
+					agama: murid.agama,
+					pendidikanSebelumnya: murid.pendidikanSebelumnya,
+					tanggalMasuk: murid.tanggalMasuk,
+					alamatId: murid.alamatId,
+					ibuId: murid.ibuId,
+					ayahId: murid.ayahId,
+					waliId: murid.waliId,
+					updatedAt: timestamp
+				});
+			}
+
+			if (values.length) {
+				await tx.insert(tableMurid).values(values);
+				insertedMurid += values.length;
+			}
+		}
+
+		return {
+			insertedKelas,
+			updatedKelas,
+			insertedMurid,
+			skippedMurid,
+			totalSourceMurid,
+			totalSourceKelas: sourceKelas.length
+		};
+	});
+}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const meta: PageMeta = {
@@ -914,7 +918,9 @@ export const actions: Actions = {
 			return fail(400, { fail: 'Penyalinan hanya tersedia untuk semester genap.' });
 		}
 
-		let sourceSemester: (typeof tableSemester.$inferSelect & { tahunAjaran: TahunAjaranRow }) | null = null;
+		let sourceSemester:
+			| (typeof tableSemester.$inferSelect & { tahunAjaran: TahunAjaranRow })
+			| null = null;
 
 		if (Number.isFinite(sourceSemesterId) && (sourceSemesterId ?? 0) > 0) {
 			const candidate = await db.query.tableSemester.findFirst({

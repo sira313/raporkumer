@@ -16,9 +16,7 @@
 
 	export function toast(data: Toast | string, type?: Toast['type']) {
 		const payload: Toast =
-			typeof data === 'string'
-				? { message: data, type }
-				: { ...data, type: data.type ?? type };
+			typeof data === 'string' ? { message: data, type } : { ...data, type: data.type ?? type };
 
 		const id = nextId(payload.id);
 		const entry: ToastInstance = {
@@ -46,11 +44,14 @@
 	let interact = $state(false);
 
 	const autoCloseAfter = 5; // seconds
-	const typesMaps: Record<NonNullable<Toast['type']>, {
-		alertClass: string;
-		icon: IconName;
-		iconClass: string;
-	}> = {
+	const typesMaps: Record<
+		NonNullable<Toast['type']>,
+		{
+			alertClass: string;
+			icon: IconName;
+			iconClass: string;
+		}
+	> = {
 		info: {
 			alertClass: 'alert-info',
 			icon: 'info',
@@ -102,7 +103,12 @@
 				<Icon name={config.icon} class="h-5 w-5" />
 			</span>
 			<span class="flex-1">{@html t.message}</span>
-			<button class="btn btn-circle btn-ghost" type="button" title="Tutup" onclick={() => close(t.id)}>
+			<button
+				class="btn btn-circle btn-ghost"
+				type="button"
+				title="Tutup"
+				onclick={() => close(t.id)}
+			>
 				<Icon name="close" class="h-4 w-4" />
 				<span class="sr-only">Tutup</span>
 			</button>

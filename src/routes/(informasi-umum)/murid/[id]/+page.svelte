@@ -75,7 +75,7 @@
 	</div>
 </div>
 
-<div class="mt-4 flex flex-col sm:flex-row gap-2">
+<div class="mt-4 flex flex-col gap-2 sm:flex-row">
 	<a class="btn border-none shadow-none" href="/murid">
 		<Icon name="close" />
 		Tutup

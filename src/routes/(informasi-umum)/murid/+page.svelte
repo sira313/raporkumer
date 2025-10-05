@@ -35,7 +35,11 @@
 	);
 
 	$effect(() => {
-		searchTerm = data.page.search ?? '';
+		if (searchTimer) return;
+		const latestSearchTerm = data.page.search ?? '';
+		if (searchTerm !== latestSearchTerm) {
+			searchTerm = latestSearchTerm;
+		}
 	});
 
 	let selectAllCheckbox: HTMLInputElement | null = null;
@@ -260,7 +264,7 @@
 	<h2 class="mb-6 text-xl font-bold">
 		Formulir Dan Tabel Isian Data Murid
 		{#if kelasAktifLabel}
-			<span class="block mt-2 text-lg font-semibold">{kelasAktifLabel}</span>
+			<span class="mt-2 block text-lg font-semibold">{kelasAktifLabel}</span>
 		{/if}
 	</h2>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
@@ -271,7 +275,7 @@
 		</a>
 
 		<button
-			class="btn shadow-none sm:ml-auto btn-soft btn-error"
+			class="btn btn-soft btn-error shadow-none sm:ml-auto"
 			type="button"
 			disabled={!hasSelection || formSubmitting}
 			onclick={openBulkDeleteModal}
@@ -393,7 +397,7 @@
 	</FormEnhance>
 	<!-- pagination -->
 	<div class="join mt-4 sm:mx-auto">
-		{#each pages as pageNumber}
+		{#each pages as pageNumber (pageNumber)}
 			<button
 				type="button"
 				class="join-item btn"
@@ -407,4 +411,4 @@
 	</div>
 </div>
 
-<MuridModals {formSubmitting} submitBulkDelete={submitBulkDelete} />
+<MuridModals {formSubmitting} {submitBulkDelete} />

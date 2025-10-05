@@ -11,23 +11,30 @@ export type EkstrakurikulerNilaiKategori = (typeof kategoriOptions)[number]['val
 
 export const ekstrakurikulerNilaiLabelByValue = kategoriOptions.reduce<
 	Record<EkstrakurikulerNilaiKategori, string>
->((acc, option) => {
-	acc[option.value] = option.label;
-	return acc;
-}, {} as Record<EkstrakurikulerNilaiKategori, string>);
+>(
+	(acc, option) => {
+		acc[option.value] = option.label;
+		return acc;
+	},
+	{} as Record<EkstrakurikulerNilaiKategori, string>
+);
 
 const kategoriSet = new Set(kategoriOptions.map((option) => option.value));
 
-export function isEkstrakurikulerNilaiKategori(value: unknown): value is EkstrakurikulerNilaiKategori {
+export function isEkstrakurikulerNilaiKategori(
+	value: unknown
+): value is EkstrakurikulerNilaiKategori {
 	return typeof value === 'string' && kategoriSet.has(value as EkstrakurikulerNilaiKategori);
 }
 
 const LOCALE_ID = 'id-ID';
 
-export function buildEkstrakurikulerDeskripsi(parts: Array<{
-	kategori: EkstrakurikulerNilaiKategori;
-	tujuan: string;
-}>): string | null {
+export function buildEkstrakurikulerDeskripsi(
+	parts: Array<{
+		kategori: EkstrakurikulerNilaiKategori;
+		tujuan: string;
+	}>
+): string | null {
 	const fragments = parts
 		.map((part) => {
 			const label = ekstrakurikulerNilaiLabelByValue[part.kategori];
@@ -42,14 +49,16 @@ export function buildEkstrakurikulerDeskripsi(parts: Array<{
 
 	if (!fragments.length) return null;
 
-	const normalized = fragments.map((fragment, index) => {
-		const trimmed = fragment.trim();
-		if (!trimmed) return null;
-		if (index === 0) {
-			return capitalizeLocale(trimmed, LOCALE_ID);
-		}
-		return lowercaseFirst(trimmed, LOCALE_ID);
-	}).filter((value): value is string => Boolean(value));
+	const normalized = fragments
+		.map((fragment, index) => {
+			const trimmed = fragment.trim();
+			if (!trimmed) return null;
+			if (index === 0) {
+				return capitalizeLocale(trimmed, LOCALE_ID);
+			}
+			return lowercaseFirst(trimmed, LOCALE_ID);
+		})
+		.filter((value): value is string => Boolean(value));
 
 	if (!normalized.length) return null;
 

@@ -204,7 +204,7 @@
 	ids={deleteModalIds}
 	mode={deleteModalMode}
 	item={deleteModalItem}
-	canManage={canManage}
+	{canManage}
 	disabled={deleteModalDisabled}
 	onClose={closeDeleteModal}
 	onSuccess={() => {
@@ -222,7 +222,9 @@
 		<div>
 			<h2 class="text-xl font-bold">Daftar Ekstrakurikuler</h2>
 			{#if !data.kelasId}
-				<p class="text-sm text-base-content/60">Pilih kelas aktif agar data ekstrakurikuler tampil.</p>
+				<p class="text-base-content/60 text-sm">
+					Pilih kelas aktif agar data ekstrakurikuler tampil.
+				</p>
 			{/if}
 		</div>
 		<div class="flex flex-col gap-2 sm:flex-row">
@@ -232,7 +234,7 @@
 			</button>
 			<button
 				type="button"
-				class={`btn shadow-none w-full sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
+				class={`btn w-full shadow-none sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
 				disabled={bulkDeleteDisabled}
 				onclick={openBulkDeleteModal}
 			>
@@ -243,22 +245,27 @@
 	</div>
 
 	{#if !data.kelasId}
-		<div class="alert mt-6 border border-dashed border-warning/60 bg-warning/10 text-warning-content">
+		<div
+			class="alert border-warning/60 bg-warning/10 text-warning-content mt-6 border border-dashed"
+		>
 			<Icon name="info" />
 			<span>Silakan pilih kelas di navbar sebelum menambah ekstrakurikuler.</span>
 		</div>
 	{/if}
 
 	{#if !data.tableReady}
-		<div class="alert mt-4 border border-dashed border-error/60 bg-error/10 text-error-content">
+		<div class="alert border-error/60 bg-error/10 text-error-content mt-4 border border-dashed">
 			<Icon name="warning" />
 			<span>
-				Database ekstrakurikuler belum siap. Jalankan <code>pnpm db:push</code> untuk menerapkan migrasi terbaru.
+				Database ekstrakurikuler belum siap. Jalankan <code>pnpm db:push</code> untuk menerapkan migrasi
+				terbaru.
 			</span>
 		</div>
 	{/if}
 
-	<div class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+	<div
+		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+	>
 		<table class="border-base-200 table min-w-[560px] border dark:border-none">
 			<thead>
 				<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
@@ -297,18 +304,20 @@
 									invalidate('app:ekstrakurikuler');
 								}}
 							>
-								{#snippet children()}
+								{#snippet children({ submitting, invalid })}
 									<input name="kelasId" value={data.kelasId ?? ''} hidden />
-									<label class="flex flex-col gap-2">
+									<label class="flex flex-col gap-2" aria-busy={submitting}>
 										<input
 											bind:this={addInputRef}
-											class="input input-sm bg-base-200 dark:bg-base-100 dark:border-none w-full"
+											class="input input-sm bg-base-200 dark:bg-base-100 w-full dark:border-none"
 											placeholder="Masukkan nama ekstrakurikuler"
 											name="nama"
 											value={addNamaInput}
-											oninput={(event) => (addNamaInput = (event.currentTarget as HTMLInputElement).value)}
+											oninput={(event) =>
+												(addNamaInput = (event.currentTarget as HTMLInputElement).value)}
 											autocomplete="off"
 											required
+											aria-invalid={invalid}
 										/>
 									</label>
 								{/snippet}
@@ -372,19 +381,21 @@
 										invalidate('app:ekstrakurikuler');
 									}}
 								>
-									{#snippet children()}
+									{#snippet children({ submitting, invalid })}
 										<input name="kelasId" value={data.kelasId ?? ''} hidden />
 										<input name="id" value={item.id} hidden />
-										<label class="flex flex-col gap-2">
+										<label class="flex flex-col gap-2" aria-busy={submitting}>
 											<input
 												bind:this={editingInputRef}
-												class="input input-sm bg-base-200 dark:bg-base-100 dark:border-none w-full"
+												class="input input-sm bg-base-200 dark:bg-base-100 w-full dark:border-none"
 												placeholder="Masukkan nama ekstrakurikuler"
 												name="nama"
 												value={editingNamaInput}
-												oninput={(event) => (editingNamaInput = (event.currentTarget as HTMLInputElement).value)}
+												oninput={(event) =>
+													(editingNamaInput = (event.currentTarget as HTMLInputElement).value)}
 												autocomplete="off"
 												required
+												aria-invalid={invalid}
 											/>
 										</label>
 									{/snippet}

@@ -37,15 +37,14 @@
 			<div class="alert alert-warning mt-4 items-start gap-3" role="alert">
 				<Icon name="warning" />
 				<div class="space-y-1 text-sm">
-					<p class="font-semibold">
-						Perhatian: mata pelajaran ini memiliki perlakuan khusus.
-					</p>
+					<p class="font-semibold">Perhatian: mata pelajaran ini memiliki perlakuan khusus.</p>
 					<p>
 						Terdapat beberapa sub-mata pelajaran Pendidikan Agama
 						{#if data.mapel.nama !== agamaParentName && agamaLabel}
 							(<strong>{agamaLabel}</strong>)
 						{/if}
-						yang saling terhubung dengan data agama siswa. Menghapus mata pelajaran ini dapat merusak logika nilai dan keterkaitan tersebut.
+						yang saling terhubung dengan data agama siswa. Menghapus mata pelajaran ini dapat merusak
+						logika nilai dan keterkaitan tersebut.
 					</p>
 				</div>
 			</div>

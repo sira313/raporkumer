@@ -14,13 +14,16 @@ export async function load({ url, locals, cookies }) {
 	const academicContext = sekolah?.id ? await resolveSekolahAcademicContext(sekolah.id) : null;
 	const daftarKelas = sekolah?.id
 		? await db.query.tableKelas.findMany({
-			columns: { id: true, nama: true, fase: true },
-			with: { waliKelas: { columns: { id: true, nama: true } } },
-			where: academicContext?.activeSemesterId
-				? and(eq(tableKelas.sekolahId, sekolah.id), eq(tableKelas.semesterId, academicContext.activeSemesterId))
-				: eq(tableKelas.sekolahId, sekolah.id),
-			orderBy: asc(tableKelas.nama)
-		  })
+				columns: { id: true, nama: true, fase: true },
+				with: { waliKelas: { columns: { id: true, nama: true } } },
+				where: academicContext?.activeSemesterId
+					? and(
+							eq(tableKelas.sekolahId, sekolah.id),
+							eq(tableKelas.semesterId, academicContext.activeSemesterId)
+						)
+					: eq(tableKelas.sekolahId, sekolah.id),
+				orderBy: asc(tableKelas.nama)
+			})
 		: [];
 
 	const kelasIdParam = url.searchParams.get('kelas_id');
