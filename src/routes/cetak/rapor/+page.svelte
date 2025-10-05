@@ -289,12 +289,3 @@
 		</div>
 	</div>
 </div>
-
-			<style>
-				@media print {
-					:global(body) {
-						margin: 0 !important;
-						padding: 0 !important;
-					}
-				}
-			</style>
