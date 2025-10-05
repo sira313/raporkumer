@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { printElement } from '$lib/utils';
 	import { toast } from '$lib/components/toast.svelte';
 	import PrintTip from '$lib/components/alerts/print-tip.svelte';
@@ -14,6 +15,18 @@
 			toast('Elemen cover belum siap untuk dicetak. Coba muat ulang halaman.', 'warning');
 		}
 	}
+
+	onMount(() => {
+		function onKeydown(event: KeyboardEvent) {
+			if (!(event.ctrlKey || event.metaKey)) return;
+			if (event.key.toLowerCase() !== 'p') return;
+			event.preventDefault();
+			handlePrint();
+		}
+
+		window.addEventListener('keydown', onKeydown);
+		return () => window.removeEventListener('keydown', onKeydown);
+	});
 </script>
 
 <PrintTip onPrint={handlePrint} />
