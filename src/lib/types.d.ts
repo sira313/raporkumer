@@ -75,6 +75,57 @@ interface BiodataPrintData {
 	};
 }
 
+interface RaporPrintData {
+	sekolah: {
+		nama: string;
+		alamat: string;
+		logoUrl?: string | null;
+	};
+	murid: {
+		nama: string;
+		nis: string;
+		nisn: string;
+	};
+	rombel: {
+		nama: string;
+		fase: string;
+	};
+	periode: {
+		tahunPelajaran: string;
+		semester: string;
+	};
+	waliKelas: {
+		nama: string;
+		nip?: string | null;
+	};
+	kepalaSekolah: {
+		nama: string;
+		nip?: string | null;
+	};
+	nilaiIntrakurikuler: Array<{
+		kelompok?: string | null;
+		mataPelajaran: string;
+		nilaiAkhir: string;
+		deskripsi: string;
+	}>;
+	kokurikuler: string;
+	ekstrakurikuler: Array<{
+		nama: string;
+		deskripsi: string;
+	}>;
+	ketidakhadiran: {
+		sakit: number;
+		izin: number;
+		tanpaKeterangan: number;
+	};
+	catatanWali: string;
+	tanggapanOrangTua: string;
+	ttd: {
+		tempat: string;
+		tanggal: string;
+	};
+}
+
 type MaybePromise<T> = T | Promise<T>;
 
 type FormSubmitEvent = SubmitEvent & { currentTarget: EventTarget & HTMLFormElement };

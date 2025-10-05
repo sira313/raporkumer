@@ -28,6 +28,7 @@ declare global {
 			statistikDashboard?: DashboardStatistik;
 			coverData?: CoverPrintData;
 			biodataData?: BiodataPrintData;
+			raporData?: RaporPrintData;
 		}
 		interface PageState {
 			modal: {

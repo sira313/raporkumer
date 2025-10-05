@@ -32,7 +32,6 @@ a[data-preloading] {
 
 @media print {
 	body {
-		margin: 0;
 		background: transparent;
 	}
 	#header,
