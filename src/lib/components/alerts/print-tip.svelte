@@ -27,7 +27,7 @@
 			<h3 class="font-semibold text-base">{title}</h3>
 			<p class="text-sm leading-relaxed">{message}</p>
 			{#if subMessage}
-				<p class="text-xs text-base/70">{subMessage}</p>
+				<p class="text-xs text-base-content/70">{subMessage}</p>
 			{/if}
 		</div>
 		<button
