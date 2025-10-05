@@ -26,6 +26,8 @@ declare global {
 				waliKelas?: Pick<Pegawai, 'id' | 'nama'> | null;
 			}) | null;
 			statistikDashboard?: DashboardStatistik;
+			coverData?: CoverPrintData;
+			biodataData?: BiodataPrintData;
 		}
 		interface PageState {
 			modal: {
