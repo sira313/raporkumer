@@ -18,7 +18,7 @@
 	}: Props = $props();
 </script>
 
-<div class="alert alert-info mb-4 items-start gap-4 shadow-md print:hidden">
+<div class="alert mb-4 items-start gap-4 shadow-md print:hidden">
 	<span
 		class="bg-info-content/10 text-info-content flex h-10 w-10 items-center justify-center rounded-full"
 	>

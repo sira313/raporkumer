@@ -5,6 +5,7 @@ import {
 	tableAsesmenEkstrakurikuler,
 	tableAsesmenKokurikuler,
 	tableAsesmenSumatif,
+	tableAsesmenSumatifTujuan,
 	tableMurid
 } from '$lib/server/db/schema';
 import { jenisMapel, type DimensiProfilLulusanKey } from '$lib/statics';
@@ -22,6 +23,107 @@ import {
 import type { PageServerLoad } from './$types';
 
 const LOCALE_ID = 'id-ID';
+
+type PredikatKey = 'perlu-bimbingan' | 'cukup' | 'baik' | 'sangat-baik';
+
+const PREDIKAT_ORDER: Record<PredikatKey, number> = {
+	'perlu-bimbingan': 0,
+	'cukup': 1,
+	'baik': 2,
+	'sangat-baik': 3
+};
+
+type TujuanScoreEntry = {
+	tujuanPembelajaranId: number;
+	deskripsi: string;
+	nilai: number;
+};
+
+type PredikatDetail = {
+	key: PredikatKey;
+	label: string;
+	narrative: string;
+};
+
+type CapaianDescriptor = TujuanScoreEntry & {
+	predikat: PredikatDetail;
+};
+
+function determinePredikat(nilai: number, kkm: number | null | undefined): PredikatDetail {
+	const numericKkm = typeof kkm === 'number' && Number.isFinite(kkm) ? kkm : 0;
+	const baseKkm = Math.max(0, numericKkm);
+	const thresholdCukup = baseKkm * 1.15;
+	const thresholdBaik = baseKkm * 1.3;
+	if (nilai < baseKkm) {
+		return {
+			key: 'perlu-bimbingan',
+			label: 'Perlu Bimbingan',
+			narrative: 'masih perlu bimbingan'
+		};
+	}
+	if (nilai < thresholdCukup) {
+		return {
+			key: 'cukup',
+			label: 'Cukup',
+			narrative: 'menunjukkan penguasaan yang cukup'
+		};
+	}
+	if (nilai < thresholdBaik) {
+		return {
+			key: 'baik',
+			label: 'Baik',
+			narrative: 'menunjukkan penguasaan yang baik'
+		};
+	}
+	return {
+		key: 'sangat-baik',
+		label: 'Sangat Baik',
+		narrative: 'menunjukkan penguasaan yang sangat baik'
+	};
+}
+
+function compareDescriptorAscending(a: CapaianDescriptor, b: CapaianDescriptor): number {
+	const predikatDiff = PREDIKAT_ORDER[a.predikat.key] - PREDIKAT_ORDER[b.predikat.key];
+	if (predikatDiff !== 0) return predikatDiff;
+	if (a.nilai !== b.nilai) return a.nilai - b.nilai;
+	if (a.tujuanPembelajaranId !== b.tujuanPembelajaranId) {
+		return a.tujuanPembelajaranId - b.tujuanPembelajaranId;
+	}
+	return a.deskripsi.localeCompare(b.deskripsi, LOCALE_ID);
+}
+
+function buildDeskripsiLine(muridNama: string, descriptor: CapaianDescriptor): string {
+	const nama = muridNama.trim().length > 0 ? muridNama.trim() : muridNama;
+	const narrative = descriptor.predikat.narrative;
+	return `Ananda ${nama} ${narrative} dalam ${descriptor.deskripsi}`;
+}
+
+function buildCapaianKompetensi(
+	muridNama: string,
+	tujuanScores: TujuanScoreEntry[],
+	kkm: number | null | undefined
+): string {
+	if (!tujuanScores.length) {
+		return 'Belum ada penilaian sumatif.';
+	}
+
+	const descriptors = tujuanScores.map<CapaianDescriptor>((entry) => ({
+		...entry,
+		predikat: determinePredikat(entry.nilai, kkm)
+	}));
+
+	const sorted = descriptors.slice().sort(compareDescriptorAscending);
+	const lowest = sorted[0];
+	const highest = sorted.at(-1) ?? lowest;
+	const highestLine = buildDeskripsiLine(muridNama, highest);
+	const lowestLine = buildDeskripsiLine(muridNama, lowest);
+
+	if (sorted.length === 1) {
+		return `${highestLine}\n${lowestLine}`;
+	}
+
+	return `${highestLine}\n${lowestLine}`;
+}
 
 function requireInteger(paramName: string, value: string | null): number {
 	if (!value) {
@@ -115,7 +217,8 @@ export const load = (async ({ locals, url, depends }) => {
 		throw error(400, 'Murid tidak terdaftar pada kelas yang diminta.');
 	}
 
-	const [asesmenSumatif, asesmenEkstrakurikuler, asesmenKokurikuler] = await Promise.all([
+	const [asesmenSumatif, asesmenEkstrakurikuler, asesmenKokurikuler, asesmenSumatifTujuan] =
+		await Promise.all([
 		db.query.tableAsesmenSumatif.findMany({
 			where: eq(tableAsesmenSumatif.muridId, murid.id),
 			with: {
@@ -136,18 +239,52 @@ export const load = (async ({ locals, url, depends }) => {
 		}),
 		db.query.tableAsesmenKokurikuler.findMany({
 			where: eq(tableAsesmenKokurikuler.muridId, murid.id)
+		}),
+		db.query.tableAsesmenSumatifTujuan.findMany({
+			where: eq(tableAsesmenSumatifTujuan.muridId, murid.id),
+			with: {
+				tujuanPembelajaran: {
+					columns: {
+						deskripsi: true
+					}
+				}
+			},
+			orderBy: [
+				asc(tableAsesmenSumatifTujuan.mataPelajaranId),
+				asc(tableAsesmenSumatifTujuan.tujuanPembelajaranId)
+			]
 		})
 	]);
+
+	const tujuanScoresByMapel = new Map<number, TujuanScoreEntry[]>();
+
+	for (const item of asesmenSumatifTujuan) {
+		const deskripsi = item.tujuanPembelajaran?.deskripsi?.trim();
+		if (!deskripsi) continue;
+		const nilai = typeof item.nilai === 'number' && Number.isFinite(item.nilai) ? item.nilai : null;
+		if (nilai == null) continue;
+		const list = tujuanScoresByMapel.get(item.mataPelajaranId) ?? [];
+		list.push({
+			tujuanPembelajaranId: item.tujuanPembelajaranId,
+			deskripsi,
+			nilai
+		});
+		tujuanScoresByMapel.set(item.mataPelajaranId, list);
+	}
+
+	const muridNamaTrimmed = murid.nama.trim();
+	const muridNama = muridNamaTrimmed.length > 0 ? muridNamaTrimmed : murid.nama;
 
 	const nilaiIntrakurikuler = asesmenSumatif
 		.filter((item) => item.mataPelajaran)
 		.map((item) => {
 			const mapel = item.mataPelajaran!;
+			const tujuanScores = tujuanScoresByMapel.get(mapel.id) ?? [];
 			return {
 				kelompok: jenisMapel[mapel.jenis] ?? null,
 				mataPelajaran: mapel.nama,
 				nilaiAkhir: formatNilai(item.nilaiAkhir ?? null),
-				deskripsi: '—'
+				deskripsi: buildCapaianKompetensi(muridNama, tujuanScores, mapel.kkm)
 			};
 		})
 		.sort((a, b) => a.mataPelajaran.localeCompare(b.mataPelajaran, LOCALE_ID));
