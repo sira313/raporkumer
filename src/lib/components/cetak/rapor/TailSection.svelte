@@ -138,7 +138,7 @@
 			</thead>
 			<tbody>
 				<tr>
-					<td class="border-base-300 min-h-[80px] border px-3 py-3 whitespace-pre-line">
+					<td class="border-base-300 min-h-[80px] border px-3 py-3 align-top whitespace-pre-line">
 						{formatValue(rapor?.catatanWali)}
 					</td>
 				</tr>
