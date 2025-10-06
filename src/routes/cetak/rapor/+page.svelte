@@ -258,7 +258,7 @@
 					<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
 				</header>
 
-				<section class="mt-6">
+				<section>
 					<table class="w-full border-collapse">
 						<tbody>
 							<tr>
@@ -544,7 +544,7 @@
 				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
 			>
 				<div class="flex min-h-0 flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
-					<section class="mt-6">
+					<section>
 						<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
 							{#if hasIntrakRows(pageRows)}
 								<thead class="bg-base-300">
@@ -1057,7 +1057,6 @@
 					bind:this={continuationPrototypeContent}
 				>
 					<section
-						class="mt-6"
 						bind:this={continuationPrototypeTableSection}
 						use:triggerSplitOnMount
 					>
