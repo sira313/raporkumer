@@ -47,6 +47,12 @@
 	const resolvedSectionClass = $derived.by(() => [sectionClass].filter(Boolean).join(' '));
 
 	const shouldRenderHeader = $derived.by(() => hasIntrakRows(rows));
+
+	function descriptionParagraphs(value: string | null | undefined) {
+		const formatted = formatValue(value);
+		if (formatted === '—') return [formatted];
+		return formatted.split(/\r?\n+/);
+	}
 </script>
 
 <section class={resolvedSectionClass} bind:this={sectionRef} use:applySplit>
@@ -77,8 +83,12 @@
 						<td class="border-base-300 border px-3 py-2 text-center align-top font-semibold">
 							{formatValue(row.entry.nilaiAkhir)}
 						</td>
-						<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line">
-							{formatValue(row.entry.deskripsi)}
+						<td class="border-base-300 border px-3 py-2 align-top">
+							<div class="flex flex-col gap-2">
+								{#each descriptionParagraphs(row.entry.deskripsi) as paragraph, idx (idx)}
+									<span class="whitespace-pre-line">{paragraph}</span>
+								{/each}
+							</div>
 						</td>
 					</tr>
 				{:else if row.kind === 'empty'}
