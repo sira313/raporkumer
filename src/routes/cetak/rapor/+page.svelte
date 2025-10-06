@@ -204,7 +204,7 @@
 		bind:contentRef={firstCardContent}
 		splitTrigger={triggerSplitOnMount}
 	>
-		<header class="text-center">
+		<header class="text-center pb-4">
 			<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
 			<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
 		</header>
