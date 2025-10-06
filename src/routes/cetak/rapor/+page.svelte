@@ -295,7 +295,7 @@
 				</section>
 
 				<section class="mt-8" bind:this={firstTableSection} use:triggerSplitOnMount>
-					<table class="border-base-300 w-full border">
+					<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
 						<thead class="bg-base-300">
 							<tr>
 								<th class="border-base-300 border px-3 py-2 text-left">No.</th>
@@ -333,7 +333,7 @@
 										</td>
 									</tr>
 								{:else if row.tailKey === 'kokurikuler'}
-									<tr use:tableRow={row.order}>
+									<tr use:tableRow={row.order} data-tail-row="true">
 										<td class="border-none p-0 align-top" colspan="4">
 											<div class="flex flex-col gap-6 py-6">
 												<table class="border-base-300 w-full border">
@@ -355,7 +355,7 @@
 										</td>
 									</tr>
 								{:else if row.tailKey === 'ekstrakurikuler'}
-									<tr use:tableRow={row.order}>
+									<tr use:tableRow={row.order} data-tail-row="true">
 										<td class="border-none p-0 align-top" colspan="4">
 											<div class="flex flex-col gap-6 py-6">
 												<table class="border-base-300 w-full border">
@@ -404,7 +404,7 @@
 										</td>
 									</tr>
 								{:else if row.tailKey === 'ketidakhadiran'}
-									<tr use:tableRow={row.order} class="align-top">
+									<tr use:tableRow={row.order} class="align-top" data-tail-row="true">
 										<td class="border-none p-0 align-top" colspan="2">
 											<div class="flex flex-col gap-6 py-6">
 												<table class="border-base-300 w-full border">
@@ -462,7 +462,7 @@
 										</td>
 									</tr>
 								{:else if row.tailKey === 'tanggapan'}
-									<tr use:tableRow={row.order}>
+									<tr use:tableRow={row.order} data-tail-row="true">
 										<td class="border-none p-0 align-top" colspan="4">
 											<div class="flex flex-col gap-6 py-6">
 												<table class="border-base-300 w-full border">
@@ -487,7 +487,7 @@
 										</td>
 									</tr>
 								{:else}
-									<tr use:tableRow={row.order}>
+									<tr use:tableRow={row.order} data-tail-row="true">
 										<td class="border-none p-0 align-top" colspan="4">
 											<div class="flex flex-col gap-6 py-6">
 												<div class="grid gap-6 md:grid-cols-2 print:grid-cols-2">
@@ -539,7 +539,7 @@
 			>
 				<div class="flex min-h-0 flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
 					<section class="mt-6">
-						<table class="border-base-300 w-full border">
+						<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
 							<thead class="bg-base-300">
 								<tr>
 									<th class="border-base-300 border px-3 py-2 text-left">No.</th>
@@ -577,7 +577,7 @@
 											</td>
 										</tr>
 									{:else if row.tailKey === 'kokurikuler'}
-										<tr use:tableRow={row.order}>
+										<tr use:tableRow={row.order} data-tail-row="true">
 											<td class="border-none p-0 align-top" colspan="4">
 												<div class="flex flex-col gap-6 py-6">
 													<table class="border-base-300 w-full border">
@@ -600,7 +600,7 @@
 											</td>
 										</tr>
 									{:else if row.tailKey === 'ekstrakurikuler'}
-										<tr use:tableRow={row.order}>
+										<tr use:tableRow={row.order} data-tail-row="true">
 											<td class="border-none p-0 align-top" colspan="4">
 												<div class="flex flex-col gap-6 py-6">
 													<table class="border-base-300 w-full border">
@@ -651,7 +651,7 @@
 											</td>
 										</tr>
 									{:else if row.tailKey === 'ketidakhadiran'}
-										<tr use:tableRow={row.order} class="align-top">
+										<tr use:tableRow={row.order} class="align-top" data-tail-row="true">
 											<td class="border-none p-0 align-top" colspan="2">
 												<div class="flex flex-col gap-6 py-6">
 													<table class="border-base-300 w-full border">
@@ -709,7 +709,7 @@
 											</td>
 										</tr>
 									{:else if row.tailKey === 'tanggapan'}
-										<tr use:tableRow={row.order}>
+										<tr use:tableRow={row.order} data-tail-row="true">
 											<td class="border-none p-0 align-top" colspan="4">
 												<div class="flex flex-col gap-6 py-6">
 													<table class="border-base-300 w-full border">
@@ -734,7 +734,7 @@
 											</td>
 										</tr>
 									{:else}
-										<tr use:tableRow={row.order}>
+										<tr use:tableRow={row.order} data-tail-row="true">
 											<td class="border-none p-0 align-top" colspan="4">
 												<div class="flex flex-col gap-6 py-6">
 													<div class="grid gap-6 md:grid-cols-2 print:grid-cols-2">
@@ -791,7 +791,7 @@
 			>
 				<div class="flex min-h-0 flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
 					<section use:triggerSplitOnMount>
-						<table class="border-base-300 w-full border">
+						<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
 							<thead class="bg-base-300">
 								<tr>
 									<th class="border-base-300 border px-3 py-2 text-left">No.</th>
@@ -829,7 +829,7 @@
 											</td>
 										</tr>
 									{:else if row.tailKey === 'kokurikuler'}
-										<tr use:tableRow={row.order}>
+										<tr use:tableRow={row.order} data-tail-row="true">
 											<td class="border-none p-0 align-top" colspan="4">
 												<div class="flex flex-col gap-6 py-6">
 													<table class="border-base-300 w-full border">
@@ -852,7 +852,7 @@
 											</td>
 										</tr>
 									{:else if row.tailKey === 'ekstrakurikuler'}
-										<tr use:tableRow={row.order}>
+										<tr use:tableRow={row.order} data-tail-row="true">
 											<td class="border-none p-0 align-top" colspan="4">
 												<div class="flex flex-col gap-6 py-6">
 													<table class="border-base-300 w-full border">
@@ -903,7 +903,7 @@
 											</td>
 										</tr>
 									{:else if row.tailKey === 'ketidakhadiran'}
-										<tr use:tableRow={row.order} class="align-top">
+										<tr use:tableRow={row.order} class="align-top" data-tail-row="true">
 											<td class="border-none p-0 align-top" colspan="2">
 												<div class="flex flex-col gap-6 py-6">
 													<table class="border-base-300 w-full border">
@@ -961,7 +961,7 @@
 											</td>
 										</tr>
 									{:else if row.tailKey === 'tanggapan'}
-										<tr use:tableRow={row.order}>
+										<tr use:tableRow={row.order} data-tail-row="true">
 											<td class="border-none p-0 align-top" colspan="4">
 												<div class="flex flex-col gap-6 py-6">
 													<table class="border-base-300 w-full border">
@@ -986,7 +986,7 @@
 											</td>
 										</tr>
 									{:else}
-										<tr use:tableRow={row.order}>
+										<tr use:tableRow={row.order} data-tail-row="true">
 											<td class="border-none p-0 align-top" colspan="4">
 												<div class="flex flex-col gap-6 py-6">
 													<div class="grid gap-6 md:grid-cols-2 print:grid-cols-2">
@@ -1051,7 +1051,7 @@
 						bind:this={continuationPrototypeTableSection}
 						use:triggerSplitOnMount
 					>
-						<table class="border-base-300 w-full border">
+						<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
 							<thead class="bg-base-300">
 								<tr>
 									<th class="border-base-300 border px-3 py-2 text-left">No.</th>
@@ -1067,3 +1067,21 @@
 		</div>
 	</div>
 </div>
+
+
+<style>
+	:global(table[data-intrak-table="true"]) {
+		border-collapse: collapse;
+	}
+
+	:global(table[data-intrak-table="true"] tr[data-tail-row="true"]) {
+		border-width: 0 !important;
+		border-color: transparent !important;
+	}
+
+	:global(table[data-intrak-table="true"] tr[data-tail-row="true"] > th),
+	:global(table[data-intrak-table="true"] tr[data-tail-row="true"] > td) {
+		border-width: 0 !important;
+		border-color: transparent !important;
+	}
+</style>
