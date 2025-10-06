@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import PrintTip from '$lib/components/alerts/print-tip.svelte';
-	import TailSection from '$lib/components/cetak/rapor/TailSection.svelte';
 	import { tailBlockOrder } from '$lib/components/cetak/rapor/tail-blocks';
+	import type { TailBlockKey } from '$lib/components/cetak/rapor/tail-blocks';
 	import { toast } from '$lib/components/toast.svelte';
 	import { printElement } from '$lib/utils';
 	import { paginateRowsByHeight } from '$lib/utils/table-pagination';
-
-	const tailContentKeys = tailBlockOrder.filter((key) => key !== 'footer');
 
 	let { data } = $props();
 	let printable: HTMLDivElement | null = null;
@@ -24,6 +22,23 @@
 
 	type IntrakurikulerEntry = NonNullable<RaporPrintData['nilaiIntrakurikuler']>[number];
 	type IntrakRow = { index: number; nomor: number; entry: IntrakurikulerEntry };
+	type IntrakTableRow = {
+		kind: 'intrak';
+		order: number;
+		index: number;
+		nomor: number;
+		entry: IntrakurikulerEntry;
+	};
+	type EmptyTableRow = {
+		kind: 'empty';
+		order: number;
+	};
+	type TailTableRow = {
+		kind: 'tail';
+		order: number;
+		tailKey: TailBlockKey;
+	};
+	type TableRow = IntrakTableRow | EmptyTableRow | TailTableRow;
 
 	let firstCardContent = $state<HTMLDivElement | null>(null);
 	let firstTableSection = $state<HTMLElement | null>(null);
@@ -35,47 +50,73 @@
 		return items.map<IntrakRow>((entry, index) => ({ index, nomor: index + 1, entry }));
 	});
 
-	const intrakRowElements = new Map<number, HTMLTableRowElement>();
-	function intrakRow(node: HTMLTableRowElement, index: number) {
-		intrakRowElements.set(index, node);
-		let currentIndex = index;
+	const tableRows = $derived.by<TableRow[]>(() => {
+		const result: TableRow[] = [];
+		let order = 0;
+
+		if (intrakurikulerRows.length === 0) {
+			result.push({ kind: 'empty', order: order++ });
+		} else {
+			for (const row of intrakurikulerRows) {
+				result.push({
+					kind: 'intrak',
+					order: order++,
+					index: row.index,
+					nomor: row.nomor,
+					entry: row.entry
+				});
+			}
+		}
+
+		for (const tailKey of tailBlockOrder) {
+			result.push({
+				kind: 'tail',
+				order: order++,
+				tailKey
+			});
+		}
+
+		return result;
+	});
+
+	const tableRowElements = new Map<number, HTMLTableRowElement>();
+	function tableRow(node: HTMLTableRowElement, order: number) {
+		tableRowElements.set(order, node);
+		let currentOrder = order;
 		return {
-			update(newIndex: number) {
-				if (newIndex === currentIndex) return;
-				intrakRowElements.delete(currentIndex);
-				currentIndex = newIndex;
-				intrakRowElements.set(currentIndex, node);
+			update(newOrder: number) {
+				if (newOrder === currentOrder) return;
+				tableRowElements.delete(currentOrder);
+				currentOrder = newOrder;
+				tableRowElements.set(currentOrder, node);
 			},
 			destroy() {
-				intrakRowElements.delete(currentIndex);
+				tableRowElements.delete(currentOrder);
 			}
 		};
 	}
 
-	type IntrakPage = {
-		rows: IntrakRow[];
+	type TablePage = {
+		rows: TableRow[];
 	};
 
-	let intrakPages = $state<IntrakPage[]>([]);
-	const intrakurikulerCount = $derived.by(() => intrakurikulerRows.length);
-	const intrakFirstPageRows = $derived.by(() => {
-		if (intrakPages.length > 0) return intrakPages[0]?.rows ?? [];
-		return intrakurikulerRows;
+	let tablePages = $state<TablePage[]>([]);
+	const firstPageRows = $derived.by(() => {
+		if (tablePages.length > 0) return tablePages[0]?.rows ?? [];
+		return tableRows;
 	});
-	const intrakIntermediatePageRows = $derived.by(() => {
-		if (intrakPages.length <= 1) return [] as IntrakPage['rows'][];
+	const intermediatePageRows = $derived.by(() => {
+		if (tablePages.length <= 1) return [] as TablePage['rows'][];
 		const start = 1;
-		const end = Math.max(1, intrakPages.length - 1);
-		return intrakPages.slice(start, end).map((page) => page.rows);
+		const end = Math.max(1, tablePages.length - 1);
+		return tablePages.slice(start, end).map((page) => page.rows);
 	});
-	const intrakFinalPageRows = $derived.by(() => {
-		if (intrakPages.length > 1) {
-			return intrakPages.at(-1)?.rows ?? [];
+	const finalPageRows = $derived.by(() => {
+		if (tablePages.length > 1) {
+			return tablePages.at(-1)?.rows ?? [];
 		}
-		return [] as IntrakPage['rows'];
+		return [] as TablePage['rows'];
 	});
-
-	const showTailOnFirstPage = $derived.by(() => intrakPages.length <= 1);
 
 	let splitQueued = false;
 
@@ -86,7 +127,7 @@
 		return Math.max(0, contentRect.bottom - tableRect.top - headerHeight);
 	}
 
-	async function splitIntrakRows() {
+	async function splitTableRows() {
 		splitQueued = false;
 		await tick();
 		if (
@@ -98,7 +139,7 @@
 			return;
 		}
 
-		const rows: IntrakRow[] = intrakurikulerRows;
+		const rows: TableRow[] = tableRows;
 		const firstCapacity = computeTableCapacity(firstCardContent, firstTableSection);
 		const continuationCapacity = computeTableCapacity(
 			continuationPrototypeContent,
@@ -106,7 +147,7 @@
 		);
 
 		const rowHeights = rows.map(
-			(row) => intrakRowElements.get(row.index)?.getBoundingClientRect().height ?? 0
+			(row) => tableRowElements.get(row.order)?.getBoundingClientRect().height ?? 0
 		);
 		if (rowHeights.some((height) => height === 0)) {
 			queueSplit();
@@ -123,13 +164,13 @@
 			tolerance
 		});
 
-		intrakPages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
+		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
 	}
 
 	function queueSplit() {
 		if (splitQueued) return;
 		splitQueued = true;
-		queueMicrotask(splitIntrakRows);
+		queueMicrotask(splitTableRows);
 	}
 
 	function triggerSplitOnMount(node: Element) {
@@ -143,9 +184,8 @@
 	}
 
 	$effect(() => {
-		if (intrakurikulerRows.length >= 0) {
-			queueSplit();
-		}
+		void tableRows;
+		queueSplit();
 	});
 
 	onMount(() => {
@@ -265,15 +305,9 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#if intrakurikulerCount === 0}
-								<tr>
-									<td class="border-base-300 border px-3 py-2 text-center" colspan="4"
-										>Belum ada data intrakurikuler.</td
-									>
-								</tr>
-							{:else}
-								{#each intrakFirstPageRows as row (row.index)}
-									<tr use:intrakRow={row.index}>
+							{#each firstPageRows as row (row.kind === 'intrak' ? `intrak-${row.index}` : row.kind === 'tail' ? `tail-${row.tailKey}` : 'empty')}
+								{#if row.kind === 'intrak'}
+									<tr use:tableRow={row.order}>
 										<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
 										<td class="border-base-300 border px-3 py-2 align-top">
 											<span class="font-semibold">{row.entry.mataPelajaran}</span>
@@ -283,49 +317,219 @@
 												</div>
 											{/if}
 										</td>
-										<td class="border-base-300 border px-3 py-2 text-center align-top font-semibold"
-											>{formatValue(row.entry.nilaiAkhir)}</td
+										<td
+											class="border-base-300 border px-3 py-2 text-center align-top font-semibold"
 										>
-										<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
-											>{formatValue(row.entry.deskripsi)}</td
-										>
+											{formatValue(row.entry.nilaiAkhir)}
+										</td>
+										<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line">
+											{formatValue(row.entry.deskripsi)}
+										</td>
 									</tr>
-								{/each}
-							{/if}
+								{:else if row.kind === 'empty'}
+									<tr use:tableRow={row.order}>
+										<td class="border-base-300 border px-3 py-2 text-center" colspan="4">
+											Belum ada data intrakurikuler.
+										</td>
+									</tr>
+								{:else if row.tailKey === 'kokurikuler'}
+									<tr use:tableRow={row.order}>
+										<td class="border-none p-0 align-top" colspan="4">
+											<div class="flex flex-col gap-6 py-6">
+												<table class="border-base-300 w-full border">
+													<thead class="bg-base-300">
+														<tr>
+															<th class="border-base-300 border px-3 py-2 text-left">Kokurikuler</th
+															>
+														</tr>
+													</thead>
+													<tbody>
+														<tr>
+															<td class="border-base-300 border px-3 py-3 whitespace-pre-line">
+																{formatValue(rapor?.kokurikuler)}
+															</td>
+														</tr>
+													</tbody>
+												</table>
+											</div>
+										</td>
+									</tr>
+								{:else if row.tailKey === 'ekstrakurikuler'}
+									<tr use:tableRow={row.order}>
+										<td class="border-none p-0 align-top" colspan="4">
+											<div class="flex flex-col gap-6 py-6">
+												<table class="border-base-300 w-full border">
+													<thead class="bg-base-300">
+														<tr>
+															<th
+																class="border-base-300 border px-3 py-2 text-left"
+																style="width: 40px;">No.</th
+															>
+															<th class="border-base-300 border px-3 py-2 text-left"
+																>Ekstrakurikuler</th
+															>
+															<th class="border-base-300 border px-3 py-2 text-left">Keterangan</th>
+														</tr>
+													</thead>
+													<tbody>
+														{#if (rapor?.ekstrakurikuler?.length ?? 0) === 0}
+															<tr>
+																<td
+																	class="border-base-300 border px-3 py-2 text-center"
+																	colspan="3"
+																>
+																	Belum ada data ekstrakurikuler.
+																</td>
+															</tr>
+														{:else}
+															{#each rapor?.ekstrakurikuler ?? [] as ekskul, index (index)}
+																<tr>
+																	<td class="border-base-300 border px-3 py-2 align-top"
+																		>{index + 1}</td
+																	>
+																	<td class="border-base-300 border px-3 py-2 align-top">
+																		{formatValue(ekskul.nama)}
+																	</td>
+																	<td
+																		class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
+																	>
+																		{formatValue(ekskul.deskripsi)}
+																	</td>
+																</tr>
+															{/each}
+														{/if}
+													</tbody>
+												</table>
+											</div>
+										</td>
+									</tr>
+								{:else if row.tailKey === 'ketidakhadiran'}
+									<tr use:tableRow={row.order} class="align-top">
+										<td class="border-none p-0 align-top" colspan="2">
+											<div class="flex flex-col gap-6 py-6">
+												<table class="border-base-300 w-full border">
+													<thead class="bg-base-300">
+														<tr>
+															<th class="border-base-300 border px-3 py-2 text-left" colspan="2">
+																Ketidakhadiran
+															</th>
+														</tr>
+													</thead>
+													<tbody>
+														<tr>
+															<td class="border-base-300 border px-3 py-2">Sakit</td>
+															<td class="border-base-300 border px-3 py-2 text-center">
+																{formatHari(rapor?.ketidakhadiran?.sakit)}
+															</td>
+														</tr>
+														<tr>
+															<td class="border-base-300 border px-3 py-2">Izin</td>
+															<td class="border-base-300 border px-3 py-2 text-center">
+																{formatHari(rapor?.ketidakhadiran?.izin)}
+															</td>
+														</tr>
+														<tr>
+															<td class="border-base-300 border px-3 py-2">Tanpa Keterangan</td>
+															<td class="border-base-300 border px-3 py-2 text-center">
+																{formatHari(rapor?.ketidakhadiran?.tanpaKeterangan)}
+															</td>
+														</tr>
+													</tbody>
+												</table>
+											</div>
+										</td>
+										<td class="border-none p-0 align-top" colspan="2">
+											<div class="flex flex-col gap-6 py-6">
+												<table class="border-base-300 w-full border">
+													<thead class="bg-base-300">
+														<tr>
+															<th class="border-base-300 border px-3 py-2 text-left"
+																>Catatan Wali Kelas</th
+															>
+														</tr>
+													</thead>
+													<tbody>
+														<tr>
+															<td
+																class="border-base-300 min-h-[80px] border px-3 py-3 whitespace-pre-line"
+															>
+																{formatValue(rapor?.catatanWali)}
+															</td>
+														</tr>
+													</tbody>
+												</table>
+											</div>
+										</td>
+									</tr>
+								{:else if row.tailKey === 'tanggapan'}
+									<tr use:tableRow={row.order}>
+										<td class="border-none p-0 align-top" colspan="4">
+											<div class="flex flex-col gap-6 py-6">
+												<table class="border-base-300 w-full border">
+													<thead class="bg-base-300">
+														<tr>
+															<th class="border-base-300 border px-3 py-2 text-left">
+																Tanggapan Orang Tua/Wali Murid
+															</th>
+														</tr>
+													</thead>
+													<tbody>
+														<tr>
+															<td class="border-base-300 border px-3 py-4 align-top">
+																<div class="min-h-[70px] whitespace-pre-line">
+																	{rapor?.tanggapanOrangTua?.trim() || ''}
+																</div>
+															</td>
+														</tr>
+													</tbody>
+												</table>
+											</div>
+										</td>
+									</tr>
+								{:else}
+									<tr use:tableRow={row.order}>
+										<td class="border-none p-0 align-top" colspan="4">
+											<div class="flex flex-col gap-6 py-6">
+												<div class="grid gap-6 md:grid-cols-2 print:grid-cols-2">
+													<div class="flex flex-col items-center text-center">
+														<p>Orang Tua/Wali Murid</p>
+														<div
+															class="border-base-300 mt-16 h-[1px] w-full max-w-[220px] border-b border-dashed"
+															aria-hidden="true"
+														></div>
+														<div class="text-base-content/70 mt-1 text-sm">Nama Orang Tua/Wali</div>
+													</div>
+													<div class="relative flex flex-col items-center text-center">
+														<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+															{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
+														</p>
+														<p>Wali Kelas</p>
+														<div class="mt-16 font-semibold tracking-wide uppercase">
+															{formatUpper(waliKelas?.nama)}
+														</div>
+														<div class="mt-1">NIP. {formatValue(waliKelas?.nip)}</div>
+													</div>
+												</div>
+												<div class="text-center">
+													<p>Kepala Sekolah</p>
+													<div class="mt-16 font-semibold tracking-wide uppercase">
+														{formatUpper(kepalaSekolah?.nama)}
+													</div>
+													<div class="mt-1">NIP. {formatValue(kepalaSekolah?.nip)}</div>
+												</div>
+											</div>
+										</td>
+									</tr>
+								{/if}
+							{/each}
 						</tbody>
 					</table>
 				</section>
-
-				{#if showTailOnFirstPage}
-					{#each tailContentKeys as tailKey (tailKey)}
-						<TailSection
-							{tailKey}
-							{rapor}
-							{formatValue}
-							{formatUpper}
-							{formatHari}
-							{waliKelas}
-							{kepalaSekolah}
-							{ttd}
-						/>
-					{/each}
-
-					<TailSection
-						tailKey="footer"
-						{rapor}
-						{formatValue}
-						{formatUpper}
-						{formatHari}
-						{waliKelas}
-						{kepalaSekolah}
-						{ttd}
-					/>
-				{/if}
 			</div>
 		</div>
 	</div>
 
-	{#each intrakIntermediatePageRows as pageRows, pageIndex (pageIndex)}
+	{#each intermediatePageRows as pageRows, pageIndex (pageIndex)}
 		<div
 			class="card bg-base-100 rounded-lg border border-none shadow-md print:break-after-page print:border-none print:bg-transparent print:shadow-none"
 			style="break-inside: avoid-page;"
@@ -352,24 +556,229 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each pageRows as row (row.index)}
-									<tr use:intrakRow={row.index}>
-										<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
-										<td class="border-base-300 border px-3 py-2 align-top">
-											<span class="font-semibold">{row.entry.mataPelajaran}</span>
-											{#if row.entry.kelompok}
-												<div class="text-base-content/70 text-xs">
-													{formatValue(row.entry.kelompok)}
+								{#each pageRows as row (row.kind === 'intrak' ? `intrak-${row.index}` : row.kind === 'tail' ? `tail-${row.tailKey}` : 'empty')}
+									{#if row.kind === 'intrak'}
+										<tr use:tableRow={row.order}>
+											<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
+											<td class="border-base-300 border px-3 py-2 align-top">
+												<span class="font-semibold">{row.entry.mataPelajaran}</span>
+												{#if row.entry.kelompok}
+													<div class="text-base-content/70 text-xs">
+														{formatValue(row.entry.kelompok)}
+													</div>
+												{/if}
+											</td>
+											<td
+												class="border-base-300 border px-3 py-2 text-center align-top font-semibold"
+											>
+												{formatValue(row.entry.nilaiAkhir)}
+											</td>
+											<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line">
+												{formatValue(row.entry.deskripsi)}
+											</td>
+										</tr>
+									{:else if row.kind === 'empty'}
+										<tr use:tableRow={row.order}>
+											<td class="border-base-300 border px-3 py-2 text-center" colspan="4">
+												Belum ada data intrakurikuler.
+											</td>
+										</tr>
+									{:else if row.tailKey === 'kokurikuler'}
+										<tr use:tableRow={row.order}>
+											<td class="border-none p-0 align-top" colspan="4">
+												<div class="flex flex-col gap-6 py-6">
+													<table class="border-base-300 w-full border">
+														<thead class="bg-base-300">
+															<tr>
+																<th class="border-base-300 border px-3 py-2 text-left"
+																	>Kokurikuler</th
+																>
+															</tr>
+														</thead>
+														<tbody>
+															<tr>
+																<td class="border-base-300 border px-3 py-3 whitespace-pre-line">
+																	{formatValue(rapor?.kokurikuler)}
+																</td>
+															</tr>
+														</tbody>
+													</table>
 												</div>
-											{/if}
-										</td>
-										<td class="border-base-300 border px-3 py-2 text-center align-top font-semibold"
-											>{formatValue(row.entry.nilaiAkhir)}</td
-										>
-										<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
-											>{formatValue(row.entry.deskripsi)}</td
-										>
-									</tr>
+											</td>
+										</tr>
+									{:else if row.tailKey === 'ekstrakurikuler'}
+										<tr use:tableRow={row.order}>
+											<td class="border-none p-0 align-top" colspan="4">
+												<div class="flex flex-col gap-6 py-6">
+													<table class="border-base-300 w-full border">
+														<thead class="bg-base-300">
+															<tr>
+																<th
+																	class="border-base-300 border px-3 py-2 text-left"
+																	style="width: 40px;">No.</th
+																>
+																<th class="border-base-300 border px-3 py-2 text-left"
+																	>Ekstrakurikuler</th
+																>
+																<th class="border-base-300 border px-3 py-2 text-left"
+																	>Keterangan</th
+																>
+															</tr>
+														</thead>
+														<tbody>
+															{#if (rapor?.ekstrakurikuler?.length ?? 0) === 0}
+																<tr>
+																	<td
+																		class="border-base-300 border px-3 py-2 text-center"
+																		colspan="3"
+																	>
+																		Belum ada data ekstrakurikuler.
+																	</td>
+																</tr>
+															{:else}
+																{#each rapor?.ekstrakurikuler ?? [] as ekskul, index (index)}
+																	<tr>
+																		<td class="border-base-300 border px-3 py-2 align-top"
+																			>{index + 1}</td
+																		>
+																		<td class="border-base-300 border px-3 py-2 align-top">
+																			{formatValue(ekskul.nama)}
+																		</td>
+																		<td
+																			class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
+																		>
+																			{formatValue(ekskul.deskripsi)}
+																		</td>
+																	</tr>
+																{/each}
+															{/if}
+														</tbody>
+													</table>
+												</div>
+											</td>
+										</tr>
+									{:else if row.tailKey === 'ketidakhadiran'}
+										<tr use:tableRow={row.order} class="align-top">
+											<td class="border-none p-0 align-top" colspan="2">
+												<div class="flex flex-col gap-6 py-6">
+													<table class="border-base-300 w-full border">
+														<thead class="bg-base-300">
+															<tr>
+																<th class="border-base-300 border px-3 py-2 text-left" colspan="2">
+																	Ketidakhadiran
+																</th>
+															</tr>
+														</thead>
+														<tbody>
+															<tr>
+																<td class="border-base-300 border px-3 py-2">Sakit</td>
+																<td class="border-base-300 border px-3 py-2 text-center">
+																	{formatHari(rapor?.ketidakhadiran?.sakit)}
+																</td>
+															</tr>
+															<tr>
+																<td class="border-base-300 border px-3 py-2">Izin</td>
+																<td class="border-base-300 border px-3 py-2 text-center">
+																	{formatHari(rapor?.ketidakhadiran?.izin)}
+																</td>
+															</tr>
+															<tr>
+																<td class="border-base-300 border px-3 py-2">Tanpa Keterangan</td>
+																<td class="border-base-300 border px-3 py-2 text-center">
+																	{formatHari(rapor?.ketidakhadiran?.tanpaKeterangan)}
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</div>
+											</td>
+											<td class="border-none p-0 align-top" colspan="2">
+												<div class="flex flex-col gap-6 py-6">
+													<table class="border-base-300 w-full border">
+														<thead class="bg-base-300">
+															<tr>
+																<th class="border-base-300 border px-3 py-2 text-left"
+																	>Catatan Wali Kelas</th
+																>
+															</tr>
+														</thead>
+														<tbody>
+															<tr>
+																<td
+																	class="border-base-300 min-h-[80px] border px-3 py-3 whitespace-pre-line"
+																>
+																	{formatValue(rapor?.catatanWali)}
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</div>
+											</td>
+										</tr>
+									{:else if row.tailKey === 'tanggapan'}
+										<tr use:tableRow={row.order}>
+											<td class="border-none p-0 align-top" colspan="4">
+												<div class="flex flex-col gap-6 py-6">
+													<table class="border-base-300 w-full border">
+														<thead class="bg-base-300">
+															<tr>
+																<th class="border-base-300 border px-3 py-2 text-left">
+																	Tanggapan Orang Tua/Wali Murid
+																</th>
+															</tr>
+														</thead>
+														<tbody>
+															<tr>
+																<td class="border-base-300 border px-3 py-4 align-top">
+																	<div class="min-h-[70px] whitespace-pre-line">
+																		{rapor?.tanggapanOrangTua?.trim() || ''}
+																	</div>
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</div>
+											</td>
+										</tr>
+									{:else}
+										<tr use:tableRow={row.order}>
+											<td class="border-none p-0 align-top" colspan="4">
+												<div class="flex flex-col gap-6 py-6">
+													<div class="grid gap-6 md:grid-cols-2 print:grid-cols-2">
+														<div class="flex flex-col items-center text-center">
+															<p>Orang Tua/Wali Murid</p>
+															<div
+																class="border-base-300 mt-16 h-[1px] w-full max-w-[220px] border-b border-dashed"
+																aria-hidden="true"
+															></div>
+															<div class="text-base-content/70 mt-1 text-sm">
+																Nama Orang Tua/Wali
+															</div>
+														</div>
+														<div class="relative flex flex-col items-center text-center">
+															<p
+																class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap"
+															>
+																{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
+															</p>
+															<p>Wali Kelas</p>
+															<div class="mt-16 font-semibold tracking-wide uppercase">
+																{formatUpper(waliKelas?.nama)}
+															</div>
+															<div class="mt-1">NIP. {formatValue(waliKelas?.nip)}</div>
+														</div>
+													</div>
+													<div class="text-center">
+														<p>Kepala Sekolah</p>
+														<div class="mt-16 font-semibold tracking-wide uppercase">
+															{formatUpper(kepalaSekolah?.nama)}
+														</div>
+														<div class="mt-1">NIP. {formatValue(kepalaSekolah?.nip)}</div>
+													</div>
+												</div>
+											</td>
+										</tr>
+									{/if}
 								{/each}
 							</tbody>
 						</table>
@@ -379,7 +788,7 @@
 		</div>
 	{/each}
 
-	{#if intrakFinalPageRows.length > 0}
+	{#if finalPageRows.length > 0}
 		<div
 			class="card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none"
 			style="break-inside: avoid-page;"
@@ -399,54 +808,233 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each intrakFinalPageRows as row (row.index)}
-									<tr use:intrakRow={row.index}>
-										<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
-										<td class="border-base-300 border px-3 py-2 align-top">
-											<span class="font-semibold">{row.entry.mataPelajaran}</span>
-											{#if row.entry.kelompok}
-												<div class="text-base-content/70 text-xs">
-													{formatValue(row.entry.kelompok)}
+								{#each finalPageRows as row (row.kind === 'intrak' ? `intrak-${row.index}` : row.kind === 'tail' ? `tail-${row.tailKey}` : 'empty')}
+									{#if row.kind === 'intrak'}
+										<tr use:tableRow={row.order}>
+											<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
+											<td class="border-base-300 border px-3 py-2 align-top">
+												<span class="font-semibold">{row.entry.mataPelajaran}</span>
+												{#if row.entry.kelompok}
+													<div class="text-base-content/70 text-xs">
+														{formatValue(row.entry.kelompok)}
+													</div>
+												{/if}
+											</td>
+											<td
+												class="border-base-300 border px-3 py-2 text-center align-top font-semibold"
+											>
+												{formatValue(row.entry.nilaiAkhir)}
+											</td>
+											<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line">
+												{formatValue(row.entry.deskripsi)}
+											</td>
+										</tr>
+									{:else if row.kind === 'empty'}
+										<tr use:tableRow={row.order}>
+											<td class="border-base-300 border px-3 py-2 text-center" colspan="4">
+												Belum ada data intrakurikuler.
+											</td>
+										</tr>
+									{:else if row.tailKey === 'kokurikuler'}
+										<tr use:tableRow={row.order}>
+											<td class="border-none p-0 align-top" colspan="4">
+												<div class="flex flex-col gap-6 py-6">
+													<table class="border-base-300 w-full border">
+														<thead class="bg-base-300">
+															<tr>
+																<th class="border-base-300 border px-3 py-2 text-left"
+																	>Kokurikuler</th
+																>
+															</tr>
+														</thead>
+														<tbody>
+															<tr>
+																<td class="border-base-300 border px-3 py-3 whitespace-pre-line">
+																	{formatValue(rapor?.kokurikuler)}
+																</td>
+															</tr>
+														</tbody>
+													</table>
 												</div>
-											{/if}
-										</td>
-										<td class="border-base-300 border px-3 py-2 text-center align-top font-semibold"
-											>{formatValue(row.entry.nilaiAkhir)}</td
-										>
-										<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
-											>{formatValue(row.entry.deskripsi)}</td
-										>
-									</tr>
+											</td>
+										</tr>
+									{:else if row.tailKey === 'ekstrakurikuler'}
+										<tr use:tableRow={row.order}>
+											<td class="border-none p-0 align-top" colspan="4">
+												<div class="flex flex-col gap-6 py-6">
+													<table class="border-base-300 w-full border">
+														<thead class="bg-base-300">
+															<tr>
+																<th
+																	class="border-base-300 border px-3 py-2 text-left"
+																	style="width: 40px;">No.</th
+																>
+																<th class="border-base-300 border px-3 py-2 text-left"
+																	>Ekstrakurikuler</th
+																>
+																<th class="border-base-300 border px-3 py-2 text-left"
+																	>Keterangan</th
+																>
+															</tr>
+														</thead>
+														<tbody>
+															{#if (rapor?.ekstrakurikuler?.length ?? 0) === 0}
+																<tr>
+																	<td
+																		class="border-base-300 border px-3 py-2 text-center"
+																		colspan="3"
+																	>
+																		Belum ada data ekstrakurikuler.
+																	</td>
+																</tr>
+															{:else}
+																{#each rapor?.ekstrakurikuler ?? [] as ekskul, index (index)}
+																	<tr>
+																		<td class="border-base-300 border px-3 py-2 align-top"
+																			>{index + 1}</td
+																		>
+																		<td class="border-base-300 border px-3 py-2 align-top">
+																			{formatValue(ekskul.nama)}
+																		</td>
+																		<td
+																			class="border-base-300 border px-3 py-2 align-top whitespace-pre-line"
+																		>
+																			{formatValue(ekskul.deskripsi)}
+																		</td>
+																	</tr>
+																{/each}
+															{/if}
+														</tbody>
+													</table>
+												</div>
+											</td>
+										</tr>
+									{:else if row.tailKey === 'ketidakhadiran'}
+										<tr use:tableRow={row.order} class="align-top">
+											<td class="border-none p-0 align-top" colspan="2">
+												<div class="flex flex-col gap-6 py-6">
+													<table class="border-base-300 w-full border">
+														<thead class="bg-base-300">
+															<tr>
+																<th class="border-base-300 border px-3 py-2 text-left" colspan="2">
+																	Ketidakhadiran
+																</th>
+															</tr>
+														</thead>
+														<tbody>
+															<tr>
+																<td class="border-base-300 border px-3 py-2">Sakit</td>
+																<td class="border-base-300 border px-3 py-2 text-center">
+																	{formatHari(rapor?.ketidakhadiran?.sakit)}
+																</td>
+															</tr>
+															<tr>
+																<td class="border-base-300 border px-3 py-2">Izin</td>
+																<td class="border-base-300 border px-3 py-2 text-center">
+																	{formatHari(rapor?.ketidakhadiran?.izin)}
+																</td>
+															</tr>
+															<tr>
+																<td class="border-base-300 border px-3 py-2">Tanpa Keterangan</td>
+																<td class="border-base-300 border px-3 py-2 text-center">
+																	{formatHari(rapor?.ketidakhadiran?.tanpaKeterangan)}
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</div>
+											</td>
+											<td class="border-none p-0 align-top" colspan="2">
+												<div class="flex flex-col gap-6 py-6">
+													<table class="border-base-300 w-full border">
+														<thead class="bg-base-300">
+															<tr>
+																<th class="border-base-300 border px-3 py-2 text-left"
+																	>Catatan Wali Kelas</th
+																>
+															</tr>
+														</thead>
+														<tbody>
+															<tr>
+																<td
+																	class="border-base-300 min-h-[80px] border px-3 py-3 whitespace-pre-line"
+																>
+																	{formatValue(rapor?.catatanWali)}
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</div>
+											</td>
+										</tr>
+									{:else if row.tailKey === 'tanggapan'}
+										<tr use:tableRow={row.order}>
+											<td class="border-none p-0 align-top" colspan="4">
+												<div class="flex flex-col gap-6 py-6">
+													<table class="border-base-300 w-full border">
+														<thead class="bg-base-300">
+															<tr>
+																<th class="border-base-300 border px-3 py-2 text-left">
+																	Tanggapan Orang Tua/Wali Murid
+																</th>
+															</tr>
+														</thead>
+														<tbody>
+															<tr>
+																<td class="border-base-300 border px-3 py-4 align-top">
+																	<div class="min-h-[70px] whitespace-pre-line">
+																		{rapor?.tanggapanOrangTua?.trim() || ''}
+																	</div>
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</div>
+											</td>
+										</tr>
+									{:else}
+										<tr use:tableRow={row.order}>
+											<td class="border-none p-0 align-top" colspan="4">
+												<div class="flex flex-col gap-6 py-6">
+													<div class="grid gap-6 md:grid-cols-2 print:grid-cols-2">
+														<div class="flex flex-col items-center text-center">
+															<p>Orang Tua/Wali Murid</p>
+															<div
+																class="border-base-300 mt-16 h-[1px] w-full max-w-[220px] border-b border-dashed"
+																aria-hidden="true"
+															></div>
+															<div class="text-base-content/70 mt-1 text-sm">
+																Nama Orang Tua/Wali
+															</div>
+														</div>
+														<div class="relative flex flex-col items-center text-center">
+															<p
+																class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap"
+															>
+																{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
+															</p>
+															<p>Wali Kelas</p>
+															<div class="mt-16 font-semibold tracking-wide uppercase">
+																{formatUpper(waliKelas?.nama)}
+															</div>
+															<div class="mt-1">NIP. {formatValue(waliKelas?.nip)}</div>
+														</div>
+													</div>
+													<div class="text-center">
+														<p>Kepala Sekolah</p>
+														<div class="mt-16 font-semibold tracking-wide uppercase">
+															{formatUpper(kepalaSekolah?.nama)}
+														</div>
+														<div class="mt-1">NIP. {formatValue(kepalaSekolah?.nip)}</div>
+													</div>
+												</div>
+											</td>
+										</tr>
+									{/if}
 								{/each}
 							</tbody>
 						</table>
 					</section>
-
-					{#if !showTailOnFirstPage}
-						{#each tailContentKeys as tailKey (tailKey)}
-							<TailSection
-								{tailKey}
-								{rapor}
-								{formatValue}
-								{formatUpper}
-								{formatHari}
-								{waliKelas}
-								{kepalaSekolah}
-								{ttd}
-							/>
-						{/each}
-
-						<TailSection
-							tailKey="footer"
-							{rapor}
-							{formatValue}
-							{formatUpper}
-							{formatHari}
-							{waliKelas}
-							{kepalaSekolah}
-							{ttd}
-						/>
-					{/if}
 				</div>
 			</div>
 		</div>
