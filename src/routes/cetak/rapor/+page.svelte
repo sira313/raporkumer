@@ -1067,21 +1067,3 @@
 		</div>
 	</div>
 </div>
-
-
-<style>
-	:global(table[data-intrak-table="true"]) {
-		border-collapse: collapse;
-	}
-
-	:global(table[data-intrak-table="true"] tr[data-tail-row="true"]) {
-		border-width: 0 !important;
-		border-color: transparent !important;
-	}
-
-	:global(table[data-intrak-table="true"] tr[data-tail-row="true"] > th),
-	:global(table[data-intrak-table="true"] tr[data-tail-row="true"] > td) {
-		border-width: 0 !important;
-		border-color: transparent !important;
-	}
-</style>
