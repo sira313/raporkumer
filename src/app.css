@@ -53,9 +53,24 @@ a[data-preloading] {
 		margin: 0 !important;
 		padding: 0 !important;
 	}
+
 	#header,
 	#footer,
 	.navbar {
 		display: none !important;
+	}
+}
+
+@layer utilities {
+	@media print {
+		:where(table, thead, tbody, tr, th, td) {
+			--tw-border-opacity: 1 !important;
+			border-color: #000 !important;
+		}
+
+		:where(.border, .border-base-100, .border-base-200, .border-base-300, .border-base-400, .card) {
+			--tw-border-opacity: 1 !important;
+			border-color: #000 !important;
+		}
 	}
 }
