@@ -4,6 +4,10 @@ import {
 	profilPelajarPancasilaDimensions
 } from '$lib/statics';
 
+const LOCALE_ID = 'id-ID';
+
+export const DEFAULT_KOKURIKULER_MESSAGE = 'Belum ada catatan kokurikuler.';
+
 export const nilaiKategoriOptions = [
 	{ value: 'sangat-baik', label: 'Sangat baik' },
 	{ value: 'baik', label: 'Baik' },
@@ -66,17 +70,15 @@ export function buildKokurikulerDeskripsi(
 ): string | null {
 	if (!parts.length) return null;
 
-	const locale = 'id-ID';
-
 	const phrases = parts
 		.map((part, index) => {
 			const kategoriLabel = nilaiKategoriLabelByValue[part.kategori];
 			const dimensiLabel = profilPelajarPancasilaDimensionLabelByKey[part.dimensi] ?? part.dimensi;
 			const kategoriText =
 				index === 0
-					? capitalizeLocale(kategoriLabel, locale)
-					: kategoriLabel.toLocaleLowerCase(locale);
-			const dimensiText = dimensiLabel.toLocaleLowerCase(locale);
+					? capitalizeLocale(kategoriLabel, LOCALE_ID)
+					: kategoriLabel.toLocaleLowerCase(LOCALE_ID);
+			const dimensiText = dimensiLabel.toLocaleLowerCase(LOCALE_ID);
 			return `${kategoriText} dalam ${dimensiText}`.trim();
 		})
 		.filter(Boolean);
@@ -96,11 +98,55 @@ export function buildKokurikulerDeskripsi(
 	sentence = sentence.trim();
 	if (!sentence) return null;
 
-	sentence = sentence.charAt(0).toLocaleUpperCase(locale) + sentence.slice(1);
+	sentence = sentence.charAt(0).toLocaleUpperCase(LOCALE_ID) + sentence.slice(1);
 	return sentence.endsWith('.') ? sentence : `${sentence}.`;
 }
 
 function capitalizeLocale(value: string, locale = 'id-ID') {
 	const lower = value.toLocaleLowerCase(locale);
 	return lower.charAt(0).toLocaleUpperCase(locale) + lower.slice(1);
+}
+
+function removeSentenceTerminator(value: string): string {
+	return value.replace(/[.!?]+$/u, '').trim();
+}
+
+function toSentenceContinuation(value: string): string {
+	const trimmed = removeSentenceTerminator(value).trim();
+	if (!trimmed) return '';
+	return trimmed.toLocaleLowerCase(LOCALE_ID);
+}
+
+export type KokurikulerNarrativeGroup = {
+	tujuan: string;
+	entries: Array<{ kategori: NilaiKategori; dimensi: DimensiProfilLulusanKey }>;
+};
+
+export function buildKokurikulerNarrative(options: {
+	studentName?: string | null;
+	groups: KokurikulerNarrativeGroup[];
+}): string | null {
+	const { studentName, groups } = options;
+	if (!groups.length) return null;
+
+	const introName = (() => {
+		const trimmed = studentName?.trim();
+		return trimmed && trimmed.length > 0 ? `Ananda ${trimmed}` : 'Ananda';
+	})();
+
+	const sentences = groups
+		.map((group) => {
+			if (group.entries.length === 0) return null;
+			const base = buildKokurikulerDeskripsi(group.entries);
+			if (!base) return null;
+			const continuation = toSentenceContinuation(base);
+			if (!continuation) return null;
+			const abilityClause = toSentenceContinuation(group.tujuan);
+			return abilityClause
+				? `${introName} ${continuation}, terlihat dalam kemampuan ${abilityClause}.`
+				: `${introName} ${continuation}.`;
+		})
+		.filter((sentence): sentence is string => Boolean(sentence));
+	if (!sentences.length) return null;
+	return sentences.join('\n\n');
 }

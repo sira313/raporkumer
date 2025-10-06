@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ActionReturn } from 'svelte/action';
+	import { DEFAULT_KOKURIKULER_MESSAGE } from '$lib/kokurikuler';
 	import type { TailBlockKey } from './tail-blocks';
 
 	type MeasureAction = (node: HTMLElement, key: TailBlockKey) => ActionReturn | void;
@@ -49,6 +50,22 @@
 	});
 
 	const resolvedSectionClass = $derived.by(() => [sectionClass, className].filter(Boolean).join(' '));
+
+	const kokurikulerNarrative = $derived.by(() => {
+		const base = formatValue(rapor?.kokurikuler);
+		if (base === '—') {
+			return DEFAULT_KOKURIKULER_MESSAGE;
+		}
+		return base;
+	});
+
+	const kokurikulerSentences = $derived.by(() => {
+		const sentences = kokurikulerNarrative
+			.split(/\n+/)
+			.map((sentence: string) => sentence.trim())
+			.filter((sentence: string) => sentence.length > 0);
+		return sentences.length > 0 ? sentences : [kokurikulerNarrative];
+	});
 </script>
 
 {#if tailKey === 'kokurikuler'}
@@ -61,8 +78,12 @@
 			</thead>
 			<tbody>
 				<tr>
-					<td class="border-base-300 border px-3 py-3 whitespace-pre-line">
-						{formatValue(rapor?.kokurikuler)}
+					<td class="border-base-300 border px-3 py-3">
+						<div class="flex flex-col gap-2 whitespace-pre-line">
+							{#each kokurikulerSentences as sentence, idx (idx)}
+								<span>{sentence}</span>
+							{/each}
+						</div>
 					</td>
 				</tr>
 			</tbody>

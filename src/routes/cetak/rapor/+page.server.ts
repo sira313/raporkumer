@@ -10,10 +10,11 @@ import {
 } from '$lib/server/db/schema';
 import { jenisMapel, type DimensiProfilLulusanKey } from '$lib/statics';
 import {
-	buildKokurikulerDeskripsi,
+	buildKokurikulerNarrative,
+	DEFAULT_KOKURIKULER_MESSAGE,
+	type NilaiKategori,
 	isNilaiKategori as isKokurikulerNilaiKategori,
-	isProfilDimensionKey,
-	type NilaiKategori
+	isProfilDimensionKey
 } from '$lib/kokurikuler';
 import {
 	buildEkstrakurikulerDeskripsi,
@@ -238,7 +239,10 @@ export const load = (async ({ locals, url, depends }) => {
 				]
 			}),
 			db.query.tableAsesmenKokurikuler.findMany({
-				where: eq(tableAsesmenKokurikuler.muridId, murid.id)
+				where: eq(tableAsesmenKokurikuler.muridId, murid.id),
+				with: {
+					kokurikuler: true
+				}
 			}),
 			db.query.tableAsesmenSumatifTujuan.findMany({
 				where: eq(tableAsesmenSumatifTujuan.muridId, murid.id),
@@ -318,15 +322,55 @@ export const load = (async ({ locals, url, depends }) => {
 		}))
 		.sort((a, b) => a.nama.localeCompare(b.nama, LOCALE_ID));
 
-	const kokurikulerParts: Array<{ kategori: NilaiKategori; dimensi: DimensiProfilLulusanKey }> = [];
+	const sanitizeTujuan = (value: string | null | undefined) =>
+		value?.replace(/[.!?]+$/gu, '').trim() ?? '';
+	const buildTujuanKey = (tujuan: string, dimensi: DimensiProfilLulusanKey) =>
+		tujuan.length > 0 ? tujuan.toLocaleLowerCase(LOCALE_ID) : `__${dimensi}`;
+
+	const kokurikulerGroups: Array<{
+		tujuan: string;
+		entries: Array<{ kategori: NilaiKategori; dimensi: DimensiProfilLulusanKey }>;
+	}> = [];
+	const kokurikulerByTujuan = new Map<
+		string,
+		{ tujuan: string; entries: Map<DimensiProfilLulusanKey, NilaiKategori> }
+	>();
 	for (const item of asesmenKokurikuler) {
 		if (!isKokurikulerNilaiKategori(item.kategori)) continue;
 		if (!isProfilDimensionKey(item.dimensi)) continue;
-		kokurikulerParts.push({ kategori: item.kategori, dimensi: item.dimensi });
+		const tujuanSanitized = sanitizeTujuan(item.kokurikuler?.tujuan ?? null);
+		const tujuanKey = buildTujuanKey(tujuanSanitized, item.dimensi);
+		const group = kokurikulerByTujuan.get(tujuanKey);
+		if (group) {
+			if (!group.tujuan && tujuanSanitized) {
+				group.tujuan = tujuanSanitized;
+			}
+			if (!group.entries.has(item.dimensi)) {
+				group.entries.set(item.dimensi, item.kategori);
+			}
+			continue;
+		}
+		const entries = new Map<DimensiProfilLulusanKey, NilaiKategori>();
+		entries.set(item.dimensi, item.kategori);
+		kokurikulerByTujuan.set(tujuanKey, {
+			tujuan: tujuanSanitized,
+			entries
+		});
+	}
+
+	for (const { tujuan, entries } of kokurikulerByTujuan.values()) {
+		const entryList = Array.from(entries.entries()).map(([dimensi, kategori]) => ({
+			kategori,
+			dimensi
+		}));
+		kokurikulerGroups.push({ tujuan, entries: entryList });
 	}
 
 	const kokurikuler =
-		buildKokurikulerDeskripsi(kokurikulerParts) ?? 'Belum ada catatan kokurikuler.';
+		buildKokurikulerNarrative({
+			studentName: murid.nama,
+			groups: kokurikulerGroups
+		}) ?? DEFAULT_KOKURIKULER_MESSAGE;
 
 	const ttdTanggal = formatTanggal(murid.semester?.tanggalBagiRaport);
 
