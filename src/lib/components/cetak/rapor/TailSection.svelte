@@ -183,16 +183,16 @@
 						{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
 					</p>
 					<p>Wali Kelas</p>
-					<div class="mt-16 font-semibold tracking-wide uppercase">
-						{formatUpper(waliKelas?.nama)}
+					<div class="mt-16 font-semibold tracking-wide">
+						{formatValue(waliKelas?.nama)}
 					</div>
 					<div class="mt-1">NIP. {formatValue(waliKelas?.nip)}</div>
 				</div>
 			</div>
 			<div class="text-center">
 				<p>Kepala Sekolah</p>
-				<div class="mt-16 font-semibold tracking-wide uppercase">
-					{formatUpper(kepalaSekolah?.nama)}
+				<div class="mt-16 font-semibold tracking-wide">
+					{formatValue(kepalaSekolah?.nama)}
 				</div>
 				<div class="mt-1">NIP. {formatValue(kepalaSekolah?.nip)}</div>
 			</div>
