@@ -5,6 +5,7 @@
 	import { tailBlockOrder } from '$lib/components/cetak/rapor/tail-blocks';
 	import { toast } from '$lib/components/toast.svelte';
 	import { printElement } from '$lib/utils';
+	import { paginateRowsByHeight } from '$lib/utils/table-pagination';
 
 	const tailContentKeys = tailBlockOrder.filter((key) => key !== 'footer');
 
@@ -114,50 +115,15 @@
 
 		const tolerance = 0.5;
 
-		const pages: IntrakPage[] = [];
-		const firstLimit = Math.max(0, firstCapacity);
-		let cursor = 0;
+		const paginatedRows = paginateRowsByHeight({
+			rows,
+			rowHeights,
+			firstPageCapacity: firstCapacity,
+			continuationPageCapacity: continuationCapacity,
+			tolerance
+		});
 
-		function takeRows(capacity: number) {
-			const pageRows: IntrakPage['rows'] = [];
-			let used = 0;
-			while (cursor < rows.length) {
-				const rowHeight = rowHeights[cursor];
-				if (pageRows.length > 0 && used + rowHeight > capacity + tolerance) {
-					break;
-				}
-				if (pageRows.length === 0 && capacity <= 0) {
-					pageRows.push(rows[cursor]);
-					cursor += 1;
-					break;
-				}
-				if (pageRows.length === 0 && rowHeight > capacity + tolerance) {
-					pageRows.push(rows[cursor]);
-					cursor += 1;
-					break;
-				}
-				pageRows.push(rows[cursor]);
-				used += rowHeight;
-				cursor += 1;
-			}
-			return pageRows;
-		}
-
-		const firstPageRows = takeRows(firstLimit);
-		if (firstPageRows.length > 0) {
-			pages.push({ rows: firstPageRows });
-		}
-
-		while (cursor < rows.length) {
-			const pageRows = takeRows(continuationCapacity);
-			if (pageRows.length === 0) {
-				pageRows.push(rows[cursor]);
-				cursor += 1;
-			}
-			pages.push({ rows: pageRows });
-		}
-
-		intrakPages = pages;
+		intrakPages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
 	}
 
 	function queueSplit() {
