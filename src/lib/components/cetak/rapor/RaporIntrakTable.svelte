@@ -51,7 +51,18 @@
 	function descriptionParagraphs(value: string | null | undefined) {
 		const formatted = formatValue(value);
 		if (formatted === '—') return [formatted];
-		return formatted.split(/\r?\n+/);
+		const segments = formatted
+			.split(/\r?\n+/)
+			.map((part: string) => part.trim())
+			.filter((part: string) => part.length > 0)
+			.map((part: string) => {
+				const withoutTrailingPeriod = part.replace(/\.+$/u, '');
+				if (withoutTrailingPeriod.length === 0) return '';
+				const endsWithTerminal = /[!?]$/.test(withoutTrailingPeriod);
+				return endsWithTerminal ? withoutTrailingPeriod : `${withoutTrailingPeriod}.`;
+			})
+			.filter((part: string) => part.length > 0);
+		return segments.length > 0 ? segments : [formatted];
 	}
 </script>
 
