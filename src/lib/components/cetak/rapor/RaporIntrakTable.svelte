@@ -74,11 +74,6 @@
 						<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
 						<td class="border-base-300 border px-3 py-2 align-top">
 							<span class="font-semibold">{row.entry.mataPelajaran}</span>
-							{#if row.entry.kelompok}
-								<div class="text-base-content/70 text-xs">
-									{formatValue(row.entry.kelompok)}
-								</div>
-							{/if}
 						</td>
 						<td class="border-base-300 border px-3 py-2 text-center align-top font-semibold">
 							{formatValue(row.entry.nilaiAkhir)}
