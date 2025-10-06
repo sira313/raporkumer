@@ -39,6 +39,12 @@
 		if (tailKey === 'ketidakhadiran') {
 			return 'grid gap-4 md:grid-cols-2 print:grid-cols-2';
 		}
+		if (tailKey === 'kokurikuler') {
+			return 'pt-2';
+		}
+		if (tailKey === 'footer') {
+			return 'pt-4';
+		}
 		return '';
 	});
 
