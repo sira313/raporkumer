@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import PrintTip from '$lib/components/alerts/print-tip.svelte';
 	import TailSection from '$lib/components/cetak/rapor/TailSection.svelte';
-	import { tailBlockOrder, type TailBlockKey } from '$lib/components/cetak/rapor/tail-blocks';
+	import { tailBlockOrder } from '$lib/components/cetak/rapor/tail-blocks';
 	import { toast } from '$lib/components/toast.svelte';
 	import { printElement } from '$lib/utils';
 
@@ -28,8 +28,6 @@
 	let firstTableSection = $state<HTMLElement | null>(null);
 	let continuationPrototypeContent = $state<HTMLDivElement | null>(null);
 	let continuationPrototypeTableSection = $state<HTMLElement | null>(null);
-	let finalCardContent = $state<HTMLDivElement | null>(null);
-	let finalTableSection = $state<HTMLElement | null>(null);
 
 	const intrakurikulerRows = $derived.by(() => {
 		const items: IntrakurikulerEntry[] = rapor?.nilaiIntrakurikuler ?? [];
@@ -78,20 +76,6 @@
 
 	const showTailOnFirstPage = $derived.by(() => intrakPages.length <= 1);
 
-	let footerOnSeparatePage = $state(false);
-
-	const tailMeasurementElements = new Map<TailBlockKey, HTMLElement>();
-	function tailMeasurement(node: HTMLElement, key: TailBlockKey) {
-		tailMeasurementElements.set(key, node);
-		queueSplit();
-		return {
-			destroy() {
-				tailMeasurementElements.delete(key);
-				queueSplit();
-			}
-		};
-	}
-
 	let splitQueued = false;
 
 	function computeTableCapacity(content: HTMLElement, tableSection: HTMLElement) {
@@ -108,8 +92,7 @@
 			!firstCardContent ||
 			!firstTableSection ||
 			!continuationPrototypeContent ||
-			!continuationPrototypeTableSection ||
-			tailMeasurementElements.size !== tailBlockOrder.length
+			!continuationPrototypeTableSection
 		) {
 			return;
 		}
@@ -120,31 +103,6 @@
 			continuationPrototypeContent,
 			continuationPrototypeTableSection
 		);
-		const tailHeightMap = new Map<TailBlockKey, number>();
-		for (const key of tailBlockOrder) {
-			const element = tailMeasurementElements.get(key);
-			if (!element) {
-				queueSplit();
-				return;
-			}
-			const rect = element.getBoundingClientRect();
-			if (rect.height === 0) {
-				queueSplit();
-				return;
-			}
-			const styles = getComputedStyle(element);
-			const marginTop = Number.parseFloat(styles.marginTop) || 0;
-			const marginBottom = Number.parseFloat(styles.marginBottom) || 0;
-			tailHeightMap.set(key, rect.height + marginTop + marginBottom);
-		}
-
-		const tailContentHeight = tailContentKeys.reduce(
-			(total, key) => total + (tailHeightMap.get(key) ?? 0),
-			0
-		);
-		const footerHeight = tailHeightMap.get('footer') ?? 0;
-		const footerTolerance = 8;
-		const finalCapacityBase = Math.max(0, continuationCapacity - tailContentHeight);
 
 		const rowHeights = rows.map(
 			(row) => intrakRowElements.get(row.index)?.getBoundingClientRect().height ?? 0
@@ -156,118 +114,50 @@
 
 		const tolerance = 0.5;
 
-		function buildPages(firstCapacityOverride?: number) {
-			const pages: IntrakPage[] = [];
-			const firstLimit = Math.max(0, firstCapacityOverride ?? firstCapacity);
-			let cursor = 0;
-			let finalRowsHeightUsed = 0;
+		const pages: IntrakPage[] = [];
+		const firstLimit = Math.max(0, firstCapacity);
+		let cursor = 0;
 
-			function takeRows(capacity: number) {
-				const pageRows: IntrakPage['rows'] = [];
-				let used = 0;
-				while (cursor < rows.length) {
-					const rowHeight = rowHeights[cursor];
-					if (pageRows.length > 0 && used + rowHeight > capacity + tolerance) {
-						break;
-					}
-					if (pageRows.length === 0 && capacity <= 0) {
-						pageRows.push(rows[cursor]);
-						cursor += 1;
-						break;
-					}
-					if (pageRows.length === 0 && rowHeight > capacity + tolerance) {
-						pageRows.push(rows[cursor]);
-						cursor += 1;
-						break;
-					}
-					pageRows.push(rows[cursor]);
-					used += rowHeight;
-					cursor += 1;
-				}
-				return pageRows;
-			}
-
-			function takeFinalRows(capacity: number) {
-				const pageRows: IntrakPage['rows'] = [];
-				let used = 0;
-				while (cursor < rows.length) {
-					const rowHeight = rowHeights[cursor];
-					if (pageRows.length > 0 && used + rowHeight > capacity + tolerance) {
-						break;
-					}
-					pageRows.push(rows[cursor]);
-					used += rowHeight;
-					cursor += 1;
-				}
-				if (pageRows.length === 0 && cursor < rows.length) {
-					pageRows.push(rows[cursor]);
-					cursor += 1;
-				}
-				finalRowsHeightUsed = used;
-				return pageRows;
-			}
-
-			function remainingFitsFinal(startIndex: number) {
-				if (startIndex >= rows.length) return true;
-				if (finalCapacityBase <= 0) return false;
-				let used = 0;
-				for (let i = startIndex; i < rows.length; i += 1) {
-					const height = rowHeights[i];
-					if (i > startIndex && used + height > finalCapacityBase + tolerance) {
-						return false;
-					}
-					used += height;
-				}
-				return (
-					used <= finalCapacityBase + tolerance ||
-					rowHeights[startIndex] > finalCapacityBase + tolerance
-				);
-			}
-
-			const firstPageRows = takeRows(firstLimit);
-			if (firstPageRows.length > 0) {
-				pages.push({ rows: firstPageRows });
-			}
-
+		function takeRows(capacity: number) {
+			const pageRows: IntrakPage['rows'] = [];
+			let used = 0;
 			while (cursor < rows.length) {
-				if (remainingFitsFinal(cursor)) {
-					const finalRows = takeFinalRows(finalCapacityBase);
-					if (finalRows.length > 0) {
-						pages.push({ rows: finalRows });
-					}
+				const rowHeight = rowHeights[cursor];
+				if (pageRows.length > 0 && used + rowHeight > capacity + tolerance) {
 					break;
 				}
-				const pageRows = takeRows(continuationCapacity);
-				if (pageRows.length === 0) {
+				if (pageRows.length === 0 && capacity <= 0) {
 					pageRows.push(rows[cursor]);
 					cursor += 1;
+					break;
 				}
-				pages.push({ rows: pageRows });
-			}
-
-			if (pages.length === 0) {
-				finalRowsHeightUsed = 0;
-			} else if (pages.length === 1 && finalRowsHeightUsed === 0) {
-				finalRowsHeightUsed = pages[0].rows.reduce((sum, row) => sum + rowHeights[row.index], 0);
-			} else if (finalRowsHeightUsed === 0) {
-				const lastPage = pages.at(-1);
-				if (lastPage) {
-					finalRowsHeightUsed = lastPage.rows.reduce((sum, row) => sum + rowHeights[row.index], 0);
+				if (pageRows.length === 0 && rowHeight > capacity + tolerance) {
+					pageRows.push(rows[cursor]);
+					cursor += 1;
+					break;
 				}
+				pageRows.push(rows[cursor]);
+				used += rowHeight;
+				cursor += 1;
 			}
-
-			return { pages, finalRowsHeightUsed };
+			return pageRows;
 		}
 
-		let { pages, finalRowsHeightUsed } = buildPages();
-		if (pages.length === 1 && finalRowsHeightUsed > finalCapacityBase + tolerance) {
-			({ pages, finalRowsHeightUsed } = buildPages(finalCapacityBase));
+		const firstPageRows = takeRows(firstLimit);
+		if (firstPageRows.length > 0) {
+			pages.push({ rows: firstPageRows });
+		}
+
+		while (cursor < rows.length) {
+			const pageRows = takeRows(continuationCapacity);
+			if (pageRows.length === 0) {
+				pageRows.push(rows[cursor]);
+				cursor += 1;
+			}
+			pages.push({ rows: pageRows });
 		}
 
 		intrakPages = pages;
-
-		const leftoverForFooter = finalCapacityBase - finalRowsHeightUsed;
-		footerOnSeparatePage = leftoverForFooter < footerHeight + footerTolerance;
 	}
 
 	function queueSplit() {
@@ -454,18 +344,16 @@
 						/>
 					{/each}
 
-					{#if !footerOnSeparatePage}
-						<TailSection
-							tailKey="footer"
-							{rapor}
-							{formatValue}
-							{formatUpper}
-							{formatHari}
-							{waliKelas}
-							{kepalaSekolah}
-							{ttd}
-						/>
-					{/if}
+					<TailSection
+						tailKey="footer"
+						{rapor}
+						{formatValue}
+						{formatUpper}
+						{formatHari}
+						{waliKelas}
+						{kepalaSekolah}
+						{ttd}
+					/>
 				{/if}
 			</div>
 		</div>
@@ -529,17 +417,12 @@
 		<div
 			class="card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none"
 			style="break-inside: avoid-page;"
-			class:print\:break-after-page={footerOnSeparatePage}
 		>
 			<div
 				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
 			>
-				<div
-					class="flex min-h-0 flex-1 flex-col text-[12px]"
-					bind:this={finalCardContent}
-					use:triggerSplitOnMount
-				>
-					<section bind:this={finalTableSection} use:triggerSplitOnMount>
+				<div class="flex min-h-0 flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
+					<section use:triggerSplitOnMount>
 						<table class="border-base-300 w-full border">
 							<thead class="bg-base-300">
 								<tr>
@@ -587,43 +470,17 @@
 							/>
 						{/each}
 
-						{#if !footerOnSeparatePage}
-							<TailSection
-								tailKey="footer"
-								{rapor}
-								{formatValue}
-								{formatUpper}
-								{formatHari}
-								{waliKelas}
-								{kepalaSekolah}
-								{ttd}
-							/>
-						{/if}
+						<TailSection
+							tailKey="footer"
+							{rapor}
+							{formatValue}
+							{formatUpper}
+							{formatHari}
+							{waliKelas}
+							{kepalaSekolah}
+							{ttd}
+						/>
 					{/if}
-				</div>
-			</div>
-		</div>
-	{/if}
-
-	{#if footerOnSeparatePage}
-		<div
-			class="card bg-base-100 rounded-lg border border-none shadow-md print:break-after-page print:border-none print:bg-transparent print:shadow-none"
-			style="break-inside: avoid-page;"
-		>
-			<div
-				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
-			>
-				<div class="flex min-h-0 flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
-					<TailSection
-						tailKey="footer"
-						{rapor}
-						{formatValue}
-						{formatUpper}
-						{formatHari}
-						{waliKelas}
-						{kepalaSekolah}
-						{ttd}
-					/>
 				</div>
 			</div>
 		</div>
@@ -658,66 +515,6 @@
 							</thead>
 						</table>
 					</section>
-
-					<TailSection
-						tailKey="kokurikuler"
-						{rapor}
-						{formatValue}
-						{formatUpper}
-						{formatHari}
-						{waliKelas}
-						{kepalaSekolah}
-						{ttd}
-						measure={tailMeasurement}
-					/>
-
-					<TailSection
-						tailKey="ekstrakurikuler"
-						{rapor}
-						{formatValue}
-						{formatUpper}
-						{formatHari}
-						{waliKelas}
-						{kepalaSekolah}
-						{ttd}
-						measure={tailMeasurement}
-					/>
-
-					<TailSection
-						tailKey="ketidakhadiran"
-						{rapor}
-						{formatValue}
-						{formatUpper}
-						{formatHari}
-						{waliKelas}
-						{kepalaSekolah}
-						{ttd}
-						measure={tailMeasurement}
-					/>
-
-					<TailSection
-						tailKey="tanggapan"
-						{rapor}
-						{formatValue}
-						{formatUpper}
-						{formatHari}
-						{waliKelas}
-						{kepalaSekolah}
-						{ttd}
-						measure={tailMeasurement}
-					/>
-
-					<TailSection
-						tailKey="footer"
-						{rapor}
-						{formatValue}
-						{formatUpper}
-						{formatHari}
-						{waliKelas}
-						{kepalaSekolah}
-						{ttd}
-						measure={tailMeasurement}
-					/>
 				</div>
 			</div>
 		</div>
