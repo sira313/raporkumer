@@ -538,13 +538,6 @@
 				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
 			>
 				<div class="flex min-h-0 flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
-					<header class="text-center">
-						<h2 class="text-xl font-semibold tracking-wide uppercase">
-							Muatan Pelajaran (Lanjutan)
-						</h2>
-						<p class="text-base-content/70 text-sm">Halaman lanjutan #{pageIndex + 2}</p>
-					</header>
-
 					<section class="mt-6">
 						<table class="border-base-300 w-full border">
 							<thead class="bg-base-300">
