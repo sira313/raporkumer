@@ -157,9 +157,12 @@ function composeAlamat(sekolah: NonNullable<App.Locals['sekolah']>): string {
 
 function formatNilai(value: number | null | undefined): string {
 	if (value === null || value === undefined) return '—';
+	if (Number.isNaN(value)) return '—';
+	const rounded = Math.round(value);
 	return new Intl.NumberFormat(LOCALE_ID, {
-		maximumFractionDigits: Number.isInteger(value) ? 0 : 2
-	}).format(value);
+		maximumFractionDigits: 0,
+		minimumFractionDigits: 0
+	}).format(rounded);
 }
 
 function formatTanggal(value: string | null | undefined): string {
