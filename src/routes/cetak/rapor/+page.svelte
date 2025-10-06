@@ -96,6 +96,10 @@
 		};
 	}
 
+	function hasIntrakRows(rows: TableRow[]) {
+		return rows.some((row) => row.kind === 'intrak');
+	}
+
 	type TablePage = {
 		rows: TableRow[];
 	};
@@ -296,14 +300,16 @@
 
 				<section class="mt-8" bind:this={firstTableSection} use:triggerSplitOnMount>
 					<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
-						<thead class="bg-base-300">
-							<tr>
-								<th class="border-base-300 border px-3 py-2 text-left">No.</th>
-								<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
-								<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
-								<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
-							</tr>
-						</thead>
+						{#if hasIntrakRows(firstPageRows)}
+							<thead class="bg-base-300">
+								<tr>
+									<th class="border-base-300 border px-3 py-2 text-left">No.</th>
+									<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
+									<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
+									<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
+								</tr>
+							</thead>
+						{/if}
 						<tbody>
 							{#each firstPageRows as row (row.kind === 'intrak' ? `intrak-${row.index}` : row.kind === 'tail' ? `tail-${row.tailKey}` : 'empty')}
 								{#if row.kind === 'intrak'}
@@ -540,14 +546,16 @@
 				<div class="flex min-h-0 flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
 					<section class="mt-6">
 						<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
-							<thead class="bg-base-300">
-								<tr>
-									<th class="border-base-300 border px-3 py-2 text-left">No.</th>
-									<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
-									<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
-									<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
-								</tr>
-							</thead>
+							{#if hasIntrakRows(pageRows)}
+								<thead class="bg-base-300">
+									<tr>
+										<th class="border-base-300 border px-3 py-2 text-left">No.</th>
+										<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
+										<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
+										<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
+									</tr>
+								</thead>
+							{/if}
 							<tbody>
 								{#each pageRows as row (row.kind === 'intrak' ? `intrak-${row.index}` : row.kind === 'tail' ? `tail-${row.tailKey}` : 'empty')}
 									{#if row.kind === 'intrak'}
@@ -792,14 +800,16 @@
 				<div class="flex min-h-0 flex-1 flex-col text-[12px]" use:triggerSplitOnMount>
 					<section use:triggerSplitOnMount>
 						<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
-							<thead class="bg-base-300">
-								<tr>
-									<th class="border-base-300 border px-3 py-2 text-left">No.</th>
-									<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
-									<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
-									<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
-								</tr>
-							</thead>
+							{#if hasIntrakRows(finalPageRows)}
+								<thead class="bg-base-300">
+									<tr>
+										<th class="border-base-300 border px-3 py-2 text-left">No.</th>
+										<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
+										<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
+										<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
+									</tr>
+								</thead>
+							{/if}
 							<tbody>
 								{#each finalPageRows as row (row.kind === 'intrak' ? `intrak-${row.index}` : row.kind === 'tail' ? `tail-${row.tailKey}` : 'empty')}
 									{#if row.kind === 'intrak'}

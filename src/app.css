@@ -35,13 +35,13 @@ a[data-preloading] {
 		white-space: nowrap;
 	}
 
-	table[data-intrak-table="true"] {
+	table[data-intrak-table='true'] {
 		border-collapse: collapse;
 	}
 
-	table[data-intrak-table="true"] tr[data-tail-row="true"],
-	table[data-intrak-table="true"] tr[data-tail-row="true"] > th,
-	table[data-intrak-table="true"] tr[data-tail-row="true"] > td {
+	table[data-intrak-table='true'] tr[data-tail-row='true'],
+	table[data-intrak-table='true'] tr[data-tail-row='true'] > th,
+	table[data-intrak-table='true'] tr[data-tail-row='true'] > td {
 		border-width: 0 !important;
 		border-color: transparent !important;
 	}
