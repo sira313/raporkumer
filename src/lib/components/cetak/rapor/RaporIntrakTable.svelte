@@ -90,7 +90,7 @@
 				{:else}
 					<tr use:applyRow={row.order} data-tail-row="true">
 						<td class="border-none p-0 align-top" colspan="4">
-							<div class="flex flex-col gap-6 py-6">
+							<div class="flex flex-col gap-4 my-2">
 								<TailSection
 									tailKey={row.tailKey}
 									rapor={rapor}

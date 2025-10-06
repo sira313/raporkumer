@@ -14,6 +14,7 @@
 		kepalaSekolah: RaporPrintData['kepalaSekolah'] | null | undefined;
 		ttd: RaporPrintData['ttd'] | null | undefined;
 		measure?: MeasureAction;
+		class?: string;
 	}>();
 
 	let {
@@ -25,7 +26,8 @@
 		waliKelas,
 		kepalaSekolah,
 		ttd,
-		measure
+		measure,
+		class: className = ''
 	} = props;
 
 	function applyMeasurement(node: HTMLElement) {
@@ -35,17 +37,16 @@
 
 	const sectionClass = $derived.by(() => {
 		if (tailKey === 'ketidakhadiran') {
-			return 'mt-8 grid gap-6 md:grid-cols-2 print:grid-cols-2';
+			return 'grid gap-4 md:grid-cols-2 print:grid-cols-2';
 		}
-		if (tailKey === 'footer') {
-			return 'mt-12';
-		}
-		return 'mt-6';
+		return '';
 	});
+
+	const resolvedSectionClass = $derived.by(() => [sectionClass, className].filter(Boolean).join(' '));
 </script>
 
 {#if tailKey === 'kokurikuler'}
-	<section class={sectionClass} data-tail-key={tailKey} use:applyMeasurement>
+	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 		<table class="border-base-300 w-full border">
 			<thead class="bg-base-300">
 				<tr>
@@ -62,7 +63,7 @@
 		</table>
 	</section>
 {:else if tailKey === 'ekstrakurikuler'}
-	<section class={sectionClass} data-tail-key={tailKey} use:applyMeasurement>
+	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 		<table class="border-base-300 w-full border">
 			<thead class="bg-base-300">
 				<tr>
@@ -95,7 +96,7 @@
 		</table>
 	</section>
 {:else if tailKey === 'ketidakhadiran'}
-	<section class={sectionClass} data-tail-key={tailKey} use:applyMeasurement>
+	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 		<table class="border-base-300 w-full border">
 			<thead class="bg-base-300">
 				<tr>
@@ -139,7 +140,7 @@
 		</table>
 	</section>
 {:else if tailKey === 'tanggapan'}
-	<section class={sectionClass} data-tail-key={tailKey} use:applyMeasurement>
+	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 		<table class="border-base-300 w-full border">
 			<thead class="bg-base-300">
 				<tr>
@@ -160,9 +161,9 @@
 		</table>
 	</section>
 {:else if tailKey === 'footer'}
-	<section class={sectionClass} data-tail-key={tailKey} use:applyMeasurement>
-		<div class="flex flex-col gap-10">
-			<div class="grid gap-8 md:grid-cols-2 print:grid-cols-2">
+	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
+		<div class="flex flex-col gap-6">
+			<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
 				<div class="flex flex-col items-center text-center">
 					<p>Orang Tua/Wali Murid</p>
 					<div
