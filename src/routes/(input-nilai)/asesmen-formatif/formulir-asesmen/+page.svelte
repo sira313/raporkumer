@@ -2,6 +2,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import { invalidate } from '$app/navigation';
+	import { checkboxArrowNavigation } from '$lib/utils/checkbox-navigation';
 
 	type EntryStatus = 'ya' | 'tidak' | null;
 	type PageData = {
@@ -109,7 +110,7 @@
 								<th class="text-center">Tidak</th>
 							</tr>
 						</thead>
-						<tbody>
+						<tbody use:checkboxArrowNavigation>
 							{#each entries as entry, index (entry.tujuanPembelajaranId)}
 								<tr
 									class:border-l-success={entry.status === 'ya'}
@@ -139,6 +140,7 @@
 											class="checkbox"
 											disabled={submitting}
 											checked={isChecked(entry.status, 'ya')}
+											data-checkbox-column="ya"
 											onchange={() => toggleEntry(index, 'ya')}
 										/>
 									</td>
@@ -148,6 +150,7 @@
 											class="checkbox"
 											disabled={submitting}
 											checked={isChecked(entry.status, 'tidak')}
+											data-checkbox-column="tidak"
 											onchange={() => toggleEntry(index, 'tidak')}
 										/>
 									</td>
