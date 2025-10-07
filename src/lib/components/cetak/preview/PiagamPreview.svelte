@@ -41,19 +41,38 @@
 		return formatted ? formatted.toUpperCase() : '';
 	}
 
-function formatTitle(value: string | null | undefined): string {
-	const formatted = formatValue(value);
-	if (!formatted) return '';
-	return formatted
-		.toLowerCase()
-		.split(/([\s-]+)/u)
-		.map((part) => {
-			if (/^[\s-]+$/u.test(part)) return part;
-			return part.charAt(0).toUpperCase() + part.slice(1);
-		})
-		.join('')
-		.trim();
-}
+	function formatTitle(value: string | null | undefined): string {
+		const formatted = formatValue(value);
+		if (!formatted) return '';
+		return formatted
+			.toLowerCase()
+			.split(/([\s-]+)/u)
+			.map((part) => {
+				if (/^[\s-]+$/u.test(part)) return part;
+				return part.charAt(0).toUpperCase() + part.slice(1);
+			})
+			.join('')
+			.trim();
+	}
+
+	function buildSekolahHeading(jenjangLabel: string, sekolahNama: string) {
+		const nameUpper = sekolahNama.trim();
+		const jenjangUpper = jenjangLabel.trim();
+		if (!nameUpper && !jenjangUpper) return '';
+		if (!jenjangUpper) return nameUpper;
+		if (!nameUpper) return jenjangUpper;
+
+		const abbreviationPattern = /^(SD|SMP|SMA|SMK|SLB)\b/u;
+		if (
+			nameUpper.startsWith(jenjangUpper) ||
+			nameUpper.includes(jenjangUpper) ||
+			abbreviationPattern.test(nameUpper)
+		) {
+			return nameUpper;
+		}
+
+		return `${jenjangUpper} ${nameUpper}`.trim();
+	}
 
 	const kabupaten = $derived.by(() => formatUpper(sekolah?.alamat?.kabupaten));
 	const kecamatan = $derived.by(() => formatUpper(sekolah?.alamat?.kecamatan));
@@ -83,7 +102,10 @@ function formatTitle(value: string | null | undefined): string {
 		}
 		const sekolahNama = formatUpper(sekolah?.nama);
 		if (sekolahNama) {
-			lines.push(`${jenjangLabel} ${sekolahNama}`.trim());
+			const heading = buildSekolahHeading(jenjangLabel, sekolahNama);
+			if (heading) {
+				lines.push(heading);
+			}
 		}
 		return lines;
 	});
@@ -171,7 +193,15 @@ function formatTitle(value: string | null | undefined): string {
 					</div>
 					<div class="text-center">
 						{#each headingLines as line, index}
-							<p class={`font-semibold uppercase ${index === 0 ? 'text-lg tracking-wide' : 'text-sm'}`}>
+							<p
+								class={`font-semibold uppercase ${
+									index === headingLines.length - 1
+										? 'text-lg tracking-wide'
+										: index === 0
+											? 'text-sm tracking-wide'
+											: 'text-sm'
+								}`}
+							>
 								{line}
 							</p>
 						{/each}

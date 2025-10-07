@@ -1,7 +1,8 @@
 import { error } from '@sveltejs/kit';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import db from '$lib/server/db';
-import { tableAsesmenSumatif, tableMurid } from '$lib/server/db/schema';
+import { tableMurid } from '$lib/server/db/schema';
+import { computeNilaiAkhirRekap } from '$lib/server/nilai-akhir';
 
 const ORDINAL_WORDS: Record<number, string> = {
 	1: 'Pertama',
@@ -152,73 +153,15 @@ export async function getPiagamPreviewPayload({
 		throw error(404, 'Data kelas murid tidak ditemukan.');
 	}
 
-	const muridKelas = await db.query.tableMurid.findMany({
-		columns: {
-			id: true,
-			nama: true
-		},
-		where: and(eq(tableMurid.sekolahId, sekolah.id), eq(tableMurid.kelasId, kelasMurid.id))
+	const rekap = await computeNilaiAkhirRekap({
+		sekolahId: sekolah.id,
+		kelasId: kelasMurid.id
 	});
 
-	const muridIds = muridKelas.map((item) => item.id);
-
-	const asesmenRows = muridIds.length
-		? await db.query.tableAsesmenSumatif.findMany({
-				columns: {
-					muridId: true,
-					nilaiAkhir: true
-				},
-				where: inArray(tableAsesmenSumatif.muridId, muridIds)
-			})
-		: [];
-
-	const nilaiByMurid = new Map<number, number[]>();
-	for (const entry of asesmenRows) {
-		if (entry.nilaiAkhir == null || Number.isNaN(entry.nilaiAkhir)) continue;
-		const list = nilaiByMurid.get(entry.muridId) ?? [];
-		list.push(entry.nilaiAkhir);
-		nilaiByMurid.set(entry.muridId, list);
-	}
-
-	const averageByMurid = new Map<number, number>();
-	for (const [muridKey, values] of nilaiByMurid.entries()) {
-		if (!values.length) continue;
-		const sum = values.reduce((acc, value) => acc + value, 0);
-		averageByMurid.set(muridKey, sum / values.length);
-	}
-
-	const classmatesWithAverage = muridKelas
-		.map((item) => ({
-			id: item.id,
-			average: averageByMurid.get(item.id) ?? null,
-			nama: item.nama
-		}))
-		.filter((item) => item.average != null)
-		.sort((a, b) => {
-			const diff = (b.average ?? 0) - (a.average ?? 0);
-			if (Math.abs(diff) > 0.0001) return diff;
-			return a.nama.localeCompare(b.nama, 'id-ID');
-		});
-
-	let processed = 0;
-	let lastAverage: number | null = null;
-	let lastRank = 0;
-	const rankingMap = new Map<number, number>();
-
-	for (const entry of classmatesWithAverage) {
-		processed += 1;
-		const avg = entry.average ?? 0;
-		if (lastAverage != null && Math.abs(avg - lastAverage) < 0.0001) {
-			rankingMap.set(entry.id, lastRank);
-			continue;
-		}
-		lastRank = processed;
-		lastAverage = avg;
-		rankingMap.set(entry.id, processed);
-	}
-
-	const muridAverage = averageByMurid.get(murid.id) ?? null;
-	const muridRanking = rankingMap.get(murid.id) ?? null;
+	const muridRekap = rekap.rows.find((row) => row.id === murid.id);
+	const muridAverage = muridRekap?.nilaiRataRata ?? null;
+	const muridRanking =
+		muridRekap && muridRekap.jumlahMapelDinilai > 0 ? muridRekap.peringkat : null;
 
 	const piagamData: PiagamPrintData = {
 		sekolah: {
