@@ -198,19 +198,20 @@
 
 <PrintTip onPrint={handlePrint} buttonLabel="Cetak rapor" />
 
-<section class="card w-full flex-1 basis-full bg-base-100 shadow-md print:border-none print:bg-transparent print:shadow-none">
-	<div class="card-body w-full items-stretch space-y-6 print:space-y-4 print:p-0">
-		<div class="space-y-1">
+<section class="flex flex-col gap-4">
+	<div class="card w-full flex-1 basis-full bg-base-100 shadow-md print:hidden">
+		<div class="card-body w-full space-y-1">
 			<h2 class="card-title text-2xl">Pratinjau Dokumen A4</h2>
-			<p class="text-sm text-base-content/70 print:hidden">
+			<p class="text-sm text-base-content/70">
 				Area pratinjau di bawah akan menjaga ukuran kertas A4. Geser horizontal bila layar tidak cukup lebar.
 			</p>
 		</div>
+	</div>
 
-		<div class="bg-base-300 rounded-md">
-		<div class="w-full p-2 overflow-x-auto print:border-none print:bg-transparent print:p-0">
+	<div class="bg-base-300 rounded-md">
+		<div class="w-full overflow-x-auto print:border-none print:bg-transparent print:p-0">
 			<div
-				class="mx-auto flex w-fit flex-col gap-2 print:gap-0"
+				class="mx-auto flex w-fit flex-col gap-6 print:gap-0"
 				bind:this={printable}
 			>
 				<PrintCardPage
@@ -315,7 +316,6 @@
 					</div>
 				</div>
 			</div>
-		</div>
 		</div>
 	</div>
 </section>
