@@ -24,10 +24,7 @@ export function formatUpper(value: NullableString): string {
 	return formatted === '—' ? formatted : formatted.toUpperCase();
 }
 
-export function combinePlaceDate(
-	tempat: NullableString,
-	tanggal: NullableString
-): string {
+export function combinePlaceDate(tempat: NullableString, tanggal: NullableString): string {
 	const place = formatValue(tempat);
 	const date = formatValue(tanggal);
 	if (place === '—' && date === '—') return '—';

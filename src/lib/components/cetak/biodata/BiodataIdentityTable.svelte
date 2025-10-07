@@ -10,7 +10,9 @@
 
 	let { murid, orangTua, wali, class: className = '' } = props;
 
-	const sectionClass = $derived.by(() => ['text-base leading-relaxed', className].filter(Boolean).join(' '));
+	const sectionClass = $derived.by(() =>
+		['text-base leading-relaxed', className].filter(Boolean).join(' ')
+	);
 
 	const orangTuaNamaFields = $derived.by(() => [
 		{ label: 'Ayah', value: formatUpper(orangTua?.ayah?.nama) },

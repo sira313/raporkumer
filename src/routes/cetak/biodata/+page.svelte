@@ -45,17 +45,14 @@
 <PrintTip onPrint={handlePrint} buttonLabel="Cetak biodata" />
 
 <section>
-	<div class="bg-base-300 border border-black/20 rounded-md card shadow-md w-full overflow-x-auto print:border-none print:bg-transparent print:p-0">
+	<div
+		class="bg-base-300 card w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
+	>
 		<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
 			<PrintCardPage contentClass="gap-6 text-[13px] leading-relaxed">
 				<BiodataHeader {sekolah} />
-				<BiodataIdentityTable
-					murid={murid}
-					orangTua={orangTua}
-					wali={wali}
-					class="mt-2 flex-1"
-				/>
-				<BiodataFooter ttd={ttd} class="mt-auto pt-12" />
+				<BiodataIdentityTable {murid} {orangTua} {wali} class="mt-2 flex-1" />
+				<BiodataFooter {ttd} class="mt-auto pt-12" />
 			</PrintCardPage>
 		</div>
 	</div>

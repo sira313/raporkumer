@@ -11,7 +11,6 @@
 		tableRowAction,
 		rapor,
 		formatValue,
-		formatUpper,
 		formatHari,
 		waliKelas,
 		kepalaSekolah,
@@ -24,7 +23,6 @@
 		tableRowAction: TableRowAction;
 		rapor: RaporPrintData | null;
 		formatValue: (value: string | null | undefined) => string;
-		formatUpper: (value: string | null | undefined) => string;
 		formatHari: (value: number | null | undefined) => string;
 		waliKelas: RaporPrintData['waliKelas'] | null | undefined;
 		kepalaSekolah: RaporPrintData['kepalaSekolah'] | null | undefined;
@@ -106,16 +104,15 @@
 				{:else}
 					<tr use:applyRow={row.order} data-tail-row="true">
 						<td class="border-none p-0 align-top" colspan="4">
-							<div class="flex flex-col gap-4 my-2">
+							<div class="my-2 flex flex-col gap-4">
 								<TailSection
 									tailKey={row.tailKey}
-									rapor={rapor}
-									formatValue={formatValue}
-									formatUpper={formatUpper}
-									formatHari={formatHari}
-									waliKelas={waliKelas}
-									kepalaSekolah={kepalaSekolah}
-									ttd={ttd}
+									{rapor}
+									{formatValue}
+									{formatHari}
+									{waliKelas}
+									{kepalaSekolah}
+									{ttd}
 								/>
 							</div>
 						</td>

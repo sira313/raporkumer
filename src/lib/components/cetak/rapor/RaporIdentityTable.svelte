@@ -9,15 +9,7 @@
 		class?: string;
 	}>();
 
-	let {
-		murid,
-		rombel,
-		sekolah,
-		periode,
-		formatValue,
-		formatUpper,
-		class: className = ''
-	} = props;
+	let { murid, rombel, sekolah, periode, formatValue, formatUpper, class: className = '' } = props;
 
 	const sectionClass = $derived.by(() => [className].filter(Boolean).join(' '));
 </script>

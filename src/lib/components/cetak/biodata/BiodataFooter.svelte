@@ -8,12 +8,16 @@
 
 	let { ttd, class: className = '' } = props;
 
-	const footerClass = $derived.by(() => ['flex justify-end gap-8 text-sm', className].filter(Boolean).join(' '));
+	const footerClass = $derived.by(() =>
+		['flex justify-end gap-8 text-sm', className].filter(Boolean).join(' ')
+	);
 </script>
 
 <footer class={footerClass}>
 	<div class="flex flex-col items-center gap-3 text-center">
-		<div class="border-base-content flex h-[40mm] w-[30mm] flex-col items-center justify-center gap-1 border">
+		<div
+			class="border-base-content flex h-[40mm] w-[30mm] flex-col items-center justify-center gap-1 border"
+		>
 			<span class="text-xs tracking-wide uppercase">Pas Foto</span>
 			<span class="text-xs">3 x 4</span>
 		</div>

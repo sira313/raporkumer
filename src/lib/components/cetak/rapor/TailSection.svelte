@@ -9,7 +9,6 @@
 		tailKey: TailBlockKey;
 		rapor: RaporPrintData | null;
 		formatValue: (value: string | null | undefined) => string;
-		formatUpper: (value: string | null | undefined) => string;
 		formatHari: (value: number | null | undefined) => string;
 		waliKelas: RaporPrintData['waliKelas'] | null | undefined;
 		kepalaSekolah: RaporPrintData['kepalaSekolah'] | null | undefined;
@@ -22,7 +21,6 @@
 		tailKey,
 		rapor,
 		formatValue,
-		formatUpper,
 		formatHari,
 		waliKelas,
 		kepalaSekolah,
@@ -36,78 +34,80 @@
 		return measure(node, tailKey);
 	}
 
-		function normalizeSemester(value: string | null | undefined): string {
-			if (!value) return '';
-			return value
-				.replace(/semester/giu, '')
-				.replace(/[^a-z0-9]+/giu, ' ')
-				.trim()
-				.toLowerCase();
+	function normalizeSemester(value: string | null | undefined): string {
+		if (!value) return '';
+		return value
+			.replace(/semester/giu, '')
+			.replace(/[^a-z0-9]+/giu, ' ')
+			.trim()
+			.toLowerCase();
+	}
+
+	function isGenap(value: string | null | undefined): boolean {
+		const normalized = normalizeSemester(value);
+		if (!normalized) return false;
+		if (normalized.includes('genap')) return true;
+		return normalized === '2';
+	}
+
+	function parseRombelLevel(value: string | null | undefined): number | null {
+		if (!value) return null;
+		const trimmed = value.trim();
+		if (!trimmed) return null;
+		const digitMatch = trimmed.match(/(\d{1,2})/u);
+		if (digitMatch) {
+			return Number.parseInt(digitMatch[1], 10);
 		}
-
-		function isGenap(value: string | null | undefined): boolean {
-			const normalized = normalizeSemester(value);
-			if (!normalized) return false;
-			if (normalized.includes('genap')) return true;
-			return normalized === '2';
+		const upper = trimmed.toUpperCase();
+		const romanMap: Record<string, number> = {
+			VI: 6,
+			V: 5,
+			IV: 4,
+			III: 3,
+			II: 2,
+			I: 1
+		};
+		for (const [roman, level] of Object.entries(romanMap)) {
+			if (upper.includes(roman)) {
+				return level;
+			}
 		}
+		return null;
+	}
 
-		function parseRombelLevel(value: string | null | undefined): number | null {
-			if (!value) return null;
-			const trimmed = value.trim();
-			if (!trimmed) return null;
-			const digitMatch = trimmed.match(/(\d{1,2})/u);
-			if (digitMatch) {
-				return Number.parseInt(digitMatch[1], 10);
-			}
-			const upper = trimmed.toUpperCase();
-			const romanMap: Record<string, number> = {
-				VI: 6,
-				V: 5,
-				IV: 4,
-				III: 3,
-				II: 2,
-				I: 1
-			};
-			for (const [roman, level] of Object.entries(romanMap)) {
-				if (upper.includes(roman)) {
-					return level;
-				}
-			}
-			return null;
+	const isSemesterGenap = $derived.by(() => isGenap(rapor?.periode?.semester ?? null));
+
+	const rombelLevel = $derived.by(() => parseRombelLevel(rapor?.rombel?.nama ?? null));
+
+	const isKelasEnam = $derived.by(() => rombelLevel === 6);
+
+	const decisionLabels = $derived.by(() => {
+		if (!isSemesterGenap) return null;
+		return {
+			positive: isKelasEnam ? 'Lulus' : 'Naik Kelas',
+			negative: isKelasEnam ? 'Tidak Lulus' : 'Tidak Naik Kelas'
+		};
+	});
+
+	const sectionClass = $derived.by(() => {
+		if (tailKey === 'ketidakhadiran') {
+			return 'grid gap-4 md:grid-cols-2 print:grid-cols-2';
 		}
+		if (tailKey === 'kokurikuler') {
+			return 'pt-2';
+		}
+		if (tailKey === 'footer') {
+			return 'pt-4';
+		}
+		if (tailKey === 'tanggapan' && isSemesterGenap) {
+			return 'grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]';
+		}
+		return '';
+	});
 
-		const isSemesterGenap = $derived.by(() => isGenap(rapor?.periode?.semester ?? null));
-
-		const rombelLevel = $derived.by(() => parseRombelLevel(rapor?.rombel?.nama ?? null));
-
-		const isKelasEnam = $derived.by(() => rombelLevel === 6);
-
-		const decisionLabels = $derived.by(() => {
-			if (!isSemesterGenap) return null;
-			return {
-				positive: isKelasEnam ? 'Lulus' : 'Naik Kelas',
-				negative: isKelasEnam ? 'Tidak Lulus' : 'Tidak Naik Kelas'
-			};
-		});
-
-		const sectionClass = $derived.by(() => {
-			if (tailKey === 'ketidakhadiran') {
-				return 'grid gap-4 md:grid-cols-2 print:grid-cols-2';
-			}
-			if (tailKey === 'kokurikuler') {
-				return 'pt-2';
-			}
-			if (tailKey === 'footer') {
-				return 'pt-4';
-			}
-			if (tailKey === 'tanggapan' && isSemesterGenap) {
-				return 'grid gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] print:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]';
-			}
-			return '';
-		});
-
-		const resolvedSectionClass = $derived.by(() => [sectionClass, className].filter(Boolean).join(' '));
+	const resolvedSectionClass = $derived.by(() =>
+		[sectionClass, className].filter(Boolean).join(' ')
+	);
 
 	const kokurikulerNarrative = $derived.by(() => {
 		const base = formatValue(rapor?.kokurikuler);
