@@ -73,26 +73,26 @@
 		() => !selectedDocument || selectedDocument === 'piagam' || !hasMurid || !selectedMurid
 	);
 	const previewButtonTitle = $derived.by(() => {
-		if (!selectedDocument) return 'Pilih dokumen yang ingin dipreview terlebih dahulu';
+		if (!selectedDocument) return 'Pilih dokumen yang ingin dilihat terlebih dahulu';
 		if (selectedDocument === 'piagam') return 'Preview piagam belum tersedia';
-		if (!hasMurid) return 'Tidak ada murid yang dapat dipreview untuk kelas ini';
-		if (!selectedMurid) return 'Pilih murid yang ingin dipreview terlebih dahulu';
+		if (!hasMurid) return 'Tidak ada murid yang dapat dilihat untuk kelas ini';
+		if (!selectedMurid) return 'Pilih murid yang ingin dilihat terlebih dahulu';
 		return `Preview ${selectedDocumentEntry?.label ?? 'dokumen'} untuk ${selectedMurid.nama}`;
 	});
 
 	function handlePreview() {
 		const documentType = selectedDocument;
 		if (!documentType) {
-			toast('Pilih dokumen yang ingin dipreview terlebih dahulu.', 'warning');
+			toast('Pilih dokumen yang ingin dilihat terlebih dahulu.', 'warning');
 			return;
 		}
 		if (!hasMurid) {
-			toast('Tidak ada murid yang dapat dipreview untuk kelas ini.', 'warning');
+			toast('Tidak ada murid yang dapat dilihat untuk kelas ini.', 'warning');
 			return;
 		}
 		const murid = selectedMurid;
 		if (!murid) {
-			toast('Pilih murid yang ingin dipreview.', 'warning');
+			toast('Pilih murid yang ingin dilihat.', 'warning');
 			return;
 		}
 		if (documentType === 'piagam') {
@@ -131,7 +131,7 @@
 		<select
 			class="select bg-base-200 w-full dark:border-none"
 			bind:value={selectedDocument}
-			title="Pilih dokumen yang ingin dipreview"
+			title="Pilih dokumen yang ingin dilihat"
 		>
 			<option value="">Pilih dokumen…</option>
 			{#each documentOptions as option (option.value)}
@@ -180,7 +180,7 @@
 			</p>
 		{:else}
 			<p class="text-warning">
-				Belum ada data murid yang bisa dipreview. Tambahkan murid terlebih dahulu pada menu Informasi Umum › Murid.
+				Belum ada data murid yang bisa dilihat. Tambahkan murid terlebih dahulu pada menu Informasi Umum › Murid.
 			</p>
 		{/if}
 	</div>
