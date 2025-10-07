@@ -41,6 +41,7 @@ export const tableSekolah = sqliteTable('sekolah', {
 	kepalaSekolahId: int()
 		.references(() => tablePegawai.id)
 		.notNull(),
+	lokasiTandaTangan: text(),
 	...audit
 });
 

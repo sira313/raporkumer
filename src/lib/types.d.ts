@@ -138,6 +138,53 @@ interface RaporPrintData {
 	};
 }
 
+interface PiagamPrintData {
+	sekolah: {
+		nama: string;
+		jenjang: 'sd' | 'smp' | 'sma';
+		npsn: string;
+		alamat: {
+			jalan: string;
+			desa: string;
+			kecamatan: string;
+			kabupaten: string;
+			provinsi?: string | null;
+			kodePos?: string | null;
+		};
+		website?: string | null;
+		email?: string | null;
+		logoUrl?: string | null;
+	};
+	murid: {
+		nama: string;
+	};
+	penghargaan: {
+		rataRata: number | null;
+		rataRataFormatted: string;
+		ranking: number | null;
+		rankingLabel: string;
+		judul: string;
+		subjudul: string;
+		motivasi: string;
+	};
+	periode: {
+		semester: string;
+		tahunAjaran: string;
+	};
+	ttd: {
+		tempat: string;
+		tanggal: string;
+		kepalaSekolah: {
+			nama: string;
+			nip?: string | null;
+		};
+		waliKelas: {
+			nama: string;
+			nip?: string | null;
+		};
+	};
+}
+
 type MaybePromise<T> = T | Promise<T>;
 
 type FormSubmitEvent = SubmitEvent & { currentTarget: EventTarget & HTMLFormElement };

@@ -4,6 +4,7 @@
 	import BiodataPreview from '$lib/components/cetak/preview/BiodataPreview.svelte';
 	import CoverPreview from '$lib/components/cetak/preview/CoverPreview.svelte';
 	import RaporPreview from '$lib/components/cetak/preview/RaporPreview.svelte';
+	import PiagamPreview from '$lib/components/cetak/preview/PiagamPreview.svelte';
 	import { printElement } from '$lib/utils';
 	import { toast } from '$lib/components/toast.svelte';
 	import { onDestroy, tick } from 'svelte';
@@ -11,7 +12,6 @@
 	let { data } = $props();
 
 	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam';
-	type PreviewableDocument = Exclude<DocumentType, 'piagam'>;
 	type MuridData = {
 		id: number;
 		nama: string;
@@ -23,12 +23,14 @@
 		coverData?: NonNullable<App.PageData['coverData']> | null;
 		biodataData?: NonNullable<App.PageData['biodataData']> | null;
 		raporData?: NonNullable<App.PageData['raporData']> | null;
+		piagamData?: NonNullable<App.PageData['piagamData']> | null;
 	};
 
-	const previewComponents: Record<PreviewableDocument, typeof CoverPreview> = {
+	const previewComponents: Record<DocumentType, typeof CoverPreview> = {
 		cover: CoverPreview,
 		biodata: BiodataPreview,
-		rapor: RaporPreview
+		rapor: RaporPreview,
+		piagam: PiagamPreview
 	};
 
 	const documentOptions: Array<{ value: DocumentType; label: string }> = [
@@ -38,20 +40,22 @@
 		{ value: 'piagam', label: 'Piagam' }
 	];
 
-	const documentPaths: Record<PreviewableDocument, string> = {
+	const documentPaths: Record<DocumentType, string> = {
 		cover: '/cetak/cover',
 		biodata: '/cetak/biodata',
-		rapor: '/cetak/rapor'
+		rapor: '/cetak/rapor',
+		piagam: '/cetak/piagam'
 	};
 
-	const printFailureMessages: Record<PreviewableDocument, string> = {
+	const printFailureMessages: Record<DocumentType, string> = {
 		cover: 'Elemen cover belum siap untuk dicetak. Coba muat ulang halaman.',
 		biodata: 'Elemen biodata belum siap untuk dicetak. Coba muat ulang halaman.',
-		rapor: 'Elemen rapor belum siap untuk dicetak. Coba muat ulang halaman.'
+		rapor: 'Elemen rapor belum siap untuk dicetak. Coba muat ulang halaman.',
+		piagam: 'Elemen piagam belum siap untuk dicetak. Coba muat ulang halaman.'
 	};
 
-	function isPreviewableDocument(value: DocumentType | ''): value is PreviewableDocument {
-		return value === 'cover' || value === 'biodata' || value === 'rapor';
+	function isPreviewableDocument(value: DocumentType | ''): value is DocumentType {
+		return value === 'cover' || value === 'biodata' || value === 'rapor' || value === 'piagam';
 	}
 
 	let selectedDocument = $state<DocumentType | ''>('');
@@ -109,17 +113,12 @@
 		() => selectedMuridIndex >= 0 && selectedMuridIndex < daftarMurid.length - 1
 	);
 	const canNavigateMurid = $derived.by(() => {
-		if (!selectedDocument || selectedDocument === 'piagam') return false;
+		if (!selectedDocument) return false;
 		if (!hasMurid) return false;
 		return selectedMuridIndex >= 0;
 	});
 	const isPreviewMatchingSelection = $derived.by(() =>
-		Boolean(
-			previewDocument &&
-				previewDocument !== 'piagam' &&
-				selectedDocument &&
-				selectedDocument === previewDocument
-		)
+		Boolean(previewDocument && selectedDocument && selectedDocument === previewDocument)
 	);
 
 	$effect(() => {
@@ -160,22 +159,17 @@
 		return parts.join(' - ');
 	});
 
-	const previewDisabled = $derived.by(
-		() => !selectedDocument || selectedDocument === 'piagam' || !hasMurid || !selectedMurid
-	);
+	const previewDisabled = $derived.by(() => !selectedDocument || !hasMurid || !selectedMurid);
 	const previewButtonTitle = $derived.by(() => {
 		if (!selectedDocument) return 'Pilih dokumen yang ingin dipreview terlebih dahulu';
-		if (selectedDocument === 'piagam') return 'Preview piagam belum tersedia';
 		if (!hasMurid) return 'Tidak ada murid yang dapat dipreview untuk kelas ini';
 		if (!selectedMurid) return 'Pilih murid yang ingin dipreview terlebih dahulu';
 		return `Preview ${selectedDocumentEntry?.label ?? 'dokumen'} untuk ${selectedMurid.nama}`;
 	});
 
-	const printDisabled = $derived.by(
-		() => !previewDocument || previewDocument === 'piagam' || !previewPrintable
-	);
+	const printDisabled = $derived.by(() => !previewDocument || !previewPrintable);
 	const printButtonTitle = $derived.by(() => {
-		if (!previewDocument || previewDocument === 'piagam') {
+		if (!previewDocument) {
 			return 'Preview dokumen terlebih dahulu sebelum mencetak';
 		}
 		if (!previewPrintable) {
@@ -216,10 +210,6 @@
 		const documentType = selectedDocument;
 		if (!documentType) {
 			toast('Pilih dokumen yang ingin dipreview terlebih dahulu.', 'warning');
-			return;
-		}
-		if (documentType === 'piagam') {
-			toast('Preview piagam akan tersedia setelah tampilan piagam selesai dibuat.', 'info');
 			return;
 		}
 		if (!isPreviewableDocument(documentType)) {
@@ -300,7 +290,7 @@
 
 	function handlePrint() {
 		const doc = previewDocument;
-		if (!doc || doc === 'piagam') {
+		if (!doc) {
 			toast('Preview dokumen belum tersedia untuk dicetak.', 'warning');
 			return;
 		}
@@ -312,9 +302,12 @@
 			toast(printFailureMessages[doc], 'warning');
 			return;
 		}
+		const landscape = doc === 'piagam';
 		const ok = printElement(printableNode, {
 			title: previewMetaTitle || previewDocumentEntry?.label || 'Dokumen Rapor',
-			pageMargin: '0'
+			pageMargin: '0',
+			pageWidth: landscape ? '297mm' : '210mm',
+			pageHeight: landscape ? '210mm' : '297mm'
 		});
 		if (!ok) {
 			toast(printFailureMessages[doc], 'warning');
@@ -328,7 +321,7 @@
 		}
 		const doc = previewDocument;
 		const printableNode = previewPrintable;
-		if (!doc || doc === 'piagam' || !printableNode) {
+		if (!doc || !printableNode) {
 			return;
 		}
 		const handler = (event: KeyboardEvent) => {
@@ -443,12 +436,6 @@
 			Cetak
 		</button>
 	</div>
-	{#if selectedDocument === 'piagam'}
-		<p class="text-warning text-sm">
-			Preview dan cetak piagam akan tersedia setelah tampilan piagam selesai dibuat.
-		</p>
-	{/if}
-
 	<div class="mt-4 space-y-2 text-sm">
 		{#if hasMurid}
 			<p>
@@ -474,8 +461,8 @@
 		<Icon name="error" />
 		<span>{previewError}</span>
 	</div>
-{:else if previewDocument && previewDocument !== 'piagam' && previewData}
-	{@const PreviewComponent = previewComponents[previewDocument as PreviewableDocument]}
+{:else if previewDocument && previewData}
+	{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
 	<div class="mt-6">
 		<PreviewComponent data={previewData} onPrintableReady={handlePrintableReady} />
 	</div>

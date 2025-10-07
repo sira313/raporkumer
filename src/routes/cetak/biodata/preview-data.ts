@@ -106,6 +106,8 @@ function composeOrangTuaAlamat(
 }
 
 function fallbackTempat(sekolah: NonNullable<App.Locals['sekolah']>): string {
+	const explicit = sekolah.lokasiTandaTangan?.trim();
+	if (explicit) return explicit;
 	const alamat = sekolah.alamat;
 	if (!alamat) return '';
 	return alamat.kabupaten || alamat.kecamatan || alamat.desa || '';

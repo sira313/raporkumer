@@ -1,0 +1,223 @@
+<script lang="ts">
+	import PrintCardPage from '$lib/components/cetak/rapor/PrintCardPage.svelte';
+
+	type PiagamData = NonNullable<App.PageData['piagamData']>;
+	type ComponentData = {
+		piagamData?: PiagamData | null;
+		meta?: { title?: string | null } | null;
+	};
+
+	let { data = {}, onPrintableReady = () => {} } = $props<{
+		data?: ComponentData;
+		onPrintableReady?: (node: HTMLDivElement | null) => void;
+	}>();
+
+	let printable: HTMLDivElement | null = null;
+
+	const piagam = $derived.by(() => data?.piagamData ?? null);
+	const sekolah = $derived.by(() => piagam?.sekolah ?? null);
+	const murid = $derived.by(() => piagam?.murid ?? null);
+	const penghargaan = $derived.by(() => piagam?.penghargaan ?? null);
+	const periode = $derived.by(() => piagam?.periode ?? null);
+	const ttd = $derived.by(() => piagam?.ttd ?? null);
+	const kepalaSekolah = $derived.by(() => ttd?.kepalaSekolah ?? null);
+	const waliKelas = $derived.by(() => ttd?.waliKelas ?? null);
+
+	const sekolahNamaUpper = $derived.by(() => formatUpper(sekolah?.nama) || 'Sekolah');
+	const muridNamaUpper = $derived.by(() => formatUpper(murid?.nama) || '—');
+	const kepalaNamaUpper = $derived.by(() => formatUpper(kepalaSekolah?.nama) || '—');
+	const waliNamaUpper = $derived.by(() => formatUpper(waliKelas?.nama) || '—');
+	const kepalaNip = $derived.by(() => formatValue(kepalaSekolah?.nip));
+	const waliNip = $derived.by(() => formatValue(waliKelas?.nip));
+
+	function formatValue(value: string | null | undefined): string {
+		if (!value) return '';
+		const trimmed = value.trim();
+		return trimmed.length ? trimmed : '';
+	}
+
+	function formatUpper(value: string | null | undefined): string {
+		const formatted = formatValue(value);
+		return formatted ? formatted.toUpperCase() : '';
+	}
+
+function formatTitle(value: string | null | undefined): string {
+	const formatted = formatValue(value);
+	if (!formatted) return '';
+	return formatted
+		.toLowerCase()
+		.split(/([\s-]+)/u)
+		.map((part) => {
+			if (/^[\s-]+$/u.test(part)) return part;
+			return part.charAt(0).toUpperCase() + part.slice(1);
+		})
+		.join('')
+		.trim();
+}
+
+	const kabupaten = $derived.by(() => formatUpper(sekolah?.alamat?.kabupaten));
+	const kecamatan = $derived.by(() => formatUpper(sekolah?.alamat?.kecamatan));
+	const desa = $derived.by(() => formatUpper(sekolah?.alamat?.desa));
+	const jenjangLabel = $derived.by(() => {
+		const jenjang = sekolah?.jenjang ?? '';
+		switch (jenjang) {
+			case 'sd':
+				return 'SEKOLAH DASAR';
+			case 'smp':
+				return 'SEKOLAH MENENGAH PERTAMA';
+			case 'sma':
+				return 'SEKOLAH MENENGAH ATAS';
+			default:
+				return 'SEKOLAH';
+		}
+	});
+
+	const headingLines = $derived.by(() => {
+		const lines: string[] = [];
+		if (kabupaten) {
+			lines.push(`PEMERINTAH ${kabupaten}`);
+		}
+		lines.push('DINAS PENDIDIKAN DAN KEBUDAYAAN');
+		if (kecamatan) {
+			lines.push(`KOORDINATOR WILAYAH ${kecamatan}`);
+		}
+		const sekolahNama = formatUpper(sekolah?.nama);
+		if (sekolahNama) {
+			lines.push(`${jenjangLabel} ${sekolahNama}`.trim());
+		}
+		return lines;
+	});
+
+	const alamatSekolah = $derived.by(() => {
+		const parts = [
+			sekolah?.alamat?.jalan,
+			sekolah?.alamat?.desa,
+			sekolah?.alamat?.kecamatan,
+			sekolah?.alamat?.kabupaten,
+			sekolah?.alamat?.provinsi
+		]
+			.map((part) => formatValue(part))
+			.filter(Boolean);
+		return parts.join(', ');
+	});
+
+	const infoLines = $derived.by(() => {
+		const lines: string[] = [];
+		if (alamatSekolah) {
+			lines.push(`Alamat: ${alamatSekolah}`);
+		}
+		const contactParts = [
+			sekolah?.npsn ? `NPSN: ${sekolah.npsn}` : null,
+			sekolah?.website ? `Website: ${sekolah.website}` : null,
+			sekolah?.email ? `Email: ${sekolah.email}` : null,
+			sekolah?.alamat?.kodePos ? `Kode Pos: ${sekolah.alamat.kodePos}` : null
+		]
+			.map((part) => formatValue(part))
+			.filter(Boolean);
+		if (contactParts.length) {
+			lines.push(contactParts.join(' • '));
+		}
+		return lines;
+	});
+
+	const rataRata = $derived.by(() => penghargaan?.rataRataFormatted ?? '—');
+	const rankingLabel = $derived.by(() => penghargaan?.rankingLabel ?? 'Penerima Penghargaan');
+	const achievementTitle = $derived.by(() => penghargaan?.judul ?? 'Piagam Penghargaan');
+	const achievementSubtitle = $derived.by(() => penghargaan?.subjudul ?? 'Diberikan Kepada');
+	const achievementMotivation = $derived.by(
+		() =>
+			penghargaan?.motivasi ??
+				'Semoga prestasi yang diraih menjadi motivasi untuk meraih kesuksesan di masa yang akan datang.'
+	);
+
+	const periodeSemester = $derived.by(() => formatUpper(periode?.semester) || '—');
+	const periodeTahun = $derived.by(() => formatUpper(periode?.tahunAjaran) || '—');
+
+	const lokasiPenandatangan = $derived.by(() => {
+		const explicit = formatTitle(ttd?.tempat);
+		if (explicit) return explicit;
+		const fallbackDesa = formatTitle(sekolah?.alamat?.desa);
+		if (fallbackDesa) return fallbackDesa;
+		const fallbackKecamatan = formatTitle(sekolah?.alamat?.kecamatan);
+		if (fallbackKecamatan) return fallbackKecamatan;
+		const fallbackKabupaten = formatTitle(sekolah?.alamat?.kabupaten);
+		if (fallbackKabupaten) return fallbackKabupaten;
+		return '';
+	});
+	const tanggalPenandatangan = $derived.by(() => ttd?.tanggal ?? '');
+
+	const logoLeft = '/garudaPancasila.png';
+	const logoRight = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri-bw.png');
+
+	$effect(() => {
+		onPrintableReady?.(printable);
+	});
+</script>
+
+<div
+	class="bg-base-300 dark:bg-base-200 card w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
+>
+	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
+		<PrintCardPage
+			orientation="landscape"
+			cardClass="shadow-md"
+			paddingClass="p-[16mm]"
+			contentClass="justify-between gap-4 text-[11px]"
+		>
+			<section class="flex flex-col gap-4">
+				<header class="grid grid-cols-[80px_1fr_80px] items-center gap-3">
+					<div class="flex justify-center">
+						<img src={logoLeft} alt="Lambang negara" class="h-20 w-20 object-contain" />
+					</div>
+					<div class="text-center">
+						{#each headingLines as line, index}
+							<p class={`font-semibold uppercase ${index === 0 ? 'text-lg tracking-wide' : 'text-sm'}`}>
+								{line}
+							</p>
+						{/each}
+						{#each infoLines as infoLine, infoIndex}
+							<p class={`text-xs ${infoIndex === 0 ? 'mt-1.5' : ''}`}>{infoLine}</p>
+						{/each}
+					</div>
+					<div class="flex justify-center">
+						<img src={logoRight} alt="Logo sekolah" class="h-20 w-20 object-contain" />
+					</div>
+				</header>
+				<div class="border-base-content/60 border-t" aria-hidden="true"></div>
+			</section>
+
+			<section class="flex flex-col items-center gap-2.5 text-center">
+				<h1 class="text-2xl font-bold tracking-widest uppercase">{achievementTitle}</h1>
+				<p class="text-sm uppercase tracking-wide text-base-content/80">{achievementSubtitle}</p>
+				<h2 class="text-xl font-extrabold uppercase tracking-wide">{muridNamaUpper}</h2>
+				<p class="text-sm uppercase tracking-wide text-base-content/80">Sebagai</p>
+				<p class="text-xl font-bold uppercase">{rankingLabel}</p>
+				<p class="mt-3 max-w-[480px] text-justify text-base leading-relaxed">
+					Dengan total nilai rata-rata <strong>{rataRata}</strong> pada semester {periodeSemester}
+					tahun ajaran {periodeTahun}.
+				</p>
+				<p class="max-w-[480px] text-justify text-base leading-relaxed">{achievementMotivation}</p>
+			</section>
+
+			<footer class="mt-6 grid grid-cols-2 gap-6 text-sm">
+				<div class="flex flex-col items-center gap-1.5 text-center">
+					<p class="font-semibold uppercase">Mengetahui</p>
+					<p class="text-base font-semibold">Kepala {sekolahNamaUpper}</p>
+					<div class="h-16 w-full"></div>
+					<p class="text-sm font-semibold uppercase">{kepalaNamaUpper}</p>
+					<p class="text-xs">NIP {kepalaNip || '—'}</p>
+				</div>
+				<div class="flex flex-col items-center gap-1.5 text-center">
+					<p class="text-base">
+						{#if lokasiPenandatangan}{lokasiPenandatangan}{#if tanggalPenandatangan}, {/if}{/if}
+						{#if tanggalPenandatangan}{tanggalPenandatangan}{/if}
+					</p>
+					<p class="font-semibold uppercase">Wali Kelas</p>
+					<div class="h-16 w-full"></div>
+					<p class="text-sm font-semibold uppercase">{waliNamaUpper}</p>
+					<p class="text-xs">NIP {waliNip || '—'}</p>
+				</div>
+			</footer>
+		</PrintCardPage>
+	</div>
+</div>

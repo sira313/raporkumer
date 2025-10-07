@@ -41,19 +41,31 @@
 			</h2>
 
 			<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-2">
-				<!-- Jenjang Pendidikan -->
-				<div class="md:col-span-2">
-					<legend class="fieldset-legend">Jenjang Pendidikan</legend>
-					<select
-						class="select bg-base-200 validator w-full border dark:border-none"
-						name="jenjangPendidikan"
-						required
-					>
-						<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
-						{#each Object.entries(jenjangPendidikan) as [value, label] (value)}
-							<option {value}>{label}</option>
-						{/each}
-					</select>
+				<!-- Jenjang Pendidikan & Lokasi Tanda Tangan -->
+				<div class="md:col-span-2 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] md:items-end">
+					<div>
+						<legend class="fieldset-legend">Jenjang Pendidikan</legend>
+						<select
+							class="select bg-base-200 validator w-full border dark:border-none"
+							name="jenjangPendidikan"
+							required
+						>
+							<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
+							{#each Object.entries(jenjangPendidikan) as [value, label] (value)}
+								<option {value}>{label}</option>
+							{/each}
+						</select>
+					</div>
+					<div>
+						<legend class="fieldset-legend">Lokasi Tanda Tangan</legend>
+						<input
+							required
+							type="text"
+							class="input validator bg-base-200 w-full dark:border-none"
+							placeholder="Contoh: Periji"
+							name="lokasiTandaTangan"
+						/>
+					</div>
 				</div>
 
 				<div>

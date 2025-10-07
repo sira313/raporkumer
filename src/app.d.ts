@@ -31,6 +31,7 @@ declare global {
 			coverData?: CoverPrintData;
 			biodataData?: BiodataPrintData;
 			raporData?: RaporPrintData;
+			piagamData?: PiagamPrintData;
 		}
 		interface PageState {
 			modal: {
