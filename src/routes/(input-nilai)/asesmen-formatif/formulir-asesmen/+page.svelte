@@ -37,7 +37,11 @@
 
 	const kembaliHref = `/asesmen-formatif?mapel_id=${data.mapel.id}`;
 
-	function toggleEntry(index: number, value: Exclude<EntryStatus, null>) {
+	function toggleEntry(
+		index: number,
+		value: Exclude<EntryStatus, null>,
+		target: HTMLInputElement | null = null
+	) {
 		const base = data.entries[index];
 		if (!base) return;
 		const currentStatus = overrides[index] ?? base.status ?? null;
@@ -50,6 +54,18 @@
 			updated[index] = nextStatus;
 		}
 		overrides = updated;
+
+		if (!target) return;
+		target.checked = nextStatus === value;
+		const row = target.closest('tr');
+		if (!row) return;
+		const oppositeColumn = value === 'ya' ? 'tidak' : 'ya';
+		const oppositeInput = row.querySelector<HTMLInputElement>(
+			`input[data-checkbox-column="${oppositeColumn}"]`
+		);
+		if (oppositeInput) {
+			oppositeInput.checked = false;
+		}
 	}
 
 	function isChecked(status: EntryStatus, value: 'ya' | 'tidak') {
@@ -141,7 +157,7 @@
 											disabled={submitting}
 											checked={isChecked(entry.status, 'ya')}
 											data-checkbox-column="ya"
-											onchange={() => toggleEntry(index, 'ya')}
+											onchange={(event) => toggleEntry(index, 'ya', event.currentTarget as HTMLInputElement)}
 										/>
 									</td>
 									<td class="text-center">
@@ -151,7 +167,8 @@
 											disabled={submitting}
 											checked={isChecked(entry.status, 'tidak')}
 											data-checkbox-column="tidak"
-											onchange={() => toggleEntry(index, 'tidak')}
+											onchange={(event) =>
+												toggleEntry(index, 'tidak', event.currentTarget as HTMLInputElement)}
 										/>
 									</td>
 								</tr>
