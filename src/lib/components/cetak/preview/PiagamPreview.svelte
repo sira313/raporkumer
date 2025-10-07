@@ -24,9 +24,12 @@
 	const waliKelas = $derived.by(() => ttd?.waliKelas ?? null);
 
 	const sekolahNamaUpper = $derived.by(() => formatUpper(sekolah?.nama) || 'Sekolah');
+	const sekolahNamaDisplay = $derived.by(() => formatValue(sekolah?.nama) || 'Sekolah');
 	const muridNamaUpper = $derived.by(() => formatUpper(murid?.nama) || '—');
 	const kepalaNamaUpper = $derived.by(() => formatUpper(kepalaSekolah?.nama) || '—');
+	const kepalaNamaDisplay = $derived.by(() => formatValue(kepalaSekolah?.nama) || '—');
 	const waliNamaUpper = $derived.by(() => formatUpper(waliKelas?.nama) || '—');
+	const waliNamaDisplay = $derived.by(() => formatValue(waliKelas?.nama) || '—');
 	const kepalaNip = $derived.by(() => formatValue(kepalaSekolah?.nip));
 	const waliNip = $derived.by(() => formatValue(waliKelas?.nip));
 
@@ -110,34 +113,40 @@
 		return lines;
 	});
 
-	const alamatSekolah = $derived.by(() => {
-		const parts = [
-			sekolah?.alamat?.jalan,
-			sekolah?.alamat?.desa,
-			sekolah?.alamat?.kecamatan,
-			sekolah?.alamat?.kabupaten,
-			sekolah?.alamat?.provinsi
-		]
-			.map((part) => formatValue(part))
-			.filter(Boolean);
+	const alamatUtama = $derived.by(() => {
+		const jalan = formatTitle(sekolah?.alamat?.jalan);
+		const desaValue = formatTitle(sekolah?.alamat?.desa);
+		const kecamatanValue = formatTitle(sekolah?.alamat?.kecamatan);
+		const parts: string[] = [];
+		if (jalan) parts.push(jalan);
+		if (desaValue) parts.push(`Desa ${desaValue}`);
+		if (kecamatanValue) parts.push(`Kecamatan ${kecamatanValue}`);
 		return parts.join(', ');
 	});
 
+	const kodePos = $derived.by(() => formatValue(sekolah?.alamat?.kodePos));
+
 	const infoLines = $derived.by(() => {
 		const lines: string[] = [];
-		if (alamatSekolah) {
-			lines.push(`Alamat: ${alamatSekolah}`);
+		const alamatSegments: string[] = [];
+		if (alamatUtama) {
+			alamatSegments.push(`Alamat: ${alamatUtama}.`);
+		}
+		if (kodePos) {
+			alamatSegments.push(`Kode POS: ${kodePos}.`);
+		}
+		if (alamatSegments.length) {
+			lines.push(alamatSegments.join(' '));
 		}
 		const contactParts = [
 			sekolah?.npsn ? `NPSN: ${sekolah.npsn}` : null,
 			sekolah?.website ? `Website: ${sekolah.website}` : null,
-			sekolah?.email ? `Email: ${sekolah.email}` : null,
-			sekolah?.alamat?.kodePos ? `Kode Pos: ${sekolah.alamat.kodePos}` : null
+			sekolah?.email ? `Email: ${sekolah.email}` : null
 		]
 			.map((part) => formatValue(part))
 			.filter(Boolean);
 		if (contactParts.length) {
-			lines.push(contactParts.join(' • '));
+			lines.push(contactParts.join('  '));
 		}
 		return lines;
 	});
@@ -210,27 +219,30 @@
 						</div>
 						<div class="text-center">
 							{#each headingLines as line, index}
-							<p
-								class={`font-semibold uppercase ${
-									index === headingLines.length - 1
-										? 'text-lg tracking-wide'
-										: index === 0
-											? 'text-sm tracking-wide'
-											: 'text-sm'
-								}`}
-							>
+								<p
+									class={`font-semibold uppercase ${
+										index === headingLines.length - 1
+											? 'text-lg tracking-wide font-extrabold'
+											: index === 0
+												? 'text-sm tracking-wide'
+												: 'text-sm'
+										}`}
+								>
 								{line}
 							</p>
 						{/each}
 						{#each infoLines as infoLine, infoIndex}
-							<p class={`text-xs ${infoIndex === 0 ? 'mt-1.5' : ''}`}>{infoLine}</p>
+							<p class={`text-xs ${infoIndex === 0 ? 'mt-1.5 italic' : ''}`}>{infoLine}</p>
 						{/each}
 					</div>
 					<div class="flex justify-center">
 						<img src={logoRight} alt={sekolahLogoAlt} class="h-20 w-20 object-contain" />
 					</div>
 				</header>
-				<div class="border-base-content/60 border-t print:border-[#000]" aria-hidden="true"></div>
+				<div class="flex flex-col gap-[2px]" aria-hidden="true">
+					<div class="h-[2px] w-full bg-base-content/80 print:bg-[#000]"></div>
+					<div class="border-base-content/60 border-t print:border-[#000]"></div>
+				</div>
 			</section>
 
 			<section class="flex flex-col items-center gap-2.5 text-center">
@@ -249,9 +261,9 @@
 			<footer class="mt-6 grid grid-cols-2 gap-6 text-sm">
 				<div class="flex flex-col items-center gap-1.5 text-center">
 					<p class="font-semibold uppercase">Mengetahui</p>
-					<p class="text-base font-semibold">Kepala {sekolahNamaUpper}</p>
+					<p class="text-base font-semibold">Kepala {sekolahNamaDisplay}</p>
 					<div class="h-16 w-full"></div>
-					<p class="text-sm font-semibold uppercase">{kepalaNamaUpper}</p>
+					<p class="text-sm font-semibold">{kepalaNamaDisplay}</p>
 					<p class="text-xs">NIP {kepalaNip || '—'}</p>
 				</div>
 				<div class="flex flex-col items-center gap-1.5 text-center">
@@ -261,7 +273,7 @@
 					</p>
 					<p class="font-semibold uppercase">Wali Kelas</p>
 					<div class="h-16 w-full"></div>
-					<p class="text-sm font-semibold uppercase">{waliNamaUpper}</p>
+					<p class="text-sm font-semibold">{waliNamaDisplay}</p>
 					<p class="text-xs">NIP {waliNip || '—'}</p>
 				</div>
 			</footer>
