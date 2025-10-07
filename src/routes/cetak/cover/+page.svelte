@@ -95,12 +95,12 @@
 
 <section>
 	<div
-		class="bg-base-300 dark:bg-base-200 card w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
+		class="border border-black/20 bg-base-300 dark:bg-base-200 card w-full overflow-x-auto rounded-md shadow-md print:border-none print:bg-transparent print:p-0"
 	>
 		<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
 			<PrintCardPage
 				breakAfter
-				cardClass="shadow-md border border-black/20"
+				cardClass="shadow-md"
 				contentClass="justify-between gap-12 text-[1rem] text-center"
 			>
 				<div class="flex flex-col items-center gap-6">
@@ -130,7 +130,7 @@
 			</PrintCardPage>
 
 			<PrintCardPage
-				cardClass="shadow-md border border-black/20"
+				cardClass="shadow-md"
 				contentClass="justify-start gap-12 text-[1rem]"
 			>
 				<div class="flex flex-col items-center gap-1 text-center uppercase">
