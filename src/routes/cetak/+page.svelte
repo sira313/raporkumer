@@ -417,7 +417,7 @@
 			Preview
 		</button>
 		<button
-			class="btn btn-outline shadow-none"
+			class="btn btn-primary shadow-none"
 			type="button"
 			title={printButtonTitle}
 			disabled={printDisabled}
