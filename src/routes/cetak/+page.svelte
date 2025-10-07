@@ -166,11 +166,7 @@
 		}
 		const target = `${basePath}?${params.toString()}`;
 
-		if (typeof window !== 'undefined') {
-			window.open(target, '_blank', 'noopener');
-		} else {
-			void goto(target, { replaceState: false });
-		}
+		void goto(target, { replaceState: false, keepFocus: true });
 	}
 </script>
 
