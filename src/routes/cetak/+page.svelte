@@ -1,12 +1,29 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
+	import BiodataPreview from '$lib/components/cetak/preview/BiodataPreview.svelte';
+	import CoverPreview from '$lib/components/cetak/preview/CoverPreview.svelte';
+	import RaporPreview from '$lib/components/cetak/preview/RaporPreview.svelte';
+	import { printElement } from '$lib/utils';
 	import { toast } from '$lib/components/toast.svelte';
+	import { onDestroy, tick } from 'svelte';
 
 	let { data } = $props();
 
 	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam';
+	type PreviewableDocument = Exclude<DocumentType, 'piagam'>;
+	type MuridData = {
+		id: number;
+		nama: string;
+		nis?: string | null;
+		nisn?: string | null;
+	};
+
+	const previewComponents: Record<PreviewableDocument, typeof CoverPreview> = {
+		cover: CoverPreview,
+		biodata: BiodataPreview,
+		rapor: RaporPreview
+	};
 
 	const documentOptions: Array<{ value: DocumentType; label: string }> = [
 		{ value: 'cover', label: 'Cover' },
@@ -15,14 +32,27 @@
 		{ value: 'piagam', label: 'Piagam' }
 	];
 
-	const documentPaths: Record<Exclude<DocumentType, 'piagam'>, string> = {
+	const documentPaths: Record<PreviewableDocument, string> = {
 		cover: '/cetak/cover',
 		biodata: '/cetak/biodata',
 		rapor: '/cetak/rapor'
 	};
 
+	const printFailureMessages: Record<PreviewableDocument, string> = {
+		cover: 'Elemen cover belum siap untuk dicetak. Coba muat ulang halaman.',
+		biodata: 'Elemen biodata belum siap untuk dicetak. Coba muat ulang halaman.',
+		rapor: 'Elemen rapor belum siap untuk dicetak. Coba muat ulang halaman.'
+	};
+
 	let selectedDocument = $state<DocumentType | ''>('');
 	let selectedMuridId = $state('');
+	let previewDocument = $state<DocumentType | ''>('');
+	let previewMetaTitle = $state('');
+	let previewData = $state<any>(null);
+	let previewMurid = $state<MuridData | null>(null);
+	let previewPrintable = $state<HTMLDivElement | null>(null);
+	let previewLoading = $state(false);
+	let previewError = $state<string | null>(null);
 
 	const academicContext = $derived(data.academicContext ?? null);
 	const activeSemester = $derived.by(() => {
@@ -49,9 +79,17 @@
 	const daftarMurid = $derived(data.daftarMurid ?? []);
 	const muridCount = $derived.by(() => daftarMurid.length);
 	const hasMurid = $derived.by(() => muridCount > 0);
-	const selectedMurid = $derived.by(
-		() => daftarMurid.find((murid) => String(murid.id) === selectedMuridId) ?? null
-	);
+	const selectedMurid = $derived.by<MuridData | null>(() => {
+		const murid = daftarMurid.find((item) => String(item.id) === selectedMuridId);
+		return murid
+			? {
+					id: murid.id,
+					nama: murid.nama,
+					nis: murid.nis,
+					nisn: murid.nisn
+			  }
+			: null;
+	});
 
 	$effect(() => {
 		const list = daftarMurid;
@@ -69,46 +107,182 @@
 	const selectedDocumentEntry = $derived.by(
 		() => documentOptions.find((option) => option.value === selectedDocument) ?? null
 	);
+	const previewDocumentEntry = $derived.by(
+		() => documentOptions.find((option) => option.value === previewDocument) ?? null
+	);
+
 	const previewDisabled = $derived.by(
 		() => !selectedDocument || selectedDocument === 'piagam' || !hasMurid || !selectedMurid
 	);
 	const previewButtonTitle = $derived.by(() => {
-		if (!selectedDocument) return 'Pilih dokumen yang ingin dilihat terlebih dahulu';
+		if (!selectedDocument) return 'Pilih dokumen yang ingin dipreview terlebih dahulu';
 		if (selectedDocument === 'piagam') return 'Preview piagam belum tersedia';
-		if (!hasMurid) return 'Tidak ada murid yang dapat dilihat untuk kelas ini';
-		if (!selectedMurid) return 'Pilih murid yang ingin dilihat terlebih dahulu';
+		if (!hasMurid) return 'Tidak ada murid yang dapat dipreview untuk kelas ini';
+		if (!selectedMurid) return 'Pilih murid yang ingin dipreview terlebih dahulu';
 		return `Preview ${selectedDocumentEntry?.label ?? 'dokumen'} untuk ${selectedMurid.nama}`;
 	});
 
-	function handlePreview() {
+	const printDisabled = $derived.by(
+		() => !previewDocument || previewDocument === 'piagam' || !previewPrintable
+	);
+	const printButtonTitle = $derived.by(() => {
+		if (!previewDocument || previewDocument === 'piagam') {
+			return 'Preview dokumen terlebih dahulu sebelum mencetak';
+		}
+		if (!previewPrintable) {
+			return 'Preview sedang disiapkan untuk dicetak';
+		}
+		const targetName = previewMurid?.nama ?? 'murid ini';
+		return `Cetak ${previewDocumentEntry?.label ?? 'dokumen'} untuk ${targetName}`;
+	});
+
+	let previewAbortController: AbortController | null = null;
+	let previewContainer = $state<HTMLDivElement | null>(null);
+	let keydownHandler: ((event: KeyboardEvent) => void) | null = null;
+
+	function resetPreviewState() {
+		previewDocument = '';
+		previewMetaTitle = '';
+		previewData = null;
+		previewMurid = null;
+		previewPrintable = null;
+	}
+
+	async function handlePreview() {
 		const documentType = selectedDocument;
 		if (!documentType) {
-			toast('Pilih dokumen yang ingin dilihat terlebih dahulu.', 'warning');
-			return;
-		}
-		if (!hasMurid) {
-			toast('Tidak ada murid yang dapat dilihat untuk kelas ini.', 'warning');
-			return;
-		}
-		const murid = selectedMurid;
-		if (!murid) {
-			toast('Pilih murid yang ingin dilihat.', 'warning');
+			toast('Pilih dokumen yang ingin dipreview terlebih dahulu.', 'warning');
 			return;
 		}
 		if (documentType === 'piagam') {
 			toast('Preview piagam akan tersedia setelah tampilan piagam selesai dibuat.', 'info');
 			return;
 		}
+		if (!hasMurid) {
+			toast('Tidak ada murid yang dapat dipreview untuk kelas ini.', 'warning');
+			return;
+		}
+		const murid = selectedMurid;
+		if (!murid) {
+			toast('Pilih murid yang ingin dipreview.', 'warning');
+			return;
+		}
 
-		const basePath = documentPaths[documentType];
+		const path = documentPaths[documentType as PreviewableDocument];
 		const params = new URLSearchParams({ murid_id: String(murid.id) });
 		if (data.kelasId) {
 			params.set('kelas_id', data.kelasId);
 		}
-		const target = `${basePath}?${params.toString()}`;
 
-		void goto(target, { replaceState: false, keepFocus: true });
+		if (previewAbortController) {
+			previewAbortController.abort();
+		}
+		const controller = new AbortController();
+		previewAbortController = controller;
+
+		previewLoading = true;
+		previewError = null;
+		resetPreviewState();
+
+		let response: Response;
+		try {
+			response = await fetch(`${path}.json?${params.toString()}`, {
+				signal: controller.signal
+			});
+		} catch (error) {
+			if (controller.signal.aborted) {
+				return;
+			}
+			previewLoading = false;
+			previewAbortController = null;
+			previewError = 'Gagal memuat preview dokumen. Periksa koneksi lalu coba lagi.';
+			toast('Gagal memuat preview dokumen. Periksa koneksi lalu coba lagi.', 'error');
+			return;
+		}
+
+		if (controller.signal.aborted) {
+			return;
+		}
+
+		if (!response.ok) {
+			previewLoading = false;
+			previewAbortController = null;
+			previewError = 'Server tidak dapat menyiapkan preview dokumen. Coba lagi nanti.';
+			toast('Server tidak dapat menyiapkan preview dokumen. Coba lagi nanti.', 'error');
+			return;
+		}
+
+		const payload = (await response.json()) as any;
+		previewDocument = documentType;
+		previewData = payload;
+		previewMetaTitle =
+			(payload.meta && typeof payload.meta === 'object' && 'title' in payload.meta
+				? (payload.meta as { title?: string | null }).title ?? ''
+				: '') || `${selectedDocumentEntry?.label ?? 'Dokumen'} - ${murid.nama}`;
+		previewMurid = murid;
+		previewLoading = false;
+		previewAbortController = null;
+
+		await tick();
+		if (previewContainer) {
+			previewContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
 	}
+
+	function handlePrintableReady(node: HTMLDivElement | null) {
+		previewPrintable = node;
+	}
+
+	function handlePrint() {
+		const doc = previewDocument;
+		if (!doc || doc === 'piagam') {
+			toast('Preview dokumen belum tersedia untuk dicetak.', 'warning');
+			return;
+		}
+		const printableNode = previewPrintable;
+		if (!printableNode) {
+			toast(printFailureMessages[doc as PreviewableDocument], 'warning');
+			return;
+		}
+		const ok = printElement(printableNode, {
+			title: previewMetaTitle || previewDocumentEntry?.label || 'Dokumen Rapor',
+			pageMargin: '0'
+		});
+		if (!ok) {
+			toast(printFailureMessages[doc as PreviewableDocument], 'warning');
+		}
+	}
+
+	$effect(() => {
+		if (keydownHandler) {
+			window.removeEventListener('keydown', keydownHandler);
+			keydownHandler = null;
+		}
+		const doc = previewDocument;
+		const printableNode = previewPrintable;
+		if (!doc || doc === 'piagam' || !printableNode) {
+			return;
+		}
+		const handler = (event: KeyboardEvent) => {
+			if (!(event.ctrlKey || event.metaKey)) return;
+			if (event.key.toLowerCase() !== 'p') return;
+			event.preventDefault();
+			handlePrint();
+		};
+		keydownHandler = handler;
+		window.addEventListener('keydown', handler);
+	});
+
+	onDestroy(() => {
+		if (keydownHandler) {
+			window.removeEventListener('keydown', keydownHandler);
+			keydownHandler = null;
+		}
+		if (previewAbortController) {
+			previewAbortController.abort();
+			previewAbortController = null;
+		}
+	});
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
@@ -131,7 +305,7 @@
 		<select
 			class="select bg-base-200 w-full dark:border-none"
 			bind:value={selectedDocument}
-			title="Pilih dokumen yang ingin dilihat"
+			title="Pilih dokumen yang ingin dipreview"
 		>
 			<option value="">Pilih dokumen…</option>
 			{#each documentOptions as option (option.value)}
@@ -141,7 +315,7 @@
 		<select
 			class="select bg-base-200 w-full dark:border-none"
 			bind:value={selectedMuridId}
-			title="Pilih murid yang ingin dilihat preview dokumennya"
+			title="Pilih murid yang ingin dipreview dokumennya"
 			disabled={!hasMurid}
 		>
 			<option value="">Pilih murid…</option>
@@ -166,22 +340,49 @@
 			<Icon name="eye" />
 			Preview
 		</button>
+		<button
+			class="btn btn-outline shadow-none"
+			type="button"
+			title={printButtonTitle}
+			disabled={printDisabled}
+			onclick={handlePrint}
+		>
+			<Icon name="print" />
+			Cetak
+		</button>
 	</div>
 	{#if selectedDocument === 'piagam'}
 		<p class="text-warning text-sm">
-			Cetak piagam akan tersedia setelah tampilan piagam selesai dibuat.
+			Preview dan cetak piagam akan tersedia setelah tampilan piagam selesai dibuat.
 		</p>
 	{/if}
 
 	<div class="mt-4 space-y-2 text-sm">
 		{#if hasMurid}
 			<p>
-				Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dokumen dilakukan per murid melalui menu data murid.
+				Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dan cetak dokumen dilakukan per murid melalui menu data murid.
 			</p>
 		{:else}
 			<p class="text-warning">
-				Belum ada data murid yang bisa dilihat. Tambahkan murid terlebih dahulu pada menu Informasi Umum › Murid.
+				Belum ada data murid yang bisa dipreview. Tambahkan murid terlebih dahulu pada menu Informasi Umum › Murid.
 			</p>
 		{/if}
 	</div>
 </div>
+
+{#if previewLoading}
+	<div class="mt-6 flex items-center gap-3 text-sm text-base-content/70">
+		<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+		<span>Menyiapkan preview dokumen…</span>
+	</div>
+{:else if previewError}
+	<div class="alert alert-error mt-6 flex items-center gap-2 text-sm">
+		<Icon name="error" />
+		<span>{previewError}</span>
+	</div>
+{:else if previewDocument && previewDocument !== 'piagam' && previewData}
+	{@const PreviewComponent = previewComponents[previewDocument as PreviewableDocument]}
+	<div class="mt-6" bind:this={previewContainer}>
+		<PreviewComponent data={previewData} onPrintableReady={handlePrintableReady} />
+	</div>
+{/if}
