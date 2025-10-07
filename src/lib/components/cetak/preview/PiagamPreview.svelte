@@ -201,7 +201,7 @@
 					loading="eager"
 				/>
 			</div>
-			<div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-base-100/30 dark:bg-base-100/30"></div>
+			<div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-base-100/30 dark:bg-base-100/30 print:bg-white/30"></div>
 			<div class="relative z-10 flex min-h-0 flex-1 flex-col justify-between gap-4 p-[16mm] text-[11px] print:gap-6">
 				<section class="flex flex-col gap-4">
 					<header class="grid grid-cols-[80px_1fr_80px] items-center gap-3">
@@ -230,7 +230,7 @@
 						<img src={logoRight} alt={sekolahLogoAlt} class="h-20 w-20 object-contain" />
 					</div>
 				</header>
-				<div class="border-base-content/60 border-t" aria-hidden="true"></div>
+				<div class="border-base-content/60 border-t print:border-[#000]" aria-hidden="true"></div>
 			</section>
 
 			<section class="flex flex-col items-center gap-2.5 text-center">
