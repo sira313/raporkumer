@@ -15,6 +15,18 @@ interface PageMeta {
 interface CoverPrintData {
 	sekolah: {
 		nama: string;
+		jenjang: 'sd' | 'smp' | 'sma';
+		npsn: string;
+		alamat: {
+			jalan: string;
+			desa: string;
+			kecamatan: string;
+			kabupaten: string;
+			provinsi?: string | null;
+			kodePos?: string | null;
+		};
+		website?: string | null;
+		email?: string | null;
 		logoUrl?: string | null;
 	};
 	murid: {

@@ -68,6 +68,18 @@ export const load = (async ({ locals, url, depends }) => {
 	const coverData: CoverPrintData = {
 		sekolah: {
 			nama: sekolah.nama,
+			jenjang: sekolah.jenjangPendidikan,
+			npsn: sekolah.npsn,
+			alamat: {
+				jalan: sekolah.alamat?.jalan ?? '',
+				desa: sekolah.alamat?.desa ?? '',
+				kecamatan: sekolah.alamat?.kecamatan ?? '',
+				kabupaten: sekolah.alamat?.kabupaten ?? '',
+				provinsi: sekolah.alamat?.provinsi ?? null,
+				kodePos: sekolah.alamat?.kodePos ?? null
+			},
+			website: sekolah.website ?? null,
+			email: sekolah.email ?? null,
 			logoUrl: buildLogoUrl(sekolah)
 		},
 		murid: {
