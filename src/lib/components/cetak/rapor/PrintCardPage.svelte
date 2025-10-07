@@ -26,7 +26,7 @@
 
 	const cardClasses = $derived.by(() =>
 		[
-			'card bg-base-100 rounded-lg border border-none shadow-md print:border-none print:bg-transparent print:shadow-none',
+			'card bg-base-100 print:border-none print:bg-transparent print:shadow-none',
 			breakAfter ? 'print:break-after-page' : '',
 			cardClass
 		]
