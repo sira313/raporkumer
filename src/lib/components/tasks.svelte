@@ -284,7 +284,7 @@
 	<div class={listContainerClass}>
 		{#if isLoading && !hasLoaded}
 			<div class="flex-1 overflow-y-auto">
-				<table class="table w-full">
+				<table class="table w-full pl-2">
 					<tbody>
 						<tr>
 							<td colspan="3" class="p-4 text-center text-sm">
@@ -298,7 +298,7 @@
 		{:else}
 			{#if isAdding || hasActiveTasks}
 				<div class="flex-1 overflow-y-auto">
-					<table class="table w-full">
+					<table class="table w-full pl-2">
 						<tbody>
 							{#if isAdding}
 								<tr class="border-base-300 dark:border-base-200">
@@ -328,7 +328,7 @@
 							{/if}
 							{#each activeTasks as task (task.id)}
 								<tr class="border-base-300 dark:border-base-200">
-									<th>
+									<th class="w-0 align-middle">
 										<input
 											type="checkbox"
 											class="checkbox"
@@ -368,7 +368,7 @@
 				<input type="checkbox" />
 				<div class="collapse-title font-bold">Tugas sudah selesai</div>
 				<div class="collapse-content p-0 text-sm">
-					<table class="table">
+					<table class="table pl-2">
 						<tbody>
 							{#if !hasLoaded && isLoading}
 								<tr>
@@ -386,7 +386,7 @@
 							{/if}
 							{#each completedTasks as task (task.id)}
 								<tr class="border-base-100">
-									<th>
+									<th class="w-0 p-2 align-middle">
 										<input
 											type="checkbox"
 											class="checkbox"
