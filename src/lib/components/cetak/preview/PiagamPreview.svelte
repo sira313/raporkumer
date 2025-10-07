@@ -189,16 +189,27 @@
 		<PrintCardPage
 			orientation="landscape"
 			cardClass="shadow-md"
-			paddingClass="p-[16mm]"
-			contentClass="justify-between gap-4 text-[11px]"
+			paddingClass="p-0"
+			contentClass="relative isolate overflow-hidden"
 		>
-			<section class="flex flex-col gap-4">
-				<header class="grid grid-cols-[80px_1fr_80px] items-center gap-3">
-					<div class="flex justify-center">
-						<img src={logoLeft} alt={dinasLogoAlt} class="h-20 w-20 object-contain" />
-					</div>
-					<div class="text-center">
-						{#each headingLines as line, index}
+			<div aria-hidden="true" class="pointer-events-none absolute inset-0">
+				<img
+					src="/bg-certificate.png"
+					alt=""
+					class="h-full w-full object-cover"
+					draggable="false"
+					loading="eager"
+				/>
+			</div>
+			<div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-base-100/30 dark:bg-base-100/30"></div>
+			<div class="relative z-10 flex min-h-0 flex-1 flex-col justify-between gap-4 p-[16mm] text-[11px] print:gap-6">
+				<section class="flex flex-col gap-4">
+					<header class="grid grid-cols-[80px_1fr_80px] items-center gap-3">
+						<div class="flex justify-center">
+							<img src={logoLeft} alt={dinasLogoAlt} class="h-20 w-20 object-contain" />
+						</div>
+						<div class="text-center">
+							{#each headingLines as line, index}
 							<p
 								class={`font-semibold uppercase ${
 									index === headingLines.length - 1
@@ -254,6 +265,7 @@
 					<p class="text-xs">NIP {waliNip || '—'}</p>
 				</div>
 			</footer>
-		</PrintCardPage>
+		</div>
+	</PrintCardPage>
 	</div>
 </div>
