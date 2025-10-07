@@ -90,6 +90,28 @@
 			  }
 			: null;
 	});
+	const selectedMuridIndex = $derived.by(() => {
+		if (!selectedMuridId) return -1;
+		return daftarMurid.findIndex((murid) => String(murid.id) === selectedMuridId);
+	});
+	const hasPrevMurid = $derived.by(() => selectedMuridIndex > 0);
+	const hasNextMurid = $derived.by(
+		() => selectedMuridIndex >= 0 && selectedMuridIndex < daftarMurid.length - 1
+	);
+	const canNavigateMurid = $derived.by(() => {
+		if (!selectedDocument || selectedDocument === 'piagam') return false;
+		if (!hasMurid) return false;
+		return selectedMuridIndex >= 0;
+	});
+	const isPreviewMatchingSelection = $derived.by(
+		() =>
+			Boolean(
+				previewDocument &&
+				previewDocument !== 'piagam' &&
+				selectedDocument &&
+				selectedDocument === previewDocument
+			)
+	);
 
 	$effect(() => {
 		const list = daftarMurid;
@@ -146,6 +168,22 @@
 		previewData = null;
 		previewMurid = null;
 		previewPrintable = null;
+	}
+
+	async function navigateMurid(direction: 'prev' | 'next') {
+		if (!canNavigateMurid) return;
+		const list = daftarMurid;
+		const currentIndex = selectedMuridIndex;
+		if (currentIndex < 0) return;
+		const offset = direction === 'next' ? 1 : -1;
+		const targetIndex = currentIndex + offset;
+		if (targetIndex < 0 || targetIndex >= list.length) return;
+		const target = list[targetIndex];
+		selectedMuridId = String(target.id);
+		await tick();
+		if (isPreviewMatchingSelection) {
+			await handlePreview();
+		}
 	}
 
 	async function handlePreview() {
@@ -286,21 +324,45 @@
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">
-		Cetak Dokumen Rapor
-		{#if kelasAktifLabel}
-			<span class="mt-2 block text-lg font-semibold text-base-content">
-				{kelasAktifLabel}
-				{#if activeSemester}
-					{' '}- Semester {activeSemester.nama} ({activeSemester.tahunAjaranNama})
-				{:else if academicContext?.activeSemesterId}
-					{' '}- Semester aktif tidak ditemukan dalam daftar tahun ajaran.
-				{:else}
-					{' '}- Semester belum disetel di menu Rapor.
-				{/if}
-			</span>
-		{/if}
-	</h2>
+	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+		<h2 class="text-xl font-bold">
+			Cetak Dokumen Rapor
+			{#if kelasAktifLabel}
+				<span class="mt-2 block text-lg font-semibold text-base-content">
+					{kelasAktifLabel}
+					{#if activeSemester}
+						{' '}- Semester {activeSemester.nama} ({activeSemester.tahunAjaranNama})
+					{:else if academicContext?.activeSemesterId}
+						{' '}- Semester aktif tidak ditemukan dalam daftar tahun ajaran.
+					{:else}
+						{' '}- Semester belum disetel di menu Rapor.
+					{/if}
+				</span>
+			{/if}
+		</h2>
+		<div class="flex items-center gap-2 self-end sm:self-auto">
+			<button
+				class="btn btn-circle shadow-none"
+				type="button"
+				onclick={() => navigateMurid('prev')}
+				title="Murid sebelumnya"
+				aria-label="Murid sebelumnya"
+				disabled={!canNavigateMurid || !hasPrevMurid}
+			>
+				<Icon name="left" />
+			</button>
+			<button
+				class="btn btn-circle shadow-none"
+				type="button"
+				onclick={() => navigateMurid('next')}
+				title="Murid berikutnya"
+				aria-label="Murid berikutnya"
+				disabled={!canNavigateMurid || !hasNextMurid}
+			>
+				<Icon name="right" />
+			</button>
+		</div>
+	</div>
 	<div class="mb-2 flex flex-col gap-2 sm:flex-row">
 		<select
 			class="select bg-base-200 w-full dark:border-none"
