@@ -360,7 +360,7 @@
 	<div class="mt-4 space-y-2 text-sm">
 		{#if hasMurid}
 			<p>
-				Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dan cetak dokumen dilakukan per murid melalui menu data murid.
+				Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dan cetak dokumen dilakukan per murid.
 			</p>
 		{:else}
 			<p class="text-warning">
