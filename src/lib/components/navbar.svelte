@@ -85,7 +85,7 @@
 			<!-- tasks modal for mobile -->
 			<li>
 				<button
-					class="btn btn-ghost btn-circle 2xl:hidden"
+					class="btn btn-ghost btn-circle xl:hidden"
 					aria-label="Daftar Tugas"
 					title="Daftar Tugas"
 					onclick={() => tasksModalRef?.open()}

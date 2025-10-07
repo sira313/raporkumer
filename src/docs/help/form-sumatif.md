@@ -2,5 +2,6 @@
 title: Petunjuk
 ---
 
-Form ini digunakan bila bapak/ibu melakukan penginputan siswa manual.
-Cukup isi nilai pada setiap tujuan pembelajaran dan SAS, lalu klik `Simpan`.
+Beri nilai masing-masing tujuan pembelajaran.<br />
+Gunakan tombol <kbd class="kbd kbd-sm">Tab</kbd> untuk berpindah antara *input* satu dan yang lainnya.<br />
+Tekan <kbd class="kbd kbd-sm">Enter</kbd> untuk *save*
