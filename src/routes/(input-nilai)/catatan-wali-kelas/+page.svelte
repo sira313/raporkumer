@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 	import { searchQueryMarker } from '$lib/utils';
 	import { onDestroy, tick } from 'svelte';
 
@@ -14,6 +15,9 @@
 	let editingCatatan = $state('');
 	let editingOriginal = $state('');
 	let editingSubmitting = $state(false);
+	let bulkDialog = $state<HTMLDialogElement | null>(null);
+	let bulkCatatan = $state('');
+	let bulkSubmitting = $state(false);
 
 	const currentPage = $derived.by(() => data.page.currentPage ?? 1);
 	const totalPages = $derived.by(() => Math.max(1, data.page.totalPages ?? 1));
@@ -41,6 +45,9 @@
 		() =>
 			editingRowId === null || editingSubmitting || editingCatatan.trim() === editingOriginal.trim()
 	);
+	const muridIds = $derived.by(() => data.daftarCatatan.map((item) => item.id));
+	const bulkTargetCount = $derived.by(() => muridIds.length);
+	const muridIdsPayload = $derived.by(() => JSON.stringify(muridIds));
 
 	$effect(() => {
 		if (searchTimer) return;
@@ -168,6 +175,30 @@
 		cancelEdit();
 		await invalidate('app:catatan-wali-kelas');
 	}
+
+	function openBulkDialog() {
+		if (!bulkTargetCount) {
+			toast('Tidak ada murid pada daftar ini.', 'warning');
+			return;
+		}
+		bulkCatatan = '';
+		requestAnimationFrame(() => bulkDialog?.showModal());
+	}
+
+	function closeBulkDialog() {
+		if (!bulkDialog) return;
+		bulkDialog.close();
+	}
+
+	function handleBulkDialogClose() {
+		bulkCatatan = '';
+		bulkSubmitting = false;
+	}
+
+	async function handleBulkSuccess() {
+		closeBulkDialog();
+		await invalidate('app:catatan-wali-kelas');
+	}
 </script>
 
 {#if academicContext}
@@ -193,12 +224,24 @@
 {/if}
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">
-		Rekapitulasi Catatan Wali Kelas
-		{#if kelasAktifLabel}
-			<span class="mt-2 block text-lg font-semibold">{kelasAktifLabel}</span>
-		{/if}
-	</h2>
+	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+		<h2 class="text-xl font-bold">
+			Rekapitulasi Catatan Wali Kelas
+			{#if kelasAktifLabel}
+				<span class="mt-2 block text-lg font-semibold">{kelasAktifLabel}</span>
+			{/if}
+		</h2>
+		<button
+			type="button"
+			class="btn btn-primary gap-2 self-start shadow-none sm:self-center"
+			onclick={openBulkDialog}
+			disabled={!bulkTargetCount || editingRowId !== null}
+			title="Isi catatan yang sama untuk seluruh murid pada halaman ini"
+		>
+			<Icon name="copy" />
+			<span>Isi Sekaligus</span>
+		</button>
+	</div>
 
 	<form
 		class="flex flex-col items-center gap-2 sm:flex-row"
@@ -339,3 +382,61 @@
 		{/each}
 	</div>
 </div>
+
+<dialog class="modal" bind:this={bulkDialog} onclose={handleBulkDialogClose}>
+	<div class="modal-box sm:w-full sm:max-w-2xl">
+		<h3 class="text-lg font-bold">Isi Catatan Sekaligus</h3>
+		<p class="text-base-content/70 mt-2 text-sm">
+			Terapkan catatan yang sama untuk {bulkTargetCount} murid pada halaman ini. Tindakan ini akan menimpa
+			catatan sebelumnya.
+		</p>
+		<FormEnhance
+			action="?/fillAll"
+			submitStateChange={(value) => (bulkSubmitting = value)}
+			onsuccess={() => {
+				void handleBulkSuccess();
+			}}
+		>
+			{#snippet children({ submitting, invalid })}
+				<input type="hidden" name="muridIds" value={muridIdsPayload} />
+				<label class="mt-4 flex flex-col gap-2" aria-busy={submitting}>
+					<span class="text-sm font-semibold">Catatan</span>
+					<textarea
+						class="textarea textarea-bordered bg-base-200 dark:bg-base-100 w-full dark:border-none"
+						name="catatan"
+						rows="5"
+						bind:value={bulkCatatan}
+						placeholder="Tuliskan catatan yang ingin diterapkan ke semua murid"
+						spellcheck="false"
+					></textarea>
+					<small class="text-base-content/70 text-xs">
+						Biarkan kosong untuk menghapus catatan seluruh murid pada halaman ini.
+					</small>
+				</label>
+				<div class="modal-action">
+					<button
+						type="button"
+						class="btn btn-soft shadow-none"
+						onclick={closeBulkDialog}
+						disabled={bulkSubmitting}
+					>
+						Batal
+					</button>
+					<button
+						type="submit"
+						class="btn btn-primary shadow-none"
+						disabled={invalid || bulkSubmitting || !bulkTargetCount}
+					>
+						{#if bulkSubmitting}
+							<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+						{/if}
+						Terapkan
+					</button>
+				</div>
+			{/snippet}
+		</FormEnhance>
+	</div>
+	<form method="dialog" class="modal-backdrop">
+		<button type="submit">close</button>
+	</form>
+</dialog>

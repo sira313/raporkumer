@@ -18,6 +18,12 @@
 		nis?: string | null;
 		nisn?: string | null;
 	};
+	type PreviewPayload = {
+		meta?: { title?: string | null } | null;
+		coverData?: NonNullable<App.PageData['coverData']> | null;
+		biodataData?: NonNullable<App.PageData['biodataData']> | null;
+		raporData?: NonNullable<App.PageData['raporData']> | null;
+	};
 
 	const previewComponents: Record<PreviewableDocument, typeof CoverPreview> = {
 		cover: CoverPreview,
@@ -44,11 +50,15 @@
 		rapor: 'Elemen rapor belum siap untuk dicetak. Coba muat ulang halaman.'
 	};
 
+	function isPreviewableDocument(value: DocumentType | ''): value is PreviewableDocument {
+		return value === 'cover' || value === 'biodata' || value === 'rapor';
+	}
+
 	let selectedDocument = $state<DocumentType | ''>('');
 	let selectedMuridId = $state('');
 	let previewDocument = $state<DocumentType | ''>('');
 	let previewMetaTitle = $state('');
-	let previewData = $state<any>(null);
+	let previewData = $state<PreviewPayload | null>(null);
 	let previewMurid = $state<MuridData | null>(null);
 	let previewPrintable = $state<HTMLDivElement | null>(null);
 	let previewLoading = $state(false);
@@ -87,7 +97,7 @@
 					nama: murid.nama,
 					nis: murid.nis,
 					nisn: murid.nisn
-			  }
+				}
 			: null;
 	});
 	const selectedMuridIndex = $derived.by(() => {
@@ -103,14 +113,13 @@
 		if (!hasMurid) return false;
 		return selectedMuridIndex >= 0;
 	});
-	const isPreviewMatchingSelection = $derived.by(
-		() =>
-			Boolean(
-				previewDocument &&
+	const isPreviewMatchingSelection = $derived.by(() =>
+		Boolean(
+			previewDocument &&
 				previewDocument !== 'piagam' &&
 				selectedDocument &&
 				selectedDocument === previewDocument
-			)
+		)
 	);
 
 	$effect(() => {
@@ -213,6 +222,9 @@
 			toast('Preview piagam akan tersedia setelah tampilan piagam selesai dibuat.', 'info');
 			return;
 		}
+		if (!isPreviewableDocument(documentType)) {
+			return;
+		}
 		if (!hasMurid) {
 			toast('Tidak ada murid yang dapat dipreview untuk kelas ini.', 'warning');
 			return;
@@ -223,7 +235,7 @@
 			return;
 		}
 
-		const path = documentPaths[documentType as PreviewableDocument];
+		const path = documentPaths[documentType];
 		const params = new URLSearchParams({ murid_id: String(murid.id) });
 		if (data.kelasId) {
 			params.set('kelas_id', data.kelasId);
@@ -244,10 +256,11 @@
 			response = await fetch(`${path}.json?${params.toString()}`, {
 				signal: controller.signal
 			});
-		} catch (error) {
+		} catch (err) {
 			if (controller.signal.aborted) {
 				return;
 			}
+			console.error(err);
 			previewLoading = false;
 			previewAbortController = null;
 			previewError = 'Gagal memuat preview dokumen. Periksa koneksi lalu coba lagi.';
@@ -267,12 +280,12 @@
 			return;
 		}
 
-		const payload = (await response.json()) as any;
+		const payload = (await response.json()) as PreviewPayload;
 		previewDocument = documentType;
 		previewData = payload;
 		previewMetaTitle =
 			(payload.meta && typeof payload.meta === 'object' && 'title' in payload.meta
-				? (payload.meta as { title?: string | null }).title ?? ''
+				? ((payload.meta as { title?: string | null }).title ?? '')
 				: '') || `${selectedDocumentEntry?.label ?? 'Dokumen'} - ${murid.nama}`;
 		previewMurid = murid;
 		previewLoading = false;
@@ -291,9 +304,12 @@
 			toast('Preview dokumen belum tersedia untuk dicetak.', 'warning');
 			return;
 		}
+		if (!isPreviewableDocument(doc)) {
+			return;
+		}
 		const printableNode = previewPrintable;
 		if (!printableNode) {
-			toast(printFailureMessages[doc as PreviewableDocument], 'warning');
+			toast(printFailureMessages[doc], 'warning');
 			return;
 		}
 		const ok = printElement(printableNode, {
@@ -301,7 +317,7 @@
 			pageMargin: '0'
 		});
 		if (!ok) {
-			toast(printFailureMessages[doc as PreviewableDocument], 'warning');
+			toast(printFailureMessages[doc], 'warning');
 		}
 	}
 
@@ -342,14 +358,14 @@
 		<h2 class="text-xl font-bold">
 			{headingTitle}
 			{#if kelasAktifLabel}
-				<span class="mt-2 block text-lg font-semibold text-base-content">
+				<span class="text-base-content mt-2 block text-lg font-semibold">
 					{kelasAktifLabel}
 					{#if activeSemester}
-						{' '}- Semester {activeSemester.nama} ({activeSemester.tahunAjaranNama})
+						- Semester {activeSemester.nama} ({activeSemester.tahunAjaranNama})
 					{:else if academicContext?.activeSemesterId}
-						{' '}- Semester aktif tidak ditemukan dalam daftar tahun ajaran.
+						- Semester aktif tidak ditemukan dalam daftar tahun ajaran.
 					{:else}
-						{' '}- Semester belum disetel di menu Rapor.
+						- Semester belum disetel di menu Rapor.
 					{/if}
 				</span>
 			{/if}
@@ -399,9 +415,9 @@
 				<option value={String(murid.id)}>
 					{murid.nama}
 					{#if murid.nisn}
-						 — {murid.nisn}
+						— {murid.nisn}
 					{:else if murid.nis}
-						 — {murid.nis}
+						— {murid.nis}
 					{/if}
 				</option>
 			{/each}
@@ -436,18 +452,20 @@
 	<div class="mt-4 space-y-2 text-sm">
 		{#if hasMurid}
 			<p>
-				Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dan cetak dokumen dilakukan per murid.
+				Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dan cetak dokumen dilakukan
+				per murid.
 			</p>
 		{:else}
 			<p class="text-warning">
-				Belum ada data murid yang bisa dipreview. Tambahkan murid terlebih dahulu pada menu Informasi Umum › Murid.
+				Belum ada data murid yang bisa dipreview. Tambahkan murid terlebih dahulu pada menu
+				Informasi Umum › Murid.
 			</p>
 		{/if}
 	</div>
 </div>
 
 {#if previewLoading}
-	<div class="mt-6 flex items-center gap-3 text-sm text-base-content/70">
+	<div class="text-base-content/70 mt-6 flex items-center gap-3 text-sm">
 		<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
 		<span>Menyiapkan preview dokumen…</span>
 	</div>

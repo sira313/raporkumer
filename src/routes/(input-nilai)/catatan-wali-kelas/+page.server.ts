@@ -160,5 +160,79 @@ export const actions = {
 			});
 
 		return { message: 'Catatan tersimpan' };
+	},
+	fillAll: async ({ request, locals }) => {
+		const sekolahId = locals.sekolah?.id;
+		if (!sekolahId) {
+			return fail(401, { fail: 'Sekolah tidak ditemukan' });
+		}
+
+		await ensureCatatanWaliSchema();
+
+		const formData = await request.formData();
+		const muridIdsRaw = formData.get('muridIds');
+		const catatanRaw = formData.get('catatan');
+
+		if (typeof muridIdsRaw !== 'string') {
+			return fail(400, { fail: 'Daftar murid tidak valid' });
+		}
+
+		let parsedIds: unknown;
+		try {
+			parsedIds = JSON.parse(muridIdsRaw);
+		} catch (error) {
+			console.error('Gagal mengurai muridIds', error);
+			return fail(400, { fail: 'Format daftar murid tidak valid' });
+		}
+
+		const muridIds = Array.isArray(parsedIds)
+			? parsedIds
+					.map((value) => Number(value))
+					.filter((value) => Number.isInteger(value) && value > 0)
+			: [];
+
+		if (!muridIds.length) {
+			return fail(400, { fail: 'Tidak ada murid yang dipilih' });
+		}
+
+		const muridList = await db
+			.select({ id: tableMurid.id })
+			.from(tableMurid)
+			.where(and(eq(tableMurid.sekolahId, sekolahId), inArray(tableMurid.id, muridIds)));
+
+		const validIds = muridList.map((item) => item.id);
+		if (!validIds.length) {
+			return fail(404, { fail: 'Murid tidak ditemukan' });
+		}
+
+		const catatanValue = typeof catatanRaw === 'string' ? catatanRaw : '';
+		const trimmed = catatanValue.trim();
+		const now = new Date().toISOString();
+
+		if (!trimmed) {
+			await db
+				.delete(tableCatatanWaliKelas)
+				.where(inArray(tableCatatanWaliKelas.muridId, validIds));
+			return { message: `Catatan dihapus untuk ${validIds.length} murid` };
+		}
+
+		const payload = validIds.map((id) => ({
+			muridId: id,
+			catatan: catatanValue,
+			updatedAt: now
+		}));
+
+		await db
+			.insert(tableCatatanWaliKelas)
+			.values(payload)
+			.onConflictDoUpdate({
+				target: tableCatatanWaliKelas.muridId,
+				set: {
+					catatan: catatanValue,
+					updatedAt: now
+				}
+			});
+
+		return { message: `Catatan diterapkan ke ${validIds.length} murid` };
 	}
 };

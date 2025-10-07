@@ -811,13 +811,13 @@
 <!-- Data Mapel Wajib -->
 <div class="card bg-base-100 rounded-box w-full border border-none p-4 shadow-md">
 	<!-- Judul IPAS bisa berubah dinamis sesuai mata pelajaran yang dipilih -->
-	<div class="mb-2 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+	<div class="mb-2 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
 		<h2 class="text-xl font-bold sm:flex-1">
 			<span class="opacity-50">Mata Pelajaran:</span>
 			{mapelDisplayName} – {data.mapel.kelas.nama}
 		</h2>
 		<button
-			class="btn shadow-none w-full sm:w-auto sm:max-w-40"
+			class="btn w-full shadow-none sm:w-auto sm:max-w-40"
 			type="button"
 			onclick={openImportDialog}
 			disabled={isImportDisabled}

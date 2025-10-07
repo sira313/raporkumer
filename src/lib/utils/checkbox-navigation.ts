@@ -68,9 +68,7 @@ export const checkboxArrowNavigation: Action<HTMLElement> = (node) => {
 	};
 
 	const handleKeydown = (event: KeyboardEvent) => {
-		if (
-			!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)
-		) {
+		if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
 			return;
 		}
 

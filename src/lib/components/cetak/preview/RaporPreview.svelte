@@ -188,11 +188,7 @@
 	class="bg-base-300 dark:bg-base-200 card w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
 >
 	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
-		<PrintCardPage
-			breakAfter
-			bind:contentRef={firstCardContent}
-			splitTrigger={triggerSplitOnMount}
-		>
+		<PrintCardPage breakAfter bind:contentRef={firstCardContent} splitTrigger={triggerSplitOnMount}>
 			<header class="pb-4 text-center">
 				<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
 				<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>

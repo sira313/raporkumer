@@ -157,7 +157,8 @@
 											disabled={submitting}
 											checked={isChecked(entry.status, 'ya')}
 											data-checkbox-column="ya"
-											onchange={(event) => toggleEntry(index, 'ya', event.currentTarget as HTMLInputElement)}
+											onchange={(event) =>
+												toggleEntry(index, 'ya', event.currentTarget as HTMLInputElement)}
 										/>
 									</td>
 									<td class="text-center">

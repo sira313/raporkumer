@@ -79,7 +79,7 @@
 </script>
 
 <div
-	class="border border-black/20 bg-base-300 dark:bg-base-200 card w-full overflow-x-auto rounded-md shadow-md print:border-none print:bg-transparent print:p-0"
+	class="bg-base-300 dark:bg-base-200 card w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
 >
 	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
 		<PrintCardPage
@@ -92,33 +92,30 @@
 					<img src={logoSrc} alt={`Logo ${sekolah?.nama ?? 'sekolah'}`} class="object-contain" />
 				</div>
 				<div class="flex flex-col gap-4">
-					{#each coverHeadings as heading}
+					{#each coverHeadings as heading (heading.text)}
 						<p class={heading.class}>{heading.text}</p>
 					{/each}
 				</div>
 			</div>
 
 			<div class="flex flex-col gap-6">
-				{#each identityFields as field}
+				{#each identityFields as field (field.label)}
 					<div class="flex flex-col gap-2">
 						<p class="text-lg font-bold">{field.label}</p>
 						<p class="border py-2 text-lg font-bold">{field.value}</p>
 					</div>
 				{/each}
 				<div class="flex flex-col gap-2">
-					{#each ministryLines as line}
+					{#each ministryLines as line (line)}
 						<p class="text-lg font-bold">{line}</p>
 					{/each}
 				</div>
 			</div>
 		</PrintCardPage>
 
-		<PrintCardPage
-			cardClass="shadow-md"
-			contentClass="justify-start gap-12 text-[1rem]"
-		>
+		<PrintCardPage cardClass="shadow-md" contentClass="justify-start gap-12 text-[1rem]">
 			<div class="flex flex-col items-center gap-1 text-center uppercase">
-				<p class="tracking-[0.5em] text-2xl font-bold">R A P O R</p>
+				<p class="text-2xl font-bold tracking-[0.5em]">R A P O R</p>
 				<p class="text-xl font-semibold">HASIL BELAJAR MURID</p>
 				{#if jenjangHeading}
 					<p class="text-xl font-semibold">{jenjangHeading}</p>
@@ -127,7 +124,7 @@
 			<div class="flex justify-start">
 				<table class="w-full max-w-[160mm] text-lg leading-8">
 					<tbody>
-						{#each biodataRows as row}
+						{#each biodataRows as row (row.label)}
 							<tr class="align-top">
 								<th class="w-[70mm] pb-2 text-left font-normal">{row.label}</th>
 								<td class="w-6 pb-2 font-normal">:</td>
