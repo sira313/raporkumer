@@ -132,6 +132,24 @@
 	const previewDocumentEntry = $derived.by(
 		() => documentOptions.find((option) => option.value === previewDocument) ?? null
 	);
+	const headingDocumentLabel = $derived.by(() => {
+		if (previewDocumentEntry?.label) return previewDocumentEntry.label;
+		if (selectedDocumentEntry?.label) return selectedDocumentEntry.label;
+		return 'Dokumen';
+	});
+	const headingMuridName = $derived.by(() => {
+		if (previewMurid?.nama) return previewMurid.nama;
+		if (selectedMurid?.nama) return selectedMurid.nama;
+		return '';
+	});
+	const headingTitle = $derived.by(() => {
+		const parts: string[] = ['Cetak'];
+		const docLabel = headingDocumentLabel.trim();
+		if (docLabel) parts.push(docLabel);
+		const muridLabel = headingMuridName.trim();
+		if (muridLabel) parts.push(muridLabel);
+		return parts.join(' - ');
+	});
 
 	const previewDisabled = $derived.by(
 		() => !selectedDocument || selectedDocument === 'piagam' || !hasMurid || !selectedMurid
@@ -159,7 +177,6 @@
 	});
 
 	let previewAbortController: AbortController | null = null;
-	let previewContainer = $state<HTMLDivElement | null>(null);
 	let keydownHandler: ((event: KeyboardEvent) => void) | null = null;
 
 	function resetPreviewState() {
@@ -262,9 +279,6 @@
 		previewAbortController = null;
 
 		await tick();
-		if (previewContainer) {
-			previewContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-		}
 	}
 
 	function handlePrintableReady(node: HTMLDivElement | null) {
@@ -326,7 +340,7 @@
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 		<h2 class="text-xl font-bold">
-			Cetak Dokumen Rapor
+			{headingTitle}
 			{#if kelasAktifLabel}
 				<span class="mt-2 block text-lg font-semibold text-base-content">
 					{kelasAktifLabel}
@@ -444,7 +458,7 @@
 	</div>
 {:else if previewDocument && previewDocument !== 'piagam' && previewData}
 	{@const PreviewComponent = previewComponents[previewDocument as PreviewableDocument]}
-	<div class="mt-6" bind:this={previewContainer}>
+	<div class="mt-6">
 		<PreviewComponent data={previewData} onPrintableReady={handlePrintableReady} />
 	</div>
 {/if}
