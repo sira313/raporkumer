@@ -2,6 +2,6 @@
 title: Petunjuk Penggunaan
 ---
 
-Isi data sekolah dengan lengkap dan benar.
-
-Pastikan untuk mengunggah logo sekolah dalam format PNG dengan ukuran file maksimal 300KB.
+Aplikasi ini dapat menambahkan sekolah lebih dari satu.<br>
+Tiap sekolah akan memiliki data yang berbeda.<br>
+Setelah menambahkan sekolah, klik tombol <kbd class="kbd">Tahun Ajaran</kbd> untuk menambahkan tahun ajaran.

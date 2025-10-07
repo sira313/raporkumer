@@ -1,8 +1,7 @@
 ---
-title: Petunjuk Penggunaan
+title: Petunjuk
 ---
 
-1. `Tambah Murid` Berfungsi untuk menambahkan murid secara manual ke dalam daftar.
-2. `Download Template` Berfungsi untuk mengunduh template Excel yang digunakan saat mengisi data murid.
-3. `Import` Berfungsi untuk mengunggah data murid dari file Excel. Gunakan template yang sudah disediakan!
-4. `Export` Berfungsi untuk mengunduh daftar murid yang telah dimasukkan dalam format Excel.
+Jika sudah import data dari Dapodik pada menu **Informasi Umum** > **Data Rapor**, seharusnya daftar murid muncul secara otomatis di halaman ini. Jadi, cukup klik tombol <kbd class="kbd">Edit</kbd> pada masing-masing murid untuk menambahkan data yang diperlukan.
+
+Selain itu, juga bisa melakukan penambahakn kelas secara manual melalui tombol <kbd class="kbd">Tambah Murid</kbd>

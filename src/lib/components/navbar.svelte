@@ -22,26 +22,43 @@
 		return query ? `${page.url.pathname}?${query}` : page.url.pathname;
 	}
 
-	const helpMaps: Record<string, string> = {
-		'/': 'umum',
-		'/sekolah': 'sekolah',
-		'/sekolah/form': 'sekolah',
-		'/murid': 'murid',
-		'/intrakurikuler': 'intrakurikuler',
-		'/ekstrakurikuler': 'ekstrakurikuler',
-		'/kelas': 'data-kelas',
-		'/kelas/form': 'data-kelas',
-		'/intrakurikuler/tp-rl': 'tp-rl',
-		'/asesmen-formatif': 'asesmen-formatif',
-		'/asesmen-formatif/formulir-asesmen': 'form-formatif',
-		'/asesmen-sumatif': 'asesmen-sumatif',
-		'/asesmen-sumatif/formulir-asesmen': 'form-sumatif',
-		'/nilai-akhir': 'nilai-akhir',
-		'/nilai-akhir/daftar-nilai': 'daftar-nilai',
-		'/absen': 'absen',
-		'/nilai-ekstrakurikuler': 'nilai-ekstrakurikuler',
-		'/cetak': 'cetak'
-	};
+	type HelpMapEntry = { matcher: string | RegExp; file: string };
+
+	const helpMaps: HelpMapEntry[] = [
+		{ matcher: '/', file: 'umum' },
+		{ matcher: '/sekolah', file: 'sekolah' },
+		{ matcher: '/sekolah/form', file: 'sekolah-form' },
+		{ matcher: '/sekolah/tahun-ajaran', file: 'tahun-ajaran' },
+		{ matcher: '/rapor', file: 'rapor' },
+		{ matcher: '/murid', file: 'murid' },
+		{ matcher: '/intrakurikuler', file: 'intrakurikuler' },
+		{ matcher: /^\/intrakurikuler\/\d+\/tp-rl$/, file: 'tp-rl' },
+		{ matcher: '/ekstrakurikuler', file: 'ekstrakurikuler' },
+		{ matcher: '/kelas', file: 'data-kelas' },
+		{ matcher: '/kelas/form', file: 'data-kelas' },
+		{ matcher: '/asesmen-formatif', file: 'asesmen-formatif' },
+		{ matcher: '/asesmen-formatif/formulir-asesmen', file: 'form-formatif' },
+		{ matcher: '/asesmen-sumatif', file: 'asesmen-sumatif' },
+		{ matcher: '/asesmen-sumatif/formulir-asesmen', file: 'form-sumatif' },
+		{ matcher: '/nilai-akhir', file: 'nilai-akhir' },
+		{ matcher: '/nilai-akhir/daftar-nilai', file: 'daftar-nilai' },
+		{ matcher: '/absen', file: 'absen' },
+		{ matcher: '/nilai-ekstrakurikuler', file: 'nilai-ekstrakurikuler' },
+		{ matcher: '/cetak', file: 'cetak' }
+	];
+
+	function resolveHelpFile(pathname: string): string | null {
+		for (const entry of helpMaps) {
+			if (typeof entry.matcher === 'string') {
+				if (pathname === entry.matcher) return entry.file;
+				continue;
+			}
+			if (entry.matcher.test(pathname)) {
+				return entry.file;
+			}
+		}
+		return null;
+	}
 
 	async function getHelpPage(fileName: string) {
 		const page = await import(`../../docs/help/${fileName}.md`);
@@ -53,7 +70,7 @@
 
 	async function showHelp() {
 		const pathname = page.url.pathname.replace(/\/+$/, '') || '/';
-		const fileName = helpMaps[pathname];
+		const fileName = resolveHelpFile(pathname);
 		if (!fileName) {
 			toast(
 				`Tombol ini berfungsi untuk menampilkan petunjuk penggunaan.<br />` +
