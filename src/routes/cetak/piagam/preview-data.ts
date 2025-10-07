@@ -37,11 +37,15 @@ function optionalInteger(paramName: string, value: string | null): number | null
 	return parsed;
 }
 
-function buildLogoUrl(sekolah: NonNullable<App.Locals['sekolah']>): string | null {
+function buildLogoUrl(
+	sekolah: NonNullable<App.Locals['sekolah']>,
+	variant: 'sekolah' | 'dinas' = 'sekolah'
+): string | null {
 	if (!sekolah.id) return null;
 	const updatedAt = sekolah.updatedAt ? Date.parse(sekolah.updatedAt) : NaN;
 	const suffix = Number.isFinite(updatedAt) ? `?v=${updatedAt}` : '';
-	return `/sekolah/logo${suffix}`;
+	const basePath = variant === 'dinas' ? '/sekolah/logo-dinas' : '/sekolah/logo';
+	return `${basePath}${suffix}`;
 }
 
 function formatTanggal(value: string | Date | null | undefined): string {
@@ -178,7 +182,8 @@ export async function getPiagamPreviewPayload({
 			},
 			website: sekolah.website ?? null,
 			email: sekolah.email ?? null,
-			logoUrl: buildLogoUrl(sekolah)
+			logoUrl: buildLogoUrl(sekolah),
+			logoDinasUrl: buildLogoUrl(sekolah, 'dinas')
 		},
 		murid: {
 			nama: murid.nama

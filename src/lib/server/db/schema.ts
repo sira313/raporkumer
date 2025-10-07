@@ -36,6 +36,8 @@ export const tableSekolah = sqliteTable('sekolah', {
 		.notNull(),
 	logo: blob().$type<Uint8Array>(),
 	logoType: text(),
+	logoDinas: blob().$type<Uint8Array>(),
+	logoDinasType: text(),
 	website: text(),
 	email: text().notNull(),
 	kepalaSekolahId: int()

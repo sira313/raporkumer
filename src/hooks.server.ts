@@ -12,7 +12,7 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 	}
 
 	let sekolah = await db.query.tableSekolah.findFirst({
-		columns: { logo: false },
+		columns: { logo: false, logoDinas: false },
 		with: { alamat: true, kepalaSekolah: true },
 		orderBy: [desc(tableSekolah.id)],
 		where: sekolahId ? eq(tableSekolah.id, sekolahId) : undefined
@@ -20,7 +20,7 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 
 	if (!sekolah) {
 		sekolah = await db.query.tableSekolah.findFirst({
-			columns: { logo: false },
+			columns: { logo: false, logoDinas: false },
 			with: { alamat: true, kepalaSekolah: true },
 			orderBy: [desc(tableSekolah.id)]
 		});

@@ -25,6 +25,14 @@ export const actions = {
 			formSekolah.logo = null;
 		}
 
+		const logoDinas = formData.get('logoDinas') as File;
+		if (logoDinas?.size) {
+			formSekolah.logoDinas = new Uint8Array(await logoDinas.arrayBuffer());
+			formSekolah.logoDinasType = logoDinas.type;
+		} else {
+			formSekolah.logoDinas = null;
+		}
+
 		await db.transaction(async (db) => {
 			if (formSekolah.id) {
 				const sekolah = await db.query.tableSekolah.findFirst({

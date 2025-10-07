@@ -42,7 +42,7 @@
 
 			<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-2">
 				<!-- Jenjang Pendidikan & Lokasi Tanda Tangan -->
-				<div class="md:col-span-2 grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] md:items-end">
+				<div class="md:col-span-2 grid grid-cols-1 gap-2 md:grid-cols-2 md:items-end">
 					<div>
 						<legend class="fieldset-legend">Jenjang Pendidikan</legend>
 						<select
@@ -210,10 +210,24 @@
 				</div>
 			</div>
 
-			<!-- Upload logo sekolah -->
-			<legend class="fieldset-legend mt-2">Logo Sekolah</legend>
-			<input type="file" class="file-input file-input-ghost" accept="image/*" name="logo" />
-			<p class="label">Format png, tanpa latar belakang, maksimal 300KB</p>
+			<!-- Upload logo sekolah dan dinas pendidikan -->
+			<div class="mt-2 grid gap-2 md:grid-cols-2">
+				<div class="flex flex-col gap-1">
+					<legend class="fieldset-legend">Logo Sekolah</legend>
+					<input type="file" class="file-input file-input-ghost" accept="image/*" name="logo" />
+					<p class="label text-wrap">Format png, tanpa latar belakang, maksimal 300KB</p>
+				</div>
+				<div class="flex flex-col gap-1">
+					<legend class="fieldset-legend">Logo Dinas Pendidikan</legend>
+					<input
+						type="file"
+						class="file-input file-input-ghost"
+						accept="image/*"
+						name="logoDinas"
+					/>
+					<p class="label text-wrap">Format png, tanpa latar belakang, maksimal 300KB</p>
+				</div>
+			</div>
 
 			<!-- Back and Save -->
 			<div class="mt-6 flex justify-end gap-2">

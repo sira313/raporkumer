@@ -28,6 +28,7 @@ interface CoverPrintData {
 		website?: string | null;
 		email?: string | null;
 		logoUrl?: string | null;
+		logoDinasUrl?: string | null;
 	};
 	murid: {
 		nama: string;
@@ -154,6 +155,7 @@ interface PiagamPrintData {
 		website?: string | null;
 		email?: string | null;
 		logoUrl?: string | null;
+		logoDinasUrl?: string | null;
 	};
 	murid: {
 		nama: string;

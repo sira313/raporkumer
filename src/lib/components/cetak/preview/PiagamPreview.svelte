@@ -168,8 +168,14 @@
 	});
 	const tanggalPenandatangan = $derived.by(() => ttd?.tanggal ?? '');
 
-	const logoLeft = '/garudaPancasila.png';
+	const logoLeft = $derived.by(() => sekolah?.logoDinasUrl ?? '/garudaPancasila.png');
 	const logoRight = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri-bw.png');
+	const dinasLogoAlt = $derived.by(() =>
+		kabupaten ? `Logo Dinas Pendidikan ${kabupaten}` : 'Logo Dinas Pendidikan'
+	);
+	const sekolahLogoAlt = $derived.by(() =>
+		sekolahNamaUpper ? `Logo ${sekolahNamaUpper}` : 'Logo sekolah'
+	);
 
 	$effect(() => {
 		onPrintableReady?.(printable);
@@ -189,7 +195,7 @@
 			<section class="flex flex-col gap-4">
 				<header class="grid grid-cols-[80px_1fr_80px] items-center gap-3">
 					<div class="flex justify-center">
-						<img src={logoLeft} alt="Lambang negara" class="h-20 w-20 object-contain" />
+						<img src={logoLeft} alt={dinasLogoAlt} class="h-20 w-20 object-contain" />
 					</div>
 					<div class="text-center">
 						{#each headingLines as line, index}
@@ -210,7 +216,7 @@
 						{/each}
 					</div>
 					<div class="flex justify-center">
-						<img src={logoRight} alt="Logo sekolah" class="h-20 w-20 object-contain" />
+						<img src={logoRight} alt={sekolahLogoAlt} class="h-20 w-20 object-contain" />
 					</div>
 				</header>
 				<div class="border-base-content/60 border-t" aria-hidden="true"></div>
