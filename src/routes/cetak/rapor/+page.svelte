@@ -198,106 +198,124 @@
 
 <PrintTip onPrint={handlePrint} buttonLabel="Cetak rapor" />
 
-<div class="flex flex-col gap-4 overflow-visible print:gap-0" bind:this={printable}>
-	<PrintCardPage
-		breakAfter
-		bind:contentRef={firstCardContent}
-		splitTrigger={triggerSplitOnMount}
-	>
-		<header class="text-center pb-4">
-			<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
-			<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
-		</header>
+<section class="card w-full flex-1 basis-full bg-base-100 shadow-2xl print:border-none print:bg-transparent print:shadow-none">
+	<div class="card-body w-full items-stretch space-y-6 print:space-y-4 print:p-0">
+		<div class="space-y-1">
+			<h2 class="card-title text-2xl">Pratinjau Dokumen A4</h2>
+			<p class="text-sm text-base-content/70 print:hidden">
+				Area pratinjau di bawah akan menjaga ukuran kertas A4. Geser horizontal bila layar tidak cukup lebar.
+			</p>
+		</div>
 
-		<RaporIdentityTable
-			murid={murid}
-			rombel={rombel}
-			sekolah={sekolah}
-			periode={periode}
-			formatValue={formatValue}
-			formatUpper={formatUpper}
-		/>
-
-		<RaporIntrakTable
-			rows={firstPageRows}
-			tableRowAction={tableRow}
-			rapor={rapor}
-			formatValue={formatValue}
-			formatUpper={formatUpper}
-			formatHari={formatHari}
-			waliKelas={waliKelas}
-			kepalaSekolah={kepalaSekolah}
-			ttd={ttd}
-			bind:sectionRef={firstTableSection}
-			sectionClass="mt-8"
-			splitTrigger={triggerSplitOnMount}
-		/>
-	</PrintCardPage>
-
-	{#each intermediatePageRows as pageRows, pageIndex (pageIndex)}
-		<PrintCardPage breakAfter splitTrigger={triggerSplitOnMount}>
-			<RaporIntrakTable
-				rows={pageRows}
-				tableRowAction={tableRow}
-				rapor={rapor}
-				formatValue={formatValue}
-				formatUpper={formatUpper}
-				formatHari={formatHari}
-				waliKelas={waliKelas}
-				kepalaSekolah={kepalaSekolah}
-				ttd={ttd}
-				splitTrigger={triggerSplitOnMount}
-			/>
-		</PrintCardPage>
-	{/each}
-
-	{#if finalPageRows.length > 0}
-		<PrintCardPage splitTrigger={triggerSplitOnMount}>
-			<RaporIntrakTable
-				rows={finalPageRows}
-				tableRowAction={tableRow}
-				rapor={rapor}
-				formatValue={formatValue}
-				formatUpper={formatUpper}
-				formatHari={formatHari}
-				waliKelas={waliKelas}
-				kepalaSekolah={kepalaSekolah}
-				ttd={ttd}
-				splitTrigger={triggerSplitOnMount}
-			/>
-		</PrintCardPage>
-	{/if}
-
-	<div
-		class="pointer-events-none"
-		style="position: fixed; top: -10000px; left: -10000px; width: 210mm; pointer-events: none; opacity: 0;"
-		aria-hidden="true"
-	>
-		<div class="card bg-base-100 rounded-lg border border-none shadow-md">
+		<div class="bg-base-300 rounded-md">
+		<div class="w-full p-2 overflow-x-auto print:border-none print:bg-transparent print:p-0">
 			<div
-				class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
+				class="mx-auto flex w-fit flex-col gap-6 print:gap-0"
+				bind:this={printable}
 			>
-				<div
-					class="flex min-h-0 flex-1 flex-col text-[12px]"
-					bind:this={continuationPrototypeContent}
+				<PrintCardPage
+					breakAfter
+					bind:contentRef={firstCardContent}
+					splitTrigger={triggerSplitOnMount}
 				>
-					<section
-						bind:this={continuationPrototypeTableSection}
-						use:triggerSplitOnMount
-					>
-						<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
-							<thead class="bg-base-300">
-								<tr>
-									<th class="border-base-300 border px-3 py-2 text-left">No.</th>
-									<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
-									<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
-									<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
-								</tr>
-							</thead>
-						</table>
-					</section>
+					<header class="text-center pb-4">
+						<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
+						<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
+					</header>
+
+					<RaporIdentityTable
+						murid={murid}
+						rombel={rombel}
+						sekolah={sekolah}
+						periode={periode}
+						formatValue={formatValue}
+						formatUpper={formatUpper}
+					/>
+
+					<RaporIntrakTable
+						rows={firstPageRows}
+						tableRowAction={tableRow}
+						rapor={rapor}
+						formatValue={formatValue}
+						formatUpper={formatUpper}
+						formatHari={formatHari}
+						waliKelas={waliKelas}
+						kepalaSekolah={kepalaSekolah}
+						ttd={ttd}
+						bind:sectionRef={firstTableSection}
+						sectionClass="mt-8"
+						splitTrigger={triggerSplitOnMount}
+					/>
+				</PrintCardPage>
+
+				{#each intermediatePageRows as pageRows, pageIndex (pageIndex)}
+					<PrintCardPage breakAfter splitTrigger={triggerSplitOnMount}>
+						<RaporIntrakTable
+							rows={pageRows}
+							tableRowAction={tableRow}
+							rapor={rapor}
+							formatValue={formatValue}
+							formatUpper={formatUpper}
+							formatHari={formatHari}
+							waliKelas={waliKelas}
+							kepalaSekolah={kepalaSekolah}
+							ttd={ttd}
+							splitTrigger={triggerSplitOnMount}
+						/>
+					</PrintCardPage>
+				{/each}
+
+				{#if finalPageRows.length > 0}
+					<PrintCardPage splitTrigger={triggerSplitOnMount}>
+						<RaporIntrakTable
+							rows={finalPageRows}
+							tableRowAction={tableRow}
+							rapor={rapor}
+							formatValue={formatValue}
+							formatUpper={formatUpper}
+							formatHari={formatHari}
+							waliKelas={waliKelas}
+							kepalaSekolah={kepalaSekolah}
+							ttd={ttd}
+							splitTrigger={triggerSplitOnMount}
+						/>
+					</PrintCardPage>
+				{/if}
+
+				<div
+					class="pointer-events-none"
+					style="position: fixed; top: -10000px; left: -10000px; width: 210mm; pointer-events: none; opacity: 0;"
+					aria-hidden="true"
+				>
+					<div class="card bg-base-100 rounded-lg border border-none shadow-md">
+						<div
+							class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
+						>
+							<div
+								class="flex min-h-0 flex-1 flex-col text-[12px]"
+								bind:this={continuationPrototypeContent}
+							>
+								<section
+									bind:this={continuationPrototypeTableSection}
+									use:triggerSplitOnMount
+								>
+									<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
+										<thead class="bg-base-300">
+											<tr>
+												<th class="border-base-300 border px-3 py-2 text-left">No.</th>
+												<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
+												<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
+												<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
+											</tr>
+										</thead>
+									</table>
+								</section>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
+		</div>
 	</div>
-</div>
+</section>
