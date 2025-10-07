@@ -278,7 +278,7 @@
 							<td class="text-center">
 								{#if isEditing}
 									<input
-										class="input input-sm bg-base-200 dark:bg-base-100 w-full text-center dark:border-none"
+										class="input input-sm dark:bg-base-300 w-full text-center dark:border-none"
 										type="text"
 										inputmode="numeric"
 										value={editingValues.sakit}
@@ -294,7 +294,7 @@
 							<td class="text-center">
 								{#if isEditing}
 									<input
-										class="input input-sm bg-base-200 dark:bg-base-100 w-full text-center dark:border-none"
+										class="input input-sm dark:bg-base-300 w-full text-center dark:border-none"
 										type="text"
 										inputmode="numeric"
 										value={editingValues.izin}
@@ -310,7 +310,7 @@
 							<td class="text-center">
 								{#if isEditing}
 									<input
-										class="input input-sm bg-base-200 dark:bg-base-100 w-full text-center dark:border-none"
+										class="input input-sm dark:bg-base-300 w-full text-center dark:border-none"
 										type="text"
 										inputmode="numeric"
 										value={editingValues.alfa}

@@ -811,7 +811,7 @@
 <!-- Data Mapel Wajib -->
 <div class="card bg-base-100 rounded-box w-full border border-none p-4 shadow-md">
 	<!-- Judul IPAS bisa berubah dinamis sesuai mata pelajaran yang dipilih -->
-	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+	<div class="mb-2 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 		<h2 class="text-xl font-bold sm:flex-1">
 			<span class="opacity-50">Mata Pelajaran:</span>
 			{mapelDisplayName} – {data.mapel.kelas.nama}
