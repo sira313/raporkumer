@@ -13,6 +13,7 @@ interface ModalProps {
 	onPositive?: ModalAction;
 	onNeutral?: ModalAction;
 	onNegative?: ModalAction;
+	onClose?: () => void;
 }
 
 interface Toast {

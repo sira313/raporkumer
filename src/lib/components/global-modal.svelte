@@ -3,7 +3,9 @@
 	let modalProps = $state<ModalProps | null>(null);
 
 	function clearModal() {
+		const handler = modalProps?.onClose;
 		modalProps = null;
+		handler?.();
 	}
 
 	export function showModal(props: ModalProps) {
@@ -38,14 +40,14 @@
 				<h3 class="text-lg font-bold">{props.title}</h3>
 			{/if}
 
-			<p class="prose w-full max-w-none py-4">
+			<div class="prose w-full max-w-none py-4">
 				{#if typeof props.body == 'string'}
 					{@html props.body}
 				{:else}
 					{@const BodyComponent = props.body as import('svelte').Component<any, any, any>}
 					<BodyComponent {...props.bodyProps ?? {}} />
 				{/if}
-			</p>
+			</div>
 
 			{#if props.onPositive || props.onNeutral || props.onNegative}
 				<div class="modal-action">

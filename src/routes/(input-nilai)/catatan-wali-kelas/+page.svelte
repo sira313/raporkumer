@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { goto, invalidate } from '$app/navigation';
 	import { page } from '$app/state';
+	import BulkFillModal from '$lib/components/catatan-wali/bulk-fill-modal.svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { hideModal, showModal } from '$lib/components/global-modal.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import { searchQueryMarker } from '$lib/utils';
 	import { onDestroy, tick } from 'svelte';
@@ -15,9 +17,8 @@
 	let editingCatatan = $state('');
 	let editingOriginal = $state('');
 	let editingSubmitting = $state(false);
-	let bulkDialog = $state<HTMLDialogElement | null>(null);
 	let bulkCatatan = $state('');
-	let bulkSubmitting = $state(false);
+	const bulkFormId = 'bulk-catatan-form';
 
 	const currentPage = $derived.by(() => data.page.currentPage ?? 1);
 	const totalPages = $derived.by(() => Math.max(1, data.page.totalPages ?? 1));
@@ -182,21 +183,33 @@
 			return;
 		}
 		bulkCatatan = '';
-		requestAnimationFrame(() => bulkDialog?.showModal());
-	}
-
-	function closeBulkDialog() {
-		if (!bulkDialog) return;
-		bulkDialog.close();
+		showModal({
+			title: 'Isi Catatan Sekaligus',
+			body: BulkFillModal,
+			bodyProps: {
+				formId: bulkFormId,
+				muridIdsPayload,
+				targetCount: bulkTargetCount,
+				catatan: bulkCatatan,
+				onCatatanChange: (value: string) => {
+					bulkCatatan = value;
+				},
+				onRequestClose: () => hideModal(),
+				onSuccess: async () => {
+					await handleBulkSuccess();
+				}
+			},
+			dismissible: true,
+			onClose: handleBulkDialogClose
+		});
 	}
 
 	function handleBulkDialogClose() {
 		bulkCatatan = '';
-		bulkSubmitting = false;
 	}
 
 	async function handleBulkSuccess() {
-		closeBulkDialog();
+		hideModal();
 		await invalidate('app:catatan-wali-kelas');
 	}
 </script>
@@ -382,61 +395,3 @@
 		{/each}
 	</div>
 </div>
-
-<dialog class="modal" bind:this={bulkDialog} onclose={handleBulkDialogClose}>
-	<div class="modal-box sm:w-full sm:max-w-2xl">
-		<h3 class="text-lg font-bold">Isi Catatan Sekaligus</h3>
-		<p class="text-base-content/70 mt-2 text-sm">
-			Terapkan catatan yang sama untuk {bulkTargetCount} murid pada halaman ini. Tindakan ini akan menimpa
-			catatan sebelumnya.
-		</p>
-		<FormEnhance
-			action="?/fillAll"
-			submitStateChange={(value) => (bulkSubmitting = value)}
-			onsuccess={() => {
-				void handleBulkSuccess();
-			}}
-		>
-			{#snippet children({ submitting, invalid })}
-				<input type="hidden" name="muridIds" value={muridIdsPayload} />
-				<label class="mt-4 flex flex-col gap-2" aria-busy={submitting}>
-					<span class="text-sm font-semibold">Catatan</span>
-					<textarea
-						class="textarea textarea-bordered bg-base-200 dark:bg-base-100 w-full dark:border-none"
-						name="catatan"
-						rows="5"
-						bind:value={bulkCatatan}
-						placeholder="Tuliskan catatan yang ingin diterapkan ke semua murid"
-						spellcheck="false"
-					></textarea>
-					<small class="text-base-content/70 text-xs">
-						Biarkan kosong untuk menghapus catatan seluruh murid pada halaman ini.
-					</small>
-				</label>
-				<div class="modal-action">
-					<button
-						type="button"
-						class="btn btn-soft shadow-none"
-						onclick={closeBulkDialog}
-						disabled={bulkSubmitting}
-					>
-						Batal
-					</button>
-					<button
-						type="submit"
-						class="btn btn-primary shadow-none"
-						disabled={invalid || bulkSubmitting || !bulkTargetCount}
-					>
-						{#if bulkSubmitting}
-							<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
-						{/if}
-						Terapkan
-					</button>
-				</div>
-			{/snippet}
-		</FormEnhance>
-	</div>
-	<form method="dialog" class="modal-backdrop">
-		<button type="submit">close</button>
-	</form>
-</dialog>
