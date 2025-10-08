@@ -9,10 +9,30 @@
 	const statistikDashboard = $derived(
 		data.statistikDashboard ?? {
 			rombel: { total: 0, perFase: [] },
-			murid: { total: 0 }
+			murid: { total: 0 },
+			mapel: { total: 0, wajib: 0, mulok: 0, lainnya: 0 },
+			ekstrakurikuler: { total: 0 },
+			progress: {
+				akademik: { percentage: 0, completed: 0, total: 0 },
+				absensi: { percentage: 0, completed: 0, total: 0 },
+				ekstrakurikuler: { percentage: 0, completed: 0, total: 0 }
+			}
 		}
 	);
 	const rombelBadges = $derived.by(() => statistikDashboard.rombel.perFase);
+	const mapelStats = $derived(
+		statistikDashboard.mapel ?? { total: 0, wajib: 0, mulok: 0, lainnya: 0 }
+	);
+	const progressStats = $derived(
+		statistikDashboard.progress ?? {
+			akademik: { percentage: 0, completed: 0, total: 0 },
+			absensi: { percentage: 0, completed: 0, total: 0 },
+			ekstrakurikuler: { percentage: 0, completed: 0, total: 0 }
+		}
+	);
+	const ekstrakurikulerStats = $derived(
+		statistikDashboard.ekstrakurikuler ?? { total: 0 }
+	);
 </script>
 
 <!-- Kontainer Utama Grid -->
@@ -93,8 +113,13 @@
 					</span>
 				</div>
 				<div class="stat-title">Mata Pelajaran</div>
-				<div class="stat-value">25</div>
-				<div class="stat-desc">18 Wajib & 7 Mulok</div>
+				<div class="stat-value">{mapelStats.total}</div>
+				<div class="stat-desc">
+					{mapelStats.wajib} Wajib & {mapelStats.mulok} Mulok
+					{#if mapelStats.lainnya}
+						& {mapelStats.lainnya} Pilihan
+					{/if}
+				</div>
 			</div>
 
 			<div class="stat">
@@ -104,8 +129,14 @@
 					</span>
 				</div>
 				<div class="stat-title">Ekstrakurikuler</div>
-				<div class="stat-value">12</div>
-				<div class="stat-desc">Pilihan</div>
+				<div class="stat-value">{ekstrakurikulerStats.total}</div>
+				<div class="stat-desc">
+					{#if ekstrakurikulerStats.total}
+						Total di kelas ini
+					{:else}
+						Belum ada data
+					{/if}
+				</div>
 			</div>
 		</div>
 	</div>
@@ -126,38 +157,60 @@
 				<div class="mb-4">
 					<label class="label" for="progress-akademik">
 						<span class="label-text">Nilai Akademik</span>
-						<span class="label-text-alt font-semibold">85%</span>
+						<span class="label-text-alt font-semibold">
+							{progressStats.akademik.percentage}%
+						</span>
 					</label>
 					<progress
 						id="progress-akademik"
 						class="progress progress-success w-full"
-						value="85"
+						value={progressStats.akademik.percentage}
 						max="100"
 					></progress>
+					<p class="mt-1 text-xs text-base-content/70">
+						{progressStats.akademik.completed} dari {progressStats.akademik.total} penilaian
+						sudah diinput.
+					</p>
 				</div>
 
 				<!-- Progress Absensi -->
 				<div class="mb-4">
 					<label class="label" for="progress-absensi">
 						<span class="label-text">Absensi Siswa</span>
-						<span class="label-text-alt font-semibold">98%</span>
+						<span class="label-text-alt font-semibold">
+							{progressStats.absensi.percentage}%
+						</span>
 					</label>
-					<progress id="progress-absensi" class="progress progress-info w-full" value="98" max="100"
+					<progress
+						id="progress-absensi"
+						class="progress progress-info w-full"
+						value={progressStats.absensi.percentage}
+						max="100"
 					></progress>
+					<p class="mt-1 text-xs text-base-content/70">
+						{progressStats.absensi.completed} dari {progressStats.absensi.total} murid
+						telah memiliki rekap absensi.
+					</p>
 				</div>
 
 				<!-- Progress Nilai Ekstrakurikuler -->
 				<div>
 					<label class="label" for="progress-ekskul">
 						<span class="label-text">Nilai Ekstrakurikuler</span>
-						<span class="label-text-alt font-semibold">70%</span>
+						<span class="label-text-alt font-semibold">
+							{progressStats.ekstrakurikuler.percentage}%
+						</span>
 					</label>
 					<progress
 						id="progress-ekskul"
 						class="progress progress-warning w-full"
-						value="70"
+						value={progressStats.ekstrakurikuler.percentage}
 						max="100"
 					></progress>
+					<p class="mt-1 text-xs text-base-content/70">
+						{progressStats.ekstrakurikuler.completed} dari {progressStats.ekstrakurikuler.total} murid
+						sudah dinilai.
+					</p>
 				</div>
 			</div>
 		</div>
