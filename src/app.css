@@ -101,3 +101,13 @@ a[data-preloading] {
 		}
 	}
 }
+
+.preview {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 0, 0, 0.09), 
+    rgba(0, 0, 0, 0.09) 1px,
+    transparent 1px,
+    transparent 12px
+  );
+}

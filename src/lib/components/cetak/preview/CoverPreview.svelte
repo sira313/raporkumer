@@ -47,7 +47,7 @@
 	});
 	const coverHeadings = $derived.by(() => [
 		{ text: 'LAPORAN', class: 'text-4xl font-bold tracking-wide uppercase' },
-		{ text: 'HASIL CAPAIAN PEMBELAJARAN MURID', class: 'text-2xl font-bold uppercase' },
+		{ text: 'HASIL BELAJAR MURID', class: 'text-2xl font-bold uppercase' },
 		{ text: formatUpper(sekolah?.nama), class: 'text-2xl font-bold uppercase' }
 	]);
 	const identityFields = $derived.by(() => [
@@ -79,7 +79,7 @@
 </script>
 
 <div
-	class="bg-base-300 dark:bg-base-200 card w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
+	class="bg-base-300 dark:bg-base-200 card w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0 preview"
 >
 	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
 		<PrintCardPage
