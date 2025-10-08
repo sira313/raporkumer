@@ -11,11 +11,23 @@
 		requestAnimationFrame(() => modal?.showModal());
 	}
 
+	export function updateModal(props: Partial<ModalProps>) {
+		if (!modalProps) return;
+		const nextBodyProps = props.bodyProps
+			? { ...(modalProps.bodyProps ?? {}), ...(props.bodyProps ?? {}) }
+			: modalProps.bodyProps;
+		modalProps = { ...modalProps, ...props, bodyProps: nextBodyProps };
+	}
+
 	export function hideModal() {
 		if (!modal) return;
 		modal.close();
 		clearModal();
 	}
+</script>
+
+<script lang="ts">
+	import Icon from '$lib/components/icon.svelte';
 </script>
 
 {#if modalProps}
@@ -30,7 +42,8 @@
 				{#if typeof props.body == 'string'}
 					{@html props.body}
 				{:else}
-					<props.body />
+					{@const BodyComponent = props.body as import('svelte').Component<any, any, any>}
+					<BodyComponent {...props.bodyProps ?? {}} />
 				{/if}
 			</p>
 
@@ -38,30 +51,39 @@
 				<div class="modal-action">
 					{#if props.onNegative}
 						<button
-							class="btn btn-error shadow-none"
+							class="btn btn-error gap-2 shadow-none"
 							type="button"
 							onclick={() => props.onNegative?.action?.({ close: hideModal })}
 						>
+							{#if props.onNegative.icon}
+								<Icon name={props.onNegative.icon} />
+							{/if}
 							{props.onNegative.label}
 						</button>
 					{/if}
 
 					{#if props.onNeutral}
 						<button
-							class="btn shadow-none"
+							class="btn gap-2 shadow-none"
 							type="button"
 							onclick={() => props.onNeutral?.action?.({ close: hideModal })}
 						>
+							{#if props.onNeutral.icon}
+								<Icon name={props.onNeutral.icon} />
+							{/if}
 							{props.onNeutral.label}
 						</button>
 					{/if}
 
 					{#if props.onPositive}
 						<button
-							class="btn btn-primary shadow-none"
+							class="btn btn-primary gap-2 shadow-none"
 							type="button"
 							onclick={() => props.onPositive?.action?.({ close: hideModal })}
 						>
+							{#if props.onPositive.icon}
+								<Icon name={props.onPositive.icon} />
+							{/if}
 							{props.onPositive.label}
 						</button>
 					{/if}
