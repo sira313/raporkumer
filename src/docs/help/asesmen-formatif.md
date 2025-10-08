@@ -2,6 +2,5 @@
 title: Petunjuk
 ---
 
-Pilih kelas dan pilih mata pelajaran terlebih dahulu sebelum melakukan penilaian.
-
-Klik tombol `Nilai` untuk melakukan penilaian pada tiap siswa.
+Asesmen Formatif ini sebenarnya tidak berpengaruh terhadap perhitungan nilai rapor, hanya berguna untuk umpan balik guru dan murid.<br>
+Klik tombol <kbd class="kbd">Nilai</kbd> pada kolom aksi untuk menilai murid.

@@ -17,6 +17,7 @@
 		if (!kelasAktif) return null;
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
 	});
+	let exporting = $state(false);
 
 	function formatScore(value: number | null) {
 		if (value == null) return '&mdash;';
@@ -31,6 +32,52 @@
 		if (!ringkasan.totalMapel) return '0/0 Mata Pelajaran';
 		return `${ringkasan.mapelDinilai}/${ringkasan.totalMapel} Mata Pelajaran`;
 	});
+
+	async function handleExport() {
+		if (!murid || !hasNilai || exporting) return;
+		try {
+			exporting = true;
+			const XLSX = await import('xlsx');
+			const headerRows: (string | number)[][] = [
+				['Rekap Nilai Akhir Murid'],
+				['Nama Murid', murid.nama],
+				['Kelas', kelasAktifLabel ?? '-'],
+				['Rata-rata', ringkasan.rataRata ?? ''],
+				['Mapel Dinilai', `${ringkasan.mapelDinilai} dari ${ringkasan.totalMapel}`],
+				[]
+			];
+			const tableHeader = ['No', 'Mata Pelajaran', 'Nilai Akhir', 'Status'];
+			const tableRows = daftarNilai.map((nilai) => [
+				nilai.no,
+				nilai.mataPelajaran,
+				nilai.sudahDinilai ? Number.parseFloat(nilai.nilaiAkhir.toFixed(2)) : null,
+				nilai.sudahDinilai ? 'Sudah Dinilai' : 'Belum Dinilai'
+			]);
+			const worksheet = XLSX.utils.aoa_to_sheet([...headerRows, tableHeader, ...tableRows]);
+			worksheet['!cols'] = [
+				{ wch: 6 },
+				{ wch: 40 },
+				{ wch: 14 },
+				{ wch: 18 }
+			];
+			worksheet['!freeze'] = { xSplit: 0, ySplit: headerRows.length + 1 };
+			const workbook = XLSX.utils.book_new();
+			XLSX.utils.book_append_sheet(workbook, worksheet, 'Nilai Akhir');
+			const safeName = murid.nama.replace(/[<>:"/\\|?*]+/g, ' ').trim() || 'murid';
+			const kelasName = kelasAktifLabel ? ` - ${kelasAktifLabel}` : '';
+			const timestamp = new Date().toISOString().slice(0, 10);
+			const fileName = `Nilai Akhir - ${safeName}${kelasName} - ${timestamp}.xlsx`;
+			if (typeof XLSX.writeFileXLSX === 'function') {
+				XLSX.writeFileXLSX(workbook, fileName, { compression: true });
+			} else {
+				XLSX.writeFile(workbook, fileName, { compression: true });
+			}
+		} catch (error) {
+			console.error('Gagal mengekspor nilai akhir', error);
+		} finally {
+			exporting = false;
+		}
+	}
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
@@ -41,8 +88,14 @@
 		</a>
 		<button
 			class="btn shadow-none sm:ml-auto"
-			disabled={!hasNilai}
-			title={hasNilai ? 'Unduh nilai murid' : 'Belum ada nilai untuk diexport'}
+			class:loading={exporting}
+			disabled={!hasNilai || exporting}
+			title={exporting
+				? 'Sedang menyiapkan file Excel'
+				: hasNilai
+					? 'Unduh nilai murid'
+					: 'Belum ada nilai untuk diexport'}
+			onclick={handleExport}
 		>
 			<Icon name="export" />
 			Export
