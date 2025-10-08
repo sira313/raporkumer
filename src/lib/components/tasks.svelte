@@ -1,27 +1,23 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { page } from '$app/state';
 	import Icon from './icon.svelte';
-
-	type TaskStatus = 'active' | 'completed';
-
-	type TaskRecord = {
-		id: number;
-		title: string;
-		status: TaskStatus;
-		createdAt: string;
-		updatedAt: string | null;
-	};
-
-	type ApiResponse<T> = {
-		data?: T;
-		message?: string;
-	};
+	import TaskActiveList from './tasks/task-active-list.svelte';
+	import TaskCompletedList from './tasks/task-completed-list.svelte';
+	import TaskHeader from './tasks/task-header.svelte';
+	import {
+		createTask,
+		deleteTasks,
+		listTasks,
+		splitTaskBuckets,
+		updateTaskStatus
+	} from './tasks/task-service';
+	import type { TaskRecord } from './tasks/types';
 
 	let { variant = 'sidebar' }: { variant?: 'sidebar' | 'modal' } = $props();
 
 	const wrapperClass = $derived(
 		variant === 'sidebar'
-			? 'card bg-base-100 mb-6 hidden max-h-80 min-h-80 max-w-70 min-w-70 shadow-md xl:block'
+			? 'card bg-base-100 mb-6 hidden max-h-100 min-h-80 max-w-70 min-w-70 shadow-md xl:block'
 			: 'card bg-base-100 shadow-md w-full'
 	);
 
@@ -31,84 +27,101 @@
 			: 'flex flex-col max-h-[60vh] overflow-y-auto'
 	);
 
-	const timestamp = (value?: string | null) => {
-		if (!value) return 0;
-		const parsed = Date.parse(value);
-		return Number.isNaN(parsed) ? 0 : parsed;
-	};
-
-	const sortTasks = (tasks: TaskRecord[]) =>
-		[...tasks].sort((a, b) => {
-			const diff = timestamp(b.createdAt) - timestamp(a.createdAt);
-			if (diff !== 0) return diff;
-			return b.id - a.id;
-		});
-
-	const setBuckets = (tasks: TaskRecord[]) => {
-		const ordered = sortTasks(tasks);
-		activeTasks = ordered.filter((task) => task.status === 'active');
-		completedTasks = ordered.filter((task) => task.status === 'completed');
-	};
-
-	async function requestJson<T>(
-		input: RequestInfo | URL,
-		init?: RequestInit
-	): Promise<{ response: Response; payload: ApiResponse<T> }> {
-		const response = await fetch(input, init);
-		let payload: ApiResponse<T>;
-		try {
-			payload = (await response.json()) as ApiResponse<T>;
-		} catch {
-			payload = {};
-		}
-		return { response, payload };
-	}
+	const kelasAktifId = $derived(page.data.kelasAktif?.id ?? null);
+	const kelasLabel = $derived.by(() => {
+		const kelas = page.data.kelasAktif ?? null;
+		if (!kelas) return null;
+		return kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama;
+	});
 
 	let activeTasks = $state<TaskRecord[]>([]);
 	let completedTasks = $state<TaskRecord[]>([]);
 	let isAdding = $state(false);
 	let newTaskTitle = $state('');
-	let newTaskInput = $state<HTMLInputElement | null>(null);
 	let isLoading = $state(false);
 	let hasLoaded = $state(false);
 	let isProcessing = $state(false);
 	let errorMessage = $state('');
+	let previousKelasId = $state<number | null>(null);
+	let activeListRef = $state<{ focusInput: () => Promise<void> | void } | null>(null);
 
-	const loadTasks = async (options?: { showSpinner?: boolean }) => {
-		const showSpinner = options?.showSpinner ?? !hasLoaded;
-		if (showSpinner) isLoading = true;
-		errorMessage = '';
-		try {
-			const { response, payload } = await requestJson<TaskRecord[]>('/api/tasks');
-			if (!response.ok) {
-				throw new Error(payload.message ?? 'Gagal memuat tugas.');
-			}
-			const tasks = Array.isArray(payload.data) ? payload.data : [];
-			setBuckets(tasks);
-		} catch (error) {
-			console.error(error);
-			activeTasks = [];
-			completedTasks = [];
-			errorMessage = error instanceof Error ? error.message : 'Gagal memuat tugas.';
-		} finally {
-			hasLoaded = true;
-			isLoading = false;
-		}
+	const showInitialSpinner = $derived(isLoading && !hasLoaded);
+	const hasActiveTasks = $derived(Boolean(activeTasks.length));
+	const hasCompletedTasks = $derived(Boolean(completedTasks.length));
+	const hasAnyTasks = $derived(hasActiveTasks || hasCompletedTasks);
+	const canManageTasks = $derived(Boolean(kelasAktifId));
+	const hasAnyTasksLoaded = $derived(canManageTasks && hasLoaded);
+	const showEmptyState = $derived(hasAnyTasksLoaded && !isAdding && !hasActiveTasks);
+	const showNoClass = $derived(!canManageTasks);
+
+	const resetBuckets = () => {
+		activeTasks = [];
+		completedTasks = [];
 	};
-
-	onMount(() => {
-		void loadTasks();
-	});
 
 	const resetInput = () => {
 		newTaskTitle = '';
 		isAdding = false;
 	};
 
-	const focusInput = async () => {
-		await tick();
-		newTaskInput?.focus();
+	const assignBuckets = (tasks: TaskRecord[]) => {
+		const { active, completed } = splitTaskBuckets(tasks);
+		activeTasks = active;
+		completedTasks = completed;
 	};
+
+	const ensureKelasAvailable = () => {
+		if (!kelasAktifId) {
+			errorMessage = 'Pilih kelas untuk mengelola tugas.';
+			return false;
+		}
+		return true;
+	};
+
+	const loadTasks = async ({
+		kelasId = kelasAktifId,
+		showSpinner = false
+	}: { kelasId?: number | null; showSpinner?: boolean } = {}) => {
+		const targetKelasId = kelasId ?? null;
+		if (!targetKelasId) {
+			resetBuckets();
+			hasLoaded = false;
+			isLoading = false;
+			return;
+		}
+		if (showSpinner) isLoading = true;
+		errorMessage = '';
+		try {
+			const tasks = await listTasks(targetKelasId);
+			if (kelasAktifId !== targetKelasId) return;
+			assignBuckets(tasks);
+		} catch (error) {
+			console.error(error);
+			if (kelasAktifId !== targetKelasId) return;
+			resetBuckets();
+			errorMessage = error instanceof Error ? error.message : 'Gagal memuat tugas.';
+		} finally {
+			if (kelasAktifId === targetKelasId) {
+				hasLoaded = true;
+				isLoading = false;
+			}
+		}
+	};
+
+	$effect(() => {
+		if (kelasAktifId === previousKelasId) return;
+		previousKelasId = kelasAktifId;
+		resetInput();
+		if (!kelasAktifId) {
+			resetBuckets();
+			hasLoaded = false;
+			isLoading = false;
+			errorMessage = '';
+			return;
+		}
+		hasLoaded = false;
+		void loadTasks({ kelasId: kelasAktifId, showSpinner: true });
+	});
 
 	const toggleAddTask = async () => {
 		if (isProcessing) return;
@@ -116,26 +129,22 @@
 			resetInput();
 			return;
 		}
+		if (!ensureKelasAvailable()) return;
 		isAdding = true;
-		await focusInput();
+		await activeListRef?.focusInput();
 	};
 
 	const saveTask = async () => {
 		const title = newTaskTitle.trim();
 		if (!title || isProcessing) return;
+		if (!ensureKelasAvailable()) return;
+		const kelasId = kelasAktifId!;
 		isProcessing = true;
 		errorMessage = '';
 		try {
-			const { response, payload } = await requestJson<TaskRecord>('/api/tasks', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ title })
-			});
-			if (!response.ok) {
-				throw new Error(payload.message ?? 'Gagal menyimpan tugas.');
-			}
+			await createTask(kelasId, title);
 			resetInput();
-			await loadTasks({ showSpinner: false });
+			await loadTasks({ kelasId, showSpinner: false });
 		} catch (error) {
 			console.error(error);
 			errorMessage = error instanceof Error ? error.message : 'Gagal menyimpan tugas.';
@@ -144,31 +153,15 @@
 		}
 	};
 
-	const handleNewTaskKeydown = async (event: KeyboardEvent) => {
-		if (event.key === 'Enter') {
-			event.preventDefault();
-			await saveTask();
-		}
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			resetInput();
-		}
-	};
-
-	const updateTaskStatus = async (taskId: number, status: TaskStatus) => {
+	const updateTask = async (taskId: number, status: 'active' | 'completed') => {
 		if (isProcessing) return;
+		if (!ensureKelasAvailable()) return;
+		const kelasId = kelasAktifId!;
 		isProcessing = true;
 		errorMessage = '';
 		try {
-			const { response, payload } = await requestJson<TaskRecord>('/api/tasks', {
-				method: 'PATCH',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ id: taskId, status })
-			});
-			if (!response.ok) {
-				throw new Error(payload.message ?? 'Gagal memperbarui tugas.');
-			}
-			await loadTasks({ showSpinner: false });
+			await updateTaskStatus(kelasId, taskId, status);
+			await loadTasks({ kelasId, showSpinner: false });
 		} catch (error) {
 			console.error(error);
 			errorMessage = error instanceof Error ? error.message : 'Gagal memperbarui tugas.';
@@ -177,20 +170,23 @@
 		}
 	};
 
+	const moveToCompleted = (taskId: number) => {
+		void updateTask(taskId, 'completed');
+	};
+
+	const moveToActive = (taskId: number) => {
+		void updateTask(taskId, 'active');
+	};
+
 	const removeTasks = async (payload: { id?: number; scope?: 'completed' | 'all' }) => {
 		if (isProcessing) return;
+		if (!ensureKelasAvailable()) return;
+		const kelasId = kelasAktifId!;
 		isProcessing = true;
 		errorMessage = '';
 		try {
-			const { response, payload: result } = await requestJson<{ deleted: number }>('/api/tasks', {
-				method: 'DELETE',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify(payload)
-			});
-			if (!response.ok) {
-				throw new Error(result.message ?? 'Gagal menghapus tugas.');
-			}
-			await loadTasks({ showSpinner: false });
+			await deleteTasks(kelasId, payload);
+			await loadTasks({ kelasId, showSpinner: false });
 		} catch (error) {
 			console.error(error);
 			errorMessage = error instanceof Error ? error.message : 'Gagal menghapus tugas.';
@@ -199,80 +195,34 @@
 		}
 	};
 
-	const moveToCompleted = (taskId: number) => {
-		void updateTaskStatus(taskId, 'completed');
-	};
-
-	const moveToActive = (taskId: number) => {
-		void updateTaskStatus(taskId, 'active');
-	};
-
 	const removeTask = (taskId: number) => {
 		void removeTasks({ id: taskId });
 	};
 
 	const clearCompleted = () => {
-		if (!completedTasks.length) return;
+		if (!hasCompletedTasks) return;
 		void removeTasks({ scope: 'completed' });
 	};
 
 	const clearAll = () => {
-		if (!activeTasks.length && !completedTasks.length) return;
+		if (!hasAnyTasks) return;
 		void removeTasks({ scope: 'all' });
 	};
-
-	const hasActiveTasks = $derived(Boolean(activeTasks.length));
-	const hasCompletedTasks = $derived(Boolean(completedTasks.length));
-	const hasAnyTasks = $derived(hasActiveTasks || hasCompletedTasks);
 </script>
 
 <div class={wrapperClass}>
-	<div class="flex flex-row items-center justify-center p-4">
-		<h2 class="text-lg font-bold">Daftar tugas</h2>
-		{#if isLoading && !hasLoaded}
-			<span class="loading loading-spinner loading-xs text-primary ml-2" aria-hidden="true"></span>
-		{/if}
-		<div class="flex-1"></div>
-		<div class="join">
-			<button
-				type="button"
-				class="btn join-item shadow-none"
-				onclick={toggleAddTask}
-				title={isAdding ? 'Batalkan tambah tugas' : 'Tambah tugas'}
-				disabled={isProcessing}
-			>
-				<Icon name={isAdding ? 'close' : 'plus'} />
-			</button>
-			<div class="dropdown dropdown-end">
-				<div tabindex="0" role="button" title="Tombol hapus" class="join-item btn shadow-none">
-					<Icon name="del" class="text-error" />
-					<Icon name="collapse-all" class="text-error" />
-				</div>
-				<ul class="menu dropdown-content bg-base-100 rounded-box z-1 mt-2 w-48 p-2 shadow-md">
-					<li>
-						<button
-							type="button"
-							class="btn btn-ghost btn-sm justify-start"
-							onclick={clearCompleted}
-							disabled={!hasCompletedTasks || isProcessing}
-						>
-							Hapus tugas selesai
-						</button>
-					</li>
-					<li>
-						<button
-							type="button"
-							class="btn btn-ghost btn-sm text-error justify-start"
-							onclick={clearAll}
-							disabled={!hasAnyTasks || isProcessing}
-						>
-							Hapus semua tugas
-						</button>
-					</li>
-				</ul>
-			</div>
-		</div>
-	</div>
+	<TaskHeader
+		isAdding={isAdding}
+		isProcessing={isProcessing}
+		canManage={canManageTasks}
+		showInitialSpinner={showInitialSpinner}
+		hasCompletedTasks={hasCompletedTasks}
+		hasAnyTasks={hasAnyTasks}
+		kelasLabel={kelasLabel}
+		on:toggleAdd={toggleAddTask}
+		on:clearCompleted={clearCompleted}
+		on:clearAll={clearAll}
+	/>
 	{#if errorMessage}
 		<div class="px-4 pb-2">
 			<div class="alert alert-error flex items-center gap-2 rounded-lg p-3 text-sm">
@@ -282,7 +232,7 @@
 		</div>
 	{/if}
 	<div class={listContainerClass}>
-		{#if isLoading && !hasLoaded}
+		{#if showInitialSpinner}
 			<div class="flex-1 overflow-y-auto">
 				<table class="table w-full pl-2">
 					<tbody>
@@ -295,125 +245,39 @@
 					</tbody>
 				</table>
 			</div>
+		{:else if showNoClass}
+			<div class="text-base-content/60 flex flex-1 items-center justify-center px-4 py-6 text-center text-sm">
+				Pilih kelas untuk melihat daftar tugas.
+			</div>
 		{:else}
-			{#if isAdding || hasActiveTasks}
-				<div class="flex-1 overflow-y-auto">
-					<table class="table w-full pl-2">
-						<tbody>
-							{#if isAdding}
-								<tr class="border-base-300 dark:border-base-200">
-									<td class="p-2" colspan="2">
-										<input
-											bind:this={newTaskInput}
-											bind:value={newTaskTitle}
-											placeholder="Nama tugas"
-											class="input input-sm input-bordered w-full"
-											onkeydown={handleNewTaskKeydown}
-											autocomplete="off"
-											aria-label="Nama tugas baru"
-										/>
-									</td>
-									<td class="p-2 text-right">
-										<button
-											type="button"
-											class="btn btn-primary btn-sm"
-											onclick={saveTask}
-											title="Simpan tugas"
-											disabled={isProcessing || !newTaskTitle.trim()}
-										>
-											<Icon name="save" />
-										</button>
-									</td>
-								</tr>
-							{/if}
-							{#each activeTasks as task (task.id)}
-								<tr class="border-base-300 dark:border-base-200">
-									<th class="w-0 align-middle">
-										<input
-											type="checkbox"
-											class="checkbox"
-											onchange={() => moveToCompleted(task.id)}
-											title="Tandai selesai"
-											disabled={isProcessing}
-										/>
-									</th>
-									<td class="p-2"><p class="flex-1">{task.title}</p></td>
-									<td class="p-2 text-right">
-										<button
-											type="button"
-											class="btn btn-circle btn-ghost"
-											title="Hapus tugas"
-											onclick={() => removeTask(task.id)}
-											disabled={isProcessing}
-										>
-											<Icon name="del" class="text-error" />
-										</button>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			{/if}
-			{#if !isAdding && !hasActiveTasks}
-				<div
-					class="text-base-content/60 flex flex-1 items-center justify-center px-4 py-6 text-center text-sm"
-				>
+			<TaskActiveList
+				bind:this={activeListRef}
+				tasks={activeTasks}
+				isAdding={isAdding}
+				isProcessing={isProcessing}
+				newTaskTitle={newTaskTitle}
+				canManage={canManageTasks}
+				on:updateTitle={(event: CustomEvent<string>) => (newTaskTitle = event.detail)}
+				on:save={() => void saveTask()}
+				on:cancel={resetInput}
+				on:complete={(event: CustomEvent<number>) => void moveToCompleted(event.detail)}
+				on:remove={(event: CustomEvent<number>) => void removeTask(event.detail)}
+			/>
+			{#if showEmptyState}
+				<div class="text-base-content/60 flex flex-1 items-center justify-center px-4 py-6 text-center text-sm">
 					Belum ada tugas aktif. Tambahkan tugas baru untuk memulai.
 				</div>
 			{/if}
 		{/if}
 		<div class="m-2 mt-auto">
-			<div class="bg-base-300 dark:bg-base-200 collapse mt-6">
-				<input type="checkbox" />
-				<div class="collapse-title font-bold">Tugas sudah selesai</div>
-				<div class="collapse-content p-0 text-sm">
-					<table class="table pl-2">
-						<tbody>
-							{#if !hasLoaded && isLoading}
-								<tr>
-									<td colspan="3" class="p-4 text-center text-sm">
-										<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-										<span class="sr-only">Memuat tugas selesai</span>
-									</td>
-								</tr>
-							{:else if !hasCompletedTasks}
-								<tr>
-									<td colspan="3" class="text-base-content/60 p-4 text-center text-sm">
-										Belum ada tugas yang selesai.
-									</td>
-								</tr>
-							{/if}
-							{#each completedTasks as task (task.id)}
-								<tr class="border-base-100">
-									<th class="w-0 p-2 align-middle">
-										<input
-											type="checkbox"
-											class="checkbox"
-											checked
-											onchange={() => moveToActive(task.id)}
-											title="Kembalikan ke tugas aktif"
-											disabled={isProcessing}
-										/>
-									</th>
-									<td class="p-2"><p class="flex-1"><s>{task.title}</s></p></td>
-									<td class="p-2 text-right">
-										<button
-											type="button"
-											class="btn btn-circle btn-ghost"
-											title="Hapus tugas"
-											onclick={() => removeTask(task.id)}
-											disabled={isProcessing}
-										>
-											<Icon name="del" class="text-error" />
-										</button>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			</div>
+			<TaskCompletedList
+				tasks={completedTasks}
+				isProcessing={isProcessing}
+				showInitialSpinner={showInitialSpinner}
+				canManage={canManageTasks}
+				on:restore={(event: CustomEvent<number>) => void moveToActive(event.detail)}
+				on:remove={(event: CustomEvent<number>) => void removeTask(event.detail)}
+			/>
 		</div>
 	</div>
 </div>

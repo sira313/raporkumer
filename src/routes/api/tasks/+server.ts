@@ -1,5 +1,5 @@
 import db from '$lib/server/db';
-import { tableTasks } from '$lib/server/db/schema';
+import { tableKelas, tableTasks } from '$lib/server/db/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import { json, type RequestHandler } from '@sveltejs/kit';
 
@@ -12,6 +12,7 @@ type TaskPayload = {
 	title?: string;
 	status?: TaskStatus;
 	scope?: 'completed' | 'all';
+	kelasId?: number;
 };
 
 const parseBody = async (request: Request): Promise<TaskPayload> => {
@@ -43,12 +44,22 @@ const serializeTasks = (tasks: TaskItem[]) =>
 		status: task.status as TaskStatus
 	}));
 
-export const GET: RequestHandler = async ({ locals }) => {
+const parsePositiveInteger = (value: unknown) => {
+	const parsed = Number(value ?? 0);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+export const GET: RequestHandler = async ({ locals, url }) => {
 	const sekolahError = ensureSekolah(locals.sekolah);
 	if (sekolahError) return sekolahError;
 
+	const kelasId = parsePositiveInteger(url.searchParams.get('kelasId'));
+	if (!kelasId) {
+		return json({ message: 'Kelas tidak valid.' }, { status: 400 });
+	}
+
 	const tasks = await db.query.tableTasks.findMany({
-		where: eq(tableTasks.sekolahId, locals.sekolah!.id),
+		where: and(eq(tableTasks.sekolahId, locals.sekolah!.id), eq(tableTasks.kelasId, kelasId)),
 		orderBy: [desc(tableTasks.createdAt), desc(tableTasks.id)]
 	});
 
@@ -59,11 +70,25 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	const sekolahError = ensureSekolah(locals.sekolah);
 	if (sekolahError) return sekolahError;
 
-	const { title } = await parseBody(request);
+	const { title, kelasId } = await parseBody(request);
 	const normalizedTitle = (title ?? '').trim();
+	const normalizedKelasId = parsePositiveInteger(kelasId);
 
 	if (!normalizedTitle) {
 		return json({ message: 'Judul tugas wajib diisi.' }, { status: 400 });
+	}
+
+	if (!normalizedKelasId) {
+		return json({ message: 'Kelas tidak valid.' }, { status: 400 });
+	}
+
+	const kelas = await db.query.tableKelas.findFirst({
+		columns: { id: true },
+		where: and(eq(tableKelas.id, normalizedKelasId), eq(tableKelas.sekolahId, locals.sekolah!.id))
+	});
+
+	if (!kelas) {
+		return json({ message: 'Kelas tidak ditemukan.' }, { status: 404 });
 	}
 
 	const now = new Date().toISOString();
@@ -72,6 +97,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		.insert(tableTasks)
 		.values({
 			sekolahId: locals.sekolah!.id,
+			kelasId: normalizedKelasId,
 			title: normalizedTitle,
 			status: 'active',
 			updatedAt: now
@@ -85,11 +111,12 @@ export const PATCH: RequestHandler = async ({ locals, request }) => {
 	const sekolahError = ensureSekolah(locals.sekolah);
 	if (sekolahError) return sekolahError;
 
-	const { id, status } = await parseBody(request);
+	const { id, status, kelasId } = await parseBody(request);
 	const normalizedId = Number(id || 0);
 	const normalizedStatus = TASK_STATUSES.find((item) => item === status) ?? null;
+	const normalizedKelasId = parsePositiveInteger(kelasId);
 
-	if (!normalizedId || !normalizedStatus) {
+	if (!normalizedId || !normalizedStatus || !normalizedKelasId) {
 		return json({ message: 'Data tugas tidak valid.' }, { status: 400 });
 	}
 
@@ -98,7 +125,13 @@ export const PATCH: RequestHandler = async ({ locals, request }) => {
 	const [task] = await db
 		.update(tableTasks)
 		.set({ status: normalizedStatus, updatedAt: now })
-		.where(and(eq(tableTasks.id, normalizedId), eq(tableTasks.sekolahId, locals.sekolah!.id)))
+		.where(
+			and(
+				eq(tableTasks.id, normalizedId),
+				eq(tableTasks.sekolahId, locals.sekolah!.id),
+				eq(tableTasks.kelasId, normalizedKelasId)
+			)
+		)
 		.returning();
 
 	if (!task) {
@@ -112,8 +145,13 @@ export const DELETE: RequestHandler = async ({ locals, request }) => {
 	const sekolahError = ensureSekolah(locals.sekolah);
 	if (sekolahError) return sekolahError;
 
-	const { id, scope } = await parseBody(request);
+	const { id, scope, kelasId } = await parseBody(request);
 	const normalizedId = Number(id || 0);
+	const normalizedKelasId = parsePositiveInteger(kelasId);
+
+	if (!normalizedKelasId) {
+		return json({ message: 'Kelas tidak valid.' }, { status: 400 });
+	}
 
 	let deleted = 0;
 
@@ -121,19 +159,29 @@ export const DELETE: RequestHandler = async ({ locals, request }) => {
 		if (scope === 'all') {
 			const result = await db
 				.delete(tableTasks)
-				.where(eq(tableTasks.sekolahId, locals.sekolah!.id));
+				.where(and(eq(tableTasks.sekolahId, locals.sekolah!.id), eq(tableTasks.kelasId, normalizedKelasId)));
 			deleted = result.rowsAffected ?? 0;
 		} else if (scope === 'completed') {
 			const result = await db
 				.delete(tableTasks)
 				.where(
-					and(eq(tableTasks.sekolahId, locals.sekolah!.id), eq(tableTasks.status, 'completed'))
+					and(
+						eq(tableTasks.sekolahId, locals.sekolah!.id),
+						eq(tableTasks.kelasId, normalizedKelasId),
+						eq(tableTasks.status, 'completed')
+					)
 				);
 			deleted = result.rowsAffected ?? 0;
 		} else if (normalizedId) {
 			const result = await db
 				.delete(tableTasks)
-				.where(and(eq(tableTasks.id, normalizedId), eq(tableTasks.sekolahId, locals.sekolah!.id)));
+				.where(
+					and(
+						eq(tableTasks.id, normalizedId),
+						eq(tableTasks.sekolahId, locals.sekolah!.id),
+						eq(tableTasks.kelasId, normalizedKelasId)
+					)
+				);
 			deleted = result.rowsAffected ?? 0;
 		} else {
 			return json({ message: 'Permintaan hapus tidak valid.' }, { status: 400 });

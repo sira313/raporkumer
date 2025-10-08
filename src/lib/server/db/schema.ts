@@ -81,11 +81,33 @@ export const tableSemester = sqliteTable(
 	(table) => [unique().on(table.tahunAjaranId, table.tipe)]
 );
 
+export const tableKelas = sqliteTable(
+	'kelas',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id, { onDelete: 'cascade' })
+			.notNull(),
+		tahunAjaranId: int()
+			.references(() => tableTahunAjaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		semesterId: int()
+			.references(() => tableSemester.id, { onDelete: 'cascade' })
+			.notNull(),
+		nama: text().notNull(),
+		fase: text(),
+		waliKelasId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
+		...audit
+	},
+	(table) => [unique().on(table.sekolahId, table.semesterId, table.nama)]
+);
+
 export const tableTasks = sqliteTable('tasks', {
 	id: int().primaryKey({ autoIncrement: true }),
 	sekolahId: int()
 		.references(() => tableSekolah.id, { onDelete: 'cascade' })
 		.notNull(),
+	kelasId: int().references(() => tableKelas.id, { onDelete: 'cascade' }),
 	title: text().notNull(),
 	status: text({ enum: ['active', 'completed'] })
 		.default('active')
@@ -122,29 +144,12 @@ export const tableTasksRelations = relations(tableTasks, ({ one }) => ({
 	sekolah: one(tableSekolah, {
 		fields: [tableTasks.sekolahId],
 		references: [tableSekolah.id]
+	}),
+	kelas: one(tableKelas, {
+		fields: [tableTasks.kelasId],
+		references: [tableKelas.id]
 	})
 }));
-
-export const tableKelas = sqliteTable(
-	'kelas',
-	{
-		id: int().primaryKey({ autoIncrement: true }),
-		sekolahId: int()
-			.references(() => tableSekolah.id, { onDelete: 'cascade' })
-			.notNull(),
-		tahunAjaranId: int()
-			.references(() => tableTahunAjaran.id, { onDelete: 'cascade' })
-			.notNull(),
-		semesterId: int()
-			.references(() => tableSemester.id, { onDelete: 'cascade' })
-			.notNull(),
-		nama: text().notNull(),
-		fase: text(),
-		waliKelasId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
-		...audit
-	},
-	(table) => [unique().on(table.sekolahId, table.semesterId, table.nama)]
-);
 
 export const tableKelasRelations = relations(tableKelas, ({ one }) => ({
 	sekolah: one(tableSekolah, { fields: [tableKelas.sekolahId], references: [tableSekolah.id] }),
