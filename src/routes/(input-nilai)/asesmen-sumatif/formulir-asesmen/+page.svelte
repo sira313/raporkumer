@@ -15,6 +15,14 @@
 		TujuanEntry
 	} from '$lib/components/asesmen-sumatif/types';
 	import { showModal, updateModal } from '$lib/components/global-modal.svelte';
+	import {
+		formatScore,
+		toInputText,
+		toDraft,
+		normalizeScoreText,
+		isScoreValid
+	} from '$lib/components/asesmen-sumatif/utils';
+	import { generateCheatResult } from '$lib/components/asesmen-sumatif/cheat-generator';
 
 	type PageData = {
 		murid: { id: number; nama: string };
@@ -42,39 +50,6 @@
 	};
 
 	let { data }: { data: PageData } = $props();
-
-	function formatScore(value: number | null) {
-		if (value == null || Number.isNaN(value)) return '—';
-		return value.toFixed(2);
-	}
-
-	function toInputText(value: number | null) {
-		return value != null ? value.toFixed(2) : '';
-	}
-
-	function toDraft(entry: TujuanEntry): EntryDraft {
-		const nilaiText = toInputText(entry.nilai);
-		return { ...entry, nilaiText };
-	}
-
-	function normalizeScoreText(input: unknown): number | null {
-		if (input == null) return null;
-		const raw =
-			typeof input === 'number' ? (Number.isFinite(input) ? input.toString() : '') : String(input);
-		const trimmed = raw.trim();
-		if (!trimmed) return null;
-		const normalized = trimmed.replace(',', '.');
-		const pattern = /^(?:100(?:\.0{1,2})?|\d{1,2}(?:\.\d{1,2})?)$/;
-		if (!pattern.test(normalized)) return null;
-		const value = Number.parseFloat(normalized);
-		if (!Number.isFinite(value) || value < 0 || value > 100) return null;
-		return Math.round(value * 100) / 100;
-	}
-
-	function isScoreValid(text: string) {
-		if (!text.trim()) return true;
-		return normalizeScoreText(text) != null;
-	}
 
 	let entries = $state(data.entries.map(toDraft));
 	let sasTesText = $state(
@@ -277,198 +252,7 @@
 		await invalidate('app:asesmen-sumatif/formulir');
 	}
 
-	function roundToTwo(value: number): number {
-		return Math.round(value * 100) / 100;
-	}
-
-	function clamp(value: number, min: number, max: number): number {
-		return Math.min(max, Math.max(min, value));
-	}
-
-	function randomBetween(min: number, max: number): number {
-		if (max <= min) return min;
-		return Math.random() * (max - min) + min;
-	}
-
-	function ensureUniqueValue(value: number, used: Set<string>): number {
-		let candidate = roundToTwo(value);
-		let formatted = candidate.toFixed(2);
-		if (!used.has(formatted)) {
-			used.add(formatted);
-			return candidate;
-		}
-		const step = 0.01;
-		for (let offset = 1; offset < 500; offset += 1) {
-			const up = roundToTwo(value + step * offset);
-			if (up <= 100) {
-				const upKey = up.toFixed(2);
-				if (!used.has(upKey)) {
-					used.add(upKey);
-					return up;
-				}
-			}
-			const down = roundToTwo(value - step * offset);
-			if (down >= 0) {
-				const downKey = down.toFixed(2);
-				if (!used.has(downKey)) {
-					used.add(downKey);
-					return down;
-				}
-			}
-		}
-		used.add(formatted);
-		return candidate;
-	}
-
-	function shuffle<T>(values: T[]): T[] {
-		const array = [...values];
-		for (let i = array.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[array[i], array[j]] = [array[j], array[i]];
-		}
-		return array;
-	}
-
-	function buildCheatDrafts(target: number, attempt: number): EntryDraft[] | null {
-		const count = entries.length;
-		if (!count) return null;
-		const indexes = shuffle(entries.map((_, index) => index));
-		const used = new Set<string>();
-		const baseStep = Math.min(6, Math.max(0.25, 24 / Math.max(1, count - 1)));
-		const shrink = 1 + attempt / 5;
-		const step = baseStep / shrink;
-		const jitter = Math.max(0.05, step / 2);
-		const values = new Array<number>(count);
-
-		for (let position = 0; position < indexes.length; position += 1) {
-			const idx = indexes[position];
-			const offsetIndex = position - (count - 1) / 2;
-			const randomOffset = offsetIndex * step + randomBetween(-jitter, jitter);
-			const raw = clamp(target + randomOffset, 0, 100);
-			const uniqueValue = ensureUniqueValue(raw, used);
-			values[idx] = uniqueValue;
-		}
-
-		return entries.map((entry, idx) => {
-			const nilai = values[idx];
-			return {
-				...entry,
-				nilai,
-				nilaiText: toInputText(nilai)
-			};
-		});
-	}
-
-	function calculateNaSumatifLingkupFromDrafts(drafts: EntryDraft[]): number | null {
-		const grouped = new Map<
-			string,
-			{
-				bobot: number | null;
-				values: number[];
-			}
-		>();
-
-		for (const entry of drafts) {
-			const key = entry.lingkupMateri;
-			let group = grouped.get(key);
-			if (!group) {
-				group = { bobot: entry.bobot ?? null, values: [] };
-				grouped.set(key, group);
-			} else if (group.bobot == null && entry.bobot != null) {
-				group.bobot = entry.bobot;
-			}
-			const score = normalizeScoreText(entry.nilaiText);
-			if (score != null) {
-				group.values.push(score);
-			}
-		}
-
-		if (!grouped.size) return null;
-
-		const summaries = Array.from(grouped.entries(), ([lingkupMateri, group]) => {
-			const avg = group.values.length
-				? roundToTwo(group.values.reduce((sum, value) => sum + value, 0) / group.values.length)
-				: null;
-			return { lingkupMateri, bobot: group.bobot, rataRata: avg } satisfies LingkupSummary;
-		});
-
-		const weighted = summaries.reduce(
-			(
-				acc,
-				item
-			): {
-				sum: number;
-				weight: number;
-				fallbackSum: number;
-				fallbackCount: number;
-			} => {
-				if (item.rataRata == null) return acc;
-				const bobot = item.bobot ?? 0;
-				if (bobot > 0) {
-					return {
-						sum: acc.sum + item.rataRata * bobot,
-						weight: acc.weight + bobot,
-						fallbackSum: acc.fallbackSum,
-						fallbackCount: acc.fallbackCount
-					};
-				}
-				return {
-					sum: acc.sum,
-					weight: acc.weight,
-					fallbackSum: acc.fallbackSum + item.rataRata,
-					fallbackCount: acc.fallbackCount + 1
-				};
-			},
-			{ sum: 0, weight: 0, fallbackSum: 0, fallbackCount: 0 }
-		);
-
-		if (weighted.weight > 0) {
-			return roundToTwo(weighted.sum / weighted.weight);
-		}
-		if (weighted.fallbackCount > 0) {
-			return roundToTwo(weighted.fallbackSum / weighted.fallbackCount);
-		}
-		return null;
-	}
-
-	function applyCheat(target: number): boolean {
-		if (!entries.length) return false;
-		const maxAttempts = 40;
-
-		for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-			const drafts = buildCheatDrafts(target, attempt);
-			if (!drafts) return false;
-			const naCandidate = calculateNaSumatifLingkupFromDrafts(drafts);
-			if (naCandidate == null) continue;
-			const nilaiSasCandidate = roundToTwo(2 * target - naCandidate);
-			if (nilaiSasCandidate < 0 || nilaiSasCandidate > 100) {
-				continue;
-			}
-			let sasTes = nilaiSasCandidate;
-			let sasNonTes = nilaiSasCandidate;
-			const spreadLimit = Math.min(0.6, Math.min(100 - nilaiSasCandidate, nilaiSasCandidate));
-			if (spreadLimit > 0) {
-				const spreadBase = spreadLimit <= 0.1 ? spreadLimit : randomBetween(0.1, spreadLimit);
-				const spread = roundToTwo(spreadBase);
-				sasTes = roundToTwo(nilaiSasCandidate + spread / 2);
-				sasNonTes = roundToTwo(2 * nilaiSasCandidate - sasTes);
-				if (sasTes < 0 || sasTes > 100 || sasNonTes < 0 || sasNonTes > 100) {
-					sasTes = roundToTwo(nilaiSasCandidate);
-					sasNonTes = sasTes;
-				}
-			}
-
-			entries = drafts.map((draft) => ({
-				...draft,
-				nilai: normalizeScoreText(draft.nilaiText)
-			}));
-			sasTesText = toInputText(sasTes);
-			sasNonTesText = toInputText(sasNonTes);
-			return true;
-		}
-
-		return false;
-	}
+	/* Cheat logic handled via generateCheatResult utility */
 
 	function syncCheatModalBody(): void {
 		updateModal({
@@ -498,11 +282,15 @@
 			syncCheatModalBody();
 			return;
 		}
-		if (!applyCheat(normalized)) {
+		const result = generateCheatResult(entries, normalized);
+		if (!result) {
 			cheatModalError = 'Gagal menghasilkan nilai acak yang valid. Coba lagi.';
 			syncCheatModalBody();
 			return;
 		}
+		entries = result.drafts;
+		sasTesText = toInputText(result.sasTes);
+		sasNonTesText = toInputText(result.sasNonTes);
 		cheatModalError = null;
 		close();
 	}
