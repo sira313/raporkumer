@@ -277,10 +277,9 @@
 				<div class="flex flex-col items-center text-center">
 					<p>Orang Tua/Wali Murid</p>
 					<div
-						class="border-base-300 mt-16 h-[1px] w-full max-w-[220px] border-b border-dashed"
+						class="border-base-300 mt-20 h-[1px] w-full max-w-[220px] border-b border-dashed"
 						aria-hidden="true"
 					></div>
-					<div class="text-base-content/70 mt-1 text-sm">Nama Orang Tua/Wali</div>
 				</div>
 				<div class="relative flex flex-col items-center text-center">
 					<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">

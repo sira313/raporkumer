@@ -29,16 +29,21 @@
 		{ label: 'Kelurahan/Desa', value: formatValue(orangTua?.alamat?.kelurahan) },
 		{ label: 'Kecamatan', value: formatValue(orangTua?.alamat?.kecamatan) },
 		{ label: 'Kabupaten/Kota', value: formatValue(orangTua?.alamat?.kabupaten) },
-		{ label: 'Provinsi', value: formatValue(orangTua?.alamat?.provinsi) }
+		{ label: 'Provinsi', value: formatValue(orangTua?.alamat?.provinsi, '-') }
 	]);
 
 	const waliFields = $derived.by(() => [
-		{ label: 'Nama Wali', value: formatUpper(wali?.nama) },
-		{ label: 'Pekerjaan Wali', value: formatValue(wali?.pekerjaan) },
-		{ label: 'Alamat Wali', value: formatValue(wali?.alamat) }
+		{ label: 'Nama Wali', value: formatUpper(wali?.nama, '-') },
+		{ label: 'Pekerjaan Wali', value: formatValue(wali?.pekerjaan, '-') },
+		{ label: 'Alamat Wali', value: formatValue(wali?.alamat, '-') }
 	]);
 
 	const muridAlamat = $derived.by(() => formatMuridAlamat(murid?.alamat));
+	const pendidikanSebelumnya = $derived.by(() => {
+		const value = formatValue(murid?.pendidikanSebelumnya);
+		if (value === '—') return value;
+		return value.trim().toLowerCase() === 'belum diisi' ? '-' : value;
+	});
 </script>
 
 <section class={sectionClass}>
@@ -78,7 +83,7 @@
 				<td class="align-top">6.</td>
 				<td class="align-top">Pendidikan Sebelumnya</td>
 				<td class="align-top">:</td>
-				<td class="font-semibold">{formatValue(murid?.pendidikanSebelumnya)}</td>
+				<td class="font-semibold">{pendidikanSebelumnya}</td>
 			</tr>
 			<tr>
 				<td class="align-top">7.</td>

@@ -161,7 +161,7 @@
 				'Semoga prestasi yang diraih menjadi motivasi untuk meraih kesuksesan di masa yang akan datang.'
 	);
 
-	const periodeSemester = $derived.by(() => formatUpper(periode?.semester) || '—');
+	const periodeSemester = $derived.by(() => formatTitle(periode?.semester) || '—');
 	const periodeTahun = $derived.by(() => formatUpper(periode?.tahunAjaran) || '—');
 
 	const lokasiPenandatangan = $derived.by(() => {
@@ -252,7 +252,7 @@
 				<p class="text-sm uppercase tracking-wide text-base-content/80">Sebagai</p>
 				<p class="text-xl font-bold uppercase">{rankingLabel}</p>
 				<p class="mt-3 max-w-[480px] text-justify text-base leading-relaxed">
-					Dengan total nilai rata-rata <strong>{rataRata}</strong> pada semester {periodeSemester}
+					Dengan total nilai rata-rata <strong>{rataRata}</strong> pada Semester {periodeSemester}
 					tahun ajaran {periodeTahun}.
 				</p>
 				<p class="max-w-[480px] text-justify text-base leading-relaxed">{achievementMotivation}</p>

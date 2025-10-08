@@ -24,8 +24,8 @@
 	</div>
 	<div class="text-left leading-relaxed">
 		<p>{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}</p>
-		<p>Kepala Sekolah,</p>
-		<div class="mt-12 font-semibold tracking-wide uppercase">
+		<p>Kepala Sekolah</p>
+		<div class="mt-12 font-semibold tracking-wide">
 			{formatValue(ttd?.kepalaSekolah)}
 		</div>
 		<div class="mt-1">NIP. {formatValue(ttd?.nip)}</div>

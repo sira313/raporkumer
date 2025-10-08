@@ -58,6 +58,11 @@
 		return value === 'cover' || value === 'biodata' || value === 'rapor' || value === 'piagam';
 	}
 
+	const averageFormatter = new Intl.NumberFormat('id-ID', {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2
+	});
+
 	let selectedDocument = $state<DocumentType | ''>('');
 	let selectedMuridId = $state('');
 	let previewDocument = $state<DocumentType | ''>('');
@@ -90,6 +95,21 @@
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
 	});
 
+	const piagamRankingOptions = $derived(data.piagamRankingOptions ?? []);
+	const piagamSelectOptions = $derived.by(() =>
+		piagamRankingOptions.map((option) => {
+			const formattedAverage =
+				option.nilaiRataRata != null ? averageFormatter.format(option.nilaiRataRata) : null;
+			const label = formattedAverage
+				? `Peringkat ${option.peringkat} — ${option.nama} (${formattedAverage})`
+				: `Peringkat ${option.peringkat} — ${option.nama}`;
+			return {
+				value: String(option.muridId),
+				label
+			};
+		})
+	);
+	const hasPiagamRankingOptions = $derived.by(() => piagamRankingOptions.length > 0);
 	const daftarMurid = $derived(data.daftarMurid ?? []);
 	const muridCount = $derived.by(() => daftarMurid.length);
 	const hasMurid = $derived.by(() => muridCount > 0);
@@ -104,24 +124,51 @@
 				}
 			: null;
 	});
+	const isPiagamSelected = $derived.by(() => selectedDocument === 'piagam');
+	const navigationMuridIds = $derived.by(() => {
+		if (isPiagamSelected) {
+			return piagamRankingOptions.map((option) => String(option.muridId));
+		}
+		return daftarMurid.map((murid) => String(murid.id));
+	});
 	const selectedMuridIndex = $derived.by(() => {
 		if (!selectedMuridId) return -1;
-		return daftarMurid.findIndex((murid) => String(murid.id) === selectedMuridId);
+		return navigationMuridIds.findIndex((id) => id === selectedMuridId);
 	});
 	const hasPrevMurid = $derived.by(() => selectedMuridIndex > 0);
 	const hasNextMurid = $derived.by(
-		() => selectedMuridIndex >= 0 && selectedMuridIndex < daftarMurid.length - 1
+		() => selectedMuridIndex >= 0 && selectedMuridIndex < navigationMuridIds.length - 1
+	);
+	const hasSelectionOptions = $derived.by(() =>
+		isPiagamSelected ? hasPiagamRankingOptions : hasMurid
 	);
 	const canNavigateMurid = $derived.by(() => {
 		if (!selectedDocument) return false;
-		if (!hasMurid) return false;
-		return selectedMuridIndex >= 0;
+		if (!hasSelectionOptions) return false;
+		return selectedMuridIndex >= 0 && navigationMuridIds.length > 0;
 	});
 	const isPreviewMatchingSelection = $derived.by(() =>
 		Boolean(previewDocument && selectedDocument && selectedDocument === previewDocument)
 	);
 
 	$effect(() => {
+		if (isPiagamSelected) {
+			const rankingOptions = piagamRankingOptions;
+			if (!rankingOptions.length) {
+				if (selectedMuridId) {
+					selectedMuridId = '';
+				}
+				return;
+			}
+			if (
+				selectedMuridId &&
+				!rankingOptions.some((option) => String(option.muridId) === selectedMuridId)
+			) {
+				selectedMuridId = '';
+			}
+			return;
+		}
+
 		const list = daftarMurid;
 		if (!list.length) {
 			if (selectedMuridId) {
@@ -159,11 +206,21 @@
 		return parts.join(' - ');
 	});
 
-	const previewDisabled = $derived.by(() => !selectedDocument || !hasMurid || !selectedMurid);
+	const previewDisabled = $derived.by(
+		() => !selectedDocument || !hasSelectionOptions || !selectedMurid
+	);
 	const previewButtonTitle = $derived.by(() => {
 		if (!selectedDocument) return 'Pilih dokumen yang ingin dipreview terlebih dahulu';
-		if (!hasMurid) return 'Tidak ada murid yang dapat dipreview untuk kelas ini';
-		if (!selectedMurid) return 'Pilih murid yang ingin dipreview terlebih dahulu';
+		if (!hasSelectionOptions) {
+			return selectedDocument === 'piagam'
+				? 'Tidak ada data peringkat yang tersedia untuk piagam di kelas ini'
+				: 'Tidak ada murid yang dapat dipreview untuk kelas ini';
+		}
+		if (!selectedMurid) {
+			return selectedDocument === 'piagam'
+				? 'Pilih peringkat piagam yang ingin dipreview terlebih dahulu'
+				: 'Pilih murid yang ingin dipreview terlebih dahulu';
+		}
 		return `Preview ${selectedDocumentEntry?.label ?? 'dokumen'} untuk ${selectedMurid.nama}`;
 	});
 
@@ -192,14 +249,14 @@
 
 	async function navigateMurid(direction: 'prev' | 'next') {
 		if (!canNavigateMurid) return;
-		const list = daftarMurid;
+		const list = navigationMuridIds;
 		const currentIndex = selectedMuridIndex;
 		if (currentIndex < 0) return;
 		const offset = direction === 'next' ? 1 : -1;
 		const targetIndex = currentIndex + offset;
 		if (targetIndex < 0 || targetIndex >= list.length) return;
-		const target = list[targetIndex];
-		selectedMuridId = String(target.id);
+		const targetId = list[targetIndex];
+		selectedMuridId = targetId;
 		await tick();
 		if (isPreviewMatchingSelection) {
 			await handlePreview();
@@ -215,13 +272,21 @@
 		if (!isPreviewableDocument(documentType)) {
 			return;
 		}
-		if (!hasMurid) {
-			toast('Tidak ada murid yang dapat dipreview untuk kelas ini.', 'warning');
+		if (!hasSelectionOptions) {
+			const message =
+				documentType === 'piagam'
+					? 'Tidak ada data peringkat piagam yang dapat dipreview untuk kelas ini.'
+					: 'Tidak ada murid yang dapat dipreview untuk kelas ini.';
+			toast(message, 'warning');
 			return;
 		}
 		const murid = selectedMurid;
 		if (!murid) {
-			toast('Pilih murid yang ingin dipreview.', 'warning');
+			const message =
+				documentType === 'piagam'
+					? 'Pilih peringkat piagam yang ingin dipreview.'
+					: 'Pilih murid yang ingin dipreview.';
+			toast(message, 'warning');
 			return;
 		}
 
@@ -397,24 +462,38 @@
 				<option value={option.value}>{option.label}</option>
 			{/each}
 		</select>
-		<select
-			class="select bg-base-200 w-full dark:border-none"
-			bind:value={selectedMuridId}
-			title="Pilih murid yang ingin dipreview dokumennya"
-			disabled={!hasMurid}
-		>
-			<option value="">Pilih murid…</option>
-			{#each daftarMurid as murid (murid.id)}
-				<option value={String(murid.id)}>
-					{murid.nama}
-					{#if murid.nisn}
-						— {murid.nisn}
-					{:else if murid.nis}
-						— {murid.nis}
-					{/if}
-				</option>
-			{/each}
-		</select>
+		{#if isPiagamSelected}
+			<select
+				class="select bg-base-200 w-full dark:border-none"
+				bind:value={selectedMuridId}
+				title="Pilih peringkat piagam yang ingin dipreview"
+				disabled={!hasPiagamRankingOptions}
+			>
+				<option value="">Pilih peringkat…</option>
+				{#each piagamSelectOptions as option (option.value)}
+					<option value={option.value}>{option.label}</option>
+				{/each}
+			</select>
+		{:else}
+			<select
+				class="select bg-base-200 w-full dark:border-none"
+				bind:value={selectedMuridId}
+				title="Pilih murid yang ingin dipreview dokumennya"
+				disabled={!hasMurid}
+			>
+				<option value="">Pilih murid…</option>
+				{#each daftarMurid as murid (murid.id)}
+					<option value={String(murid.id)}>
+						{murid.nama}
+						{#if murid.nisn}
+							— {murid.nisn}
+						{:else if murid.nis}
+							— {murid.nis}
+						{/if}
+					</option>
+				{/each}
+			</select>
+		{/if}
 		<button
 			class="btn shadow-none sm:ml-auto"
 			type="button"
@@ -442,6 +521,11 @@
 				Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dan cetak dokumen dilakukan
 				per murid.
 			</p>
+			{#if isPiagamSelected}
+				<p>
+					Pilihan piagam menampilkan peringkat 1–4 berdasarkan nilai rata-rata dari semua mata pelajaran di kelas ini.
+				</p>
+			{/if}
 		{:else}
 			<p class="text-warning">
 				Belum ada data murid yang bisa dipreview. Tambahkan murid terlebih dahulu pada menu

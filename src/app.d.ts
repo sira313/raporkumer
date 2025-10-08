@@ -16,6 +16,12 @@ declare global {
 			sekolah?: Omit<Sekolah, 'logo'>;
 			sekolahDirty?: boolean;
 		}
+		type PiagamRankingOption = {
+			muridId: number;
+			peringkat: number;
+			nama: string;
+			nilaiRataRata: number | null;
+		};
 		interface PageData {
 			meta: PageMeta;
 			sekolah?: Omit<Sekolah, 'logo'>;
@@ -32,6 +38,7 @@ declare global {
 			biodataData?: BiodataPrintData;
 			raporData?: RaporPrintData;
 			piagamData?: PiagamPrintData;
+			piagamRankingOptions?: PiagamRankingOption[];
 		}
 		interface PageState {
 			modal: {
