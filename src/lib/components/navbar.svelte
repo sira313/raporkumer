@@ -48,6 +48,7 @@
 		{ matcher: '/absen', file: 'absen' },
 		{ matcher: '/nilai-ekstrakurikuler/form-asesmen', file: 'form-ekstra' },
 		{ matcher: '/nilai-ekstrakurikuler', file: 'nilai-ekstra' },
+		{ matcher: '/catatan-wali-kelas', file: 'catatan-wali' },
 		{ matcher: '/cetak', file: 'cetak' }
 	];
 
