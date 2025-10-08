@@ -6,28 +6,38 @@ import { sequence } from '@sveltejs/kit/hooks';
 import { desc, eq } from 'drizzle-orm';
 
 const cookieParser: Handle = async ({ event, resolve }) => {
-	const sekolahId = event.cookies.get(cookieNames.ACTIVE_SEKOLAH_ID) || '';
-	if (+sekolahId == event.locals.sekolah?.id && !event.locals.sekolahDirty) {
+	const sekolahId = Number(event.cookies.get(cookieNames.ACTIVE_SEKOLAH_ID) || '');
+	if (sekolahId === event.locals.sekolah?.id && !event.locals.sekolahDirty) {
 		return resolve(event);
 	}
 
-	const [sekolah] = await db.query.tableSekolah.findMany({
-		columns: { logo: false },
+	let sekolah = await db.query.tableSekolah.findFirst({
+		columns: { logo: false, logoDinas: false },
 		with: { alamat: true, kepalaSekolah: true },
-		where: +sekolahId ? eq(tableSekolah.id, +sekolahId) : undefined,
-		limit: 1,
-		orderBy: [desc(tableSekolah.id)]
+		orderBy: [desc(tableSekolah.id)],
+		where: sekolahId ? eq(tableSekolah.id, sekolahId) : undefined
 	});
 
-	if (!sekolahId && sekolah?.id) {
+	if (!sekolah) {
+		sekolah = await db.query.tableSekolah.findFirst({
+			columns: { logo: false, logoDinas: false },
+			with: { alamat: true, kepalaSekolah: true },
+			orderBy: [desc(tableSekolah.id)]
+		});
+		if (sekolah?.id) {
+			event.cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(sekolah.id), { path: '/' });
+		} else if (sekolahId) {
+			event.cookies.delete(cookieNames.ACTIVE_SEKOLAH_ID, { path: '/' });
+		}
+	} else if (!sekolahId) {
 		event.cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(sekolah.id), { path: '/' });
 	}
 
 	if (!sekolah?.id && event.route.id != '/(informasi-umum)/sekolah/form') {
-		redirect(303, `/sekolah/form?init`);
+		throw redirect(303, `/sekolah/form?init`);
 	}
 
-	event.locals.sekolah = sekolah;
+	event.locals.sekolah = sekolah as Omit<Sekolah, 'logo'> | undefined;
 	return resolve(event);
 };
 

@@ -1,108 +1,329 @@
-<script>
+<script lang="ts">
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
+	import DeskripsiCell from '$lib/components/nilai-ekstrakurikuler/deskripsi-cell.svelte';
+	import { searchQueryMarker } from '$lib/utils';
+	import type { EkstrakurikulerNilaiKategori } from '$lib/ekstrakurikuler';
+	import { onDestroy } from 'svelte';
+
+	type EkstrakurikulerOption = {
+		id: number;
+		nama: string;
+		tujuanCount: number;
+	};
+
+	type EkstrakurikulerDetail = {
+		id: number;
+		nama: string;
+		tujuan: Array<{ id: number; deskripsi: string }>;
+	};
+
+	type NilaiEntry = {
+		tujuanId: number;
+		tujuan: string;
+		kategori: EkstrakurikulerNilaiKategori | null;
+		kategoriLabel: string | null;
+		timestamp: string | null;
+	};
+
+	type MuridRow = {
+		id: number;
+		nama: string;
+		no: number;
+		nilai: NilaiEntry[];
+		deskripsi: string | null;
+		hasNilai: boolean;
+		lastUpdated: string | null;
+	};
+
+	type PaginationState = {
+		currentPage: number;
+		totalPages: number;
+		totalItems: number;
+		perPage: number;
+		search: string | null;
+	};
+
+	type PageData = {
+		ekstrakurikulerList: EkstrakurikulerOption[];
+		selectedEkstrakurikulerId: number | null;
+		selectedEkstrakurikuler: EkstrakurikulerDetail | null;
+		daftarMurid: MuridRow[];
+		search: string | null;
+		totalMurid: number;
+		muridCount: number;
+		page: PaginationState;
+	};
+
+	let { data }: { data: PageData } = $props();
+
+	const hasEkstrakurikuler = $derived.by(() => data.ekstrakurikulerList.length > 0);
+	const selectedEkstrak = $derived.by(() => data.selectedEkstrakurikuler);
+	const selectedEkstrakHasTujuan = $derived.by(() =>
+		selectedEkstrak ? selectedEkstrak.tujuan.length > 0 : false
+	);
+	const currentPage = $derived.by(() => data.page?.currentPage ?? 1);
+	const totalPages = $derived.by(() => Math.max(1, data.page?.totalPages ?? 1));
+	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
+
+	let selectedEkstrakValue = $state(
+		data.selectedEkstrakurikulerId ? String(data.selectedEkstrakurikulerId) : ''
+	);
+	let searchTerm = $state(data.search ?? '');
+	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+	$effect(() => {
+		selectedEkstrakValue = data.selectedEkstrakurikulerId
+			? String(data.selectedEkstrakurikulerId)
+			: '';
+		searchTerm = data.search ?? '';
+	});
+
+	$effect(() => {
+		if (!hasEkstrakurikuler) return;
+		if (data.ekstrakurikulerList.length !== 1) return;
+		const onlyId = String(data.ekstrakurikulerList[0].id);
+		if (selectedEkstrakValue === onlyId) return;
+		selectedEkstrakValue = onlyId;
+		handleEkstrakChange(onlyId);
+	});
+
+	function buildUrl(updateParams: (params: URLSearchParams) => void) {
+		const params = new URLSearchParams(page.url.search);
+		updateParams(params);
+		const nextQuery = params.toString();
+		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+		const currentUrl = `${page.url.pathname}${page.url.search}`;
+		return nextUrl === currentUrl ? null : nextUrl;
+	}
+
+	async function applyNavigation(updateParams: (params: URLSearchParams) => void) {
+		const target = buildUrl(updateParams);
+		if (!target) return;
+		await goto(target, { replaceState: true, keepFocus: true });
+	}
+
+	function handleEkstrakChange(value: string) {
+		void applyNavigation((params) => {
+			if (value) {
+				params.set('ekstrakurikuler_id', value);
+			} else {
+				params.delete('ekstrakurikuler_id');
+			}
+			params.delete('page');
+		});
+	}
+
+	async function applySearch(value: string) {
+		await applyNavigation((params) => {
+			const cleaned = value.trim();
+			if (cleaned) {
+				params.set('q', cleaned);
+			} else {
+				params.delete('q');
+			}
+			params.delete('page');
+		});
+	}
+
+	function handleSearchInput(event: Event) {
+		const value = (event.currentTarget as HTMLInputElement).value;
+		searchTerm = value;
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+		searchTimer = setTimeout(() => {
+			void applySearch(value);
+		}, 400);
+	}
+
+	function submitSearch(event: Event) {
+		event.preventDefault();
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+			searchTimer = undefined;
+		}
+		void applySearch(searchTerm);
+	}
+
+	onDestroy(() => {
+		if (searchTimer) {
+			clearTimeout(searchTimer);
+		}
+	});
+
+	function gotoPage(pageNumber: number) {
+		const sanitized = pageNumber < 1 ? 1 : pageNumber;
+		void applyNavigation((params) => {
+			if (sanitized <= 1) {
+				params.delete('page');
+			} else {
+				params.set('page', String(sanitized));
+			}
+		});
+	}
+
+	function handlePageClick(pageNumber: number) {
+		if (pageNumber === currentPage) return;
+		gotoPage(pageNumber);
+	}
+
+	function buildNilaiLink(muridId: number) {
+		if (!selectedEkstrak) return '#';
+		const redirectTarget = encodeURIComponent(`${page.url.pathname}${page.url.search}`);
+		return `/nilai-ekstrakurikuler/form-asesmen?murid_id=${muridId}&ekstrakurikuler_id=${selectedEkstrak.id}&redirect=${redirectTarget}`;
+	}
+
+	function capitalizeSentence(value: string | null | undefined) {
+		if (!value) return '';
+		const trimmed = value.trimStart();
+		if (!trimmed) return '';
+		return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+	}
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">Daftar Nilai Extrakurikuler</h2>
+	<div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+		<h2 class="text-xl font-bold">Daftar Nilai Ekstrakurikuler</h2>
+		{#if selectedEkstrak}
+			<div class="flex flex-col items-start gap-1 sm:items-end">
+				<p class="text-base-content text-sm font-semibold">
+					{capitalizeSentence(selectedEkstrak.nama)}
+				</p>
+			</div>
+		{/if}
+	</div>
 
 	<div class="flex flex-col items-center gap-2 sm:flex-row">
-		<select class="select bg-base-200 w-full md:max-w-80 dark:border-none" title="Pilih kelas">
-			<option value="" disabled selected> Pilih Ekstrakurikuler</option>
-			<option value=""> Pramuka </option>
-		</select>
-
-		<!-- Cari nama murid -->
-		<label class="input bg-base-200 w-full dark:border-none">
-			<Icon name="search" />
-			<input type="search" required placeholder="Cari nama murid..." />
+		<label class="w-full md:max-w-80">
+			<span class="sr-only">Pilih ekstrakurikuler</span>
+			<select
+				class="select bg-base-200 w-full truncate dark:border-none"
+				title="Pilih ekstrakurikuler"
+				bind:value={selectedEkstrakValue}
+				onchange={(event) => handleEkstrakChange((event.currentTarget as HTMLSelectElement).value)}
+				disabled={!hasEkstrakurikuler}
+			>
+				{#if !hasEkstrakurikuler}
+					<option value="">Belum ada ekstrakurikuler</option>
+				{:else}
+					<option value="" disabled selected={selectedEkstrakValue === ''}>
+						Pilih Ekstrakurikuler
+					</option>
+					{#each data.ekstrakurikulerList as item (item.id)}
+						<option value={String(item.id)}>{capitalizeSentence(item.nama)}</option>
+					{/each}
+				{/if}
+			</select>
 		</label>
-	</div>
-
-	<!-- Tabel daftar murid -->
-	<div
-		class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
-	>
-		<table class="border-base-200 table min-w-150 border dark:border-none">
-			<!-- head -->
-			<thead>
-				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-					<th style="width: 50px; min-width: 40px;">No</th>
-					<th>Nama</th>
-					<th class="w-full flex-1">Deskripsi Nilai</th>
-					<th>Aksi</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td>1</td>
-					<td>Ali</td>
-					<td> Perlu bimbingan dalam mempelajari teknik simpul. </td>
-					<td>
-						<a
-							class="btn btn-sm btn-soft shadow-none"
-							title="Edit nilai"
-							href="/nilai-ekstrakurikuler/form-asesmen"
-						>
-							<Icon name="edit" />
-							Nilai
-						</a>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-	<!-- pagination -->
-	<div class="join mx-auto mt-4">
-		<button class="join-item btn btn-active">1</button>
-		<button class="join-item btn">2</button>
-		<button class="join-item btn">3</button>
-		<button class="join-item btn">4</button>
-	</div>
-</div>
-
-<!-- Modal Input Ekstrakurikuler -->
-<input type="checkbox" id="input-extrakurikuler" class="modal-toggle" />
-<div class="modal" role="dialog">
-	<div class="modal-box">
-		<h3 class="text-lg font-bold">Input Nilai Ekstrakurikuler</h3>
-		<p class="mb-4 text-lg">ananda <b>Ali</b></p>
-		<form>
-			<div class="form-control mb-3">
-				<label class="label" for="nilai-ekstrakurikuler">
-					<span class="label-text">Nilai</span>
-				</label>
-				<select
-					id="nilai-ekstrakurikuler"
-					class="select dark:bg-base-300 w-full dark:border-none"
-					required
-				>
-					<option value="" disabled selected>Pilih Nilai</option>
-					<option>Sangat baik</option>
-					<option>Baik</option>
-					<option>Cukup</option>
-					<option>Perlu bimbingan</option>
-				</select>
-			</div>
-			<label class="floating-label">
-				<span class="label-text">Deskripsi</span>
-				<textarea
-					class="textarea dark:bg-base-300 w-full dark:border-none"
-					placeholder="Isi deskripsi nilai ekstrakurikuler di sini"
-					rows="4"
-					required
-				></textarea>
+		<form
+			class="w-full"
+			autocomplete="off"
+			data-sveltekit-keepfocus
+			data-sveltekit-replacestate
+			onsubmit={submitSearch}
+		>
+			<label class="input bg-base-200 w-full dark:border-none">
+				<Icon name="search" />
+				<input
+					type="search"
+					name="q"
+					value={searchTerm}
+					autocomplete="off"
+					placeholder="Cari nama murid..."
+					oninput={handleSearchInput}
+				/>
 			</label>
-			<div class="modal-action">
-				<label for="input-extrakurikuler" class="btn shadow-none">
-					<Icon name="close-sm" />
-					Batal
-				</label>
-				<button type="submit" class="btn btn-primary shadow-none">
-					<Icon name="save" />
-					Simpan
-				</button>
-			</div>
 		</form>
 	</div>
-	<label class="modal-backdrop" for="input-extrakurikuler"></label>
+
+	{#if !hasEkstrakurikuler}
+		<div class="alert alert-soft alert-info mt-6">
+			<Icon name="info" />
+			<span>
+				Belum ada data ekstrakurikuler untuk kelas ini. Tambahkan terlebih dahulu di menu
+				<strong>Ekstrakurikuler</strong>.
+			</span>
+		</div>
+	{:else if !selectedEkstrak}
+		<div class="alert alert-soft alert-warning mt-6">
+			<Icon name="alert" />
+			<span>Pilih ekstrakurikuler untuk mulai menilai.</span>
+		</div>
+	{:else if !selectedEkstrakHasTujuan}
+		<div class="alert alert-soft alert-warning mt-6">
+			<Icon name="alert" />
+			<span>
+				Ekstrakurikuler ini belum memiliki tujuan pembelajaran. Tambahkan tujuan terlebih dahulu
+				melalui menu <strong>Ekstrakurikuler &gt; Tujuan</strong>.
+			</span>
+		</div>
+	{:else if data.muridCount === 0}
+		<div class="alert alert-soft alert-warning mt-6">
+			<Icon name="alert" />
+			<span>
+				Belum ada data murid di kelas ini. Tambahkan murid terlebih dahulu melalui menu
+				<strong>Murid</strong>.
+			</span>
+		</div>
+	{:else if data.totalMurid === 0}
+		<div class="alert alert-soft alert-info mt-6">
+			<Icon name="info" />
+			<span>Tidak ada murid yang cocok dengan pencarian.</span>
+		</div>
+	{:else}
+		<div
+			class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+		>
+			<table class="border-base-200 table min-w-150 border dark:border-none">
+				<thead>
+					<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
+						<th style="width: 50px; min-width: 40px;">No</th>
+						<th class="min-w-48">Nama</th>
+						<th class="min-w-32">Aksi</th>
+						<th class="w-full" style="min-width: 240px;">Deskripsi Nilai</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each data.daftarMurid as murid (murid.id)}
+						<tr>
+							<td class="align-top">{murid.no}</td>
+							<td class="align-top">
+								{@html searchQueryMarker(data.search, murid.nama)}
+							</td>
+							<td class="align-top">
+								<a
+									class="btn btn-sm btn-soft shadow-none"
+									title={`Nilai ${murid.nama}`}
+									href={buildNilaiLink(murid.id)}
+									class:btn-disabled={!selectedEkstrakHasTujuan}
+									aria-disabled={!selectedEkstrakHasTujuan}
+								>
+									<Icon name="edit" />
+									Nilai
+								</a>
+							</td>
+							<td class="align-top">
+								<DeskripsiCell text={murid.deskripsi} />
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+		<div class="join mt-4 sm:mx-auto">
+			{#each pages as pageNumber (pageNumber)}
+				<button
+					type="button"
+					class="join-item btn"
+					class:btn-active={pageNumber === currentPage}
+					onclick={() => handlePageClick(pageNumber)}
+					aria-current={pageNumber === currentPage ? 'page' : undefined}
+				>
+					{pageNumber}
+				</button>
+			{/each}
+		</div>
+	{/if}
 </div>

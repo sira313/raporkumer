@@ -1,10 +1,15 @@
 import { browser } from '$app/environment';
 
+type SekolahWithLogo = Sekolah & { logo?: Uint8Array; logoType?: string };
+
 export function load({ data }) {
-	if (browser && data.sekolah?.logo?.length) {
-		const url = URL.createObjectURL(new Blob([data.sekolah.logo]));
+	const sekolah = data.sekolah as SekolahWithLogo | undefined;
+	if (browser && sekolah?.logo?.length) {
+		const blob = new Blob([sekolah.logo as unknown as BlobPart], {
+			type: sekolah.logoType || undefined
+		});
+		const url = URL.createObjectURL(blob);
 		const meta: PageMeta = { ...data.meta, logoUrl: url };
-		URL.revokeObjectURL(url);
 		return { ...data, meta };
 	}
 	return { ...data };

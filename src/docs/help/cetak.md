@@ -2,8 +2,7 @@
 title: Petunjuk
 ---
 
-Pilih kelas dan jenis dokumen yang ingin bapak/ibu cetak terlebih dahulu.
-
-`Cetak semua` berfungsi untuk mencetak semua dokumen sekaligus.
-
-`Cetak` pada baris nama siswa berfungsi untuk mencetak data berdasarkan nama siswa yang dipilih.
+Pilih dokumen yang akan dicetak, lalu pilih murid.<br>
+Selalu klik tombol <kbd class="kbd">Preview</kbd> sebelum <kbd class="kbd">Cetak</kbd>.<br>
+Mencetak dokumen juga bisa dilakukan dengan menekan tombol <kbd class="kbd">ctrl</kbd> + <kbd class="kbd">p</kbd>. <br>
+Cetak piagam dibatasi peringkat 1 - 4 saja.

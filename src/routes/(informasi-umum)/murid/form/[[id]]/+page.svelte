@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenisKelamin } from '$lib/statics';
@@ -11,7 +11,10 @@
 <FormEnhance
 	action="?/save"
 	init={data.murid}
-	onsuccess={async () => await goto('/murid', { invalidate: ['app:murid'] })}
+	onsuccess={async () => {
+		await invalidate('app:murid');
+		history.back();
+	}}
 >
 	{#snippet children({ submitting, invalid })}
 		<p class="mb-6 text-xl font-bold">
@@ -71,7 +74,7 @@
 								required
 							>
 								<option value="" disabled selected> Pilih Kelas </option>
-								{#each data.daftarKelas as kelas (kelas)}
+								{#each data.daftarKelas as kelas (kelas.id)}
 									<option value={kelas.id}>
 										{kelas.nama} &bullet; {kelas.fase}
 									</option>
@@ -115,7 +118,7 @@
 								required
 							>
 								<option value="" disabled selected>Pilih Jenis Kelamin</option>
-								{#each Object.entries(jenisKelamin) as [value, label]}
+								{#each Object.entries(jenisKelamin) as [value, label] (value)}
 									<option {value}>{label}</option>
 								{/each}
 							</select>
@@ -357,28 +360,29 @@
 
 			{#if invalid}
 				<button
-					class="btn btn-neutral border-none shadow-none sm:ml-auto"
+					class="btn btn-neutral border-none shadow-none"
 					type="button"
 					onclick={() => (activeTab = (activeTab + 1) % 4)}
 				>
 					<Icon name="double-arrow" class="h-4 w-4" />
 					Selanjutnya
 				</button>
-			{:else}
-				<button
-					class="btn {data.murid?.id
-						? 'btn-secondary'
-						: 'btn-primary'} border-none shadow-none sm:ml-auto"
-					disabled={submitting || invalid}
-				>
-					{#if submitting}
-						<span class="loading loading-spinner"></span>
-					{:else}
-						<Icon name="save" />
-					{/if}
-					Simpan
-				</button>
 			{/if}
+
+			<button
+				class="btn {data.murid?.id
+					? 'btn-secondary'
+					: 'btn-primary'} border-none shadow-none sm:ml-auto"
+				type="submit"
+				disabled={submitting || invalid}
+			>
+				{#if submitting}
+					<span class="loading loading-spinner"></span>
+				{:else}
+					<Icon name="save" />
+				{/if}
+				Simpan
+			</button>
 		</div>
 	{/snippet}
 </FormEnhance>

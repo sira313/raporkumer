@@ -4,30 +4,66 @@
 	import Icon from '$lib/components/icon.svelte';
 	import TasksModal from '$lib/components/modal-tasks.svelte';
 	import { toast } from '$lib/components/toast.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
 	import type { Component } from 'svelte';
 
 	let tasksModalRef: { open: () => void } | null = null;
+	const daftarKelas = $derived(page.data.daftarKelas ?? []);
+	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const kelasAktifLabel = $derived.by(() => {
+		if (!kelasAktif) return 'Pilih Kelas';
+		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
+	});
 
-	const helpMaps: Record<string, string> = {
-		'/': 'umum',
-		'/sekolah': 'sekolah',
-		'/sekolah/form': 'sekolah',
-		'/murid': 'murid',
-		'/intrakurikuler': 'intrakurikuler',
-		'/ekstrakurikuler': 'ekstrakurikuler',
-		'/kelas': 'data-kelas',
-		'/kelas/form': 'data-kelas',
-		'/intrakurikuler/tp-rl': 'tp-rl',
-		'/asesmen-formatif': 'asesmen-formatif',
-		'/asesmen-formatif/formulir-asesmen': 'form-formatif',
-		'/asesmen-sumatif': 'asesmen-sumatif',
-		'/asesmen-sumatif/formulir-asesmen': 'form-sumatif',
-		'/nilai-akhir': 'nilai-akhir',
-		'/nilai-akhir/daftar-nilai': 'daftar-nilai',
-		'/absen': 'absen',
-		'/nilai-ekstrakurikuler': 'nilai-ekstrakurikuler',
-		'/cetak': 'cetak'
-	};
+	function buildKelasHref(kelasId: number) {
+		const params = new URLSearchParams(page.url.search);
+		params.set('kelas_id', String(kelasId));
+		const query = params.toString();
+		return query ? `${page.url.pathname}?${query}` : page.url.pathname;
+	}
+
+	type HelpMapEntry = { matcher: string | RegExp; file: string };
+
+	const helpMaps: HelpMapEntry[] = [
+		{ matcher: '/', file: 'umum' },
+		{ matcher: '/sekolah', file: 'sekolah' },
+		{ matcher: '/sekolah/form', file: 'sekolah-form' },
+		{ matcher: '/sekolah/tahun-ajaran', file: 'tahun-ajaran' },
+		{ matcher: '/rapor', file: 'rapor' },
+		{ matcher: '/murid', file: 'murid' },
+		{ matcher: '/intrakurikuler', file: 'intrakurikuler' },
+		{ matcher: /^\/intrakurikuler\/\d+\/tp-rl$/, file: 'tp-rl' },
+		{ matcher: '/kokurikuler', file: 'kokurikuler' },
+		{ matcher: '/asesmen-kokurikuler', file: 'asesmen-kokurikuler' },
+		{ matcher: '/ekstrakurikuler', file: 'ekstrakurikuler' },
+		{ matcher: '/ekstrakurikuler/tp-ekstra', file: 'tp-ekstra' },
+		{ matcher: '/kelas', file: 'data-kelas' },
+		{ matcher: '/kelas/form', file: 'data-kelas' },
+		{ matcher: '/asesmen-formatif', file: 'asesmen-formatif' },
+		{ matcher: '/asesmen-formatif/formulir-asesmen', file: 'form-formatif' },
+		{ matcher: '/asesmen-sumatif', file: 'asesmen-sumatif' },
+		{ matcher: '/asesmen-sumatif/formulir-asesmen', file: 'form-sumatif' },
+		{ matcher: '/nilai-akhir', file: 'nilai-akhir' },
+		{ matcher: '/nilai-akhir/daftar-nilai', file: 'daftar-nilai' },
+		{ matcher: '/absen', file: 'absen' },
+		{ matcher: '/nilai-ekstrakurikuler/form-asesmen', file: 'form-ekstra' },
+		{ matcher: '/nilai-ekstrakurikuler', file: 'nilai-ekstra' },
+		{ matcher: '/catatan-wali-kelas', file: 'catatan-wali' },
+		{ matcher: '/cetak', file: 'cetak' }
+	];
+
+	function resolveHelpFile(pathname: string): string | null {
+		for (const entry of helpMaps) {
+			if (typeof entry.matcher === 'string') {
+				if (pathname === entry.matcher) return entry.file;
+				continue;
+			}
+			if (entry.matcher.test(pathname)) {
+				return entry.file;
+			}
+		}
+		return null;
+	}
 
 	async function getHelpPage(fileName: string) {
 		const page = await import(`../../docs/help/${fileName}.md`);
@@ -39,7 +75,7 @@
 
 	async function showHelp() {
 		const pathname = page.url.pathname.replace(/\/+$/, '') || '/';
-		const fileName = helpMaps[pathname];
+		const fileName = resolveHelpFile(pathname);
 		if (!fileName) {
 			toast(
 				`Tombol ini berfungsi untuk menampilkan petunjuk penggunaan.<br />` +
@@ -48,9 +84,11 @@
 			return;
 		}
 		const result = await getHelpPage(fileName);
-		// panggil global modal milikmu (tetap seperti sebelumnya)
-		// asumsi: showModal tersedia di tempat lain. Kalau perlu, import lagi.
-		// showModal({ body: result.ContentPage, title: result.meta.title, ... });
+		showModal({
+			title: result.meta.title,
+			body: result.ContentPage,
+			dismissible: true
+		});
 	}
 </script>
 
@@ -97,11 +135,11 @@
 				</button>
 			</li>
 
-			<!-- Dropdown kelas (biarkan seperti aslinya) -->
+			<!-- Dropdown ganti kelas -->
 			<li class="ml-2">
 				<div class="dropdown dropdown-end">
 					<div tabindex="0" role="button" title="Ganti kelas" class="btn btn-soft rounded-full">
-						<span class="hidden sm:block"> Kelas I </span>
+						<span class="hidden sm:block">{kelasAktifLabel}</span>
 						<Icon name="users" class="sm:hidden" />
 						<Icon name="select" class="hidden sm:block" />
 					</div>
@@ -115,18 +153,37 @@
 								<Icon name="user" class="text-4xl" />
 							</div>
 							<div class="flex flex-col gap-1">
-								<p class="text-base-content text-sm font-semibold">Aris Wira Pratama, S.Pd.</p>
-								<p class="text-base-content/70 text-xs">Kelas IV - Fase B</p>
+								<!-- Nama wali kelas -->
+								<p class="text-base-content text-sm font-semibold">
+									{kelasAktif?.waliKelas?.nama ?? 'Belum ada wali kelas'}
+								</p>
+								<!-- Nama kelas -->
+								<p class="text-base-content/70 text-xs">{kelasAktifLabel}</p>
 							</div>
 						</div>
 
-						<details class="bg-base-300 dark:bg-base-200 collapse mt-6">
-							<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-							<div class="collapse-content text-sm">
-								<li><a href="?kelas_id=2"> Kelas I - Fase A </a></li>
-								<li><a href="?kelas_id=1"> Kelas IV - Fase B</a></li>
-							</div>
-						</details>
+						{#if daftarKelas.length}
+							<details class="bg-base-300 dark:bg-base-200 collapse mt-6">
+								<!-- opsi pindah kelas -->
+								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
+								<div class="collapse-content flex flex-col px-2">
+									{#each daftarKelas as kelas (kelas.id)}
+										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
+										<a
+											class="btn btn-ghost btn-sm justify-start"
+											href={buildKelasHref(kelas.id)}
+											class:active={kelasAktif?.id === kelas.id}
+										>
+											{label}
+										</a>
+									{/each}
+								</div>
+							</details>
+						{:else}
+							<p class="text-base-content/70 mt-6 text-sm">
+								Belum ada data kelas yang dapat dipilih.
+							</p>
+						{/if}
 
 						<li class="mt-2">
 							<a href="/pengaturan">

@@ -28,10 +28,12 @@
 					{@render field('NISN', data.murid.nisn)}
 					{@render field('Nama', data.murid.nama)}
 					{@render field('Kelas', kelas)}
-					{@render field('Jenis Kelamin', jenisKelamin[data.murid.jenisKelamin])}
 					{@render field('Tempat Lahir', data.murid.tempatLahir)}
 					{@render field('Tanggal Lahir', data.murid.tanggalLahir)}
+					{@render field('Jenis Kelamin', jenisKelamin[data.murid.jenisKelamin])}
 					{@render field('Agama', data.murid.agama)}
+					{@render field('Pendidikan Sebelumnya', data.murid.pendidikanSebelumnya)}
+					{@render field('Tanggal Masuk Sekolah Ini', data.murid.tanggalMasuk)}
 				</div>
 			</div>
 			<!-- data Orang Tua -->
@@ -42,7 +44,10 @@
 					{@render field('Pekerjaan Ayah', data.murid.ayah?.pekerjaan)}
 					{@render field('Nama Ibu', data.murid.ibu?.nama)}
 					{@render field('Pekerjaan Ibu', data.murid.ibu?.pekerjaan)}
-					{@render field('Kontak', data.murid.ayah?.kontak)}
+					{@render field(
+						'Kontak',
+						data.murid.ayah?.kontak || data.murid.ibu?.kontak || data.murid.wali?.kontak
+					)}
 				</div>
 			</div>
 			<!-- data Alamat Murid -->
@@ -70,14 +75,15 @@
 	</div>
 </div>
 
-<div class="mt-4 space-x-3">
-	<a class="btn border-none shadow-none sm:ml-auto" href="/murid">
+<div class="mt-4 flex flex-col gap-2 sm:flex-row">
+	<a class="btn border-none shadow-none" href="/murid">
 		<Icon name="close" />
 		Tutup
 	</a>
+	<div class="flex-1"></div>
 
 	<a
-		class="btn btn-primary border-none shadow-none sm:ml-auto"
+		class="btn btn-primary border-none shadow-none"
 		href="/murid/form/{data.murid.id}"
 		use:modalRoute={'edit-murid'}
 	>

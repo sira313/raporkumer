@@ -2,7 +2,8 @@ import { goto, preloadData, pushState } from '$app/navigation';
 import { appMenuItems } from './components/menu';
 
 export const cookieNames = {
-	ACTIVE_SEKOLAH_ID: 'active-sekolah-id'
+	ACTIVE_SEKOLAH_ID: 'active-sekolah-id',
+	ACTIVE_KELAS_ID: 'active-kelas-id'
 };
 
 export function findTitleByPath(path: string, items = appMenuItems): string | undefined {
@@ -165,4 +166,114 @@ export function autoSubmit(form: HTMLFormElement) {
 			form.removeEventListener('input', submit);
 		}
 	};
+}
+
+export interface PrintElementOptions {
+	title?: string;
+	pageWidth?: string | null;
+	pageHeight?: string | null;
+	pageMargin?: string | null;
+}
+
+export function printElement(
+	element: HTMLElement | null,
+	{ title, pageWidth = '210mm', pageHeight = '297mm', pageMargin }: PrintElementOptions = {}
+): boolean {
+	if (!element || typeof window === 'undefined') {
+		console.warn('[printElement] target element tidak tersedia');
+		return false;
+	}
+
+	const { document } = window;
+	const originalTitle = document.title;
+	let cleaned = false;
+
+	const host = document.createElement('div');
+	host.className = '__print-host';
+	const activeTheme = document.documentElement.getAttribute('data-theme');
+	if (activeTheme) {
+		host.setAttribute('data-theme', activeTheme);
+	}
+	const clone = element.cloneNode(true) as HTMLElement;
+	clone.classList.add('__print-target');
+	host.appendChild(clone);
+	document.body.appendChild(host);
+
+	const style = document.createElement('style');
+	style.setAttribute('data-print-style', 'true');
+
+	const pageDeclarations: string[] = [];
+	if (pageWidth && pageHeight) {
+		pageDeclarations.push(`size: ${pageWidth} ${pageHeight};`);
+	} else if (pageWidth && !pageHeight) {
+		pageDeclarations.push(`size: ${pageWidth};`);
+	}
+	if (pageMargin !== undefined) {
+		if (pageMargin) {
+			pageDeclarations.push(`margin: ${pageMargin};`);
+		} else {
+			pageDeclarations.push('margin: 0;');
+		}
+	}
+	const pageRule = pageDeclarations.length
+		? `@page {\n\t\t${pageDeclarations.join('\n\t\t')}\n\t}\n`
+		: '';
+
+	const targetWidthRule = pageWidth ? `\t\t\tmax-width: ${pageWidth};\n` : '';
+	const targetHeightRule = pageHeight ? `\t\t\tmin-height: ${pageHeight};\n` : '';
+
+	style.textContent = `
+		@media screen {
+			.__print-host {
+				display: none !important;
+			}
+		}
+		${pageRule}
+		@media print {
+			body > :not(.__print-host) {
+				display: none !important;
+			}
+			.__print-host {
+				display: flex !important;
+				justify-content: center !important;
+				align-items: flex-start !important;
+				width: 100% !important;
+				min-height: 100% !important;
+				margin: 0 !important;
+				padding: 0 !important;
+				background: transparent !important;
+			}
+			.__print-host > .__print-target {
+				width: 100%;
+				margin: 0 auto;
+				${targetWidthRule}${targetHeightRule}
+				box-sizing: border-box;
+			}
+		}
+	`;
+	document.head.appendChild(style);
+
+	const cleanup = () => {
+		if (cleaned) return;
+		cleaned = true;
+		style.remove();
+		host.remove();
+		document.title = originalTitle;
+	};
+
+	const handleAfterPrint = () => {
+		cleanup();
+		window.removeEventListener('afterprint', handleAfterPrint);
+	};
+	window.addEventListener('afterprint', handleAfterPrint, { once: true });
+
+	if (title) {
+		document.title = title;
+	}
+
+	requestAnimationFrame(() => {
+		window.print();
+		setTimeout(cleanup, 1500);
+	});
+	return true;
 }

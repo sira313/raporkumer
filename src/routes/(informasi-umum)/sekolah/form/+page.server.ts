@@ -6,7 +6,8 @@ import { eq } from 'drizzle-orm';
 
 export function load({ url }) {
 	const isInit = url.searchParams.has('init');
-	return { isInit, meta: { title: 'Form Sekolah' } };
+	const isNew = url.searchParams.get('mode') === 'new';
+	return { isInit, isNew, meta: { title: isNew ? 'Tambah Sekolah' : 'Form Sekolah' } };
 }
 
 export const actions = {
@@ -22,6 +23,14 @@ export const actions = {
 			formSekolah.logoType = logo.type;
 		} else {
 			formSekolah.logo = null;
+		}
+
+		const logoDinas = formData.get('logoDinas') as File;
+		if (logoDinas?.size) {
+			formSekolah.logoDinas = new Uint8Array(await logoDinas.arrayBuffer());
+			formSekolah.logoDinasType = logoDinas.type;
+		} else {
+			formSekolah.logoDinas = null;
 		}
 
 		await db.transaction(async (db) => {

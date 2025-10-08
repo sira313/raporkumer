@@ -1,15 +1,21 @@
-<script lang>
-	import { goto } from '$app/navigation';
+<script lang="ts">
+	import { invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 
 	let { data } = $props();
+
+	const handleDeleteSuccess = async ({ data: payload }: { data?: Record<string, unknown> }) => {
+		await invalidate('app:murid');
+		history.back();
+		const message =
+			typeof payload?.message === 'string' ? payload.message : 'Data murid berhasil dihapus';
+		toast({ message, type: 'success', persist: true });
+	};
 </script>
 
-<FormEnhance
-	action="?/delete"
-	onsuccess={async () => await goto('/murid', { invalidate: ['app:murid'] })}
->
+<FormEnhance action="?/delete" onsuccess={handleDeleteSuccess} showToast={false}>
 	{#snippet children({ submitting })}
 		<h3 class="mb-4 text-xl font-bold">Hapus data murid?</h3>
 		<p>NIS: {data.murid.nis}</p>
@@ -17,10 +23,10 @@
 		<p>Nama: <b>{data.murid.nama}</b></p>
 
 		<div class="mt-4 flex justify-end gap-2">
-			<a class="btn shadow-none" href="/murid">
+			<button class="btn shadow-none" type="button" onclick={() => history.back()}>
 				<Icon name="close" />
 				Batal
-			</a>
+			</button>
 
 			<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
 				{#if submitting}

@@ -1,19 +1,64 @@
 <script lang="ts">
-	import { invalidate } from '$app/navigation';
-	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import DeleteKelasModal from '$lib/components/kelas/delete-kelas-modal.svelte';
+	import { faseBadgeClass } from '$lib/components/kelas/fase';
+	import type { DeleteKelasModalHandle, KelasCard } from '$lib/components/kelas/types';
 
 	let { data } = $props();
-	let deleteKelasData = $state<Omit<Kelas, 'sekolah'>>();
+	const daftarKelas = $derived((data.daftarKelas ?? []) as KelasCard[]);
+	let deleteModalRef: DeleteKelasModalHandle | null = null;
+	const academicContext = $derived(data.academicContext ?? null);
+	const activeSemester = $derived.by(() => {
+		const context = academicContext;
+		if (!context?.activeSemesterId) return null;
+		for (const tahun of context.tahunAjaranList ?? []) {
+			const match = tahun.semester.find((item) => item.id === context.activeSemesterId);
+			if (match) {
+				return {
+					...match,
+					tahunAjaranNama: tahun.nama
+				};
+			}
+		}
+		return null;
+	});
 </script>
 
+{#if academicContext}
+	{#if academicContext.activeSemesterId}
+		<div class="alert alert-info alert-soft mb-6 flex items-center gap-3">
+			<Icon name="info" />
+			<span>
+				Menampilkan kelas untuk
+				{#if activeSemester}
+					<strong>{activeSemester.nama}</strong>
+					({activeSemester.tahunAjaranNama})
+				{:else}
+					semester aktif
+				{/if}.
+			</span>
+		</div>
+	{:else}
+		<div class="alert alert-warning mb-6 flex items-center gap-3">
+			<Icon name="warning" />
+			<span>Setel semester aktif di menu Rapor untuk mulai mengelola data kelas per periode.</span>
+		</div>
+	{/if}
+{/if}
+
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-	{#each data.daftarKelas as kelas (kelas)}
+	{#each daftarKelas as kelas (kelas.id)}
 		<div class="card bg-base-100 rounded-box shadow-md">
 			<div class="p-4">
-				<div class="flex items-start justify-between">
-					<h2 class="card-title text-xl font-bold">{kelas.nama}</h2>
-					<div class="badge badge-accent">{kelas.fase}</div>
+				<div class="flex items-start justify-between gap-4">
+					<div>
+						<h2 class="card-title text-xl font-bold">{kelas.nama}</h2>
+						<p class="text-base-content/60 text-sm">
+							{kelas.tahunAjaran?.nama ?? 'Tahun ajaran belum ditetapkan'} •
+							{kelas.semester?.nama ?? 'Semester belum ditetapkan'}
+						</p>
+					</div>
+					<div class={`badge ${faseBadgeClass(kelas.fase)}`}>{kelas.fase || 'Belum diatur'}</div>
 				</div>
 			</div>
 			<div class="border-base-300 dark:border-base-200 m-0 border"></div>
@@ -28,16 +73,16 @@
 						<p class="text-base-content/70 text-sm">NIP {kelas.waliKelas?.nip}</p>
 					</div>
 				</div>
-				<div class="mt-6 flex justify-end gap-2">
+				<div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-between">
 					<button
 						class="btn btn-error btn-soft shadow-none"
 						type="button"
-						onclick={() => (deleteKelasData = kelas)}
+						onclick={() => deleteModalRef?.open(kelas)}
 					>
 						<Icon name="del" />
 						Hapus
 					</button>
-					<a href="/kelas/form/{kelas.id}" class="btn btn-soft shadow-none">
+					<a href={`/kelas/form/${kelas.id}`} class="btn btn-soft shadow-none">
 						<Icon name="edit" />
 						Edit
 					</a>
@@ -47,7 +92,13 @@
 	{:else}
 		<div class="card bg-base-100 rounded-box flex items-center justify-center min-h-40">
 			<div class="p-6 text-center items-center justify-center">
-				<em class="opacity-50">Belum ada data kelas</em>
+				{#if academicContext && !academicContext.activeSemesterId}
+					<em class="opacity-50"
+						>Tentukan semester aktif untuk melihat atau menambahkan data kelas.</em
+					>
+				{:else}
+					<em class="opacity-50">Belum ada data kelas untuk semester ini</em>
+				{/if}
 			</div>
 		</div>
 	{/each}
@@ -70,47 +121,4 @@
 		</div>
 	</a>
 </div>
-
-{#if deleteKelasData}
-	<dialog class="modal" open onclose={() => (deleteKelasData = undefined)}>
-		<div class="modal-box p-4">
-			<FormEnhance
-				action="?/delete"
-				onsuccess={() => {
-					deleteKelasData = undefined;
-					invalidate('app:kelas');
-				}}
-			>
-				{#snippet children({ submitting })}
-					<input name="id" value={deleteKelasData?.id} hidden />
-
-					<h3 class="mb-4 text-xl font-bold">Hapus kelas?</h3>
-					<p>Kelas: {deleteKelasData?.nama}</p>
-					<p class="mb-4">Fase: {deleteKelasData?.fase}</p>
-
-					<div class="flex justify-end gap-2">
-						<button
-							class="btn shadow-none"
-							type="button"
-							onclick={() => (deleteKelasData = undefined)}
-						>
-							Batal
-						</button>
-
-						<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
-							{#if submitting}
-								<div class="loading loading-spinner"></div>
-							{:else}
-								<Icon name="del" />
-							{/if}
-							Hapus
-						</button>
-					</div>
-				{/snippet}
-			</FormEnhance>
-		</div>
-		<form method="dialog" class="modal-backdrop">
-			<button>close</button>
-		</form>
-	</dialog>
-{/if}
+<DeleteKelasModal bind:this={deleteModalRef} />

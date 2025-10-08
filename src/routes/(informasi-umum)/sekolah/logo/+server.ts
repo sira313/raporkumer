@@ -4,24 +4,45 @@ import { eq } from 'drizzle-orm';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-export async function GET({ locals }) {
-	const sekolah = await db.query.tableSekolah.findFirst({
-		columns: { logo: true, logoType: true },
-		where: eq(tableSekolah.id, locals.sekolah!.id)
-	});
+let placeholderCache: Uint8Array | null = null;
 
-	if (!sekolah?.logo?.length) {
-		const placeholderPath = path.resolve(`static/tutwuri.png`);
-		const placeholderBuffer = await fs.readFile(placeholderPath);
-		return new Response(placeholderBuffer, {
-			headers: { 'Content-Type': 'image/png' }
+async function getPlaceholder() {
+	if (!placeholderCache) {
+		const placeholderPath = path.resolve('static/tutwuri.png');
+		placeholderCache = await fs.readFile(placeholderPath);
+	}
+	return placeholderCache;
+}
+
+export async function GET({ locals }) {
+	const sekolahId = locals.sekolah?.id;
+	const noCacheHeaders = {
+		'Cache-Control': 'no-store, max-age=0',
+		Pragma: 'no-cache'
+	};
+
+	if (!sekolahId) {
+		const data = await getPlaceholder();
+		return new Response(Buffer.from(data), {
+			headers: { 'Content-Type': 'image/png', ...noCacheHeaders }
 		});
 	}
 
-	return new Response(sekolah.logo, {
-		headers: {
-			'Content-Type': sekolah.logoType || '',
-			'Content-Length': sekolah.logo.length.toString()
-		}
+	const sekolah = await db.query.tableSekolah.findFirst({
+		columns: { logo: true, logoType: true },
+		where: eq(tableSekolah.id, sekolahId)
+	});
+
+	if (sekolah?.logo?.length) {
+		return new Response(Buffer.from(sekolah.logo), {
+			headers: {
+				'Content-Type': sekolah.logoType || 'image/png'
+			}
+		});
+	}
+
+	const data = await getPlaceholder();
+	return new Response(Buffer.from(data), {
+		headers: { 'Content-Type': 'image/png', ...noCacheHeaders }
 	});
 }

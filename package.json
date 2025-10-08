@@ -6,6 +6,7 @@
 	"scripts": {
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
+		"db:cleanup": "node scripts/cleanup-orphans.mjs",
 		"dev": "node scripts/dev.js",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -23,7 +24,7 @@
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
 		"@tailwindcss/typography": "^0.5.16",
 		"@tailwindcss/vite": "^4.0.0",
-		"daisyui": "^5.0.43",
+		"daisyui": "^5.1.25",
 		"drizzle-kit": "^0.31.4",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
@@ -44,10 +45,14 @@
 	"pnpm": {
 		"onlyBuiltDependencies": [
 			"esbuild"
+		],
+		"ignoredBuiltDependencies": [
+			"@tailwindcss/oxide"
 		]
 	},
 	"dependencies": {
 		"@libsql/client": "^0.15.9",
-		"drizzle-orm": "^0.44.2"
+		"drizzle-orm": "^0.44.2",
+		"xlsx": "^0.18.5"
 	}
 }

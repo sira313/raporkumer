@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenjangPendidikan } from '$lib/statics';
 
 	let { data } = $props();
+	const isNew = data.isNew as boolean;
+	const initialSekolah = (isNew ? undefined : data.sekolah) as Sekolah | undefined;
 </script>
 
 {#if data.isInit}
@@ -17,32 +19,53 @@
 
 <FormEnhance
 	action="?/save"
-	init={data.sekolah}
+	init={initialSekolah}
 	enctype="multipart/form-data"
-	onsuccess={() => goto('/sekolah')}
+	onsuccess={async () => {
+		await invalidate('app:sekolah');
+		await goto('/sekolah');
+	}}
 >
 	{#snippet children({ submitting })}
-		{#if data.sekolah?.id}
-			<input name="id" value={data.sekolah.id} hidden />
+		{#if initialSekolah?.id}
+			<input name="id" value={initialSekolah.id} hidden />
 		{/if}
 
 		<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-			<h2 class="mb-4 text-xl font-bold">Formulir Isian Data Sekolah</h2>
+			<h2 class="mb-4 text-xl font-bold">
+				{#if isNew}
+					Tambah Sekolah Baru
+				{:else}
+					Formulir Isian Data Sekolah
+				{/if}
+			</h2>
 
 			<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-2">
-				<!-- Jenjang Pendidikan -->
-				<div class="md:col-span-2">
-					<legend class="fieldset-legend">Jenjang Pendidikan</legend>
-					<select
-						class="select bg-base-200 validator w-full border dark:border-none"
-						name="jenjangPendidikan"
-						required
-					>
-						<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
-						{#each Object.entries(jenjangPendidikan) as [value, label]}
-							<option {value}>{label}</option>
-						{/each}
-					</select>
+				<!-- Jenjang Pendidikan & Lokasi Tanda Tangan -->
+				<div class="md:col-span-2 grid grid-cols-1 gap-2 md:grid-cols-2 md:items-end">
+					<div>
+						<legend class="fieldset-legend">Jenjang Pendidikan</legend>
+						<select
+							class="select bg-base-200 validator w-full border dark:border-none"
+							name="jenjangPendidikan"
+							required
+						>
+							<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
+							{#each Object.entries(jenjangPendidikan) as [value, label] (value)}
+								<option {value}>{label}</option>
+							{/each}
+						</select>
+					</div>
+					<div>
+						<legend class="fieldset-legend">Lokasi Tanda Tangan</legend>
+						<input
+							required
+							type="text"
+							class="input validator bg-base-200 w-full dark:border-none"
+							placeholder="Contoh: Periji"
+							name="lokasiTandaTangan"
+						/>
+					</div>
 				</div>
 
 				<div>
@@ -187,10 +210,24 @@
 				</div>
 			</div>
 
-			<!-- Upload logo sekolah -->
-			<legend class="fieldset-legend mt-2">Logo Sekolah</legend>
-			<input type="file" class="file-input file-input-ghost" accept="image/*" name="logo" />
-			<p class="label">Format png, tanpa latar belakang, maksimal 300KB</p>
+			<!-- Upload logo sekolah dan dinas pendidikan -->
+			<div class="mt-2 grid gap-2 md:grid-cols-2">
+				<div class="flex flex-col gap-1">
+					<legend class="fieldset-legend">Logo Sekolah</legend>
+					<input type="file" class="file-input file-input-ghost" accept="image/*" name="logo" />
+					<p class="label text-wrap">Format png, tanpa latar belakang, maksimal 300KB</p>
+				</div>
+				<div class="flex flex-col gap-1">
+					<legend class="fieldset-legend">Logo Dinas Pendidikan</legend>
+					<input
+						type="file"
+						class="file-input file-input-ghost"
+						accept="image/*"
+						name="logoDinas"
+					/>
+					<p class="label text-wrap">Format png, tanpa latar belakang, maksimal 300KB</p>
+				</div>
+			</div>
 
 			<!-- Back and Save -->
 			<div class="mt-6 flex justify-end gap-2">

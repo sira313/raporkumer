@@ -18,10 +18,23 @@
 	<script>
 		(function () {
 			try {
-				var dark = localStorage.getItem('dark-mode');
-				if (dark) dark = JSON.parse(dark);
-				else dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-				document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+				var stored = localStorage.getItem('dark-mode');
+				var theme;
+				if (stored === 'dark' || stored === 'light') {
+					theme = stored;
+				} else if (stored === 'true' || stored === 'false') {
+					theme = stored === 'true' ? 'dark' : 'light';
+				} else if (stored) {
+					try {
+						var parsed = JSON.parse(stored);
+						theme = parsed ? 'dark' : 'light';
+					} catch (err) {
+						theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+					}
+				} else {
+					theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+				}
+				document.documentElement.setAttribute('data-theme', theme);
 			} catch (e) {
 				console.error('failed initialize dark mode:', e);
 			}
@@ -32,20 +45,21 @@
 
 <main class="drawer lg:drawer-open">
 	<input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-	<div class="drawer-content">
+	<div class="drawer-content flex min-h-screen flex-col">
 		<Navbar />
 
-		<!-- Page content -->
 		<div
-			class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:rounded-tl-xl"
+			class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:mr-2 lg:mb-2 lg:rounded-xl"
 		>
-			<div class="max-h-[calc(100vh-4.3rem)] min-h-[calc(100vh-4.3rem)] max-w-none overflow-y-auto">
+			<div
+				class="max-h-[calc(100vh-4.2rem)] min-h-[calc(100vh-4.2rem)] max-w-none overflow-y-auto md:max-h-[calc(100vh-4.6rem)] md:min-h-[calc(100vh-4.6rem)] print:overflow-visible"
+			>
 				<div class="m-4 flex flex-row lg:m-6 xl:gap-5">
-					<div class="w-full max-w-5xl">
+					<div class="w-full max-w-5xl min-w-0 flex-1">
 						{@render children()}
 					</div>
 					<div class="sticky top-6 self-start">
-						<Task />
+						<Task variant="sidebar" />
 					</div>
 				</div>
 			</div>
@@ -64,6 +78,10 @@
 			<Menu />
 
 			<div class="mt-4 flex flex-col gap-3">
+				<a href="/pengaturan" class="flex items-center gap-2">
+					<Icon name="gear" />
+					<h2 class="font-bold">Pengaturan</h2>
+				</a>
 				<a href="/tentang" class="flex items-center gap-2">
 					<Icon name="info" />
 					<h2 class="font-bold">Tentang Aplikasi</h2>

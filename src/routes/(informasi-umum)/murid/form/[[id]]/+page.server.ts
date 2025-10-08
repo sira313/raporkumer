@@ -1,5 +1,5 @@
 import db from '$lib/server/db/index.js';
-import { tableAlamat, tableMurid, tableWaliMurid } from '$lib/server/db/schema.js';
+import { tableAlamat, tableKelas, tableMurid, tableWaliMurid } from '$lib/server/db/schema.js';
 import { unflattenFormData } from '$lib/utils.js';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
@@ -20,6 +20,20 @@ export const actions = {
 	async save({ locals, request, params }) {
 		const formMurid = unflattenFormData<Murid>(await request.formData());
 		formMurid.sekolahId = locals.sekolah!.id;
+		if (!formMurid.kelasId) {
+			error(400, 'Kelas harus dipilih');
+		}
+
+		const kelas = await db.query.tableKelas.findFirst({
+			where: eq(tableKelas.id, formMurid.kelasId),
+			columns: { id: true, sekolahId: true, semesterId: true }
+		});
+
+		if (!kelas || kelas.sekolahId !== formMurid.sekolahId) {
+			error(400, 'Kelas tidak valid untuk sekolah ini');
+		}
+
+		formMurid.semesterId = kelas.semesterId;
 
 		await db.transaction(async (db) => {
 			if (params.id) {
