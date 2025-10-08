@@ -34,6 +34,7 @@
 		{ matcher: '/intrakurikuler', file: 'intrakurikuler' },
 		{ matcher: /^\/intrakurikuler\/\d+\/tp-rl$/, file: 'tp-rl' },
 		{ matcher: '/kokurikuler', file: 'kokurikuler' },
+		{ matcher: '/asesmen-kokurikuler', file: 'asesmen-kokurikuler' },
 		{ matcher: '/ekstrakurikuler', file: 'ekstrakurikuler' },
 		{ matcher: '/ekstrakurikuler/tp-ekstra', file: 'tp-ekstra' },
 		{ matcher: '/kelas', file: 'data-kelas' },
@@ -45,7 +46,8 @@
 		{ matcher: '/nilai-akhir', file: 'nilai-akhir' },
 		{ matcher: '/nilai-akhir/daftar-nilai', file: 'daftar-nilai' },
 		{ matcher: '/absen', file: 'absen' },
-		{ matcher: '/nilai-ekstrakurikuler', file: 'nilai-ekstrakurikuler' },
+		{ matcher: '/nilai-ekstrakurikuler/form-asesmen', file: 'form-ekstra' },
+		{ matcher: '/nilai-ekstrakurikuler', file: 'nilai-ekstra' },
 		{ matcher: '/cetak', file: 'cetak' }
 	];
 
