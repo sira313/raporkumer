@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
 
 	let { data } = $props();
 	const sekolah = (data.sekolah ?? null) as Sekolah | null;
@@ -33,6 +34,17 @@
 	const ekstrakurikulerStats = $derived(
 		statistikDashboard.ekstrakurikuler ?? { total: 0 }
 	);
+	const handleExportInfo = () => {
+		showModal({
+			title: 'Export Dapodik',
+			body: 'Fitur belum tersedia, masih dalam tahap pengembangan.',
+			dismissible: true,
+			onPositive: {
+				label: 'Mengerti',
+				action: ({ close }) => close()
+			}
+		});
+	};
 </script>
 
 <!-- Kontainer Utama Grid -->
@@ -226,7 +238,11 @@
 				</h2>
 				<div class="grid grid-cols-1 gap-2">
 					<!-- Tombol Export Data -->
-					<button class="btn btn-primary w-full shadow-none">
+					<button
+						type="button"
+						onclick={handleExportInfo}
+						class="btn btn-primary w-full shadow-none"
+					>
 						<Icon name="export" />
 						Export Dapodik
 					</button>
