@@ -53,7 +53,7 @@
 				<div class="modal-action">
 					{#if props.onNegative}
 						<button
-							class="btn btn-error gap-2 shadow-none"
+							class="btn gap-2 shadow-none"
 							type="button"
 							onclick={() => props.onNegative?.action?.({ close: hideModal })}
 						>
