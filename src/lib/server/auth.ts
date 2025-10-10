@@ -189,19 +189,14 @@ export async function verifyUserPassword(userId: number, password: string) {
 export function applySessionCookie(
 	cookies: Cookies,
 	token: string,
-	expiresAt: string,
+	_expiresAt: string,
 	secure: boolean
 ) {
-	const expiry = new Date(expiresAt).getTime();
-	const diffMs = expiry - Date.now();
-	const maxAge = Number.isFinite(diffMs)
-		? Math.max(60, Math.floor(diffMs / 1000))
-		: SESSION_TTL_SECONDS;
+	// Use a session cookie so credentials are cleared once the app/browser closes.
 	cookies.set(cookieNames.AUTH_SESSION, token, {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
-		secure,
-		maxAge
+		secure
 	});
 }

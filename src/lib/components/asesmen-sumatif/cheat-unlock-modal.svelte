@@ -31,14 +31,14 @@
 <form class="flex flex-col gap-4" onsubmit={handleSubmit}>
 	<div class="alert alert-warning">
 		<Icon name="alert" />
-		<span class="text-sm">
-			Ini adalah fitur cheat, donasi minimal 5 gelas kopi di tombol traktir.
+		<span>
+			Ini adalah fitur cheat, donasi minimal 5 gelas kopi di tombol traktir. Lalu kirim screenshot ke <a href="https://t.me/apoxic4m" target="_blank" class="font-bold text-base-content">Telegram</a> untuk mendapatkan token akses.
 		</span>
 		<a
 			href="https://trakteer.id/raporkumer/tip"
 			target="_blank"
 			rel="noopener noreferrer"
-			class="btn btn-primary shadow-none"
+			class="btn shadow-none"
 		>
 			<Icon name="coffee" />
 			Traktir
