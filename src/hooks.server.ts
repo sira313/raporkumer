@@ -1,5 +1,6 @@
 import db from '$lib/server/db';
 import { tableSekolah } from '$lib/server/db/schema';
+import { applySessionCookie, ensureDefaultAdmin, resolveSession } from '$lib/server/auth';
 import { cookieNames } from '$lib/utils';
 import { error, redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
@@ -68,7 +69,77 @@ const csrfGuard: Handle = async ({ event, resolve }) => {
 	throw error(403, 'Permintaan lintas origin tidak diizinkan.');
 };
 
+const PUBLIC_ROUTE_IDS = new Set(['/login', '/logout']);
+
+let ensureDefaultAdminResolved = false;
+
+function resolveRedirectTarget(value: string | null) {
+	if (!value) return null;
+	if (!value.startsWith('/')) return null;
+	if (value.startsWith('//')) return null;
+	return value;
+}
+
+const authGuard: Handle = async ({ event, resolve }) => {
+	if (!ensureDefaultAdminResolved) {
+		await ensureDefaultAdmin();
+		ensureDefaultAdminResolved = true;
+	}
+
+	const sessionToken = event.cookies.get(cookieNames.AUTH_SESSION);
+	const secure = event.url.protocol === 'https:';
+
+	if (sessionToken) {
+		const resolved = await resolveSession(sessionToken);
+		if (resolved) {
+			event.locals.user = {
+				id: resolved.user.id,
+				username: resolved.user.username
+			};
+			event.locals.session = {
+				id: resolved.session.id,
+				expiresAt: resolved.session.expiresAt,
+				tokenHash: resolved.session.tokenHash
+			};
+			if (resolved.refreshed) {
+				applySessionCookie(event.cookies, sessionToken, resolved.session.expiresAt, secure);
+			}
+		} else {
+			event.locals.user = undefined;
+			event.locals.session = undefined;
+			event.cookies.delete(cookieNames.AUTH_SESSION, { path: '/' });
+		}
+	} else {
+		event.locals.user = undefined;
+		event.locals.session = undefined;
+	}
+
+	const routeId = event.route.id;
+	const isPublicRoute = !routeId || PUBLIC_ROUTE_IDS.has(routeId);
+	const isLoginPath = event.url.pathname === '/login';
+
+	if (event.locals.user && isLoginPath) {
+		const redirectTarget = resolveRedirectTarget(event.url.searchParams.get('redirect')) ?? '/';
+		throw redirect(303, redirectTarget);
+	}
+
+	if (!event.locals.user && !isPublicRoute) {
+		if (event.request.method === 'GET') {
+			const redirectTarget = resolveRedirectTarget(`${event.url.pathname}${event.url.search}`);
+			const query = redirectTarget && redirectTarget !== '/' ? `?redirect=${encodeURIComponent(redirectTarget)}` : '';
+			throw redirect(303, `/login${query}`);
+		}
+		throw redirect(303, '/login');
+	}
+
+	return resolve(event);
+};
+
 const cookieParser: Handle = async ({ event, resolve }) => {
+	if (!event.locals.user) {
+		return resolve(event);
+	}
+
 	const sekolahId = Number(event.cookies.get(cookieNames.ACTIVE_SEKOLAH_ID) || '');
 	if (sekolahId === event.locals.sekolah?.id && !event.locals.sekolahDirty) {
 		return resolve(event);
@@ -104,7 +175,7 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-export const handle = sequence(csrfGuard, cookieParser);
+export const handle = sequence(csrfGuard, authGuard, cookieParser);
 
 const sqliteErrors = {
 	SQLITE_CONSTRAINT_UNIQUE: 'Terdapat duplikasi data',

@@ -11,6 +11,7 @@ export async function load({ url, locals, cookies }) {
 	};
 
 	const sekolah = locals.sekolah;
+	const user = locals.user ?? null;
 	const academicContext = sekolah?.id ? await resolveSekolahAcademicContext(sekolah.id) : null;
 	const daftarKelas = sekolah?.id
 		? await db.query.tableKelas.findMany({
@@ -48,5 +49,5 @@ export async function load({ url, locals, cookies }) {
 		cookies.delete(cookieNames.ACTIVE_KELAS_ID, { path: '/' });
 	}
 
-	return { sekolah, meta, daftarKelas, kelasAktif };
+	return { sekolah, meta, daftarKelas, kelasAktif, user };
 }

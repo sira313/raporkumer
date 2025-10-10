@@ -8,6 +8,36 @@ const audit = {
 	updatedAt: text()
 };
 
+export const tableAuthUser = sqliteTable(
+	'auth_user',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		username: text().notNull(),
+		usernameNormalized: text().notNull(),
+		passwordHash: text().notNull(),
+		passwordSalt: text().notNull(),
+		passwordUpdatedAt: text(),
+		...audit
+	},
+	(table) => [unique().on(table.usernameNormalized)]
+);
+
+export const tableAuthSession = sqliteTable(
+	'auth_session',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		userId: int()
+			.references(() => tableAuthUser.id, { onDelete: 'cascade' })
+			.notNull(),
+		tokenHash: text().notNull(),
+		userAgent: text(),
+		ipAddress: text(),
+		expiresAt: text().notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.tokenHash), index('auth_session_user_id_idx').on(table.userId)]
+);
+
 export const tableAlamat = sqliteTable('alamat', {
 	id: int().primaryKey({ autoIncrement: true }),
 	jalan: text().notNull(),
@@ -148,6 +178,17 @@ export const tableTasksRelations = relations(tableTasks, ({ one }) => ({
 	kelas: one(tableKelas, {
 		fields: [tableTasks.kelasId],
 		references: [tableKelas.id]
+	})
+}));
+
+export const tableAuthUserRelations = relations(tableAuthUser, ({ many }) => ({
+	sessions: many(tableAuthSession)
+}));
+
+export const tableAuthSessionRelations = relations(tableAuthSession, ({ one }) => ({
+	user: one(tableAuthUser, {
+		fields: [tableAuthSession.userId],
+		references: [tableAuthUser.id]
 	})
 }));
 

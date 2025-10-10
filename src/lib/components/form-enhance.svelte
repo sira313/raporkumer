@@ -30,7 +30,12 @@
 	let submitting = $state(false);
 	let invalid = $state(true);
 
-	type SubmitOutcome = ActionResult | Response | undefined;
+		type GenericActionResult = ActionResult<Record<string, unknown>, Record<string, unknown>>;
+		type SubmitOutcome = GenericActionResult | Response | undefined;
+
+		function isActionResult(value: SubmitOutcome): value is GenericActionResult {
+			return typeof value === 'object' && value !== null && 'type' in value;
+		}
 
 	function resolveResultType(result: SubmitOutcome) {
 		if (!result) return 'success';
@@ -39,11 +44,13 @@
 			if (result.status >= 400 && result.status < 500) return 'failure';
 			return 'error';
 		}
-		if ('type' in result && result.type) return result.type as ActionResult['type'];
-		if ('status' in result && typeof result.status === 'number') {
-			if (result.status >= 200 && result.status < 300) return 'success';
-			if (result.status >= 400 && result.status < 500) return 'failure';
-			return 'error';
+		if (isActionResult(result)) {
+			if (result.type) return result.type;
+			if (typeof result.status === 'number') {
+				if (result.status >= 200 && result.status < 300) return 'success';
+				if (result.status >= 400 && result.status < 500) return 'failure';
+				return 'error';
+			}
 		}
 		return 'success';
 	}
@@ -59,7 +66,7 @@
 				}
 				return undefined;
 			}
-			if ('data' in result) {
+			if (isActionResult(result) && 'data' in result) {
 				return result.data as Record<string, unknown> | undefined;
 			}
 		} catch (error) {
@@ -72,8 +79,9 @@
 		submitting = true;
 		return async ({ update, formElement, result }) => {
 			const resolvedType = resolveResultType(result);
-			const status = result instanceof Response ? result.status : 'status' in (result ?? {}) ? result?.status : undefined;
-			const initialType = result && 'type' in result ? result.type : undefined;
+			const actionResult = isActionResult(result) ? result : undefined;
+			const status = result instanceof Response ? result.status : actionResult?.status;
+			const initialType = actionResult?.type;
 			console.debug('[form-enhance] submit result', {
 				action,
 				initialType,
@@ -93,16 +101,30 @@
 						break;
 					}
 					case 'failure': {
-						const failureData = result.data as { fail?: string; message?: string } | undefined;
+						const failureData = actionResult && 'data' in actionResult
+							? (actionResult.data as { fail?: string; message?: string } | undefined)
+							: undefined;
 						if (showToast) {
 							toast(failureData?.fail || failureData?.message || 'Gagal', 'warning');
 						}
 						break;
 					}
 					case 'error': {
-						const message =
-							`Error (${result.status}): \n` +
-							(result.error?.message || JSON.stringify(result.error));
+						let message = 'Terjadi kesalahan.';
+						if (result instanceof Response) {
+							message = `Error (${result.status})`;
+						} else if (actionResult) {
+							const detail = 'error' in actionResult ? actionResult.error : undefined;
+							const detailMessage =
+								typeof detail === 'object' && detail && 'message' in detail
+									? String(detail.message)
+									: detail
+									? JSON.stringify(detail)
+									: undefined;
+							message = status
+								? `Error (${status}): ${detailMessage ?? 'Terjadi kesalahan.'}`
+								: detailMessage ?? 'Terjadi kesalahan.';
+						}
 						if (showToast) {
 							toast(message, 'error');
 						}

@@ -17,6 +17,7 @@
 	let tasksModalRef: { open: () => void } | null = null;
 	const daftarKelas = $derived(page.data.daftarKelas ?? []);
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const user = $derived(page.data.user ?? null);
 	const kelasAktifLabel = $derived.by(() => {
 		if (!kelasAktif) return 'Pilih Kelas';
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
@@ -198,6 +199,14 @@
 								Pengaturan
 							</a>
 						</li>
+						{#if user}
+						{/if}
+						<li>
+							<form method="POST" action="/logout" class="w-full">
+								<Icon name="export" />
+								Keluar
+							</form>
+						</li>
 						<li>
 							<button
 								type="button"
@@ -205,7 +214,7 @@
 								onclick={stopServer}
 								disabled={stoppingServer}
 							>
-								<Icon name="warning" class="h-4 w-4" />
+								<Icon name="warning" />
 								{stoppingServer ? 'Menghentikan server…' : 'Hentikan Server'}
 							</button>
 						</li>
