@@ -75,7 +75,7 @@
 <main class="drawer lg:drawer-open">
 	<input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
 	<div class="drawer-content flex min-h-screen flex-col">
-		<Navbar />
+		<Navbar {stopServer} {stoppingServer} />
 
 		<div
 			class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:mr-2 lg:mb-2 lg:rounded-xl"
@@ -111,15 +111,6 @@
 					<Icon name="gear" />
 					<h2 class="font-bold">Pengaturan</h2>
 				</a>
-				<button
-					type="button"
-					class="btn btn-sm btn-error normal-case justify-start gap-2"
-					onclick={stopServer}
-					disabled={stoppingServer}
-				>
-					<Icon name="warning" class="h-4 w-4" />
-					{stoppingServer ? 'Menghentikan server…' : 'Hentikan Server'}
-				</button>
 				<a href="/tentang" class="flex items-center gap-2">
 					<Icon name="info" />
 					<h2 class="font-bold">Tentang Aplikasi</h2>

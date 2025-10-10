@@ -7,6 +7,13 @@
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import type { Component } from 'svelte';
 
+	type NavbarProps = {
+		stopServer?: () => void;
+		stoppingServer?: boolean;
+	};
+
+	let { stopServer = () => {}, stoppingServer = false }: NavbarProps = $props();
+
 	let tasksModalRef: { open: () => void } | null = null;
 	const daftarKelas = $derived(page.data.daftarKelas ?? []);
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
@@ -190,6 +197,17 @@
 								<Icon name="gear" />
 								Pengaturan
 							</a>
+						</li>
+						<li>
+							<button
+								type="button"
+								title="Hentikan server"
+								onclick={stopServer}
+								disabled={stoppingServer}
+							>
+								<Icon name="warning" class="h-4 w-4" />
+								{stoppingServer ? 'Menghentikan server…' : 'Hentikan Server'}
+							</button>
 						</li>
 					</ul>
 				</div>
