@@ -14,7 +14,7 @@
 			<p class="text-base-content/70 text-sm">
 				Pengaturan tambahan untuk lingkungan server lokal Anda.
 			</p>
-		</header>	
+		</header>
 
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Alamat aplikasi</legend>
@@ -32,21 +32,14 @@
 				Buka alamat ini pada perangkat lain di jaringan lokal yang sama.
 			</p>
 		</fieldset>
-
-		<div class="flex justify-end">
-			<button class="btn btn-primary shadow-none" type="button">
-				<Icon name="save" />
-				Simpan
-			</button>
-		</div>
 	</div>
 </section>
 
-<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md mt-5">
+<section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
 	<div class="space-y-6">
 		<div role="alert" class="alert alert-warning">
-		  <Icon name="alert" />
-		  <span>Simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
+			<Icon name="alert" />
+			<span>Simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
 		</div>
 		<header class="space-y-2">
 			<h2 class="text-xl font-semibold">Keamanan Akun</h2>
@@ -68,7 +61,7 @@
 							name="currentPassword"
 							required
 							autocomplete="current-password"
-							class="input input-bordered w-full"
+							class="input input-bordered w-full dark:border-none dark:bg-base-200"
 							placeholder="Masukkan kata sandi lama"
 						/>
 					</div>
@@ -84,7 +77,7 @@
 							required
 							minlength={8}
 							autocomplete="new-password"
-							class="input input-bordered w-full"
+							class="input input-bordered w-full dark:border-none dark:bg-base-200"
 							placeholder="Minimal 8 karakter"
 						/>
 					</div>
@@ -100,7 +93,7 @@
 							required
 							minlength={8}
 							autocomplete="new-password"
-							class="input input-bordered w-full"
+							class="input input-bordered w-full dark:border-none dark:bg-base-200"
 							placeholder="Ulangi kata sandi baru"
 						/>
 					</div>

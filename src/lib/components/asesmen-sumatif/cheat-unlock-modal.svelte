@@ -8,15 +8,18 @@
 	}
 
 	let { tokenText, errorMessage, onInput }: Props = $props();
-	let tokenLocal = $state(tokenText);
+	let tokenOverride = $state<string | null>(null);
+	const tokenValue = $derived.by(() => tokenOverride ?? tokenText);
 
 	$effect(() => {
-		tokenLocal = tokenText;
+		if (tokenOverride != null && tokenOverride === tokenText) {
+			tokenOverride = null;
+		}
 	});
 
 	function handleInput(event: Event) {
 		const target = event.currentTarget as HTMLInputElement;
-		tokenLocal = target.value;
+		tokenOverride = target.value;
 		onInput?.(target.value);
 	}
 
@@ -31,7 +34,7 @@
 		<span class="text-sm">
 			Ini adalah fitur cheat, donasi minimal 5 gelas kopi di tombol traktir.
 		</span>
-    <a
+		<a
 			href="https://trakteer.id/raporkumer/tip"
 			target="_blank"
 			rel="noopener noreferrer"
@@ -43,24 +46,23 @@
 	</div>
 
 	<fieldset class="fieldset">
-		<legend class="fieldset-legend">
-      Token Akses
-		</legend>
+		<legend class="fieldset-legend"> Token Akses </legend>
 		<input
 			type="password"
 			class={`input input-bordered dark:bg-base-200 w-full dark:border-none ${errorMessage ? 'input-error' : ''}`}
 			placeholder="Masukkan token"
 			autocomplete="off"
-			value={tokenLocal}
+			value={tokenValue}
 			oninput={handleInput}
 		/>
 		{#if errorMessage}
 			<p class="label text-wrap">
-        {errorMessage}
+				{errorMessage}
 			</p>
 		{/if}
-    <p class="label text-wrap">
-	  	Jika belum memiliki token, silakan dukung pengembangan Rapkumer melalui tombol Traktir agar fitur ini dapat kami buka.
-    </p>  
-  </fieldset>
+		<p class="label text-wrap">
+			Jika belum memiliki token, silakan dukung pengembangan Rapkumer melalui tombol Traktir agar
+			fitur ini dapat kami buka.
+		</p>
+	</fieldset>
 </form>

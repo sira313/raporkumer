@@ -21,7 +21,8 @@
 
 		const showSuccess = () =>
 			toast({
-				message: 'Server dihentikan. Tutup jendela Rapkumer ini lalu jalankan ulang bila diperlukan.',
+				message:
+					'Server dihentikan. Tutup jendela Rapkumer ini lalu jalankan ulang bila diperlukan.',
 				type: 'info',
 				persist: true
 			});
@@ -36,7 +37,10 @@
 				toast({ message: 'Gagal menghentikan server. Coba lagi.', type: 'error' });
 			}
 		} catch (error) {
-			console.warn('Permintaan stop server berakhir sebelum respons diterima. Diasumsikan berhasil.', error);
+			console.warn(
+				'Permintaan stop server berakhir sebelum respons diterima. Diasumsikan berhasil.',
+				error
+			);
 			showSuccess();
 		} finally {
 			stoppingServer = false;
@@ -74,7 +78,7 @@
 </svelte:head>
 
 {#if isLoginPage}
-	<div class="flex min-h-screen flex-col items-center justify-center bg-base-200 p-6">
+	<div class="bg-base-200 flex min-h-screen flex-col items-center justify-center p-6">
 		{@render children()}
 	</div>
 {:else}

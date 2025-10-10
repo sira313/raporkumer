@@ -523,7 +523,8 @@
 			</p>
 			{#if isPiagamSelected}
 				<p>
-					Pilihan piagam menampilkan peringkat 1–4 berdasarkan nilai rata-rata dari semua mata pelajaran di kelas ini.
+					Pilihan piagam menampilkan peringkat 1–4 berdasarkan nilai rata-rata dari semua mata
+					pelajaran di kelas ini.
 				</p>
 			{/if}
 		{:else}

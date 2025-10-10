@@ -44,7 +44,7 @@
 				{#if typeof props.body == 'string'}
 					{@html props.body}
 				{:else}
-					{@const BodyComponent = props.body as import('svelte').Component<any, any, any>}
+					{@const BodyComponent = props.body as ModalBodyComponent}
 					<BodyComponent {...props.bodyProps ?? {}} />
 				{/if}
 			</div>

@@ -30,12 +30,12 @@
 	let submitting = $state(false);
 	let invalid = $state(true);
 
-		type GenericActionResult = ActionResult<Record<string, unknown>, Record<string, unknown>>;
-		type SubmitOutcome = GenericActionResult | Response | undefined;
+	type GenericActionResult = ActionResult<Record<string, unknown>, Record<string, unknown>>;
+	type SubmitOutcome = GenericActionResult | Response | undefined;
 
-		function isActionResult(value: SubmitOutcome): value is GenericActionResult {
-			return typeof value === 'object' && value !== null && 'type' in value;
-		}
+	function isActionResult(value: SubmitOutcome): value is GenericActionResult {
+		return typeof value === 'object' && value !== null && 'type' in value;
+	}
 
 	function resolveResultType(result: SubmitOutcome) {
 		if (!result) return 'success';
@@ -101,9 +101,10 @@
 						break;
 					}
 					case 'failure': {
-						const failureData = actionResult && 'data' in actionResult
-							? (actionResult.data as { fail?: string; message?: string } | undefined)
-							: undefined;
+						const failureData =
+							actionResult && 'data' in actionResult
+								? (actionResult.data as { fail?: string; message?: string } | undefined)
+								: undefined;
 						if (showToast) {
 							toast(failureData?.fail || failureData?.message || 'Gagal', 'warning');
 						}
@@ -119,11 +120,11 @@
 								typeof detail === 'object' && detail && 'message' in detail
 									? String(detail.message)
 									: detail
-									? JSON.stringify(detail)
-									: undefined;
+										? JSON.stringify(detail)
+										: undefined;
 							message = status
 								? `Error (${status}): ${detailMessage ?? 'Terjadi kesalahan.'}`
-								: detailMessage ?? 'Terjadi kesalahan.';
+								: (detailMessage ?? 'Terjadi kesalahan.');
 						}
 						if (showToast) {
 							toast(message, 'error');

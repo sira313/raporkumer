@@ -2,7 +2,7 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 </script>
 
-<section class="card w-full max-w-md bg-base-100 shadow-xl">
+<section class="card bg-base-100 w-full max-w-md shadow-xl">
 	<div class="card-body space-y-6">
 		<header class="space-y-2 text-center">
 			<h1 class="text-2xl font-bold">Masuk ke Rapkumer</h1>
@@ -45,7 +45,8 @@
 					</div>
 
 					<p class="text-base-content/60 text-xs">
-						Akun bawaan: <span class="font-semibold">Admin</span> / <span class="font-semibold">Admin123</span>
+						Akun bawaan: <span class="font-semibold">Admin</span> /
+						<span class="font-semibold">Admin123</span>
 					</p>
 
 					<button class="btn btn-primary w-full" type="submit" disabled={submitting || invalid}>

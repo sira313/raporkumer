@@ -26,9 +26,7 @@
 	const sekolahNamaUpper = $derived.by(() => formatUpper(sekolah?.nama) || 'Sekolah');
 	const sekolahNamaDisplay = $derived.by(() => formatValue(sekolah?.nama) || 'Sekolah');
 	const muridNamaUpper = $derived.by(() => formatUpper(murid?.nama) || '—');
-	const kepalaNamaUpper = $derived.by(() => formatUpper(kepalaSekolah?.nama) || '—');
 	const kepalaNamaDisplay = $derived.by(() => formatValue(kepalaSekolah?.nama) || '—');
-	const waliNamaUpper = $derived.by(() => formatUpper(waliKelas?.nama) || '—');
 	const waliNamaDisplay = $derived.by(() => formatValue(waliKelas?.nama) || '—');
 	const kepalaNip = $derived.by(() => formatValue(kepalaSekolah?.nip));
 	const waliNip = $derived.by(() => formatValue(waliKelas?.nip));
@@ -79,7 +77,6 @@
 
 	const kabupaten = $derived.by(() => formatUpper(sekolah?.alamat?.kabupaten));
 	const kecamatan = $derived.by(() => formatUpper(sekolah?.alamat?.kecamatan));
-	const desa = $derived.by(() => formatUpper(sekolah?.alamat?.desa));
 	const jenjangLabel = $derived.by(() => {
 		const jenjang = sekolah?.jenjang ?? '';
 		switch (jenjang) {
@@ -158,7 +155,7 @@
 	const achievementMotivation = $derived.by(
 		() =>
 			penghargaan?.motivasi ??
-				'Semoga prestasi yang diraih menjadi motivasi untuk meraih kesuksesan di masa yang akan datang.'
+			'Semoga prestasi yang diraih menjadi motivasi untuk meraih kesuksesan di masa yang akan datang.'
 	);
 
 	const periodeSemester = $derived.by(() => formatTitle(periode?.semester) || '—');
@@ -192,7 +189,7 @@
 </script>
 
 <div
-	class="bg-base-300 dark:bg-base-200 card w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0 preview"
+	class="bg-base-300 dark:bg-base-200 card preview w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
 >
 	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
 		<PrintCardPage
@@ -210,74 +207,82 @@
 					loading="eager"
 				/>
 			</div>
-			<div aria-hidden="true" class="pointer-events-none absolute inset-0 bg-base-100/30 dark:bg-base-100/30 print:bg-white/30"></div>
-			<div class="relative z-10 flex min-h-0 flex-1 flex-col justify-between gap-4 p-[16mm] text-[11px] print:gap-6">
+			<div
+				aria-hidden="true"
+				class="bg-base-100/30 dark:bg-base-100/30 pointer-events-none absolute inset-0 print:bg-white/30"
+			></div>
+			<div
+				class="relative z-10 flex min-h-0 flex-1 flex-col justify-between gap-4 p-[16mm] text-[11px] print:gap-6"
+			>
 				<section class="flex flex-col gap-4">
 					<header class="grid grid-cols-[80px_1fr_80px] items-center gap-3">
 						<div class="flex justify-center">
 							<img src={logoLeft} alt={dinasLogoAlt} class="h-20 w-20 object-contain" />
 						</div>
 						<div class="text-center">
-							{#each headingLines as line, index}
+							{#each headingLines as line, index (index)}
 								<p
 									class={`font-semibold uppercase ${
 										index === headingLines.length - 1
-											? 'text-lg tracking-wide font-extrabold'
+											? 'text-lg font-extrabold tracking-wide'
 											: index === 0
 												? 'text-sm tracking-wide'
 												: 'text-sm'
-										}`}
+									}`}
 								>
-								{line}
-							</p>
-						{/each}
-						{#each infoLines as infoLine, infoIndex}
-							<p class={`text-xs ${infoIndex === 0 ? 'mt-1.5 italic' : ''}`}>{infoLine}</p>
-						{/each}
+									{line}
+								</p>
+							{/each}
+							{#each infoLines as infoLine, infoIndex (infoIndex)}
+								<p class={`text-xs ${infoIndex === 0 ? 'mt-1.5 italic' : ''}`}>{infoLine}</p>
+							{/each}
+						</div>
+						<div class="flex justify-center">
+							<img src={logoRight} alt={sekolahLogoAlt} class="h-20 w-20 object-contain" />
+						</div>
+					</header>
+					<div class="flex flex-col gap-[2px]" aria-hidden="true">
+						<div class="bg-base-content/80 h-[2px] w-full print:bg-[#000]"></div>
+						<div class="border-base-content/60 border-t print:border-[#000]"></div>
 					</div>
-					<div class="flex justify-center">
-						<img src={logoRight} alt={sekolahLogoAlt} class="h-20 w-20 object-contain" />
-					</div>
-				</header>
-				<div class="flex flex-col gap-[2px]" aria-hidden="true">
-					<div class="h-[2px] w-full bg-base-content/80 print:bg-[#000]"></div>
-					<div class="border-base-content/60 border-t print:border-[#000]"></div>
-				</div>
-			</section>
+				</section>
 
-			<section class="flex flex-col items-center gap-2.5 text-center">
-				<h1 class="text-2xl font-bold tracking-widest uppercase">{achievementTitle}</h1>
-				<p class="text-sm uppercase tracking-wide text-base-content/80">{achievementSubtitle}</p>
-				<h2 class="text-xl font-extrabold uppercase tracking-wide">{muridNamaUpper}</h2>
-				<p class="text-sm uppercase tracking-wide text-base-content/80">Sebagai</p>
-				<p class="text-xl font-bold uppercase">{rankingLabel}</p>
-				<p class="mt-3 max-w-[480px] text-justify text-base leading-relaxed">
-					Dengan total nilai rata-rata <strong>{rataRata}</strong> pada Semester {periodeSemester}
-					tahun ajaran {periodeTahun}.
-				</p>
-				<p class="max-w-[480px] text-justify text-base leading-relaxed">{achievementMotivation}</p>
-			</section>
-
-			<footer class="mt-6 grid grid-cols-2 gap-6 text-sm">
-				<div class="flex flex-col items-center gap-1.5 text-center">
-					<p class="font-semibold uppercase">Mengetahui</p>
-					<p class="text-base font-semibold">Kepala {sekolahNamaDisplay}</p>
-					<div class="h-16 w-full"></div>
-					<p class="text-sm font-semibold">{kepalaNamaDisplay}</p>
-					<p class="text-xs">NIP {kepalaNip || '—'}</p>
-				</div>
-				<div class="flex flex-col items-center gap-1.5 text-center">
-					<p class="text-base">
-						{#if lokasiPenandatangan}{lokasiPenandatangan}{#if tanggalPenandatangan}, {/if}{/if}
-						{#if tanggalPenandatangan}{tanggalPenandatangan}{/if}
+				<section class="flex flex-col items-center gap-2.5 text-center">
+					<h1 class="text-2xl font-bold tracking-widest uppercase">{achievementTitle}</h1>
+					<p class="text-base-content/80 text-sm tracking-wide uppercase">{achievementSubtitle}</p>
+					<h2 class="text-xl font-extrabold tracking-wide uppercase">{muridNamaUpper}</h2>
+					<p class="text-base-content/80 text-sm tracking-wide uppercase">Sebagai</p>
+					<p class="text-xl font-bold uppercase">{rankingLabel}</p>
+					<p class="mt-3 max-w-[480px] text-justify text-base leading-relaxed">
+						Dengan total nilai rata-rata <strong>{rataRata}</strong> pada Semester {periodeSemester}
+						tahun ajaran {periodeTahun}.
 					</p>
-					<p class="font-semibold uppercase">Wali Kelas</p>
-					<div class="h-16 w-full"></div>
-					<p class="text-sm font-semibold">{waliNamaDisplay}</p>
-					<p class="text-xs">NIP {waliNip || '—'}</p>
-				</div>
-			</footer>
-		</div>
-	</PrintCardPage>
+					<p class="max-w-[480px] text-justify text-base leading-relaxed">
+						{achievementMotivation}
+					</p>
+				</section>
+
+				<footer class="mt-6 grid grid-cols-2 gap-6 text-sm">
+					<div class="flex flex-col items-center gap-1.5 text-center">
+						<p class="font-semibold uppercase">Mengetahui</p>
+						<p class="text-base font-semibold">Kepala {sekolahNamaDisplay}</p>
+						<div class="h-16 w-full"></div>
+						<p class="text-sm font-semibold">{kepalaNamaDisplay}</p>
+						<p class="text-xs">NIP {kepalaNip || '—'}</p>
+					</div>
+					<div class="flex flex-col items-center gap-1.5 text-center">
+						<p class="text-base">
+							{#if lokasiPenandatangan}{lokasiPenandatangan}{#if tanggalPenandatangan},
+								{/if}{/if}
+							{#if tanggalPenandatangan}{tanggalPenandatangan}{/if}
+						</p>
+						<p class="font-semibold uppercase">Wali Kelas</p>
+						<div class="h-16 w-full"></div>
+						<p class="text-sm font-semibold">{waliNamaDisplay}</p>
+						<p class="text-xs">NIP {waliNip || '—'}</p>
+					</div>
+				</footer>
+			</div>
+		</PrintCardPage>
 	</div>
 </div>

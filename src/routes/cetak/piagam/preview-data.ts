@@ -67,10 +67,15 @@ function fallbackTempat(sekolah: NonNullable<App.Locals['sekolah']>): string {
 	return alamat.kecamatan || alamat.kabupaten || alamat.desa || '';
 }
 
-function formatSemesterLabel(semester: {
-	nama?: string | null;
-	tipe?: string | null;
-} | null | undefined): string {
+function formatSemesterLabel(
+	semester:
+		| {
+				nama?: string | null;
+				tipe?: string | null;
+		  }
+		| null
+		| undefined
+): string {
 	if (!semester) return '';
 	const nama = semester.nama?.trim();
 	if (nama) return nama;
@@ -93,13 +98,7 @@ function buildRankingLabel(rank: number | null | undefined): string {
 	return `Peringkat ${word}`;
 }
 
-export async function getPiagamPreviewPayload({
-	locals,
-	url
-}: {
-	locals: App.Locals;
-	url: URL;
-}) {
+export async function getPiagamPreviewPayload({ locals, url }: { locals: App.Locals; url: URL }) {
 	const sekolah = locals.sekolah;
 	if (!sekolah?.id) {
 		throw error(404, 'Sekolah tidak ditemukan.');
@@ -204,8 +203,7 @@ export async function getPiagamPreviewPayload({
 		},
 		ttd: {
 			tempat: fallbackTempat(sekolah),
-			tanggal:
-				formatTanggal(murid.semester?.tanggalBagiRaport) || formatTanggal(new Date()),
+			tanggal: formatTanggal(murid.semester?.tanggalBagiRaport) || formatTanggal(new Date()),
 			kepalaSekolah: {
 				nama: sekolah.kepalaSekolah?.nama ?? '',
 				nip: sekolah.kepalaSekolah?.nip ?? ''

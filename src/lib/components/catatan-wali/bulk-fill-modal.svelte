@@ -22,14 +22,24 @@
 		onSuccess
 	}: Props = $props();
 
-	let catatanLocal = $state(catatan);
+	let catatanOverride = $state<string | null>(null);
+	const catatanValue = $derived.by(() => catatanOverride ?? catatan);
+	let previousCatatan = catatan;
 
 	$effect(() => {
-		catatanLocal = catatan;
+		if (catatan !== previousCatatan) {
+			previousCatatan = catatan;
+			catatanOverride = null;
+			return;
+		}
+		if (catatanOverride != null && catatanOverride === catatan) {
+			catatanOverride = null;
+		}
 	});
 
 	function handleInput(event: Event) {
 		const value = (event.currentTarget as HTMLTextAreaElement).value;
+		catatanOverride = value;
 		onCatatanChange?.(value);
 	}
 
@@ -62,7 +72,7 @@
 					class="textarea textarea-bordered bg-base-200 dark:bg-base-100 w-full dark:border-none"
 					name="catatan"
 					rows="5"
-					bind:value={catatanLocal}
+					value={catatanValue}
 					oninput={handleInput}
 					placeholder="Tuliskan catatan yang ingin diterapkan ke semua murid"
 					spellcheck="false"

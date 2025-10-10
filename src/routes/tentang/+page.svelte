@@ -37,11 +37,12 @@
 					<div
 						class="rounded-box border-base-200/70 bg-base-100/80 border p-4 shadow-md backdrop-blur"
 					>
-							<h3 class="text-secondary font-semibold">Ekspor Nilai ke Dapodik</h3>
-							<p class="text-base-content/80 text-sm">
-								Integrasi nilai ke aplikasi Dapodik sedang melalui tahap riset lanjutan agar format ekspor
-									downstream benar-benar sesuai dan aman dipakai. Mohon donasi agar kami lebih bersemangat dalam mengembangkan aplikasi ini.
-							</p>
+						<h3 class="text-secondary font-semibold">Ekspor Nilai ke Dapodik</h3>
+						<p class="text-base-content/80 text-sm">
+							Integrasi nilai ke aplikasi Dapodik sedang melalui tahap riset lanjutan agar format
+							ekspor downstream benar-benar sesuai dan aman dipakai. Mohon donasi agar kami lebih
+							bersemangat dalam mengembangkan aplikasi ini.
+						</p>
 					</div>
 				</div>
 				<div class="flex flex-wrap gap-3">
@@ -122,12 +123,8 @@
 				<div class="space-y-3">
 					<h3 class="text-base-content text-xl font-semibold">Tester</h3>
 					<ul class="text-base-content/90 list-inside list-disc space-y-1">
-						<li>
-							Hamdani, S.Pd., Gr.
-						</li>
-						<li>
-							Rudiansyah, S.Pd., Gr.
-						</li>
+						<li>Hamdani, S.Pd., Gr.</li>
+						<li>Rudiansyah, S.Pd., Gr.</li>
 					</ul>
 				</div>
 				<div class="space-y-3">

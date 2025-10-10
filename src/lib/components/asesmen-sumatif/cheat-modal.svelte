@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Icon from '$lib/components/icon.svelte';
+	import Icon from '$lib/components/icon.svelte';
 	interface Props {
 		nilaiAkhirText: string;
 		errorMessage: string | null;
@@ -7,15 +7,18 @@
 	}
 
 	let { nilaiAkhirText, errorMessage, onInput }: Props = $props();
-	let nilaiAkhirLocal = $state<string>(nilaiAkhirText);
+	let nilaiAkhirOverride = $state<string | null>(null);
+	const nilaiAkhirValue = $derived.by(() => nilaiAkhirOverride ?? nilaiAkhirText);
 
 	$effect(() => {
-		nilaiAkhirLocal = nilaiAkhirText;
+		if (nilaiAkhirOverride != null && nilaiAkhirOverride === nilaiAkhirText) {
+			nilaiAkhirOverride = null;
+		}
 	});
 
 	function handleInput(event: Event) {
 		const target = event.currentTarget as HTMLInputElement;
-		nilaiAkhirLocal = target.value;
+		nilaiAkhirOverride = target.value;
 		onInput?.(target.value);
 	}
 </script>
@@ -29,7 +32,7 @@
 		</span>
 	</div>
 
-	<label class="flex flex-col sm:flex-row gap-2">
+	<label class="flex flex-col gap-2 sm:flex-row">
 		<div class="label">
 			<span class="text-wrap">Target nilai akhir untuk ditampilkan di rapor</span>
 		</div>
@@ -41,7 +44,7 @@
 			max="100"
 			step="0.01"
 			autocomplete="off"
-			value={nilaiAkhirLocal}
+			value={nilaiAkhirValue}
 			oninput={handleInput}
 		/>
 		{#if errorMessage}

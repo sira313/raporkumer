@@ -50,10 +50,10 @@ Ganti path `ISCC.exe` sesuai lokasi instalasi Inno Setup Anda. Berkas `.exe` aka
 
 1. Klik shortcut **Jalankan Rapkumer** (desktop atau Start Menu)
 2. Skrip akan:
-	- Memastikan port default `3000`
-	- Menjalankan `node build/index.js` menggunakan Node bawaan (atau Node sistem jika tersedia)
-	- Membuka browser ke `http://localhost:3000`
-	- Menyimpan log ke `logs/rapkumer.log`
+   - Memastikan port default `3000`
+   - Menjalankan `node build/index.js` menggunakan Node bawaan (atau Node sistem jika tersedia)
+   - Membuka browser ke `http://localhost:3000`
+   - Menyimpan log ke `logs/rapkumer.log`
 
 Database SQLite bawaan berada di `{app}\data\database.sqlite3`. Backup sebelum menghapus aplikasi bila dibutuhkan.
 

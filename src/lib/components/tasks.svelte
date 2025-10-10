@@ -212,13 +212,13 @@
 
 <div class={wrapperClass}>
 	<TaskHeader
-		isAdding={isAdding}
-		isProcessing={isProcessing}
+		{isAdding}
+		{isProcessing}
 		canManage={canManageTasks}
-		showInitialSpinner={showInitialSpinner}
-		hasCompletedTasks={hasCompletedTasks}
-		hasAnyTasks={hasAnyTasks}
-		kelasLabel={kelasLabel}
+		{showInitialSpinner}
+		{hasCompletedTasks}
+		{hasAnyTasks}
+		{kelasLabel}
 		on:toggleAdd={toggleAddTask}
 		on:clearCompleted={clearCompleted}
 		on:clearAll={clearAll}
@@ -246,16 +246,18 @@
 				</table>
 			</div>
 		{:else if showNoClass}
-			<div class="text-base-content/60 flex flex-1 items-center justify-center px-4 py-6 text-center text-sm">
+			<div
+				class="text-base-content/60 flex flex-1 items-center justify-center px-4 py-6 text-center text-sm"
+			>
 				Pilih kelas untuk melihat daftar tugas.
 			</div>
 		{:else}
 			<TaskActiveList
 				bind:this={activeListRef}
 				tasks={activeTasks}
-				isAdding={isAdding}
-				isProcessing={isProcessing}
-				newTaskTitle={newTaskTitle}
+				{isAdding}
+				{isProcessing}
+				{newTaskTitle}
 				canManage={canManageTasks}
 				on:updateTitle={(event: CustomEvent<string>) => (newTaskTitle = event.detail)}
 				on:save={() => void saveTask()}
@@ -264,7 +266,9 @@
 				on:remove={(event: CustomEvent<number>) => void removeTask(event.detail)}
 			/>
 			{#if showEmptyState}
-				<div class="text-base-content/60 flex flex-1 items-center justify-center px-4 py-6 text-center text-sm">
+				<div
+					class="text-base-content/60 flex flex-1 items-center justify-center px-4 py-6 text-center text-sm"
+				>
 					Belum ada tugas aktif. Tambahkan tugas baru untuk memulai.
 				</div>
 			{/if}
@@ -272,8 +276,8 @@
 		<div class="m-2 mt-auto">
 			<TaskCompletedList
 				tasks={completedTasks}
-				isProcessing={isProcessing}
-				showInitialSpinner={showInitialSpinner}
+				{isProcessing}
+				{showInitialSpinner}
 				canManage={canManageTasks}
 				on:restore={(event: CustomEvent<number>) => void moveToActive(event.detail)}
 				on:remove={(event: CustomEvent<number>) => void removeTask(event.detail)}

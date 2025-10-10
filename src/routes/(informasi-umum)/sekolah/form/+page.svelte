@@ -42,7 +42,7 @@
 
 			<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-2">
 				<!-- Jenjang Pendidikan & Lokasi Tanda Tangan -->
-				<div class="md:col-span-2 grid grid-cols-1 gap-2 md:grid-cols-2 md:items-end">
+				<div class="grid grid-cols-1 gap-2 md:col-span-2 md:grid-cols-2 md:items-end">
 					<div>
 						<legend class="fieldset-legend">Jenjang Pendidikan</legend>
 						<select

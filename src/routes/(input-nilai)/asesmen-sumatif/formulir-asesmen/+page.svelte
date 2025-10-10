@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
-	import CheatModal from '$lib/components/asesmen-sumatif/cheat-modal.svelte';
-	import CheatUnlockModal from '$lib/components/asesmen-sumatif/cheat-unlock-modal.svelte';
+	import CheatControls from '$lib/components/asesmen-sumatif/cheat-controls.svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import LingkupSummaryCard from '$lib/components/asesmen-sumatif/lingkup-summary-card.svelte';
@@ -15,7 +14,6 @@
 		NilaiAkhirCategory,
 		TujuanEntry
 	} from '$lib/components/asesmen-sumatif/types';
-	import { showModal, updateModal } from '$lib/components/global-modal.svelte';
 	import {
 		formatScore,
 		toInputText,
@@ -23,7 +21,6 @@
 		normalizeScoreText,
 		isScoreValid
 	} from '$lib/components/asesmen-sumatif/utils';
-	import { generateCheatResult } from '$lib/components/asesmen-sumatif/cheat-generator';
 
 	type PageData = {
 		murid: { id: number; nama: string };
@@ -60,14 +57,7 @@
 	let sasNonTesText = $state(
 		data.initialScores.sasNonTes != null ? data.initialScores.sasNonTes.toFixed(2) : ''
 	);
-	const CHEAT_FEATURE_KEY = 'cheat-asesmen-sumatif';
-
-	let cheatNilaiAkhirText = $state('');
-	let cheatModalError = $state<string | null>(null);
 	let cheatUnlocked = $state(data.cheatUnlocked);
-	let cheatUnlockTokenText = $state('');
-	let cheatUnlockError = $state<string | null>(null);
-	let cheatUnlockBusy = false;
 
 	$effect(() => {
 		entries = data.entries.map(toDraft);
@@ -238,6 +228,19 @@
 		sasNonTesText = value;
 	}
 
+	function handleCheatApply(
+		event: CustomEvent<{ entries: EntryDraft[]; sasTesText: string; sasNonTesText: string }>
+	): void {
+		const { entries: drafts, sasTesText: sasTes, sasNonTesText: sasNonTes } = event.detail;
+		entries = drafts;
+		sasTesText = sasTes;
+		sasNonTesText = sasNonTes;
+	}
+
+	function handleCheatUnlockChange(event: CustomEvent<{ cheatUnlocked: boolean }>): void {
+		cheatUnlocked = event.detail.cheatUnlocked;
+	}
+
 	async function handleSuccess({ data: result }: { data?: Record<string, unknown> }) {
 		const payload = (result?.payload ?? null) as SavePayload | null;
 		if (payload) {
@@ -260,197 +263,6 @@
 		await invalidate('app:asesmen-sumatif');
 		await invalidate('app:asesmen-sumatif/formulir');
 	}
-
-	/* Cheat logic handled via generateCheatResult utility */
-
-	function syncCheatModalBody(): void {
-		updateModal({
-			bodyProps: {
-				nilaiAkhirText: cheatNilaiAkhirText,
-				errorMessage: cheatModalError,
-				onInput: handleCheatInput
-			}
-		});
-	}
-
-	function handleCheatInput(value: string): void {
-		cheatNilaiAkhirText = value;
-		cheatModalError = null;
-		syncCheatModalBody();
-	}
-
-	function syncCheatUnlockModalBody(): void {
-		updateModal({
-			bodyProps: {
-				tokenText: cheatUnlockTokenText,
-				errorMessage: cheatUnlockError,
-				onInput: handleCheatUnlockInput
-			}
-		});
-	}
-
-	function setCheatUnlockBusyState(busy: boolean): void {
-		cheatUnlockBusy = busy;
-		updateModal({
-			onPositive: {
-				label: busy ? 'Memverifikasi...' : 'Verifikasi Token',
-				icon: 'check',
-				action: ({ close }) => handleCheatUnlockConfirm(close)
-			}
-		});
-	}
-
-	function handleCheatUnlockInput(value: string): void {
-		cheatUnlockTokenText = value;
-		cheatUnlockError = null;
-		syncCheatUnlockModalBody();
-	}
-
-	async function requestCheatUnlock(token: string): Promise<{ success: boolean; message?: string }> {
-		try {
-			const response = await fetch('/api/feature-unlocks', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({ featureKey: CHEAT_FEATURE_KEY, token })
-			});
-			if (!response.ok) {
-				const errorResult = (await response.json().catch(() => null)) as
-					| { message?: string }
-					| null;
-				return {
-					success: false,
-					message: errorResult?.message ?? 'Token tidak valid atau terjadi kesalahan.'
-				};
-			}
-			const result = (await response.json().catch(() => null)) as
-				| { data?: { unlocked?: boolean }; message?: string }
-				| null;
-			return {
-				success: Boolean(result?.data?.unlocked),
-				message: result?.message
-			};
-		} catch (error) {
-			console.error('Gagal memanggil API unlock cheat', error);
-			return { success: false, message: 'Tidak dapat terhubung ke server. Coba lagi.' };
-		}
-	}
-
-	async function handleCheatUnlockConfirm(close: () => void): Promise<void> {
-		if (cheatUnlockBusy) return;
-		setCheatUnlockBusyState(true);
-		const token = cheatUnlockTokenText.trim();
-		if (!token) {
-			cheatUnlockError = 'Token tidak boleh kosong.';
-			syncCheatUnlockModalBody();
-			setCheatUnlockBusyState(false);
-			return;
-		}
-		try {
-			const result = await requestCheatUnlock(token);
-			if (!result.success) {
-				cheatUnlockError = result.message ?? 'Token tidak valid. Pastikan token sesuai setelah donasi.';
-				syncCheatUnlockModalBody();
-				setCheatUnlockBusyState(false);
-				return;
-			}
-			cheatUnlocked = true;
-			cheatUnlockTokenText = '';
-			cheatUnlockError = null;
-			setCheatUnlockBusyState(false);
-			close();
-			queueMicrotask(() => {
-				openCheatModal();
-			});
-		} catch (error) {
-			console.error('Gagal memverifikasi token cheat', error);
-			cheatUnlockError = 'Terjadi kesalahan saat memverifikasi token. Coba lagi.';
-			syncCheatUnlockModalBody();
-			setCheatUnlockBusyState(false);
-		}
-	}
-
-	function openCheatUnlockModal(): void {
-		cheatUnlockTokenText = '';
-		cheatUnlockError = null;
-		cheatUnlockBusy = false;
-		showModal({
-			title: 'Buka Kunci Isi Sekaligus',
-			body: CheatUnlockModal,
-			bodyProps: {
-				tokenText: cheatUnlockTokenText,
-				errorMessage: cheatUnlockError,
-				onInput: handleCheatUnlockInput
-			},
-			dismissible: true,
-			onNegative: {
-				label: 'Tutup',
-				icon: 'close',
-				action: ({ close }) => close()
-			},
-			onPositive: {
-				label: 'Verifikasi Token',
-				icon: 'check',
-				action: ({ close }) => handleCheatUnlockConfirm(close)
-			}
-		});
-	}
-
-	function handleCheatConfirm(close: () => void): void {
-		const normalized = normalizeScoreText(cheatNilaiAkhirText);
-		if (normalized == null) {
-			cheatModalError = 'Masukkan angka antara 0 sampai 100 dengan maksimal dua angka desimal.';
-			syncCheatModalBody();
-			return;
-		}
-		if (!entries.length) {
-			cheatModalError = 'Tidak ada tujuan pembelajaran yang dapat diisi otomatis.';
-			syncCheatModalBody();
-			return;
-		}
-		const result = generateCheatResult(entries, normalized);
-		if (!result) {
-			cheatModalError = 'Gagal menghasilkan nilai acak yang valid. Coba lagi.';
-			syncCheatModalBody();
-			return;
-		}
-		entries = result.drafts;
-		sasTesText = toInputText(result.sasTes);
-		sasNonTesText = toInputText(result.sasNonTes);
-		cheatModalError = null;
-		close();
-	}
-
-	function openCheatModal(): void {
-		if (!cheatUnlocked) {
-			openCheatUnlockModal();
-			return;
-		}
-		if (!data.hasTujuan) return;
-		cheatNilaiAkhirText = toInputText(data.initialScores.nilaiAkhir ?? nilaiAkhir ?? null);
-		cheatModalError = null;
-		showModal({
-			title: 'Fitur Cheat Nilai Sumatif',
-			body: CheatModal,
-			bodyProps: {
-				nilaiAkhirText: cheatNilaiAkhirText,
-				errorMessage: cheatModalError,
-				onInput: handleCheatInput
-			},
-			dismissible: true,
-			onNegative: {
-				label: 'Batal',
-				icon: 'close',
-				action: ({ close }) => close()
-			},
-			onPositive: {
-				label: 'Terapkan',
-				icon: 'check',
-				action: ({ close }) => handleCheatConfirm(close)
-			}
-		});
-	}
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
@@ -464,15 +276,16 @@
 					<Icon name="left" />
 					Kembali
 				</a>
-				<button
-					type="button"
-					class="btn shadow-none"
-					onclick={openCheatModal}
-					disabled={(!data.hasTujuan && cheatUnlocked) || submitting}
-				>
-					<Icon name={cheatUnlocked ? 'copy' : 'lock'} />
-					{cheatUnlocked ? 'Isi Sekaligus' : 'Isi Sekaligus (Terkunci)'}
-				</button>
+				<CheatControls
+					{entries}
+					hasTujuan={data.hasTujuan}
+					initialNilaiAkhir={data.initialScores.nilaiAkhir}
+					{nilaiAkhir}
+					disabled={submitting}
+					{cheatUnlocked}
+					on:apply={handleCheatApply}
+					on:unlockChange={handleCheatUnlockChange}
+				/>
 				<button
 					type="submit"
 					class="btn btn-primary shadow-none sm:ml-auto"

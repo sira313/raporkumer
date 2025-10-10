@@ -199,8 +199,7 @@
 								Pengaturan
 							</a>
 						</li>
-						{#if user}
-						{/if}
+						{#if user}{/if}
 						<li>
 							<form method="POST" action="/logout" class="w-full">
 								<Icon name="export" />

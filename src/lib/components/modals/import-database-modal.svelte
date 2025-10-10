@@ -39,10 +39,12 @@
 				</div>
 			</div>
 
-      <div role="alert" class="alert alert-warning">
-  		<Icon name="warning" />
-  		<span>Berkas yang diunggah akan menggantikan database saat ini. Backup otomatis dibuat sebelum
-				proses import.</span>
+			<div role="alert" class="alert alert-warning">
+				<Icon name="warning" />
+				<span
+					>Berkas yang diunggah akan menggantikan database saat ini. Backup otomatis dibuat sebelum
+					proses import.</span
+				>
 			</div>
 
 			<div class="flex justify-end gap-2 pt-2">

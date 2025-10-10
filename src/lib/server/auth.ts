@@ -186,10 +186,17 @@ export async function verifyUserPassword(userId: number, password: string) {
 	return verifyPassword(password, user.passwordHash, user.passwordSalt);
 }
 
-export function applySessionCookie(cookies: Cookies, token: string, expiresAt: string, secure: boolean) {
+export function applySessionCookie(
+	cookies: Cookies,
+	token: string,
+	expiresAt: string,
+	secure: boolean
+) {
 	const expiry = new Date(expiresAt).getTime();
 	const diffMs = expiry - Date.now();
-	const maxAge = Number.isFinite(diffMs) ? Math.max(60, Math.floor(diffMs / 1000)) : SESSION_TTL_SECONDS;
+	const maxAge = Number.isFinite(diffMs)
+		? Math.max(60, Math.floor(diffMs / 1000))
+		: SESSION_TTL_SECONDS;
 	cookies.set(cookieNames.AUTH_SESSION, token, {
 		path: '/',
 		httpOnly: true,

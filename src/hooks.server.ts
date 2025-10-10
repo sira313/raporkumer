@@ -35,7 +35,9 @@ const parseTrustedOrigins = () => {
 const shouldCheckRequest = (request: Request) => {
 	if (!MUTATING_METHODS.has(request.method.toUpperCase())) return false;
 	const contentType = request.headers.get('content-type');
-	return !!contentType && FORM_CONTENT_TYPES.some((type) => contentType.toLowerCase().startsWith(type));
+	return (
+		!!contentType && FORM_CONTENT_TYPES.some((type) => contentType.toLowerCase().startsWith(type))
+	);
 };
 
 const csrfGuard: Handle = async ({ event, resolve }) => {
@@ -126,7 +128,10 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	if (!event.locals.user && !isPublicRoute) {
 		if (event.request.method === 'GET') {
 			const redirectTarget = resolveRedirectTarget(`${event.url.pathname}${event.url.search}`);
-			const query = redirectTarget && redirectTarget !== '/' ? `?redirect=${encodeURIComponent(redirectTarget)}` : '';
+			const query =
+				redirectTarget && redirectTarget !== '/'
+					? `?redirect=${encodeURIComponent(redirectTarget)}`
+					: '';
 			throw redirect(303, `/login${query}`);
 		}
 		throw redirect(303, '/login');

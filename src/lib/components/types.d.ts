@@ -4,10 +4,15 @@ interface ModalAction {
 	action?: (params: { close: () => void }) => MaybePromise<void>;
 }
 
+type ModalBodyComponent = import('svelte').Component<
+	Record<string, unknown>,
+	Record<string, unknown>,
+	string
+>;
+
 interface ModalProps {
 	title?: string;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	body: string | import('svelte').Component<any, any, any>;
+	body: string | ModalBodyComponent;
 	bodyProps?: Record<string, unknown>;
 	dismissible?: boolean;
 	onPositive?: ModalAction;
