@@ -14,17 +14,7 @@
 			<p class="text-base-content/70 text-sm">
 				Pengaturan tambahan untuk lingkungan server lokal Anda.
 			</p>
-		</header>
-
-		<fieldset class="fieldset">
-			<legend class="fieldset-legend">Atur port aplikasi</legend>
-			<input
-				type="text"
-				class="input bg-base-200 join-item w-full dark:border-none"
-				placeholder="Contoh: 5173"
-			/>
-			<p class="text-base-content/70 mt-1 text-xs">Kosongkan bila tidak diperlukan</p>
-		</fieldset>
+		</header>	
 
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Alamat aplikasi</legend>
@@ -54,6 +44,10 @@
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md mt-5">
 	<div class="space-y-6">
+		<div role="alert" class="alert alert-warning">
+		  <Icon name="alert" />
+		  <span>Simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
+		</div>
 		<header class="space-y-2">
 			<h2 class="text-xl font-semibold">Keamanan Akun</h2>
 			<p class="text-base-content/70 text-sm">
