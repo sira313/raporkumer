@@ -1,9 +1,6 @@
 <script lang="ts">
-	import Masukan from './masukan.svelte';
 	import Donate from '$lib/components/donate.svelte';
 	import Icon from '$lib/components/icon.svelte';
-
-	let masukanModal: InstanceType<typeof Masukan>;
 </script>
 
 <Donate />
@@ -211,5 +208,3 @@
 		</div>
 	</section>
 </div>
-
-<Masukan bind:this={masukanModal} />

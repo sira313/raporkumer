@@ -4,7 +4,7 @@
 
 <section class="card bg-base-100 w-full max-w-md shadow-xl">
 	<div class="card-body space-y-6">
-		<header class="space-y-2 text-center">
+		<header class="space-y-2 text-center mb-2">
 			<h1 class="text-2xl font-bold">Masuk ke Rapkumer</h1>
 			<p class="text-base-content/70 text-sm">
 				Masukkan kredensial Anda untuk mulai mengelola data sekolah.
@@ -13,10 +13,9 @@
 
 		<FormEnhance action="?/login">
 			{#snippet children({ submitting, invalid })}
-				<div class="space-y-4">
-					<div class="form-control">
-						<label class="label" for="username">
-							<span class="label-text">Nama Pengguna</span>
+					<div class="fieldset">
+						<label class="fieldset-legend" for="username">
+							Nama Pengguna
 						</label>
 						<input
 							type="text"
@@ -25,13 +24,13 @@
 							required
 							autocomplete="username"
 							placeholder="Contoh: Admin"
-							class="input input-bordered w-full"
+							class="input input-bordered w-full dark:border-none dark:bg-base-200"
 						/>
 					</div>
 
-					<div class="form-control">
-						<label class="label" for="password">
-							<span class="label-text">Kata Sandi</span>
+					<div class="fieldset">
+						<label class="fieldset-legend" for="password">
+							Kata Sandi
 						</label>
 						<input
 							type="password"
@@ -40,19 +39,13 @@
 							required
 							autocomplete="current-password"
 							placeholder="••••••••"
-							class="input input-bordered w-full"
+							class="input input-bordered w-full dark:border-none dark:bg-base-200"
 						/>
 					</div>
 
-					<p class="text-base-content/60 text-xs">
-						Akun bawaan: <span class="font-semibold">Admin</span> /
-						<span class="font-semibold">Admin123</span>
-					</p>
-
-					<button class="btn btn-primary w-full" type="submit" disabled={submitting || invalid}>
+					<button class="btn btn-primary w-full mt-6" type="submit" disabled={submitting || invalid}>
 						{submitting ? 'Masuk…' : 'Masuk'}
 					</button>
-				</div>
 			{/snippet}
 		</FormEnhance>
 	</div>
