@@ -40,6 +40,14 @@ if (Test-Path $staticSource) {
     Write-Warning 'Static directory not found; skipping copy of static assets.'
 }
 
+$iconSource = Join-Path $projectRoot 'static/logo.ico'
+if (Test-Path $iconSource) {
+    $iconTarget = Join-Path $appStage 'rapkumer.ico'
+    Copy-Item $iconSource -Destination $iconTarget -Force
+} else {
+    Write-Warning 'File static/logo.ico tidak ditemukan; ikon installer tidak akan diperbarui.'
+}
+
 $databasePath = Join-Path $projectRoot 'data/database.sqlite3'
 if (Test-Path $databasePath) {
     Write-Host 'Bundling default SQLite database...'

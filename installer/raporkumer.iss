@@ -21,6 +21,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 UninstallDisplayIcon={app}\start-rapkumer.cmd
 VersionInfoVersion={#AppVersion}
+SetupIconFile={#StagePath}\rapkumer.ico
 
 [Files]
 Source:"{#StagePath}\\*"; DestDir:"{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -29,5 +30,5 @@ Source:"{#StagePath}\\*"; DestDir:"{app}"; Flags: ignoreversion recursesubdirs c
 Filename:"{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters:"-ExecutionPolicy Bypass -File ""{app}\\tools\\ensure-node.ps1"" -InstallDir ""{app}"""; StatusMsg:"Memastikan Node.js tersedia..."; Flags: runhidden waituntilterminated
 
 [Icons]
-Name:"{autoprograms}\\Rapkumer\\Jalankan Rapkumer"; Filename:"{app}\\start-rapkumer.cmd"; WorkingDir:"{app}"
-Name:"{autodesktop}\\Rapkumer"; Filename:"{app}\\start-rapkumer.cmd"; WorkingDir:"{app}"
+Name:"{autoprograms}\\Rapkumer\\Rapkumer"; Filename:"{app}\\start-rapkumer.cmd"; WorkingDir:"{app}"; IconFilename:"{app}\\rapkumer.ico"
+Name:"{autodesktop}\\Rapkumer"; Filename:"{app}\\start-rapkumer.cmd"; WorkingDir:"{app}"; IconFilename:"{app}\\rapkumer.ico"
