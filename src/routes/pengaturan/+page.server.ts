@@ -7,14 +7,81 @@ import {
 } from '$lib/server/auth';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { networkInterfaces } from 'node:os';
+import { isIPv4 } from 'node:net';
 
-export const load: PageServerLoad = async () => {
+interface AddressEntry {
+	name: string;
+	address: string;
+	raw: string;
+}
+
+function collectIpv4Addresses(port: string | null): AddressEntry[] {
+	const interfaces = networkInterfaces();
+	const collected: AddressEntry[] = [];
+
+	for (const [name, entries] of Object.entries(interfaces)) {
+		for (const entry of entries ?? []) {
+			if (entry.family === 'IPv4' && !entry.internal && entry.address) {
+				const address = port ? `${entry.address}:${port}` : entry.address;
+				collected.push({ name, address, raw: entry.address });
+			}
+		}
+	}
+
+	return collected;
+}
+
+function filterAddresses(entries: AddressEntry[], currentHost: string) {
+	const hostIpv4 = isIPv4(currentHost) ? currentHost : null;
+
+	if (hostIpv4) {
+		const primaryInterfaces = new Set(
+			entries.filter((entry) => entry.raw === hostIpv4).map((entry) => entry.name)
+		);
+		if (primaryInterfaces.size > 0) {
+			const filtered = entries.filter((entry) => primaryInterfaces.has(entry.name));
+			if (filtered.length) return filtered;
+		}
+	}
+
+	const privateRanges = entries.filter((entry) => {
+		if (entry.raw.startsWith('192.168.')) return true;
+		const match172 = entry.raw.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./);
+		return Boolean(match172);
+	});
+
+	if (privateRanges.length) {
+		return privateRanges;
+	}
+
+	return entries;
+}
+
+export const load: PageServerLoad = async ({ url }) => {
 	const meta: PageMeta = {
 		title: 'Pengaturan',
 		description: 'Pengaturan Aplikasi E-Rapor Kurikulum Merdeka'
 	};
 
-	return { meta };
+	const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+	const collected = collectIpv4Addresses(port);
+	const filtered = filterAddresses(collected, url.hostname);
+	const seen = new Set<string>();
+	const addresses = filtered
+		.map((entry) => entry.address)
+		.filter((address) => {
+			if (seen.has(address)) return false;
+			seen.add(address);
+			return true;
+		});
+
+	const hostWithPort = url.port ? url.host : `${url.hostname}:${port}`;
+	if (isIPv4(url.hostname) && hostWithPort && !addresses.includes(hostWithPort)) {
+		addresses.push(hostWithPort);
+	}
+
+	return { meta, appAddresses: addresses, protocol: url.protocol };
 };
 
 export const actions: Actions = {

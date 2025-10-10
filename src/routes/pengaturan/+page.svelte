@@ -1,6 +1,56 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { toast } from '$lib/components/toast.svelte';
+	import { onMount } from 'svelte';
+	import type { PageData } from './$types';
+
+	const { data } = $props<{ data: PageData }>();
+
+	const detectedAddresses = data.appAddresses ?? [];
+	const protocol = data.protocol ?? 'http:';
+
+	let appAddress = $state(detectedAddresses[0] ?? '');
+	let copying = $state(false);
+
+	onMount(() => {
+		if (!appAddress && browser) {
+			appAddress = window.location.host;
+		}
+	});
+
+	async function copyAddress() {
+		if (!browser) {
+			toast({ message: 'Penyalinan hanya tersedia di peramban.', type: 'warning' });
+			return;
+		}
+
+		const target = appAddress || window.location.host;
+		if (!target) {
+			toast({ message: 'Alamat aplikasi tidak ditemukan.', type: 'warning' });
+			return;
+		}
+
+		if (!navigator.clipboard) {
+			toast({ message: 'Clipboard tidak tersedia di perangkat ini.', type: 'warning' });
+			return;
+		}
+
+		const scheme = protocol === 'https:' ? 'https://' : 'http://';
+		const copyValue = target.startsWith('http://') || target.startsWith('https://') ? target : `${scheme}${target}`;
+
+		try {
+			copying = true;
+			await navigator.clipboard.writeText(copyValue);
+			toast({ message: 'Alamat aplikasi berhasil disalin.', type: 'success' });
+		} catch (error) {
+			console.error('Failed to copy app address', error);
+			toast({ message: 'Gagal menyalin alamat. Salin manual ya.', type: 'error' });
+		} finally {
+			copying = false;
+		}
+	}
 
 	function handlePasswordSuccess({ form }: { form: HTMLFormElement }) {
 		form.reset();
@@ -23,11 +73,32 @@
 					type="text"
 					disabled
 					class="input bg-base-200 join-item w-full dark:border-none"
-					placeholder="192.168.8.100:5173"
-					value="192.168.8.100:5173"
+					placeholder={appAddress || 'Tidak ada alamat terdeteksi'}
+					value={appAddress}
 				/>
-				<button class="btn join-item shadow-none" type="button">Copy</button>
+				<button
+					class="btn join-item shadow-none"
+					type="button"
+					on:click={copyAddress}
+					disabled={!appAddress || copying}
+				>
+					{copying ? 'Menyalin…' : 'Copy'}
+				</button>
 			</div>
+			{#if detectedAddresses.length > 1}
+				<label class="label mt-3" for="addressSelector">
+					<span class="label-text">Alamat terdeteksi lainnya</span>
+				</label>
+				<select
+					id="addressSelector"
+					class="select select-bordered w-full dark:border-none dark:bg-base-200"
+					bind:value={appAddress}
+				>
+					{#each detectedAddresses as address}
+						<option value={address}>{address}</option>
+					{/each}
+				</select>
+			{/if}
 			<p class="text-base-content/70 mt-1 text-xs">
 				Buka alamat ini pada perangkat lain di jaringan lokal yang sama.
 			</p>
