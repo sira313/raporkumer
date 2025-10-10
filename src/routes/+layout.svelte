@@ -4,7 +4,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import Menu from '$lib/components/menu.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
-	import Toast from '$lib/components/toast.svelte';
+	import Toast, { toast } from '$lib/components/toast.svelte';
 	import Task from '$lib/components/tasks.svelte';
 
 	import '../app.css';
@@ -12,6 +12,35 @@
 	let { data, children } = $props();
 
 	const appName = 'Rapkumer';
+	let stoppingServer = $state(false);
+
+	async function stopServer() {
+		if (stoppingServer) return;
+		stoppingServer = true;
+
+		const showSuccess = () =>
+			toast({
+				message: 'Server dihentikan. Tutup jendela Rapkumer ini lalu jalankan ulang bila diperlukan.',
+				type: 'info',
+				persist: true
+			});
+
+		try {
+			const response = await fetch('/api/runtime/stop', { method: 'POST', keepalive: true });
+			if (response.ok) {
+				showSuccess();
+			} else {
+				const details = await response.text().catch(() => '');
+				console.error('Gagal menghentikan server', response.status, details);
+				toast({ message: 'Gagal menghentikan server. Coba lagi.', type: 'error' });
+			}
+		} catch (error) {
+			console.warn('Permintaan stop server berakhir sebelum respons diterima. Diasumsikan berhasil.', error);
+			showSuccess();
+		} finally {
+			stoppingServer = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -82,6 +111,15 @@
 					<Icon name="gear" />
 					<h2 class="font-bold">Pengaturan</h2>
 				</a>
+				<button
+					type="button"
+					class="btn btn-sm btn-error normal-case justify-start gap-2"
+					onclick={stopServer}
+					disabled={stoppingServer}
+				>
+					<Icon name="warning" class="h-4 w-4" />
+					{stoppingServer ? 'Menghentikan server…' : 'Hentikan Server'}
+				</button>
 				<a href="/tentang" class="flex items-center gap-2">
 					<Icon name="info" />
 					<h2 class="font-bold">Tentang Aplikasi</h2>

@@ -85,13 +85,14 @@ set "RUNNER_SCRIPT=%TEMP%\rapkumer-run-%RANDOM%.cmd"
     echo @echo off
     echo set PORT=%PORT%
     echo set NODE_ENV=%NODE_ENV%
+    echo set BODY_SIZE_LIMIT=5242880
     echo set DB_URL=%DB_URL%
     echo set DATABASE_URL=%DB_URL%
     echo set RAPKUMER_CSRF_TRUSTED_ORIGINS=!RAPKUMER_CSRF_TRUSTED_ORIGINS!
     echo call "%APP_HOME%\tools\run-server.cmd" "%NODE_BINARY%" "%APP_HOME%" %PORT% %NODE_ENV% "%DB_URL%" "!RAPKUMER_CSRF_TRUSTED_ORIGINS!" "%LOG_FILE%"
 ) >"%RUNNER_SCRIPT%"
 echo [%date% %time%] Runner script created at %RUNNER_SCRIPT%>>"%LOG_FILE%"
-start "Rapkumer Server" cmd /c ""%RUNNER_SCRIPT%""
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath cmd.exe -ArgumentList '/c', '""%RUNNER_SCRIPT%""' -WindowStyle Hidden" >>"%LOG_FILE%" 2>&1
 ping 127.0.0.1 -n 2 >nul
 del "%RUNNER_SCRIPT%" >nul 2>&1
 ping 127.0.0.1 -n 4 >nul

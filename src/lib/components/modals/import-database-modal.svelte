@@ -1,12 +1,19 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import { hideModal } from '$lib/components/global-modal.svelte';
 	import Icon from '../icon.svelte';
+	import { toast } from '../toast.svelte';
 
 	const inputId = 'import-database-file';
 
 	function handleSuccess() {
 		hideModal();
+		toast('Database berhasil diimport.', 'success');
+		invalidateAll().catch((error) => {
+			console.warn('Gagal melakukan refresh data setelah import', error);
+			toast('Database berhasil diimport, tetapi data tidak berhasil dimuat ulang.', 'warning');
+		});
 	}
 </script>
 
