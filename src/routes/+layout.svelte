@@ -13,6 +13,7 @@
 
 	const appName = 'Rapkumer';
 	let stoppingServer = $state(false);
+	let loggingOut = $state(false);
 	const isLoginPage = $derived(page.url.pathname === '/login');
 
 	async function stopServer() {
@@ -44,6 +45,32 @@
 			showSuccess();
 		} finally {
 			stoppingServer = false;
+		}
+	}
+
+	async function logout() {
+		if (loggingOut) return;
+		loggingOut = true;
+
+		try {
+			const response = await fetch('/logout', { method: 'POST' });
+			if (response.redirected) {
+				window.location.href = response.url;
+				return;
+			}
+
+			if (response.ok) {
+				window.location.href = '/login';
+				return;
+			}
+
+			console.error('Gagal logout', response.status, await response.text().catch(() => ''));
+			toast({ message: 'Gagal keluar. Coba lagi.', type: 'error' });
+		} catch (error) {
+			console.error('Gagal logout', error);
+			toast({ message: 'Gagal keluar. Coba lagi.', type: 'error' });
+		} finally {
+			loggingOut = false;
 		}
 	}
 </script>
@@ -85,7 +112,7 @@
 	<main class="drawer lg:drawer-open">
 		<input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
 		<div class="drawer-content flex min-h-screen flex-col">
-			<Navbar {stopServer} {stoppingServer} />
+				<Navbar {stopServer} {stoppingServer} {logout} {loggingOut} />
 
 			<div
 				class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:mr-2 lg:mb-2 lg:rounded-xl"

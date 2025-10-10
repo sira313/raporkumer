@@ -10,9 +10,16 @@
 	type NavbarProps = {
 		stopServer?: () => void;
 		stoppingServer?: boolean;
+		logout?: () => void;
+		loggingOut?: boolean;
 	};
 
-	let { stopServer = () => {}, stoppingServer = false }: NavbarProps = $props();
+	let {
+		stopServer = () => {},
+		stoppingServer = false,
+		logout = () => {},
+		loggingOut = false
+	}: NavbarProps = $props();
 
 	let tasksModalRef: { open: () => void } | null = null;
 	const daftarKelas = $derived(page.data.daftarKelas ?? []);
@@ -201,10 +208,15 @@
 						</li>
 						{#if user}{/if}
 						<li>
-							<form method="POST" action="/logout" class="w-full">
+							<button
+								type="button"
+								title="Keluar dari aplikasi"
+								onclick={logout}
+								disabled={loggingOut}
+							>
 								<Icon name="export" />
-								Keluar
-							</form>
+								{loggingOut ? 'Keluar…' : 'Keluar'}
+							</button>
 						</li>
 						<li>
 							<button
