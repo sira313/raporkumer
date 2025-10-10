@@ -1,9 +1,72 @@
 import db from '$lib/server/db';
 import { tableSekolah } from '$lib/server/db/schema';
 import { cookieNames } from '$lib/utils';
-import { redirect, type Handle } from '@sveltejs/kit';
+import { error, redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { desc, eq } from 'drizzle-orm';
+
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+const FORM_CONTENT_TYPES = [
+	'application/x-www-form-urlencoded',
+	'multipart/form-data',
+	'text/plain'
+];
+
+const normalizeOrigin = (value: string | null) => {
+	if (!value) return undefined;
+	try {
+		return new URL(value).origin.toLowerCase();
+	} catch {
+		return undefined;
+	}
+};
+
+const parseTrustedOrigins = () => {
+	const raw = process.env.RAPKUMER_CSRF_TRUSTED_ORIGINS || '';
+	const candidates = raw
+		.split(',')
+		.map((entry) => entry.trim())
+		.filter(Boolean)
+		.map((entry) => normalizeOrigin(entry));
+	return new Set(candidates.filter((entry): entry is string => Boolean(entry)));
+};
+
+const shouldCheckRequest = (request: Request) => {
+	if (!MUTATING_METHODS.has(request.method.toUpperCase())) return false;
+	const contentType = request.headers.get('content-type');
+	return !!contentType && FORM_CONTENT_TYPES.some((type) => contentType.toLowerCase().startsWith(type));
+};
+
+const csrfGuard: Handle = async ({ event, resolve }) => {
+	if (!shouldCheckRequest(event.request)) {
+		return resolve(event);
+	}
+
+	const headerOrigin = event.request.headers.get('origin');
+	const headerReferer = event.request.headers.get('referer');
+	const incomingOrigin = normalizeOrigin(headerOrigin) ?? normalizeOrigin(headerReferer);
+	if (!incomingOrigin) {
+		throw error(403, 'Permintaan ditolak karena origin tidak valid.');
+	}
+
+	const requestOrigin = incomingOrigin;
+	const currentOrigin = normalizeOrigin(event.url.origin);
+	if (currentOrigin && requestOrigin === currentOrigin) {
+		return resolve(event);
+	}
+
+	const trustedOrigins = parseTrustedOrigins();
+	if (trustedOrigins.has(requestOrigin)) {
+		return resolve(event);
+	}
+
+	console.warn('CSRF guard blocked request from untrusted origin:', {
+		origin: requestOrigin,
+		method: event.request.method,
+		path: event.url.pathname
+	});
+	throw error(403, 'Permintaan lintas origin tidak diizinkan.');
+};
 
 const cookieParser: Handle = async ({ event, resolve }) => {
 	const sekolahId = Number(event.cookies.get(cookieNames.ACTIVE_SEKOLAH_ID) || '');
@@ -41,7 +104,7 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-export const handle = sequence(cookieParser);
+export const handle = sequence(csrfGuard, cookieParser);
 
 const sqliteErrors = {
 	SQLITE_CONSTRAINT_UNIQUE: 'Terdapat duplikasi data',

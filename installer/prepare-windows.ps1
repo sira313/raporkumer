@@ -69,7 +69,9 @@ Copy-Item (Join-Path $projectRoot 'installer/files/start-rapkumer.cmd') (Join-Pa
 
 $toolsDir = Join-Path $appStage 'tools'
 New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null
-Copy-Item (Join-Path $projectRoot 'installer/scripts/ensure-node.ps1') (Join-Path $toolsDir 'ensure-node.ps1') -Force
+Copy-Item (Join-Path $projectRoot 'installer/scripts/detect-csrf-origins.ps1') (Join-Path $toolsDir 'detect-csrf-origins.ps1') -Force
+Copy-Item (Join-Path $projectRoot 'installer/scripts/resolve-node.ps1') (Join-Path $toolsDir 'resolve-node.ps1') -Force
+Copy-Item (Join-Path $projectRoot 'installer/scripts/run-server.cmd') (Join-Path $toolsDir 'run-server.cmd') -Force
 
 $envSample = Join-Path $projectRoot '.env.example'
 if (Test-Path $envSample) {
