@@ -37,20 +37,14 @@
 					<div
 						class="rounded-box border-base-200/70 bg-base-100/80 border p-4 shadow-md backdrop-blur"
 					>
-						<h3 class="text-secondary font-semibold">Ekspor Nilai ke Dapodik</h3>
-						<p class="text-base-content/80 text-sm">
-							Integrasi nilai ke aplikasi Dapodik jadi lebih efisien dengan format yang sudah
-							disesuaikan.
-						</p>
+							<h3 class="text-secondary font-semibold">Ekspor Nilai ke Dapodik</h3>
+							<p class="text-base-content/80 text-sm">
+								Integrasi nilai ke aplikasi Dapodik sedang melalui tahap riset lanjutan agar format ekspor
+									downstream benar-benar sesuai dan aman dipakai. Mohon donasi agar kami lebih bersemangat dalam mengembangkan aplikasi ini.
+							</p>
 					</div>
 				</div>
 				<div class="flex flex-wrap gap-3">
-					<button
-						class="btn btn-primary btn-lg shadow-primary/30 shadow-none"
-						on:click={() => masukanModal.openModal()}
-					>
-						Kirim Masukan
-					</button>
 					<a
 						class="btn btn-outline btn-lg shadow-none"
 						href="https://kurikulum.kemdikbud.go.id/"
@@ -60,7 +54,7 @@
 						Pelajari Kurikulum
 					</a>
 					<a
-						class="btn btn-outline btn-lg shadow-none sm:ml-auto"
+						class="btn btn-primary btn-lg shadow-none sm:ml-auto"
 						href="https://t.me/+zj3h_zjBAC02YjZl"
 						target="_blank"
 						rel="noreferrer"
@@ -86,9 +80,10 @@
 				</p>
 				<p class="text-base-content/90">
 					Selain mempermudah guru, aplikasi ini juga dirancang untuk membantu operator sekolah dalam
-					proses penginputan nilai ke dalam aplikasi Dapodik. Fitur
+					proses penginputan nilai ke dalam aplikasi Dapodik. Saat ini fitur
 					<span class="font-medium">ekspor nilai ke Dapodik</span>
-					tersedia agar proses integrasi data menjadi lebih efisien dan mengurangi risiko kesalahan input.
+					sedang kami sempurnakan melalui riset format dan alur validasi, sehingga rilisnya dilakukan
+					bertahap agar tetap aman digunakan di lingkungan sekolah.
 				</p>
 				<p class="text-base-content/90">
 					Harapan kami, aplikasi ini dapat menjadi solusi praktis dan bermanfaat bagi seluruh tenaga
@@ -121,6 +116,17 @@
 								>Habib Mustofa</a
 							>
 							<span class="text-base-content/70 text-sm"> — Mentor & Advisor</span>
+						</li>
+					</ul>
+				</div>
+				<div class="space-y-3">
+					<h3 class="text-base-content text-xl font-semibold">Tester</h3>
+					<ul class="text-base-content/90 list-inside list-disc space-y-1">
+						<li>
+							Hamdani, S.Pd., Gr.
+						</li>
+						<li>
+							Rudiansyah, S.Pd., Gr.
 						</li>
 					</ul>
 				</div>
