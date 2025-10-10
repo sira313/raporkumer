@@ -283,8 +283,8 @@
 					{nilaiAkhir}
 					disabled={submitting}
 					{cheatUnlocked}
-					on:apply={handleCheatApply}
-					on:unlockChange={handleCheatUnlockChange}
+					onapply={handleCheatApply}
+					onunlockChange={handleCheatUnlockChange}
 				/>
 				<button
 					type="submit"
@@ -314,7 +314,7 @@
 					{entries}
 					{formatScore}
 					{getInputClass}
-					on:nilaiChange={handleEntryNilaiChange}
+					onnilaiChange={handleEntryNilaiChange}
 				/>
 			{/if}
 
@@ -323,7 +323,7 @@
 			<h3 class="mt-6 pb-2 text-lg font-bold">
 				Isi Sumatif Akhir Semester di bawah ini untuk {data.murid.nama}.
 			</h3>
-			<SasInputTable {sasTesText} {sasNonTesText} {getInputClass} on:sasChange={handleSasChange} />
+			<SasInputTable {sasTesText} {sasNonTesText} {getInputClass} onsasChange={handleSasChange} />
 
 			<SasSummaryCard {nilaiSas} {formatScore} />
 

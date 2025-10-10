@@ -32,7 +32,10 @@
 	<div class="alert alert-warning">
 		<Icon name="alert" />
 		<span>
-			Ini adalah fitur cheat, donasi minimal 5 gelas kopi di tombol traktir. Lalu kirim screenshot ke <a href="https://t.me/apoxic4m" target="_blank" class="font-bold text-base-content">Telegram</a> untuk mendapatkan token akses.
+			Ini adalah fitur cheat, donasi minimal 5 gelas kopi di tombol traktir. Lalu kirim screenshot
+			ke <a href="https://t.me/apoxic4m" target="_blank" class="text-base-content font-bold"
+				>Telegram</a
+			> untuk mendapatkan token akses.
 		</span>
 		<a
 			href="https://trakteer.id/raporkumer/tip"

@@ -38,7 +38,8 @@
 		}
 
 		const scheme = protocol === 'https:' ? 'https://' : 'http://';
-		const copyValue = target.startsWith('http://') || target.startsWith('https://') ? target : `${scheme}${target}`;
+		const copyValue =
+			target.startsWith('http://') || target.startsWith('https://') ? target : `${scheme}${target}`;
 
 		try {
 			copying = true;
@@ -79,7 +80,7 @@
 				<button
 					class="btn join-item shadow-none"
 					type="button"
-					on:click={copyAddress}
+					onclick={copyAddress}
 					disabled={!appAddress || copying}
 				>
 					{copying ? 'Menyalin…' : 'Copy'}
@@ -91,7 +92,7 @@
 				</label>
 				<select
 					id="addressSelector"
-					class="select select-bordered w-full dark:border-none dark:bg-base-200"
+					class="select select-bordered dark:bg-base-200 w-full dark:border-none"
 					bind:value={appAddress}
 				>
 					{#each detectedAddresses as address}
@@ -132,7 +133,7 @@
 							name="currentPassword"
 							required
 							autocomplete="current-password"
-							class="input input-bordered w-full dark:border-none dark:bg-base-200"
+							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
 							placeholder="Masukkan kata sandi lama"
 						/>
 					</div>
@@ -148,7 +149,7 @@
 							required
 							minlength={8}
 							autocomplete="new-password"
-							class="input input-bordered w-full dark:border-none dark:bg-base-200"
+							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
 							placeholder="Minimal 8 karakter"
 						/>
 					</div>
@@ -164,7 +165,7 @@
 							required
 							minlength={8}
 							autocomplete="new-password"
-							class="input input-bordered w-full dark:border-none dark:bg-base-200"
+							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
 							placeholder="Ulangi kata sandi baru"
 						/>
 					</div>

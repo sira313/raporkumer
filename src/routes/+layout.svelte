@@ -112,7 +112,7 @@
 	<main class="drawer lg:drawer-open">
 		<input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
 		<div class="drawer-content flex min-h-screen flex-col">
-				<Navbar {stopServer} {stoppingServer} {logout} {loggingOut} />
+			<Navbar {stopServer} {stoppingServer} {logout} {loggingOut} />
 
 			<div
 				class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:mr-2 lg:mb-2 lg:rounded-xl"
