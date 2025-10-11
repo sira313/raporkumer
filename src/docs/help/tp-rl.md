@@ -2,7 +2,7 @@
 title: Petunjuk
 ---
 
-Khusus mata pelajaran Pendidikan Agama dan Budi Pekerti, pilih agama yang ditambahkan Tujuan Pembelajarannya dulu.<br>
+Khusus mata pelajaran Pendidikan Agama dan Budi Pekerti, pilih agama yang ingin ditambahkan Tujuan Pembelajarannya terlebih dahulu.<br>
 Satu lingkup materi biasanya terdiri atas beberapa Tujuan Pembelajaran.<br>
 Untuk import Tujuan Pembelajaran dari excel, gunakan format seperti gambar di bawah.
 ![import tp](/importtp.png)
