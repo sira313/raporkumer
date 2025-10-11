@@ -16,7 +16,8 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint ."
+		"lint": "prettier --check . && eslint .",
+		"prod": "rm -rf build && pnpm db:push && pnpm build && pnpm package:win && pnpm package:win:installer"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
