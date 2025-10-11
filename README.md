@@ -1,6 +1,6 @@
-# Raporkumer
+# Rapkumer
 
-Raporkumer adalah aplikasi web yang membantu sekolah menyiapkan rapor Kurikulum Merdeka secara praktis. Seluruh proses pengerjaan berada di browser, sehingga guru bisa fokus mengisi data tanpa repot menyesuaikan format manual.
+Rapkumer adalah aplikasi web yang membantu sekolah menyiapkan rapor Kurikulum Merdeka secara praktis. Seluruh proses pengerjaan berada di browser, sehingga guru bisa fokus mengisi data tanpa repot menyesuaikan format manual.
 
 ## Apa yang Bisa Dilakukan
 
