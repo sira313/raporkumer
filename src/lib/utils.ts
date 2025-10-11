@@ -111,7 +111,6 @@ export async function delay(ms = 500) {
 export function modalRoute(anchor: HTMLAnchorElement, name: string) {
 	anchor.onclick = async (e) => {
 		if (
-			innerWidth < 640 || // bail if the screen is too small
 			e.shiftKey || // or the link is opened in a new window
 			e.metaKey ||
 			e.ctrlKey // or a new tab (mac: metaKey, win/linux: ctrlKey)
