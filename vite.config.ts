@@ -19,9 +19,9 @@ export default defineConfig(({ mode }) => {
 		},
 		esbuild: isProd
 			? {
-				// Strip debugger statements from production bundles; keep console for server logging.
-				drop: ['debugger']
-			}
+					// Strip debugger statements from production bundles; keep console for server logging.
+					drop: ['debugger']
+				}
 			: undefined
 	};
 });

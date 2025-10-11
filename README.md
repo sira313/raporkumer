@@ -1,69 +1,62 @@
 # Raporkumer
 
-Platform rapor Kurikulum Merdeka berbasis SvelteKit dengan adapter Node.js.
+Raporkumer adalah aplikasi web yang membantu sekolah menyiapkan rapor Kurikulum Merdeka secara praktis. Seluruh proses pengerjaan berada di browser, sehingga guru bisa fokus mengisi data tanpa repot menyesuaikan format manual.
 
-## 📦 Windows Installer Workflow
+## Apa yang Bisa Dilakukan
 
-Gunakan alur berikut untuk membuat paket pemasang Windows (.exe) menggunakan Inno Setup dengan dependensi produksi saja.
+- Mengelola data sekolah, kelas, dan murid dalam satu tempat
+- Mengisi nilai formatif dan sumatif sesuai struktur Kurikulum Merdeka
+- Menyimpan catatan wali kelas dan capaian belajar
+- Mencetak rapor, piagam, dan dokumen pendukung dalam format siap cetak
 
-### Prasyarat
+## Siapa yang Cocok Menggunakan
 
-- Node.js 20 LTS atau lebih baru (terpasang di mesin build)
-- pnpm (mengikuti lockfile yang sudah ada)
-- npm (ikut terpasang bersama Node.js)
-- PowerShell 5.1+
-- [Inno Setup 6.3+](https://jrsoftware.org/isinfo.php) (menyediakan `ISCC.exe` untuk kompilasi skrip)
+- Kepala sekolah yang ingin memantau progres pengisian rapor
+- Guru mata pelajaran dan wali kelas yang bertugas mengisi nilai
+- Operator sekolah yang menyiapkan dokumen resmi
 
-### 1. Siapkan staging build
 
-```powershell
-pnpm install
-pnpm run package:win
-```
+## Cara Menggunakan Aplikasi
 
-Perintah di atas:
+- Pilih sekolah aktif (jika ada lebih dari satu).
+- Isi data dasar seperti guru, murid, dan mata pelajaran.
+- Masukkan nilai pada menu **Input Nilai** sesuai asesmen yang tersedia.
+- Gunakan menu **Cetak Dokumen** untuk menghasilkan rapor dan piagam.
+- Simpan arsip rapor yang sudah dicetak untuk kebutuhan sekolah.
+- Jika membutuhkan panduan cepat, klik ikon tanda tanya (?) di navbar. Setiap halaman memiliki petunjuk yang berbeda sesuai konteksnya.
+- Akun bawaan: masuk dengan `Admin` sebagai nama pengguna dan `Admin123` sebagai kata sandi, lalu segera ganti demi keamanan.
 
-- Menjalankan `pnpm build`
-- Menyalin artefak produksi (`build/`, `data/database.sqlite3`, skrip runtime)
-- Menghasilkan `package.json` berisi hanya dependensi produksi
-- Menjalankan `npm install --omit=dev --no-package-lock` pada staging sehingga hanya dependensi produksi yang tersertakan
-- Menyalin skrip `ensure-node.ps1` untuk memeriksa / memasang Node.js LTS saat instalasi
+## Instalasi Cepat (Windows)
 
-Output akhir berada di `dist/windows/stage/Rapkumer` dan siap dipaketkan.
+- Kunjungi halaman **Releases** di GitHub repositori ini.
+- Unduh berkas `RapkumerSetup.exe` versi terbaru.
+- Jalankan installer dan ikuti langkah di layar.
+- Setelah selesai, cari shortcut **Rapkumer** di desktop atau Start Menu.
 
-### 2. Kompilasi installer Inno Setup
+## Cara Menjalankan Versi Pengembangan
 
-```powershell
-"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\raporkumer.iss
-```
+1. Pastikan sudah memasang **Node.js 20 LTS** dan **pnpm**.
+2. Buka terminal lalu jalankan perintah berikut:
 
-Ganti path `ISCC.exe` sesuai lokasi instalasi Inno Setup Anda. Berkas `.exe` akan tersimpan di `dist/windows/RapkumerSetup.exe`.
+   ```bash
+   pnpm install
+   pnpm dev -- --port 5173
+   ```
 
-### 3. Uji pemasang
+3. Buka browser ke `http://localhost:5173`.
+4. Tekan `Ctrl+C` di terminal untuk menghentikan server.
 
-- Jalankan `RapkumerSetup.exe`
-- Pemasang akan menyalin seluruh bundel ke `{autopf}\Rapkumer`
-- Skrip `ensure-node.ps1` otomatis dijalankan; jika Node.js tidak ditemukan pada PATH, skrip akan mengunduh rilis Node.js LTS terbaru (arsip `win-x64.zip`) dan mengekstraknya ke `{app}\runtime\node`
-- Setelah instalasi, shortcut desktop dan Start Menu `Jalankan Rapkumer` dibuat dan menjalankan `start-rapkumer.cmd`
+## Bantuan dan Dukungan
 
-## 🚀 Menjalankan aplikasi terpasang
+- Dokumentasi singkat tersedia di menu **Tentang** di dalam aplikasi.
+- Jika menemukan kendala teknis, hubungi tim pengembang melalui isu GitHub atau gabung grup Telegram di halaman **Tentang**.
 
-1. Klik shortcut **Jalankan Rapkumer** (desktop atau Start Menu)
-2. Skrip akan:
-   - Memastikan port default `3000`
-   - Menjalankan `node build/index.js` menggunakan Node bawaan (atau Node sistem jika tersedia)
-   - Membuka browser ke `http://localhost:3000`
-   - Menyimpan log ke `logs/rapkumer.log`
+## Kontribusi
 
-Database SQLite bawaan berada di `{app}\data\database.sqlite3`. Backup sebelum menghapus aplikasi bila dibutuhkan.
+- Repo ini menggunakan SvelteKit, TailwindCSS + DaisyUI, dan Drizzle ORM.
+- Jalankan `pnpm lint` dan `pnpm check` sebelum mengirimkan perubahan.
+- Gunakan bahasa Indonesia untuk teks antarmuka agar konsisten dengan kebutuhan sekolah.
 
-## 🛠️ Penyesuaian
+## Lisensi
 
-- Ubah nama aplikasi atau metadata installer melalui `installer/raporkumer.iss`
-- Sesuaikan skrip start di `installer/files/start-rapkumer.cmd` bila port atau perilaku server berubah
-- Skrip pengunduh Node dapat dimodifikasi di `installer/scripts/ensure-node.ps1`
-
-## 🔍 Quality Gates
-
-- `pnpm build` ✅
-- `installer/prepare-windows.ps1` ✅ (`npm` melaporkan 1 kerentanan severe pada paket upstream; investigasi lanjutan disarankan bila diperlukan)
+Konten repositori ini dilisensikan di bawah [Creative Commons Atribusi-NonKomersial-TanpaTurunan 4.0 Internasional](https://creativecommons.org/licenses/by-nc-nd/4.0/deed.id). Anda boleh menyalin dan membagikan materi ini dengan mencantumkan atribusi yang sesuai, tidak menggunakannya untuk tujuan komersial, dan tidak membuat turunan dari materi yang dibagikan. Untuk detail hukum lengkap, silakan baca [teks lisensinya](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode.id).
