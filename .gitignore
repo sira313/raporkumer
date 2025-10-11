@@ -26,3 +26,6 @@ vite.config.ts.timestamp-*
 # Our custom
 /src/lib/icons/__icons.d.ts
 /data/*.sqlite3
+
+#cert
+/installer/cert

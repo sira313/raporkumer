@@ -22,6 +22,10 @@ PrivilegesRequired=admin
 UninstallDisplayIcon={app}\start-rapkumer.cmd
 VersionInfoVersion={#AppVersion}
 SetupIconFile={#StagePath}\rapkumer.ico
+; Code signing configuration (commented out by default)
+; Uncomment and configure these lines if you want Inno Setup to sign the installer
+; SignTool=custom "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\signtool.exe" sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /d "Rapor Kurikulum Merdeka Installer" /f "installer\cert\codesign.pfx" /p "YOUR_PASSWORD" $f
+; SignedUninstaller=yes
 
 [Files]
 Source:"{#StagePath}\\*"; DestDir:"{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

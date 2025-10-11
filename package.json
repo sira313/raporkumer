@@ -12,12 +12,19 @@
 		"preview": "vite preview",
 		"package:win": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/prepare-windows.ps1",
 		"package:win:installer": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& 'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe' 'installer/raporkumer.iss'\"",
+		"sign:executables": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/scripts/sign-files.ps1 -SignExecutables",
+		"sign:installer": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/scripts/sign-files.ps1 -SignInstaller",
+		"sign:verify": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/scripts/sign-files.ps1 -VerifyOnly -SignExecutables -SignInstaller",
+		"sign:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/scripts/setup-signing.ps1 -Setup",
+		"sign:create-cert": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/scripts/setup-signing.ps1 -CreateSelfSigned",
+		"sign:create-cert:force": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/scripts/setup-signing.ps1 -CreateSelfSigned -Force",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-		"prod": "rm -rf build && pnpm db:push && pnpm build && pnpm package:win && pnpm package:win:installer"
+		"prod": "rm data/database.sqlite3 && pnpm db:push && pnpm build && pnpm package:win && pnpm package:win:installer",
+		"prod:signed": "rm data/database.sqlite3 && pnpm db:push && pnpm build && pnpm package:win && pnpm sign:executables && pnpm package:win:installer && pnpm sign:installer"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
