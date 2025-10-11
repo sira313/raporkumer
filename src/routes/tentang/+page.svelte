@@ -51,6 +51,9 @@
 					>
 						Pelajari Kurikulum
 					</a>
+					<a class="btn btn-outline btn-lg shadow-none" href="/lisensi">
+						Lihat Lisensi
+					</a>
 					<a
 						class="btn btn-primary btn-lg shadow-none sm:ml-auto"
 						href="https://t.me/+zj3h_zjBAC02YjZl"
