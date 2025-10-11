@@ -95,7 +95,7 @@
 					class="select select-bordered dark:bg-base-200 w-full dark:border-none"
 					bind:value={appAddress}
 				>
-					{#each detectedAddresses as address}
+					{#each detectedAddresses as address (address)}
 						<option value={address}>{address}</option>
 					{/each}
 				</select>

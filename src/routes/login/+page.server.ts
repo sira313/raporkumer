@@ -23,18 +23,34 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	return { meta };
 };
 
+const LOGIN_LOG_PREFIX = '[login action]';
+
+function logLoginEvent(message: string, details?: Record<string, unknown>) {
+	const payload = details ? `${message} ${JSON.stringify(details)}` : message;
+	console.info(`${LOGIN_LOG_PREFIX} ${payload}`);
+}
+
 export const actions: Actions = {
 	login: async ({ request, cookies, getClientAddress, url }) => {
 		const formData = await request.formData();
 		const username = String(formData.get('username') ?? '').trim();
 		const password = String(formData.get('password') ?? '');
 
+		logLoginEvent('Attempt received', {
+			username,
+			client: getClientAddress(),
+			origin: request.headers.get('origin') ?? undefined,
+			referer: request.headers.get('referer') ?? undefined
+		});
+
 		if (!username || !password) {
+			logLoginEvent('Missing credentials', { username });
 			return fail(400, { message: 'Nama pengguna dan kata sandi wajib diisi.' });
 		}
 
 		const user = await authenticateUser(username, password);
 		if (!user) {
+			logLoginEvent('Invalid credentials', { username });
 			return fail(401, { message: 'Nama pengguna atau kata sandi tidak valid.' });
 		}
 
@@ -43,9 +59,16 @@ export const actions: Actions = {
 			ipAddress: getClientAddress()
 		});
 
+		logLoginEvent('Authentication success', {
+			username,
+			userId: user.id,
+			expiresAt: session.expiresAt
+		});
+
 		applySessionCookie(cookies, session.token, session.expiresAt, url.protocol === 'https:');
 
 		const target = resolveRedirectTarget(url.searchParams.get('redirect')) ?? '/';
+		logLoginEvent('Redirecting after success', { username, target });
 		throw redirect(303, target);
 	}
 };

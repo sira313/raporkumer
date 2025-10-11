@@ -15,6 +15,8 @@
 		nilaiAkhir: number | null;
 		disabled: boolean;
 		cheatUnlocked: boolean;
+		onapply?: (event: CustomEvent<CheatApplyDetail>) => void;
+		onunlockChange?: (event: CustomEvent<CheatUnlockDetail>) => void;
 	};
 
 	type CheatApplyDetail = {
@@ -27,7 +29,14 @@
 		cheatUnlocked: boolean;
 	};
 
-	const props = $props<CheatControlsProps>();
+	let {
+		entries,
+		hasTujuan,
+		initialNilaiAkhir,
+		nilaiAkhir,
+		disabled: isDisabled,
+		cheatUnlocked
+	}: CheatControlsProps = $props();
 	const dispatch = createEventDispatcher<{
 		apply: CheatApplyDetail;
 		unlockChange: CheatUnlockDetail;
@@ -41,10 +50,10 @@
 	let cheatUnlockError = $state<string | null>(null);
 	let cheatUnlockBusy = false;
 	let cheatUnlockedOverride = $state<boolean | null>(null);
-	const cheatUnlockedState = $derived.by(() => cheatUnlockedOverride ?? props.cheatUnlocked);
+	const cheatUnlockedState = $derived.by(() => cheatUnlockedOverride ?? cheatUnlocked);
 
 	$effect(() => {
-		if (!props.cheatUnlocked) {
+		if (!cheatUnlocked) {
 			cheatUnlockedOverride = null;
 		}
 	});
@@ -195,12 +204,12 @@
 			syncCheatModalBody();
 			return;
 		}
-		if (!props.entries.length) {
+		if (!entries.length) {
 			cheatModalError = 'Tidak ada tujuan pembelajaran yang dapat diisi otomatis.';
 			syncCheatModalBody();
 			return;
 		}
-		const result = generateCheatResult(props.entries, normalized);
+		const result = generateCheatResult(entries, normalized);
 		if (!result) {
 			cheatModalError = 'Gagal menghasilkan nilai acak yang valid. Coba lagi.';
 			syncCheatModalBody();
@@ -220,8 +229,8 @@
 			openCheatUnlockModal();
 			return;
 		}
-		if (!props.hasTujuan) return;
-		cheatNilaiAkhirText = toInputText(props.initialNilaiAkhir ?? props.nilaiAkhir ?? null);
+		if (!hasTujuan) return;
+		cheatNilaiAkhirText = toInputText(initialNilaiAkhir ?? nilaiAkhir ?? null);
 		cheatModalError = null;
 		showModal({
 			title: 'Fitur Cheat Nilai Sumatif',
@@ -250,7 +259,7 @@
 	type="button"
 	class="btn shadow-none"
 	onclick={openCheatModal}
-	disabled={(!props.hasTujuan && cheatUnlockedState) || props.disabled}
+	disabled={(!hasTujuan && cheatUnlockedState) || isDisabled}
 >
 	<Icon name={cheatUnlockedState ? 'copy' : 'lock'} />
 	{cheatUnlockedState ? 'Isi Sekaligus' : 'Isi Sekaligus (Terkunci)'}

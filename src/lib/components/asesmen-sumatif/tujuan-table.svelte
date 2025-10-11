@@ -6,6 +6,7 @@
 		entries: EntryDraft[];
 		formatScore: (value: number | null) => string;
 		getInputClass: (value: string) => string;
+		onnilaiChange?: (event: CustomEvent<{ index: number; value: string }>) => void;
 	}
 
 	let { entries, formatScore, getInputClass }: Props = $props();

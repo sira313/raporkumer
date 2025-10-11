@@ -41,16 +41,13 @@
 		if (!result) return 'success';
 		if (result instanceof Response) {
 			if (result.ok) return 'success';
+			if (result.status >= 300 && result.status < 400) return 'redirect';
 			if (result.status >= 400 && result.status < 500) return 'failure';
 			return 'error';
 		}
 		if (isActionResult(result)) {
 			if (result.type) return result.type;
-			if (typeof result.status === 'number') {
-				if (result.status >= 200 && result.status < 300) return 'success';
-				if (result.status >= 400 && result.status < 500) return 'failure';
-				return 'error';
-			}
+			return 'success';
 		}
 		return 'success';
 	}
@@ -100,6 +97,10 @@
 						onsuccess?.({ form: formElement, data: successData });
 						break;
 					}
+					case 'redirect': {
+						await update();
+						break;
+					}
 					case 'failure': {
 						const failureData =
 							actionResult && 'data' in actionResult
@@ -131,9 +132,10 @@
 						}
 						break;
 					}
-					default:
+					default: {
 						await update();
 						break;
+					}
 				}
 			} catch (error) {
 				console.error(error);

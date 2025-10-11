@@ -4,16 +4,13 @@ interface ModalAction {
 	action?: (params: { close: () => void }) => MaybePromise<void>;
 }
 
-type ModalBodyComponent = import('svelte').Component<
-	Record<string, unknown>,
-	Record<string, unknown>,
-	string
->;
+type ModalBodyComponent<Props extends Record<string, unknown> = Record<string, unknown>> =
+	import('svelte').Component<Props, Record<string, unknown>, string>;
 
-interface ModalProps {
+interface ModalProps<BodyProps extends Record<string, unknown> = Record<string, unknown>> {
 	title?: string;
-	body: string | ModalBodyComponent;
-	bodyProps?: Record<string, unknown>;
+	body: string | ModalBodyComponent<BodyProps>;
+	bodyProps?: BodyProps;
 	dismissible?: boolean;
 	onPositive?: ModalAction;
 	onNeutral?: ModalAction;

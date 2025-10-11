@@ -31,14 +31,32 @@ set "DB_URL=file:%DB_FILE:\=/%"
 set "DATABASE_URL=%DB_URL%"
 
 :: === DETEKSI ORIGIN UNTUK CSRF ===
-for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\detect-csrf-origins.ps1" -Port %PORT%`) do (
+echo [%date% %time%] Mendeteksi origin CSRF (port %PORT%)...>>"%LOG_FILE%"
+set "RAPKUMER_CSRF_TRUSTED_ORIGINS="
+for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\detect-csrf-origins.ps1" -Port %PORT% -LogPath "%LOG_FILE%"`) do (
     set "RAPKUMER_CSRF_TRUSTED_ORIGINS=%%i"
 )
+
 if not defined RAPKUMER_CSRF_TRUSTED_ORIGINS (
     set "RAPKUMER_CSRF_TRUSTED_ORIGINS=http://localhost:%PORT%,http://127.0.0.1:%PORT%"
 )
+
 for /f "tokens=* delims= " %%a in ("!RAPKUMER_CSRF_TRUSTED_ORIGINS!") do set "RAPKUMER_CSRF_TRUSTED_ORIGINS=%%a"
 if "!RAPKUMER_CSRF_TRUSTED_ORIGINS!"=="" set "RAPKUMER_CSRF_TRUSTED_ORIGINS=http://localhost:%PORT%,http://127.0.0.1:%PORT%"
+set "DEFAULT_CSRF_ORIGINS=http://localhost:%PORT%,http://127.0.0.1:%PORT%"
+
+if /I "!RAPKUMER_CSRF_TRUSTED_ORIGINS!"=="!DEFAULT_CSRF_ORIGINS!" (
+    echo [%date% %time%] Deteksi IPv4 tambahan tidak ditemukan; memakai origin bawaan.>>"%LOG_FILE%"
+) else (
+    echo [%date% %time%] Deteksi IPv4 tambahan berhasil; origin non-default ikut ditambahkan.>>"%LOG_FILE%"
+)
+
+for %%O in (!RAPKUMER_CSRF_TRUSTED_ORIGINS:,= !) do (
+    if /I not "%%O"=="RAPKUMER_CSRF_TRUSTED_ORIGINS:" (
+        echo [%date% %time%] Origin diizinkan: %%O>>"%LOG_FILE%"
+    )
+)
+
 echo Mengizinkan origin: !RAPKUMER_CSRF_TRUSTED_ORIGINS!
 
 :: === DETEKSI NODE.JS ===

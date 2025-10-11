@@ -86,7 +86,14 @@ export const load: PageServerLoad = async ({ url }) => {
 
 export const actions: Actions = {
 	'change-password': async ({ request, locals, cookies, getClientAddress, url }) => {
+		const logContext = {
+			userId: locals.user?.id,
+			client: getClientAddress(),
+			origin: request.headers.get('origin') ?? undefined,
+			referer: request.headers.get('referer') ?? undefined
+		};
 		if (!locals.user) {
+			console.warn('[change-password] user missing', logContext);
 			throw redirect(303, '/login');
 		}
 
@@ -96,19 +103,23 @@ export const actions: Actions = {
 		const confirmPassword = String(formData.get('confirmPassword') ?? '');
 
 		if (!currentPassword || !newPassword || !confirmPassword) {
+			console.warn('[change-password] missing fields', logContext);
 			return fail(400, { message: 'Semua kolom kata sandi wajib diisi.' });
 		}
 
 		if (newPassword.length < 8) {
+			console.warn('[change-password] password too short', logContext);
 			return fail(400, { message: 'Kata sandi baru minimal 8 karakter.' });
 		}
 
 		if (newPassword !== confirmPassword) {
+			console.warn('[change-password] confirmation mismatch', logContext);
 			return fail(400, { message: 'Konfirmasi kata sandi tidak cocok.' });
 		}
 
 		const valid = await verifyUserPassword(locals.user.id, currentPassword);
 		if (!valid) {
+			console.warn('[change-password] invalid current password', logContext);
 			return fail(400, { message: 'Kata sandi lama tidak sesuai.' });
 		}
 
@@ -117,6 +128,11 @@ export const actions: Actions = {
 		const session = await createSession(locals.user.id, {
 			userAgent: request.headers.get('user-agent'),
 			ipAddress: getClientAddress()
+		});
+
+		console.info('[change-password] success', {
+			...logContext,
+			sessionExpiresAt: session.expiresAt
 		});
 
 		applySessionCookie(cookies, session.token, session.expiresAt, url.protocol === 'https:');
