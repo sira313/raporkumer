@@ -15,7 +15,6 @@ Rapkumer adalah aplikasi web yang membantu sekolah menyiapkan rapor Kurikulum Me
 - Guru mata pelajaran dan wali kelas yang bertugas mengisi nilai
 - Operator sekolah yang menyiapkan dokumen resmi
 
-
 ## Cara Menggunakan Aplikasi
 
 - Pilih sekolah aktif (jika ada lebih dari satu).

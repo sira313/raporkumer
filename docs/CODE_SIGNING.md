@@ -5,6 +5,7 @@ Dokumentasi ini menjelaskan cara mengatur dan menggunakan code signing untuk pro
 ## 🔧 Prerequisites
 
 1. **Windows SDK** - SignTool tersedia sebagai bagian dari Windows SDK
+
    - Download dari: https://developer.microsoft.com/windows/downloads/windows-sdk
    - Atau install melalui Visual Studio Installer
 
@@ -104,6 +105,7 @@ Edit `installer/scripts/signing-config.ps1` untuk mengatur:
 ### Error: "No certificate available"
 
 1. **Untuk PFX file**:
+
    - Pastikan file `installer/cert/codesign.pfx` ada
    - Pastikan file `installer/cert/password.txt` ada dan berisi password yang benar
 
@@ -132,6 +134,7 @@ Edit `installer/scripts/signing-config.ps1` untuk mengatur:
 ## 🔒 Security Best Practices
 
 1. **Jangan commit certificate ke git**
+
    - File `.gitignore` sudah dikonfigurasi untuk mengabaikan certificate files
    - Backup certificate di tempat yang aman
 
@@ -146,8 +149,9 @@ Edit `installer/scripts/signing-config.ps1` untuk mengatur:
 ## 📊 Apa yang Di-Sign
 
 Script akan otomatis sign:
+
 - **Executables**: Semua `.exe` files di staging area
-- **DLLs**: Semua `.dll` files di staging area  
+- **DLLs**: Semua `.dll` files di staging area
 - **Installer**: File `RapkumerSetup.exe` final
 
 ## 🔄 Workflow Production

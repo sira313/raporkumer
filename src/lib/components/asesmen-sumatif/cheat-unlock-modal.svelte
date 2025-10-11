@@ -31,21 +31,21 @@
 <form class="flex flex-col gap-4" onsubmit={handleSubmit}>
 	<div class="alert alert-warning">
 		<Icon name="alert" />
-		<span>
-			Ini adalah fitur cheat, donasi minimal 5 gelas kopi di tombol traktir. Lalu kirim screenshot
-			ke <a href="https://t.me/apoxic4m" target="_blank" class="text-base-content font-bold"
-				>Telegram</a
-			> untuk mendapatkan token akses.
-		</span>
-		<a
-			href="https://trakteer.id/raporkumer/tip"
-			target="_blank"
-			rel="noopener noreferrer"
-			class="btn shadow-none"
-		>
-			<Icon name="coffee" />
-			Traktir
-		</a>
+		<div class="flex flex-col gap-2 sm:flex-row">
+			<span>
+				Ini adalah fitur cheat, donasi minimal 5 gelas kopi di tombol exclusive content. Token akan
+				muncul di sana. Copy paste token ke kolom di bawah.
+			</span>
+			<a
+				href="https://trakteer.id/raporkumer/showcase"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="btn my-auto shadow-none"
+			>
+				<Icon name="coffee" />
+				Exclusive Content
+			</a>
+		</div>
 	</div>
 
 	<fieldset class="fieldset">

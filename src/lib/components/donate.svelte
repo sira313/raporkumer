@@ -14,7 +14,7 @@
 
 		<div class="mt-4 self-end sm:mt-0 sm:self-center">
 			<a
-				href="https://trakteer.id/raporkumer/tip"
+				href="https://teer.id/raporkumer"
 				target="_blank"
 				rel="noopener noreferrer"
 				class="btn btn-warning shadow-none"

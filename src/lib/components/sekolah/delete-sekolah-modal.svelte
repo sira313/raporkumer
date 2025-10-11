@@ -52,7 +52,7 @@
 >
 	{#if targetSekolah}
 		{@const sekolah = targetSekolah}
-		<div class="modal-box max-h-[85vh] w-full max-w-2xl overflow-hidden p-0 sm:max-h-[90vh]">
+		<div class="modal-box max-h-[85vh] max-w-2xl overflow-hidden p-0 sm:max-h-[90vh] sm:w-full">
 			<FormEnhance action="?/delete" onsuccess={handleDeleteSuccess}>
 				{#snippet children({ submitting })}
 					<input type="hidden" name="sekolahId" value={sekolah.id} />

@@ -3,7 +3,7 @@ title: Petunjuk
 ---
 
 Khusus mata pelajaran Pendidikan Agama dan Budi Pekerti, pilih agama yang ingin ditambahkan Tujuan Pembelajarannya terlebih dahulu.<br>
-Satu lingkup materi biasanya terdiri atas beberapa Tujuan Pembelajaran.<br>
+Satu Lingkup Materi biasanya terdiri atas beberapa Tujuan Pembelajaran.<br>
 Untuk import Tujuan Pembelajaran dari excel, gunakan format seperti gambar di bawah.
 ![import tp](/importtp.png)
 
@@ -15,6 +15,7 @@ Untuk import Tujuan Pembelajaran dari excel, gunakan format seperti gambar di ba
 </div>
 
 Contoh TP lengkap:<br>
-“<span class="text-primary">(<i>Audience</i>) Setelah mengikuti pembelajaran, siswa dapat</span> <span class="text-secondary">(<i>Behavior</i>) menentukan ide pokok dari paragraf</span> <span class="text-warning">(<i>Condition</i>) dengan membaca teks bacaan nonfiksi yang diberikan</span> <span class="text-info">(<i>Degree</i>) dengan ketepatan minimal 80%.</span>”<br>
-Maka yang di-_input_ dalam aplikasi rapor ini hanya:<br>
-"**Menentukan ide pokok dari paragraf**"
+<span class="text-primary">(<i>Audience</i>) Setelah mengikuti pembelajaran, siswa dapat</span> <span class="text-secondary font-bold">(<i>Behavior</i>) menentukan ide pokok dari paragraf</span> <span class="text-warning">(<i>Condition</i>) dengan membaca teks bacaan nonfiksi yang diberikan</span> <span class="text-info">(<i>Degree</i>) dengan ketepatan minimal 80%.</span><br>
+
+Maka yang di- _input_ dalam aplikasi rapor ini hanya:<br>
+<span class="text-secondary font-bold">Menentukan ide pokok dari paragraf</span>
