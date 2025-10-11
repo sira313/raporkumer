@@ -28,7 +28,7 @@ Raporkumer adalah aplikasi web yang membantu sekolah menyiapkan rapor Kurikulum 
 
 ## Instalasi Cepat (Windows)
 
-- Kunjungi halaman **Releases** di GitHub repositori ini.
+- Kunjungi halaman [Release](https://github.com/sira313/raporkumer/releases) di GitHub repositori ini.
 - Unduh berkas `RapkumerSetup.exe` versi terbaru.
 - Jalankan installer dan ikuti langkah di layar.
 - Setelah selesai, cari shortcut **Rapkumer** di desktop atau Start Menu.
