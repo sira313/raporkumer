@@ -23,8 +23,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-		"prod": "rm data/database.sqlite3 && pnpm db:push && pnpm build && pnpm package:win && pnpm package:win:installer",
-		"prod:signed": "rm data/database.sqlite3 && pnpm db:push && pnpm build && pnpm package:win && pnpm sign:executables && pnpm package:win:installer && pnpm sign:installer"
+		"prod": "rm data/*.sqlite3 && pnpm db:push && pnpm build && pnpm package:win && pnpm package:win:installer",
+		"prod:signed": "rm data/*.sqlite3 && pnpm db:push && pnpm build && pnpm package:win && pnpm sign:executables && pnpm package:win:installer && pnpm sign:installer"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
