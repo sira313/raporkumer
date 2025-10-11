@@ -1,6 +1,7 @@
 import db from '$lib/server/db';
 import { tableSekolah } from '$lib/server/db/schema';
 import { applySessionCookie, ensureDefaultAdmin, resolveSession } from '$lib/server/auth';
+import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
 import { cookieNames } from '$lib/utils';
 import { error, redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
@@ -89,7 +90,18 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	}
 
 	const sessionToken = event.cookies.get(cookieNames.AUTH_SESSION);
-	const secure = event.url.protocol === 'https:';
+	const resolvedProtocol = resolveRequestProtocol(event.request, event.url);
+	const secure = isSecureRequest(event.request, event.url);
+	if (!sessionToken) {
+		console.debug('[auth guard] No session cookie on incoming request', {
+			path: event.url.pathname,
+			protocol: event.url.protocol,
+			resolvedProtocol,
+			xForwardedProto: event.request.headers.get('x-forwarded-proto') ?? undefined,
+			forwarded: event.request.headers.get('forwarded') ?? undefined,
+			host: event.url.host
+		});
+	}
 
 	if (sessionToken) {
 		const resolved = await resolveSession(sessionToken);
@@ -107,6 +119,9 @@ const authGuard: Handle = async ({ event, resolve }) => {
 				applySessionCookie(event.cookies, sessionToken, resolved.session.expiresAt, secure);
 			}
 		} else {
+			console.warn('[auth guard] Provided session token invalid or expired', {
+				path: event.url.pathname
+			});
 			event.locals.user = undefined;
 			event.locals.session = undefined;
 			event.cookies.delete(cookieNames.AUTH_SESSION, { path: '/' });

@@ -1,4 +1,5 @@
 import { applySessionCookie, authenticateUser, createSession } from '$lib/server/auth';
+import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -65,7 +66,17 @@ export const actions: Actions = {
 			expiresAt: session.expiresAt
 		});
 
-		applySessionCookie(cookies, session.token, session.expiresAt, url.protocol === 'https:');
+		const secure = isSecureRequest(request, url);
+		const resolvedProtocol = resolveRequestProtocol(request, url);
+		logLoginEvent('Setting session cookie', {
+			secure,
+			protocol: url.protocol,
+			resolvedProtocol,
+			xForwardedProto: request.headers.get('x-forwarded-proto') ?? undefined,
+			forwarded: request.headers.get('forwarded') ?? undefined,
+			host: url.host
+		});
+		applySessionCookie(cookies, session.token, session.expiresAt, secure);
 
 		const target = resolveRedirectTarget(url.searchParams.get('redirect')) ?? '/';
 		logLoginEvent('Redirecting after success', { username, target });
