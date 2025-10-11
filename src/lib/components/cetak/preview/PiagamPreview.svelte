@@ -177,7 +177,7 @@
 	const logoLeft = $derived.by(() => sekolah?.logoDinasUrl ?? '/garudaPancasila.png');
 	const logoRight = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri-bw.png');
 	const dinasLogoAlt = $derived.by(() =>
-		kabupaten ? `Logo Dinas Pendidikan ${kabupaten}` : 'Logo Dinas Pendidikan'
+		kabupaten ? `Logo Pemda ${kabupaten}` : 'Logo Pemda'
 	);
 	const sekolahLogoAlt = $derived.by(() =>
 		sekolahNamaUpper ? `Logo ${sekolahNamaUpper}` : 'Logo sekolah'

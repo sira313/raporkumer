@@ -17,6 +17,7 @@ declare global {
 			sekolahDirty?: boolean;
 			user?: Pick<AuthUser, 'id' | 'username'>;
 			session?: (Pick<AuthSession, 'id' | 'expiresAt'> & { tokenHash?: string }) | undefined;
+			requestIsSecure?: boolean;
 		}
 		type PiagamRankingOption = {
 			muridId: number;

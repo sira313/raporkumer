@@ -92,6 +92,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	const sessionToken = event.cookies.get(cookieNames.AUTH_SESSION);
 	const resolvedProtocol = resolveRequestProtocol(event.request, event.url);
 	const secure = isSecureRequest(event.request, event.url);
+	event.locals.requestIsSecure = secure;
 	if (!sessionToken) {
 		console.debug('[auth guard] No session cookie on incoming request', {
 			path: event.url.pathname,
@@ -124,7 +125,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 			});
 			event.locals.user = undefined;
 			event.locals.session = undefined;
-			event.cookies.delete(cookieNames.AUTH_SESSION, { path: '/' });
+			event.cookies.delete(cookieNames.AUTH_SESSION, { path: '/', secure });
 		}
 	} else {
 		event.locals.user = undefined;
@@ -160,6 +161,7 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 		return resolve(event);
 	}
 
+	const secure = event.locals.requestIsSecure ?? false;
 	const sekolahId = Number(event.cookies.get(cookieNames.ACTIVE_SEKOLAH_ID) || '');
 	if (sekolahId === event.locals.sekolah?.id && !event.locals.sekolahDirty) {
 		return resolve(event);
@@ -179,12 +181,18 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 			orderBy: [desc(tableSekolah.id)]
 		});
 		if (sekolah?.id) {
-			event.cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(sekolah.id), { path: '/' });
+			event.cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(sekolah.id), {
+				path: '/',
+				secure
+			});
 		} else if (sekolahId) {
-			event.cookies.delete(cookieNames.ACTIVE_SEKOLAH_ID, { path: '/' });
+			event.cookies.delete(cookieNames.ACTIVE_SEKOLAH_ID, { path: '/', secure });
 		}
 	} else if (!sekolahId) {
-		event.cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(sekolah.id), { path: '/' });
+		event.cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(sekolah.id), {
+			path: '/',
+			secure
+		});
 	}
 
 	if (!sekolah?.id && event.route.id != '/(informasi-umum)/sekolah/form') {

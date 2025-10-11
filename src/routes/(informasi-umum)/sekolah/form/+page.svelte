@@ -218,7 +218,7 @@
 					<p class="label text-wrap">Format png, tanpa latar belakang, maksimal 300KB</p>
 				</div>
 				<div class="flex flex-col gap-1">
-					<legend class="fieldset-legend">Logo Dinas Pendidikan</legend>
+					<legend class="fieldset-legend">Logo Pemda</legend>
 					<input
 						type="file"
 						class="file-input file-input-ghost"

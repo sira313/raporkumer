@@ -43,10 +43,14 @@ export async function load({ url, locals, cookies }) {
 		kelasAktif = daftarKelas[0];
 	}
 
+	const secure = locals.requestIsSecure ?? false;
 	if (kelasAktif) {
-		cookies.set(cookieNames.ACTIVE_KELAS_ID, String(kelasAktif.id), { path: '/' });
+		cookies.set(cookieNames.ACTIVE_KELAS_ID, String(kelasAktif.id), {
+			path: '/',
+			secure
+		});
 	} else {
-		cookies.delete(cookieNames.ACTIVE_KELAS_ID, { path: '/' });
+		cookies.delete(cookieNames.ACTIVE_KELAS_ID, { path: '/', secure });
 	}
 
 	return { sekolah, meta, daftarKelas, kelasAktif, user };

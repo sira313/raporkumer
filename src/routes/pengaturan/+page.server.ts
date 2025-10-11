@@ -58,13 +58,15 @@ function filterAddresses(entries: AddressEntry[], currentHost: string) {
 	return entries;
 }
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
 	const meta: PageMeta = {
 		title: 'Pengaturan',
 		description: 'Pengaturan Aplikasi E-Rapor Kurikulum Merdeka'
 	};
 
-	const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+	const secure = locals.requestIsSecure ?? url.protocol === 'https:';
+	const protocol = secure ? 'https:' : 'http:';
+	const port = url.port || (secure ? '443' : '80');
 	const collected = collectIpv4Addresses(port);
 	const filtered = filterAddresses(collected, url.hostname);
 	const seen = new Set<string>();
@@ -81,7 +83,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		addresses.push(hostWithPort);
 	}
 
-	return { meta, appAddresses: addresses, protocol: url.protocol };
+	return { meta, appAddresses: addresses, protocol };
 };
 
 export const actions: Actions = {
@@ -135,7 +137,8 @@ export const actions: Actions = {
 			sessionExpiresAt: session.expiresAt
 		});
 
-		applySessionCookie(cookies, session.token, session.expiresAt, url.protocol === 'https:');
+		const secure = locals.requestIsSecure ?? url.protocol === 'https:';
+		applySessionCookie(cookies, session.token, session.expiresAt, secure);
 
 		return { message: 'Kata sandi berhasil diperbarui.' };
 	}
