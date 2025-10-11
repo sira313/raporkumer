@@ -3,6 +3,7 @@ import { ensureAsesmenSumatifSchema } from '$lib/server/db/ensure-asesmen-sumati
 import {
 	tableAsesmenSumatif,
 	tableAsesmenSumatifTujuan,
+	tableFeatureUnlock,
 	tableMataPelajaran,
 	tableMurid,
 	tableTujuanPembelajaran
@@ -10,6 +11,8 @@ import {
 import { unflattenFormData } from '$lib/utils';
 import { fail, error } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
+
+const CHEAT_FEATURE_KEY = 'cheat-asesmen-sumatif';
 
 const DEFAULT_LINGKUP = 'Tanpa lingkup materi';
 
@@ -135,6 +138,14 @@ export async function load({ url, locals, depends }) {
 		throw error(404, 'Mata pelajaran tidak ditemukan untuk murid ini.');
 	}
 
+	const featureUnlock = await db.query.tableFeatureUnlock.findFirst({
+		columns: { id: true },
+		where: and(
+			eq(tableFeatureUnlock.sekolahId, sekolahId),
+			eq(tableFeatureUnlock.featureKey, CHEAT_FEATURE_KEY)
+		)
+	});
+
 	await ensureAsesmenSumatifSchema();
 
 	const tujuanPembelajaran = await db.query.tableTujuanPembelajaran.findMany({
@@ -195,6 +206,7 @@ export async function load({ url, locals, depends }) {
 		mapel: { id: mapel.id, nama: mapel.nama, kkm: mapel.kkm ?? 0 },
 		hasTujuan: entries.length > 0,
 		entries,
+		cheatUnlocked: Boolean(featureUnlock),
 		initialScores: {
 			naLingkup: normalizeScore(sumatifRecord?.naLingkup ?? null),
 			sasTes: normalizeScore(sumatifRecord?.sasTes ?? null),

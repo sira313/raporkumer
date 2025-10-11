@@ -1,6 +1,7 @@
 <script lang="ts" module>
 	let modal = $state<HTMLDialogElement | null>(null);
-	let modalProps = $state<ModalProps | null>(null);
+	type ModalState = ModalProps<Record<string, unknown>>;
+	let modalProps = $state<ModalState | null>(null);
 
 	function clearModal() {
 		const handler = modalProps?.onClose;
@@ -8,17 +9,28 @@
 		handler?.();
 	}
 
-	export function showModal(props: ModalProps) {
-		modalProps = props;
+	export function showModal<BodyProps extends Record<string, unknown>>(
+		props: ModalProps<BodyProps>
+	) {
+		modalProps = props as ModalState;
 		requestAnimationFrame(() => modal?.showModal());
 	}
 
-	export function updateModal(props: Partial<ModalProps>) {
+	export function updateModal<BodyProps extends Record<string, unknown>>(
+		props: Partial<ModalProps<BodyProps>>
+	) {
 		if (!modalProps) return;
 		const nextBodyProps = props.bodyProps
-			? { ...(modalProps.bodyProps ?? {}), ...(props.bodyProps ?? {}) }
+			? {
+					...(modalProps.bodyProps ?? {}),
+					...((props.bodyProps as Record<string, unknown>) ?? {})
+				}
 			: modalProps.bodyProps;
-		modalProps = { ...modalProps, ...props, bodyProps: nextBodyProps };
+		modalProps = {
+			...modalProps,
+			...(props as Partial<ModalState>),
+			bodyProps: nextBodyProps
+		};
 	}
 
 	export function hideModal() {
@@ -44,7 +56,7 @@
 				{#if typeof props.body == 'string'}
 					{@html props.body}
 				{:else}
-					{@const BodyComponent = props.body as import('svelte').Component<any, any, any>}
+					{@const BodyComponent = props.body as ModalBodyComponent}
 					<BodyComponent {...props.bodyProps ?? {}} />
 				{/if}
 			</div>

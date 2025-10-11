@@ -87,7 +87,11 @@ export const actions = {
 		});
 
 		locals.sekolahDirty = true;
-		cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(formSekolah.id), { path: '/' });
+		const secure = locals.requestIsSecure ?? false;
+		cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(formSekolah.id), {
+			path: '/',
+			secure
+		});
 		return { message: 'Data sekolah berhasil disimpan' };
 	}
 };

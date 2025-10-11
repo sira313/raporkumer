@@ -54,12 +54,7 @@
 				nilai.sudahDinilai ? 'Sudah Dinilai' : 'Belum Dinilai'
 			]);
 			const worksheet = XLSX.utils.aoa_to_sheet([...headerRows, tableHeader, ...tableRows]);
-			worksheet['!cols'] = [
-				{ wch: 6 },
-				{ wch: 40 },
-				{ wch: 14 },
-				{ wch: 18 }
-			];
+			worksheet['!cols'] = [{ wch: 6 }, { wch: 40 }, { wch: 14 }, { wch: 18 }];
 			worksheet['!freeze'] = { xSplit: 0, ySplit: headerRows.length + 1 };
 			const workbook = XLSX.utils.book_new();
 			XLSX.utils.book_append_sheet(workbook, worksheet, 'Nilai Akhir');

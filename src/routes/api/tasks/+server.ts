@@ -159,7 +159,12 @@ export const DELETE: RequestHandler = async ({ locals, request }) => {
 		if (scope === 'all') {
 			const result = await db
 				.delete(tableTasks)
-				.where(and(eq(tableTasks.sekolahId, locals.sekolah!.id), eq(tableTasks.kelasId, normalizedKelasId)));
+				.where(
+					and(
+						eq(tableTasks.sekolahId, locals.sekolah!.id),
+						eq(tableTasks.kelasId, normalizedKelasId)
+					)
+				);
 			deleted = result.rowsAffected ?? 0;
 		} else if (scope === 'completed') {
 			const result = await db

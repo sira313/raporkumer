@@ -61,3 +61,6 @@ type AsesmenEkstrakurikuler =
 type Kokurikuler = typeof import('$lib/server/db/schema').tableKokurikuler.$inferSelect;
 
 type TaskItem = typeof import('$lib/server/db/schema').tableTasks.$inferSelect;
+
+type AuthUser = typeof import('$lib/server/db/schema').tableAuthUser.$inferSelect;
+type AuthSession = typeof import('$lib/server/db/schema').tableAuthSession.$inferSelect;

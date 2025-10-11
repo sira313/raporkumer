@@ -42,7 +42,7 @@
 
 			<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-2">
 				<!-- Jenjang Pendidikan & Lokasi Tanda Tangan -->
-				<div class="md:col-span-2 grid grid-cols-1 gap-2 md:grid-cols-2 md:items-end">
+				<div class="grid grid-cols-1 gap-2 md:col-span-2 md:grid-cols-2 md:items-end">
 					<div>
 						<legend class="fieldset-legend">Jenjang Pendidikan</legend>
 						<select
@@ -218,7 +218,7 @@
 					<p class="label text-wrap">Format png, tanpa latar belakang, maksimal 300KB</p>
 				</div>
 				<div class="flex flex-col gap-1">
-					<legend class="fieldset-legend">Logo Dinas Pendidikan</legend>
+					<legend class="fieldset-legend">Logo Pemda</legend>
 					<input
 						type="file"
 						class="file-input file-input-ghost"

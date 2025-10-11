@@ -1,5 +1,61 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
+	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { toast } from '$lib/components/toast.svelte';
+	import { onMount } from 'svelte';
+	import type { PageData } from './$types';
+
+	const { data } = $props<{ data: PageData }>();
+
+	const detectedAddresses = data.appAddresses ?? [];
+	const protocol = data.protocol ?? 'http:';
+
+	let appAddress = $state(detectedAddresses[0] ?? '');
+	let copying = $state(false);
+
+	onMount(() => {
+		if (!appAddress && browser) {
+			appAddress = window.location.host;
+		}
+	});
+
+	async function copyAddress() {
+		if (!browser) {
+			toast({ message: 'Penyalinan hanya tersedia di peramban.', type: 'warning' });
+			return;
+		}
+
+		const target = appAddress || window.location.host;
+		if (!target) {
+			toast({ message: 'Alamat aplikasi tidak ditemukan.', type: 'warning' });
+			return;
+		}
+
+		if (!navigator.clipboard) {
+			toast({ message: 'Clipboard tidak tersedia di perangkat ini.', type: 'warning' });
+			return;
+		}
+
+		const scheme = protocol === 'https:' ? 'https://' : 'http://';
+		const copyValue =
+			target.startsWith('http://') || target.startsWith('https://') ? target : `${scheme}${target}`;
+
+		try {
+			copying = true;
+			await navigator.clipboard.writeText(copyValue);
+			toast({ message: 'Alamat aplikasi berhasil disalin.', type: 'success' });
+		} catch (error) {
+			console.error('Failed to copy app address', error);
+			toast({ message: 'Gagal menyalin alamat. Salin manual ya.', type: 'error' });
+		} finally {
+			copying = false;
+		}
+	}
+
+	function handlePasswordSuccess({ form }: { form: HTMLFormElement }) {
+		form.reset();
+	}
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
@@ -12,37 +68,118 @@
 		</header>
 
 		<fieldset class="fieldset">
-			<legend class="fieldset-legend">Atur port aplikasi</legend>
-			<input
-				type="text"
-				class="input bg-base-200 join-item w-full dark:border-none"
-				placeholder="Contoh: 5173"
-			/>
-			<p class="text-base-content/70 mt-1 text-xs">Kosongkan bila tidak diperlukan</p>
-		</fieldset>
-
-		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Alamat aplikasi</legend>
 			<div class="join">
 				<input
 					type="text"
 					disabled
 					class="input bg-base-200 join-item w-full dark:border-none"
-					placeholder="192.168.8.100:5173"
-					value="192.168.8.100:5173"
+					placeholder={appAddress || 'Tidak ada alamat terdeteksi'}
+					value={appAddress}
 				/>
-				<button class="btn join-item shadow-none" type="button">Copy</button>
+				<button
+					class="btn join-item shadow-none"
+					type="button"
+					onclick={copyAddress}
+					disabled={!appAddress || copying}
+				>
+					{copying ? 'Menyalin…' : 'Copy'}
+				</button>
 			</div>
+			{#if detectedAddresses.length > 1}
+				<label class="label mt-3" for="addressSelector">
+					<span class="label-text">Alamat terdeteksi lainnya</span>
+				</label>
+				<select
+					id="addressSelector"
+					class="select select-bordered dark:bg-base-200 w-full dark:border-none"
+					bind:value={appAddress}
+				>
+					{#each detectedAddresses as address (address)}
+						<option value={address}>{address}</option>
+					{/each}
+				</select>
+			{/if}
 			<p class="text-base-content/70 mt-1 text-xs">
 				Buka alamat ini pada perangkat lain di jaringan lokal yang sama.
 			</p>
 		</fieldset>
+	</div>
+</section>
 
-		<div class="flex justify-end">
-			<button class="btn btn-primary shadow-none" type="button">
-				<Icon name="save" />
-				Simpan
-			</button>
+<section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
+	<div class="space-y-6">
+		<div role="alert" class="alert alert-warning">
+			<Icon name="alert" />
+			<span>Simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
 		</div>
+		<header class="space-y-2">
+			<h2 class="text-xl font-semibold">Keamanan Akun</h2>
+			<p class="text-base-content/70 text-sm">
+				Perbarui kata sandi admin untuk menjaga keamanan akses aplikasi.
+			</p>
+		</header>
+
+		<FormEnhance action="?/change-password" onsuccess={handlePasswordSuccess}>
+			{#snippet children({ submitting, invalid })}
+				<div class="space-y-4">
+					<div class="form-control">
+						<label class="label" for="currentPassword">
+							<span class="label-text">Kata sandi saat ini</span>
+						</label>
+						<input
+							type="password"
+							id="currentPassword"
+							name="currentPassword"
+							required
+							autocomplete="current-password"
+							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+							placeholder="Masukkan kata sandi lama"
+						/>
+					</div>
+
+					<div class="form-control">
+						<label class="label" for="newPassword">
+							<span class="label-text">Kata sandi baru</span>
+						</label>
+						<input
+							type="password"
+							id="newPassword"
+							name="newPassword"
+							required
+							minlength={8}
+							autocomplete="new-password"
+							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+							placeholder="Minimal 8 karakter"
+						/>
+					</div>
+
+					<div class="form-control">
+						<label class="label" for="confirmPassword">
+							<span class="label-text">Konfirmasi kata sandi baru</span>
+						</label>
+						<input
+							type="password"
+							id="confirmPassword"
+							name="confirmPassword"
+							required
+							minlength={8}
+							autocomplete="new-password"
+							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+							placeholder="Ulangi kata sandi baru"
+						/>
+					</div>
+
+					<p class="text-base-content/70 text-xs">
+						Gunakan kombinasi huruf dan angka untuk keamanan maksimal.
+					</p>
+
+					<button class="btn btn-primary" type="submit" disabled={submitting || invalid}>
+						<Icon name="save" />
+						{submitting ? 'Menyimpan…' : 'Simpan kata sandi'}
+					</button>
+				</div>
+			{/snippet}
+		</FormEnhance>
 	</div>
 </section>

@@ -139,9 +139,15 @@ export async function load(event) {
 
 		const uniqueSubjectValues = Array.from(uniqueSubjects.values());
 		statistikDashboard.mapel.total = uniqueSubjectValues.length;
-		statistikDashboard.mapel.wajib = uniqueSubjectValues.filter((item) => item.jenis === 'wajib').length;
-		statistikDashboard.mapel.mulok = uniqueSubjectValues.filter((item) => item.jenis === 'mulok').length;
-		statistikDashboard.mapel.lainnya = uniqueSubjectValues.filter((item) => item.jenis === 'pilihan').length;
+		statistikDashboard.mapel.wajib = uniqueSubjectValues.filter(
+			(item) => item.jenis === 'wajib'
+		).length;
+		statistikDashboard.mapel.mulok = uniqueSubjectValues.filter(
+			(item) => item.jenis === 'mulok'
+		).length;
+		statistikDashboard.mapel.lainnya = uniqueSubjectValues.filter(
+			(item) => item.jenis === 'pilihan'
+		).length;
 
 		const ekstrakurikulerRows = await db.query.tableEkstrakurikuler.findMany({
 			columns: { id: true },

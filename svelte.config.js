@@ -5,7 +5,13 @@ import { mdsvex } from 'mdsvex';
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	preprocess: [mdsvex({ extensions: ['.md'] }), vitePreprocess()],
-	kit: { adapter: adapter() },
+	kit: {
+		adapter: adapter(),
+		csrf: {
+			// Disable the built-in same-origin guard and enforce a custom, runtime-aware check via hooks.server.ts
+			checkOrigin: false
+		}
+	},
 	extensions: ['.svelte', '.md']
 };
 

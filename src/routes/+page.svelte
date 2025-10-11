@@ -30,9 +30,7 @@
 			ekstrakurikuler: { percentage: 0, completed: 0, total: 0 }
 		}
 	);
-	const ekstrakurikulerStats = $derived(
-		statistikDashboard.ekstrakurikuler ?? { total: 0 }
-	);
+	const ekstrakurikulerStats = $derived(statistikDashboard.ekstrakurikuler ?? { total: 0 });
 </script>
 
 <!-- Kontainer Utama Grid -->

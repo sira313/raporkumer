@@ -47,33 +47,33 @@ export async function load({ locals, url, depends, parent }) {
 		orderBy: asc(tableMurid.nama)
 	});
 
-		let piagamRankingOptions: Array<{
-			muridId: number;
-			peringkat: number;
-			nama: string;
-			nilaiRataRata: number | null;
-		}> = [];
+	let piagamRankingOptions: Array<{
+		muridId: number;
+		peringkat: number;
+		nama: string;
+		nilaiRataRata: number | null;
+	}> = [];
 
-		if (kelasId) {
-			const kelasIdNumber = Number(kelasId);
-			const rekap = await computeNilaiAkhirRekap({ sekolahId, kelasId: kelasIdNumber });
-			piagamRankingOptions = rekap.rows
-				.filter((row) => Number.isFinite(row.peringkat) && row.peringkat >= 1)
-				.sort((a, b) => a.peringkat - b.peringkat)
-				.slice(0, 4)
-				.map((row) => ({
-					muridId: row.id,
-					peringkat: row.peringkat,
-					nama: row.nama,
-					nilaiRataRata: row.nilaiRataRata
-				}));
-		}
+	if (kelasId) {
+		const kelasIdNumber = Number(kelasId);
+		const rekap = await computeNilaiAkhirRekap({ sekolahId, kelasId: kelasIdNumber });
+		piagamRankingOptions = rekap.rows
+			.filter((row) => Number.isFinite(row.peringkat) && row.peringkat >= 1)
+			.sort((a, b) => a.peringkat - b.peringkat)
+			.slice(0, 4)
+			.map((row) => ({
+				muridId: row.id,
+				peringkat: row.peringkat,
+				nama: row.nama,
+				nilaiRataRata: row.nilaiRataRata
+			}));
+	}
 
 	return {
 		academicContext,
 		kelasId,
-			daftarMurid,
-			muridCount: daftarMurid.length,
-			piagamRankingOptions
+		daftarMurid,
+		muridCount: daftarMurid.length,
+		piagamRankingOptions
 	};
 }

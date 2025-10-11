@@ -19,7 +19,7 @@
 		cardClass?: string;
 		contentClass?: string;
 		orientation?: 'portrait' | 'landscape';
-	 	paddingClass?: string;
+		paddingClass?: string;
 		children?: () => unknown;
 	}>();
 
@@ -43,11 +43,7 @@
 			orientation === 'landscape'
 				? 'max-h-[210mm] min-h-[210mm] max-w-[297mm] min-w-[297mm]'
 				: 'max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm]';
-		return [
-			'bg-base-100 text-base-content mx-auto flex flex-col',
-			dimensions,
-			paddingClass
-		]
+		return ['bg-base-100 text-base-content mx-auto flex flex-col', dimensions, paddingClass]
 			.filter(Boolean)
 			.join(' ');
 	});
@@ -58,7 +54,7 @@
 </script>
 
 <div class={cardClasses} style="break-inside: avoid-page;">
-		<div class={contentContainerClasses}>
+	<div class={contentContainerClasses}>
 		<div class={bodyClasses} bind:this={contentRef} use:applySplit>
 			{@render children?.()}
 		</div>

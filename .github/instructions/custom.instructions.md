@@ -29,6 +29,7 @@ applyTo: '**'
 - **Ikon**: tambahkan SVG ke `src/lib/icons`, generator `scripts/icon.js` akan membuat `__icons.d.ts`. Jangan commit file ini.
 - **Komponen reusable**: pecah halaman yang kompleks menjadi komponen mandiri di `src/lib/components`. Kelompokkan per domain dengan subfolder (mis. `tp-rl/`) dan simpan hanya logika presentasi di sana.
 - **Halaman**: hindari `+page.svelte` dengan baris kode terlalu banyak; ekstrak elemen UI atau logika presentasi ke `src/lib/components/**` atau gunakan komponen yang sudah ada untuk menjaga efisiensi dan keterbacaan.
+- **Problems**: Periksa tab problems di VSCode, jika ada warning atau error, langsung perbaiki.
 
 ## Aturan Domain & Data
 

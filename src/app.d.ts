@@ -15,6 +15,9 @@ declare global {
 		interface Locals {
 			sekolah?: Omit<Sekolah, 'logo'>;
 			sekolahDirty?: boolean;
+			user?: Pick<AuthUser, 'id' | 'username'>;
+			session?: (Pick<AuthSession, 'id' | 'expiresAt'> & { tokenHash?: string }) | undefined;
+			requestIsSecure?: boolean;
 		}
 		type PiagamRankingOption = {
 			muridId: number;
@@ -39,6 +42,7 @@ declare global {
 			raporData?: RaporPrintData;
 			piagamData?: PiagamPrintData;
 			piagamRankingOptions?: PiagamRankingOption[];
+			user?: Pick<AuthUser, 'id' | 'username'>;
 		}
 		interface PageState {
 			modal: {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
-	import CheatModal from '$lib/components/asesmen-sumatif/cheat-modal.svelte';
+	import CheatControls from '$lib/components/asesmen-sumatif/cheat-controls.svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import LingkupSummaryCard from '$lib/components/asesmen-sumatif/lingkup-summary-card.svelte';
@@ -14,7 +14,6 @@
 		NilaiAkhirCategory,
 		TujuanEntry
 	} from '$lib/components/asesmen-sumatif/types';
-	import { showModal, updateModal } from '$lib/components/global-modal.svelte';
 	import {
 		formatScore,
 		toInputText,
@@ -22,7 +21,6 @@
 		normalizeScoreText,
 		isScoreValid
 	} from '$lib/components/asesmen-sumatif/utils';
-	import { generateCheatResult } from '$lib/components/asesmen-sumatif/cheat-generator';
 
 	type PageData = {
 		murid: { id: number; nama: string };
@@ -36,6 +34,7 @@
 			sas: number | null;
 			nilaiAkhir: number | null;
 		};
+		cheatUnlocked: boolean;
 	};
 
 	type SavePayload = {
@@ -58,14 +57,14 @@
 	let sasNonTesText = $state(
 		data.initialScores.sasNonTes != null ? data.initialScores.sasNonTes.toFixed(2) : ''
 	);
-	let cheatNilaiAkhirText = $state('');
-	let cheatModalError = $state<string | null>(null);
+	let cheatUnlocked = $state(data.cheatUnlocked);
 
 	$effect(() => {
 		entries = data.entries.map(toDraft);
 		sasTesText = data.initialScores.sasTes != null ? data.initialScores.sasTes.toFixed(2) : '';
 		sasNonTesText =
 			data.initialScores.sasNonTes != null ? data.initialScores.sasNonTes.toFixed(2) : '';
+		cheatUnlocked = data.cheatUnlocked;
 	});
 
 	const lingkupSummaries = $derived.by((): LingkupSummary[] => {
@@ -229,6 +228,19 @@
 		sasNonTesText = value;
 	}
 
+	function handleCheatApply(
+		event: CustomEvent<{ entries: EntryDraft[]; sasTesText: string; sasNonTesText: string }>
+	): void {
+		const { entries: drafts, sasTesText: sasTes, sasNonTesText: sasNonTes } = event.detail;
+		entries = drafts;
+		sasTesText = sasTes;
+		sasNonTesText = sasNonTes;
+	}
+
+	function handleCheatUnlockChange(event: CustomEvent<{ cheatUnlocked: boolean }>): void {
+		cheatUnlocked = event.detail.cheatUnlocked;
+	}
+
 	async function handleSuccess({ data: result }: { data?: Record<string, unknown> }) {
 		const payload = (result?.payload ?? null) as SavePayload | null;
 		if (payload) {
@@ -251,75 +263,6 @@
 		await invalidate('app:asesmen-sumatif');
 		await invalidate('app:asesmen-sumatif/formulir');
 	}
-
-	/* Cheat logic handled via generateCheatResult utility */
-
-	function syncCheatModalBody(): void {
-		updateModal({
-			bodyProps: {
-				nilaiAkhirText: cheatNilaiAkhirText,
-				errorMessage: cheatModalError,
-				onInput: handleCheatInput
-			}
-		});
-	}
-
-	function handleCheatInput(value: string): void {
-		cheatNilaiAkhirText = value;
-		cheatModalError = null;
-		syncCheatModalBody();
-	}
-
-	function handleCheatConfirm(close: () => void): void {
-		const normalized = normalizeScoreText(cheatNilaiAkhirText);
-		if (normalized == null) {
-			cheatModalError = 'Masukkan angka antara 0 sampai 100 dengan maksimal dua angka desimal.';
-			syncCheatModalBody();
-			return;
-		}
-		if (!entries.length) {
-			cheatModalError = 'Tidak ada tujuan pembelajaran yang dapat diisi otomatis.';
-			syncCheatModalBody();
-			return;
-		}
-		const result = generateCheatResult(entries, normalized);
-		if (!result) {
-			cheatModalError = 'Gagal menghasilkan nilai acak yang valid. Coba lagi.';
-			syncCheatModalBody();
-			return;
-		}
-		entries = result.drafts;
-		sasTesText = toInputText(result.sasTes);
-		sasNonTesText = toInputText(result.sasNonTes);
-		cheatModalError = null;
-		close();
-	}
-
-	function openCheatModal(): void {
-		if (!data.hasTujuan) return;
-		cheatNilaiAkhirText = toInputText(data.initialScores.nilaiAkhir ?? nilaiAkhir ?? null);
-		cheatModalError = null;
-		showModal({
-			title: 'Fitur Cheat Nilai Sumatif',
-			body: CheatModal,
-			bodyProps: {
-				nilaiAkhirText: cheatNilaiAkhirText,
-				errorMessage: cheatModalError,
-				onInput: handleCheatInput
-			},
-			dismissible: true,
-			onNegative: {
-				label: 'Batal',
-				icon: 'close',
-				action: ({ close }) => close()
-			},
-			onPositive: {
-				label: 'Terapkan',
-				icon: 'check',
-				action: ({ close }) => handleCheatConfirm(close)
-			}
-		});
-	}
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
@@ -333,15 +276,16 @@
 					<Icon name="left" />
 					Kembali
 				</a>
-				<button
-					type="button"
-					class="btn shadow-none"
-					onclick={openCheatModal}
-					disabled={!data.hasTujuan || submitting}
-				>
-					<Icon name="copy" />
-					Isi Sekaligus
-				</button>
+				<CheatControls
+					{entries}
+					hasTujuan={data.hasTujuan}
+					initialNilaiAkhir={data.initialScores.nilaiAkhir}
+					{nilaiAkhir}
+					disabled={submitting}
+					{cheatUnlocked}
+					onapply={handleCheatApply}
+					onunlockChange={handleCheatUnlockChange}
+				/>
 				<button
 					type="submit"
 					class="btn btn-primary shadow-none sm:ml-auto"
@@ -370,7 +314,7 @@
 					{entries}
 					{formatScore}
 					{getInputClass}
-					on:nilaiChange={handleEntryNilaiChange}
+					onnilaiChange={handleEntryNilaiChange}
 				/>
 			{/if}
 
@@ -379,7 +323,7 @@
 			<h3 class="mt-6 pb-2 text-lg font-bold">
 				Isi Sumatif Akhir Semester di bawah ini untuk {data.murid.nama}.
 			</h3>
-			<SasInputTable {sasTesText} {sasNonTesText} {getInputClass} on:sasChange={handleSasChange} />
+			<SasInputTable {sasTesText} {sasNonTesText} {getInputClass} onsasChange={handleSasChange} />
 
 			<SasSummaryCard {nilaiSas} {formatScore} />
 

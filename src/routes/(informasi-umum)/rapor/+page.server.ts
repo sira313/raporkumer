@@ -723,7 +723,11 @@ export const actions: Actions = {
 			error(404, 'Data sekolah tidak ditemukan');
 		}
 
-		cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(sekolah.id), { path: '/' });
+		const secure = locals.requestIsSecure ?? false;
+		cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(sekolah.id), {
+			path: '/',
+			secure
+		});
 		locals.sekolahDirty = true;
 
 		const context = await resolveSekolahAcademicContext(sekolah.id);

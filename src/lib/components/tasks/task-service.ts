@@ -24,7 +24,10 @@ export const splitTaskBuckets = (tasks: TaskRecord[]) => {
 
 type RequestResult<T> = { response: Response; payload: ApiResponse<T> };
 
-const requestJson = async <T>(input: RequestInfo | URL, init?: RequestInit): Promise<RequestResult<T>> => {
+const requestJson = async <T>(
+	input: RequestInfo | URL,
+	init?: RequestInit
+): Promise<RequestResult<T>> => {
 	const response = await fetch(input, init);
 	let payload: ApiResponse<T>;
 	try {

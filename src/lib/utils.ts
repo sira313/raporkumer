@@ -3,7 +3,8 @@ import { appMenuItems } from './components/menu';
 
 export const cookieNames = {
 	ACTIVE_SEKOLAH_ID: 'active-sekolah-id',
-	ACTIVE_KELAS_ID: 'active-kelas-id'
+	ACTIVE_KELAS_ID: 'active-kelas-id',
+	AUTH_SESSION: 'rapkumer-session'
 };
 
 export function findTitleByPath(path: string, items = appMenuItems): string | undefined {

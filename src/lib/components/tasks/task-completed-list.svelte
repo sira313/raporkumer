@@ -21,7 +21,7 @@
 	}>();
 </script>
 
-<div class="bg-base-300 dark:bg-base-200 collapse collapse-plus mt-6">
+<div class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6">
 	<input type="checkbox" />
 	<div class="collapse-title font-bold">Tugas sudah selesai</div>
 	<div class="collapse-content p-0 text-sm">

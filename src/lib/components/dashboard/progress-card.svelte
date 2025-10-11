@@ -36,7 +36,7 @@
 				value={progress.akademik.percentage}
 				max="100"
 			></progress>
-			<p class="mt-1 text-xs text-base-content/70">
+			<p class="text-base-content/70 mt-1 text-xs">
 				{progress.akademik.completed} dari {progress.akademik.total} penilaian sudah diinput.
 			</p>
 		</div>
@@ -52,7 +52,7 @@
 				value={progress.absensi.percentage}
 				max="100"
 			></progress>
-			<p class="mt-1 text-xs text-base-content/70">
+			<p class="text-base-content/70 mt-1 text-xs">
 				{progress.absensi.completed} dari {progress.absensi.total} murid telah memiliki rekap absensi.
 			</p>
 		</div>
@@ -68,7 +68,7 @@
 				value={progress.ekstrakurikuler.percentage}
 				max="100"
 			></progress>
-			<p class="mt-1 text-xs text-base-content/70">
+			<p class="text-base-content/70 mt-1 text-xs">
 				{progress.ekstrakurikuler.completed} dari {progress.ekstrakurikuler.total} murid sudah dinilai.
 			</p>
 		</div>

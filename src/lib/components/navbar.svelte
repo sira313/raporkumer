@@ -7,9 +7,24 @@
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import type { Component } from 'svelte';
 
+	type NavbarProps = {
+		stopServer?: () => void;
+		stoppingServer?: boolean;
+		logout?: () => void;
+		loggingOut?: boolean;
+	};
+
+	let {
+		stopServer = () => {},
+		stoppingServer = false,
+		logout = () => {},
+		loggingOut = false
+	}: NavbarProps = $props();
+
 	let tasksModalRef: { open: () => void } | null = null;
 	const daftarKelas = $derived(page.data.daftarKelas ?? []);
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const user = $derived(page.data.user ?? null);
 	const kelasAktifLabel = $derived.by(() => {
 		if (!kelasAktif) return 'Pilih Kelas';
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
@@ -49,6 +64,7 @@
 		{ matcher: '/nilai-ekstrakurikuler/form-asesmen', file: 'form-ekstra' },
 		{ matcher: '/nilai-ekstrakurikuler', file: 'nilai-ekstra' },
 		{ matcher: '/catatan-wali-kelas', file: 'catatan-wali' },
+		{ matcher: '/pengaturan', file: 'pengaturan' },
 		{ matcher: '/cetak', file: 'cetak' }
 	];
 
@@ -190,6 +206,29 @@
 								<Icon name="gear" />
 								Pengaturan
 							</a>
+						</li>
+						{#if user}{/if}
+						<li>
+							<button
+								type="button"
+								title="Keluar dari aplikasi"
+								onclick={logout}
+								disabled={loggingOut}
+							>
+								<Icon name="export" />
+								{loggingOut ? 'Keluar…' : 'Keluar'}
+							</button>
+						</li>
+						<li>
+							<button
+								type="button"
+								title="Hentikan server"
+								onclick={stopServer}
+								disabled={stoppingServer}
+							>
+								<Icon name="warning" />
+								{stoppingServer ? 'Menghentikan server…' : 'Hentikan Server'}
+							</button>
 						</li>
 					</ul>
 				</div>

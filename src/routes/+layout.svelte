@@ -4,7 +4,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import Menu from '$lib/components/menu.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
-	import Toast from '$lib/components/toast.svelte';
+	import Toast, { toast } from '$lib/components/toast.svelte';
 	import Task from '$lib/components/tasks.svelte';
 
 	import '../app.css';
@@ -12,6 +12,67 @@
 	let { data, children } = $props();
 
 	const appName = 'Rapkumer';
+	let stoppingServer = $state(false);
+	let loggingOut = $state(false);
+	const isLoginPage = $derived(page.url.pathname === '/login');
+
+	async function stopServer() {
+		if (stoppingServer) return;
+		stoppingServer = true;
+
+		const showSuccess = () =>
+			toast({
+				message:
+					'Server dihentikan. Tutup jendela Rapkumer ini lalu jalankan ulang bila diperlukan.',
+				type: 'info',
+				persist: true
+			});
+
+		try {
+			const response = await fetch('/api/runtime/stop', { method: 'POST', keepalive: true });
+			if (response.ok) {
+				showSuccess();
+			} else {
+				const details = await response.text().catch(() => '');
+				console.error('Gagal menghentikan server', response.status, details);
+				toast({ message: 'Gagal menghentikan server. Coba lagi.', type: 'error' });
+			}
+		} catch (error) {
+			console.warn(
+				'Permintaan stop server berakhir sebelum respons diterima. Diasumsikan berhasil.',
+				error
+			);
+			showSuccess();
+		} finally {
+			stoppingServer = false;
+		}
+	}
+
+	async function logout() {
+		if (loggingOut) return;
+		loggingOut = true;
+
+		try {
+			const response = await fetch('/logout', { method: 'POST' });
+			if (response.redirected) {
+				window.location.href = response.url;
+				return;
+			}
+
+			if (response.ok) {
+				window.location.href = '/login';
+				return;
+			}
+
+			console.error('Gagal logout', response.status, await response.text().catch(() => ''));
+			toast({ message: 'Gagal keluar. Coba lagi.', type: 'error' });
+		} catch (error) {
+			console.error('Gagal logout', error);
+			toast({ message: 'Gagal keluar. Coba lagi.', type: 'error' });
+		} finally {
+			loggingOut = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -43,53 +104,59 @@
 	<title>{appName}{page.data.meta.title ? ' - ' + page.data.meta.title : ''}</title>
 </svelte:head>
 
-<main class="drawer lg:drawer-open">
-	<input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
-	<div class="drawer-content flex min-h-screen flex-col">
-		<Navbar />
+{#if isLoginPage}
+	<div class="bg-base-200 flex min-h-screen flex-col items-center justify-center p-6">
+		{@render children()}
+	</div>
+{:else}
+	<main class="drawer lg:drawer-open">
+		<input id="my-drawer-2" type="checkbox" class="drawer-toggle" />
+		<div class="drawer-content flex min-h-screen flex-col">
+			<Navbar {stopServer} {stoppingServer} {logout} {loggingOut} />
 
-		<div
-			class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:mr-2 lg:mb-2 lg:rounded-xl"
-		>
 			<div
-				class="max-h-[calc(100vh-4.2rem)] min-h-[calc(100vh-4.2rem)] max-w-none overflow-y-auto md:max-h-[calc(100vh-4.6rem)] md:min-h-[calc(100vh-4.6rem)] print:overflow-visible"
+				class="bg-base-300 dark:bg-base-200 dark:border-base-200 border-base-300 flex flex-1 flex-col border lg:mr-2 lg:mb-2 lg:rounded-xl"
 			>
-				<div class="m-4 flex flex-row lg:m-6 xl:gap-5">
-					<div class="w-full max-w-5xl min-w-0 flex-1">
-						{@render children()}
-					</div>
-					<div class="sticky top-6 self-start">
-						<Task variant="sidebar" />
+				<div
+					class="max-h-[calc(100vh-4.2rem)] min-h-[calc(100vh-4.2rem)] max-w-none overflow-y-auto md:max-h-[calc(100vh-4.6rem)] md:min-h-[calc(100vh-4.6rem)] print:overflow-visible"
+				>
+					<div class="m-4 flex flex-row lg:m-6 xl:gap-5">
+						<div class="w-full max-w-5xl min-w-0 flex-1">
+							{@render children()}
+						</div>
+						<div class="sticky top-6 self-start">
+							<Task variant="sidebar" />
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	</div>
-	<div class="drawer-side">
-		<label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
-		<ul class="menu bg-base-100 text-base-content min-h-full w-80 p-4">
-			<div class="mt-[4rem] flex items-center gap-2 pb-4 lg:mt-1">
-				{#if data.meta?.logoUrl}
-					<img class="h-8 rounded" src={data.meta.logoUrl} alt="Brand logo" />
-				{/if}
-				<a href="/"><h2 class="mb-2 text-xl font-bold">Dashboard</h2></a>
-			</div>
+		<div class="drawer-side">
+			<label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
+			<ul class="menu bg-base-100 text-base-content min-h-full w-80 p-4">
+				<div class="mt-[4rem] flex items-center gap-2 pb-4 lg:mt-1">
+					{#if data.meta?.logoUrl}
+						<img class="h-8 rounded" src={data.meta.logoUrl} alt="Brand logo" />
+					{/if}
+					<a href="/"><h2 class="mb-2 text-xl font-bold">Dashboard</h2></a>
+				</div>
 
-			<Menu />
+				<Menu />
 
-			<div class="mt-4 flex flex-col gap-3">
-				<a href="/pengaturan" class="flex items-center gap-2">
-					<Icon name="gear" />
-					<h2 class="font-bold">Pengaturan</h2>
-				</a>
-				<a href="/tentang" class="flex items-center gap-2">
-					<Icon name="info" />
-					<h2 class="font-bold">Tentang Aplikasi</h2>
-				</a>
-			</div>
-		</ul>
-	</div>
-</main>
+				<div class="mt-4 flex flex-col gap-3">
+					<a href="/pengaturan" class="flex items-center gap-2">
+						<Icon name="gear" />
+						<h2 class="font-bold">Pengaturan</h2>
+					</a>
+					<a href="/tentang" class="flex items-center gap-2">
+						<Icon name="info" />
+						<h2 class="font-bold">Tentang Aplikasi</h2>
+					</a>
+				</div>
+			</ul>
+		</div>
+	</main>
+{/if}
 
 <Toast />
 <GlobalModal />

@@ -8,6 +8,36 @@ const audit = {
 	updatedAt: text()
 };
 
+export const tableAuthUser = sqliteTable(
+	'auth_user',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		username: text().notNull(),
+		usernameNormalized: text().notNull(),
+		passwordHash: text().notNull(),
+		passwordSalt: text().notNull(),
+		passwordUpdatedAt: text(),
+		...audit
+	},
+	(table) => [unique().on(table.usernameNormalized)]
+);
+
+export const tableAuthSession = sqliteTable(
+	'auth_session',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		userId: int()
+			.references(() => tableAuthUser.id, { onDelete: 'cascade' })
+			.notNull(),
+		tokenHash: text().notNull(),
+		userAgent: text(),
+		ipAddress: text(),
+		expiresAt: text().notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.tokenHash), index('auth_session_user_id_idx').on(table.userId)]
+);
+
 export const tableAlamat = sqliteTable('alamat', {
 	id: int().primaryKey({ autoIncrement: true }),
 	jalan: text().notNull(),
@@ -46,6 +76,22 @@ export const tableSekolah = sqliteTable('sekolah', {
 	lokasiTandaTangan: text(),
 	...audit
 });
+
+export const tableFeatureUnlock = sqliteTable(
+	'feature_unlock',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id, { onDelete: 'cascade' })
+			.notNull(),
+		featureKey: text().notNull(),
+		unlockedAt: text()
+			.$defaultFn(() => new Date().toISOString())
+			.notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.sekolahId, table.featureKey)]
+);
 
 export const tableTahunAjaran = sqliteTable(
 	'tahun_ajaran',
@@ -122,7 +168,15 @@ export const tableSekolahRelations = relations(tableSekolah, ({ one, many }) => 
 		references: [tablePegawai.id]
 	}),
 	tahunAjaran: many(tableTahunAjaran),
-	tasks: many(tableTasks)
+	tasks: many(tableTasks),
+	featureUnlocks: many(tableFeatureUnlock)
+}));
+
+export const tableFeatureUnlockRelations = relations(tableFeatureUnlock, ({ one }) => ({
+	sekolah: one(tableSekolah, {
+		fields: [tableFeatureUnlock.sekolahId],
+		references: [tableSekolah.id]
+	})
 }));
 
 export const tableTahunAjaranRelations = relations(tableTahunAjaran, ({ one, many }) => ({
@@ -148,6 +202,17 @@ export const tableTasksRelations = relations(tableTasks, ({ one }) => ({
 	kelas: one(tableKelas, {
 		fields: [tableTasks.kelasId],
 		references: [tableKelas.id]
+	})
+}));
+
+export const tableAuthUserRelations = relations(tableAuthUser, ({ many }) => ({
+	sessions: many(tableAuthSession)
+}));
+
+export const tableAuthSessionRelations = relations(tableAuthSession, ({ one }) => ({
+	user: one(tableAuthUser, {
+		fields: [tableAuthSession.userId],
+		references: [tableAuthUser.id]
 	})
 }));
 
