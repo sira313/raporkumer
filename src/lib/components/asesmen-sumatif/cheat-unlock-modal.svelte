@@ -31,15 +31,16 @@
 <form class="flex flex-col gap-4" onsubmit={handleSubmit}>
 	<div class="alert alert-warning">
 		<Icon name="alert" />
-		<div class="flex flex-col sm:flex-row gap-2">
+		<div class="flex flex-col gap-2 sm:flex-row">
 			<span>
-				Ini adalah fitur cheat, donasi minimal 5 gelas kopi di tombol exclusive content. Token akan muncul di sana. Copy paste token ke kolom di bawah.
+				Ini adalah fitur cheat, donasi minimal 5 gelas kopi di tombol exclusive content. Token akan
+				muncul di sana. Copy paste token ke kolom di bawah.
 			</span>
 			<a
 				href="https://trakteer.id/raporkumer/showcase"
 				target="_blank"
 				rel="noopener noreferrer"
-				class="btn shadow-none my-auto"
+				class="btn my-auto shadow-none"
 			>
 				<Icon name="coffee" />
 				Exclusive Content
