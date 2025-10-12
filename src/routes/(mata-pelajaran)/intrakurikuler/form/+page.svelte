@@ -91,25 +91,29 @@
 				{kelasAktifLabel}
 			</div>
 		</fieldset>
-		<legend class="fieldset-legend">Nama Mata Pelajaran</legend>
-		<input
-			type="text"
-			class="input validator bg-base-200 w-full dark:border-none"
-			placeholder="Contoh: IPAS"
-			name="nama"
-			required
-			disabled={disableNama}
-		/>
-		<legend class="fieldset-legend">KKM</legend>
-		<input
-			type="number"
-			class="input validator bg-base-200 w-full dark:border-none"
-			placeholder="Contoh: 76"
-			name="kkm"
-			required
-			disabled={!kelasAktif}
-			min="0"
-		/>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Nama Mata Pelajaran</legend>
+			<input
+				type="text"
+				class="input validator bg-base-200 w-full dark:border-none"
+				placeholder="Contoh: IPAS"
+				name="nama"
+				required
+				disabled={disableNama}
+			/>
+		</fieldset>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">KKM</legend>
+			<input
+				type="number"
+				class="input validator bg-base-200 w-full dark:border-none"
+				placeholder="Contoh: 76"
+				name="kkm"
+				required
+				disabled={!kelasAktif}
+				min="0"
+			/>
+		</fieldset>
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Jenis Mata Pelajaran</legend>
 			<select
