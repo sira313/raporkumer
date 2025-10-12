@@ -51,7 +51,9 @@
 			: undefined;
 	const heading = mode === 'edit' ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran';
 	const namaPlaceholder =
-		mode === 'edit' && isAgamaParent ? 'Pendidikan Agama dan Budi Pekerti' : 'Contoh: IPAS';
+		mode === 'edit' && isAgamaParent
+			? 'Pendidikan Agama dan Budi Pekerti'
+			: 'Contoh: Ilmu Pengetahuan Alam dan Sosial';
 </script>
 
 <FormEnhance
@@ -99,6 +101,7 @@
 				disabled={disableNama}
 				value={mapel?.nama ?? ''}
 			/>
+			<p class="label text-wrap">Nama mata pelajaran jangan disingkat!</p>
 		</fieldset>
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">KKM</legend>
