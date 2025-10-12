@@ -8,7 +8,13 @@ import {
 	tableAsesmenSumatifTujuan,
 	tableMurid
 } from '$lib/server/db/schema';
-import { jenisMapel, type DimensiProfilLulusanKey } from '$lib/statics';
+import {
+	jenisMapel,
+	agamaMapelNames,
+	agamaMapelOptions,
+	agamaParentName,
+	type DimensiProfilLulusanKey
+} from '$lib/statics';
 import {
 	buildKokurikulerNarrative,
 	DEFAULT_KOKURIKULER_MESSAGE,
@@ -292,26 +298,104 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		mulok: 2
 	};
 
+	const normalizeSubjectName = (value: string) => value.trim().toLocaleLowerCase(LOCALE_ID);
+
+	const wajibSubjectPriority = [
+		{
+			core: 'pendidikan agama dan budi pekerti',
+			matchers: agamaMapelNames.map((name) => normalizeSubjectName(name))
+		},
+		{
+			core: 'pendidikan pancasila',
+			matchers: ['pendidikan pancasila']
+		},
+		{
+			core: 'bahasa indonesia',
+			matchers: ['bahasa indonesia']
+		},
+		{
+			core: 'matematika',
+			matchers: ['matematika']
+		}
+	] as const;
+
+	const muridAgamaSubjectName = (() => {
+		const normalizedAgama = murid.agama ? normalizeSubjectName(murid.agama) : '';
+		const matchedOption =
+			agamaMapelOptions.find((option) => normalizeSubjectName(option.label) === normalizedAgama) ??
+			agamaMapelOptions.find((option) => normalizeSubjectName(option.key) === normalizedAgama);
+		return matchedOption?.name ?? agamaParentName;
+	})();
+
+	const agamaParentNameNormalized = normalizeSubjectName(agamaParentName);
+
+	type WajibPriorityInfo = {
+		order: number;
+		core: string;
+	};
+
+	const getWajibPriorityInfo = (name: string): WajibPriorityInfo => {
+		const normalized = normalizeSubjectName(name);
+		for (let index = 0; index < wajibSubjectPriority.length; index += 1) {
+			const entry = wajibSubjectPriority[index];
+			if (
+				entry.matchers.some((matcher) => normalized === matcher || normalized.includes(matcher))
+			) {
+				return { order: index, core: entry.core };
+			}
+		}
+		if (normalized.startsWith('pendidikan agama') && normalized.includes('budi pekerti')) {
+			return { order: 0, core: 'pendidikan agama dan budi pekerti' };
+		}
+		return { order: Number.POSITIVE_INFINITY, core: normalized };
+	};
+
 	const nilaiIntrakurikuler = asesmenSumatif
 		.filter((item) => item.mataPelajaran)
-		.sort((a, b) => {
-			const mapelA = a.mataPelajaran!;
-			const mapelB = b.mataPelajaran!;
-			const orderA = mapelJenisOrder[mapelA.jenis] ?? Number.POSITIVE_INFINITY;
-			const orderB = mapelJenisOrder[mapelB.jenis] ?? Number.POSITIVE_INFINITY;
-			if (orderA !== orderB) return orderA - orderB;
-			return mapelA.nama.localeCompare(mapelB.nama, LOCALE_ID);
-		})
 		.map((item) => {
 			const mapel = item.mataPelajaran!;
+			const priority = mapel.jenis === 'wajib' ? getWajibPriorityInfo(mapel.nama) : null;
+			const normalizedName = normalizeSubjectName(mapel.nama);
+			const isAgamaCore = priority?.core === 'pendidikan agama dan budi pekerti';
 			const tujuanScores = tujuanScoresByMapel.get(mapel.id) ?? [];
+			const displayName =
+				isAgamaCore && normalizedName === agamaParentNameNormalized
+					? muridAgamaSubjectName
+					: mapel.nama;
 			return {
+				mapel,
+				priority,
+				normalizedName,
+				displayName,
 				kelompok: jenisMapel[mapel.jenis] ?? null,
-				mataPelajaran: mapel.nama,
 				nilaiAkhir: formatNilai(item.nilaiAkhir ?? null),
 				deskripsi: buildCapaianKompetensi(muridNama, tujuanScores, mapel.kkm)
 			};
-		});
+		})
+		.sort((a, b) => {
+			const orderA = mapelJenisOrder[a.mapel.jenis] ?? Number.POSITIVE_INFINITY;
+			const orderB = mapelJenisOrder[b.mapel.jenis] ?? Number.POSITIVE_INFINITY;
+			if (orderA !== orderB) return orderA - orderB;
+			if (a.mapel.jenis === 'wajib' && b.mapel.jenis === 'wajib') {
+				const priorityOrderA = a.priority?.order ?? Number.POSITIVE_INFINITY;
+				const priorityOrderB = b.priority?.order ?? Number.POSITIVE_INFINITY;
+				if (priorityOrderA !== priorityOrderB) {
+					return priorityOrderA - priorityOrderB;
+				}
+				const coreA = a.priority?.core ?? a.normalizedName;
+				const coreB = b.priority?.core ?? b.normalizedName;
+				if (coreA !== coreB) {
+					return coreA.localeCompare(coreB, LOCALE_ID);
+				}
+			}
+			return a.displayName.localeCompare(b.displayName, LOCALE_ID);
+		})
+		.map((entry) => ({
+			kelompok: entry.kelompok,
+			mataPelajaran: entry.displayName,
+			nilaiAkhir: entry.nilaiAkhir,
+			deskripsi: entry.deskripsi
+		}));
 
 	const ekstrakurikulerGrouped = new Map<
 		number,
