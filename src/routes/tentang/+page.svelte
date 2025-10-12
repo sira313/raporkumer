@@ -12,10 +12,10 @@
 		<div class="flex flex-col gap-8 lg:flex-row lg:items-center">
 			<div class="flex-1 space-y-6">
 				<span class="badge badge-outline badge-lg bg-base-100/70 text-primary shadow-md"
-					>Tentang Rapkumer</span
+					>Tentang Rapkumer v0.0.4</span
 				>
 				<h1 class="text-base-content text-3xl font-bold md:text-4xl">
-					Aplikasi E-Rapor Kurikulum Merdeka
+					Rapkumer - Aplikasi Rapor Kurikulum Merdeka
 				</h1>
 				<p class="text-base-content/90 max-w-2xl text-base lg:text-lg">
 					Rapkumer membantu guru dan operator sekolah mengelola nilai peserta didik secara cepat,

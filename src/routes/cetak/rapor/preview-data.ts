@@ -286,8 +286,22 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	const muridNamaTrimmed = murid.nama.trim();
 	const muridNama = muridNamaTrimmed.length > 0 ? muridNamaTrimmed : murid.nama;
 
+	const mapelJenisOrder: Record<string, number> = {
+		wajib: 0,
+		pilihan: 1,
+		mulok: 2
+	};
+
 	const nilaiIntrakurikuler = asesmenSumatif
 		.filter((item) => item.mataPelajaran)
+		.sort((a, b) => {
+			const mapelA = a.mataPelajaran!;
+			const mapelB = b.mataPelajaran!;
+			const orderA = mapelJenisOrder[mapelA.jenis] ?? Number.POSITIVE_INFINITY;
+			const orderB = mapelJenisOrder[mapelB.jenis] ?? Number.POSITIVE_INFINITY;
+			if (orderA !== orderB) return orderA - orderB;
+			return mapelA.nama.localeCompare(mapelB.nama, LOCALE_ID);
+		})
 		.map((item) => {
 			const mapel = item.mataPelajaran!;
 			const tujuanScores = tujuanScoresByMapel.get(mapel.id) ?? [];
@@ -297,8 +311,7 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 				nilaiAkhir: formatNilai(item.nilaiAkhir ?? null),
 				deskripsi: buildCapaianKompetensi(muridNama, tujuanScores, mapel.kkm)
 			};
-		})
-		.sort((a, b) => a.mataPelajaran.localeCompare(b.mataPelajaran, LOCALE_ID));
+		});
 
 	const ekstrakurikulerGrouped = new Map<
 		number,

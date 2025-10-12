@@ -6,7 +6,8 @@
 	import { modalRoute } from '$lib/utils';
 	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
 
-	let { data }: { data: { kelasId: number | null; mapel: Record<string, MataPelajaran[]> } } =
+	type MapelWithIndicator = MataPelajaran & { tpCount: number };
+	let { data }: { data: { kelasId: number | null; mapel: Record<string, MapelWithIndicator[]> } } =
 		$props();
 
 	const emptyStateMessage = 'Belum ada data mata pelajaran';
@@ -131,14 +132,25 @@
 								<td class="font-medium">{mapel.nama}</td>
 								<td>{formatKkm(mapel.kkm)}</td>
 								<td>
-									<a
-										class="btn btn-sm btn-soft shadow-none"
-										href={`/intrakurikuler/${mapel.id}/tp-rl`}
-										title="Kelola tujuan &amp; ruang lingkup"
-									>
-										<Icon name="edit" />
-										Edit TP
-									</a>
+									<div class="indicator">
+										<span
+											class="indicator-item indicator-end badge badge-xs"
+											class:badge-success={mapel.tpCount > 0}
+											class:badge-error={mapel.tpCount === 0}
+											aria-label={`Status tujuan pembelajaran: ${
+												mapel.tpCount > 0 ? 'sudah terisi' : 'belum terisi'
+											}`}
+											role="status"
+										></span>
+										<a
+											class="btn btn-sm btn-soft shadow-none"
+											href={`/intrakurikuler/${mapel.id}/tp-rl`}
+											title="Kelola tujuan &amp; ruang lingkup"
+										>
+											<Icon name="edit" />
+											Edit TP
+										</a>
+									</div>
 								</td>
 								<td>
 									<div class="flex flex-row gap-2">

@@ -1,7 +1,7 @@
 {
 	"name": "rapkumer",
 	"private": true,
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"type": "module",
 	"scripts": {
 		"db:push": "drizzle-kit push",
@@ -19,6 +19,7 @@
 		"sign:create-cert": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/scripts/setup-signing.ps1 -CreateSelfSigned",
 		"sign:create-cert:force": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/scripts/setup-signing.ps1 -CreateSelfSigned -Force",
 		"prepare": "svelte-kit sync || echo ''",
+		"version": "node scripts/update-version.mjs",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",

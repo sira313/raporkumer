@@ -12,6 +12,14 @@
 	let { murid, rombel, sekolah, periode, formatValue, formatUpper, class: className = '' } = props;
 
 	const sectionClass = $derived.by(() => [className].filter(Boolean).join(' '));
+
+	const semesterLabel = $derived.by(() => {
+		const value = periode?.semester;
+		if (!value) {
+			return formatValue(value);
+		}
+		return formatValue(value.replace(/^Semester\s+/i, ''));
+	});
 </script>
 
 <section class={sectionClass}>
@@ -36,10 +44,10 @@
 			<tr>
 				<td class="align-top">Sekolah</td>
 				<td class="align-top">:</td>
-				<td class="font-semibold uppercase">{formatUpper(sekolah?.nama)}</td>
+				<td class="align-top font-semibold uppercase">{formatUpper(sekolah?.nama)}</td>
 				<td class="align-top">Semester</td>
 				<td class="align-top">:</td>
-				<td class="font-semibold">{formatValue(periode?.semester)}</td>
+				<td class="font-semibold">{semesterLabel}</td>
 			</tr>
 			<tr>
 				<td class="align-top">Alamat</td>

@@ -12,3 +12,5 @@ title: Petunjuk
 Tambahkan secara manual mata pelajaran yang ada di kelas masing-masing melalui tombol <kbd class="kbd">Tambah mata pelajaran</kbd>.<br>
 Setelah menambahkan mata pelajaran, klik <kbd class="kbd">Edit TP</kbd> untuk menambahkan Tujuan Pembelajaran.<br>
 Selain itu, juga bisa meng-_edit_ ataupun menghapus mata pelajaran yang ada melalui tombol yang ada di kolom aksi.
+
+Setiap tombol <kbd class="kbd">Edit TP</kbd> akan memiliki status warna. Jika merah artinya Tujuan Pembelajaran belum diisi, jika hijau artinya sudah diisi.

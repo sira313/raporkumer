@@ -143,7 +143,7 @@ export function buildKokurikulerNarrative(options: {
 			if (!continuation) return null;
 			const abilityClause = toSentenceContinuation(group.tujuan);
 			return abilityClause
-				? `${introName} ${continuation}, terlihat dalam kemampuan ${abilityClause}.`
+				? `${introName} ${continuation}, terlihat dalam kegiatan dengan tema ${abilityClause}.`
 				: `${introName} ${continuation}.`;
 		})
 		.filter((sentence): sentence is string => Boolean(sentence));
