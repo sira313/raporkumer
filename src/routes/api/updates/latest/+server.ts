@@ -1,9 +1,5 @@
 import { json } from '@sveltejs/kit';
-import {
-	compareVersions,
-	fetchLatestRelease,
-	getAppVersion
-} from '$lib/server/update-manager';
+import { compareVersions, fetchLatestRelease, getAppVersion } from '$lib/server/update-manager';
 
 export const GET = async () => {
 	try {

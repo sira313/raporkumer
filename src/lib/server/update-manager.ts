@@ -53,8 +53,12 @@ function buildGithubDownloadHeaders(): HeadersInit {
 }
 
 function compareVersions(a: string, b: string): number {
-	const segmentsA = normalizeVersion(a).split('.').map((part) => Number.parseInt(part, 10));
-	const segmentsB = normalizeVersion(b).split('.').map((part) => Number.parseInt(part, 10));
+	const segmentsA = normalizeVersion(a)
+		.split('.')
+		.map((part) => Number.parseInt(part, 10));
+	const segmentsB = normalizeVersion(b)
+		.split('.')
+		.map((part) => Number.parseInt(part, 10));
 	const length = Math.max(segmentsA.length, segmentsB.length);
 
 	for (let index = 0; index < length; index += 1) {
@@ -154,7 +158,10 @@ async function ensureWritableTarget(targetPath: string) {
 
 function findExistingDownload(version: string, assetId: number) {
 	for (const record of downloads.values()) {
-		if (normalizeVersion(record.version) === normalizeVersion(version) && record.assetId === assetId) {
+		if (
+			normalizeVersion(record.version) === normalizeVersion(version) &&
+			record.assetId === assetId
+		) {
 			return record;
 		}
 	}
@@ -297,16 +304,20 @@ export async function scheduleInstall(downloadId: string): Promise<{ message: st
 		"$ErrorActionPreference = 'Stop'",
 		`$installer = "${escapedPath}"`,
 		`$port = '${port}'`,
-		"try { Invoke-WebRequest -Uri (\"http://127.0.0.1:\" + $port + \"/api/runtime/stop\") -Method Post -UseBasicParsing -TimeoutSec 5 | Out-Null } catch { Write-Host $_.Exception.Message }",
+		'try { Invoke-WebRequest -Uri ("http://127.0.0.1:" + $port + "/api/runtime/stop") -Method Post -UseBasicParsing -TimeoutSec 5 | Out-Null } catch { Write-Host $_.Exception.Message }',
 		'Start-Sleep -Seconds 2',
 		'if (Test-Path $installer) { Start-Process -FilePath $installer } else { Write-Error "File installer tidak ditemukan: $installer" }'
 	].join('; ');
 
 	try {
-		const child = spawn('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], {
-			detached: true,
-			stdio: 'ignore'
-		});
+		const child = spawn(
+			'powershell.exe',
+			['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script],
+			{
+				detached: true,
+				stdio: 'ignore'
+			}
+		);
 		child.unref();
 		record.installScheduled = true;
 		record.updatedAt = Date.now();

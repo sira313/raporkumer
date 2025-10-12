@@ -1,9 +1,5 @@
 import { json } from '@sveltejs/kit';
-import {
-	fetchLatestRelease,
-	normalizeVersion,
-	startDownload
-} from '$lib/server/update-manager';
+import { fetchLatestRelease, normalizeVersion, startDownload } from '$lib/server/update-manager';
 
 export const POST = async ({ request }) => {
 	let payload: { version?: string; assetId?: number };
@@ -27,7 +23,10 @@ export const POST = async ({ request }) => {
 	try {
 		const release = await fetchLatestRelease();
 		if (normalizeVersion(release.version) !== normalizeVersion(version)) {
-			return json({ message: 'Versi rilis sudah tidak sesuai. Muat ulang pemeriksaan.' }, { status: 409 });
+			return json(
+				{ message: 'Versi rilis sudah tidak sesuai. Muat ulang pemeriksaan.' },
+				{ status: 409 }
+			);
 		}
 
 		const asset = release.assets.find((entry) => entry.id === assetId);

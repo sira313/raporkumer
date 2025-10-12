@@ -1,9 +1,10 @@
 import packageJson from '../../../package.json' assert { type: 'json' };
 
 const fallbackVersion = '0.0.0';
-const versionValue = typeof packageJson.version === 'string' && packageJson.version.trim()
-	? packageJson.version.trim()
-	: fallbackVersion;
+const versionValue =
+	typeof packageJson.version === 'string' && packageJson.version.trim()
+		? packageJson.version.trim()
+		: fallbackVersion;
 
 export const APP_VERSION = versionValue;
 
