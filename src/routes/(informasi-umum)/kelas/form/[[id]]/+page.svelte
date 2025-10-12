@@ -47,7 +47,7 @@
 			{/if}
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 				<!-- Nama Rombel -->
-				<div>
+				<div class="fieldset">
 					<legend class="fieldset-legend">Nama Rombel</legend>
 					<input
 						required
@@ -59,19 +59,7 @@
 				</div>
 
 				<!-- Fase -->
-				<!-- <div>
-					<legend class="fieldset-legend">Fase</legend>
-					<input
-						required
-						type="text"
-						class="input validator bg-base-200 w-full dark:border-none"
-						placeholder="Contoh: Fase C (Kelas 6)"
-						name="fase"
-					/>
-				</div> -->
-
-				<!-- Fase diganti dengan tingkat pendidikan -->
-				<div>
+				<div class="fieldset">
 					<legend class="fieldset-legend">Fase</legend>
 					<select
 						class="select bg-base-200 w-full dark:border-none"
@@ -91,7 +79,7 @@
 				</div>
 
 				<!-- Wali Kelas -->
-				<div>
+				<div class="fieldset">
 					<legend class="fieldset-legend">Wali Kelas</legend>
 					<input
 						type="text"
@@ -102,7 +90,7 @@
 				</div>
 
 				<!-- NIP Wali Kelas -->
-				<div>
+				<div class="fieldset">
 					<legend class="fieldset-legend">NIP Wali Kelas</legend>
 					<input
 						type="text"

@@ -5,6 +5,7 @@ import {
 	updateUserPassword,
 	verifyUserPassword
 } from '$lib/server/auth';
+import { getAppVersion } from '$lib/server/app-info';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { networkInterfaces } from 'node:os';
@@ -83,7 +84,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		addresses.push(hostWithPort);
 	}
 
-	return { meta, appAddresses: addresses, protocol };
+	return { meta, appAddresses: addresses, protocol, appVersion: getAppVersion() };
 };
 
 export const actions: Actions = {

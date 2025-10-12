@@ -37,9 +37,6 @@ async function main() {
 	}
 	const versionTag = `v${version}`;
 
-	const tentangPath = resolve(rootDir, 'src/routes/tentang/+page.svelte');
-	const tentangRegex = /Rapkumer v\d+\.\d+\.\d+/g;
-
 	const installerPath = resolve(rootDir, 'installer/raporkumer.iss');
 	const installerRegex = /(#define\s+AppVersion\s+")([^"]+)(")/;
 
@@ -47,14 +44,6 @@ async function main() {
 	const stageVersionRegex = /("version"\s*:\s*")([^"]+)(")/;
 
 	const updatedFiles = [];
-
-	if (
-		await updateFileIfExists(tentangPath, (content) =>
-			content.replace(tentangRegex, `Rapkumer ${versionTag}`)
-		)
-	) {
-		updatedFiles.push('src/routes/tentang/+page.svelte');
-	}
 
 	if (
 		await updateFileIfExists(installerPath, (content) =>

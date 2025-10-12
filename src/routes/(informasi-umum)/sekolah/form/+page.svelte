@@ -43,7 +43,7 @@
 			<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-2">
 				<!-- Jenjang Pendidikan & Lokasi Tanda Tangan -->
 				<div class="grid grid-cols-1 gap-2 md:col-span-2 md:grid-cols-2 md:items-end">
-					<div>
+					<div class="fieldset">
 						<legend class="fieldset-legend">Jenjang Pendidikan</legend>
 						<select
 							class="select bg-base-200 validator w-full border dark:border-none"
@@ -56,7 +56,7 @@
 							{/each}
 						</select>
 					</div>
-					<div>
+					<div class="fieldset">
 						<legend class="fieldset-legend">Lokasi Tanda Tangan</legend>
 						<input
 							required
@@ -68,7 +68,7 @@
 					</div>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- Nama Sekolah -->
 					<legend class="fieldset-legend">Nama Sekolah</legend>
 					<input
@@ -80,7 +80,7 @@
 					/>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- NPSN -->
 					<legend class="fieldset-legend">NPSN</legend>
 					<input
@@ -92,7 +92,7 @@
 					/>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- Nama Kepala Sekolah -->
 					<legend class="fieldset-legend">Nama Kepala Sekolah</legend>
 					<input
@@ -104,7 +104,7 @@
 					/>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- NIP Kepala Sekolah -->
 					<legend class="fieldset-legend">NIP Kepala Sekolah</legend>
 					<input
@@ -116,7 +116,7 @@
 					/>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- Nama desa atau kelurahan -->
 					<legend class="fieldset-legend">Desa atau Kelurahan</legend>
 					<input
@@ -128,7 +128,7 @@
 					/>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- Kecamatan -->
 					<legend class="fieldset-legend">Kecamatan</legend>
 					<input
@@ -140,7 +140,7 @@
 					/>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- Kabupaten -->
 					<legend class="fieldset-legend">Kabupaten</legend>
 					<input
@@ -152,7 +152,7 @@
 					/>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- Provinsi -->
 					<legend class="fieldset-legend">Provinsi</legend>
 					<input
@@ -164,7 +164,7 @@
 					/>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- Kode Pos -->
 					<legend class="fieldset-legend">Kode POS</legend>
 					<input
@@ -176,7 +176,7 @@
 					/>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- Alamat Sekolah -->
 					<legend class="fieldset-legend">Rincian Alamat Sekolah</legend>
 					<input
@@ -188,7 +188,7 @@
 					/>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- Website Sekolah -->
 					<legend class="fieldset-legend">Website Sekolah</legend>
 					<label class="input bg-base-200 validator w-full dark:border-none">
@@ -197,7 +197,7 @@
 					</label>
 				</div>
 
-				<div>
+				<div class="fieldset">
 					<!-- Email Sekolah -->
 					<legend class="fieldset-legend">Email Sekolah</legend>
 					<input
@@ -212,12 +212,12 @@
 
 			<!-- Upload logo sekolah dan dinas pendidikan -->
 			<div class="mt-2 grid gap-2 md:grid-cols-2">
-				<div class="flex flex-col gap-1">
+				<div class="fieldset">
 					<legend class="fieldset-legend">Logo Sekolah</legend>
 					<input type="file" class="file-input file-input-ghost" accept="image/*" name="logo" />
 					<p class="label text-wrap">Format png, tanpa latar belakang, maksimal 300KB</p>
 				</div>
-				<div class="flex flex-col gap-1">
+				<div class="fieldset">
 					<legend class="fieldset-legend">Logo Pemda</legend>
 					<input
 						type="file"

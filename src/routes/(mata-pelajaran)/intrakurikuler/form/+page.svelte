@@ -50,6 +50,8 @@
 				}
 			: undefined;
 	const heading = mode === 'edit' ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran';
+	const namaPlaceholder =
+		mode === 'edit' && isAgamaParent ? 'Pendidikan Agama dan Budi Pekerti' : 'Contoh: IPAS';
 </script>
 
 <FormEnhance
@@ -65,7 +67,7 @@
 	}}
 >
 	{#snippet children({ submitting, invalid })}
-		<p class="mb-6 text-xl font-bold">{heading}</p>
+		<p class="mb-2 text-xl font-bold">{heading}</p>
 		{#if !kelasAktif}
 			<div
 				class="alert bg-warning/10 border-warning text-warning-content mb-4 flex items-center gap-2 border border-dashed"
@@ -85,31 +87,31 @@
 		{#if mode === 'edit' && disableJenis}
 			<input name="jenis" value={mapel?.jenis ?? ''} hidden />
 		{/if}
+		<p class="text-base-content/70 mb-4 text-sm">Kelas aktif: {kelasAktifLabel}</p>
 		<fieldset class="fieldset">
-			<legend class="fieldset-legend">Kelas Aktif</legend>
-			<div class="bg-base-200 dark:bg-base-300 text-base-content/80 rounded-lg px-3 py-2">
-				{kelasAktifLabel}
-			</div>
+			<legend class="fieldset-legend">Nama Mata Pelajaran</legend>
+			<input
+				type="text"
+				class="input validator bg-base-200 w-full dark:border-none"
+				placeholder={namaPlaceholder}
+				name="nama"
+				required
+				disabled={disableNama}
+				value={mapel?.nama ?? ''}
+			/>
 		</fieldset>
-		<legend class="fieldset-legend">Nama Mata Pelajaran</legend>
-		<input
-			type="text"
-			class="input validator bg-base-200 w-full dark:border-none"
-			placeholder="Contoh: IPAS"
-			name="nama"
-			required
-			disabled={disableNama}
-		/>
-		<legend class="fieldset-legend">KKM</legend>
-		<input
-			type="number"
-			class="input validator bg-base-200 w-full dark:border-none"
-			placeholder="Contoh: 76"
-			name="kkm"
-			required
-			disabled={!kelasAktif}
-			min="0"
-		/>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">KKM</legend>
+			<input
+				type="number"
+				class="input validator bg-base-200 w-full dark:border-none"
+				placeholder="Contoh: 76"
+				name="kkm"
+				required
+				disabled={!kelasAktif}
+				min="0"
+			/>
+		</fieldset>
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Jenis Mata Pelajaran</legend>
 			<select
@@ -130,7 +132,7 @@
 				Pekerti.
 			</p>
 		{/if}
-		<div class="mt-4 flex justify-end gap-2">
+		<div class="mt-6 flex justify-end gap-2">
 			<button type="button" class="btn shadow-none" onclick={() => history.back()}>
 				<Icon name="close-sm" />
 				Batal
