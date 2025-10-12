@@ -62,7 +62,7 @@
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
-	<div class="space-y-6">
+	<div class="space-y-4">
 		<header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<div class="space-y-2">
 				<h1 class="text-2xl font-bold">Pengaturan Aplikasi</h1>
@@ -123,7 +123,7 @@
 </section>
 
 <section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
-	<div class="space-y-6">
+	<div class="space-y-4">
 		<div role="alert" class="alert alert-warning">
 			<Icon name="alert" />
 			<span>Simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
@@ -137,11 +137,9 @@
 
 		<FormEnhance action="?/change-password" onsuccess={handlePasswordSuccess}>
 			{#snippet children({ submitting, invalid })}
-				<div class="space-y-4">
-					<div class="form-control">
-						<label class="label" for="currentPassword">
-							<span class="label-text">Kata sandi saat ini</span>
-						</label>
+				<div>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Kata sandi saat ini</legend>
 						<input
 							type="password"
 							id="currentPassword"
@@ -151,12 +149,10 @@
 							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
 							placeholder="Masukkan kata sandi lama"
 						/>
-					</div>
+					</fieldset>
 
-					<div class="form-control">
-						<label class="label" for="newPassword">
-							<span class="label-text">Kata sandi baru</span>
-						</label>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Kata sandi baru</legend>
 						<input
 							type="password"
 							id="newPassword"
@@ -167,12 +163,10 @@
 							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
 							placeholder="Minimal 8 karakter"
 						/>
-					</div>
+					</fieldset>
 
-					<div class="form-control">
-						<label class="label" for="confirmPassword">
-							<span class="label-text">Konfirmasi kata sandi baru</span>
-						</label>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Konfirmasi kata sandi baru</legend>
 						<input
 							type="password"
 							id="confirmPassword"
@@ -183,16 +177,18 @@
 							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
 							placeholder="Ulangi kata sandi baru"
 						/>
-					</div>
+					</fieldset>
 
 					<p class="text-base-content/70 text-xs">
 						Gunakan kombinasi huruf dan angka untuk keamanan maksimal.
 					</p>
 
-					<button class="btn btn-primary" type="submit" disabled={submitting || invalid}>
-						<Icon name="save" />
-						{submitting ? 'Menyimpan…' : 'Simpan kata sandi'}
-					</button>
+					<div class="mt-6 flex justify-end">
+						<button class="btn btn-primary" type="submit" disabled={submitting || invalid}>
+							<Icon name="save" />
+							{submitting ? 'Menyimpan…' : 'Simpan kata sandi'}
+						</button>
+					</div>
 				</div>
 			{/snippet}
 		</FormEnhance>

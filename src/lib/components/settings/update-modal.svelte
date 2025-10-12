@@ -382,7 +382,7 @@
 						{/if}
 					</section>
 				{:else if !checkingUpdate}
-					<div class="rounded-box bg-base-200/60 p-4 text-sm">
+					<div class="rounded-box bg-base-200/60 p-4 text-sm space-y-1">
 						<p class="font-medium">Anda sudah menggunakan versi terbaru Rapkumer.</p>
 						<p class="text-base-content/70 text-xs">Tetap cek berkala untuk fitur terbaru.</p>
 					</div>
