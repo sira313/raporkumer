@@ -44,7 +44,7 @@
 			<tr>
 				<td class="align-top">Sekolah</td>
 				<td class="align-top">:</td>
-				<td class="font-semibold uppercase align-top">{formatUpper(sekolah?.nama)}</td>
+				<td class="align-top font-semibold uppercase">{formatUpper(sekolah?.nama)}</td>
 				<td class="align-top">Semester</td>
 				<td class="align-top">:</td>
 				<td class="font-semibold">{semesterLabel}</td>

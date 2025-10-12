@@ -1,21 +1,24 @@
 import db from '$lib/server/db';
 import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama';
-import { tableMataPelajaran } from '$lib/server/db/schema';
+import { tableMataPelajaran, tableTujuanPembelajaran } from '$lib/server/db/schema';
 import { agamaVariantNames } from '$lib/statics';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
-type MataPelajaranList = Omit<MataPelajaran, 'tujuanPembelajaran'>[];
+type MataPelajaranBase = Omit<MataPelajaran, 'tujuanPembelajaran'>;
+type MataPelajaranWithTp = MataPelajaranBase & { tpCount: number };
+type MataPelajaranList = MataPelajaranWithTp[];
 
 const AGAMA_VARIANT_NAME_SET = new Set<string>(agamaVariantNames);
 
 export async function load({ depends, url, parent }) {
 	depends('app:mapel');
 	const { kelasAktif, daftarKelas } = await parent();
-	await ensureAgamaMapelForClasses(daftarKelas?.map((kelas) => kelas.id) ?? []);
+	const daftarKelasEntries = daftarKelas as Array<{ id: number }> | undefined;
+	await ensureAgamaMapelForClasses(daftarKelasEntries?.map((kelas) => kelas.id) ?? []);
 	const fromQuery = url.searchParams.get('kelas_id');
 	const kelasCandidate = fromQuery ? Number(fromQuery) : (kelasAktif?.id ?? null);
 	const kelasId =
-		kelasCandidate != null && daftarKelas?.some((kelas) => kelas.id === kelasCandidate)
+		kelasCandidate != null && daftarKelasEntries?.some((kelas) => kelas.id === kelasCandidate)
 			? kelasCandidate
 			: null;
 
@@ -25,7 +28,25 @@ export async function load({ depends, url, parent }) {
 			})
 		: [];
 
-	const mapelTampil = mapel.filter((item) => !AGAMA_VARIANT_NAME_SET.has(item.nama));
+	const tpCountByMapelId = new Map<number, number>();
+	if (mapel.length > 0) {
+		const mapelIds = mapel.map((item) => item.id);
+		const tujuanList = await db.query.tableTujuanPembelajaran.findMany({
+			columns: { mataPelajaranId: true },
+			where: inArray(tableTujuanPembelajaran.mataPelajaranId, mapelIds)
+		});
+		for (const entry of tujuanList) {
+			const current = tpCountByMapelId.get(entry.mataPelajaranId) ?? 0;
+			tpCountByMapelId.set(entry.mataPelajaranId, current + 1);
+		}
+	}
+
+	const mapelWithIndicator: MataPelajaranWithTp[] = mapel.map((item) => ({
+		...item,
+		tpCount: tpCountByMapelId.get(item.id) ?? 0
+	}));
+
+	const mapelTampil = mapelWithIndicator.filter((item) => !AGAMA_VARIANT_NAME_SET.has(item.nama));
 
 	const { daftarWajib, daftarPilihan, daftarMulok } = mapelTampil.reduce(
 		(acc, item) => {
