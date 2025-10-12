@@ -192,3 +192,40 @@ type MaybePromise<T> = T | Promise<T>;
 type FormSubmitEvent = SubmitEvent & { currentTarget: EventTarget & HTMLFormElement };
 
 type OptId<T, ID = number> = Omit<T, 'id'> & { id?: ID };
+
+interface UpdateAsset {
+	id: number;
+	name: string;
+	size: number;
+	downloadUrl: string;
+	contentType: string | null;
+}
+
+interface ReleaseSummary {
+	version: string;
+	name: string;
+	notes: string;
+	publishedAt: string;
+	htmlUrl: string;
+	isPrerelease: boolean;
+	assets: UpdateAsset[];
+}
+
+interface UpdateCheckResponse {
+	currentVersion: string;
+	updateAvailable: boolean;
+	latest: ReleaseSummary | null;
+}
+
+type UpdateDownloadState = 'pending' | 'downloading' | 'completed' | 'failed' | 'cancelled';
+
+interface UpdateDownloadStatus {
+	id: string;
+	version: string;
+	assetName: string;
+	status: UpdateDownloadState;
+	downloadedBytes: number;
+	totalBytes: number | null;
+	error: string | null;
+	installScheduled: boolean;
+}

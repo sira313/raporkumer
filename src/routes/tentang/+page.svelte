@@ -1,6 +1,10 @@
 <script lang="ts">
 	import Donate from '$lib/components/donate.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import type { PageData } from './$types';
+
+	const { data } = $props<{ data: PageData }>();
+	const appVersion = $derived(data.appVersion ?? '0.0.0');
 </script>
 
 <Donate />
@@ -12,7 +16,7 @@
 		<div class="flex flex-col gap-8 lg:flex-row lg:items-center">
 			<div class="flex-1 space-y-6">
 				<span class="badge badge-outline badge-lg bg-base-100/70 text-primary shadow-md"
-					>Tentang Rapkumer v0.0.4</span
+					>Tentang Rapkumer v{appVersion}</span
 				>
 				<h1 class="text-base-content text-3xl font-bold md:text-4xl">
 					Rapkumer - Aplikasi Rapor Kurikulum Merdeka
@@ -144,7 +148,7 @@
 						</li>
 						<li>
 							<a
-								href="https://drive.google.com/file/d/1sXqkrCqU_2L4BPKi0fLo3FgOnXdxFt4v/view?usp=sharing"
+								href="https://kurikulum.kemdikbud.go.id/file/1753929861_manage_file.pdf"
 								target="_blank"
 								class="link link-primary">Capaian pembelajaran</a
 							>
