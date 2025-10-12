@@ -283,8 +283,8 @@
 					{nilaiAkhir}
 					disabled={submitting}
 					{cheatUnlocked}
-					onapply={handleCheatApply}
-					onunlockChange={handleCheatUnlockChange}
+					on:apply={handleCheatApply}
+					on:unlockChange={handleCheatUnlockChange}
 				/>
 				<button
 					type="submit"
