@@ -12,7 +12,7 @@
 		<div class="flex flex-col gap-8 lg:flex-row lg:items-center">
 			<div class="flex-1 space-y-6">
 				<span class="badge badge-outline badge-lg bg-base-100/70 text-primary shadow-md"
-					>Tentang Rapkumer v0.0.3</span
+					>Tentang Rapkumer v0.0.4</span
 				>
 				<h1 class="text-base-content text-3xl font-bold md:text-4xl">
 					Rapkumer - Aplikasi Rapor Kurikulum Merdeka

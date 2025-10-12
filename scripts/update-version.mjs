@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = resolve(__dirname, '..');
+const BOM = '\uFEFF';
 
 async function updateFile(path, transform) {
 	const original = await readFile(path, 'utf8');
@@ -43,6 +44,7 @@ async function main() {
 	const installerRegex = /(#define\s+AppVersion\s+")([^"]+)(")/;
 
 	const stagePackagePath = resolve(rootDir, 'dist/windows/stage/Rapkumer/package.json');
+	const stageVersionRegex = /("version"\s*:\s*")([^"]+)(")/;
 
 	const updatedFiles = [];
 
@@ -67,13 +69,28 @@ async function main() {
 
 	if (
 		await updateFileIfExists(stagePackagePath, (content) => {
+			const maybeBom = content.startsWith(BOM);
+			const withoutBom = maybeBom ? content.slice(BOM.length) : content;
+			const trimmed = withoutBom.trimStart();
 			try {
-				const parsed = JSON.parse(content);
-				if (parsed.version === version) return content;
+				const parsed = JSON.parse(trimmed);
+				if (parsed.version === version) {
+					return content;
+				}
 				parsed.version = version;
-				return `${JSON.stringify(parsed, null, 2)}\n`;
+				const serialized = `${JSON.stringify(parsed, null, 2)}\n`;
+				return maybeBom ? `${BOM}${serialized}` : serialized;
 			} catch (error) {
-				console.warn(`Skipping ${stagePackagePath}: failed to parse JSON`, error);
+				const replaced = withoutBom.replace(stageVersionRegex, (_match, prefix, _old, suffix) => {
+					return `${prefix}${version}${suffix}`;
+				});
+				if (replaced !== withoutBom) {
+					return maybeBom ? `${BOM}${replaced}` : replaced;
+				}
+				console.warn(
+					`Skipping ${stagePackagePath}: failed to update version automatically. Please update manually.`,
+					error
+				);
 				return content;
 			}
 		})
