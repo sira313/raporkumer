@@ -28,7 +28,7 @@
 				<div class="tab-content bg-base-100 p-4">
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- NIS -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">NIS</legend>
 							<input
 								required
@@ -37,9 +37,9 @@
 								placeholder="Contoh: 0030"
 								name="nis"
 							/>
-						</div>
+						</fieldset>
 						<!-- NISN -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">NISN</legend>
 							<input
 								required
@@ -48,12 +48,12 @@
 								placeholder="Contoh: 8371612"
 								name="nisn"
 							/>
-						</div>
+						</fieldset>
 					</div>
 
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Nama Murid -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Nama Murid</legend>
 							<input
 								required
@@ -62,10 +62,10 @@
 								placeholder="Contoh: Chairil Anwar"
 								name="nama"
 							/>
-						</div>
+						</fieldset>
 
 						<!-- Kelas -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Kelas</legend>
 							<select
 								class="select bg-base-200 dark:border-none"
@@ -82,12 +82,12 @@
 									<option value="" disabled selected> Belum ada data kelas </option>
 								{/each}
 							</select>
-						</div>
+						</fieldset>
 					</div>
 
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Tempat lahir -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Tempat Lahir</legend>
 							<input
 								required
@@ -96,9 +96,9 @@
 								placeholder="Contoh: Kembayan"
 								name="tempatLahir"
 							/>
-						</div>
+						</fieldset>
 						<!-- Tanggal Lahir -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Tanggal Lahir</legend>
 							<input
 								type="date"
@@ -106,11 +106,11 @@
 								name="tanggalLahir"
 								required
 							/>
-						</div>
+						</fieldset>
 					</div>
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Jenis Kelamin -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Jenis Kelamin</legend>
 							<select
 								class="select validator bg-base-200 w-full dark:border-none"
@@ -122,9 +122,9 @@
 									<option {value}>{label}</option>
 								{/each}
 							</select>
-						</div>
+						</fieldset>
 						<!-- Agama -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Agama</legend>
 							<input
 								required
@@ -133,11 +133,11 @@
 								placeholder="Contoh: Islam"
 								name="agama"
 							/>
-						</div>
+						</fieldset>
 					</div>
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Pendidikan Sebelumnya -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Pendidikan Sebelumnya</legend>
 							<input
 								required
@@ -146,9 +146,9 @@
 								placeholder="Contoh: TK Kencana Pertiwi"
 								name="pendidikanSebelumnya"
 							/>
-						</div>
+						</fieldset>
 						<!-- Tanggal Masuk Sekolah Ini -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Tanggal masuk sekolah ini</legend>
 							<input
 								type="date"
@@ -156,7 +156,7 @@
 								name="tanggalMasuk"
 								required
 							/>
-						</div>
+						</fieldset>
 					</div>
 				</div>
 
@@ -171,7 +171,7 @@
 				<div class="tab-content bg-base-100 p-4">
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Nama Ayah -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Nama Ayah</legend>
 							<input
 								required
@@ -180,9 +180,9 @@
 								placeholder="Contoh: Agus"
 								name="ayah.nama"
 							/>
-						</div>
+						</fieldset>
 						<!-- Nama Ibu -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Nama Ibu</legend>
 							<input
 								required
@@ -191,11 +191,11 @@
 								placeholder="Contoh: Ratih"
 								name="ibu.nama"
 							/>
-						</div>
+						</fieldset>
 					</div>
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Pekerjaan Ayah -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Pekerjaan Ayah</legend>
 							<input
 								required
@@ -204,9 +204,9 @@
 								placeholder="Contoh: Tani"
 								name="ayah.pekerjaan"
 							/>
-						</div>
+						</fieldset>
 						<!-- Pekerjaan Ibu -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Pekerjaan Ibu</legend>
 							<input
 								required
@@ -215,17 +215,19 @@
 								placeholder="Contoh: IRT"
 								name="ibu.pekerjaan"
 							/>
-						</div>
+						</fieldset>
 					</div>
 					<!-- Kontak -->
-					<legend class="fieldset-legend">Kontak</legend>
-					<input
-						required
-						type="text"
-						class="input validator bg-base-200 w-full dark:border-none"
-						placeholder="Nomor telepon atau WhatsApp"
-						name="ayah.kontak"
-					/>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Kontak</legend>
+						<input
+							required
+							type="text"
+							class="input validator bg-base-200 w-full dark:border-none"
+							placeholder="Nomor telepon atau WhatsApp"
+							name="ayah.kontak"
+						/>
+					</fieldset>
 				</div>
 
 				<!-- data Alamat Murid -->
@@ -238,17 +240,19 @@
 				/>
 				<div class="tab-content bg-base-100 p-4">
 					<!-- Alamat Jalan -->
-					<legend class="fieldset-legend">Jalan</legend>
-					<input
-						required
-						type="text"
-						class="input validator bg-base-200 w-full dark:border-none"
-						placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
-						name="alamat.jalan"
-					/>
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Jalan</legend>
+						<input
+							required
+							type="text"
+							class="input validator bg-base-200 w-full dark:border-none"
+							placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
+							name="alamat.jalan"
+						/>
+					</fieldset>
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Kelurahan/Desa -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Kelurahan/Desa</legend>
 							<input
 								required
@@ -257,9 +261,9 @@
 								placeholder="Contoh: Sungai Dangin"
 								name="alamat.desa"
 							/>
-						</div>
+						</fieldset>
 						<!-- Kecamatan -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Kecamatan</legend>
 							<input
 								required
@@ -268,11 +272,11 @@
 								placeholder="Contoh: Noyan"
 								name="alamat.kecamatan"
 							/>
-						</div>
+						</fieldset>
 					</div>
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Kabupaten -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Kabupaten</legend>
 							<input
 								required
@@ -281,9 +285,9 @@
 								placeholder="Contoh: Sanggau"
 								name="alamat.kabupaten"
 							/>
-						</div>
+						</fieldset>
 						<!-- Provinsi -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Provinsi</legend>
 							<input
 								required
@@ -292,7 +296,7 @@
 								placeholder="Contoh: Kalimantan Barat"
 								name="alamat.provinsi"
 							/>
-						</div>
+						</fieldset>
 					</div>
 				</div>
 
@@ -307,7 +311,7 @@
 				<div class="tab-content bg-base-100 p-4">
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Nama Wali -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Nama Wali</legend>
 							<input
 								type="text"
@@ -315,9 +319,9 @@
 								placeholder="Contoh: Hendra"
 								name="wali.nama"
 							/>
-						</div>
+						</fieldset>
 						<!-- Pekerjaan Wali -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Pekerjaan Wali</legend>
 							<input
 								type="text"
@@ -325,11 +329,11 @@
 								placeholder="Contoh: PNS"
 								name="wali.pekerjaan"
 							/>
-						</div>
+						</fieldset>
 					</div>
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<!-- Alamat Wali -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Alamat Wali</legend>
 							<input
 								type="text"
@@ -337,9 +341,9 @@
 								placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
 								name="wali.alamat"
 							/>
-						</div>
+						</fieldset>
 						<!-- Kontak Wali -->
-						<div class="flex-1">
+						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Kontak</legend>
 							<input
 								type="text"
@@ -347,7 +351,7 @@
 								placeholder="Nomor telepon atau WhatsApp"
 								name="wali.kontak"
 							/>
-						</div>
+						</fieldset>
 					</div>
 				</div>
 			</div>
