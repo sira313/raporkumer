@@ -122,6 +122,7 @@ interface RaporPrintData {
 		deskripsi: string;
 	}>;
 	kokurikuler: string;
+	hasKokurikuler: boolean;
 	ekstrakurikuler: Array<{
 		nama: string;
 		deskripsi: string;

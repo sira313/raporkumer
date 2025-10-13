@@ -32,6 +32,7 @@
 	const waliKelas = $derived.by(() => rapor?.waliKelas ?? null);
 	const kepalaSekolah = $derived.by(() => rapor?.kepalaSekolah ?? null);
 	const ttd = $derived.by(() => rapor?.ttd ?? null);
+	const hasKokurikuler = $derived.by(() => Boolean(rapor?.hasKokurikuler));
 
 	let firstCardContent = $state<HTMLDivElement | null>(null);
 	let firstTableSection = $state<HTMLElement | null>(null);
@@ -43,8 +44,13 @@
 		return createIntrakRows(items);
 	});
 
+	const activeTailBlocks = $derived.by(() => {
+		if (hasKokurikuler) return tailBlockOrder;
+		return tailBlockOrder.filter((key) => key !== 'kokurikuler');
+	});
+
 	const tableRows = $derived.by<TableRow[]>(() => {
-		return createTableRows(intrakurikulerRows, tailBlockOrder);
+		return createTableRows(intrakurikulerRows, activeTailBlocks);
 	});
 
 	const tableRowElements = new Map<number, HTMLTableRowElement>();

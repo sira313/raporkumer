@@ -476,6 +476,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			groups: kokurikulerGroups
 		}) ?? DEFAULT_KOKURIKULER_MESSAGE;
 
+	const hasKokurikuler = kokurikulerGroups.length > 0;
+
 	const ttdTanggal = formatTanggal(murid.semester?.tanggalBagiRaport);
 
 	const raporData: RaporPrintData = {
@@ -507,6 +509,7 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		},
 		nilaiIntrakurikuler,
 		kokurikuler,
+		hasKokurikuler,
 		ekstrakurikuler,
 		ketidakhadiran: {
 			sakit: murid.kehadiran?.sakit ?? 0,
