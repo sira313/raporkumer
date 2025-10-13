@@ -29,6 +29,8 @@
 		class: className = ''
 	} = props;
 
+	const hasKokurikuler = $derived.by(() => Boolean(rapor?.hasKokurikuler));
+
 	function applyMeasurement(node: HTMLElement) {
 		if (!measure) return;
 		return measure(node, tailKey);
@@ -96,6 +98,9 @@
 		if (tailKey === 'kokurikuler') {
 			return 'pt-2';
 		}
+		if (tailKey === 'ekstrakurikuler' && !hasKokurikuler) {
+			return 'pt-2';
+		}
 		if (tailKey === 'footer') {
 			return 'pt-4';
 		}
@@ -110,6 +115,7 @@
 	);
 
 	const kokurikulerNarrative = $derived.by(() => {
+		if (!hasKokurikuler) return '';
 		const base = formatValue(rapor?.kokurikuler);
 		if (base === '—') {
 			return DEFAULT_KOKURIKULER_MESSAGE;
@@ -118,35 +124,38 @@
 	});
 
 	const kokurikulerSentences = $derived.by(() => {
+		if (!hasKokurikuler) return [] as string[];
 		const sentences = kokurikulerNarrative
 			.split(/\n+/)
 			.map((sentence: string) => sentence.trim())
 			.filter((sentence: string) => sentence.length > 0);
-		return sentences.length > 0 ? sentences : [kokurikulerNarrative];
+		return sentences.length > 0 ? sentences : [kokurikulerNarrative].filter(Boolean);
 	});
 </script>
 
 {#if tailKey === 'kokurikuler'}
-	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
-		<table class="border-base-300 w-full border">
-			<thead class="bg-base-300">
-				<tr>
-					<th class="border-base-300 border px-3 py-2 text-left">Kokurikuler</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr>
-					<td class="border-base-300 border px-3 py-3">
-						<div class="flex flex-col gap-2 whitespace-pre-line">
-							{#each kokurikulerSentences as sentence, idx (idx)}
-								<span>{sentence}</span>
-							{/each}
-						</div>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</section>
+	{#if hasKokurikuler}
+		<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
+			<table class="border-base-300 w-full border">
+				<thead class="bg-base-300">
+					<tr>
+						<th class="border-base-300 border px-3 py-2 text-left">Kokurikuler</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="border-base-300 border px-3 py-3">
+							<div class="flex flex-col gap-2 whitespace-pre-line">
+								{#each kokurikulerSentences as sentence, idx (idx)}
+									<span>{sentence}</span>
+								{/each}
+							</div>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</section>
+	{/if}
 {:else if tailKey === 'ekstrakurikuler'}
 	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 		<table class="border-base-300 w-full border">
