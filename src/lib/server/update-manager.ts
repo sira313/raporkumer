@@ -156,6 +156,26 @@ async function ensureWritableTarget(targetPath: string) {
 	}
 }
 
+async function requestLocalShutdown(port: string) {
+	const controller = new AbortController();
+	const timeout = setTimeout(() => controller.abort(), 5000);
+	const url = `http://127.0.0.1:${port}/api/runtime/stop`;
+
+	try {
+		const response = await fetch(url, { method: 'POST', signal: controller.signal });
+		if (!response.ok) {
+			const details = await response.text().catch(() => '');
+			console.warn(
+				`[updates] gagal menghentikan server otomatis (${response.status} ${response.statusText}): ${details}`.trim()
+			);
+		}
+	} catch (error) {
+		console.warn('[updates] permintaan penghentian server otomatis mungkin gagal', error);
+	} finally {
+		clearTimeout(timeout);
+	}
+}
+
 function findExistingDownload(version: string, assetId: number) {
 	for (const record of downloads.values()) {
 		if (
@@ -289,6 +309,7 @@ export async function scheduleInstall(downloadId: string): Promise<{ message: st
 	}
 
 	await access(record.filePath, constants.F_OK);
+	const installerPath = record.filePath;
 
 	if (process.platform !== 'win32') {
 		throw new Error('Pemasangan otomatis hanya tersedia di Windows.');
@@ -299,33 +320,32 @@ export async function scheduleInstall(downloadId: string): Promise<{ message: st
 	}
 
 	const port = process.env.PORT ?? '3000';
-	const escapedPath = record.filePath.replace(/`/g, '``').replace(/"/g, '`"');
-	const script = [
-		"$ErrorActionPreference = 'Stop'",
-		`$installer = "${escapedPath}"`,
-		`$port = '${port}'`,
-		'try { Invoke-WebRequest -Uri ("http://127.0.0.1:" + $port + "/api/runtime/stop") -Method Post -UseBasicParsing -TimeoutSec 5 | Out-Null } catch { Write-Host $_.Exception.Message }',
-		'Start-Sleep -Seconds 2',
-		'if (Test-Path $installer) { Start-Process -FilePath $installer } else { Write-Error "File installer tidak ditemukan: $installer" }'
-	].join('; ');
 
 	try {
-		const child = spawn(
-			'powershell.exe',
-			['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script],
-			{
+		await new Promise<void>((resolve, reject) => {
+			const child = spawn(installerPath, [], {
 				detached: true,
-				stdio: 'ignore'
-			}
-		);
-		child.unref();
-		record.installScheduled = true;
-		record.updatedAt = Date.now();
+				stdio: 'ignore',
+				windowsHide: false
+			});
+			child.once('error', reject);
+			child.once('spawn', () => {
+				child.unref();
+				resolve();
+			});
+		});
 	} catch (error) {
 		throw new Error(
 			error instanceof Error ? error.message : 'Gagal menjalankan proses pemasangan pembaruan.'
 		);
 	}
+
+	record.installScheduled = true;
+	record.updatedAt = Date.now();
+
+	setTimeout(() => {
+		void requestLocalShutdown(port);
+	}, 1000);
 
 	return { message: 'Pemasangan pembaruan dijadwalkan. Ikuti petunjuk installer yang muncul.' };
 }

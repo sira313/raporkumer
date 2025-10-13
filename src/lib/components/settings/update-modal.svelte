@@ -254,6 +254,43 @@
 		}
 	}
 
+	async function stopServerForInstaller() {
+		const showSuccess = () =>
+			toast({
+				message:
+					'Server dihentikan. Tutup jendela Rapkumer ini lalu jalankan ulang bila diperlukan.',
+				type: 'info',
+				persist: true
+			});
+
+		try {
+			const response = await fetch('/api/runtime/stop', { method: 'POST', keepalive: true });
+			if (response.ok) {
+				showSuccess();
+				return;
+			}
+
+			const details = await response.text().catch(() => '');
+			console.error(
+				'Gagal menghentikan server setelah menjalankan installer',
+				response.status,
+				details
+			);
+			toast({
+				message:
+					'Gagal menghentikan server otomatis. Tutup Rapkumer secara manual sebelum melanjutkan pemasangan.',
+				type: 'warning',
+				persist: true
+			});
+		} catch (error) {
+			console.warn(
+				'Permintaan penghentian server untuk pemasangan mungkin berhasil walau tanpa respons.',
+				error
+			);
+			showSuccess();
+		}
+	}
+
 	async function installUpdate() {
 		if (!downloadState.id) {
 			toast({ message: 'Unduh pembaruan terlebih dahulu.', type: 'warning' });
@@ -284,10 +321,12 @@
 				installScheduled: true
 			};
 			toast({
-				message: 'Installer dijalankan. Ikuti petunjuk untuk menyelesaikan pembaruan.',
+				message:
+					'Installer dijalankan. Ikuti petunjuk untuk menyelesaikan pembaruan. Server akan dimatikan otomatis.',
 				type: 'success',
 				persist: true
 			});
+			void stopServerForInstaller();
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Gagal memasang pembaruan.';
 			downloadState = {
