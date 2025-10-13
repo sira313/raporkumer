@@ -29,7 +29,7 @@
 		class: className = ''
 	} = props;
 
-		const hasKokurikuler = $derived.by(() => Boolean(rapor?.hasKokurikuler));
+	const hasKokurikuler = $derived.by(() => Boolean(rapor?.hasKokurikuler));
 
 	function applyMeasurement(node: HTMLElement) {
 		if (!measure) return;
@@ -96,6 +96,9 @@
 			return 'grid gap-4 md:grid-cols-2 print:grid-cols-2';
 		}
 		if (tailKey === 'kokurikuler') {
+			return 'pt-2';
+		}
+		if (tailKey === 'ekstrakurikuler' && !hasKokurikuler) {
 			return 'pt-2';
 		}
 		if (tailKey === 'footer') {
