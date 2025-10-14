@@ -88,19 +88,14 @@ try {
 }
 
 
+
 $uniqueIpv4 = $ipv4 | Select-Object -Unique
 $validIpv4 = @()
 
 if ($uniqueIpv4.Count -gt 0) {
-    $preferredIpv4 = $uniqueIpv4 | Where-Object { $_ -match '^(192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)' }
-    Write-DebugLog "Unique IPv4 collected: $($uniqueIpv4 -join ', ')"
-    if ($preferredIpv4.Count -gt 0) {
-        $validIpv4 = $preferredIpv4
-        Write-DebugLog "Preferred IPv4 selected: $($validIpv4 -join ', ')"
-    } else {
-        $validIpv4 = $uniqueIpv4 | Where-Object { $_ -notmatch '^10\.' }
-        Write-DebugLog "Validated IPv4 (fallback) selected: $($validIpv4 -join ', ')"
-    }
+    # Pilih semua IPv4 yang ditemukan, kecuali loopback dan APIPA (sudah difilter sebelumnya)
+    $validIpv4 = $uniqueIpv4
+    Write-DebugLog "All detected IPv4 selected: $($validIpv4 -join ', ')"
 }
 
 if ($validIpv4.Count -gt 0) {
