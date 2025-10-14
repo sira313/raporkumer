@@ -26,7 +26,33 @@
 		onSubmittingChange
 	}: Props = $props();
 
-	const formId = crypto.randomUUID();
+	function createFormId() {
+		const cryptoApi = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined;
+		if (cryptoApi) {
+			if (typeof cryptoApi.randomUUID === 'function') {
+				try {
+					return cryptoApi.randomUUID();
+				} catch (error) {
+					console.warn('crypto.randomUUID failed, using fallback.', error);
+				}
+			}
+			if (typeof cryptoApi.getRandomValues === 'function') {
+				const buffer = new Uint8Array(16);
+				cryptoApi.getRandomValues(buffer);
+				buffer[6] = (buffer[6] & 0x0f) | 0x40;
+				buffer[8] = (buffer[8] & 0x3f) | 0x80;
+				const hex = Array.from(buffer, (byte) => byte.toString(16).padStart(2, '0'));
+				return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex
+					.slice(6, 8)
+					.join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10).join('')}`;
+			}
+		}
+		const timePart = Date.now().toString(36);
+		const randomPart = Math.random().toString(36).slice(2, 10);
+		return `form-${timePart}-${randomPart}`;
+	}
+
+	const formId = createFormId();
 
 	onMount(() => {
 		onFormRegistered(formId);
