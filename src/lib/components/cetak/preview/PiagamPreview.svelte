@@ -252,7 +252,7 @@
 					<p class="text-base-content/80 text-sm tracking-wide uppercase">Sebagai</p>
 					<p class="text-xl font-bold uppercase">{rankingLabel}</p>
 					<p class="mt-3 max-w-[480px] text-justify text-base leading-relaxed">
-						Dengan total nilai rata-rata <strong>{rataRata}</strong> pada Semester {periodeSemester}
+						Dengan total nilai rata-rata <strong>{rataRata}</strong> pada {periodeSemester}
 						tahun ajaran {periodeTahun}.
 					</p>
 					<p class="max-w-[480px] text-justify text-base leading-relaxed">
