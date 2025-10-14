@@ -115,7 +115,7 @@ function New-SelfSignedCodeSigningCert {
         # Generate self-signed certificate
         $cert = New-SelfSignedCertificate `
             -Type CodeSigningCert `
-            -Subject "CN=Rapkumer Development, O=Rapkumer, C=ID" `
+            -Subject "CN=Apoxicam, E=me@apoxi.cam, O=Rapkumer, C=ID" `
             -KeyAlgorithm RSA `
             -KeyLength 2048 `
             -Provider "Microsoft Enhanced RSA and AES Cryptographic Provider" `

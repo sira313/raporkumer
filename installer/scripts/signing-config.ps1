@@ -35,7 +35,7 @@ $CertConfig = @{
     PasswordFile = "$PSScriptRoot\..\cert\password.txt"
     
     # Subject name search (if using certificate store)
-    SubjectName = "Rapkumer"  # Adjust this to match your certificate
+    SubjectName = "Apoxicam"  # Adjust this to match your certificate
     
     # Timestamping
     TimestampUrl = "http://timestamp.digicert.com"

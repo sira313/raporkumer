@@ -8,6 +8,7 @@ AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher="Rapkumer"
 AppPublisherURL="https://github.com/sira313/raporkumer"
+AppContact="me@apoxi.cam"
 DefaultDirName={autopf}\Rapkumer
 DefaultGroupName=Rapkumer
 DisableProgramGroupPage=yes
