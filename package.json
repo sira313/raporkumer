@@ -1,7 +1,7 @@
 {
 	"name": "rapkumer",
 	"private": true,
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"type": "module",
 	"scripts": {
 		"db:push": "drizzle-kit push",
@@ -20,8 +20,8 @@
 		"sign:create-cert:force": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/scripts/setup-signing.ps1 -CreateSelfSigned -Force",
 		"prepare": "svelte-kit sync || echo ''",
 		"version": "node scripts/update-version.mjs",
-	"check": "svelte-kit sync && node scripts/svelte-check-wrapper.mjs",
-	"check:watch": "svelte-kit sync && node scripts/svelte-check-wrapper.mjs --watch",
+		"check": "svelte-kit sync && node scripts/svelte-check-wrapper.mjs",
+		"check:watch": "svelte-kit sync && node scripts/svelte-check-wrapper.mjs --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
 		"prod": "rm data/*.sqlite3 && pnpm db:push && pnpm build && pnpm package:win && pnpm package:win:installer",
