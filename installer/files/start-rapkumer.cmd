@@ -8,14 +8,14 @@ if not defined PORT set "PORT=3000"
 set "NODE_ENV=production"
 
 :: === DIREKTORI DATA DAN LOG ===
-set "USER_STATE_ROOT=%LOCALAPPDATA%\Rapkumer"
+set "USER_STATE_ROOT=%LOCALAPPDATA%\Rapkumer-data"
 if not exist "%USER_STATE_ROOT%" mkdir "%USER_STATE_ROOT%" >nul 2>&1
 
 set "LOG_DIR=%USER_STATE_ROOT%\logs"
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%" >nul 2>&1
 set "LOG_FILE=%LOG_DIR%\rapkumer.log"
 
-set "DATA_DIR=%USER_STATE_ROOT%\data"
+set "DATA_DIR=%USER_STATE_ROOT%"
 if not exist "%DATA_DIR%" mkdir "%DATA_DIR%" >nul 2>&1
 
 set "DB_FILE=%DATA_DIR%\database.sqlite3"
@@ -157,11 +157,40 @@ set "RUNNER_SCRIPT=%TEMP%\rapkumer-run-%RANDOM%.cmd"
     echo set RAPKUMER_CSRF_TRUSTED_ORIGINS=!RAPKUMER_CSRF_TRUSTED_ORIGINS!
     echo call "%APP_HOME%\tools\run-server.cmd" "%NODE_BINARY%" "%APP_HOME%" %PORT% %NODE_ENV% "%DB_URL%" "!RAPKUMER_CSRF_TRUSTED_ORIGINS!" "%LOG_FILE%"
 ) >"%RUNNER_SCRIPT%"
+:: Try to resolve node via bundled resolver if NODE_BINARY wasn't set earlier
+if not defined NODE_BINARY (
+    for /f "usebackq delims=" %%N in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\resolve-node.ps1" -BundledNodePath "%ProgramFiles%\nodejs\node.exe"`) do (
+        set "NODE_BINARY=%%N"
+    )
+    if not defined NODE_BINARY (
+        echo [%date% %time%] start-rapkumer.cmd: NODE_BINARY masih belum ditemukan setelah resolve-node.ps1>>"%LOG_FILE%"
+    ) else (
+        echo [%date% %time%] start-rapkumer.cmd: NODE_BINARY resolved via script: %NODE_BINARY%>>"%LOG_FILE%"
+    )
+)
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath cmd.exe -ArgumentList '/c', '""%RUNNER_SCRIPT%""' -WindowStyle Hidden" >>"%LOG_FILE%" 2>&1
-ping 127.0.0.1 -n 2 >nul
+:: Launch runner script in a detached hidden cmd process and wait for server to listen
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath cmd.exe -ArgumentList '/c', '""%RUNNER_SCRIPT%""' -WindowStyle Hidden -WorkingDirectory '%APP_HOME%'" >>"%LOG_FILE%" 2>&1
+
+:: Wait for the server to start listening on the port (up to ~10 seconds)
+set "WAIT_COUNT=0"
+:wait_server
+powershell -NoProfile -Command "try{ $c = New-Object System.Net.Sockets.TcpClient; $c.Connect('127.0.0.1', %PORT%); $c.Close(); exit 0 } catch { exit 1 }" >nul 2>&1
+if not errorlevel 1 (
+    echo [%date% %time%] Server is listening on port %PORT% >> "%LOG_FILE%"
+    set "LAUNCHED=1"
+) else (
+    set /a WAIT_COUNT+=1
+    if %WAIT_COUNT% GEQ 10 (
+        echo [%date% %time%] Warning: server did not respond after %WAIT_COUNT% attempts >> "%LOG_FILE%"
+    ) else (
+        ping 127.0.0.1 -n 2 >nul
+        goto wait_server
+    )
+)
+
 del "%RUNNER_SCRIPT%" >nul 2>&1
-ping 127.0.0.1 -n 3 >nul
+ping 127.0.0.1 -n 1 >nul
 start "" "http://localhost:%PORT%"
 endlocal
 exit /b 0
