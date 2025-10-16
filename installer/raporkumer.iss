@@ -9,7 +9,8 @@ AppVersion={#AppVersion}
 AppPublisher="Rapkumer"
 AppPublisherURL="https://github.com/sira313/raporkumer"
 AppContact="me@apoxi.cam"
-DefaultDirName={autopf}\Rapkumer
+; Install under the current user's Local AppData so admin privileges are not required
+DefaultDirName={localappdata}\Rapkumer
 DefaultGroupName=Rapkumer
 DisableProgramGroupPage=yes
 OutputDir=..\dist\windows
@@ -19,7 +20,8 @@ SolidCompression=yes
 WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-PrivilegesRequired=admin
+; Do not require administrator privileges when installing to per-user LocalAppData
+PrivilegesRequired=lowest
 UninstallDisplayIcon={app}\start-rapkumer.cmd
 VersionInfoVersion={#AppVersion}
 SetupIconFile={#StagePath}\rapkumer.ico
