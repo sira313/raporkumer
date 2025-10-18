@@ -539,12 +539,6 @@
 				Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dan cetak dokumen dilakukan
 				per murid.
 			</p>
-			{#if isPiagamSelected}
-				<p>
-					Pilihan piagam menampilkan peringkat 1–4 berdasarkan nilai rata-rata dari semua mata
-					pelajaran di kelas ini.
-				</p>
-			{/if}
 		{:else}
 			<p class="text-warning">
 				Belum ada data murid yang bisa dipreview. Tambahkan murid terlebih dahulu pada menu
