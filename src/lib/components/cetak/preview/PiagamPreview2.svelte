@@ -94,6 +94,10 @@
 	const sekolahNamaUpper = $derived.by(() => formatUpper(sekolah?.nama) || 'SEKOLAH');
 	const kepalaNamaDisplay = $derived.by(() => formatValue(kepalaSekolah?.nama) || '—');
 	const waliNamaDisplay = $derived.by(() => formatValue(waliKelas?.nama) || '—');
+	const muridNamaTitle = $derived.by(() => {
+		const name = formatTitle(murid?.nama);
+		return name || '—';
+	});
 	const kepalaNip = $derived.by(() => formatValue(kepalaSekolah?.nip));
 	const waliNip = $derived.by(() => formatValue(waliKelas?.nip));
 
@@ -152,7 +156,7 @@
 						class="mt-2 text-5xl leading-tight"
 						style="font-family: 'Brush Script MT', 'Great Vibes', cursive;"
 					>
-						{murid?.nama ?? '—'}
+						{muridNamaTitle}
 					</h2>
 
 					<p class="text-lg font-semibold tracking-wide">Sebagai</p>
