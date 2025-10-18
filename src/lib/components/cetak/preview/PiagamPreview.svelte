@@ -7,9 +7,16 @@
 		meta?: { title?: string | null } | null;
 	};
 
-	let { data = {}, onPrintableReady = () => {} } = $props<{
+	let {
+		data = {},
+		onPrintableReady = () => {},
+		bgRefreshKey = 0,
+		template = '1'
+	} = $props<{
 		data?: ComponentData;
 		onPrintableReady?: (node: HTMLDivElement | null) => void;
+		bgRefreshKey?: number;
+		template?: '1' | '2';
 	}>();
 
 	let printable: HTMLDivElement | null = null;
@@ -198,7 +205,7 @@
 		>
 			<div aria-hidden="true" class="pointer-events-none absolute inset-0">
 				<img
-					src="/bg-certificate.png"
+					src={`/api/sekolah/piagam-bg/${template}?v=${bgRefreshKey}`}
 					alt=""
 					class="h-full w-full object-cover"
 					draggable="false"
