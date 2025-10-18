@@ -5,6 +5,7 @@
 	import CoverPreview from '$lib/components/cetak/preview/CoverPreview.svelte';
 	import RaporPreview from '$lib/components/cetak/preview/RaporPreview.svelte';
 	import PiagamPreview from '$lib/components/cetak/preview/PiagamPreview.svelte';
+	import PiagamPreview2 from '$lib/components/cetak/preview/PiagamPreview2.svelte';
 	import { printElement } from '$lib/utils';
 	import { toast } from '$lib/components/toast.svelte';
 	import { onDestroy, tick } from 'svelte';
@@ -32,6 +33,13 @@
 		rapor: RaporPreview,
 		piagam: PiagamPreview
 	};
+
+	// template selection for piagam (1 or 2)
+	let selectedTemplate = $state<'1' | '2'>('1');
+
+	function getPiagamPreviewComponent() {
+		return selectedTemplate === '2' ? PiagamPreview2 : PiagamPreview;
+	}
 
 	const documentOptions: Array<{ value: DocumentType; label: string }> = [
 		{ value: 'cover', label: 'Cover' },
@@ -462,6 +470,16 @@
 				<option value={option.value}>{option.label}</option>
 			{/each}
 		</select>
+	    {#if isPiagamSelected}
+	        <select
+	            class="select bg-base-200 w-full max-w-30 dark:border-none"
+	            bind:value={selectedTemplate}
+	            title="Pilih template piagam"
+	        >
+	            <option value="1">Template 1</option>
+	            <option value="2">Template 2</option>
+	        </select>
+	    {/if}
 		{#if isPiagamSelected}
 			<select
 				class="select bg-base-200 w-full dark:border-none"
@@ -547,8 +565,15 @@
 		<span>{previewError}</span>
 	</div>
 {:else if previewDocument && previewData}
-	{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
-	<div class="mt-6">
-		<PreviewComponent data={previewData} onPrintableReady={handlePrintableReady} />
-	</div>
+	{#if previewDocument === 'piagam'}
+		{@const PreviewComponent = getPiagamPreviewComponent()}
+		<div class="mt-6">
+			<PreviewComponent data={previewData} onPrintableReady={handlePrintableReady} />
+		</div>
+	{:else}
+		{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
+		<div class="mt-6">
+			<PreviewComponent data={previewData} onPrintableReady={handlePrintableReady} />
+		</div>
+	{/if}
 {/if}
