@@ -124,7 +124,7 @@
 			<div aria-hidden="true" class="pointer-events-none absolute inset-0 to-transparent"></div>
 
 			<div
-				class="relative z-10 flex min-h-0 flex-col justify-between gap-2 p-[14mm] text-[11px] print:gap-6"
+				class="relative z-10 flex min-h-0 flex-col justify-between gap-2 p-[14mm] text-[11px] print:gap-6 print:text-black"
 			>
 				<!-- Top logos centered -->
 				<header class="mt-1 flex items-center justify-center gap-1">
@@ -142,7 +142,7 @@
 
 				<!-- Main title area -->
 				<section class="flex flex-col items-center text-center">
-					<h1 class="text-3xl font-extrabold tracking-wide text-amber-600 uppercase">
+					<h1 class="text-3xl font-extrabold tracking-wide uppercase">
 						{achievementTitle}
 					</h1>
 					<p class="mt-4 text-lg font-semibold">{achievementSubtitle}</p>
@@ -167,7 +167,7 @@
 				</section>
 
 				<!-- Footer: QR & stamp at left, signature at right -->
-				<footer class="mt-4 grid grid-cols-2 gap-6 text-sm">
+				<footer class="mt-2 grid grid-cols-2 gap-6 text-sm">
 					<div class="flex flex-col items-center gap-1.5 text-center">
 						<p class="font-semibold uppercase">Mengetahui</p>
 						<p class="text-base font-semibold">Kepala {sekolahNamaDisplay}</p>
