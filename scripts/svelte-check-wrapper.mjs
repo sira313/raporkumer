@@ -4,10 +4,10 @@ import path from 'path';
 
 // Filter out flags that some package managers append (like --silent) which svelte-check doesn't accept
 const forbidden = new Set(['--silent', '--silent=true', '--silent=false']);
-const inputArgs = process.argv.slice(2).filter(arg => !forbidden.has(arg));
+const inputArgs = process.argv.slice(2).filter((arg) => !forbidden.has(arg));
 
 // Ensure --tsconfig is provided by default if not present
-const hasTsconfig = inputArgs.some(a => a === '--tsconfig' || a.startsWith('--tsconfig='));
+const hasTsconfig = inputArgs.some((a) => a === '--tsconfig' || a.startsWith('--tsconfig='));
 if (!hasTsconfig) inputArgs.unshift('--tsconfig', './tsconfig.json');
 
 // Resolve local svelte-check binary -- on Windows prefer the .CMD shim

@@ -5,17 +5,13 @@
 	let { data } = $props();
 
 	let selectedTemplate = $state<'1' | '2'>('1');
-
-	function getComponent() {
-		return selectedTemplate === '2' ? PiagamPreview2 : PiagamPreview;
-	}
 </script>
 
 <div class="card p-4">
 	<label class="label" for="select-template">
 		<span class="label-text">Pilih Template</span>
 	</label>
-	<select id="select-template" class="select w-full mb-4" bind:value={selectedTemplate}>
+	<select id="select-template" class="select mb-4 w-full" bind:value={selectedTemplate}>
 		<option value="1">Template 1</option>
 		<option value="2">Template 2</option>
 	</select>

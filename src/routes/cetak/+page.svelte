@@ -470,16 +470,16 @@
 				<option value={option.value}>{option.label}</option>
 			{/each}
 		</select>
-	    {#if isPiagamSelected}
-	        <select
-	            class="select bg-base-200 w-full max-w-30 dark:border-none"
-	            bind:value={selectedTemplate}
-	            title="Pilih template piagam"
-	        >
-	            <option value="1">Template 1</option>
-	            <option value="2">Template 2</option>
-	        </select>
-	    {/if}
+		{#if isPiagamSelected}
+			<select
+				class="select bg-base-200 w-full max-w-30 dark:border-none"
+				bind:value={selectedTemplate}
+				title="Pilih template piagam"
+			>
+				<option value="1">Template 1</option>
+				<option value="2">Template 2</option>
+			</select>
+		{/if}
 		{#if isPiagamSelected}
 			<select
 				class="select bg-base-200 w-full dark:border-none"
