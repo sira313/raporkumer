@@ -6,8 +6,11 @@
 	import RaporPreview from '$lib/components/cetak/preview/RaporPreview.svelte';
 	import PiagamPreview from '$lib/components/cetak/preview/PiagamPreview.svelte';
 	import PiagamPreview2 from '$lib/components/cetak/preview/PiagamPreview2.svelte';
+	import PiagamBgUploadBody from '$lib/components/PiagamBgUploadBody.svelte';
 	import { printElement } from '$lib/utils';
 	import { toast } from '$lib/components/toast.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
+	import { deletePiagamBg } from '$lib/components/piagam-bg.client';
 	import { onDestroy, tick } from 'svelte';
 
 	let { data } = $props();
@@ -80,6 +83,9 @@
 	let previewPrintable = $state<HTMLDivElement | null>(null);
 	let previewLoading = $state(false);
 	let previewError = $state<string | null>(null);
+
+	// increment this to bust background cache after upload
+	let bgRefreshKey = $state<number>(0);
 
 	const academicContext = $derived(data.academicContext ?? null);
 	const activeSemester = $derived.by(() => {
@@ -533,7 +539,7 @@
 			Cetak
 		</button>
 	</div>
-	<div class="mt-4 space-y-2 text-sm">
+	<div class="mt-4 flex flex-col gap-3 text-sm sm:flex-row sm:items-start sm:justify-between">
 		{#if hasMurid}
 			<p>
 				Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dan cetak dokumen dilakukan
@@ -545,6 +551,68 @@
 				Informasi Umum › Murid.
 			</p>
 		{/if}
+		<div class="flex items-center gap-2 self-end sm:self-auto">
+			{#if isPiagamSelected}
+				<button
+					class="btn btn-sm btn-error btn-soft shadow-none"
+					type="button"
+					title="Hapus background piagam"
+					onclick={() => {
+						showModal({
+							title: 'Hapus Background Piagam',
+							body: `Hapus background piagam template ${selectedTemplate}?<br />Ini akan mengembalikan background ke default.`,
+							dismissible: true,
+							onNegative: {
+								label: 'Batal',
+								action: ({ close }) => close()
+							},
+							onPositive: {
+								label: 'Hapus',
+								icon: 'del',
+								action: async ({ close }) => {
+									try {
+										await deletePiagamBg(selectedTemplate);
+										bgRefreshKey = Date.now();
+										toast('Background piagam dikembalikan ke default.', 'success');
+										if (previewDocument === 'piagam') await handlePreview();
+									} catch (err) {
+										console.error(err);
+										toast('Gagal menghapus background piagam.', 'error');
+									} finally {
+										close();
+									}
+								}
+							}
+						});
+					}}
+				>
+					<Icon name="del" />
+					Hapus BG
+				</button>
+
+				<button
+					class="btn btn-sm shadow-none"
+					type="button"
+					onclick={() =>
+						showModal({
+							title: `Unggah Background Piagam — Template ${selectedTemplate}`,
+							body: PiagamBgUploadBody,
+							bodyProps: {
+								template: selectedTemplate,
+								onUploaded: async () => {
+									bgRefreshKey = Date.now();
+									if (previewDocument === 'piagam') await handlePreview();
+								}
+							},
+							dismissible: true
+						})}
+					title="Ganti background piagam"
+				>
+					<Icon name="image" />
+					Ganti BG
+				</button>
+			{/if}
+		</div>
 	</div>
 </div>
 
@@ -562,7 +630,12 @@
 	{#if previewDocument === 'piagam'}
 		{@const PreviewComponent = getPiagamPreviewComponent()}
 		<div class="mt-6">
-			<PreviewComponent data={previewData} onPrintableReady={handlePrintableReady} />
+			<PreviewComponent
+				data={previewData}
+				onPrintableReady={handlePrintableReady}
+				{bgRefreshKey}
+				template={selectedTemplate}
+			/>
 		</div>
 	{:else}
 		{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
