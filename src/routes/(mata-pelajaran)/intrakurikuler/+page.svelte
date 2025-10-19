@@ -58,15 +58,39 @@
 				</p>
 			{/if}
 		</div>
-		<a
-			class="btn shadow-none btn-soft"
-			href="/intrakurikuler/form"
-			title="Tambah mata pelajaran"
-			use:modalRoute={'add-mapel'}
-		>
-			<Icon name="plus" />
-			Tambah Mata Pelajaran
-		</a>
+		<div class="flex gap-1 mt-2 sm:mt-0">
+  		<a
+  		  class="btn shadow-none btn-soft"
+  		  href="/intrakurikuler/form"
+  		  use:modalRoute={'add-mapel'}
+  		>
+  		  <Icon name="plus" />
+  		  Tambah Mapel
+  		</a>
+		
+  		<!-- dropdown yang tergabung (perhatikan join-item dan hilangkan margin m-1) -->
+  		<div class="dropdown dropdown-end">
+  		  <!-- trigger: gunakan label/button bertipe btn supaya tampil seperti item lain -->
+  		  <label tabindex="0" role="button" class="btn shadow-none btn-soft">
+					<Icon name="down" />
+  		  </label>
+			
+  		  <!-- menu dropdown -->
+  		  <ul
+  		    tabindex="-1"
+  		    class="dropdown-content menu bg-base-100 z-50 w-52 p-2 shadow-sm"
+  		  >
+  		    <li><a>
+						<Icon name="import" />
+						Impor Mapel
+					</a></li>
+  		    <li><a>
+						<Icon name="export" />
+						Ekspor Mapel
+					</a></li>
+  		  </ul>
+  		</div>
+		</div>
 	</div>
 
 	<div
@@ -145,7 +169,6 @@
 										<a
 											class="btn btn-sm btn-soft shadow-none"
 											href={`/intrakurikuler/${mapel.id}/tp-rl`}
-											title="Kelola tujuan &amp; ruang lingkup"
 										>
 											<Icon name="edit" />
 											Edit TP
