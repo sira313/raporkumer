@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
+	import ImportMapelDialog from '$lib/components/intrakurikuler/import-mapel-dialog.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import { agamaMapelLabelByName, agamaMapelNames, agamaParentName } from '$lib/statics';
 	import { modalRoute } from '$lib/utils';
@@ -70,24 +72,58 @@
 		
   		<!-- dropdown yang tergabung (perhatikan join-item dan hilangkan margin m-1) -->
   		<div class="dropdown dropdown-end">
-  		  <!-- trigger: gunakan label/button bertipe btn supaya tampil seperti item lain -->
-  		  <label tabindex="0" role="button" class="btn shadow-none btn-soft">
-					<Icon name="down" />
-  		  </label>
+		  <!-- trigger: gunakan button bertipe btn supaya tampil seperti item lain -->
+		  <button type="button" tabindex="0" class="btn shadow-none btn-soft">
+			<Icon name="down" />
+		  </button>
 			
   		  <!-- menu dropdown -->
   		  <ul
   		    tabindex="-1"
   		    class="dropdown-content menu bg-base-100 z-50 w-52 p-2 shadow-sm"
   		  >
-  		    <li><a>
-						<Icon name="import" />
-						Impor Mapel
-					</a></li>
-  		    <li><a>
-						<Icon name="export" />
-						Ekspor Mapel
-					</a></li>
+		    <li><button type="button" class="w-full text-left" onclick={() => showModal({ title: 'Import Mata Pelajaran', body: ImportMapelDialog, dismissible: true })}>
+				<Icon name="import" />
+				Impor Mapel
+			</button></li>
+			<li><button type="button" class="w-full text-left" onclick={async () => {
+					try {
+						const resp = await fetch('/intrakurikuler/export_mapel', { method: 'GET' });
+						if (!resp.ok) {
+							const body = await resp.json().catch(() => ({}));
+							return toast({ message: body?.fail || 'Gagal mengekspor data.', type: 'error' });
+						}
+													const blob = await resp.blob();
+													const url = URL.createObjectURL(blob);
+													// prefer filename from Content-Disposition header set by server
+													let filename = `mapel-${new Date().toISOString().slice(0,10)}.xlsx`;
+													try {
+														const cd = resp.headers.get('content-disposition') || resp.headers.get('Content-Disposition');
+														if (cd) {
+															// match filename*=UTF-8''encoded or filename="name"
+															const mStar = cd.match(/filename\*=UTF-8''([^;\n\r]+)/i);
+															const mBasic = cd.match(/filename="?([^";]+)"?/i);
+															if (mStar && mStar[1]) filename = decodeURIComponent(mStar[1]);
+															else if (mBasic && mBasic[1]) filename = mBasic[1];
+														}
+													} catch (err) {
+														/* ignore and fallback */
+													}
+													const a = document.createElement('a');
+													a.href = url;
+													a.download = filename;
+													document.body.appendChild(a);
+													a.click();
+													a.remove();
+													URL.revokeObjectURL(url);
+					} catch (err) {
+						console.error(err);
+						toast({ message: 'Terjadi kesalahan saat mengekspor.', type: 'error' });
+					}
+				}}>
+				<Icon name="export" />
+				Ekspor Mapel
+				</button></li>
   		  </ul>
   		</div>
 		</div>
