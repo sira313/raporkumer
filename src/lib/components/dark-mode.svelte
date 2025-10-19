@@ -59,7 +59,7 @@
 </script>
 
 <label
-	class="btn btn-ghost btn-circle swap swap-rotate"
+	class="btn btn-ghost btn-circle swap swap-rotate shadow-none"
 	title={isDark ? 'Light mode' : 'Dark mode'}
 	aria-label="Toggle color theme"
 >
