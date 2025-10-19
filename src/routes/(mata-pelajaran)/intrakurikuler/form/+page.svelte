@@ -135,14 +135,14 @@
 				Pekerti.
 			</p>
 		{/if}
-		<div class="mt-6 flex justify-end gap-2">
-			<button type="button" class="btn shadow-none" onclick={() => history.back()}>
+		<div class="mt-6 flex justify-between gap-2">
+			<button type="button" class="btn btn-soft shadow-none" onclick={() => history.back()}>
 				<Icon name="close-sm" />
 				Batal
 			</button>
 			<button
 				type="submit"
-				class="btn btn-primary shadow-none"
+				class="btn btn-primary shadow-none btn-soft"
 				disabled={submitting || invalid || !kelasAktif}
 			>
 				{#if submitting}

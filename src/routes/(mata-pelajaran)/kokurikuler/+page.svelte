@@ -209,7 +209,7 @@
 			{/if}
 		</div>
 		<div class="flex flex-col gap-2 sm:flex-row">
-			<button class="btn shadow-none" disabled={!canManage} onclick={openAddModal}>
+			<button class="btn shadow-none btn-soft" disabled={!canManage} onclick={openAddModal}>
 				<Icon name="plus" />
 				Tambah
 			</button>

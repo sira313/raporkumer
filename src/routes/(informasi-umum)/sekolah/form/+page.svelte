@@ -232,13 +232,13 @@
 			<!-- Back and Save -->
 			<div class="mt-6 flex justify-end gap-2">
 				{#if !data.isInit}
-					<a class="btn shadow-none" href="/sekolah" aria-label="kembali">
+					<a class="btn shadow-none btn-soft" href="/sekolah" aria-label="kembali">
 						<Icon name="left" />
 						Kembali
 					</a>
 				{/if}
 
-				<button class="btn btn-primary shadow-none" disabled={submitting}>
+				<button class="btn btn-primary shadow-none btn-soft" disabled={submitting}>
 					{#if submitting}
 						<span class="loading loading-spinner"></span>
 					{/if}

@@ -126,7 +126,7 @@
 	</h2>
 
 	<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-		<button class="btn shadow-none" type="button" onclick={() => history.back()}>
+		<button class="btn shadow-none btn-soft" type="button" onclick={() => history.back()}>
 			<Icon name="left" />
 			Kembali
 		</button>
@@ -398,7 +398,7 @@
 					{/each}
 
 					<div class="modal-action mt-6 flex gap-2">
-						<button class="btn shadow-none" type="button" onclick={closeDeleteModal}>
+						<button class="btn shadow-none btn-soft" type="button" onclick={closeDeleteModal}>
 							<Icon name="close" />
 							Batal
 						</button>

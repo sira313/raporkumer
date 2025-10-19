@@ -93,7 +93,7 @@
 				</button>
 				<button
 					type="submit"
-					class="btn btn-primary gap-2 shadow-none"
+					class="btn btn-primary gap-2 shadow-none btn-soft"
 					disabled={invalid || submitting || !targetCount}
 				>
 					{#if submitting}

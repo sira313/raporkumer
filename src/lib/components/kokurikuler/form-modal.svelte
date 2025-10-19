@@ -96,12 +96,12 @@
 					></textarea>
 
 					<div class="modal-action mt-6 flex gap-2">
-						<button class="btn shadow-none" type="button" onclick={onClose}>
+						<button class="btn shadow-none btn-soft" type="button" onclick={onClose}>
 							<Icon name="close" />
 							Batal
 						</button>
 						<button
-							class="btn btn-primary shadow-none"
+							class="btn btn-primary shadow-none btn-soft"
 							disabled={submitting ||
 								!selectedDimensions.length ||
 								!kelasId ||

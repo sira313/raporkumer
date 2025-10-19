@@ -817,7 +817,7 @@
 			{mapelDisplayName} – {data.mapel.kelas.nama}
 		</h2>
 		<button
-			class="btn w-full shadow-none sm:w-auto sm:max-w-40"
+			class="btn w-full btn-soft shadow-none sm:w-auto sm:max-w-40"
 			type="button"
 			onclick={openImportDialog}
 			disabled={isImportDisabled}
@@ -830,7 +830,7 @@
 
 	<!-- tombol tambah Tujuan Pembelajaran -->
 	<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-		<button class="btn shadow-none" type="button" onclick={() => history.back()}>
+		<button class="btn shadow-none btn-soft" type="button" onclick={() => history.back()}>
 			<Icon name="left" />
 			Kembali
 		</button>
@@ -852,21 +852,20 @@
 			</div>
 		{/if}
 		<button
-			class="btn shadow-none sm:ml-auto sm:max-w-40"
+			class="btn shadow-none btn-soft sm:ml-auto sm:max-w-40"
 			type="button"
 			onclick={handlePrimaryActionClick}
 			disabled={isTambahTpDisabled}
 			title={tambahTpTooltip}
 			class:btn-error={hasSelection}
-			class:btn-soft={hasSelection}
-			class:btn-warning={isInteractionLocked}
+			class:btn-secondary={isInteractionLocked}
 		>
 			<Icon name={hasSelection ? 'del' : isInteractionLocked ? 'close' : 'plus'} />
 			{hasSelection ? 'Hapus TP' : isInteractionLocked ? 'Batalkan' : 'Tambah TP'}
 		</button>
 		{#if isCreateModeActive || isEditModeActive}
 			<button
-				class="btn btn-success shadow-none sm:max-w-40"
+				class="btn btn-soft btn-primary shadow-none sm:max-w-40"
 				type="button"
 				onclick={submitActiveForm}
 				disabled={!activeFormId || isFormSubmitting}
@@ -877,7 +876,7 @@
 			</button>
 		{:else}
 			<button
-				class="btn shadow-none sm:max-w-40"
+				class="btn btn-soft shadow-none sm:max-w-40"
 				type="button"
 				onclick={toggleBobotEditing}
 				disabled={!hasGroups}

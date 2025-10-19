@@ -162,13 +162,13 @@
 							</button>
 							<a
 								href={`/sekolah/tahun-ajaran?sekolahId=${sekolah.id}`}
-								class="btn shadow-none"
+								class="btn shadow-none btn-soft"
 								aria-label="Lihat tahun ajaran"
 							>
 								<Icon name="calendar" />
 								Tahun Ajaran
 							</a>
-							<a href="/sekolah/form" class="btn shadow-none" aria-label="Edit data sekolah">
+							<a href="/sekolah/form" class="btn btn-soft shadow-none" aria-label="Edit data sekolah">
 								<Icon name="edit" />
 								Edit Sekolah
 							</a>

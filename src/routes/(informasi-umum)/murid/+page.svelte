@@ -269,7 +269,7 @@
 	</h2>
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
 		<!-- Tombol Tambah Manual -->
-		<a class="btn flex items-center shadow-none" href="/murid/form" use:modalRoute={'add-murid'}>
+		<a class="btn flex btn-soft shadow-none items-center" href="/murid/form" use:modalRoute={'add-murid'}>
 			<Icon name="plus" />
 			Tambah Murid
 		</a>

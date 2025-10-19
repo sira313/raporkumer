@@ -357,14 +357,14 @@
 			</div>
 		</div>
 		<div class="border-base-200 mt-4 flex flex-col gap-2 sm:flex-row">
-			<button class="btn border-none shadow-none" type="button" onclick={() => history.back()}>
+			<button class="btn btn-soft shadow-none" type="button" onclick={() => history.back()}>
 				<Icon name="close-sm" />
 				Batal
 			</button>
 
 			{#if invalid}
 				<button
-					class="btn btn-neutral border-none shadow-none"
+					class="btn btn-primary shadow-none btn-soft"
 					type="button"
 					onclick={() => (activeTab = (activeTab + 1) % 4)}
 				>
@@ -374,9 +374,9 @@
 			{/if}
 
 			<button
-				class="btn {data.murid?.id
+				class="btn shadow-none {data.murid?.id
 					? 'btn-secondary'
-					: 'btn-primary'} border-none shadow-none sm:ml-auto"
+					: 'btn-primary'} btn-soft sm:ml-auto"
 				type="submit"
 				disabled={submitting || invalid}
 			>

@@ -342,7 +342,7 @@
 
 					<div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-between">
 						<button
-							class="btn shadow-none"
+							class="btn shadow-none btn-soft"
 							type="submit"
 							formaction="?/copy-semester"
 							disabled={submitting || !canCopySemester}
@@ -352,7 +352,7 @@
 							Salin Semester Ganjil
 						</button>
 						<button
-							class="btn btn-primary shadow-none"
+							class="btn btn-primary btn-soft shadow-none"
 							type="submit"
 							disabled={submitting || invalid || disabledSave}
 						>

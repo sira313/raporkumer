@@ -106,11 +106,11 @@
 					</div>
 
 					<div class="modal-action mt-6 flex gap-2">
-						<button type="button" class="btn shadow-none" onclick={onClose}>
+						<button type="button" class="btn shadow-none btn-soft" onclick={onClose}>
 							<Icon name="close" />
 							Batal
 						</button>
-						<button class="btn btn-primary shadow-none" disabled={submitting}>
+						<button class="btn btn-primary shadow-none btn-soft" disabled={submitting}>
 							{#if submitting}
 								<span class="loading loading-spinner"></span>
 							{:else}

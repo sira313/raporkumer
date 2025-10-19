@@ -71,7 +71,7 @@
 				atau hak moral. Pastikan Anda mematuhi peraturan setempat saat menggunakan materi ini.
 			</p>
 			<div class="flex flex-wrap gap-3">
-				<a class="btn btn-primary shadow-none" href={licenseUrl} target="_blank" rel="noreferrer">
+				<a class="btn btn-primary shadow-none btn-soft" href={licenseUrl} target="_blank" rel="noreferrer">
 					Ringkasan Lisensi
 				</a>
 				<a class="btn btn-outline" href={legalUrl} target="_blank" rel="noreferrer">

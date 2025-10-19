@@ -59,7 +59,7 @@
 			{/if}
 		</div>
 		<a
-			class="btn shadow-none"
+			class="btn shadow-none btn-soft"
 			href="/intrakurikuler/form"
 			title="Tambah mata pelajaran"
 			use:modalRoute={'add-mapel'}

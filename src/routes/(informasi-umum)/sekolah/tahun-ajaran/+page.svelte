@@ -131,33 +131,27 @@
 	{/if}
 
 	<div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-		<button class="btn shadow-none sm:w-auto" type="button" onclick={() => history.back()}>
+		<button class="btn shadow-none btn-soft sm:w-auto" type="button" onclick={() => history.back()}>
 			<Icon name="left" />
 			Kembali
 		</button>
 		<div class="flex flex-col gap-2 sm:ml-auto sm:flex-row">
-			<button
-				class="btn shadow-none sm:max-w-40"
-				type="button"
-				disabled={!selectedSekolahId || editingId !== null}
-				onclick={handleCreateRow}
-			>
-				<Icon name="plus" />
-				Tambah TA
-			</button>
 			<FormEnhance action="?/delete" onsuccess={handleDeleteSuccess}>
 				{#snippet children({ submitting })}
-					{#each selectedIds as id (id)}
-						<input type="hidden" name="ids" value={id} />
-					{/each}
-					<input type="hidden" name="sekolahId" value={selectedSekolahId} />
+					{#if hasSelection}
+						{#each selectedIds as id (id)}
+							<input type="hidden" name="ids" value={id} />
+						{/each}
+						<input type="hidden" name="sekolahId" value={selectedSekolahId} />
+					{/if}
 					<button
-						class="btn btn-error shadow-none sm:max-w-40"
-						type="submit"
-						disabled={!hasSelection || submitting}
+						class={hasSelection ? 'btn btn-error btn-soft shadow-none sm:max-w-40' : 'btn shadow-none btn-soft sm:max-w-40'}
+						type={hasSelection ? 'submit' : 'button'}
+						onclick={!hasSelection ? handleCreateRow : undefined}
+						disabled={hasSelection ? (!selectedSekolahId || editingId !== null || submitting) : (!selectedSekolahId || editingId !== null)}
 					>
-						<Icon name="del" />
-						{submitting ? 'Menghapus…' : 'Hapus TA'}
+						<Icon name={hasSelection ? 'del' : 'plus'} />
+						{hasSelection ? (submitting ? 'Menghapus…' : 'Hapus TA') : 'Tambah TA'}
 					</button>
 				{/snippet}
 			</FormEnhance>
