@@ -529,7 +529,7 @@
 			Preview
 		</button>
 		<button
-			class="btn btn-primary btn-soft shadow-none"
+			class="btn btn-primary shadow-none"
 			type="button"
 			title={printButtonTitle}
 			disabled={printDisabled}
@@ -556,7 +556,6 @@
 				<button
 					class="btn btn-sm btn-error btn-soft shadow-none"
 					type="button"
-					title="Hapus background piagam"
 					onclick={() => {
 						showModal({
 							title: 'Hapus Background Piagam',
@@ -591,7 +590,7 @@
 				</button>
 
 				<button
-					class="btn btn-sm shadow-none"
+					class="btn btn-sm btn-soft shadow-none"
 					type="button"
 					onclick={() =>
 						showModal({
@@ -606,7 +605,6 @@
 							},
 							dismissible: true
 						})}
-					title="Ganti background piagam"
 				>
 					<Icon name="image" />
 					Ganti BG

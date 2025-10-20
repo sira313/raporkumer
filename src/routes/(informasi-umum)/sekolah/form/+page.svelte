@@ -238,7 +238,7 @@
 					</a>
 				{/if}
 
-				<button class="btn btn-primary btn-soft shadow-none" disabled={submitting}>
+				<button class="btn btn-primary shadow-none" disabled={submitting}>
 					{#if submitting}
 						<span class="loading loading-spinner"></span>
 					{/if}

@@ -91,7 +91,7 @@
 
 					{#if props.onPositive}
 						<button
-							class="btn btn-primary btn-soft gap-2 shadow-none"
+							class="btn btn-primary gap-2 shadow-none"
 							type="button"
 							onclick={() => props.onPositive?.action?.({ close: hideModal })}
 						>

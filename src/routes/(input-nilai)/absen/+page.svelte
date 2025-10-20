@@ -347,7 +347,8 @@
 										</FormEnhance>
 										<button
 											type="button"
-											class="btn btn-soft btn-sm shadow-none"
+											class="btn btn-soft btn-sm btn-error shadow-none"
+											title="Batalkan"
 											onclick={cancelEdit}
 											disabled={editingSubmitting}
 										>
@@ -356,6 +357,7 @@
 										<button
 											type="submit"
 											class="btn btn-primary btn-sm shadow-none"
+											title="Simpan"
 											form={formId}
 											disabled={editingSaveDisabled}
 										>

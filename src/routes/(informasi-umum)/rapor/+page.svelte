@@ -352,7 +352,7 @@
 							Salin Semester Ganjil
 						</button>
 						<button
-							class="btn btn-primary btn-soft shadow-none"
+							class="btn btn-primary shadow-none"
 							type="submit"
 							disabled={submitting || invalid || disabledSave}
 						>

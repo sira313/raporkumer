@@ -228,19 +228,22 @@
 			{/if}
 		</div>
 		<div class="flex flex-col gap-2 sm:flex-row">
-			<button class="btn btn-soft shadow-none" disabled={!canManage} onclick={toggleAddRow}>
-				<Icon name="plus" />
-				Tambah
-			</button>
-			<button
-				type="button"
-				class={`btn w-full shadow-none sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
-				disabled={bulkDeleteDisabled}
-				onclick={openBulkDeleteModal}
-			>
-				<Icon name="del" />
-				Hapus
-			</button>
+			{#if anySelected}
+				<button
+					type="button"
+					class={`btn w-full shadow-none sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
+					disabled={bulkDeleteDisabled}
+					onclick={openBulkDeleteModal}
+				>
+					<Icon name="del" />
+					Hapus
+				</button>
+			{:else}
+				<button class="btn btn-soft shadow-none" disabled={!canManage} onclick={toggleAddRow}>
+					<Icon name="plus" />
+					Tambah
+				</button>
+			{/if}
 		</div>
 	</div>
 
@@ -407,7 +410,7 @@
 						<td>
 							<a
 								href={`ekstrakurikuler/tp-ekstra?ekstrakurikulerId=${item.id}`}
-								class={`btn btn-sm shadow-none ${!canManage ? 'btn-disabled pointer-events-none opacity-60' : ''}`}
+								class={`btn btn-sm btn-soft shadow-none ${!canManage ? 'btn-disabled pointer-events-none opacity-60' : ''}`}
 								title="Atur tujuan ekstrakurikuler"
 								aria-disabled={!canManage}
 								tabindex={canManage ? undefined : -1}

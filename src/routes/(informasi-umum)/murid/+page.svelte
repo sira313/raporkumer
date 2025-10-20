@@ -262,33 +262,37 @@
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<h2 class="mb-6 text-xl font-bold">
-		Formulir Dan Tabel Isian Data Murid
-		{#if kelasAktifLabel}
-			<span class="mt-2 block text-lg font-semibold">{kelasAktifLabel}</span>
-		{/if}
+		<div class="flex flex-col sm:flex-row sm:justify-between">
+			<div>
+				Formulir Dan Tabel Isian Data Murid
+				{#if kelasAktifLabel}
+					<span class="mt-2 block text-lg font-semibold">{kelasAktifLabel}</span>
+				{/if}
+			</div>
+			<!-- Tombol Tambah Manual (dipindahkan ke kanan judul) -->
+			{#if hasSelection}
+				<button
+					class="btn btn-soft btn-error shadow-none mt-4 sm:mt-0"
+					type="button"
+					disabled={!hasSelection || formSubmitting}
+					onclick={openBulkDeleteModal}
+					title={hasSelection ? 'Hapus murid terpilih' : 'Pilih murid terlebih dahulu'}
+				>
+					<Icon name="del" />
+					Hapus
+				</button>
+			{:else}
+				<a
+					class="btn btn-soft flex items-center shadow-none mt-4 sm:mt-0"
+					href="/murid/form"
+					use:modalRoute={'add-murid'}
+				>
+					<Icon name="plus" />
+					Tambah Murid
+				</a>
+			{/if}
+		</div>
 	</h2>
-	<div class="mb-4 flex flex-col gap-2 sm:flex-row">
-		<!-- Tombol Tambah Manual -->
-		<a
-			class="btn btn-soft flex items-center shadow-none"
-			href="/murid/form"
-			use:modalRoute={'add-murid'}
-		>
-			<Icon name="plus" />
-			Tambah Murid
-		</a>
-
-		<button
-			class="btn btn-soft btn-error shadow-none sm:ml-auto"
-			type="button"
-			disabled={!hasSelection || formSubmitting}
-			onclick={openBulkDeleteModal}
-			title={hasSelection ? 'Hapus murid terpilih' : 'Pilih murid terlebih dahulu'}
-		>
-			<Icon name="del" />
-			Hapus
-		</button>
-	</div>
 
 	<form
 		class="flex flex-col items-center gap-2 sm:flex-row"

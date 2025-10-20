@@ -221,7 +221,7 @@
 							<td>
 								<div class="flex justify-end gap-2">
 									<button
-										class="btn btn-sm btn-ghost shadow-none"
+										class="btn btn-sm btn-error btn-soft shadow-none"
 										type="button"
 										onclick={cancelInline}
 									>

@@ -288,7 +288,7 @@
 				/>
 				<button
 					type="submit"
-					class="btn btn-primary btn-soft shadow-none sm:ml-auto"
+					class="btn btn-primary shadow-none sm:ml-auto"
 					disabled={!data.hasTujuan || submitting}
 				>
 					<Icon name="save" />

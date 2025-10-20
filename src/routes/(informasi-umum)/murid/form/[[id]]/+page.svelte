@@ -376,7 +376,7 @@
 			<button
 				class="btn shadow-none {data.murid?.id
 					? 'btn-secondary'
-					: 'btn-primary'} btn-soft sm:ml-auto"
+					: 'btn-primary'} sm:ml-auto"
 				type="submit"
 				disabled={submitting || invalid}
 			>

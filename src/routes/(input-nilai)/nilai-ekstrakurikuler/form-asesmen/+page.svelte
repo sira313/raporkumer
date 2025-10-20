@@ -46,7 +46,7 @@
 				</a>
 				<button
 					type="submit"
-					class="btn btn-primary btn-soft shadow-none sm:ml-auto"
+					class="btn btn-primary shadow-none sm:ml-auto"
 					disabled={!hasTujuan || invalid || submitting}
 				>
 					{#if submitting}
@@ -95,7 +95,7 @@
 									</td>
 									<td class="align-top">
 										<select
-											class="select bg-base-200 w-full dark:border-none"
+											class="select bg-base-200 dark:bg-base-300 w-full dark:border-none"
 											name={`nilai.${tujuan.id}`}
 										>
 											<option value="">Belum dinilai</option>

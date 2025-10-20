@@ -309,7 +309,7 @@
 										<label class="flex flex-col gap-2" aria-busy={submitting}>
 											<textarea
 												bind:this={editingTextarea}
-												class="textarea textarea-bordered bg-base-200 dark:bg-base-100 w-full dark:border-none"
+												class="textarea textarea-bordered bg-base-200 dark:bg-base-300 w-full dark:border-none"
 												name="catatan"
 												rows="4"
 												bind:value={editingCatatan}
@@ -334,7 +334,7 @@
 								<div class="flex justify-end gap-2">
 									<button
 										type="button"
-										class="btn btn-soft btn-sm shadow-none"
+										class="btn btn-soft btn-sm btn-error shadow-none"
 										onclick={cancelEdit}
 										disabled={editingSubmitting}
 										title="Batalkan edit catatan"

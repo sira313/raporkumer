@@ -101,7 +101,7 @@
 							Batal
 						</button>
 						<button
-							class="btn btn-primary btn-soft shadow-none"
+							class="btn btn-primary shadow-none"
 							disabled={submitting ||
 								!selectedDimensions.length ||
 								!kelasId ||

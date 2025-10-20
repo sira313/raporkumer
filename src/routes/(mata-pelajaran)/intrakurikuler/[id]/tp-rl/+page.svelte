@@ -865,7 +865,7 @@
 		</button>
 		{#if isCreateModeActive || isEditModeActive}
 			<button
-				class="btn btn-soft btn-primary shadow-none sm:max-w-40"
+				class="btn btn-primary shadow-none sm:max-w-40"
 				type="button"
 				onclick={submitActiveForm}
 				disabled={!activeFormId || isFormSubmitting}
@@ -876,7 +876,7 @@
 			</button>
 		{:else}
 			<button
-				class="btn btn-soft shadow-none sm:max-w-40"
+				class="btn shadow-none sm:max-w-40 {isEditingBobot ? '' : 'btn-soft' }"
 				type="button"
 				onclick={toggleBobotEditing}
 				disabled={!hasGroups}

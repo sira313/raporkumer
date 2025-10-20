@@ -106,7 +106,7 @@
 					Kembali
 				</a>
 				<button
-					class="btn btn-soft shadow-none {data.kelas?.id ? 'btn-secondary' : 'btn-primary'}"
+					class="btn shadow-none {data.kelas?.id ? 'btn-secondary' : 'btn-primary'}"
 					disabled={submitting || disableAcademic}
 				>
 					{#if submitting}

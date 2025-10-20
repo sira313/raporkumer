@@ -142,7 +142,7 @@
 			</button>
 			<button
 				type="submit"
-				class="btn btn-primary btn-soft shadow-none"
+				class="btn btn-primary shadow-none"
 				disabled={submitting || invalid || !kelasAktif}
 			>
 				{#if submitting}
