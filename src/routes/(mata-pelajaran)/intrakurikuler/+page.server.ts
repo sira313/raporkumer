@@ -2,7 +2,7 @@ import db from '$lib/server/db';
 import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama';
 import { tableMataPelajaran, tableTujuanPembelajaran, tableKelas } from '$lib/server/db/schema';
 import { agamaVariantNames } from '$lib/statics';
-import { eq, inArray, and } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 type MataPelajaranBase = Omit<MataPelajaran, 'tujuanPembelajaran'>;
 type MataPelajaranWithTp = MataPelajaranBase & { tpCount: number };
@@ -149,68 +149,99 @@ export const actions = {
 		const dataRows = rawRows.slice(headerIndex + 1).filter(Boolean);
 		if (!dataRows.length) return fail(400, { fail: 'Tidak ada data pada file.' });
 
-		// Parse rows into mapel -> groups of lingkup -> tujuan
-		const parsed = new Map<string, Array<{ lingkup: string; deskripsi: string }>>();
+		// Parse rows into mapel -> meta (jenis, kkm) -> groups of lingkup -> tujuan
+		type ParsedEntry = { lingkup: string; deskripsi: string };
+		type ParsedMapel = { jenis?: string; kkm?: number | null; entries: ParsedEntry[] };
+
+		const parsed = new Map<string, ParsedMapel>();
 		let currentMapel = '';
+		let currentJenis = '';
+		let currentKkmRaw = '';
 		let currentLingkup = '';
 
 		for (const row of dataRows as (string | number | null | undefined)[][]) {
 			const col0 = normalizeCell(row?.[0] ?? ''); // Mata Pelajaran
-			const col1 = normalizeCell(row?.[1] ?? ''); // Lingkup Materi
-			const col2 = normalizeCell(row?.[2] ?? ''); // Tujuan Pembelajaran
+			const col1 = normalizeCell(row?.[1] ?? ''); // Jenis
+			const col2 = normalizeCell(row?.[2] ?? ''); // KKM
+			const col3 = normalizeCell(row?.[3] ?? ''); // Lingkup Materi
+			const col4 = normalizeCell(row?.[4] ?? ''); // Tujuan Pembelajaran
 
 			if (col0) {
 				currentMapel = col0;
+				currentJenis = '';
+				currentKkmRaw = '';
 				currentLingkup = '';
 			}
 			if (!currentMapel) {
 				// skip rows before first mapel name
 				continue;
 			}
-			if (col1) {
-				currentLingkup = col1;
-			}
-			if (!col2) continue; // no tujuan
+			if (col1) currentJenis = col1;
+			if (col2) currentKkmRaw = col2;
+			if (col3) currentLingkup = col3;
+			if (!col4) continue; // no tujuan
 
 			const key = currentMapel;
-			const list = parsed.get(key) ?? [];
-			parsed.set(key, list);
-			list.push({ lingkup: currentLingkup, deskripsi: col2 });
+			let entry = parsed.get(key);
+			if (!entry) {
+				const parsedKkm = currentKkmRaw ? (Number.isFinite(Number(currentKkmRaw)) ? Number(currentKkmRaw) : null) : undefined;
+				entry = { jenis: currentJenis || undefined, kkm: parsedKkm ?? undefined, entries: [] };
+				parsed.set(key, entry);
+			} else {
+				// update meta if new values provided in subsequent rows
+				if (currentJenis) entry.jenis = currentJenis;
+				if (currentKkmRaw) {
+					const parsedKkm = Number.isFinite(Number(currentKkmRaw)) ? Number(currentKkmRaw) : null;
+					if (parsedKkm !== null) entry.kkm = parsedKkm;
+				}
+			}
+
+			entry.entries.push({ lingkup: currentLingkup, deskripsi: col4 });
 		}
 
 		if (parsed.size === 0) return fail(400, { fail: 'Tidak ada tujuan pembelajaran yang ditemukan.' });
 
 		// Persist into DB: create new mapel when not found, otherwise insert tujuan pembelajaran
-		// for existing mapel. Avoid duplicate TP entries.
+		// for existing mapel. Avoid duplicate TP entries. Also update existing mapel's jenis/kkm if provided.
 		let insertedMapel = 0;
+		let updatedMapel = 0;
 		let insertedTp = 0;
 		let skippedTp = 0;
 
 		await db.transaction(async (tx) => {
-			// fetch existing mapel for kelas
-			const mapelNames = Array.from(parsed.keys()).map((s) => s.toLowerCase());
-			const existingMapel = mapelNames.length
-				? await tx.query.tableMataPelajaran.findMany({
-					  where: and(eq(tableMataPelajaran.kelasId, kelasId), inArray(tableMataPelajaran.nama, mapelNames.map((n) => n)))
-				  })
-				: [];
+			// fetch existing mapel for kelas (case-insensitive matching will be done in JS)
+			const existingMapel = await tx.query.tableMataPelajaran.findMany({
+				where: eq(tableMataPelajaran.kelasId, kelasId)
+			});
 
 			const mapelByName = new Map<string, number>();
-			for (const m of existingMapel) mapelByName.set(m.nama.toLowerCase(), m.id);
+			for (const m of existingMapel) mapelByName.set((m.nama ?? '').toLowerCase(), m.id);
 
-			for (const [mapelName, entries] of parsed.entries()) {
+			for (const [mapelName, meta] of parsed.entries()) {
 				const lower = mapelName.toLowerCase();
 				let mapelId = mapelByName.get(lower) ?? null;
 				if (!mapelId) {
-					// create the mapel automatically
-					const insertRes = await tx
-						.insert(tableMataPelajaran)
-						.values({ nama: mapelName, jenis: 'wajib', kkm: 0, kelasId })
-						.returning({ id: tableMataPelajaran.id });
+					// create the mapel automatically using provided jenis/kkm if available
+					const insertValues = {
+						nama: mapelName,
+						jenis: (meta.jenis as 'wajib' | 'pilihan' | 'mulok') ?? 'wajib',
+						kkm: typeof meta.kkm === 'number' ? meta.kkm : 0,
+						kelasId
+					};
+					const insertRes = await tx.insert(tableMataPelajaran).values(insertValues).returning({ id: tableMataPelajaran.id });
 					mapelId = insertRes?.[0]?.id ?? null;
 					if (mapelId) {
 						insertedMapel += 1;
 						mapelByName.set(lower, mapelId);
+					}
+				} else {
+					// update existing mapel jika ada meta baru berbeda
+					const updates: Record<string, unknown> = {};
+					if (meta.jenis && meta.jenis !== undefined) updates.jenis = meta.jenis;
+					if (typeof meta.kkm === 'number') updates.kkm = meta.kkm;
+					if (Object.keys(updates).length > 0) {
+						await tx.update(tableMataPelajaran).set(updates).where(eq(tableMataPelajaran.id, mapelId));
+						updatedMapel += 1;
 					}
 				}
 				if (!mapelId) continue; // defensive
@@ -225,7 +256,7 @@ export const actions = {
 				);
 
 				const toInsertTp: Array<{ lingkupMateri: string; deskripsi: string; mataPelajaranId: number }> = [];
-				for (const entry of entries) {
+				for (const entry of meta.entries) {
 					const key = `${normalizeCell(entry.lingkup).toLowerCase()}::${normalizeCell(entry.deskripsi).toLowerCase()}`;
 					if (existingKeys.has(key)) {
 						skippedTp += 1;
@@ -242,7 +273,7 @@ export const actions = {
 			}
 		});
 
-		const parts = [`Impor selesai: ${insertedMapel} mapel baru, ${insertedTp} tujuan pembelajaran ditambahkan.`];
+		const parts = [`Impor selesai: ${insertedMapel} mapel baru, ${updatedMapel} mapel diperbarui, ${insertedTp} tujuan pembelajaran ditambahkan.`];
 		if (skippedTp > 0) parts.push(`${skippedTp} entri diabaikan karena sudah ada.`);
 		return { message: parts.join(' ') };
 	},

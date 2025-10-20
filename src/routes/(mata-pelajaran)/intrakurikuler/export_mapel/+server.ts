@@ -21,9 +21,9 @@ export async function GET({ cookies }) {
     orderBy: [asc(tableTujuanPembelajaran.mataPelajaranId), asc(tableTujuanPembelajaran.id)]
   });
 
-  const header = ['Mata Pelajaran', 'Lingkup Materi', 'Tujuan Pembelajaran'];
+  const header = ['Mata Pelajaran', 'Jenis', 'KKM', 'Lingkup Materi', 'Tujuan Pembelajaran'];
 
-  const mapelOrder = mapelRows.map((m) => ({ id: m.id, nama: m.nama }));
+  const mapelOrder = mapelRows.map((m) => ({ id: m.id, nama: m.nama, jenis: m.jenis, kkm: m.kkm }));
   const tpByMapel = new Map<number, Array<{ lingkup: string; deskripsi: string }>>();
   for (const tp of tpRows) {
     const list = tpByMapel.get(tp.mataPelajaranId) ?? [];
@@ -35,21 +35,21 @@ export async function GET({ cookies }) {
   for (const m of mapelOrder) {
     const entries = tpByMapel.get(m.id) ?? [];
     if (entries.length === 0) {
-      rows.push([m.nama, '', '']);
+      rows.push([m.nama, m.jenis || '', (typeof m.kkm === 'number' ? String(m.kkm) : ''), '', '']);
       continue;
     }
     let first = true;
     let lastLingkup = '';
     for (const e of entries) {
       if (first) {
-        rows.push([m.nama, e.lingkup || '', e.deskripsi || '']);
+        rows.push([m.nama, m.jenis || '', (typeof m.kkm === 'number' ? String(m.kkm) : ''), e.lingkup || '', e.deskripsi || '']);
         first = false;
         lastLingkup = e.lingkup || '';
         continue;
       }
       const mapelCell = '';
       const lingkupCell = e.lingkup && e.lingkup !== lastLingkup ? e.lingkup : '';
-      rows.push([mapelCell, lingkupCell, e.deskripsi || '']);
+      rows.push([mapelCell, '', '', lingkupCell, e.deskripsi || '']);
       lastLingkup = e.lingkup || lastLingkup;
     }
   }
