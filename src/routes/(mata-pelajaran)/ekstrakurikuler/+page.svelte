@@ -228,7 +228,7 @@
 			{/if}
 		</div>
 		<div class="flex flex-col gap-2 sm:flex-row">
-			<button class="btn shadow-none btn-soft" disabled={!canManage} onclick={toggleAddRow}>
+			<button class="btn btn-soft shadow-none" disabled={!canManage} onclick={toggleAddRow}>
 				<Icon name="plus" />
 				Tambah
 			</button>

@@ -364,7 +364,7 @@
 
 			{#if invalid}
 				<button
-					class="btn btn-primary shadow-none btn-soft"
+					class="btn btn-primary btn-soft shadow-none"
 					type="button"
 					onclick={() => (activeTab = (activeTab + 1) % 4)}
 				>

@@ -817,7 +817,7 @@
 			{mapelDisplayName} – {data.mapel.kelas.nama}
 		</h2>
 		<button
-			class="btn w-full btn-soft shadow-none sm:w-auto sm:max-w-40"
+			class="btn btn-soft w-full shadow-none sm:w-auto sm:max-w-40"
 			type="button"
 			onclick={openImportDialog}
 			disabled={isImportDisabled}
@@ -830,7 +830,7 @@
 
 	<!-- tombol tambah Tujuan Pembelajaran -->
 	<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-		<button class="btn shadow-none btn-soft" type="button" onclick={() => history.back()}>
+		<button class="btn btn-soft shadow-none" type="button" onclick={() => history.back()}>
 			<Icon name="left" />
 			Kembali
 		</button>
@@ -852,7 +852,7 @@
 			</div>
 		{/if}
 		<button
-			class="btn shadow-none btn-soft sm:ml-auto sm:max-w-40"
+			class="btn btn-soft shadow-none sm:ml-auto sm:max-w-40"
 			type="button"
 			onclick={handlePrimaryActionClick}
 			disabled={isTambahTpDisabled}

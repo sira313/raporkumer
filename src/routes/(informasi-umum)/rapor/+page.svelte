@@ -342,7 +342,7 @@
 
 					<div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-between">
 						<button
-							class="btn shadow-none btn-soft"
+							class="btn btn-soft shadow-none"
 							type="submit"
 							formaction="?/copy-semester"
 							disabled={submitting || !canCopySemester}

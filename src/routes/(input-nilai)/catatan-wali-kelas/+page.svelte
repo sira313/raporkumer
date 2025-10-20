@@ -246,7 +246,7 @@
 		</h2>
 		<button
 			type="button"
-			class="btn btn-primary gap-2 self-start shadow-none sm:self-center btn-soft"
+			class="btn btn-primary btn-soft gap-2 self-start shadow-none sm:self-center"
 			onclick={openBulkDialog}
 			disabled={!bulkTargetCount || editingRowId !== null}
 			title="Isi catatan yang sama untuk seluruh murid pada halaman ini"

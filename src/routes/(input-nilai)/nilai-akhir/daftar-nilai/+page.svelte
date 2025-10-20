@@ -77,12 +77,12 @@
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-2 flex flex-col gap-2 sm:flex-row">
-		<a href="/nilai-akhir/" class="btn shadow-none btn-soft">
+		<a href="/nilai-akhir/" class="btn btn-soft shadow-none">
 			<Icon name="left" />
 			Kembali
 		</a>
 		<button
-			class="btn shadow-none btn-soft sm:ml-auto"
+			class="btn btn-soft shadow-none sm:ml-auto"
 			class:loading={exporting}
 			disabled={!hasNilai || exporting}
 			title={exporting

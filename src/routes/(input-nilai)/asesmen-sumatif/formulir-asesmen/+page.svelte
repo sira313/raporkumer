@@ -272,7 +272,7 @@
 			<input type="hidden" name="mapelId" value={data.mapel.id} />
 
 			<div class="flex flex-col gap-2 sm:flex-row">
-				<a href={kembaliHref} class="btn shadow-none btn-soft">
+				<a href={kembaliHref} class="btn btn-soft shadow-none">
 					<Icon name="left" />
 					Kembali
 				</a>

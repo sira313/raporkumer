@@ -257,7 +257,7 @@
 
 <button
 	type="button"
-	class="btn shadow-none btn-soft"
+	class="btn btn-soft shadow-none"
 	onclick={openCheatModal}
 	disabled={(!hasTujuan && cheatUnlockedState) || isDisabled}
 >

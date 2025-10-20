@@ -65,7 +65,7 @@
 				<div class="modal-action">
 					{#if props.onNegative}
 						<button
-							class="btn gap-2 shadow-none btn-soft"
+							class="btn btn-soft gap-2 shadow-none"
 							type="button"
 							onclick={() => props.onNegative?.action?.({ close: hideModal })}
 						>
@@ -91,7 +91,7 @@
 
 					{#if props.onPositive}
 						<button
-							class="btn btn-primary gap-2 shadow-none btn-soft"
+							class="btn btn-primary btn-soft gap-2 shadow-none"
 							type="button"
 							onclick={() => props.onPositive?.action?.({ close: hideModal })}
 						>

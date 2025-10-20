@@ -85,8 +85,8 @@ function isXlsxMime(type: string | null | undefined) {
 
 export const actions = {
 	async import_mapel({ request, cookies, locals }) {
-	const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID) || null;
-	const kelasId = kelasIdCookie ? Number(kelasIdCookie) : null;
+		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID) || null;
+		const kelasId = kelasIdCookie ? Number(kelasIdCookie) : null;
 		if (!kelasId || !Number.isFinite(kelasId)) {
 			return fail(400, { fail: 'Pilih kelas aktif terlebih dahulu.' });
 		}
@@ -136,14 +136,16 @@ export const actions = {
 		const headerIndex = rawRows.findIndex((row) => {
 			const cols = (row ?? []).map((c) => normalizeCell(c).toLowerCase());
 			return (
-				(cols.some((c) => c.includes('mata pelajaran') || c === 'mapel' || c === 'mata pelajaran')) &&
+				cols.some((c) => c.includes('mata pelajaran') || c === 'mapel' || c === 'mata pelajaran') &&
 				cols.some((c) => c.includes('lingkup')) &&
 				cols.some((c) => c.includes('tujuan'))
 			);
 		});
 
 		if (headerIndex === -1) {
-			return fail(400, { fail: 'Template tidak valid. Pastikan kolom Mata Pelajaran, Lingkup Materi, dan Tujuan Pembelajaran tersedia.' });
+			return fail(400, {
+				fail: 'Template tidak valid. Pastikan kolom Mata Pelajaran, Lingkup Materi, dan Tujuan Pembelajaran tersedia.'
+			});
 		}
 
 		const dataRows = rawRows.slice(headerIndex + 1).filter(Boolean);
@@ -184,7 +186,11 @@ export const actions = {
 			const key = currentMapel;
 			let entry = parsed.get(key);
 			if (!entry) {
-				const parsedKkm = currentKkmRaw ? (Number.isFinite(Number(currentKkmRaw)) ? Number(currentKkmRaw) : null) : undefined;
+				const parsedKkm = currentKkmRaw
+					? Number.isFinite(Number(currentKkmRaw))
+						? Number(currentKkmRaw)
+						: null
+					: undefined;
 				entry = { jenis: currentJenis || undefined, kkm: parsedKkm ?? undefined, entries: [] };
 				parsed.set(key, entry);
 			} else {
@@ -199,7 +205,8 @@ export const actions = {
 			entry.entries.push({ lingkup: currentLingkup, deskripsi: col4 });
 		}
 
-		if (parsed.size === 0) return fail(400, { fail: 'Tidak ada tujuan pembelajaran yang ditemukan.' });
+		if (parsed.size === 0)
+			return fail(400, { fail: 'Tidak ada tujuan pembelajaran yang ditemukan.' });
 
 		// Persist into DB: create new mapel when not found, otherwise insert tujuan pembelajaran
 		// for existing mapel. Avoid duplicate TP entries. Also update existing mapel's jenis/kkm if provided.
@@ -228,7 +235,10 @@ export const actions = {
 						kkm: typeof meta.kkm === 'number' ? meta.kkm : 0,
 						kelasId
 					};
-					const insertRes = await tx.insert(tableMataPelajaran).values(insertValues).returning({ id: tableMataPelajaran.id });
+					const insertRes = await tx
+						.insert(tableMataPelajaran)
+						.values(insertValues)
+						.returning({ id: tableMataPelajaran.id });
 					mapelId = insertRes?.[0]?.id ?? null;
 					if (mapelId) {
 						insertedMapel += 1;
@@ -240,7 +250,10 @@ export const actions = {
 					if (meta.jenis && meta.jenis !== undefined) updates.jenis = meta.jenis;
 					if (typeof meta.kkm === 'number') updates.kkm = meta.kkm;
 					if (Object.keys(updates).length > 0) {
-						await tx.update(tableMataPelajaran).set(updates).where(eq(tableMataPelajaran.id, mapelId));
+						await tx
+							.update(tableMataPelajaran)
+							.set(updates)
+							.where(eq(tableMataPelajaran.id, mapelId));
 						updatedMapel += 1;
 					}
 				}
@@ -252,10 +265,17 @@ export const actions = {
 					where: eq(tableTujuanPembelajaran.mataPelajaranId, mapelId)
 				});
 				const existingKeys = new Set(
-					existingTp.map((t) => `${normalizeCell(t.lingkupMateri).toLowerCase()}::${normalizeCell(t.deskripsi).toLowerCase()}`)
+					existingTp.map(
+						(t) =>
+							`${normalizeCell(t.lingkupMateri).toLowerCase()}::${normalizeCell(t.deskripsi).toLowerCase()}`
+					)
 				);
 
-				const toInsertTp: Array<{ lingkupMateri: string; deskripsi: string; mataPelajaranId: number }> = [];
+				const toInsertTp: Array<{
+					lingkupMateri: string;
+					deskripsi: string;
+					mataPelajaranId: number;
+				}> = [];
 				for (const entry of meta.entries) {
 					const key = `${normalizeCell(entry.lingkup).toLowerCase()}::${normalizeCell(entry.deskripsi).toLowerCase()}`;
 					if (existingKeys.has(key)) {
@@ -263,7 +283,11 @@ export const actions = {
 						continue;
 					}
 					existingKeys.add(key);
-					toInsertTp.push({ lingkupMateri: entry.lingkup, deskripsi: entry.deskripsi, mataPelajaranId: mapelId });
+					toInsertTp.push({
+						lingkupMateri: entry.lingkup,
+						deskripsi: entry.deskripsi,
+						mataPelajaranId: mapelId
+					});
 				}
 
 				if (toInsertTp.length) {
@@ -273,7 +297,9 @@ export const actions = {
 			}
 		});
 
-		const parts = [`Impor selesai: ${insertedMapel} mapel baru, ${updatedMapel} mapel diperbarui, ${insertedTp} tujuan pembelajaran ditambahkan.`];
+		const parts = [
+			`Impor selesai: ${insertedMapel} mapel baru, ${updatedMapel} mapel diperbarui, ${insertedTp} tujuan pembelajaran ditambahkan.`
+		];
 		if (skippedTp > 0) parts.push(`${skippedTp} entri diabaikan karena sudah ada.`);
 		return { message: parts.join(' ') };
 	},
@@ -292,7 +318,10 @@ export const actions = {
 		});
 
 		const tpRows = await db.query.tableTujuanPembelajaran.findMany({
-			where: inArray(tableTujuanPembelajaran.mataPelajaranId, mapelRows.map((m) => m.id)),
+			where: inArray(
+				tableTujuanPembelajaran.mataPelajaranId,
+				mapelRows.map((m) => m.id)
+			),
 			orderBy: [asc(tableTujuanPembelajaran.mataPelajaranId), asc(tableTujuanPembelajaran.id)]
 		});
 
@@ -350,9 +379,12 @@ export const actions = {
 		} catch {
 			// ignore and fallback to kelasId
 		}
-	// compact label: remove dangerous chars and remove spaces so filename becomes mapel-KelasV.xlsx
-	const safeLabel = kelasLabel.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '').trim();
-	const filename = `mapel-${safeLabel}.xlsx`;
+		// compact label: remove dangerous chars and remove spaces so filename becomes mapel-KelasV.xlsx
+		const safeLabel = kelasLabel
+			.replace(/[\\/:*?"<>|]+/g, '')
+			.replace(/\s+/g, '')
+			.trim();
+		const filename = `mapel-${safeLabel}.xlsx`;
 
 		return new Response(Buffer.from(buffer), {
 			status: 200,

@@ -101,12 +101,12 @@
 				</div>
 			</div>
 			<div class="mt-6 flex justify-between gap-2">
-				<a class="btn shadow-none btn-soft" href="/kelas" aria-label="kembali">
+				<a class="btn btn-soft shadow-none" href="/kelas" aria-label="kembali">
 					<Icon name="left" />
 					Kembali
 				</a>
 				<button
-					class="btn shadow-none btn-soft {data.kelas?.id ? 'btn-secondary' : 'btn-primary'}"
+					class="btn btn-soft shadow-none {data.kelas?.id ? 'btn-secondary' : 'btn-primary'}"
 					disabled={submitting || disableAcademic}
 				>
 					{#if submitting}

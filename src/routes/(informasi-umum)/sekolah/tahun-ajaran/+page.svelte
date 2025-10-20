@@ -131,7 +131,7 @@
 	{/if}
 
 	<div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-		<button class="btn shadow-none btn-soft sm:w-auto" type="button" onclick={() => history.back()}>
+		<button class="btn btn-soft shadow-none sm:w-auto" type="button" onclick={() => history.back()}>
 			<Icon name="left" />
 			Kembali
 		</button>
@@ -145,10 +145,14 @@
 						<input type="hidden" name="sekolahId" value={selectedSekolahId} />
 					{/if}
 					<button
-						class={hasSelection ? 'btn btn-error btn-soft shadow-none sm:max-w-40' : 'btn shadow-none btn-soft sm:max-w-40'}
+						class={hasSelection
+							? 'btn btn-error btn-soft shadow-none sm:max-w-40'
+							: 'btn btn-soft shadow-none sm:max-w-40'}
 						type={hasSelection ? 'submit' : 'button'}
 						onclick={!hasSelection ? handleCreateRow : undefined}
-						disabled={hasSelection ? (!selectedSekolahId || editingId !== null || submitting) : (!selectedSekolahId || editingId !== null)}
+						disabled={hasSelection
+							? !selectedSekolahId || editingId !== null || submitting
+							: !selectedSekolahId || editingId !== null}
 					>
 						<Icon name={hasSelection ? 'del' : 'plus'} />
 						{hasSelection ? (submitting ? 'Menghapus…' : 'Hapus TA') : 'Tambah TA'}

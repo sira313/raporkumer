@@ -39,7 +39,7 @@
 				<p class="text-sm opacity-70">Total tujuan pembelajaran: {totalTujuan}</p>
 
 				<div class="mt-4 flex justify-end gap-2">
-					<button class="btn shadow-none btn-soft" type="button" onclick={onCancel}> Batal </button>
+					<button class="btn btn-soft shadow-none" type="button" onclick={onCancel}> Batal </button>
 					<button
 						class="btn btn-error btn-soft shadow-none"
 						disabled={submitting || idsToDelete.length === 0}

@@ -58,7 +58,9 @@
 							{kelas.semester?.nama ?? 'Semester belum ditetapkan'}
 						</p>
 					</div>
-					<div class={`badge badge-soft ${faseBadgeClass(kelas.fase)}`}>{kelas.fase || 'Belum diatur'}</div>
+					<div class={`badge badge-soft ${faseBadgeClass(kelas.fase)}`}>
+						{kelas.fase || 'Belum diatur'}
+					</div>
 				</div>
 			</div>
 			<div class="border-base-300 dark:border-base-200 m-0 border"></div>

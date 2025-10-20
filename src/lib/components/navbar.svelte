@@ -123,7 +123,7 @@
 			<!-- tasks modal for mobile -->
 			<li>
 				<button
-					class="btn btn-ghost btn-circle xl:hidden shadow-none"
+					class="btn btn-ghost btn-circle shadow-none xl:hidden"
 					aria-label="Daftar Tugas"
 					title="Daftar Tugas"
 					onclick={() => tasksModalRef?.open()}
@@ -154,7 +154,12 @@
 			<!-- Dropdown ganti kelas -->
 			<li class="ml-2">
 				<div class="dropdown dropdown-end">
-					<div tabindex="0" role="button" title="Ganti kelas" class="btn btn-soft rounded-full shadow-none">
+					<div
+						tabindex="0"
+						role="button"
+						title="Ganti kelas"
+						class="btn btn-soft rounded-full shadow-none"
+					>
 						<span class="hidden sm:block">{kelasAktifLabel}</span>
 						<Icon name="users" class="sm:hidden" />
 						<Icon name="select" class="hidden sm:block" />

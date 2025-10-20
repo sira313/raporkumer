@@ -40,13 +40,13 @@
 			<input type="hidden" name="ekstrakurikulerId" value={data.ekstrakurikuler.id} />
 
 			<div class="flex flex-col gap-2 sm:flex-row">
-				<a href={data.backUrl} class="btn shadow-none btn-soft">
+				<a href={data.backUrl} class="btn btn-soft shadow-none">
 					<Icon name="left" />
 					Kembali
 				</a>
 				<button
 					type="submit"
-					class="btn btn-primary shadow-none sm:ml-auto btn-soft"
+					class="btn btn-primary btn-soft shadow-none sm:ml-auto"
 					disabled={!hasTujuan || invalid || submitting}
 				>
 					{#if submitting}
