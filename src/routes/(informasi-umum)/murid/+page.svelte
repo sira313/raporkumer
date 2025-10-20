@@ -272,7 +272,7 @@
 			<!-- Tombol Tambah Manual (dipindahkan ke kanan judul) -->
 			{#if hasSelection}
 				<button
-					class="btn btn-soft btn-error shadow-none mt-4 sm:mt-0"
+					class="btn btn-soft btn-error mt-4 shadow-none sm:mt-0"
 					type="button"
 					disabled={!hasSelection || formSubmitting}
 					onclick={openBulkDeleteModal}
@@ -283,7 +283,7 @@
 				</button>
 			{:else}
 				<a
-					class="btn btn-soft flex items-center shadow-none mt-4 sm:mt-0"
+					class="btn btn-soft mt-4 flex items-center shadow-none sm:mt-0"
 					href="/murid/form"
 					use:modalRoute={'add-murid'}
 				>

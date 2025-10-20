@@ -876,7 +876,7 @@
 			</button>
 		{:else}
 			<button
-				class="btn shadow-none sm:max-w-40 {isEditingBobot ? '' : 'btn-soft' }"
+				class="btn shadow-none sm:max-w-40 {isEditingBobot ? '' : 'btn-soft'}"
 				type="button"
 				onclick={toggleBobotEditing}
 				disabled={!hasGroups}

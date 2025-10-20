@@ -61,7 +61,11 @@
 			{/if}
 		</div>
 		<div class="mt-2 flex gap-0.5 sm:mt-0">
-			<a class="btn rounded-r-none btn-soft shadow-none" href="/intrakurikuler/form" use:modalRoute={'add-mapel'}>
+			<a
+				class="btn btn-soft rounded-r-none shadow-none"
+				href="/intrakurikuler/form"
+				use:modalRoute={'add-mapel'}
+			>
 				<Icon name="plus" />
 				Tambah Mapel
 			</a>
@@ -69,7 +73,7 @@
 			<!-- dropdown yang tergabung (perhatikan join-item dan hilangkan margin m-1) -->
 			<div class="dropdown dropdown-end">
 				<!-- trigger: gunakan button bertipe btn supaya tampil seperti item lain -->
-				<button type="button" tabindex="0" class="btn btn-soft shadow-none rounded-l-none">
+				<button type="button" tabindex="0" class="btn btn-soft rounded-l-none shadow-none">
 					<Icon name="down" />
 				</button>
 

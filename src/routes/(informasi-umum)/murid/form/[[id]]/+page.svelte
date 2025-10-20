@@ -374,9 +374,7 @@
 			{/if}
 
 			<button
-				class="btn shadow-none {data.murid?.id
-					? 'btn-secondary'
-					: 'btn-primary'} sm:ml-auto"
+				class="btn shadow-none {data.murid?.id ? 'btn-secondary' : 'btn-primary'} sm:ml-auto"
 				type="submit"
 				disabled={submitting || invalid}
 			>
