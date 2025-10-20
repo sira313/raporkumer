@@ -76,14 +76,14 @@
 </div>
 
 <div class="mt-4 flex flex-col gap-2 sm:flex-row">
-	<a class="btn border-none shadow-none" href="/murid">
+	<a class="btn btn-soft shadow-none" href="/murid">
 		<Icon name="close" />
 		Tutup
 	</a>
 	<div class="flex-1"></div>
 
 	<a
-		class="btn btn-primary border-none shadow-none"
+		class="btn btn-primary btn-soft shadow-none"
 		href="/murid/form/{data.murid.id}"
 		use:modalRoute={'edit-murid'}
 	>

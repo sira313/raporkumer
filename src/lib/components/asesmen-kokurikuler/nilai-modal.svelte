@@ -106,7 +106,7 @@
 					</div>
 
 					<div class="modal-action mt-6 flex gap-2">
-						<button type="button" class="btn shadow-none" onclick={onClose}>
+						<button type="button" class="btn btn-soft shadow-none" onclick={onClose}>
 							<Icon name="close" />
 							Batal
 						</button>

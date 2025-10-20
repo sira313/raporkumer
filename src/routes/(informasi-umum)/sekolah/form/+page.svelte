@@ -232,7 +232,7 @@
 			<!-- Back and Save -->
 			<div class="mt-6 flex justify-end gap-2">
 				{#if !data.isInit}
-					<a class="btn shadow-none" href="/sekolah" aria-label="kembali">
+					<a class="btn btn-soft shadow-none" href="/sekolah" aria-label="kembali">
 						<Icon name="left" />
 						Kembali
 					</a>

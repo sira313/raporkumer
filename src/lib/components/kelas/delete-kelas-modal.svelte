@@ -162,7 +162,7 @@
 						</section>
 						<footer class="border-base-300 bg-base-100 flex-shrink-0 border-t p-4">
 							<div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
-								<button class="btn shadow-none sm:w-auto" type="button" onclick={close}>
+								<button class="btn btn-soft shadow-none sm:w-auto" type="button" onclick={close}>
 									Batal
 								</button>
 								<button

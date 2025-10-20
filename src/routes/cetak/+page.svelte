@@ -444,7 +444,7 @@
 		</h2>
 		<div class="flex items-center gap-2 self-end sm:self-auto">
 			<button
-				class="btn btn-circle shadow-none"
+				class="btn btn-circle btn-soft shadow-none"
 				type="button"
 				onclick={() => navigateMurid('prev')}
 				title="Murid sebelumnya"
@@ -454,7 +454,7 @@
 				<Icon name="left" />
 			</button>
 			<button
-				class="btn btn-circle shadow-none"
+				class="btn btn-circle btn-soft shadow-none"
 				type="button"
 				onclick={() => navigateMurid('next')}
 				title="Murid berikutnya"
@@ -519,7 +519,7 @@
 			</select>
 		{/if}
 		<button
-			class="btn shadow-none sm:ml-auto"
+			class="btn btn-soft shadow-none sm:ml-auto"
 			type="button"
 			title={previewButtonTitle}
 			disabled={previewDisabled}
@@ -556,7 +556,6 @@
 				<button
 					class="btn btn-sm btn-error btn-soft shadow-none"
 					type="button"
-					title="Hapus background piagam"
 					onclick={() => {
 						showModal({
 							title: 'Hapus Background Piagam',
@@ -591,7 +590,7 @@
 				</button>
 
 				<button
-					class="btn btn-sm shadow-none"
+					class="btn btn-sm btn-soft shadow-none"
 					type="button"
 					onclick={() =>
 						showModal({
@@ -606,7 +605,6 @@
 							},
 							dismissible: true
 						})}
-					title="Ganti background piagam"
 				>
 					<Icon name="image" />
 					Ganti BG

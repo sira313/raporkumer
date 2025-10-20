@@ -125,29 +125,32 @@
 		{data.ekstrakurikuler.nama}
 	</h2>
 
-	<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-		<button class="btn shadow-none" type="button" onclick={() => history.back()}>
+	<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+		<button class="btn btn-soft shadow-none" type="button" onclick={() => history.back()}>
 			<Icon name="left" />
 			Kembali
 		</button>
-		<button
-			class={`btn shadow-none sm:max-w-40 ${isCreateMode ? 'btn-error btn-soft' : ''}`}
-			type="button"
-			onclick={isCreateMode ? closeForm : openCreateForm}
-			disabled={!canManage || isEditMode}
-		>
-			<Icon name={isCreateMode ? 'close' : 'plus'} />
-			{isCreateMode ? 'Batal' : 'Tambah TP'}
-		</button>
-		<button
-			class="btn btn-error btn-soft shadow-none sm:ml-auto sm:max-w-40"
-			type="button"
-			onclick={openBulkDelete}
-			disabled={!anySelected || !canManage}
-		>
-			<Icon name="del" />
-			Hapus TP
-		</button>
+		{#if anySelected}
+			<button
+				class="btn btn-error btn-soft shadow-none sm:ml-auto sm:max-w-40"
+				type="button"
+				onclick={openBulkDelete}
+				disabled={!anySelected || !canManage}
+			>
+				<Icon name="del" />
+				Hapus TP
+			</button>
+		{:else}
+			<button
+				class={`btn btn-soft shadow-none sm:max-w-40 ${isCreateMode ? 'btn-error' : ''}`}
+				type="button"
+				onclick={isCreateMode ? closeForm : openCreateForm}
+				disabled={!canManage || isEditMode}
+			>
+				<Icon name={isCreateMode ? 'close' : 'plus'} />
+				{isCreateMode ? 'Batal' : 'Tambah TP'}
+			</button>
+		{/if}
 	</div>
 
 	{#if !data.tujuanTableReady}
@@ -203,7 +206,7 @@
 								{#snippet children({ submitting, invalid })}
 									<input name="ekstrakurikulerId" value={data.ekstrakurikuler.id} hidden />
 									<textarea
-										class="textarea dark:bg-base-200 w-full dark:border-none"
+										class="textarea dark:bg-base-300 w-full dark:border-none"
 										placeholder="Tulis tujuan pembelajaran ekstrakurikuler"
 										name="deskripsi"
 										bind:value={deskripsiInput}
@@ -398,7 +401,7 @@
 					{/each}
 
 					<div class="modal-action mt-6 flex gap-2">
-						<button class="btn shadow-none" type="button" onclick={closeDeleteModal}>
+						<button class="btn btn-soft shadow-none" type="button" onclick={closeDeleteModal}>
 							<Icon name="close" />
 							Batal
 						</button>

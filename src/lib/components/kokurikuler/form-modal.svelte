@@ -96,7 +96,7 @@
 					></textarea>
 
 					<div class="modal-action mt-6 flex gap-2">
-						<button class="btn shadow-none" type="button" onclick={onClose}>
+						<button class="btn btn-soft shadow-none" type="button" onclick={onClose}>
 							<Icon name="close" />
 							Batal
 						</button>

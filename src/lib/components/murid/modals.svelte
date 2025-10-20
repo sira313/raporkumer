@@ -68,7 +68,7 @@
 				{/if}
 				<p class="mt-4 text-sm opacity-70">Tindakan ini tidak bisa dibatalkan.</p>
 				<div class="mt-6 flex justify-end gap-2">
-					<button class="btn shadow-none" type="button" onclick={() => history.back()}>
+					<button class="btn btn-soft shadow-none" type="button" onclick={() => history.back()}>
 						<Icon name="close" />
 						Batal
 					</button>

@@ -40,7 +40,7 @@
 			<input type="hidden" name="ekstrakurikulerId" value={data.ekstrakurikuler.id} />
 
 			<div class="flex flex-col gap-2 sm:flex-row">
-				<a href={data.backUrl} class="btn shadow-none">
+				<a href={data.backUrl} class="btn btn-soft shadow-none">
 					<Icon name="left" />
 					Kembali
 				</a>
@@ -95,7 +95,7 @@
 									</td>
 									<td class="align-top">
 										<select
-											class="select bg-base-200 w-full dark:border-none"
+											class="select bg-base-200 dark:bg-base-300 w-full dark:border-none"
 											name={`nilai.${tujuan.id}`}
 										>
 											<option value="">Belum dinilai</option>

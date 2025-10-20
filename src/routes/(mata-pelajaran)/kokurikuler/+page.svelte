@@ -209,19 +209,22 @@
 			{/if}
 		</div>
 		<div class="flex flex-col gap-2 sm:flex-row">
-			<button class="btn shadow-none" disabled={!canManage} onclick={openAddModal}>
-				<Icon name="plus" />
-				Tambah
-			</button>
-			<button
-				type="button"
-				class={`btn w-full shadow-none sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
-				disabled={bulkDeleteDisabled}
-				onclick={openBulkDeleteModal}
-			>
-				<Icon name="del" />
-				Hapus
-			</button>
+			{#if anySelected}
+				<button
+					type="button"
+					class={`btn w-full shadow-none sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
+					disabled={bulkDeleteDisabled}
+					onclick={openBulkDeleteModal}
+				>
+					<Icon name="del" />
+					Hapus
+				</button>
+			{:else}
+				<button class="btn btn-soft shadow-none" disabled={!canManage} onclick={openAddModal}>
+					<Icon name="plus" />
+					Tambah
+				</button>
+			{/if}
 		</div>
 	</div>
 

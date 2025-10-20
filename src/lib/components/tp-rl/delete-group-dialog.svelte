@@ -25,7 +25,7 @@
 				<p class="text-sm opacity-70">Jumlah tujuan pembelajaran: {ids.length}</p>
 
 				<div class="mt-4 flex justify-end gap-2">
-					<button class="btn shadow-none" type="button" onclick={onCancel}> Batal </button>
+					<button class="btn btn-soft shadow-none" type="button" onclick={onCancel}> Batal </button>
 					<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
 						{#if submitting}
 							<div class="loading loading-spinner"></div>

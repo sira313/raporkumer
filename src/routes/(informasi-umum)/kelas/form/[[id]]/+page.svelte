@@ -100,8 +100,8 @@
 					/>
 				</div>
 			</div>
-			<div class="mt-6 flex justify-end gap-2">
-				<a class="btn shadow-none" href="/kelas" aria-label="kembali">
+			<div class="mt-6 flex justify-between gap-2">
+				<a class="btn btn-soft shadow-none" href="/kelas" aria-label="kembali">
 					<Icon name="left" />
 					Kembali
 				</a>

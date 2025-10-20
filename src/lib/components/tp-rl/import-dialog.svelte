@@ -112,7 +112,7 @@
 
 				<div class="mt-6 flex justify-end gap-2">
 					<button
-						class="btn shadow-none"
+						class="btn btn-soft shadow-none"
 						type="button"
 						onclick={handleCancel}
 						disabled={submitting}
@@ -120,7 +120,7 @@
 						Batal
 					</button>
 					<button
-						class="btn btn-primary shadow-none"
+						class="btn btn-primary btn-soft shadow-none"
 						type="submit"
 						disabled={submitting || !hasFile}
 					>
