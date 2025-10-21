@@ -53,6 +53,12 @@
 	const totalPages = $derived.by(() => Math.max(1, data.page?.totalPages ?? 1));
 	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
 
+	const kelasAktifLabel = $derived.by(() => {
+		const kelas = page.data.kelasAktif ?? null;
+		if (!kelas) return null;
+		return kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama;
+	});
+
 	$effect(() => {
 		selectedMapelValue = data.selectedMapelValue ?? '';
 		searchTerm = data.search ?? '';
@@ -174,15 +180,19 @@
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-		<h2 class="text-xl font-bold">Daftar Nilai Formatif</h2>
-		{#if data.selectedMapel}
-			<span
-				class="badge badge-outline border-base-300 bg-base-200/60 text-xs font-medium tracking-wide uppercase"
-			>
-				{data.selectedMapel.nama}
-			</span>
-		{/if}
+	<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+		<div>
+			{#if data.selectedMapel}
+				<h2 class="text-xl font-bold">Daftar Nilai Formatif - {data.selectedMapel.nama}</h2>
+			{/if}
+			{#if kelasAktifLabel}
+				<p class="text-base-content/70 text-sm">Kelas aktif: {kelasAktifLabel}</p>
+			{:else}
+				<p class="text-base-content/60 text-sm">
+					Pilih kelas di navbar untuk melihat mata pelajaran intrakurikuler.
+				</p>
+			{/if}
+		</div>
 	</div>
 
 	<div class="flex flex-col items-center gap-2 sm:flex-row">

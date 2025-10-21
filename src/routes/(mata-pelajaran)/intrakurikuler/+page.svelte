@@ -231,9 +231,9 @@
 									</div>
 								</td>
 								<td>
-									<div class="flex flex-row gap-2">
+									<div class="flex flex-row">
 										<a
-											class="btn btn-sm btn-soft shadow-none"
+											class="btn btn-sm btn-soft shadow-none rounded-r-none"
 											href={`/intrakurikuler/${mapel.id}/edit`}
 											title="Edit data mata pelajaran"
 											use:modalRoute={'edit-mapel'}
@@ -241,7 +241,7 @@
 											<Icon name="edit" />
 										</a>
 										<a
-											class="btn btn-sm btn-error btn-soft shadow-none"
+											class="btn btn-sm btn-error btn-soft shadow-none rounded-l-none"
 											href={`/intrakurikuler/${mapel.id}/delete`}
 											title="Hapus mata pelajaran"
 											use:modalRoute={'delete-mapel'}

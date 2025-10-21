@@ -54,6 +54,7 @@
 	});
 
 	const selectedMapelLabel = $derived.by(() => data.selectedMapel?.nama ?? null);
+	const kelasAktifLabel = $derived.by(() => (data as any).kelasAktif?.nama ?? null);
 	const hasMapel = $derived(data.mapelList.length > 0);
 	const currentPage = $derived.by(() => data.page.currentPage ?? 1);
 	const totalPages = $derived.by(() => Math.max(1, data.page.totalPages ?? 1));
@@ -153,15 +154,20 @@
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-		<h2 class="text-xl font-bold">Daftar Nilai Sumatif</h2>
-		{#if selectedMapelLabel}
-			<span
-				class="badge badge-outline border-base-300 bg-base-200/60 text-xs font-medium tracking-wide uppercase"
-			>
-				{selectedMapelLabel}
-			</span>
-		{/if}
+	<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+		<div>
+			{#if selectedMapelLabel}
+			<h2 class="text-xl font-bold">Daftar Nilai Sumatif - {selectedMapelLabel}</h2>
+			{/if}
+
+			{#if kelasAktifLabel}
+				<p class="text-base-content/70 text-sm">Kelas aktif: {kelasAktifLabel}</p>
+			{:else}
+				<p class="text-base-content/60 text-sm">
+					Pilih kelas di navbar untuk melihat mata pelajaran intrakurikuler.
+				</p>
+			{/if}
+		</div>
 	</div>
 
 	<div class="flex flex-col items-center gap-2 sm:flex-row">

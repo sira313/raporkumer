@@ -200,15 +200,6 @@
 	const hasFilteredMurid = $derived.by(() => data.totalMurid > 0);
 </script>
 
-{#if kelasAktifLabel}
-	<div class="alert alert-soft alert-info mb-6 flex items-center gap-3">
-		<Icon name="info" />
-		<span>
-			Menampilkan rekap kehadiran untuk kelas <strong>{kelasAktifLabel}</strong>.
-		</span>
-	</div>
-{/if}
-
 {#if !data.tableReady}
 	<div class="alert alert-soft alert-warning mb-6 flex items-center gap-3">
 		<Icon name="alert" />
@@ -220,7 +211,12 @@
 {/if}
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">Rekapitulasi Kehadiran Murid</h2>
+	<div class="mb-4">
+		<h2 class="text-xl font-bold">Rekapitulasi Kehadiran Murid</h2>
+		{#if kelasAktifLabel}
+		<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
+		{/if}
+	</div>
 
 	<form
 		class="flex flex-col gap-2 sm:flex-row"
