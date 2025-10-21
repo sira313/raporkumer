@@ -37,12 +37,12 @@
 
 <div>
 	<p class="text-base-content/70 mb-4 text-sm">
-		Unggah file Excel (.xlsx) sesuai format di bawah. Baris kosong akan diabaikan. <br>Jenis terdiri atas: wajib, pilihan, dan mulok.
+		Unggah file Excel (.xlsx) sesuai format di bawah. Baris kosong akan diabaikan. <br />Jenis
+		terdiri atas: wajib, pilihan, dan mulok.
 	</p>
 
 	<div class="mb-4 overflow-auto rounded-lg text-sm">
-
-		<table class="table table-sm table-compact table-zebra w-full border-collapse">
+		<table class="table-sm table-compact table-zebra table w-full border-collapse">
 			<thead class="bg-base-300">
 				<tr class="text-sm font-semibold">
 					<th class="pl-2">Mata Pelajaran</th>
@@ -55,7 +55,7 @@
 			<tbody>
 				<!-- Mapel 1 with two tujuan rows -->
 				<tr>
-					<td class="font-medium pl-2">Mapel 1</td>
+					<td class="pl-2 font-medium">Mapel 1</td>
 					<td>wajib</td>
 					<td>70</td>
 					<td>Lingkup A</td>
@@ -71,7 +71,7 @@
 
 				<!-- Mapel 2 with two tujuan rows -->
 				<tr>
-					<td class="font-medium pl-2">Mapel 2</td>
+					<td class="pl-2 font-medium">Mapel 2</td>
 					<td>pilihan</td>
 					<td>70</td>
 					<td>Lingkup 1</td>

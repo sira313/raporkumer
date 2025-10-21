@@ -28,7 +28,7 @@ export const appMenuItems: MenuItem[] = [
 			{
 				title: 'Intrakurikuler',
 				path: '/intrakurikuler',
-				tags: ['tujuan pembelajaran', 'lingkup materi']
+				tags: ['tujuan pembelajaran', 'lingkup materi', 'tp']
 			},
 			{
 				title: 'Kokurikuler',
@@ -68,7 +68,7 @@ export const appMenuItems: MenuItem[] = [
 				path: '/asesmen-kokurikuler'
 			},
 			{
-				title: 'Nilai Ekstrakurikuler',
+				title: 'Ekstrakurikuler',
 				path: '/nilai-ekstrakurikuler'
 			},
 			{

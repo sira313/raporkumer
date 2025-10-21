@@ -187,7 +187,7 @@
 		await goto(`/intrakurikuler/${mapelId}/tp-rl`, { replaceState: true });
 	}
 
-		// ensureTrailingEntry is imported from utils
+	// ensureTrailingEntry is imported from utils
 
 	function groupSelectionPayload(group: TujuanPembelajaranGroup): SelectedGroupState {
 		return {
@@ -677,32 +677,32 @@
 <!-- Data Mapel Wajib -->
 <div class="card bg-base-100 rounded-box w-full border border-none p-4 shadow-md">
 	<Header
-		mapelDisplayName={mapelDisplayName}
+		{mapelDisplayName}
 		mapelKelasNama={data.mapel.kelas.nama}
-		kelasAktifLabel={kelasAktifLabel}
-		importTooltip={importTooltip}
-		isImportDisabled={isImportDisabled}
+		{kelasAktifLabel}
+		{importTooltip}
+		{isImportDisabled}
 		onOpenImport={openImportDialog}
-		showAgamaSelect={showAgamaSelect}
-		agamaSelectId={agamaSelectId}
-		agamaOptions={agamaOptions}
-		selectedAgamaId={selectedAgamaId}
+		{showAgamaSelect}
+		{agamaSelectId}
+		{agamaOptions}
+		{selectedAgamaId}
 		onAgamaChange={handleAgamaChange}
-	onAgamaElementMounted={(el: HTMLSelectElement) => (agamaSelectElement = el)}
+		onAgamaElementMounted={(el: HTMLSelectElement) => (agamaSelectElement = el)}
 		onBack={() => history.back()}
-		handlePrimaryActionClick={handlePrimaryActionClick}
-		isTambahTpDisabled={isTambahTpDisabled}
-		tambahTpTooltip={tambahTpTooltip}
-		hasSelection={hasSelection}
-		isInteractionLocked={isInteractionLocked}
-		isCreateModeActive={isCreateModeActive}
-		isEditModeActive={isEditModeActive}
-		submitActiveForm={submitActiveForm}
-		activeFormId={activeFormId}
-		isFormSubmitting={isFormSubmitting}
-		isEditingBobot={isEditingBobot}
-		hasGroups={hasGroups}
-		toggleBobotEditing={toggleBobotEditing}
+		{handlePrimaryActionClick}
+		{isTambahTpDisabled}
+		{tambahTpTooltip}
+		{hasSelection}
+		{isInteractionLocked}
+		{isCreateModeActive}
+		{isEditModeActive}
+		{submitActiveForm}
+		{activeFormId}
+		{isFormSubmitting}
+		{isEditingBobot}
+		{hasGroups}
+		{toggleBobotEditing}
 	/>
 	{#if requiresAgamaSelection && !hasActiveAgamaSelection}
 		<div class="alert alert-warning alert-soft my-2 flex items-center gap-2 text-sm">

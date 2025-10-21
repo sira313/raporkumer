@@ -78,14 +78,17 @@
 				</button>
 
 				<!-- menu dropdown -->
-				<ul tabindex="-1" class="dropdown-content menu bg-base-100 z-50 w-52 p-2 shadow-sm">
+				<ul
+					tabindex="-1"
+					class="dropdown-content menu bg-base-100 z-50 mt-2 w-52 rounded-md p-2 shadow-md"
+				>
 					<li>
 						<button
 							type="button"
 							class="w-full text-left"
 							onclick={() =>
 								showModal({
-									title: 'Import Mata Pelajaran',
+									title: 'Impor Mata Pelajaran',
 									body: ImportMapelDialog,
 									dismissible: true
 								})}
@@ -233,7 +236,7 @@
 								<td>
 									<div class="flex flex-row">
 										<a
-											class="btn btn-sm btn-soft shadow-none rounded-r-none"
+											class="btn btn-sm btn-soft rounded-r-none shadow-none"
 											href={`/intrakurikuler/${mapel.id}/edit`}
 											title="Edit data mata pelajaran"
 											use:modalRoute={'edit-mapel'}
@@ -241,7 +244,7 @@
 											<Icon name="edit" />
 										</a>
 										<a
-											class="btn btn-sm btn-error btn-soft shadow-none rounded-l-none"
+											class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
 											href={`/intrakurikuler/${mapel.id}/delete`}
 											title="Hapus mata pelajaran"
 											use:modalRoute={'delete-mapel'}

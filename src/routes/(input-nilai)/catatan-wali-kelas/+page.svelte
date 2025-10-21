@@ -23,18 +23,6 @@
 	const currentPage = $derived.by(() => data.page.currentPage ?? 1);
 	const totalPages = $derived.by(() => Math.max(1, data.page.totalPages ?? 1));
 	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
-	const academicContext = $derived(data.academicContext ?? null);
-	const activeSemester = $derived.by(() => {
-		const context = academicContext;
-		if (!context?.activeSemesterId) return null;
-		for (const tahun of context.tahunAjaranList ?? []) {
-			const match = tahun.semester.find((item) => item.id === context.activeSemesterId);
-			if (match) {
-				return { ...match, tahunAjaranNama: tahun.nama };
-			}
-		}
-		return null;
-	});
 
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
 	const kelasAktifLabel = $derived.by(() => {
@@ -217,9 +205,7 @@
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 		<div>
-			<h2 class="text-xl font-bold">
-				Rekapitulasi Catatan Wali Kelas
-			</h2>
+			<h2 class="text-xl font-bold">Rekapitulasi Catatan Wali Kelas</h2>
 			{#if kelasAktifLabel}
 				<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
 			{/if}

@@ -132,15 +132,13 @@
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-4">
-		<h2 class="text-xl font-bold">
-			Rekapitulasi Nilai Akhir
-		</h2>
+		<h2 class="text-xl font-bold">Rekapitulasi Nilai Akhir</h2>
 		{#if kelasAktifLabel}
 			<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
 		{/if}
 	</div>
 
-	<div class="stats shadow-md dark:bg-base-200">
+	<div class="stats dark:bg-base-200 shadow-md">
 		<div class="stat">
 			<div class="stat-title">Jumlah Murid</div>
 			<div class="stat-value text-lg">{summary.totalMurid}</div>

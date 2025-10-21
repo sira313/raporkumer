@@ -196,9 +196,12 @@
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 		<div>
-			{#if selectedKokurikuler}
-			<h2 class="text-xl font-bold">Daftar Nilai Kokurikuler - {capitalizeSentence(selectedKokurikuler.tujuan)}</h2>
-			{/if}
+			<h2 class="text-xl font-bold">
+				Daftar Nilai Kokurikuler
+				{#if selectedKokurikuler}
+					- {capitalizeSentence(selectedKokurikuler.tujuan)}
+				{/if}
+			</h2>
 
 			{#if kelasAktifLabel}
 				<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>

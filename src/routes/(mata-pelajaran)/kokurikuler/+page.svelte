@@ -304,7 +304,7 @@
 						<td class="align-top">{item.tujuan}</td>
 						<td class="flex items-center justify-end">
 							<button
-								class="btn btn-sm btn-soft shadow-none rounded-r-none"
+								class="btn btn-sm btn-soft rounded-r-none shadow-none"
 								type="button"
 								title="Edit kokurikuler"
 								aria-label="Edit kokurikuler"
@@ -314,7 +314,7 @@
 								<Icon name="edit" />
 							</button>
 							<button
-								class="btn btn-sm btn-soft btn-error shadow-none rounded-l-none"
+								class="btn btn-sm btn-soft btn-error rounded-l-none shadow-none"
 								type="button"
 								title="Hapus kokurikuler"
 								aria-label="Hapus kokurikuler"

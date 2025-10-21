@@ -191,11 +191,14 @@
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 		<div>
-			{#if selectedEkstrak}
-			<h2 class="text-xl font-bold">Daftar Nilai Ekstrakurikuler - {capitalizeSentence(selectedEkstrak.nama)}</h2>
-			{/if}
+			<h2 class="text-xl font-bold">
+				Daftar Nilai Ekstrakurikuler
+				{#if selectedEkstrak}
+					- {capitalizeSentence(selectedEkstrak.nama)}
+				{/if}
+			</h2>
 			{#if kelasAktifLabel}
-			<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
+				<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
 			{/if}
 		</div>
 	</div>

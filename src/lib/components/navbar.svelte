@@ -184,14 +184,14 @@
 						</div>
 
 						{#if daftarKelas.length}
-							<details class="bg-base-300 dark:bg-base-200 collapse mt-6">
+							<details class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6">
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
 								<div class="collapse-content flex flex-col px-2">
 									{#each daftarKelas as kelas (kelas.id)}
 										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
 										<a
-											class="btn btn-ghost btn-sm justify-start"
+											class="btn btn-ghost btn-sm justify-start shadow-none"
 											href={buildKelasHref(kelas.id)}
 											class:active={kelasAktif?.id === kelas.id}
 										>

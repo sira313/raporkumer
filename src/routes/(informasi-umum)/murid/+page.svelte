@@ -264,9 +264,7 @@
 	<div class="mb-6">
 		<div class="flex flex-col sm:flex-row sm:justify-between">
 			<div>
-				<h2 class="text-xl font-bold">
-					Formulir Dan Tabel Isian Data Murid
-				</h2>
+				<h2 class="text-xl font-bold">Formulir Dan Tabel Isian Data Murid</h2>
 				{#if kelasAktifLabel}
 					<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
 				{/if}

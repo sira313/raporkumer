@@ -338,7 +338,7 @@
 						<td class="flex items-center justify-end">
 							<button
 								type="button"
-								class="btn btn-soft btn-sm shadow-none rounded-r-none"
+								class="btn btn-soft btn-sm rounded-r-none shadow-none"
 								onclick={cancelAddRow}
 								disabled={addSubmitting}
 								title="Batal"
@@ -346,7 +346,7 @@
 								<Icon name="close" />
 							</button>
 							<button
-								class="btn btn-sm btn-primary shadow-none rounded-l-none"
+								class="btn btn-sm btn-primary rounded-l-none shadow-none"
 								form="add-ekstrakurikuler-form"
 								type="submit"
 								disabled={addSaveDisabled}
@@ -431,7 +431,7 @@
 						<td class="flex items-center justify-end">
 							{#if editingRowId === item.id}
 								<button
-									class="btn btn-soft btn-sm shadow-none rounded-r-none"
+									class="btn btn-soft btn-sm rounded-r-none shadow-none"
 									type="button"
 									title="Batalkan edit"
 									onclick={cancelEditRow}
@@ -440,7 +440,7 @@
 									<Icon name="close" />
 								</button>
 								<button
-									class="btn btn-sm btn-primary shadow-none rounded-l-none"
+									class="btn btn-sm btn-primary rounded-l-none shadow-none"
 									form={formId}
 									type="submit"
 									disabled={editingSaveDisabled}
@@ -453,7 +453,7 @@
 								</button>
 							{:else}
 								<button
-									class="btn btn-sm btn-soft shadow-none rounded-r-none"
+									class="btn btn-sm btn-soft rounded-r-none shadow-none"
 									type="button"
 									title="Edit ekstrakurikuler"
 									aria-label="Edit ekstrakurikuler"
@@ -463,7 +463,7 @@
 									<Icon name="edit" />
 								</button>
 								<button
-									class="btn btn-sm btn-soft btn-error shadow-none rounded-l-none"
+									class="btn btn-sm btn-soft btn-error rounded-l-none shadow-none"
 									type="button"
 									title="Hapus ekstrakurikuler"
 									aria-label="Hapus ekstrakurikuler"

@@ -214,7 +214,7 @@
 	<div class="mb-4">
 		<h2 class="text-xl font-bold">Rekapitulasi Kehadiran Murid</h2>
 		{#if kelasAktifLabel}
-		<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
+			<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
 		{/if}
 	</div>
 

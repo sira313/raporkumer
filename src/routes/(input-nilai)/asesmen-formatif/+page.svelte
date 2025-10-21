@@ -182,9 +182,12 @@
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
 		<div>
-			{#if data.selectedMapel}
-				<h2 class="text-xl font-bold">Daftar Nilai Formatif - {data.selectedMapel.nama}</h2>
-			{/if}
+			<h2 class="text-xl font-bold">
+				Daftar Nilai Formatif
+				{#if data.selectedMapel}
+					- {data.selectedMapel.nama}
+				{/if}
+			</h2>
 			{#if kelasAktifLabel}
 				<p class="text-base-content/70 text-sm">Kelas aktif: {kelasAktifLabel}</p>
 			{:else}

@@ -22,8 +22,8 @@
 					Rapkumer - Aplikasi Rapor Kurikulum Merdeka
 				</h1>
 				<p class="text-base-content/90 max-w-2xl text-base lg:text-lg">
-					Rapkumer membantu guru dan operator sekolah mengelola nilai peserta didik secara cepat,
-					rapi, dan siap cetak sesuai kurikulum terbaru.
+					Rapkumer membantu guru dan operator sekolah mengelola nilai murid secara cepat, rapi, dan
+					siap cetak sesuai kurikulum terbaru.
 				</p>
 				<div class="grid gap-4 sm:grid-cols-2">
 					<div
@@ -76,8 +76,8 @@
 				<h2 class="text-base-content text-2xl font-semibold">Mengapa kami membangun Rapkumer?</h2>
 				<p class="text-base-content/90">
 					Aplikasi E-Rapor Kurikulum Merdeka ini kami kembangkan dengan tujuan utama untuk
-					memudahkan guru dalam mengelola dan mengolah nilai peserta didik menjadi nilai rapor yang
-					siap cetak. Proses input data dapat dilakukan secara manual maupun sekaligus melalui fitur
+					memudahkan guru dalam mengelola dan mengolah nilai murid menjadi nilai rapor yang siap
+					cetak. Proses input data dapat dilakukan secara manual maupun sekaligus melalui fitur
 					<span class="font-medium">import file Excel</span>
 					menggunakan template yang telah disediakan.
 				</p>
