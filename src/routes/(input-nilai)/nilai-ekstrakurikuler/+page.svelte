@@ -72,6 +72,11 @@
 	);
 	let searchTerm = $state(data.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const kelasAktifLabel = $derived.by(() => {
+		if (!kelasAktif) return null;
+		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
+	});
 
 	$effect(() => {
 		selectedEkstrakValue = data.selectedEkstrakurikulerId
@@ -185,14 +190,17 @@
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-		<h2 class="text-xl font-bold">Daftar Nilai Ekstrakurikuler</h2>
-		{#if selectedEkstrak}
-			<div class="flex flex-col items-start gap-1 sm:items-end">
-				<p class="text-base-content text-sm font-semibold">
-					{capitalizeSentence(selectedEkstrak.nama)}
-				</p>
-			</div>
-		{/if}
+		<div>
+			<h2 class="text-xl font-bold">
+				Daftar Nilai Ekstrakurikuler
+				{#if selectedEkstrak}
+					- {capitalizeSentence(selectedEkstrak.nama)}
+				{/if}
+			</h2>
+			{#if kelasAktifLabel}
+				<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
+			{/if}
+		</div>
 	</div>
 
 	<div class="flex flex-col items-center gap-2 sm:flex-row">

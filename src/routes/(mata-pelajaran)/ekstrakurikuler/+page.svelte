@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
+	import { page } from '$app/state';
 	import { tick } from 'svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
@@ -33,6 +34,12 @@
 	let editingSubmitting = $state(false);
 
 	const totalData = $derived.by(() => data.ekstrakurikuler.length);
+
+	const kelasAktifLabel = $derived.by(() => {
+		const kelas = page.data.kelasAktif ?? null;
+		if (!kelas) return null;
+		return kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama;
+	});
 	const anySelected = $derived.by(() => selectedIds.length > 0);
 	const allSelected = $derived.by(() => totalData > 0 && selectedIds.length === totalData);
 	const canManage = $derived.by(() => data.tableReady && !!data.kelasId);
@@ -221,9 +228,11 @@
 	<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 		<div>
 			<h2 class="text-xl font-bold">Daftar Ekstrakurikuler</h2>
-			{#if !data.kelasId}
+			{#if kelasAktifLabel}
+				<p class="text-base-content/70 text-sm">Kelas aktif: {kelasAktifLabel}</p>
+			{:else}
 				<p class="text-base-content/60 text-sm">
-					Pilih kelas aktif agar data ekstrakurikuler tampil.
+					Pilih kelas di navbar untuk melihat mata pelajaran intrakurikuler.
 				</p>
 			{/if}
 		</div>
@@ -326,10 +335,10 @@
 								{/snippet}
 							</FormEnhance>
 						</td>
-						<td class="flex items-center justify-end gap-2">
+						<td class="flex items-center justify-end">
 							<button
 								type="button"
-								class="btn btn-soft btn-sm shadow-none"
+								class="btn btn-soft btn-sm rounded-r-none shadow-none"
 								onclick={cancelAddRow}
 								disabled={addSubmitting}
 								title="Batal"
@@ -337,7 +346,7 @@
 								<Icon name="close" />
 							</button>
 							<button
-								class="btn btn-sm btn-primary shadow-none"
+								class="btn btn-sm btn-primary rounded-l-none shadow-none"
 								form="add-ekstrakurikuler-form"
 								type="submit"
 								disabled={addSaveDisabled}
@@ -419,10 +428,10 @@
 								Edit TP
 							</a>
 						</td>
-						<td class="flex items-center justify-end gap-2">
+						<td class="flex items-center justify-end">
 							{#if editingRowId === item.id}
 								<button
-									class="btn btn-soft btn-sm shadow-none"
+									class="btn btn-soft btn-sm rounded-r-none shadow-none"
 									type="button"
 									title="Batalkan edit"
 									onclick={cancelEditRow}
@@ -431,7 +440,7 @@
 									<Icon name="close" />
 								</button>
 								<button
-									class="btn btn-sm btn-primary shadow-none"
+									class="btn btn-sm btn-primary rounded-l-none shadow-none"
 									form={formId}
 									type="submit"
 									disabled={editingSaveDisabled}
@@ -444,7 +453,7 @@
 								</button>
 							{:else}
 								<button
-									class="btn btn-sm btn-soft shadow-none"
+									class="btn btn-sm btn-soft rounded-r-none shadow-none"
 									type="button"
 									title="Edit ekstrakurikuler"
 									aria-label="Edit ekstrakurikuler"
@@ -454,7 +463,7 @@
 									<Icon name="edit" />
 								</button>
 								<button
-									class="btn btn-sm btn-soft btn-error shadow-none"
+									class="btn btn-sm btn-soft btn-error rounded-l-none shadow-none"
 									type="button"
 									title="Hapus ekstrakurikuler"
 									aria-label="Hapus ekstrakurikuler"

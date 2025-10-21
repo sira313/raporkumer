@@ -51,7 +51,7 @@
 		<tbody>
 			<tr>
 				<td class="align-top" style="width: 1.75rem;">1.</td>
-				<td class="align-top" style="width: 220px;">Nama Peserta Didik</td>
+				<td class="align-top" style="width: 220px;">Nama Murid</td>
 				<td class="align-top" style="width: 0.75rem;">:</td>
 				<td class="font-semibold uppercase">{formatUpper(murid?.nama)}</td>
 			</tr>
@@ -87,7 +87,7 @@
 			</tr>
 			<tr>
 				<td class="align-top">7.</td>
-				<td class="align-top">Alamat Peserta Didik</td>
+				<td class="align-top">Alamat Murid</td>
 				<td class="align-top">:</td>
 				<td class="font-semibold">{muridAlamat}</td>
 			</tr>
@@ -135,7 +135,7 @@
 			{/each}
 			<tr>
 				<td class="align-top">11.</td>
-				<td class="align-top" style="width: 220px;">Wali Peserta Didik</td>
+				<td class="align-top" style="width: 220px;">Wali Murid</td>
 				<td class="align-top" style="width: 0.75rem;"></td>
 				<td></td>
 			</tr>

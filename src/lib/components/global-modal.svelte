@@ -52,7 +52,7 @@
 				<h3 class="text-lg font-bold">{props.title}</h3>
 			{/if}
 
-			<div class="prose w-full max-w-none py-4">
+			<div class="w-full max-w-none py-4">
 				{#if typeof props.body == 'string'}
 					{@html props.body}
 				{:else}

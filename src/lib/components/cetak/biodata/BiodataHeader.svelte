@@ -12,7 +12,7 @@
 </script>
 
 <header class={headerClass}>
-	<h1 class="text-2xl font-bold tracking-wide uppercase">Identitas Peserta Didik</h1>
+	<h1 class="text-2xl font-bold tracking-wide uppercase">Identitas Murid</h1>
 	{#if sekolah}
 		<p class="text-base-content/70 mt-1 text-sm tracking-wide uppercase">
 			{formatUpper(sekolah?.nama)}

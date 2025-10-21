@@ -8,4 +8,4 @@ const faseBadgeColors: Record<string, string> = {
 };
 
 export const faseBadgeClass = (fase?: string | null) =>
-	faseBadgeColors[fase ?? ''] ?? 'badge-neutral';
+	faseBadgeColors[fase ?? ''] ?? 'badge-ghost';

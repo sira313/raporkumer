@@ -427,10 +427,12 @@
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-		<h2 class="text-xl font-bold">
-			{headingTitle}
+		<div>
+			<h2 class="text-xl font-bold">
+				{headingTitle}
+			</h2>
 			{#if kelasAktifLabel}
-				<span class="text-base-content mt-2 block text-lg font-semibold">
+				<p class="text-base-content/80 block text-sm">
 					{kelasAktifLabel}
 					{#if activeSemester}
 						- Semester {activeSemester.nama} ({activeSemester.tahunAjaranNama})
@@ -439,9 +441,9 @@
 					{:else}
 						- Semester belum disetel di menu Rapor.
 					{/if}
-				</span>
+				</p>
 			{/if}
-		</h2>
+		</div>
 		<div class="flex items-center gap-2 self-end sm:self-auto">
 			<button
 				class="btn btn-circle btn-soft shadow-none"

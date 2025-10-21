@@ -58,6 +58,11 @@
 	const selectedKokurikulerLabel = $derived.by(() =>
 		selectedKokurikuler ? capitalizeSentence(selectedKokurikuler.tujuan) : null
 	);
+	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const kelasAktifLabel = $derived.by(() => {
+		if (!kelasAktif) return null;
+		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
+	});
 	const currentPage = $derived.by(() => data.page?.currentPage ?? 1);
 	const totalPages = $derived.by(() => Math.max(1, data.page?.totalPages ?? 1));
 	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
@@ -190,14 +195,18 @@
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-		<h2 class="text-xl font-bold">Daftar Nilai Kokurikuler</h2>
-		{#if selectedKokurikuler}
-			<div class="flex flex-col items-start gap-1 sm:items-end">
-				<p class="text-base-content/80 max-w-xl text-sm sm:text-right">
-					{capitalizeSentence(selectedKokurikuler.tujuan)}
-				</p>
-			</div>
-		{/if}
+		<div>
+			<h2 class="text-xl font-bold">
+				Daftar Nilai Kokurikuler
+				{#if selectedKokurikuler}
+					- {capitalizeSentence(selectedKokurikuler.tujuan)}
+				{/if}
+			</h2>
+
+			{#if kelasAktifLabel}
+				<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
+			{/if}
+		</div>
 	</div>
 
 	<div class="flex flex-col items-center gap-2 sm:flex-row">

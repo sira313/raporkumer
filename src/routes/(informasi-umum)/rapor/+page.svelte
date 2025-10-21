@@ -185,7 +185,7 @@
 <div class="grid grid-cols-1 gap-6">
 	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
 		<div class="space-y-6">
-			<header class="space-y-2">
+			<header>
 				<h1 class="text-2xl font-bold">Pengaturan Data Rapor</h1>
 				<p class="text-base-content/70 text-sm">
 					Kelola sekolah aktif, tahun ajaran, semester, dan tanggal bagi rapor.

@@ -131,27 +131,23 @@
 {/if}
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-2 text-xl font-bold">
-		Rekapitulasi Nilai Akhir
+	<div class="mb-4">
+		<h2 class="text-xl font-bold">Rekapitulasi Nilai Akhir</h2>
 		{#if kelasAktifLabel}
-			<span class="text-base-content/80 mt-1 block text-base font-semibold">{kelasAktifLabel}</span>
+			<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
 		{/if}
-	</h2>
+	</div>
 
-	<div class="grid gap-3 sm:grid-cols-2">
-		<div class="stats shadow-none">
-			<div class="stat">
-				<div class="stat-title">Jumlah Murid</div>
-				<div class="stat-value text-lg">{summary.totalMurid}</div>
-				<div class="stat-desc">{summary.totalMuridDinilai} sudah dinilai</div>
-			</div>
+	<div class="stats dark:bg-base-200 shadow-md">
+		<div class="stat">
+			<div class="stat-title">Jumlah Murid</div>
+			<div class="stat-value text-lg">{summary.totalMurid}</div>
+			<div class="stat-desc">{summary.totalMuridDinilai} sudah dinilai</div>
 		</div>
-		<div class="stats shadow-none">
-			<div class="stat">
-				<div class="stat-title">Mapel Per Kelas</div>
-				<div class="stat-value text-lg">{summary.totalMapel}</div>
-				<div class="stat-desc">Menghitung rata-rata per murid</div>
-			</div>
+		<div class="stat">
+			<div class="stat-title">Mapel Per Kelas</div>
+			<div class="stat-value text-lg">{summary.totalMapel}</div>
+			<div class="stat-desc text-wrap">Menghitung rata-rata per murid</div>
 		</div>
 	</div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
+	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
 	import KokurikulerFormModal from '$lib/components/kokurikuler/form-modal.svelte';
 	import KokurikulerDeleteModal from '$lib/components/kokurikuler/delete-modal.svelte';
@@ -43,6 +44,11 @@
 	const labelByKey = profilPelajarPancasilaDimensionLabelByKey;
 
 	const totalData = $derived.by(() => data.kokurikuler.length);
+	const kelasAktifLabel = $derived.by(() => {
+		const kelas = page.data.kelasAktif ?? null;
+		if (!kelas) return null;
+		return kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama;
+	});
 	const anySelected = $derived.by(() => selectedIds.length > 0);
 	const allSelected = $derived.by(() => totalData > 0 && selectedIds.length === totalData);
 	const canManage = $derived.by(() => data.tableReady && !!data.kelasId);
@@ -204,8 +210,12 @@
 	<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 		<div>
 			<h2 class="text-xl font-bold">Daftar Kokurikuler</h2>
-			{#if !data.kelasId}
-				<p class="text-base-content/60 text-sm">Pilih kelas aktif agar data kokurikuler tampil.</p>
+			{#if kelasAktifLabel}
+				<p class="text-base-content/70 text-sm">Kelas aktif: {kelasAktifLabel}</p>
+			{:else}
+				<p class="text-base-content/60 text-sm">
+					Pilih kelas di navbar untuk melihat mata pelajaran intrakurikuler.
+				</p>
 			{/if}
 		</div>
 		<div class="flex flex-col gap-2 sm:flex-row">
@@ -292,9 +302,9 @@
 							{/if}
 						</td>
 						<td class="align-top">{item.tujuan}</td>
-						<td class="flex items-center justify-end gap-2">
+						<td class="flex items-center justify-end">
 							<button
-								class="btn btn-sm btn-soft shadow-none"
+								class="btn btn-sm btn-soft rounded-r-none shadow-none"
 								type="button"
 								title="Edit kokurikuler"
 								aria-label="Edit kokurikuler"
@@ -304,7 +314,7 @@
 								<Icon name="edit" />
 							</button>
 							<button
-								class="btn btn-sm btn-soft btn-error shadow-none"
+								class="btn btn-sm btn-soft btn-error rounded-l-none shadow-none"
 								type="button"
 								title="Hapus kokurikuler"
 								aria-label="Hapus kokurikuler"
