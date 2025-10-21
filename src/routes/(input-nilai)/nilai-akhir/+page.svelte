@@ -131,7 +131,7 @@
 {/if}
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<div class="mb-2">
+	<div class="mb-4">
 		<h2 class="text-xl font-bold">
 			Rekapitulasi Nilai Akhir
 		</h2>
@@ -140,7 +140,7 @@
 		{/if}
 	</div>
 
-	<div class="stats bg-base-300 dark:bg-base-200">
+	<div class="stats shadow-md dark:bg-base-200">
 		<div class="stat">
 			<div class="stat-title">Jumlah Murid</div>
 			<div class="stat-value text-lg">{summary.totalMurid}</div>
@@ -149,7 +149,7 @@
 		<div class="stat">
 			<div class="stat-title">Mapel Per Kelas</div>
 			<div class="stat-value text-lg">{summary.totalMapel}</div>
-			<div class="stat-desc">Menghitung rata-rata per murid</div>
+			<div class="stat-desc text-wrap">Menghitung rata-rata per murid</div>
 		</div>
 	</div>
 
