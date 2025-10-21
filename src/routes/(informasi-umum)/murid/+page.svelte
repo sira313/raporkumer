@@ -261,12 +261,14 @@
 {/if}
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<h2 class="mb-6 text-xl font-bold">
+	<div class="mb-6">
 		<div class="flex flex-col sm:flex-row sm:justify-between">
 			<div>
-				Formulir Dan Tabel Isian Data Murid
+				<h2 class="text-xl font-bold">
+					Formulir Dan Tabel Isian Data Murid
+				</h2>
 				{#if kelasAktifLabel}
-					<span class="mt-2 block text-lg font-semibold">{kelasAktifLabel}</span>
+					<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
 				{/if}
 			</div>
 			<!-- Tombol Tambah Manual (dipindahkan ke kanan judul) -->
@@ -292,7 +294,7 @@
 				</a>
 			{/if}
 		</div>
-	</h2>
+	</div>
 
 	<form
 		class="flex flex-col items-center gap-2 sm:flex-row"

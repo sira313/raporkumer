@@ -60,7 +60,7 @@
 				</p>
 			{/if}
 		</div>
-		<div class="mt-2 flex gap-0.5 sm:mt-0">
+		<div class="mt-2 flex sm:mt-0">
 			<a
 				class="btn btn-soft rounded-r-none shadow-none"
 				href="/intrakurikuler/form"
