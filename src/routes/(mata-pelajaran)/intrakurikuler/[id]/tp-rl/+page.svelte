@@ -16,46 +16,21 @@
 		TujuanPembelajaranGroup
 	} from '$lib/components/tp-rl/types';
 	import { toast } from '$lib/components/toast.svelte';
+	import {
+		buildGroupedTujuanPembelajaran,
+		areGroupsEqual,
+		ensureTrailingEntry,
+		sanitizeBobotValue,
+		formatBobotValue,
+		applyBobotDistribution,
+		isSameBobotState,
+		deriveInitialBobotState,
+		computeTotalBobot,
+		cloneBobotState
+	} from '$lib/utils/tp-rl';
+	import Header from '$lib/components/intrakurikuler/header.svelte';
 
-	function buildGroupedTujuanPembelajaran(
-		items: Array<Omit<TujuanPembelajaran, 'mataPelajaran'>> = []
-	) {
-		const groups = new Map<string, TujuanPembelajaranGroup>();
-		for (const item of items) {
-			const key = (item.lingkupMateri ?? '').trim().toLowerCase();
-			const existing = groups.get(key);
-			if (existing) {
-				existing.items = [...existing.items, item];
-				if (existing.bobot == null && item.bobot != null) {
-					existing.bobot = item.bobot;
-				}
-				continue;
-			}
-			groups.set(key, {
-				lingkupMateri: item.lingkupMateri,
-				items: [item],
-				bobot: item.bobot ?? null
-			});
-		}
-		return Array.from(groups.values());
-	}
-
-	function areGroupsEqual(prev: TujuanPembelajaranGroup[], next: TujuanPembelajaranGroup[]) {
-		if (prev.length !== next.length) return false;
-		for (let groupIndex = 0; groupIndex < prev.length; groupIndex += 1) {
-			const a = prev[groupIndex];
-			const b = next[groupIndex];
-			if (a.lingkupMateri !== b.lingkupMateri) return false;
-			if (a.items.length !== b.items.length) return false;
-			for (let itemIndex = 0; itemIndex < a.items.length; itemIndex += 1) {
-				const itemA = a.items[itemIndex];
-				const itemB = b.items[itemIndex];
-				if (itemA.id !== itemB.id) return false;
-				if (itemA.deskripsi !== itemB.deskripsi) return false;
-			}
-		}
-		return true;
-	}
+	// grouping helpers imported from '$lib/utils/tp-rl'
 
 	let { data } = $props();
 	const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
@@ -81,6 +56,13 @@
 			return data.mapel.nama;
 		}
 		return activeAgamaOption?.name ?? data.mapel.nama;
+	});
+
+	// label kelas aktif — fallback ke mapel.kelas bila parent tidak menyediakan
+	const kelasAktifLabel = $derived.by(() => {
+		const kelas = data.kelasAktif ?? data.mapel?.kelas ?? null;
+		if (!kelas) return null;
+		return kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama;
 	});
 
 	let groupedTujuanPembelajaran = $state<TujuanPembelajaranGroup[]>([]);
@@ -205,42 +187,7 @@
 		await goto(`/intrakurikuler/${mapelId}/tp-rl`, { replaceState: true });
 	}
 
-	function ensureTrailingEntry(entries: GroupEntry[]): GroupEntry[] {
-		const normalized = entries.map((entry) => ({
-			id: entry.id,
-			deskripsi: entry.deskripsi ?? '',
-			deleted: entry.deleted ?? false
-		}));
-
-		const active = normalized.filter((entry) => !entry.deleted);
-
-		while (active.length > 1) {
-			const last = active[active.length - 1];
-			const prev = active[active.length - 2];
-			if (
-				last.deskripsi.trim() === '' &&
-				last.id === undefined &&
-				prev.deskripsi.trim() === '' &&
-				prev.id === undefined
-			) {
-				active.pop();
-			} else {
-				break;
-			}
-		}
-
-		const last = active[active.length - 1];
-		if (!last || last.deskripsi.trim() !== '' || last.id !== undefined) {
-			active.push({ id: undefined, deskripsi: '', deleted: false });
-		}
-
-		const deletedEntries = normalized.filter((entry) => entry.deleted && entry.id !== undefined);
-
-		return [
-			...active,
-			...deletedEntries.map((entry) => ({ ...entry, deskripsi: '', deleted: true }))
-		];
-	}
+		// ensureTrailingEntry is imported from utils
 
 	function groupSelectionPayload(group: TujuanPembelajaranGroup): SelectedGroupState {
 		return {
@@ -542,14 +489,7 @@
 		invalidate('app:mapel_tp-rl');
 	}
 
-	function sanitizeBobotValue(value: number) {
-		if (!Number.isFinite(value)) return 0;
-		return value < 0 ? 0 : value;
-	}
-
-	function formatBobotValue(value: number) {
-		return sanitizeBobotValue(value).toFixed(2);
-	}
+	// bobot helper functions moved to '$lib/utils/tp-rl'
 
 	type RefreshBobotOptions = {
 		preserveKey?: string;
@@ -578,72 +518,8 @@
 		bobotDrafts = nextDrafts;
 	}
 
-	function applyBobotDistribution(state: Record<string, GroupBobotState>) {
-		const next: Record<string, GroupBobotState> = {};
-		const autoKeys: string[] = [];
-		let manualSum = 0;
-
-		for (const [key, entry] of Object.entries(state)) {
-			const sanitizedValue = sanitizeBobotValue(entry?.value ?? 0);
-			const isManual = Boolean(entry?.isManual);
-			if (isManual) {
-				manualSum += sanitizedValue;
-			} else {
-				autoKeys.push(key);
-			}
-			next[key] = { value: sanitizedValue, isManual };
-		}
-
-		if (autoKeys.length > 0) {
-			let average = (BOBOT_TOTAL - manualSum) / autoKeys.length;
-			if (!Number.isFinite(average) || average < 0) {
-				average = 0;
-			}
-			for (const key of autoKeys) {
-				next[key] = { value: average, isManual: false };
-			}
-		}
-
-		return { state: next, manualSum };
-	}
-
-	function isSameBobotState(
-		prev: Record<string, GroupBobotState>,
-		next: Record<string, GroupBobotState>
-	) {
-		const prevKeys = Object.keys(prev);
-		const nextKeys = Object.keys(next);
-		if (prevKeys.length !== nextKeys.length) return false;
-		for (const key of prevKeys) {
-			if (!(key in next)) return false;
-			const left = prev[key];
-			const right = next[key];
-			if (!left || !right) return false;
-			if (Boolean(left.isManual) !== Boolean(right.isManual)) return false;
-			const leftValue = sanitizeBobotValue(left.value);
-			const rightValue = sanitizeBobotValue(right.value);
-			if (Math.abs(leftValue - rightValue) > 0.005) return false;
-		}
-		return true;
-	}
-
-	function deriveInitialBobotState(groups: TujuanPembelajaranGroup[]) {
-		const initial: Record<string, GroupBobotState> = {};
-		for (const group of groups) {
-			const key = groupKey(group);
-			const rawValue = group.bobot ?? null;
-			const sanitized = sanitizeBobotValue(rawValue ?? 0);
-			if (rawValue === null || sanitized === 0) {
-				initial[key] = { value: 0, isManual: false };
-				continue;
-			}
-			initial[key] = { value: sanitized, isManual: true };
-		}
-		return applyBobotDistribution(initial).state;
-	}
-
 	function syncBobotStateWithGroups(groups: TujuanPembelajaranGroup[]) {
-		const derived = deriveInitialBobotState(groups);
+		const derived = deriveInitialBobotState(groups, groupKey);
 		const next: Record<string, GroupBobotState> = {};
 		for (const group of groups) {
 			const key = groupKey(group);
@@ -706,7 +582,10 @@
 			next[key] = { value: 0, isManual: false };
 			const { state, manualSum } = applyBobotDistribution(next);
 			bobotState = state;
-			refreshBobotDrafts(state, { preserveKey: key, rawValue: '' });
+			// refreshBobotDrafts is kept in page to preserve draft handling
+			bobotDrafts = Object.fromEntries(
+				Object.entries(state).map(([k, e]) => [k, formatBobotValue(e.value)])
+			);
 			notifyBobotOverflow(manualSum > BOBOT_TOTAL);
 			return;
 		}
@@ -716,7 +595,9 @@
 		next[key] = { value: sanitized, isManual: true };
 		const { state, manualSum } = applyBobotDistribution(next);
 		bobotState = state;
-		refreshBobotDrafts(state, { preserveKey: key, rawValue });
+		bobotDrafts = Object.fromEntries(
+			Object.entries(state).map(([k, e]) => [k, formatBobotValue(e.value)])
+		);
 		notifyBobotOverflow(manualSum > BOBOT_TOTAL);
 	}
 
@@ -724,27 +605,12 @@
 		return bobotState[groupKey(group)]?.value ?? 0;
 	}
 
-	function computeTotalBobot(state: Record<string, GroupBobotState> = bobotState) {
-		return Object.values(state).reduce((sum, entry) => sum + sanitizeBobotValue(entry.value), 0);
-	}
-
-	function cloneBobotState(state: Record<string, GroupBobotState>) {
-		const next: Record<string, GroupBobotState> = {};
-		for (const [key, entry] of Object.entries(state)) {
-			next[key] = {
-				value: sanitizeBobotValue(entry.value ?? 0),
-				isManual: Boolean(entry.isManual)
-			};
-		}
-		return next;
-	}
-
 	function cancelBobotEditing() {
 		if (!isEditingBobot) return;
 		const next =
 			bobotStateBeforeEditing !== null
 				? cloneBobotState(bobotStateBeforeEditing)
-				: deriveInitialBobotState(groupedTujuanPembelajaran);
+				: deriveInitialBobotState(groupedTujuanPembelajaran, groupKey);
 		bobotState = next;
 		refreshBobotDrafts(next);
 		notifyBobotOverflow(false);
@@ -810,83 +676,34 @@
 
 <!-- Data Mapel Wajib -->
 <div class="card bg-base-100 rounded-box w-full border border-none p-4 shadow-md">
-	<!-- Judul IPAS bisa berubah dinamis sesuai mata pelajaran yang dipilih -->
-	<div class="mb-2 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
-		<h2 class="text-xl font-bold sm:flex-1">
-			<span class="opacity-50">Mata Pelajaran:</span>
-			{mapelDisplayName} – {data.mapel.kelas.nama}
-		</h2>
-		<button
-			class="btn btn-soft w-full shadow-none sm:w-auto sm:max-w-40"
-			type="button"
-			onclick={openImportDialog}
-			disabled={isImportDisabled}
-			title={importTooltip}
-		>
-			<Icon name="import" />
-			Import TP
-		</button>
-	</div>
-
-	<!-- tombol tambah Tujuan Pembelajaran -->
-	<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-		<button class="btn btn-soft shadow-none" type="button" onclick={() => history.back()}>
-			<Icon name="left" />
-			Kembali
-		</button>
-		{#if showAgamaSelect}
-			<div class="form-control sm:w-60">
-				<select
-					class="select bg-base-200 w-full shadow-none dark:border-none"
-					id={agamaSelectId}
-					bind:this={agamaSelectElement}
-					aria-label="Pilih Agama"
-					bind:value={selectedAgamaId}
-					onchange={handleAgamaChange}
-				>
-					<option value="" disabled>Pilih Agama</option>
-					{#each agamaOptions as option (option.id)}
-						<option value={option.id.toString()}>{option.label}</option>
-					{/each}
-				</select>
-			</div>
-		{/if}
-		<button
-			class="btn btn-soft shadow-none sm:ml-auto sm:max-w-40"
-			type="button"
-			onclick={handlePrimaryActionClick}
-			disabled={isTambahTpDisabled}
-			title={tambahTpTooltip}
-			class:btn-error={hasSelection}
-			class:btn-secondary={isInteractionLocked}
-		>
-			<Icon name={hasSelection ? 'del' : isInteractionLocked ? 'close' : 'plus'} />
-			{hasSelection ? 'Hapus TP' : isInteractionLocked ? 'Batalkan' : 'Tambah TP'}
-		</button>
-		{#if isCreateModeActive || isEditModeActive}
-			<button
-				class="btn btn-primary shadow-none sm:max-w-40"
-				type="button"
-				onclick={submitActiveForm}
-				disabled={!activeFormId || isFormSubmitting}
-				aria-busy={isFormSubmitting}
-			>
-				<Icon name="save" />
-				Simpan
-			</button>
-		{:else}
-			<button
-				class="btn shadow-none sm:max-w-40 {isEditingBobot ? '' : 'btn-soft'}"
-				type="button"
-				onclick={toggleBobotEditing}
-				disabled={!hasGroups}
-				class:btn-success={isEditingBobot}
-			>
-				<Icon name="percent" />
-				{isEditingBobot ? 'Simpan Bobot' : 'Atur Bobot'}
-			</button>
-		{/if}
-	</div>
+	<Header
+		mapelDisplayName={mapelDisplayName}
+		mapelKelasNama={data.mapel.kelas.nama}
+		kelasAktifLabel={kelasAktifLabel}
+		importTooltip={importTooltip}
+		isImportDisabled={isImportDisabled}
+		onOpenImport={openImportDialog}
+		showAgamaSelect={showAgamaSelect}
+		agamaSelectId={agamaSelectId}
+		agamaOptions={agamaOptions}
+		selectedAgamaId={selectedAgamaId}
+		onAgamaChange={handleAgamaChange}
+	onAgamaElementMounted={(el: HTMLSelectElement) => (agamaSelectElement = el)}
+		onBack={() => history.back()}
+		handlePrimaryActionClick={handlePrimaryActionClick}
+		isTambahTpDisabled={isTambahTpDisabled}
+		tambahTpTooltip={tambahTpTooltip}
+		hasSelection={hasSelection}
+		isInteractionLocked={isInteractionLocked}
+		isCreateModeActive={isCreateModeActive}
+		isEditModeActive={isEditModeActive}
+		submitActiveForm={submitActiveForm}
+		activeFormId={activeFormId}
+		isFormSubmitting={isFormSubmitting}
+		isEditingBobot={isEditingBobot}
+		hasGroups={hasGroups}
+		toggleBobotEditing={toggleBobotEditing}
+	/>
 	{#if requiresAgamaSelection && !hasActiveAgamaSelection}
 		<div class="alert alert-warning alert-soft my-2 flex items-center gap-2 text-sm">
 			<Icon name="warning" />
