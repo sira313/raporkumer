@@ -4,6 +4,13 @@
 	import ImportDatabaseModal from '$lib/components/modals/import-database-modal.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 
+	import { page } from '$app/state';
+
+	// derive permission booleans from page.data.user.permissions
+	let canExport = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('dashboard_export')));
+	let canBackup = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('dashboard_backup')));
+	let canImport = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('dashboard_import')));
+
 	let downloadingBackup = $state(false);
 
 	const handleExportInfo = () => {
@@ -76,7 +83,14 @@
 			Tindakan Cepat
 		</h2>
 		<div class="grid grid-cols-1 gap-2">
-			<button type="button" onclick={handleExportInfo} class="btn btn-primary w-full shadow-none">
+			<button
+				type="button"
+				onclick={handleExportInfo}
+				class="btn btn-primary w-full shadow-none"
+				disabled={!canExport}
+				aria-disabled={!canExport}
+				title={!canExport ? 'Anda tidak memiliki izin untuk melakukan Export' : ''}
+			>
 				<Icon name="export" />
 				Export Dapodik
 			</button>
@@ -85,8 +99,10 @@
 					type="button"
 					onclick={handleBackupDownload}
 					class="btn btn-outline btn-accent w-full shadow-none"
-					disabled={downloadingBackup}
+					disabled={downloadingBackup || !canBackup}
+					aria-disabled={!canBackup}
 					aria-busy={downloadingBackup}
+					title={!canBackup ? 'Anda tidak memiliki izin untuk melakukan Backup' : ''}
 				>
 					{#if downloadingBackup}
 						<span class="loading loading-spinner loading-sm"></span>
@@ -99,6 +115,9 @@
 					type="button"
 					onclick={handleImport}
 					class="btn btn-outline btn-accent w-full shadow-none"
+					disabled={!canImport}
+					aria-disabled={!canImport}
+					title={!canImport ? 'Anda tidak memiliki izin untuk melakukan Import' : ''}
 				>
 					<Icon name="import" />
 					Import Data

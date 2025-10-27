@@ -27,6 +27,15 @@ export const groupedUserPermissions = {
 		],
 		description: 'Input Nilai'
 	}
+,
+	dashboard: {
+		values: [
+			['export', 'Export Dapodik'],
+			['backup', 'Backup Data'],
+			['import', 'Import Data']
+		],
+		description: 'Tindakan Cepat pada Dashboard'
+	}
 } as const;
 
 export const userPermissions = Object.entries(groupedUserPermissions) //
