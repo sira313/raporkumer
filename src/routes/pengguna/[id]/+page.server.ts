@@ -15,7 +15,7 @@ export async function load({ params }) {
 		.where(eq(u.id, +params.id));
 	if (!userDetail) error(404, `Data pengguna tidak ditemukan`);
 
-	return { meta: { title: `Pengguna: ` }, userDetail };
+	return { meta: { title: `Pengguna: "${userDetail.username}"` }, userDetail };
 }
 
 export const actions = {
