@@ -15,7 +15,7 @@
   }
 </script>
 
-<div class="min-h-[60vh] flex items-center justify-center">
+<div class="flex justify-center">
   <div class="card w-full bg-base-100 shadow-md">
     <div class="card-body">
       <div class="flex items-center gap-4">

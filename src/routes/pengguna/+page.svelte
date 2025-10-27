@@ -41,7 +41,7 @@
 						<btn class="btn btn-sm shadow-none btn-soft rounded-none">
 							<Icon name="edit" />
 						</btn>
-						<a class="btn btn-info btn-sm shadow-none btn-soft rounded-l-none" href="/pengguna/{u.id}">
+						<a class="btn btn-primary btn-sm shadow-none btn-soft rounded-l-none" href="/pengguna/{u.id}">
 							<Icon name="eye" />
 						</a>
 					</div>
