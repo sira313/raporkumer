@@ -67,7 +67,13 @@
 						<button
 							class="btn btn-soft gap-2 shadow-none"
 							type="button"
-							onclick={() => props.onNegative?.action?.({ close: hideModal })}
+							onclick={() => {
+								if (props.onNegative?.action) {
+									props.onNegative.action({ close: hideModal });
+								} else {
+									hideModal();
+								}
+							}}
 						>
 							{#if props.onNegative.icon}
 								<Icon name={props.onNegative.icon} />
@@ -80,7 +86,13 @@
 						<button
 							class="btn gap-2 shadow-none"
 							type="button"
-							onclick={() => props.onNeutral?.action?.({ close: hideModal })}
+							onclick={() => {
+								if (props.onNeutral?.action) {
+									props.onNeutral.action({ close: hideModal });
+								} else {
+									hideModal();
+								}
+							}}
 						>
 							{#if props.onNeutral.icon}
 								<Icon name={props.onNeutral.icon} />
@@ -93,7 +105,13 @@
 						<button
 							class="btn btn-primary gap-2 shadow-none"
 							type="button"
-							onclick={() => props.onPositive?.action?.({ close: hideModal })}
+							onclick={() => {
+								if (props.onPositive?.action) {
+									props.onPositive.action({ close: hideModal });
+								} else {
+									hideModal();
+								}
+							}}
 						>
 							{#if props.onPositive.icon}
 								<Icon name={props.onPositive.icon} />

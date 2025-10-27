@@ -5,8 +5,11 @@
 
 	let { data } = $props();
 
+	// derive user item type from incoming load data to keep typings simple
+	type UserItem = typeof data.users extends Array<infer U> ? U : unknown;
+
 	// local reactive users copy so UI updates instantly without full reload
-	let users = $state(data.users ?? []);
+	let users = $state<UserItem[]>(data.users ?? []);
 
 	let editingId = $state<number | null>(null);
 	let editValues = $state<Record<number, { username: string; password: string }>>({});

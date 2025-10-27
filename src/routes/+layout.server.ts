@@ -44,10 +44,10 @@ export async function load({ url, locals, cookies }) {
 				if (userWithType.type === 'wali_kelas' && Number.isInteger(Number(userWithType.kelasId))) {
 					const allowed = Number(userWithType.kelasId);
 					if (kelasIdNumber !== allowed) {
-						// Check permission to access other kelas
+						// Check permission to access other kelas (merged into 'kelas_pindah')
 						const authUser = user as AuthUser;
 						const hasAccessOther = Array.isArray(authUser.permissions)
-							? authUser.permissions.includes('kelas_akses_lain')
+							? authUser.permissions.includes('kelas_pindah')
 							: false;
 						if (!hasAccessOther) {
 							// Deny access when a wali_kelas tries to switch to another kelas via URL param

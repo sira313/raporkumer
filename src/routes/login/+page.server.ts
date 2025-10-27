@@ -1,6 +1,9 @@
 import { applySessionCookie, authenticateUser, createSession } from '$lib/server/auth';
 import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
 import { cookieNames } from '$lib/utils';
+import db from '$lib/server/db';
+import { tableKelas } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -88,6 +91,22 @@ export const actions: Actions = {
 					path: '/',
 					secure
 				});
+
+				// Also set the active sekolah cookie to the sekolah that owns the kelas
+				try {
+					const kelas = await db.query.tableKelas.findFirst({
+						columns: { sekolahId: true },
+						where: eq(tableKelas.id, authUser.kelasId)
+					});
+					if (kelas && kelas.sekolahId) {
+						cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(kelas.sekolahId), {
+							path: '/',
+							secure
+						});
+					}
+				} catch (err) {
+					console.warn('[login action] failed to resolve kelas->sekolah mapping', err);
+				}
 			} else {
 				// ensure we don't leave a stale kelas cookie for other user types
 				cookies.delete(cookieNames.ACTIVE_KELAS_ID, { path: '/', secure });

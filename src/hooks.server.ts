@@ -138,8 +138,9 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	}
 
 	// Additional server-side guard: if request includes kelas_id param and the user
-	// is a wali_kelas, ensure they either own that kelas or have explicit
-	// 'kelas_akses_lain' permission. This prevents bypass via direct URL.
+	// is a wali_kelas, ensure they either own that kelas or have the 'kelas_pindah'
+	// permission (which grants both pindah + akses ke kelas lain). This prevents
+	// bypass via direct URL.
 	if (event.locals.user) {
 		const kelasIdParam = event.url.searchParams.get('kelas_id');
 		if (kelasIdParam != null) {
@@ -150,7 +151,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 					const allowed = Number(u.kelasId);
 					if (kelasIdNumber !== allowed) {
 						const hasAccessOther = Array.isArray(u.permissions)
-							? u.permissions.includes('kelas_akses_lain')
+							? u.permissions.includes('kelas_pindah')
 							: false;
 						if (!hasAccessOther) {
 							throw redirect(303, `/forbidden?required=kelas_id`);

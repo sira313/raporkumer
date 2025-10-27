@@ -49,20 +49,20 @@
 		}
 		// prevent navigation and show logout confirmation modal
 		e.preventDefault();
-		showModal({
-			title: 'Konfirmasi Keluar',
-			body: 'Anda tidak mempunyai akses untuk Pindah Kelas. Keluar sekarang?',
-			dismissible: true,
-			onPositive: {
-				label: 'Keluar',
-				icon: 'export',
-				action: ({ close }: { close: () => void }) => {
-					close();
-					logout();
-				}
-			},
-			onNegative: { label: 'Batal' }
-		});
+			showModal({
+				title: 'Konfirmasi Keluar',
+				body: 'Anda tidak mempunyai akses untuk Pindah Kelas. Keluar sekarang?',
+				dismissible: true,
+				onPositive: {
+					label: 'Keluar',
+					icon: 'export',
+					action: ({ close }: { close: () => void }) => {
+						close();
+						logout();
+					}
+				},
+				onNegative: { label: 'Batal', icon: 'close' }
+			});
 	}
 
 	type HelpMapEntry = { matcher: string | RegExp; file: string };
