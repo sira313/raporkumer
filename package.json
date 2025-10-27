@@ -5,6 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"db:push": "drizzle-kit push",
+		"seed:walis": "node scripts/seed-wali-users.mjs",
 		"db:studio": "drizzle-kit studio",
 		"db:cleanup": "node scripts/cleanup-orphans.mjs",
 		"dev": "node scripts/dev.js",

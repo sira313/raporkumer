@@ -2,7 +2,7 @@ import db from '$lib/server/db';
 import { tableAuthSession, tableAuthUser } from '$lib/server/db/schema';
 import { cookieNames } from '$lib/utils';
 import type { Cookies } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
 const SESSION_TTL_SECONDS = 60 * 60 * 12; // 12 hours
@@ -57,8 +57,10 @@ export function verifyPassword(password: string, hash: string, salt: string) {
 
 export async function ensureDefaultAdmin() {
 	const normalized = normalizeUsername(defaultAdminAccount.username);
+	// Find any existing admin account. Prefer exact username match, but also
+	// accept records that have type='admin' to support renamed accounts.
 	const existing = await db.query.tableAuthUser.findFirst({
-		where: eq(tableAuthUser.usernameNormalized, normalized)
+		where: sql`${tableAuthUser.usernameNormalized} = ${normalized} OR ${tableAuthUser.type} = ${'admin'}`
 	});
 	if (existing) {
 		// Ensure default admin permissions are present on the existing admin account.
@@ -94,6 +96,7 @@ export async function ensureDefaultAdmin() {
 			passwordSalt: salt,
 			passwordUpdatedAt: timestamp,
 			permissions: defaultAdminAccount.permissions,
+			type: 'admin',
 			createdAt: timestamp,
 			updatedAt: timestamp
 		})

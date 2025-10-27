@@ -18,21 +18,38 @@
 				Tambah Pengguna
 			</button>
 		</header>
+		<div class="overflow-x-auto">
 		<table class="table">
 	<thead>
 		<tr>
-			<th>ID</th>
-			<th>Username</th>
+			<th></th>
+			<th>Nama</th>
 			<th>Dibuat pada</th>
+			<th>Role</th>
+			<th>Username</th>
+			<th>Password</th>
 			<td>Aksi</td>
 		</tr>
 	</thead>
 	<tbody>
 		{#each data.users as u}
 			<tr>
-				<td>{u.id}</td>
+				<td>
+					<input type="checkbox" class="checkbox" value={u.id} />
+				</td>
+				<td>{u.pegawaiName ?? u.username}</td>
+				<td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
+				<td>
+					{#if u.type === 'wali_kelas'}
+						Wali {u.kelasName ?? (u.kelasId ? `Kelas ${u.kelasId}` : '-')}
+					{:else if u.type === 'admin'}
+						Admin
+					{:else}
+						{u.type}
+					{/if}
+				</td>
 				<td>{u.username}</td>
-				<td>{u.createdAt}</td>
+				<td>-</td>
 				<td>
 					<div class="flex flex-row">
 						<btn class="btn btn-error btn-sm shadow-none btn-soft rounded-r-none">
@@ -47,5 +64,6 @@
 		{/each}
 	</tbody>
 		</table>
+		</div>
 	</div>
 </section>
