@@ -1,5 +1,6 @@
 import { applySessionCookie, authenticateUser, createSession } from '$lib/server/auth';
 import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
+import { cookieNames } from '$lib/utils';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -77,6 +78,24 @@ export const actions: Actions = {
 			host: url.host
 		});
 		applySessionCookie(cookies, session.token, session.expiresAt, secure);
+
+		// If the authenticated user is a wali_kelas, set the active-kelas-id cookie
+		// so the UI will select their assigned class immediately after login.
+		try {
+			const authUser = user as AuthUser;
+			if (authUser.type === 'wali_kelas' && authUser.kelasId) {
+				cookies.set(cookieNames.ACTIVE_KELAS_ID, String(authUser.kelasId), {
+					path: '/',
+					secure
+				});
+			} else {
+				// ensure we don't leave a stale kelas cookie for other user types
+				cookies.delete(cookieNames.ACTIVE_KELAS_ID, { path: '/', secure });
+			}
+		} catch (err) {
+			// non-critical: log but don't block login flow
+			console.warn('[login action] failed to set active kelas cookie', err);
+		}
 
 		const target = resolveRedirectTarget(url.searchParams.get('redirect')) ?? '/';
 		logLoginEvent('Redirecting after success', { username, target });

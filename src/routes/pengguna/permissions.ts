@@ -43,7 +43,7 @@ export const groupedUserPermissions = {
 	}
     ,
 	kelas: {
-		values: [["manage", 'Kelola Data Kelas'], ["pindah", 'Pindah Kelas']],
+		values: [["manage", 'Kelola Data Kelas'], ["pindah", 'Pindah Kelas'], ["akses_lain", 'Akses ke kelas lain']],
 		description: 'Data Kelas'
 	}
 } as const;

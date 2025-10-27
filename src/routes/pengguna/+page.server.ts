@@ -21,7 +21,8 @@ export async function load({ url }) {
 				pegawaiId: u.pegawaiId,
 				pegawaiName: tablePegawai.nama,
 				kelasId: u.kelasId,
-				kelasName: tableKelas.nama
+				kelasName: tableKelas.nama,
+				passwordUpdatedAt: u.passwordUpdatedAt
 			})
 			.from(u)
 			.leftJoin(tablePegawai, eq(u.pegawaiId, tablePegawai.id))
@@ -65,7 +66,7 @@ export const actions = {
 		try {
 			await db.update(u).set(updateData).where(eq(u.id, id));
 			const [updated] = await db
-				.select({ id: u.id, username: u.username, usernameNormalized: u.usernameNormalized })
+				.select({ id: u.id, username: u.username, usernameNormalized: u.usernameNormalized, passwordUpdatedAt: u.passwordUpdatedAt })
 				.from(u)
 				.where(eq(u.id, id));
 			return { success: true, user: updated };

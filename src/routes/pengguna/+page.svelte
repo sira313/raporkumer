@@ -5,6 +5,9 @@
 
 	let { data } = $props();
 
+	// local reactive users copy so UI updates instantly without full reload
+	let users = $state(data.users ?? []);
+
 	let editingId = $state<number | null>(null);
 	let editValues = $state<Record<number, { username: string; password: string }>>({});
 </script>
@@ -37,7 +40,7 @@
 		</tr>
 	</thead>
 	<tbody>
-		{#each data.users as u}
+	{#each users as u}
 			<tr>
 				{#if !editingId}
 				<td>
@@ -66,7 +69,7 @@
 					{#if editingId === u.id}
 						<input type="password" class="input input-sm w-full" placeholder="Buat Password" bind:value={editValues[u.id].password} />
 					{:else}
-						-
+						{u.passwordUpdatedAt ? '*****' : '-'}
 					{/if}
 				</td>
 				<td>
@@ -105,13 +108,28 @@
 										toast({ message: 'Perubahan tersimpan', type: 'success' });
 										// update local list if server returned the updated user
 										if (body.user) {
-											const idx = data.users.findIndex((x) => x.id === body.user.id);
+											const idx = users.findIndex((x) => x.id === body.user.id);
 											if (idx !== -1) {
-												data.users[idx] = { ...data.users[idx], username: body.user.username };
+												// update username and passwordUpdatedAt locally (no full reload)
+												users[idx] = {
+													...users[idx],
+													username: body.user.username ?? users[idx].username,
+													passwordUpdatedAt: body.user.passwordUpdatedAt ?? users[idx].passwordUpdatedAt
+												};
+											}
+										} else {
+											// optimistic update when server didn't return full user
+											const idx = users.findIndex((x) => x.id === u.id);
+											if (idx !== -1) {
+												users[idx] = {
+													...users[idx],
+													username: editValues[u.id].username || users[idx].username,
+													// if user entered a password, mark as set
+													passwordUpdatedAt: editValues[u.id].password ? new Date().toISOString() : users[idx].passwordUpdatedAt
+												};
 											}
 										}
 										editingId = null;
-										await invalidate('/pengguna');
 									} else {
 										const text = await res.text().catch(() => 'Gagal');
 										toast({ message: `Gagal menyimpan: ${text}`, type: 'error' });
