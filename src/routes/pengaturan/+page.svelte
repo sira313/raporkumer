@@ -88,11 +88,12 @@
 					value={appAddress}
 				/>
 				<button
-					class="btn join-item shadow-none"
+					class="btn join-item shadow-none btn-soft btn-info"
 					type="button"
 					onclick={copyAddress}
 					disabled={!appAddress || copying}
 				>
+				<Icon name="copy" />
 					{copying ? 'Menyalin…' : 'Copy'}
 				</button>
 			</div>
