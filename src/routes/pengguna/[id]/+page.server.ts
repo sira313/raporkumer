@@ -10,7 +10,7 @@ export async function load({ params }) {
 	authority('user_detail');
 
 	const [userDetail] = await db
-		.select({ id: u.id, username: u.username, permissions: u.permissions, createdAt: u.createdAt })
+		.select({ id: u.id, username: u.username, type: u.type, permissions: u.permissions, createdAt: u.createdAt })
 		.from(u)
 		.where(eq(u.id, +params.id));
 	if (!userDetail) error(404, `Data pengguna tidak ditemukan`);

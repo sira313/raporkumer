@@ -22,12 +22,11 @@ export const groupedUserPermissions = {
 	nilai: {
 		values: [
 			['absen', 'Absen'],
-			['asesmen_formatif', 'Asesmen Formatif']
+			['asesmen_formatif', 'Asesmen Formatif'],
 			// ...
 		],
 		description: 'Input Nilai'
-	}
-,
+	},
 	dashboard: {
 		values: [["manage", 'Kelola Tindakan Cepat'] ],
 		description: 'Tindakan Cepat pada Dashboard'
@@ -44,7 +43,7 @@ export const groupedUserPermissions = {
 	}
     ,
 	kelas: {
-		values: [["manage", 'Kelola Kelas']],
+		values: [["manage", 'Kelola Kelas'], ["pindah", 'Pindah Kelas']],
 		description: 'Aksi pada halaman Kelas'
 	}
 } as const;

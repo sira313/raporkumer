@@ -37,6 +37,34 @@
 		return query ? `${page.url.pathname}?${query}` : page.url.pathname;
 	}
 
+	function hasPindahPermission() {
+		const perms = user?.permissions ?? [];
+		return perms.includes('kelas_pindah');
+	}
+
+	function handleKelasClick(e: MouseEvent, kelasId: number) {
+		if (hasPindahPermission()) {
+			// allow navigation
+			return;
+		}
+		// prevent navigation and show logout confirmation modal
+		e.preventDefault();
+		showModal({
+			title: 'Konfirmasi Keluar',
+			body: 'Anda tidak mempunyai akses untuk Pindah Kelas. Keluar sekarang?',
+			dismissible: true,
+			onPositive: {
+				label: 'Keluar',
+				icon: 'export',
+				action: ({ close }: { close: () => void }) => {
+					close();
+					logout();
+				}
+			},
+			onNegative: { label: 'Batal' }
+		});
+	}
+
 	type HelpMapEntry = { matcher: string | RegExp; file: string };
 
 	const helpMaps: HelpMapEntry[] = [
@@ -193,6 +221,7 @@
 										<a
 											class="btn btn-ghost btn-sm justify-start shadow-none"
 											href={buildKelasHref(kelas.id)}
+											onclick={(e) => handleKelasClick(e, kelas.id)}
 											class:active={kelasAktif?.id === kelas.id}
 										>
 											{label}

@@ -1,5 +1,6 @@
 import db from '$lib/server/db';
 import { tableAuthSession, tableAuthUser } from '$lib/server/db/schema';
+import { userPermissions } from '../../routes/pengguna/permissions';
 import { cookieNames } from '$lib/utils';
 import type { Cookies } from '@sveltejs/kit';
 import { eq, sql } from 'drizzle-orm';
@@ -13,7 +14,8 @@ const PASSWORD_SALT_BYTES = 16;
 const defaultAdminAccount = {
 	username: 'Admin',
 	password: 'Admin123',
-	permissions: <UserPermission[]>['user_list', 'user_detail', 'user_set_permissions']
+	// Grant all known permissions to the default Admin role/account
+	permissions: <UserPermission[]>userPermissions
 };
 
 interface SessionMetadata {
