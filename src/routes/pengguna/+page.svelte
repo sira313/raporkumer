@@ -4,7 +4,21 @@
 	let { data } = $props();
 </script>
 
-<table class="table">
+<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
+	<div class="space-y-4">
+		<header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div class="space-y-2">
+				<h1 class="text-2xl font-bold">Daftar pengguna</h1>
+			</div>
+			<button
+				class="btn btn-outline btn-primary shadow-none sm:self-start"
+				type="button"
+			>
+				<Icon name="plus" />
+				Tambah Pengguna
+			</button>
+		</header>
+		<table class="table">
 	<thead>
 		<tr>
 			<th>ID</th>
@@ -20,12 +34,21 @@
 				<td>{u.username}</td>
 				<td>{u.createdAt}</td>
 				<td>
-					<a class="btn btn-outline btn-info" href="/pengguna/{u.id}">
-						<Icon name="info" />
-						Detail
-					</a>
+					<div class="flex flex-row">
+						<btn class="btn btn-error btn-sm shadow-none btn-soft rounded-r-none">
+							<Icon name="del" />
+						</btn>
+						<btn class="btn btn-sm shadow-none btn-soft rounded-none">
+							<Icon name="edit" />
+						</btn>
+						<a class="btn btn-info btn-sm shadow-none btn-soft rounded-l-none" href="/pengguna/{u.id}">
+							<Icon name="eye" />
+						</a>
+					</div>
 				</td>
 			</tr>
 		{/each}
 	</tbody>
-</table>
+		</table>
+	</div>
+</section>

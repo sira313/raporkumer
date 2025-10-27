@@ -8,11 +8,12 @@
 	let user = $derived(data.userDetail);
 </script>
 
+<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
 <FormEnhance action="?/set_permissions">
 	{#snippet children()}
 		<div class="grid gap-3 gap-y-0 sm:grid-cols-3">
 			{#each Object.entries(groupedUserPermissions) as [group, permission] (group)}
-				<fieldset class="fieldset bg-base-200 rounded-box p-3 pt-1 shadow">
+				<fieldset class="fieldset">
 					<legend class="fieldset-legend">
 						<span class="opacity-50">Izin:</span>
 						{permission.description}
@@ -39,3 +40,4 @@
 		</section>
 	{/snippet}
 </FormEnhance>
+</section>
