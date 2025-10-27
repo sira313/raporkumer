@@ -6,10 +6,20 @@
 
 	let { data } = $props();
 	let user = $derived(data.userDetail);
+
+	function handleSaveSuccess({ data: successData }: { form?: HTMLFormElement; data?: Record<string, unknown> }) {
+		if (successData && 'permissions' in successData && Array.isArray(successData.permissions)) {
+			// update local user object so checkboxes reflect new permissions immediately
+			user = { ...user, permissions: successData.permissions as UserPermission[] };
+		}
+	}
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
-<FormEnhance action="?/set_permissions">
+	<header class="mb-4">
+		<h2 class="text-xl font-bold">Izin Pengguna: {user.username}</h2>
+	</header>
+<FormEnhance action="?/set_permissions" onsuccess={handleSaveSuccess}>
 	{#snippet children()}
 		<div class="grid gap-3 gap-y-0 sm:grid-cols-3">
 			{#each Object.entries(groupedUserPermissions) as [group, permission] (group)}
@@ -30,9 +40,13 @@
 			{/each}
 		</div>
 
-		<section class="flex justify-end gap-3">
+		<section class="flex justify-between mt-6">
 			<Authority permissions={['user_set_permissions']}>
-				<button class="btn btn-primary">
+				<a href="/pengguna" class="btn btn-soft shadow-none">
+					<Icon name="left" />
+					Kembali
+				</a>
+				<button class="btn btn-primary shadow-none">
 					<Icon name="save" />
 					Simpan
 				</button>

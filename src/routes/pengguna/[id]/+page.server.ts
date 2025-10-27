@@ -15,7 +15,7 @@ export async function load({ params }) {
 		.where(eq(u.id, +params.id));
 	if (!userDetail) error(404, `Data pengguna tidak ditemukan`);
 
-	return { meta: { title: `Pengguna: "${userDetail.username}"` }, userDetail };
+	return { meta: { title: 'Pengaturan Izin Pengguna' }, userDetail };
 }
 
 export const actions = {
@@ -24,6 +24,7 @@ export const actions = {
 
 		const permissions = <UserPermission[]>Array.from((await request.formData()).keys());
 		await db.update(u).set({ permissions }).where(eq(u.id, +params.id));
-		return { message: `Izin pengguna berhasil diperbarui` };
+		// Return the updated permissions so the client can update UI without a full reload
+		return { message: `Izin pengguna berhasil diperbarui`, permissions };
 	}
 };
