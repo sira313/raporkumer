@@ -2,6 +2,7 @@ import db from '$lib/server/db';
 import { tableKehadiranMurid, tableMurid } from '$lib/server/db/schema';
 import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, eq, sql } from 'drizzle-orm';
+import { authority } from '../../pengguna/utils.server.js';
 
 const PER_PAGE = 20;
 const TABLE_MISSING_MESSAGE =
@@ -35,6 +36,9 @@ type PageState = {
 
 export async function load({ parent, locals, url, depends }) {
 	depends('app:absen');
+
+	authority('nilai_absen');
+
 	const { kelasAktif } = await parent();
 	const sekolahId = locals.sekolah?.id ?? null;
 

@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { blob, int, real, sqliteTable, text, unique, index } from 'drizzle-orm/sqlite-core';
+import { blob, index, int, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 
 const audit = {
 	createdAt: text()
@@ -17,6 +17,7 @@ export const tableAuthUser = sqliteTable(
 		passwordHash: text().notNull(),
 		passwordSalt: text().notNull(),
 		passwordUpdatedAt: text(),
+		permissions: text({ mode: 'json' }).notNull().default('[]').$type<UserPermission[]>(),
 		...audit
 	},
 	(table) => [unique().on(table.usernameNormalized)]

@@ -1,6 +1,6 @@
+import { applySessionCookie, ensureDefaultAdmin, resolveSession } from '$lib/server/auth';
 import db from '$lib/server/db';
 import { tableSekolah } from '$lib/server/db/schema';
-import { applySessionCookie, ensureDefaultAdmin, resolveSession } from '$lib/server/auth';
 import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
 import { cookieNames } from '$lib/utils';
 import { error, redirect, type Handle } from '@sveltejs/kit';
@@ -109,7 +109,8 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		if (resolved) {
 			event.locals.user = {
 				id: resolved.user.id,
-				username: resolved.user.username
+				username: resolved.user.username,
+				permissions: resolved.user.permissions
 			};
 			event.locals.session = {
 				id: resolved.session.id,

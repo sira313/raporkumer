@@ -12,7 +12,8 @@ const PASSWORD_SALT_BYTES = 16;
 
 const defaultAdminAccount = {
 	username: 'Admin',
-	password: 'Admin123'
+	password: 'Admin123',
+	permissions: <UserPermission[]>['user_list', 'user_detail', 'user_set_permissions']
 };
 
 interface SessionMetadata {
@@ -71,6 +72,7 @@ export async function ensureDefaultAdmin() {
 			passwordHash: hash,
 			passwordSalt: salt,
 			passwordUpdatedAt: timestamp,
+			permissions: defaultAdminAccount.permissions,
 			createdAt: timestamp,
 			updatedAt: timestamp
 		})

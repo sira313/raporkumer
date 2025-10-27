@@ -183,7 +183,12 @@
 						Gunakan kombinasi huruf dan angka untuk keamanan maksimal.
 					</p>
 
-					<div class="mt-6 flex justify-end">
+					<div class="mt-6 flex justify-between">
+						<a class="btn btn-outline btn-info" href="/pengguna">
+							<Icon name="users" />
+							Manajemen Pengguna
+						</a>
+
 						<button class="btn btn-primary" type="submit" disabled={submitting || invalid}>
 							<Icon name="save" />
 							{submitting ? 'Menyimpan…' : 'Simpan kata sandi'}
