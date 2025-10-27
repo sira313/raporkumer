@@ -21,28 +21,47 @@
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
-	<header class="mb-4">
-	<h2 class="text-xl font-bold">Izin Pengguna: {user.username}{user.type ? ' - ' + formatRole(user.type) : ''}</h2>
+	<header class="mb-6 flex-col sm:flex-row flex items-center gap-4">
+		<div class="flex items-center gap-3">
+			<div>
+				<h2 class="text-xl font-bold">Izin Pengguna: {user.username}</h2>
+				<p class="text-sm text-base-content/70">Atur hak akses untuk pengguna ini.</p>
+			</div>
+		</div>
+		{#if user.type}
+			<div class="ml-auto">
+				<span class="badge badge-soft badge-info">{formatRole(user.type)}</span>
+			</div>
+		{/if}
 	</header>
 <FormEnhance action="?/set_permissions" onsuccess={handleSaveSuccess}>
 	{#snippet children()}
-		<div class="grid gap-3 gap-y-0 sm:grid-cols-3">
-			{#each Object.entries(groupedUserPermissions).filter(([k]) => k !== 'cetak' && k !== 'nilai') as [group, permission] (group)}
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">
-						<span class="opacity-50">Izin:</span>
-						{permission.description}
-					</legend>
-					{#each permission.values as [name, desc] (name)}
-						{@const key = `${group}_${name}` as UserPermission}
-						{@const checked = user.permissions.includes(key)}
-						<label class="hover:bg-accent/5 flex items-center gap-1">
-							<input type="checkbox" name={key} value="true" {checked} />
-							<span class={checked ? 'text-accent' : ''}>{desc}</span>
-						</label>
+		<div class="overflow-x-auto mt-2">
+			<table class="table w-full">
+				<thead>
+					<tr class="bg-base-300 dark:bg-base-200">
+						<th class="w-[90%]">Izin</th>
+						<th class="text-center">Aktif</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each Object.entries(groupedUserPermissions).filter(([k]) => k !== 'cetak' && k !== 'nilai') as [group, permission] (group)}
+						<tr>
+							<td colspan="2" class="font-bold">{permission.description}</td>
+						</tr>
+						{#each permission.values as [name, desc] (name)}
+							{@const key = `${group}_${name}` as UserPermission}
+							{@const checked = user.permissions.includes(key)}
+							<tr>
+								<td class="text-sm">{desc}</td>
+								<td class="text-center">
+									<input type="checkbox" class="toggle toggle-sm toggle-primary" name={key} value="true" {checked} />
+								</td>
+							</tr>
+						{/each}
 					{/each}
-				</fieldset>
-			{/each}
+				</tbody>
+			</table>
 		</div>
 
 		<section class="flex justify-between mt-6">

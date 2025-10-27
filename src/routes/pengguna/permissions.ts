@@ -29,22 +29,22 @@ export const groupedUserPermissions = {
 	},
 	dashboard: {
 		values: [["manage", 'Kelola Tindakan Cepat'] ],
-		description: 'Tindakan Cepat pada Dashboard'
+		description: 'Dashboard'
 	}
 	,
 	sekolah: {
-		values: [["manage", 'Kelola Sekolah']],
-		description: 'Aksi pada halaman Sekolah'
+		values: [["manage", 'Kelola Data Sekolah']],
+		description: 'Sekolah'
 	}
 	,
 	rapor: {
-		values: [["manage", 'Kelola Rapor']],
-		description: 'Izin terkait pengelolaan data rapor'
+		values: [["manage", 'Kelola Data Rapor']],
+		description: 'Data Rapor'
 	}
     ,
 	kelas: {
-		values: [["manage", 'Kelola Kelas'], ["pindah", 'Pindah Kelas']],
-		description: 'Aksi pada halaman Kelas'
+		values: [["manage", 'Kelola Data Kelas'], ["pindah", 'Pindah Kelas']],
+		description: 'Data Kelas'
 	}
 } as const;
 
