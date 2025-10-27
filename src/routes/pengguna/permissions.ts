@@ -45,6 +45,11 @@ export const groupedUserPermissions = {
 		],
 		description: 'Aksi pada halaman Sekolah'
 	}
+	,
+	rapor: {
+		values: [["manage", 'Kelola Rapor']],
+		description: 'Izin terkait pengelolaan data rapor'
+	}
 } as const;
 
 export const userPermissions = Object.entries(groupedUserPermissions) //

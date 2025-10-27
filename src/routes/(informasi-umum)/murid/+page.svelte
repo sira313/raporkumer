@@ -370,9 +370,9 @@
 								<td>{murid.tempatLahir}</td>
 								<td>{murid.tanggalLahir}</td>
 								<td>
-									<div class="flex flex-row gap-2">
+									<div class="flex flex-row">
 										<a
-											class="btn btn-sm btn-soft shadow-none"
+											class="btn btn-sm btn-soft shadow-none rounded-r-none"
 											href="/murid/{murid.id}"
 											use:modalRoute={'detail-murid'}
 											title="Lihat detail murid"
@@ -381,7 +381,7 @@
 										</a>
 
 										<a
-											class="btn btn-sm btn-error btn-soft shadow-none"
+											class="btn btn-sm btn-error btn-soft shadow-none rounded-l-none"
 											href="/murid/{murid.id}/delete"
 											use:modalRoute={'delete-murid'}
 											title="Hapus data murid"
