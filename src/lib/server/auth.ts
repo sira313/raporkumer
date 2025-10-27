@@ -60,7 +60,28 @@ export async function ensureDefaultAdmin() {
 	const existing = await db.query.tableAuthUser.findFirst({
 		where: eq(tableAuthUser.usernameNormalized, normalized)
 	});
-	if (existing) return existing;
+	if (existing) {
+		// Ensure default admin permissions are present on the existing admin account.
+		const existingPermissions = Array.isArray(existing.permissions)
+			? existing.permissions
+			: [];
+		const missing = defaultAdminAccount.permissions.filter(
+			(p) => !existingPermissions.includes(p)
+		);
+		if (missing.length > 0) {
+			const merged = existingPermissions.concat(missing);
+			await db
+				.update(tableAuthUser)
+				.set({ permissions: merged, updatedAt: nowIso() })
+				.where(eq(tableAuthUser.id, existing.id));
+			// Return the refreshed user record
+			const updated = await db.query.tableAuthUser.findFirst({
+				where: eq(tableAuthUser.id, existing.id)
+			});
+			return updated;
+		}
+		return existing;
+	}
 
 	const { hash, salt } = hashPassword(defaultAdminAccount.password);
 	const timestamp = nowIso();
