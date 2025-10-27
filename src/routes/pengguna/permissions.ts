@@ -36,6 +36,15 @@ export const groupedUserPermissions = {
 		],
 		description: 'Tindakan Cepat pada Dashboard'
 	}
+	,
+	sekolah: {
+		values: [
+			['delete', 'Hapus Sekolah'],
+			['tahun_ajaran', 'Tahun Ajaran'],
+			['edit', 'Edit Sekolah']
+		],
+		description: 'Aksi pada halaman Sekolah'
+	}
 } as const;
 
 export const userPermissions = Object.entries(groupedUserPermissions) //
