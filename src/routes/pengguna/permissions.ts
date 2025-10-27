@@ -29,20 +29,12 @@ export const groupedUserPermissions = {
 	}
 ,
 	dashboard: {
-		values: [
-			['export', 'Export Dapodik'],
-			['backup', 'Backup Data'],
-			['import', 'Import Data']
-		],
+		values: [["manage", 'Kelola Tindakan Cepat'] ],
 		description: 'Tindakan Cepat pada Dashboard'
 	}
 	,
 	sekolah: {
-		values: [
-			['delete', 'Hapus Sekolah'],
-			['tahun_ajaran', 'Tahun Ajaran'],
-			['edit', 'Edit Sekolah']
-		],
+		values: [["manage", 'Kelola Sekolah']],
 		description: 'Aksi pada halaman Sekolah'
 	}
 	,

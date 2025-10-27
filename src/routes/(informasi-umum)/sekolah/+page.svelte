@@ -6,12 +6,10 @@
 	import type { SekolahCard } from '$lib/components/sekolah/types';
 	import { jenjangPendidikan } from '$lib/statics.js';
 
-    import { page } from '$app/state';
+	import { page } from '$app/state';
 
-    // derived permission runes
-    let canDelete = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('sekolah_delete')));
-    let canTahunAjaran = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('sekolah_tahun_ajaran')));
-    let canEdit = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('sekolah_edit')));
+	// single permission for sekolah management
+	let canSekolahManage = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('sekolah_manage')));
 
 	let { data } = $props();
 	const sekolahList = $derived((data.sekolahList ?? []) as SekolahCard[]);
@@ -162,30 +160,30 @@
 								type="button"
 								class="btn btn-error btn-soft shadow-none"
 								aria-label="hapus sekolah"
-								onclick={() => canDelete ? deleteModalRef?.open(sekolah) : undefined}
-								disabled={!canDelete}
-								aria-disabled={!canDelete}
-								title={!canDelete ? 'Anda tidak memiliki izin untuk menghapus sekolah' : ''}
+								onclick={() => canSekolahManage ? deleteModalRef?.open(sekolah) : undefined}
+								disabled={!canSekolahManage}
+								aria-disabled={!canSekolahManage}
+								title={!canSekolahManage ? 'Anda tidak memiliki izin untuk menghapus sekolah' : ''}
 							>
 								<Icon name="del" />
 								Hapus Sekolah
 							</button>
 							<a
 								href={`/sekolah/tahun-ajaran?sekolahId=${sekolah.id}`}
-								class="btn btn-soft shadow-none { !canTahunAjaran ? 'pointer-events-none opacity-50' : '' }"
+								class="btn btn-soft shadow-none { !canSekolahManage ? 'pointer-events-none opacity-50' : '' }"
 								aria-label="Lihat tahun ajaran"
-								aria-disabled={!canTahunAjaran}
-								title={!canTahunAjaran ? 'Anda tidak memiliki izin untuk melihat Tahun Ajaran' : ''}
+								aria-disabled={!canSekolahManage}
+								title={!canSekolahManage ? 'Anda tidak memiliki izin untuk melihat Tahun Ajaran' : ''}
 							>
 								<Icon name="calendar" />
 								Tahun Ajaran
 							</a>
 							<a
 								href="/sekolah/form"
-								class="btn btn-soft shadow-none { !canEdit ? 'pointer-events-none opacity-50' : '' }"
+								class="btn btn-soft shadow-none { !canSekolahManage ? 'pointer-events-none opacity-50' : '' }"
 								aria-label="Edit data sekolah"
-								aria-disabled={!canEdit}
-								title={!canEdit ? 'Anda tidak memiliki izin untuk mengedit data sekolah' : ''}
+								aria-disabled={!canSekolahManage}
+								title={!canSekolahManage ? 'Anda tidak memiliki izin untuk mengedit data sekolah' : ''}
 							>
 								<Icon name="edit" />
 								Edit Sekolah

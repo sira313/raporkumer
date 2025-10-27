@@ -6,10 +6,8 @@
 
 	import { page } from '$app/state';
 
-	// derive permission booleans from page.data.user.permissions
-	let canExport = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('dashboard_export')));
-	let canBackup = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('dashboard_backup')));
-	let canImport = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('dashboard_import')));
+	// single permission to manage dashboard quick actions
+	let canDashboardManage = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('dashboard_manage')));
 
 	let downloadingBackup = $state(false);
 
@@ -85,11 +83,11 @@
 		<div class="grid grid-cols-1 gap-2">
 			<button
 				type="button"
-				onclick={handleExportInfo}
+				onclick={() => canDashboardManage ? handleExportInfo() : undefined}
 				class="btn btn-primary w-full shadow-none"
-				disabled={!canExport}
-				aria-disabled={!canExport}
-				title={!canExport ? 'Anda tidak memiliki izin untuk melakukan Export' : ''}
+				disabled={!canDashboardManage}
+				aria-disabled={!canDashboardManage}
+				title={!canDashboardManage ? 'Anda tidak memiliki izin untuk melakukan tindakan cepat' : ''}
 			>
 				<Icon name="export" />
 				Export Dapodik
@@ -97,12 +95,12 @@
 			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
 				<button
 					type="button"
-					onclick={handleBackupDownload}
+					onclick={() => canDashboardManage ? handleBackupDownload() : undefined}
 					class="btn btn-outline btn-accent w-full shadow-none"
-					disabled={downloadingBackup || !canBackup}
-					aria-disabled={!canBackup}
+					disabled={downloadingBackup || !canDashboardManage}
+					aria-disabled={!canDashboardManage}
 					aria-busy={downloadingBackup}
-					title={!canBackup ? 'Anda tidak memiliki izin untuk melakukan Backup' : ''}
+					title={!canDashboardManage ? 'Anda tidak memiliki izin untuk melakukan tindakan cepat' : ''}
 				>
 					{#if downloadingBackup}
 						<span class="loading loading-spinner loading-sm"></span>
@@ -113,11 +111,11 @@
 				</button>
 				<button
 					type="button"
-					onclick={handleImport}
+					onclick={() => canDashboardManage ? handleImport() : undefined}
 					class="btn btn-outline btn-accent w-full shadow-none"
-					disabled={!canImport}
-					aria-disabled={!canImport}
-					title={!canImport ? 'Anda tidak memiliki izin untuk melakukan Import' : ''}
+					disabled={!canDashboardManage}
+					aria-disabled={!canDashboardManage}
+					title={!canDashboardManage ? 'Anda tidak memiliki izin untuk melakukan tindakan cepat' : ''}
 				>
 					<Icon name="import" />
 					Import Data
