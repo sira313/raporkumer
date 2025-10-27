@@ -38,11 +38,8 @@
 						<btn class="btn btn-error btn-sm shadow-none btn-soft rounded-r-none">
 							<Icon name="del" />
 						</btn>
-						<btn class="btn btn-sm shadow-none btn-soft rounded-none">
-							<Icon name="edit" />
-						</btn>
 						<a class="btn btn-primary btn-sm shadow-none btn-soft rounded-l-none" href="/pengguna/{u.id}">
-							<Icon name="eye" />
+							<Icon name="key" />
 						</a>
 					</div>
 				</td>
