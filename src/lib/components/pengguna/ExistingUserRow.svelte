@@ -13,7 +13,6 @@
     {u.type}
   {/if}
 </td>
-<td>{u.createdAt ? new Date(u.createdAt).toLocaleString() : '-'}</td>
 <td>
   {#if editingId === u.id}
     <input class="input input-sm w-full" bind:value={editValues[u.id].username} />

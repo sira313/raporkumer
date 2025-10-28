@@ -148,7 +148,6 @@ async function handleDelete() {
 						{/if}
 						<th>Nama</th>
 						<th>Role</th>
-						<th>Dibuat pada</th>
 						<th>Username</th>
 						<th>Password</th>
 						<td>Aksi</td>
