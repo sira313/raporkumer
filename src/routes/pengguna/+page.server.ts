@@ -1,5 +1,5 @@
 import db from '$lib/server/db';
-import { tableAuthUser, tablePegawai, tableKelas } from '$lib/server/db/schema';
+import { tableAuthUser, tablePegawai, tableKelas, tableMataPelajaran } from '$lib/server/db/schema';
 import { sql, eq, and } from 'drizzle-orm';
 import { authority } from './utils.server';
 import { hashPassword } from '$lib/server/auth';
@@ -38,6 +38,7 @@ export async function load({ url }) {
 			const password = randomBytes(6).toString('base64url');
 			const { hash, salt } = hashPassword(password);
 			const timestamp = new Date().toISOString();
+
 			await db.insert(tableAuthUser).values({
 				username,
 				usernameNormalized,
@@ -84,7 +85,13 @@ export async function load({ url }) {
 		)
 		.limit(100);
 
-	return { meta: { title: 'Manajemen Pengguna' }, users };
+	// fetch mata pelajaran to populate select in the inline-add row
+	const mataPelajaran = await db
+		.select({ id: tableMataPelajaran.id, nama: tableMataPelajaran.nama })
+		.from(tableMataPelajaran)
+		.limit(1000);
+
+	return { meta: { title: 'Manajemen Pengguna' }, users, mataPelajaran };
 }
 
 export const actions = {
@@ -125,6 +132,46 @@ export const actions = {
 			return { success: true, user: updated };
 		} catch (err) {
 			console.error('Failed to update user credentials', err);
+			return new Response(String(err), { status: 500 });
+		}
+	}
+,
+	create_user: async ({ request }) => {
+		authority('user_add');
+		const form = await request.formData();
+		const username = String(form.get('username') ?? '').trim();
+		const password = String(form.get('password') ?? '').trim();
+		const nama = String(form.get('nama') ?? '').trim();
+		const roleValue = String(form.get('type') ?? 'user');
+
+		if (!username) return new Response('username required', { status: 400 });
+		if (!password) return new Response('password required', { status: 400 });
+
+		try {
+			const { hash, salt } = hashPassword(password);
+			const timestamp = new Date().toISOString();
+			// @ts-expect-error: allow simple insertion shape here
+			await db.insert(tableAuthUser).values({
+				username,
+				usernameNormalized: username.toLowerCase(),
+				passwordHash: hash,
+				passwordSalt: salt,
+				passwordUpdatedAt: timestamp,
+				permissions: [],
+				type: roleValue,
+				createdAt: timestamp,
+				updatedAt: timestamp
+			});
+
+			// fetch created user record to return minimal info to client
+			const [created] = await db
+				.select({ id: u.id, username: u.username, createdAt: u.createdAt, type: u.type, passwordUpdatedAt: u.passwordUpdatedAt })
+				.from(u)
+				.where(eq(u.usernameNormalized, username.toLowerCase()));
+
+			return { success: true, user: created, displayName: nama };
+		} catch (err) {
+			console.error('Failed to create user', err);
 			return new Response(String(err), { status: 500 });
 		}
 	}
