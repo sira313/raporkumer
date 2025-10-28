@@ -13,17 +13,38 @@
   let password = '';
   let type = 'user';
   let mataPelajaranId: number | null = null;
+  let uniqueMataPelajaran: { id: number; nama: string }[] = [];
+  let initialized = false;
 
-  $: if (open) {
-    // initialize defaults when opening
+  function uniqueByNama(list: { id: number; nama: string }[]) {
+    const map = new Map<string, { id: number; nama: string }>();
+    for (const m of list) {
+      // keep the first occurrence for a given nama
+      if (!map.has(m.nama)) map.set(m.nama, m);
+    }
+    return Array.from(map.values());
+  }
+
+  // initialize defaults only once when the modal opens (prevent clearing while open)
+  $: if (open && !initialized) {
     nama = '';
     username = '';
     password = '';
     type = 'user';
-    mataPelajaranId = mataPelajaran[0]?.id ?? null;
+    // use the deduplicated list for defaults
+    mataPelajaranId = uniqueMataPelajaran[0]?.id ?? null;
+    initialized = true;
   }
 
+  // if modal is closed, allow re-initialization next time it opens
+  $: if (!open) initialized = false;
+
+  // update unique list whenever mataPelajaran prop changes
+  $: uniqueMataPelajaran = uniqueByNama(mataPelajaran ?? []);
+
   function close() {
+    // reset initialized so next open will reinitialize fields
+    initialized = false;
     open = false;
     dispatch('cancel');
   }
@@ -39,12 +60,35 @@
       const res = await fetch('?/create_user', { method: 'POST', body: form });
       if (res.ok) {
         const body = await res.json().catch(() => ({}));
+        // merge local form values so the UI can update immediately even if server
+        // response omits some fields. Do NOT include the raw password in the event.
+        const mergedBody = {
+          ...body,
+          username: body.user?.username ?? username,
+          displayName: body.displayName ?? nama,
+          mataPelajaranId: body.mataPelajaranId ?? mataPelajaranId ?? null,
+          // ensure there's a `user` object for the parent to consume
+          user: body.user ?? { id: Date.now(), username: body.user?.username ?? username, createdAt: new Date().toISOString(), type: body.user?.type ?? type, passwordUpdatedAt: body.user?.passwordUpdatedAt ?? new Date().toISOString() }
+        };
         toast({ message: 'Pengguna dibuat', type: 'success' });
-        dispatch('saved', { body });
+        dispatch('saved', { body: mergedBody });
         open = false;
       } else {
-        const text = await res.text().catch(() => 'Gagal');
-        toast({ message: `Gagal membuat: ${text}`, type: 'error' });
+        // try to parse a JSON error payload from the action
+        let msg = 'Gagal membuat pengguna';
+        try {
+          const parsed = await res.json().catch(() => null);
+          if (parsed) {
+            if (typeof parsed.message === 'string' && parsed.message.trim()) msg = parsed.message;
+            else if (parsed.error && typeof parsed.error.message === 'string') msg = parsed.error.message;
+            else msg = JSON.stringify(parsed);
+          } else {
+            msg = await res.text().catch(() => msg);
+          }
+        } catch (e) {
+          msg = (await res.text().catch(() => msg)) as string;
+        }
+        toast({ message: `Gagal membuat: ${msg}`, type: 'error' });
       }
     } catch (e) {
       toast({ message: 'Gagal membuat pengguna', type: 'error' });
@@ -68,10 +112,10 @@
         <fieldset class="fieldset">
           <legend class="fieldset-legend">Mata Pelajaran (opsional)</legend>
           <select id="add-user-mapel" class="select w-full dark:bg-base-200 dark:border-none" bind:value={mataPelajaranId}>
-            {#each mataPelajaran as m}
+            {#each uniqueMataPelajaran as m}
               <option value={m.id}>{m.nama}</option>
             {/each}
-            {#if mataPelajaran.length === 0}
+            {#if uniqueMataPelajaran.length === 0}
               <option disabled>- tidak ada mata pelajaran -</option>
             {/if}
           </select>

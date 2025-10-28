@@ -4,6 +4,7 @@ import { sql, eq, and, inArray, desc } from 'drizzle-orm';
 import { authority } from './utils.server';
 import { hashPassword } from '$lib/server/auth';
 import { randomBytes } from 'node:crypto';
+import { fail } from '@sveltejs/kit';
 
 const u = tableAuthUser;
 
@@ -139,17 +140,30 @@ export const actions = {
 	create_user: async ({ request }) => {
 		authority('user_add');
 		const form = await request.formData();
-		const username = String(form.get('username') ?? '').trim();
-		const password = String(form.get('password') ?? '').trim();
-		const nama = String(form.get('nama') ?? '').trim();
-		const roleValue = String(form.get('type') ?? 'user');
+	const username = String(form.get('username') ?? '').trim();
+	const password = String(form.get('password') ?? '').trim();
+	const nama = String(form.get('nama') ?? '').trim();
+	const roleValue = String(form.get('type') ?? 'user');
+	const mataPelajaranIdRaw = form.get('mataPelajaranId');
+	const mataPelajaranId = mataPelajaranIdRaw ? Number(String(mataPelajaranIdRaw)) : null;
 
-		if (!username) return new Response('username required', { status: 400 });
-		if (!password) return new Response('password required', { status: 400 });
+	if (!username) return fail(400, { message: 'username required' });
+	if (!password) return fail(400, { message: 'password required' });
 
 		try {
 			const { hash, salt } = hashPassword(password);
 			const timestamp = new Date().toISOString();
+			// if a nama was provided, create a pegawai row and link the user to it
+			let pegawaiId: number | null = null;
+			if (nama) {
+				// `nip` is required by the schema; use empty string when not provided
+				const [p] = await db
+					.insert(tablePegawai)
+					.values({ nama, nip: '' })
+					.returning({ id: tablePegawai.id });
+				if (p && typeof p.id === 'number') pegawaiId = p.id;
+			}
+
 			// @ts-expect-error: allow simple insertion shape here
 			await db.insert(tableAuthUser).values({
 				username,
@@ -159,6 +173,7 @@ export const actions = {
 				passwordUpdatedAt: timestamp,
 				permissions: [],
 				type: roleValue,
+				pegawaiId: pegawaiId ?? undefined,
 				createdAt: timestamp,
 				updatedAt: timestamp
 			});
@@ -172,10 +187,21 @@ export const actions = {
 				.orderBy(desc(u.id))
 				.limit(1);
 
-			return { success: true, user: created, displayName: nama };
-		} catch (err) {
+			// include mataPelajaranId in the response so the client can keep track of the selection
+			return { success: true, user: created, displayName: nama, mataPelajaranId: mataPelajaranId ?? null };
+		} catch (err: unknown) {
 			console.error('Failed to create user', err);
-			return new Response(String(err), { status: 500 });
+			// detect sqlite unique constraint on normalized username and return a user-friendly error
+			// safely extract message fields from unknown error
+			const e = err as Record<string, unknown>;
+			const cause = (e.cause as Record<string, unknown> | undefined) ?? undefined;
+			const causeMsg = (
+				(cause && String(cause.message)) || (e.message && String(e.message)) || String(err)
+			).toString();
+			if (causeMsg.includes('UNIQUE constraint failed') && causeMsg.includes('auth_user.username_normalized')) {
+				return fail(400, { message: 'Username sudah digunakan' });
+			}
+			return fail(500, { message: 'Internal Error' });
 		}
 	}
 ,
