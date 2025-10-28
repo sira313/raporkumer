@@ -1,6 +1,6 @@
 import db from '$lib/server/db';
 import { tableEkstrakurikuler } from '$lib/server/db/schema';
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 
 const TABLE_MISSING_MESSAGE =
@@ -55,7 +55,7 @@ export async function load({ depends, parent }) {
 }
 
 export const actions = {
-	add: async ({ request }) => {
+	add: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const kelasIdRaw = formData.get('kelasId');
 		const nama = formData.get('nama')?.toString().trim() ?? '';
@@ -67,6 +67,18 @@ export const actions = {
 		const kelasId = Number(kelasIdRaw);
 		if (!Number.isInteger(kelasId)) {
 			return fail(400, { fail: 'Kelas tidak valid' });
+		}
+
+		// Server-side permission: wali_kelas may only add for their own kelas
+		if (locals?.user && (locals.user as unknown as { type?: string }).type === 'wali_kelas') {
+			const u = locals.user as { kelasId?: number; permissions?: string[] };
+			const allowed = Number(u.kelasId);
+			const hasAccessOther = Array.isArray(u.permissions)
+				? u.permissions.includes('kelas_pindah')
+				: false;
+			if (Number.isInteger(allowed) && kelasId !== allowed && !hasAccessOther) {
+				throw redirect(303, `/forbidden?required=kelas_id`);
+			}
 		}
 
 		if (!nama) {
@@ -87,7 +99,7 @@ export const actions = {
 		}
 	},
 
-	update: async ({ request }) => {
+	update: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const idRaw = formData.get('id');
 		const kelasIdRaw = formData.get('kelasId');
@@ -109,6 +121,18 @@ export const actions = {
 		const kelasId = Number(kelasIdRaw);
 		if (!Number.isInteger(kelasId)) {
 			return fail(400, { fail: 'Kelas tidak valid' });
+		}
+
+		// Server-side permission: wali_kelas may only update for their own kelas
+		if (locals?.user && (locals.user as unknown as { type?: string }).type === 'wali_kelas') {
+			const u = locals.user as { kelasId?: number; permissions?: string[] };
+			const allowed = Number(u.kelasId);
+			const hasAccessOther = Array.isArray(u.permissions)
+				? u.permissions.includes('kelas_pindah')
+				: false;
+			if (Number.isInteger(allowed) && kelasId !== allowed && !hasAccessOther) {
+				throw redirect(303, `/forbidden?required=kelas_id`);
+			}
 		}
 
 		if (!nama) {
@@ -138,7 +162,7 @@ export const actions = {
 		}
 	},
 
-	delete: async ({ request }) => {
+	delete: async ({ request, locals }) => {
 		const formData = await request.formData();
 		const rawIds = formData.getAll('ids');
 		const fallbackId = formData.get('id');
@@ -159,6 +183,22 @@ export const actions = {
 		}
 
 		try {
+			// If caller is wali_kelas without akses_lain, ensure all target rows belong to their kelas
+			if (locals?.user && (locals.user as unknown as { type?: string }).type === 'wali_kelas') {
+				const u = locals.user as { kelasId?: number; permissions?: string[] };
+				const allowed = Number(u.kelasId);
+				const hasAccessOther = Array.isArray(u.permissions)
+					? u.permissions.includes('kelas_pindah')
+					: false;
+				if (Number.isInteger(allowed) && !hasAccessOther) {
+					const rows = await db.query.tableEkstrakurikuler.findMany({
+						columns: { id: true, kelasId: true },
+						where: inArray(tableEkstrakurikuler.id, ids)
+					});
+					const other = rows.some((r) => r.kelasId !== allowed);
+					if (other) throw redirect(303, `/forbidden?required=kelas_id`);
+				}
+			}
 			await db.delete(tableEkstrakurikuler).where(inArray(tableEkstrakurikuler.id, ids));
 			return { message: `${ids.length} ekstrakurikuler berhasil dihapus` };
 		} catch (error) {

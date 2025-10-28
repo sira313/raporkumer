@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { blob, int, real, sqliteTable, text, unique, index } from 'drizzle-orm/sqlite-core';
+import { blob, index, int, real, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
 
 const audit = {
 	createdAt: text()
@@ -17,6 +17,17 @@ export const tableAuthUser = sqliteTable(
 		passwordHash: text().notNull(),
 		passwordSalt: text().notNull(),
 		passwordUpdatedAt: text(),
+		permissions: text({ mode: 'json' }).notNull().default('[]').$type<UserPermission[]>(),
+		// tipe user: admin (penuh), wali_kelas (terbatas ke kelas_id), atau user (default/other)
+		type: text({ enum: ['admin', 'wali_kelas', 'user'] })
+			.notNull()
+			.default('admin'),
+		// referensi opsional ke pegawai (nama wali kelas disimpan di tablePegawai)
+		pegawaiId: int().references(() => tablePegawai.id),
+		// untuk wali_kelas kita bisa menyimpan kelas_id yang diijinkan
+		kelasId: int().references(() => tableKelas.id),
+		// untuk akun tipe 'user' kita simpan pilihan mata pelajaran yang diassign saat pembuatan akun
+		mataPelajaranId: int().references(() => tableMataPelajaran.id),
 		...audit
 	},
 	(table) => [unique().on(table.usernameNormalized)]
@@ -205,8 +216,17 @@ export const tableTasksRelations = relations(tableTasks, ({ one }) => ({
 	})
 }));
 
-export const tableAuthUserRelations = relations(tableAuthUser, ({ many }) => ({
-	sessions: many(tableAuthSession)
+export const tableAuthUserRelations = relations(tableAuthUser, ({ many, one }) => ({
+	sessions: many(tableAuthSession),
+	// optional relation to pegawai (teacher/staff)
+	pegawai: one(tablePegawai, { fields: [tableAuthUser.pegawaiId], references: [tablePegawai.id] }),
+	// optional relation to kelas (for wali_kelas users)
+	kelas: one(tableKelas, { fields: [tableAuthUser.kelasId], references: [tableKelas.id] }),
+	// optional relation to a preferred mata pelajaran for 'user' accounts
+	mataPelajaran: one(tableMataPelajaran, {
+		fields: [tableAuthUser.mataPelajaranId],
+		references: [tableMataPelajaran.id]
+	})
 }));
 
 export const tableAuthSessionRelations = relations(tableAuthSession, ({ one }) => ({

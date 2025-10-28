@@ -15,7 +15,10 @@ declare global {
 		interface Locals {
 			sekolah?: Omit<Sekolah, 'logo'>;
 			sekolahDirty?: boolean;
-			user?: Pick<AuthUser, 'id' | 'username'>;
+			user?: Pick<
+				AuthUser,
+				'id' | 'username' | 'permissions' | 'type' | 'kelasId' | 'pegawaiId' | 'mataPelajaranId'
+			>;
 			session?: (Pick<AuthSession, 'id' | 'expiresAt'> & { tokenHash?: string }) | undefined;
 			requestIsSecure?: boolean;
 		}
@@ -42,7 +45,10 @@ declare global {
 			raporData?: RaporPrintData;
 			piagamData?: PiagamPrintData;
 			piagamRankingOptions?: PiagamRankingOption[];
-			user?: Pick<AuthUser, 'id' | 'username'>;
+			user?: Pick<
+				AuthUser,
+				'id' | 'username' | 'permissions' | 'type' | 'kelasId' | 'pegawaiId' | 'mataPelajaranId'
+			>;
 		}
 		interface PageState {
 			modal: {

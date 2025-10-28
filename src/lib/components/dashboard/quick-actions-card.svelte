@@ -4,6 +4,14 @@
 	import ImportDatabaseModal from '$lib/components/modals/import-database-modal.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 
+	import { page } from '$app/state';
+
+	// single permission to manage dashboard quick actions
+	let canDashboardManage = $derived.by(() => {
+		const perms = (page.data.user ?? { permissions: [] }).permissions ?? [];
+		return (perms as string[]).includes('dashboard_manage');
+	});
+
 	let downloadingBackup = $state(false);
 
 	const handleExportInfo = () => {
@@ -76,17 +84,28 @@
 			Tindakan Cepat
 		</h2>
 		<div class="grid grid-cols-1 gap-2">
-			<button type="button" onclick={handleExportInfo} class="btn btn-primary w-full shadow-none">
+			<button
+				type="button"
+				onclick={() => (canDashboardManage ? handleExportInfo() : undefined)}
+				class="btn btn-primary w-full shadow-none"
+				disabled={!canDashboardManage}
+				aria-disabled={!canDashboardManage}
+				title={!canDashboardManage ? 'Anda tidak memiliki izin untuk melakukan tindakan cepat' : ''}
+			>
 				<Icon name="export" />
 				Export Dapodik
 			</button>
 			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
 				<button
 					type="button"
-					onclick={handleBackupDownload}
+					onclick={() => (canDashboardManage ? handleBackupDownload() : undefined)}
 					class="btn btn-outline btn-accent w-full shadow-none"
-					disabled={downloadingBackup}
+					disabled={downloadingBackup || !canDashboardManage}
+					aria-disabled={!canDashboardManage}
 					aria-busy={downloadingBackup}
+					title={!canDashboardManage
+						? 'Anda tidak memiliki izin untuk melakukan tindakan cepat'
+						: ''}
 				>
 					{#if downloadingBackup}
 						<span class="loading loading-spinner loading-sm"></span>
@@ -97,8 +116,13 @@
 				</button>
 				<button
 					type="button"
-					onclick={handleImport}
+					onclick={() => (canDashboardManage ? handleImport() : undefined)}
 					class="btn btn-outline btn-accent w-full shadow-none"
+					disabled={!canDashboardManage}
+					aria-disabled={!canDashboardManage}
+					title={!canDashboardManage
+						? 'Anda tidak memiliki izin untuk melakukan tindakan cepat'
+						: ''}
 				>
 					<Icon name="import" />
 					Import Data

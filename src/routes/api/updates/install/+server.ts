@@ -1,7 +1,14 @@
 import { json } from '@sveltejs/kit';
 import { scheduleInstall } from '$lib/server/update-manager';
+import { isAuthorizedUser } from '../../../pengguna/permissions';
 
-export const POST = async ({ request }) => {
+// require permission 'app_check_update' to schedule install
+const REQUIRED_PERMISSION: UserPermission = 'app_check_update';
+
+export const POST = async ({ request, locals }) => {
+	if (!isAuthorizedUser([REQUIRED_PERMISSION], locals.user)) {
+		return json({ message: 'Anda tidak memiliki izin untuk memasang pembaruan.' }, { status: 403 });
+	}
 	let payload: { downloadId?: string };
 	try {
 		payload = await request.json();

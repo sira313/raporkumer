@@ -180,6 +180,13 @@
 	const handleSaveSuccess = ({ data }: { data?: AcademicPayload }) => {
 		applyAcademicContext(data);
 	};
+
+	// permission runes (single permission for managing rapor)
+	import { page } from '$app/state';
+	let canRaporManage = $derived.by(() => {
+		const perms = (page.data.user ?? { permissions: [] }).permissions ?? [];
+		return (perms as string[]).includes('rapor_manage');
+	});
 </script>
 
 <div class="grid grid-cols-1 gap-6">
@@ -202,7 +209,7 @@
 								name="sekolahId"
 								bind:value={selectedSekolahId}
 								required
-								disabled={disabledSekolahActions || submitting}
+								disabled={disabledSekolahActions || submitting || !canRaporManage}
 								onchange={(event) => {
 									const value = event.currentTarget.value;
 									selectedSekolahId = value;
@@ -261,6 +268,7 @@
 								name="tahunAjaranId"
 								bind:value={selectedTahunAjaranId}
 								required
+								disabled={!canRaporManage}
 							>
 								<option value="" disabled>Pilih Tahun Ajaran</option>
 								{#each tahunAjaranOptions as item (item.id)}
@@ -279,7 +287,7 @@
 								name="semesterId"
 								bind:value={selectedSemesterId}
 								required
-								disabled={semesterOptions.length === 0}
+								disabled={semesterOptions.length === 0 || !canRaporManage}
 							>
 								<option value="" disabled>Pilih Semester</option>
 								{#each semesterOptions as item (item.id)}
@@ -301,7 +309,7 @@
 								type="date"
 								name="ganjil.tanggalBagiRaport"
 								bind:value={tanggalRaporGanjil}
-								disabled={disableTanggalGanjil}
+								disabled={disableTanggalGanjil || !canRaporManage}
 							/>
 							<p class="text-base-content/70 mt-2 text-xs">
 								Tanggal ini akan muncul di catatan rapor semester ganjil.
@@ -318,7 +326,7 @@
 								type="date"
 								name="genap.tanggalBagiRaport"
 								bind:value={tanggalRaporGenap}
-								disabled={disableTanggalGenap}
+								disabled={disableTanggalGenap || !canRaporManage}
 							/>
 							<p class="text-base-content/70 mt-2 text-xs">
 								Tanggal ini akan muncul di catatan rapor semester genap.
@@ -332,6 +340,9 @@
 								class="file-input file-input-ghost"
 								accept=".xlsx, .xls"
 								name="data"
+								disabled={!canRaporManage}
+								aria-disabled={!canRaporManage}
+								title={!canRaporManage ? 'Anda tidak memiliki izin untuk mengimpor data siswa' : ''}
 							/>
 							<p class="text-base-content/70 mt-1 text-xs">
 								File daftar siswa dengan format excel dari dapodik. Pastikan file dapat dibuka
@@ -345,8 +356,11 @@
 							class="btn btn-soft shadow-none"
 							type="submit"
 							formaction="?/copy-semester"
-							disabled={submitting || !canCopySemester}
-							title={copyButtonTooltip ?? undefined}
+							disabled={submitting || !canCopySemester || !canRaporManage}
+							aria-disabled={!canRaporManage}
+							title={!canRaporManage
+								? 'Anda tidak memiliki izin untuk menyalin semester'
+								: (copyButtonTooltip ?? undefined)}
 						>
 							<Icon name="copy" />
 							Salin Semester Ganjil
@@ -354,7 +368,11 @@
 						<button
 							class="btn btn-primary shadow-none"
 							type="submit"
-							disabled={submitting || invalid || disabledSave}
+							disabled={submitting || invalid || disabledSave || !canRaporManage}
+							aria-disabled={!canRaporManage}
+							title={!canRaporManage
+								? 'Anda tidak memiliki izin untuk menyimpan pengaturan rapor'
+								: ''}
 						>
 							<Icon name="save" />
 							{submitting ? 'Menyimpan…' : 'Simpan'}

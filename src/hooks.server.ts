@@ -1,6 +1,6 @@
+import { applySessionCookie, ensureDefaultAdmin, resolveSession } from '$lib/server/auth';
 import db from '$lib/server/db';
 import { tableSekolah } from '$lib/server/db/schema';
-import { applySessionCookie, ensureDefaultAdmin, resolveSession } from '$lib/server/auth';
 import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
 import { cookieNames } from '$lib/utils';
 import { error, redirect, type Handle } from '@sveltejs/kit';
@@ -107,9 +107,17 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	if (sessionToken) {
 		const resolved = await resolveSession(sessionToken);
 		if (resolved) {
+			// Expose key user fields on locals for downstream loaders/guards.
 			event.locals.user = {
 				id: resolved.user.id,
-				username: resolved.user.username
+				username: resolved.user.username,
+				permissions: resolved.user.permissions,
+				type: resolved.user.type,
+				kelasId: resolved.user.kelasId,
+				pegawaiId: resolved.user.pegawaiId,
+				// preferred/assigned mata pelajaran for 'user' accounts (may be undefined)
+				mataPelajaranId:
+					(resolved.user as unknown as { mataPelajaranId?: number }).mataPelajaranId ?? null
 			};
 			event.locals.session = {
 				id: resolved.session.id,
@@ -130,6 +138,31 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	} else {
 		event.locals.user = undefined;
 		event.locals.session = undefined;
+	}
+
+	// Additional server-side guard: if request includes kelas_id param and the user
+	// is a wali_kelas, ensure they either own that kelas or have the 'kelas_pindah'
+	// permission (which grants both pindah + akses ke kelas lain). This prevents
+	// bypass via direct URL.
+	if (event.locals.user) {
+		const kelasIdParam = event.url.searchParams.get('kelas_id');
+		if (kelasIdParam != null) {
+			const kelasIdNumber = Number(kelasIdParam);
+			if (Number.isInteger(kelasIdNumber)) {
+				const u = event.locals.user as { type?: string; kelasId?: number; permissions?: string[] };
+				if (u.type === 'wali_kelas' && Number.isInteger(Number(u.kelasId))) {
+					const allowed = Number(u.kelasId);
+					if (kelasIdNumber !== allowed) {
+						const hasAccessOther = Array.isArray(u.permissions)
+							? u.permissions.includes('kelas_pindah')
+							: false;
+						if (!hasAccessOther) {
+							throw redirect(303, `/forbidden?required=kelas_id`);
+						}
+					}
+				}
+			}
+		}
 	}
 
 	const routeId = event.route.id;

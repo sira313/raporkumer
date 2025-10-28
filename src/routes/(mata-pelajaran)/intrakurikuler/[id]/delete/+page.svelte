@@ -10,6 +10,7 @@
 	} from '$lib/statics.js';
 
 	let { data } = $props();
+	let confirmDelete = $state(false);
 	const invalidateTargets = ['app:mapel', 'app:mapel_tp-rl'];
 	const AGAMA_MAPEL_NAME_SET = new Set<string>(agamaMapelNames);
 	const isAgamaMapel = AGAMA_MAPEL_NAME_SET.has(data.mapel.nama);
@@ -50,13 +51,34 @@
 			</div>
 		{/if}
 
+		<!-- Konfirmasi eksplisit sebelum menghapus -->
+		<div class="form-control mt-4">
+			<label class="label cursor-pointer gap-3">
+				<input
+					type="checkbox"
+					class="checkbox"
+					name="confirm"
+					bind:checked={confirmDelete}
+					value="1"
+				/>
+				<span class="label-text text-sm text-wrap"
+					>Saya mengerti bahwa menghapus mata pelajaran ini akan menghapus Tujuan Pembelajaran dan
+					data terkait.</span
+				>
+			</label>
+		</div>
+
 		<div class="mt-4 flex justify-end gap-2">
 			<button class="btn btn-soft shadow-none" type="button" onclick={() => history.back()}>
 				<Icon name="close" />
 				Batal
 			</button>
 
-			<button class="btn btn-error btn-soft shadow-none" disabled={submitting}>
+			<button
+				class="btn btn-error btn-soft shadow-none"
+				type="submit"
+				disabled={submitting || !confirmDelete}
+			>
 				{#if submitting}
 					<div class="loading loading-spinner"></div>
 				{:else}

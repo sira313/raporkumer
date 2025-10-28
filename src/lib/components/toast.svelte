@@ -102,7 +102,7 @@
 			<span class="flex h-9 w-9 items-center justify-center {config.iconClass}">
 				<Icon name={config.icon} class="h-5 w-5" />
 			</span>
-			<span class="flex-1">{@html t.message}</span>
+			<span class="flex-1 text-wrap">{@html t.message}</span>
 			<button
 				class="btn btn-circle btn-ghost"
 				type="button"

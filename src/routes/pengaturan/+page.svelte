@@ -3,6 +3,10 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import UpdateModal from '$lib/components/settings/update-modal.svelte';
+	import { page } from '$app/state';
+	import { isAuthorizedUser } from '../pengguna/permissions';
+
+	let user = $derived(page.data.user);
 	import { toast } from '$lib/components/toast.svelte';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
@@ -59,11 +63,15 @@
 	function handlePasswordSuccess({ form }: { form: HTMLFormElement }) {
 		form.reset();
 	}
+
+	function handleAdminUsernameSuccess({ form }: { form: HTMLFormElement }) {
+		form.reset();
+	}
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
 	<div class="space-y-4">
-		<header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+		<header class="flex justify-between gap-3">
 			<div class="space-y-2">
 				<h1 class="text-2xl font-bold">Pengaturan Aplikasi</h1>
 				<p class="text-base-content/70 text-sm">
@@ -71,14 +79,6 @@
 				</p>
 				<p class="text-base-content/60 text-xs">Versi terpasang: v{currentVersion}</p>
 			</div>
-			<button
-				class="btn btn-outline btn-secondary shadow-none sm:self-start"
-				type="button"
-				onclick={() => (updateModalOpen = true)}
-			>
-				<Icon name="download" />
-				Cek Update
-			</button>
 		</header>
 
 		<fieldset class="fieldset">
@@ -92,11 +92,12 @@
 					value={appAddress}
 				/>
 				<button
-					class="btn join-item shadow-none"
+					class="btn join-item btn-soft btn-info shadow-none"
 					type="button"
 					onclick={copyAddress}
 					disabled={!appAddress || copying}
 				>
+					<Icon name="copy" />
 					{copying ? 'Menyalin…' : 'Copy'}
 				</button>
 			</div>
@@ -120,18 +121,115 @@
 		</fieldset>
 	</div>
 	<UpdateModal open={updateModalOpen} {currentVersion} on:close={() => (updateModalOpen = false)} />
+	<div class="mt-4 flex flex-col justify-between gap-2 sm:flex-row">
+		<button
+			class="btn btn-outline btn-secondary shadow-none sm:self-start {!isAuthorizedUser(
+				['app_check_update'],
+				user
+			)
+				? 'btn-disabled pointer-events-none opacity-60'
+				: ''}"
+			type="button"
+			onclick={() => (updateModalOpen = true)}
+			disabled={!isAuthorizedUser(['app_check_update'], user)}
+			title={!isAuthorizedUser(['app_check_update'], user)
+				? 'Anda tidak memiliki izin untuk memeriksa pembaruan'
+				: ''}
+		>
+			<Icon name="download" />
+			Cek Update
+		</button>
+		<a
+			class="btn btn-outline btn-info shadow-none {!isAuthorizedUser(['user_list'], user)
+				? 'btn-disabled pointer-events-none opacity-60'
+				: ''}"
+			href={isAuthorizedUser(['user_list'], user) ? '/pengguna' : '#'}
+			aria-disabled={!isAuthorizedUser(['user_list'], user)}
+			tabindex={!isAuthorizedUser(['user_list'], user) ? -1 : 0}
+			title={!isAuthorizedUser(['user_list'], user)
+				? 'Anda tidak memiliki izin untuk mengakses Manajemen Pengguna'
+				: ''}
+			onclick={(e) => {
+				if (!isAuthorizedUser(['user_list'], user)) e.preventDefault();
+			}}
+		>
+			<Icon name="users" />
+			Manajemen Pengguna
+		</a>
+	</div>
+</section>
+
+<section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
+	<!-- Change Admin Username -->
+	<FormEnhance action="?/change-admin-username" onsuccess={handleAdminUsernameSuccess}>
+		{#snippet children({ submitting, invalid })}
+			<header class="mb-4 space-y-2">
+				<h2 class="text-xl font-semibold">Ganti Username</h2>
+				<p class="text-base-content/70 text-sm">
+					Perbarui username untuk menjaga keamanan akses aplikasi.
+				</p>
+			</header>
+			<div class="flex flex-col gap-2 sm:flex-row">
+				<div class="w-full">
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Username</legend>
+						<div class="form-control">
+							<label class="input dark:bg-base-200 validator w-full dark:border-none">
+								<span class="pl-2"><Icon name="users" /></span>
+								<input
+									type="text"
+									id="adminUsername"
+									name="adminUsername"
+									required
+									pattern="^[A-Za-z0-9._-]&#123;3,&#125;$"
+									title="Gunakan huruf, angka, titik, underscore atau minus. Minimal 3 karakter."
+									placeholder="contoh: laila2"
+								/>
+							</label>
+							<p class="text-base-content/70 mt-1 text-xs">Masukkan username baru.</p>
+						</div>
+					</fieldset>
+				</div>
+
+				<div class="w-full">
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Konfirmasi dengan Kata Sandi</legend>
+						<div class="form-control">
+							<label class="input dark:bg-base-200 validator w-full dark:border-none">
+								<span class="pl-2"><Icon name="lock" /></span>
+								<input
+									type="password"
+									id="adminPassword"
+									name="adminPassword"
+									required
+									placeholder="Masukkan kata sandi"
+									autocomplete="current-password"
+								/>
+							</label>
+							<p class="text-base-content/70 mt-1 text-xs">
+								Masukkan kata sandi saat ini untuk konfirmasi perubahan username.
+							</p>
+						</div>
+					</fieldset>
+				</div>
+			</div>
+
+			<div class="mt-6 flex justify-end">
+				<button class="btn btn-primary shadow-none" type="submit" disabled={submitting || invalid}>
+					<Icon name="save" />
+					{submitting ? 'Menyimpan…' : 'Terapkan'}
+				</button>
+			</div>
+		{/snippet}
+	</FormEnhance>
 </section>
 
 <section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
 	<div class="space-y-4">
-		<div role="alert" class="alert alert-warning">
-			<Icon name="alert" />
-			<span>Simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
-		</div>
 		<header class="space-y-2">
-			<h2 class="text-xl font-semibold">Keamanan Akun</h2>
+			<h2 class="text-xl font-semibold">Ganti Password</h2>
 			<p class="text-base-content/70 text-sm">
-				Perbarui kata sandi admin untuk menjaga keamanan akses aplikasi.
+				Perbarui kata sandi untuk menjaga keamanan akses aplikasi.
 			</p>
 		</header>
 
@@ -140,51 +238,72 @@
 				<div>
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Kata sandi saat ini</legend>
-						<input
-							type="password"
-							id="currentPassword"
-							name="currentPassword"
-							required
-							autocomplete="current-password"
-							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
-							placeholder="Masukkan kata sandi lama"
-						/>
+						<label class="input dark:bg-base-200 validator w-full dark:border-none">
+							<span class="pl-2"><Icon name="lock" /></span>
+							<input
+								type="password"
+								id="currentPassword"
+								name="currentPassword"
+								required
+								autocomplete="current-password"
+								placeholder="Masukkan kata sandi lama"
+							/>
+						</label>
 					</fieldset>
 
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Kata sandi baru</legend>
-						<input
-							type="password"
-							id="newPassword"
-							name="newPassword"
-							required
-							minlength={8}
-							autocomplete="new-password"
-							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
-							placeholder="Minimal 8 karakter"
-						/>
+						<label class="input dark:bg-base-200 validator w-full dark:border-none">
+							<span class="pl-2"><Icon name="lock" /></span>
+							<input
+								type="password"
+								id="newPassword"
+								name="newPassword"
+								required
+								minlength={8}
+								autocomplete="new-password"
+								placeholder="Minimal 8 karakter"
+							/>
+						</label>
 					</fieldset>
 
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Konfirmasi kata sandi baru</legend>
-						<input
-							type="password"
-							id="confirmPassword"
-							name="confirmPassword"
-							required
-							minlength={8}
-							autocomplete="new-password"
-							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
-							placeholder="Ulangi kata sandi baru"
-						/>
+						<label class="input dark:bg-base-200 validator w-full dark:border-none">
+							<span class="pl-2"><Icon name="lock" /></span>
+							<input
+								type="password"
+								id="confirmPassword"
+								name="confirmPassword"
+								required
+								minlength={8}
+								autocomplete="new-password"
+								placeholder="Ulangi kata sandi baru"
+							/>
+						</label>
 					</fieldset>
 
 					<p class="text-base-content/70 text-xs">
 						Gunakan kombinasi huruf dan angka untuk keamanan maksimal.
 					</p>
 
+					<div role="alert" class="alert alert-info mt-4">
+						<Icon name="info" />
+						<span
+							>Khusus wali kelas, dapat mengubah kata sandi mereka sendiri. Bila lupa sandi atau
+							username, dapat menghubungi admin untuk melakukan reset.</span
+						>
+					</div>
+					<div role="alert" class="alert alert-warning mt-4">
+						<Icon name="alert" />
+						<span>Khusus Admin, simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
+					</div>
 					<div class="mt-6 flex justify-end">
-						<button class="btn btn-primary" type="submit" disabled={submitting || invalid}>
+						<button
+							class="btn btn-primary shadow-none"
+							type="submit"
+							disabled={submitting || invalid}
+						>
 							<Icon name="save" />
 							{submitting ? 'Menyimpan…' : 'Simpan kata sandi'}
 						</button>

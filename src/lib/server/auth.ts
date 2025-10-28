@@ -1,8 +1,9 @@
 import db from '$lib/server/db';
 import { tableAuthSession, tableAuthUser } from '$lib/server/db/schema';
+import { userPermissions } from '../../routes/pengguna/permissions';
 import { cookieNames } from '$lib/utils';
 import type { Cookies } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 
 const SESSION_TTL_SECONDS = 60 * 60 * 12; // 12 hours
@@ -12,7 +13,9 @@ const PASSWORD_SALT_BYTES = 16;
 
 const defaultAdminAccount = {
 	username: 'Admin',
-	password: 'Admin123'
+	password: 'Admin123',
+	// Grant all known permissions to the default Admin role/account
+	permissions: <UserPermission[]>userPermissions
 };
 
 interface SessionMetadata {
@@ -56,10 +59,29 @@ export function verifyPassword(password: string, hash: string, salt: string) {
 
 export async function ensureDefaultAdmin() {
 	const normalized = normalizeUsername(defaultAdminAccount.username);
+	// Find any existing admin account. Prefer exact username match, but also
+	// accept records that have type='admin' to support renamed accounts.
 	const existing = await db.query.tableAuthUser.findFirst({
-		where: eq(tableAuthUser.usernameNormalized, normalized)
+		where: sql`${tableAuthUser.usernameNormalized} = ${normalized} OR ${tableAuthUser.type} = ${'admin'}`
 	});
-	if (existing) return existing;
+	if (existing) {
+		// Ensure default admin permissions are present on the existing admin account.
+		const existingPermissions = Array.isArray(existing.permissions) ? existing.permissions : [];
+		const missing = defaultAdminAccount.permissions.filter((p) => !existingPermissions.includes(p));
+		if (missing.length > 0) {
+			const merged = existingPermissions.concat(missing);
+			await db
+				.update(tableAuthUser)
+				.set({ permissions: merged, updatedAt: nowIso() })
+				.where(eq(tableAuthUser.id, existing.id));
+			// Return the refreshed user record
+			const updated = await db.query.tableAuthUser.findFirst({
+				where: eq(tableAuthUser.id, existing.id)
+			});
+			return updated;
+		}
+		return existing;
+	}
 
 	const { hash, salt } = hashPassword(defaultAdminAccount.password);
 	const timestamp = nowIso();
@@ -71,6 +93,8 @@ export async function ensureDefaultAdmin() {
 			passwordHash: hash,
 			passwordSalt: salt,
 			passwordUpdatedAt: timestamp,
+			permissions: defaultAdminAccount.permissions,
+			type: 'admin',
 			createdAt: timestamp,
 			updatedAt: timestamp
 		})

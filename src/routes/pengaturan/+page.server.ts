@@ -5,6 +5,9 @@ import {
 	updateUserPassword,
 	verifyUserPassword
 } from '$lib/server/auth';
+import db from '$lib/server/db';
+import { tableAuthUser } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
 import { getAppVersion } from '$lib/server/app-info';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
@@ -142,5 +145,53 @@ export const actions: Actions = {
 		applySessionCookie(cookies, session.token, session.expiresAt, secure);
 
 		return { message: 'Kata sandi berhasil diperbarui.' };
+	},
+	'change-admin-username': async ({ request, locals }) => {
+		const logContext = { userId: locals.user?.id };
+		if (!locals.user) {
+			console.warn('[change-admin-username] user missing', logContext);
+			return fail(403, { message: 'Autentikasi diperlukan.' });
+		}
+
+		// Allow the currently authenticated user to change their own username.
+		// Require current password for confirmation and ensure username uniqueness.
+		const form = await request.formData();
+		const newUsername = String(form.get('adminUsername') ?? '').trim();
+		const currentPassword = String(form.get('adminPassword') ?? '');
+
+		if (!newUsername) return fail(400, { message: 'Username baru wajib diisi.' });
+		if (!currentPassword)
+			return fail(400, { message: 'Masukkan kata sandi Anda untuk konfirmasi.' });
+
+		// Verify current password
+		const valid = await verifyUserPassword(locals.user.id, currentPassword);
+		if (!valid) return fail(400, { message: 'Kata sandi konfirmasi tidak sesuai.' });
+
+		// Server-side validation: match client-side pattern (letters, numbers, dot, underscore, dash) and min length 3
+		const usernamePattern = /^[A-Za-z0-9._-]{3,}$/;
+		if (!usernamePattern.test(newUsername)) {
+			return fail(400, {
+				message:
+					'Username tidak valid. Gunakan huruf, angka, titik, underscore atau minus. Minimal 3 karakter.'
+			});
+		}
+
+		const normalized = newUsername.trim().toLowerCase();
+
+		// Check uniqueness excluding current user
+		const existing = await db.query.tableAuthUser.findFirst({
+			where: eq(tableAuthUser.usernameNormalized, normalized)
+		});
+		if (existing && existing.id !== locals.user.id)
+			return fail(400, { message: 'Username sudah digunakan.' });
+
+		const now = new Date().toISOString();
+
+		await db
+			.update(tableAuthUser)
+			.set({ username: newUsername, usernameNormalized: normalized, updatedAt: now })
+			.where(eq(tableAuthUser.id, locals.user.id));
+
+		return { message: 'Username berhasil diperbarui.' };
 	}
 };

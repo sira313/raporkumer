@@ -182,7 +182,7 @@
 	{/if}
 
 	{#if hasKelasAktif && totalMapel === 0}
-		<div class="alert border-info/60 bg-info/10 text-info-content mt-6 border border-dashed">
+		<div class="alert border-info/60 bg-info/10 mt-6 border border-dashed">
 			<Icon name="info" />
 			<span
 				>Belum ada data mata pelajaran untuk kelas ini. Gunakan tombol &ldquo;Tambah Mata

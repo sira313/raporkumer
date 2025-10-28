@@ -194,6 +194,8 @@ type FormSubmitEvent = SubmitEvent & { currentTarget: EventTarget & HTMLFormElem
 
 type OptId<T, ID = number> = Omit<T, 'id'> & { id?: ID };
 
+type ValueOf<T> = T[keyof T];
+
 interface UpdateAsset {
 	id: number;
 	name: string;

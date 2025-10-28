@@ -22,6 +22,13 @@
 		}
 		return null;
 	});
+
+	import { page } from '$app/state';
+	// single permission to manage kelas actions
+	let canKelasManage = $derived.by(() => {
+		const perms = (page.data.user ?? { permissions: [] }).permissions ?? [];
+		return (perms as string[]).includes('kelas_manage');
+	});
 </script>
 
 {#if academicContext}
@@ -79,12 +86,22 @@
 					<button
 						class="btn btn-error btn-soft shadow-none"
 						type="button"
-						onclick={() => deleteModalRef?.open(kelas)}
+						onclick={() => (canKelasManage ? deleteModalRef?.open(kelas) : undefined)}
+						disabled={!canKelasManage}
+						aria-disabled={!canKelasManage}
+						title={!canKelasManage ? 'Anda tidak memiliki izin untuk menghapus kelas' : ''}
 					>
 						<Icon name="del" />
 						Hapus
 					</button>
-					<a href={`/kelas/form/${kelas.id}`} class="btn btn-soft shadow-none">
+					<a
+						href={`/kelas/form/${kelas.id}`}
+						class="btn btn-soft shadow-none {!canKelasManage
+							? 'pointer-events-none opacity-50'
+							: ''}"
+						aria-disabled={!canKelasManage}
+						title={!canKelasManage ? 'Anda tidak memiliki izin untuk mengedit kelas' : ''}
+					>
 						<Icon name="edit" />
 						Edit
 					</a>
@@ -106,7 +123,11 @@
 	{/each}
 	<a
 		href="/kelas/form"
-		class="card bg-base-100 rounded-box border-base-300 hover:bg-base-200 flex min-h-40 border-2 border-dashed transition-colors duration-300"
+		class="card bg-base-100 rounded-box border-base-300 hover:bg-base-200 flex min-h-40 border-2 border-dashed transition-colors duration-300 {!canKelasManage
+			? 'pointer-events-none opacity-50'
+			: ''}"
+		aria-disabled={!canKelasManage}
+		title={!canKelasManage ? 'Anda tidak memiliki izin untuk menambah kelas baru' : ''}
 	>
 		<div class="my-auto items-center justify-center text-center">
 			<svg

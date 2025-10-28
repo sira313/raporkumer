@@ -37,6 +37,34 @@
 		return query ? `${page.url.pathname}?${query}` : page.url.pathname;
 	}
 
+	function hasPindahPermission() {
+		const perms = user?.permissions ?? [];
+		return perms.includes('kelas_pindah');
+	}
+
+	function handleKelasClick(e: MouseEvent) {
+		if (hasPindahPermission()) {
+			// allow navigation
+			return;
+		}
+		// prevent navigation and show logout confirmation modal
+		e.preventDefault();
+		showModal({
+			title: 'Konfirmasi Keluar',
+			body: 'Anda tidak mempunyai akses untuk Pindah Kelas secara langsung, silahkan login ulang ke kelas yang dituju. Keluar sekarang?',
+			dismissible: true,
+			onPositive: {
+				label: 'Keluar',
+				icon: 'export',
+				action: ({ close }: { close: () => void }) => {
+					close();
+					logout();
+				}
+			},
+			onNegative: { label: 'Batal', icon: 'close' }
+		});
+	}
+
 	type HelpMapEntry = { matcher: string | RegExp; file: string };
 
 	const helpMaps: HelpMapEntry[] = [
@@ -167,6 +195,19 @@
 					<ul
 						class="menu dropdown-content bg-base-100 ring-opacity-5 z-[1] mt-6 w-72 origin-top-right rounded-xl p-4 shadow-md focus:outline-none"
 					>
+						<!-- alert akun admin -->
+						{#if user?.type === 'admin'}
+							<div role="alert" class="alert alert-info mb-4">
+								<Icon name="info" />
+								<span>Sedang login sebagai Admin</span>
+							</div>
+						{:else if user?.type === 'user'}
+							<div role="alert" class="alert alert-info mb-4">
+								<Icon name="info" />
+								<span>Sedang login sebagai Guru Mapel</span>
+							</div>
+						{/if}
+
 						<div class="flex items-center gap-4">
 							<div
 								class="bg-base-300 dark:bg-base-200 flex h-14 w-14 items-center justify-center rounded-full"
@@ -187,17 +228,20 @@
 							<details class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6">
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-								<div class="collapse-content flex flex-col px-2">
-									{#each daftarKelas as kelas (kelas.id)}
-										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
-										<a
-											class="btn btn-ghost btn-sm justify-start shadow-none"
-											href={buildKelasHref(kelas.id)}
-											class:active={kelasAktif?.id === kelas.id}
-										>
-											{label}
-										</a>
-									{/each}
+								<div class="collapse-content">
+									<div class="flex max-h-[30vh] flex-col overflow-y-auto">
+										{#each daftarKelas as kelas (kelas.id)}
+											{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
+											<a
+												class="btn btn-ghost btn-sm justify-start shadow-none"
+												href={buildKelasHref(kelas.id)}
+												onclick={handleKelasClick}
+												class:active={kelasAktif?.id === kelas.id}
+											>
+												{label}
+											</a>
+										{/each}
+									</div>
 								</div>
 							</details>
 						{:else}

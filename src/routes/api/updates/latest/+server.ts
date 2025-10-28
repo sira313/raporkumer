@@ -1,7 +1,18 @@
 import { json } from '@sveltejs/kit';
 import { compareVersions, fetchLatestRelease, getAppVersion } from '$lib/server/update-manager';
+import { isAuthorizedUser } from '../../../pengguna/permissions';
 
-export const GET = async () => {
+// require permission 'app_check_update' to use update APIs
+const REQUIRED_PERMISSION: UserPermission = 'app_check_update';
+
+export const GET = async ({ locals }) => {
+	if (!isAuthorizedUser([REQUIRED_PERMISSION], locals.user)) {
+		return json(
+			{ message: 'Anda tidak memiliki izin untuk memeriksa pembaruan.' },
+			{ status: 403 }
+		);
+	}
+
 	try {
 		const currentVersion = getAppVersion();
 		const latest = await fetchLatestRelease();
