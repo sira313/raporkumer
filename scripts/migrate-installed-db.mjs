@@ -68,7 +68,26 @@ async function main() {
   try {
     // mirror package.json db:push sequence
     run(process.execPath, [path.join(projectRoot, 'scripts', 'fix-drizzle-indexes.mjs')], { env: childEnv, cwd: projectRoot });
-    run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
+
+    // Run drizzle push, but be tolerant of a common sqlite "index ... already exists" error
+    // by running fix-drizzle-indexes and retrying once.
+    try {
+      run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
+    } catch (err) {
+      const msg = String(err?.message || err || '');
+      if (msg.includes('already exists') || msg.includes('UNIQUE constraint failed') || msg.includes('SQLITE_ERROR')) {
+        console.info('[migrate-installed-db] drizzle push failed with index error; attempting fix-drizzle-indexes and retrying');
+        try {
+          run(process.execPath, [path.join(projectRoot, 'scripts', 'fix-drizzle-indexes.mjs')], { env: childEnv, cwd: projectRoot });
+          run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
+        } catch (err2) {
+          console.error('[migrate-installed-db] retry after fix-drizzle-indexes failed:', err2?.message || err2);
+          throw err2;
+        }
+      } else {
+        throw err;
+      }
+    }
     run(process.execPath, [path.join(projectRoot, 'scripts', 'fix-drizzle-indexes.mjs')], { env: childEnv, cwd: projectRoot });
     run(process.execPath, [path.join(projectRoot, 'scripts', 'seed-default-admin.mjs')], { env: childEnv, cwd: projectRoot });
     run(process.execPath, [path.join(projectRoot, 'scripts', 'grant-admin-permissions.mjs')], { env: childEnv, cwd: projectRoot });
