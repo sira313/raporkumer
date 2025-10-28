@@ -3,7 +3,7 @@ import Icon from '$lib/components/icon.svelte';
 import { showModal, updateModal } from '$lib/components/global-modal.svelte';
 import { toast } from '$lib/components/toast.svelte';
 import UsersHeader from '$lib/components/pengguna/UsersHeader.svelte';
-import NewUserRow from '$lib/components/pengguna/NewUserRow.svelte';
+import AddUserModal from '$lib/components/pengguna/AddUserModal.svelte';
 import ExistingUserRow from '$lib/components/pengguna/ExistingUserRow.svelte';
 
 let { data } = $props();
@@ -24,10 +24,7 @@ let users = $state<LocalUser[]>(data.users ?? []);
 let mataPelajaran = $state<{ id: number; nama: string }[]>(data.mataPelajaran ?? []);
 
 // next temporary id for new rows (negative numbers)
-let nextNewId = -1;
-
-// store values for new rows keyed by temporary id
-let newValues = $state<Record<number, { nama: string; username: string; password: string; type: string; mataPelajaranId: number | null }>>({});
+let showAddModal = $state<boolean>(false);
 
 // selected ids for bulk actions
 let selectedIds = $state<number[]>([]);
@@ -59,9 +56,7 @@ let editValues = $state<Record<number, { username: string; password: string }>>(
 
 // handle add/new row
 function handleAdd() {
-	const id = nextNewId--;
-	users = [{ id, isNew: true, nama: '', username: '', type: 'admin', mataPelajaranId: mataPelajaran[0]?.id ?? null } as LocalUser, ...users];
-	newValues[id] = { nama: '', username: '', password: '', type: 'admin', mataPelajaranId: mataPelajaran[0]?.id ?? null };
+	showAddModal = true;
 }
 
 // handle delete flow (shows modal and performs deletion)
@@ -168,66 +163,49 @@ async function handleDelete() {
 								</td>
 							{/if}
 
-							{#if u.isNew}
-								<NewUserRow id={u.id} {mataPelajaran} {newValues} onCancel={(id: number) => { users = users.filter((x) => x.id !== id); delete newValues[id]; }} onSave={async (id: number) => {
-									const form = new FormData();
-									form.set('username', newValues[id].username || '');
-									form.set('password', newValues[id].password || '');
-									form.set('nama', newValues[id].nama || '');
-									form.set('type', newValues[id].type || 'user');
-									form.set('mataPelajaranId', String(newValues[id].mataPelajaranId ?? ''));
-									const res = await fetch('?/create_user', { method: 'POST', body: form });
+							<ExistingUserRow u={u} {editingId} {editValues}
+								onToggleEdit={(user: LocalUser) => {
+									if (editingId === user.id) { editingId = null; }
+									else { editingId = user.id; editValues[user.id] = { username: user.username ?? '', password: '' }; }
+								}}
+								onSaveEdit={async (user: LocalUser) => {
+									const form = new FormData(); form.set('id', String(user.id)); form.set('username', editValues[user.id].username); form.set('password', editValues[user.id].password);
+									const res = await fetch('?/update_credentials', { method: 'POST', body: form });
 									if (res.ok) {
 										const body = await res.json().catch(() => ({}));
-										toast({ message: 'Pengguna dibuat', type: 'success' });
-										const serverUser = body.user ?? null;
-										const newUser = {
-											id: serverUser?.id ?? Date.now(),
-											username: serverUser?.username ?? newValues[id].username,
-											createdAt: serverUser?.createdAt ?? new Date().toISOString(),
-											type: serverUser?.type ?? newValues[id].type,
-											pegawaiName: body.displayName || newValues[id].nama || (serverUser?.username ?? newValues[id].username),
-											pegawaiId: null,
-											kelasId: null,
-											kelasName: null,
-											passwordUpdatedAt: serverUser?.passwordUpdatedAt ?? new Date().toISOString()
-										} as LocalUser;
-										const idx = users.findIndex((x) => x.id === id);
-										if (idx !== -1) { users[idx] = newUser; users = [...users]; } else { users = [newUser, ...users]; }
-										delete newValues[id];
-									} else {
-										const text = await res.text().catch(() => 'Gagal');
-										toast({ message: `Gagal membuat: ${text}`, type: 'error' });
-									}
-								}} />
-							{:else}
-								<ExistingUserRow u={u} {editingId} {editValues}
-									onToggleEdit={(user: LocalUser) => {
-										if (editingId === user.id) { editingId = null; }
-										else { editingId = user.id; editValues[user.id] = { username: user.username ?? '', password: '' }; }
+										toast({ message: 'Perubahan tersimpan', type: 'success' });
+										if (body.user) {
+											const idx = users.findIndex((x) => x.id === body.user.id);
+											if (idx !== -1) { users[idx] = { ...users[idx], username: body.user.username ?? users[idx].username, passwordUpdatedAt: body.user.passwordUpdatedAt ?? users[idx].passwordUpdatedAt }; }
+										} else {
+											const idx = users.findIndex((x) => x.id === user.id);
+											if (idx !== -1) { users[idx] = { ...users[idx], username: editValues[user.id].username || users[idx].username, passwordUpdatedAt: editValues[user.id].password ? new Date().toISOString() : users[idx].passwordUpdatedAt }; }
+										}
+										editingId = null;
+									} else { const text = await res.text().catch(() => 'Gagal'); toast({ message: `Gagal menyimpan: ${text}`, type: 'error' }); }
 									}}
-									onSaveEdit={async (user: LocalUser) => {
-										const form = new FormData(); form.set('id', String(user.id)); form.set('username', editValues[user.id].username); form.set('password', editValues[user.id].password);
-										const res = await fetch('?/update_credentials', { method: 'POST', body: form });
-										if (res.ok) {
-											const body = await res.json().catch(() => ({}));
-											toast({ message: 'Perubahan tersimpan', type: 'success' });
-											if (body.user) {
-												const idx = users.findIndex((x) => x.id === body.user.id);
-												if (idx !== -1) { users[idx] = { ...users[idx], username: body.user.username ?? users[idx].username, passwordUpdatedAt: body.user.passwordUpdatedAt ?? users[idx].passwordUpdatedAt }; }
-											} else {
-												const idx = users.findIndex((x) => x.id === user.id);
-												if (idx !== -1) { users[idx] = { ...users[idx], username: editValues[user.id].username || users[idx].username, passwordUpdatedAt: editValues[user.id].password ? new Date().toISOString() : users[idx].passwordUpdatedAt }; }
-											}
-											editingId = null;
-										} else { const text = await res.text().catch(() => 'Gagal'); toast({ message: `Gagal menyimpan: ${text}`, type: 'error' }); }
-									}}
-									onOpenUser={(user: LocalUser) => { window.location.href = '/pengguna/' + user.id }} />
-							{/if}
+								onOpenUser={(user: LocalUser) => { window.location.href = '/pengguna/' + user.id }} />
 						</tr>
 					{/each}
 				</tbody>
 			</table>
 		</div>
+
+		<AddUserModal bind:open={showAddModal} {mataPelajaran} on:saved={(e: any) => {
+			const body = e.detail?.body ?? {};
+			const serverUser = body.user ?? null;
+			const newUser = {
+				id: serverUser?.id ?? Date.now(),
+				username: serverUser?.username ?? (body.username ?? 'user'),
+				createdAt: serverUser?.createdAt ?? new Date().toISOString(),
+				type: serverUser?.type ?? 'user',
+				pegawaiName: body.displayName || serverUser?.username || (body.username ?? 'user'),
+				pegawaiId: null,
+				kelasId: null,
+				kelasName: null,
+				passwordUpdatedAt: serverUser?.passwordUpdatedAt ?? new Date().toISOString()
+			} as LocalUser;
+			users = [newUser, ...users];
+		}} />
 	</div>
 </section>
