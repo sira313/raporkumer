@@ -135,7 +135,7 @@ async function handleDelete() {
 			<div class="space-y-2">
 				<h1 class="text-2xl font-bold">Daftar pengguna</h1>
 			</div>
-			<UsersHeader {selectedIds} onDelete={handleDelete} onAdd={handleAdd} />
+			<UsersHeader {selectedIds} {editingId} onDelete={handleDelete} onAdd={handleAdd} />
 		</header>
 		<div class="overflow-x-auto">
 			<table class="table">

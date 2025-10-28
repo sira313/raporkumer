@@ -45,6 +45,7 @@ applyTo: '**'
 - Untuk operasi server, manfaatkan load/aksi SvelteKit di `+page.server.ts` dan `+page.ts`. Pastikan data selalu dibatasi oleh `event.locals.sekolah` aktif.
 - Validasi file upload (logo sekolah) periksa `logo` + `logoType` kolom blob/text. Simpan sebagai `Uint8Array`.
 - Bila menambah API, pastikan route berada di `src/routes/api/**` dan respon JSON mematuhi struktur `{ data, message }`.
+- hindari penggunaan (on:click) karna old syntaxes.
 
 ## Dokumentasi & Konten
 

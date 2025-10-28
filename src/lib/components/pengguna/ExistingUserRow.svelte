@@ -29,7 +29,12 @@
 </td>
 <td>
   <div class="flex flex-row">
-    <button class="btn btn-sm btn-soft rounded-r-none shadow-none" title={editingId === u.id ? 'Batal' : 'Ubah username dan password'} onclick={() => onToggleEdit?.(u)}>
+    <button
+      class="btn btn-sm btn-soft rounded-r-none shadow-none"
+      title={editingId === u.id ? 'Batal' : 'Ubah username dan password'}
+      onclick={() => onToggleEdit?.(u)}
+      disabled={editingId !== null && editingId !== u.id}
+    >
       {#if editingId === u.id}
         <Icon name="close" />
       {:else}
@@ -42,9 +47,15 @@
         <Icon name="save" />
       </button>
     {:else}
-  <a class="btn btn-primary btn-sm btn-soft rounded-l-none shadow-none" title="Atur hak akses" href={'/pengguna/' + u.id} onclick={(e) => { e.preventDefault(); onOpenUser?.(u); }}>
+      <button
+        class="btn btn-primary btn-sm btn-soft rounded-l-none shadow-none"
+        title={editingId !== null ? 'Disabled while mengubah pengguna lain' : 'Atur hak akses'}
+        type="button"
+        onclick={(e) => { e.preventDefault(); if (!(editingId !== null && editingId !== u.id)) onOpenUser?.(u); }}
+        disabled={editingId !== null && editingId !== u.id}
+      >
         <Icon name="key" />
-      </a>
+      </button>
     {/if}
   </div>
 </td>
