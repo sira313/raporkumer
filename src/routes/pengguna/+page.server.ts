@@ -3,11 +3,59 @@ import { tableAuthUser, tablePegawai, tableKelas } from '$lib/server/db/schema';
 import { sql, eq, and } from 'drizzle-orm';
 import { authority } from './utils.server';
 import { hashPassword } from '$lib/server/auth';
+import { randomBytes } from 'node:crypto';
 
 const u = tableAuthUser;
 
 export async function load({ url }) {
 	authority('user_list');
+
+	// Ensure there are auth_user entries for any kelas that has a wali_kelas assigned.
+	// This mirrors `scripts/seed-wali-users.mjs` but runs lazily during the users page load
+	// so admins don't need to run a separate seed script after importing old DBs.
+	try {
+		const kelasWithWali = await db.query.tableKelas.findMany({
+			where: sql`${tableKelas.waliKelasId} IS NOT NULL`,
+			columns: { id: true, waliKelasId: true }
+		});
+		for (const k of kelasWithWali) {
+			if (!k.waliKelasId) continue;
+			const exists = await db.query.tableAuthUser.findFirst({
+				where: eq(tableAuthUser.pegawaiId, k.waliKelasId),
+				columns: { id: true }
+			});
+			if (exists) continue;
+			// fetch pegawai name
+			const peg = await db.query.tablePegawai.findFirst({
+				where: eq(tablePegawai.id, k.waliKelasId),
+				columns: { nama: true }
+			});
+			const nama = (peg?.nama || '').trim();
+			if (!nama) continue;
+			const username = nama;
+			const usernameNormalized = username.toLowerCase();
+			// generate a random password (approx 8 chars) and hash it
+			const password = randomBytes(6).toString('base64url');
+			const { hash, salt } = hashPassword(password);
+			const timestamp = new Date().toISOString();
+			await db.insert(tableAuthUser).values({
+				username,
+				usernameNormalized,
+				passwordHash: hash,
+				passwordSalt: salt,
+				passwordUpdatedAt: timestamp,
+				permissions: [],
+				type: 'wali_kelas',
+				pegawaiId: k.waliKelasId,
+				kelasId: k.id,
+				createdAt: timestamp,
+				updatedAt: timestamp
+			});
+			console.info(`[pengguna] Created user for wali_kelas ${nama} (kelas ${k.id})`);
+		}
+	} catch (err) {
+		console.warn('[pengguna] Failed to ensure wali_kelas users:', err);
+	}
 
 	// TODO: implement pagination
 	const q = url.searchParams.get('q');
