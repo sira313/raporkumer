@@ -4,7 +4,7 @@
 	"version": "0.3.2",
 	"type": "module",
 	"scripts": {
-		"db:push": "drizzle-kit push && node scripts/grant-admin-permissions.mjs",
+		"db:push": "node scripts/fix-drizzle-indexes.mjs && drizzle-kit push && node scripts/fix-drizzle-indexes.mjs && node scripts/grant-admin-permissions.mjs && node scripts/notify-server-reload.mjs",
 		"seed:walis": "node scripts/seed-wali-users.mjs",
 		"db:studio": "drizzle-kit studio",
 		"db:cleanup": "node scripts/cleanup-orphans.mjs",

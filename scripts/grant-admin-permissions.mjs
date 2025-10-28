@@ -1,57 +1,27 @@
 import { createClient } from '@libsql/client';
 
-import fs from 'node:fs';
-import path from 'node:path';
+// fs/path imports were previously used to derive permissions from source, but we
+// now use a canonical list embedded below to avoid brittle parsing.
 
 // Try to derive permissions list from source file `src/routes/pengguna/permissions.ts`.
 // If parsing fails, fall back to a conservative static list.
-function derivePermissionsFromSource() {
-	try {
-		const filePath = path.resolve(process.cwd(), 'src/routes/pengguna/permissions.ts');
-		const src = fs.readFileSync(filePath, 'utf8');
-
-		// Regex to capture each group and its values array content.
-		// Matches patterns like: key: { values: [ ['x', '...'], ['y','...'] ], description: '...' }
-		const groupRe = /(["']?)([a-zA-Z0-9_]+)\1\s*:\s*\{[\s\S]*?values\s*:\s*\[([\s\S]*?)\]/g;
-		const permSet = new Set();
-		let m;
-		while ((m = groupRe.exec(src)) !== null) {
-			const group = m[2];
-			const valuesBlock = m[3];
-			// Find actions inside nested arrays: ['action', 'Label']
-			const actionRe = /['"]([a-zA-Z0-9_]+)['"]\s*,\s*['"]/g;
-			let a;
-			while ((a = actionRe.exec(valuesBlock)) !== null) {
-				permSet.add(`${group}_${a[1]}`);
-			}
-		}
-
-		const perms = Array.from(permSet);
-		if (perms.length) return perms;
-	} catch (err) {
-		console.warn(
-			'[grant-admin-perms] Failed to derive permissions from source:',
-			err?.message ?? err
-		);
-	}
-	// fallback
-	return [
-		'user_list',
-		'user_detail',
-		'user_add',
-		'user_delete',
-		'user_suspend',
-		'user_set_permissions',
-		'dashboard_manage',
-		'sekolah_manage',
-		'app_check_update',
-		'rapor_manage',
-		'kelas_manage',
-		'kelas_pindah'
-	];
-}
-
-const REQUIRED_PERMISSIONS = derivePermissionsFromSource();
+// Use a canonical, explicit list of permissions derived from `src/routes/pengguna/permissions.ts`.
+// Parsing the TS source can be brittle across formatting; keep a fixed authoritative list here
+// so grant-admin-perms is deterministic and idempotent.
+const REQUIRED_PERMISSIONS = [
+	'user_list',
+	'user_detail',
+	'user_add',
+	'user_delete',
+	'user_suspend',
+	'user_set_permissions',
+	'dashboard_manage',
+	'sekolah_manage',
+	'app_check_update',
+	'rapor_manage',
+	'kelas_manage',
+	'kelas_pindah'
+];
 
 const DEFAULT_DB_URL = 'file:./data/database.sqlite3';
 const dbUrl = process.env.DB_URL || DEFAULT_DB_URL;

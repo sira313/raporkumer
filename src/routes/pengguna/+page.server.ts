@@ -1,4 +1,5 @@
 import db from '$lib/server/db';
+import { env } from '$env/dynamic/private';
 import { tableAuthUser, tablePegawai, tableKelas, tableMataPelajaran } from '$lib/server/db/schema';
 import { sql, eq, and, inArray, desc } from 'drizzle-orm';
 import { authority } from './utils.server';
@@ -189,8 +190,18 @@ export const actions = {
 				.orderBy(desc(u.id))
 				.limit(1);
 
+			console.info(`[pengguna] Created user via action: ${username} -> id=${created?.id}`);
+
 			// include mataPelajaranId in the response so the client can keep track of the selection
-			return { success: true, user: created, displayName: nama, mataPelajaranId: mataPelajaranId ?? null };
+					// diagnostic logs to help track persistence issues after DB imports
+					try {
+						console.info(`[pengguna] create_user diagnostic: cwd=${process.cwd()} DB_URL=${env.DB_URL ?? 'file:./data/database.sqlite3'}`);
+						const [{ count }] = await db.select({ count: sql`COUNT(*)` }).from(u);
+						console.info('[pengguna] total auth_user rows after insert:', count);
+					} catch (diagErr) {
+						console.warn('[pengguna] diagnostic failed:', diagErr);
+					}
+					return { success: true, user: created, displayName: nama, mataPelajaranId: mataPelajaranId ?? null };
 		} catch (err: unknown) {
 			console.error('Failed to create user', err);
 			// detect sqlite unique constraint on normalized username and return a user-friendly error

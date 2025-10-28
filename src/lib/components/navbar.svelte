@@ -201,6 +201,11 @@
 								<Icon name="info" />
 								<span>Sedang login sebagai Admin</span>
 							</div>
+						{:else if user?.type === 'user'}
+							<div role="alert" class="alert alert-info mb-4">
+								<Icon name="info" />
+								<span>Sedang login sebagai Guru Mapel</span>
+							</div>
 						{/if}
 
 						<div class="flex items-center gap-4">
