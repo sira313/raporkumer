@@ -15,6 +15,7 @@ import {
 	tableTujuanPembelajaran,
 	tableWaliMurid
 } from '$lib/server/db/schema.js';
+import { tableAuthUser } from '$lib/server/db/schema.js';
 import { fail } from '@sveltejs/kit';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
@@ -237,6 +238,10 @@ export const actions = {
 
 				await tx.delete(tableKokurikuler).where(eq(tableKokurikuler.kelasId, kelasIdNumber));
 				await tx.delete(tableMurid).where(eq(tableMurid.kelasId, kelasIdNumber));
+
+				// Hapus akun pengguna yang terkait langsung ke kelas (mis. wali_kelas users)
+				await tx.delete(tableAuthUser).where(eq(tableAuthUser.kelasId, kelasIdNumber));
+
 				await tx.delete(tableKelas).where(eq(tableKelas.id, kelasIdNumber));
 
 				const waliIdsArray = Array.from(waliMuridIds);
@@ -271,6 +276,9 @@ export const actions = {
 
 				if (kelas.waliKelasId) {
 					const pegawaiCandidate = kelas.waliKelasId;
+					// Hapus akun auth yang terhubung ke pegawai lebih awal agar tidak menghalangi operasi
+					await tx.delete(tableAuthUser).where(eq(tableAuthUser.pegawaiId, pegawaiCandidate));
+
 					const pegawaiStillUsed = new Set<number>();
 					const kepalaRefs = await tx
 						.selectDistinct({ id: tableSekolah.kepalaSekolahId })
@@ -314,12 +322,13 @@ export const actions = {
 					}
 				}
 			});
-		} catch (error) {
-			console.error('Gagal menghapus kelas', error);
-			return fail(400, {
-				fail: 'Gagal menghapus kelas. Pastikan tidak ada data terkait yang tersisa.'
-			});
-		}
+			} catch (error) {
+				// Log stack for debugging on server side
+				console.error('Gagal menghapus kelas', (error as any)?.stack ?? error);
+				return fail(500, {
+					fail: 'Gagal menghapus kelas. Periksa log server untuk detail.'
+				});
+			}
 
 		return {
 			message: forceDelete
