@@ -35,40 +35,20 @@ function toggleSelect(id: number) {
 	else selectedIds = selectedIds.filter((x) => x !== id);
 }
 
-function getSelectableIds() {
-	// only real existing users (positive ids) are selectable for bulk actions
-	return users.map((u) => Number(u.id)).filter((n) => Number.isFinite(n) && n > 0);
-}
-
-function toggleSelectAll() {
-	const selectable = getSelectableIds();
-	if (selectable.length === 0) {
-		selectedIds = [];
-		return;
-	}
-	const allSelected = selectable.every((id) => selectedIds.indexOf(id) !== -1);
-	if (allSelected) selectedIds = [];
-	else selectedIds = [...selectable];
-}
-
-let editingId = $state<number | null>(null);
-let editValues = $state<Record<number, { username: string; password: string }>>({});
-
-// handle add/new row
-function handleAdd() {
-	showAddModal = true;
-}
-
-// handle delete flow (shows modal and performs deletion)
 async function handleDelete() {
-	const selectedUsers = users.filter((u) => selectedIds.indexOf(u.id as number) !== -1);
+	// reuse the shared delete modal logic for the currently selected ids
+	openDeleteModalForIds(selectedIds);
+}
+// open delete modal for given ids (reused by bulk and single-user delete)
+function openDeleteModalForIds(ids: number[]) {
+	const selectedUsers = users.filter((u) => ids.indexOf(u.id as number) !== -1);
 	const hasWali = selectedUsers.some((u) => (u as any).type === 'wali_kelas');
-	let bodyContent = `Yakin ingin menghapus ${selectedIds.length} pengguna yang dipilih?`;
+	let bodyContent = `Yakin ingin menghapus ${ids.length} pengguna yang dipilih?`;
 	let positive: any = {
 		label: 'Hapus',
 		icon: 'del',
 		action: async ({ close }: { close: () => void }) => {
-			const idsToDelete = selectedIds.filter((n) => n > 0);
+			const idsToDelete = ids.filter((n) => n > 0);
 			if (!idsToDelete.length) {
 				toast({ message: 'Tidak ada pengguna valid untuk dihapus', type: 'error' });
 				return;
@@ -79,7 +59,8 @@ async function handleDelete() {
 			if (res.ok) {
 				const body = await res.json().catch(() => ({}));
 				users = users.filter((x) => !idsToDelete.includes(x.id as number));
-				selectedIds = [];
+				// remove deleted ids from selectedIds
+				selectedIds = selectedIds.filter((n) => !idsToDelete.includes(n));
 				users = [...users];
 				toast({ message: `Berhasil menghapus ${idsToDelete.length} pengguna`, type: 'success' });
 				close();
@@ -125,8 +106,34 @@ async function handleDelete() {
 		bodyContent = `<div class="alert alert-warning flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" class="h-5 w-5 shrink-0"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><div class="flex-1">Tidak dapat menghapus karena satu atau lebih pengguna terpilih berperan sebagai Wali Kelas. Untuk menggantinya, klik tombol <strong>Ganti Wali Kelas</strong></div>`;
 		positive = { label: 'Ganti Wali Kelas', icon: 'edit', action: ({ close }: { close: () => void }) => { close(); window.location.href = '/kelas'; } };
 	}
+
 	showModal({ title: 'Hapus pengguna', body: bodyContent, onPositive: positive, onNegative: { label: 'Batal', icon: 'close' }, dismissible: true });
 }
+function getSelectableIds() {
+	// only real existing users (positive ids) are selectable for bulk actions
+	return users.map((u) => Number(u.id)).filter((n) => Number.isFinite(n) && n > 0);
+}
+
+function toggleSelectAll() {
+	const selectable = getSelectableIds();
+	if (selectable.length === 0) {
+		selectedIds = [];
+		return;
+	}
+	const allSelected = selectable.every((id) => selectedIds.indexOf(id) !== -1);
+	if (allSelected) selectedIds = [];
+	else selectedIds = [...selectable];
+}
+
+let editingId = $state<number | null>(null);
+let editValues = $state<Record<number, { username: string; password: string }>>({});
+
+// handle add/new row
+function handleAdd() {
+	showAddModal = true;
+}
+
+
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
@@ -183,7 +190,8 @@ async function handleDelete() {
 										editingId = null;
 									} else { const text = await res.text().catch(() => 'Gagal'); toast({ message: `Gagal menyimpan: ${text}`, type: 'error' }); }
 									}}
-								onOpenUser={(user: LocalUser) => { window.location.href = '/pengguna/' + user.id }} />
+								onOpenUser={(user: LocalUser) => { window.location.href = '/pengguna/' + user.id }}
+								onDelete={(user: LocalUser) => openDeleteModalForIds([Number(user.id)])} />
 						</tr>
 					{/each}
 				</tbody>
