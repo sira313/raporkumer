@@ -10,23 +10,7 @@ export const groupedUserPermissions = {
 		],
 		description: 'Manajemen Pengguna'
 	},
-	cetak: {
-		values: [
-			['biodata', 'Cetak biodata'],
-			['cover', 'Cetak cover'],
-			['piagam', 'Cetak piagam'],
-			['rapor', 'Cetak rapor']
-		],
-		description: 'Halaman Cetak'
-	},
-	nilai: {
-		values: [
-			['absen', 'Absen'],
-			['asesmen_formatif', 'Asesmen Formatif']
-			// ...
-		],
-		description: 'Input Nilai'
-	},
+
 	dashboard: {
 		values: [['manage', 'Kelola Tindakan Cepat']],
 		description: 'Dashboard'

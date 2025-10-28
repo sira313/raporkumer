@@ -53,7 +53,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each Object.entries(groupedUserPermissions).filter(([k]) => k !== 'cetak' && k !== 'nilai') as [group, permission] (group)}
+					{#each Object.entries(groupedUserPermissions) as [group, permission] (group)}
 						<tr>
 							<td colspan="2" class="font-bold">{permission.description}</td>
 						</tr>

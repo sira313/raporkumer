@@ -51,7 +51,7 @@
 		e.preventDefault();
 		showModal({
 			title: 'Konfirmasi Keluar',
-			body: 'Anda tidak mempunyai akses untuk Pindah Kelas. Keluar sekarang?',
+			body: 'Anda tidak mempunyai akses untuk Pindah Kelas secara langsung, silahkan login ulang ke kelas yang dituju. Keluar sekarang?',
 			dismissible: true,
 			onPositive: {
 				label: 'Keluar',
@@ -195,6 +195,14 @@
 					<ul
 						class="menu dropdown-content bg-base-100 ring-opacity-5 z-[1] mt-6 w-72 origin-top-right rounded-xl p-4 shadow-md focus:outline-none"
 					>
+						<!-- alert akun admin -->
+						{#if user?.type === 'admin'}
+							<div role="alert" class="alert alert-info mb-4">
+								<Icon name="info" />
+								<span>Sedang login sebagai Admin</span>
+							</div>
+						{/if}
+
 						<div class="flex items-center gap-4">
 							<div
 								class="bg-base-300 dark:bg-base-200 flex h-14 w-14 items-center justify-center rounded-full"
