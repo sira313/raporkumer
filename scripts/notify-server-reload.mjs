@@ -23,7 +23,10 @@ const secret = env.INTERNAL_RELOAD_SECRET;
 		// Log a concise, non-fatal warning when the dev server is not available.
 		const msg = e && (e.message || String(e));
 		const code = e && (e.code || (e.cause && e.cause.code));
-		console.warn('[notify-server-reload] failed to contact server reload endpoint (ignored):', msg + (code ? ` (${code})` : ''));
+		console.warn(
+			'[notify-server-reload] failed to contact server reload endpoint (ignored):',
+			msg + (code ? ` (${code})` : '')
+		);
 		// If DEBUG env var is set, also output the full error (stack) for troubleshooting.
 		if (process.env.DEBUG) console.debug(e);
 		// don't fail the db:push flow if server is not running; it's optional

@@ -27,7 +27,9 @@ async function main() {
 				} catch (err) {
 					const msg = err && (err.message || err.toString());
 					if (msg && /no such table/i.test(msg)) {
-						console.warn(`[fix-drizzle-indexes] auth_user table not present; cannot drop index ${bad}.`);
+						console.warn(
+							`[fix-drizzle-indexes] auth_user table not present; cannot drop index ${bad}.`
+						);
 					} else {
 						console.error(`[fix-drizzle-indexes] Failed to drop index ${bad}:`, err);
 					}
@@ -46,7 +48,9 @@ async function main() {
 			} catch (err) {
 				const msg = err && (err.message || err.toString());
 				if (msg && /no such table/i.test(msg)) {
-					console.warn('[fix-drizzle-indexes] auth_user table not present; skipping creation of canonical index.');
+					console.warn(
+						'[fix-drizzle-indexes] auth_user table not present; skipping creation of canonical index.'
+					);
 				} else {
 					console.error('[fix-drizzle-indexes] Failed to create canonical index:', err);
 				}
