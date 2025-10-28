@@ -13,10 +13,25 @@ $appStage = Join-Path $stageRoot $appName
 
 Write-Host "Preparing Windows staging layout for $appName" -ForegroundColor Cyan
 
+# Helper: check whether a command exists on PATH
+function Test-CommandExists { param($cmd) try { Get-Command $cmd -ErrorAction Stop > $null; return $true } catch { return $false } }
+
 if (-not $SkipBuild) {
     Write-Host 'Running production build (pnpm build)...'
     Push-Location $projectRoot
-    pnpm build
+    # Prefer pnpm if available, otherwise fall back to npm (installing dev deps first).
+    if (Test-CommandExists 'pnpm') {
+        pnpm build
+    } else {
+        Write-Host 'pnpm not found on PATH; falling back to npm. This will install devDependencies if needed.'
+        # Ensure node/npm present
+        if (-not (Test-CommandExists 'npm')) {
+            throw 'Neither pnpm nor npm were found on PATH. Cannot run build.'
+        }
+        # Install dependencies (including dev) so build tools like vite are available
+        npm install
+        npm run build
+    }
     Pop-Location
 } else {
     Write-Host 'Skipping build step as requested.'
@@ -47,6 +62,23 @@ if (Test-Path $iconSource) {
 } else {
     Write-Warning 'File static/logo.ico tidak ditemukan; ikon installer tidak akan diperbarui.'
 }
+
+# Ensure database schema is prepared by running the project's db:push script.
+# Try pnpm first; if it's not present fall back to npm (installing dev deps).
+Write-Host 'Running database migration (db:push) to produce data/database.sqlite3 if needed...'
+Push-Location $projectRoot
+if (Test-CommandExists 'pnpm') {
+    pnpm db:push
+} else {
+    if (-not (Test-CommandExists 'npm')) {
+        Write-Warning 'npm not found on PATH; skipping db:push. No database will be bundled.'
+    } else {
+        Write-Host 'pnpm not found; using npm to run db:push. Installing devDependencies if needed.'
+        npm install
+        npm run db:push
+    }
+}
+Pop-Location
 
 $databasePath = Join-Path $projectRoot 'data/database.sqlite3'
 if (Test-Path $databasePath) {
@@ -80,6 +112,55 @@ New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null
 Copy-Item (Join-Path $projectRoot 'installer/scripts/detect-csrf-origins.ps1') (Join-Path $toolsDir 'detect-csrf-origins.ps1') -Force
 Copy-Item (Join-Path $projectRoot 'installer/scripts/resolve-node.ps1') (Join-Path $toolsDir 'resolve-node.ps1') -Force
 Copy-Item (Join-Path $projectRoot 'installer/scripts/run-server.cmd') (Join-Path $toolsDir 'run-server.cmd') -Force
+Copy-Item (Join-Path $projectRoot 'installer/scripts/run-migrations.ps1') (Join-Path $toolsDir 'run-migrations.ps1') -Force
+
+# Also copy the convenience wrappers from installer/ to the staged app root so end-users
+# see a top-level double-clickable script (run-migrations.cmd) alongside the app.
+$wrapperCmd = Join-Path $projectRoot 'installer\run-migrations.cmd'
+if (Test-Path $wrapperCmd) { Copy-Item $wrapperCmd (Join-Path $appStage 'run-migrations.cmd') -Force }
+
+$wrapperPs = Join-Path $projectRoot 'installer\run-migrations.ps1'
+if (Test-Path $wrapperPs) { Copy-Item $wrapperPs (Join-Path $appStage 'run-migrations.ps1') -Force }
+
+# Copy migrate helper JS so the convenience wrapper can run it from the staged app
+$migrateJs = Join-Path $projectRoot 'scripts\migrate-installed-db.mjs'
+if (Test-Path $migrateJs) {
+    $scriptsDir = Join-Path $appStage 'scripts'
+    New-Item -ItemType Directory -Path $scriptsDir -Force | Out-Null
+    Copy-Item $migrateJs (Join-Path $scriptsDir 'migrate-installed-db.mjs') -Force
+}
+
+# Copy a minimal set of project scripts required by the migrator into the staged app
+$requiredScripts = @(
+    'fix-drizzle-indexes.mjs',
+    'seed-default-admin.mjs',
+    'grant-admin-permissions.mjs',
+    'notify-server-reload.mjs'
+)
+foreach ($s in $requiredScripts) {
+    $src = Join-Path $projectRoot ('scripts\' + $s)
+    if (Test-Path $src) {
+        if (-not (Test-Path $scriptsDir)) { New-Item -ItemType Directory -Path $scriptsDir -Force | Out-Null }
+        Copy-Item $src (Join-Path $scriptsDir $s) -Force
+    } else {
+        Write-Warning "Required script $s not found in project scripts directory; migrator on target may fail if this script is missing."
+    }
+}
+
+# Copy drizzle config, migrations and schema so drizzle-kit can run on the installed app
+$drizzleConfig = Join-Path $projectRoot 'drizzle.config.js'
+if (Test-Path $drizzleConfig) { Copy-Item $drizzleConfig (Join-Path $appStage 'drizzle.config.js') -Force }
+
+$drizzleDir = Join-Path $projectRoot 'drizzle'
+if (Test-Path $drizzleDir) { Copy-Item $drizzleDir (Join-Path $appStage 'drizzle') -Recurse -Force }
+
+# copy server-side schema referenced by drizzle.config.js if present
+$schemaSrc = Join-Path $projectRoot 'src\lib\server\db\schema.ts'
+if (Test-Path $schemaSrc) {
+    $schemaDestDir = Join-Path $appStage 'src\lib\server\db'
+    New-Item -ItemType Directory -Path $schemaDestDir -Force | Out-Null
+    Copy-Item $schemaSrc (Join-Path $schemaDestDir 'schema.ts') -Force
+}
 
 $envSample = Join-Path $projectRoot '.env.example'
 if (Test-Path $envSample) {
@@ -91,6 +172,13 @@ Push-Location $appStage
 if (Test-Path 'node_modules') { Remove-Item 'node_modules' -Recurse -Force }
 if (Test-Path 'package-lock.json') { Remove-Item 'package-lock.json' -Force }
 npm install --omit=dev --no-package-lock
+Write-Host 'Installing drizzle-kit into staged app so migrations can run on target...'
+# Install only drizzle-kit (no-save) into staged app to keep install minimal but provide the CLI
+try {
+    npm install --no-package-lock --no-save drizzle-kit
+} catch {
+    Write-Warning 'Failed to install drizzle-kit into staged app; migrations on target may not be possible.'
+}
 Pop-Location
 
 Write-Host "Staging complete. Contents available at $appStage" -ForegroundColor Green

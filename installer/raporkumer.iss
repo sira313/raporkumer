@@ -35,6 +35,7 @@ Source:"{#StagePath}\\*"; DestDir:"{app}"; Flags: ignoreversion recursesubdirs c
 
 [Run]
 Filename:"{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters:"-ExecutionPolicy Bypass -File ""{app}\\tools\\ensure-node.ps1"" -InstallDir ""{app}"""; StatusMsg:"Memastikan Node.js tersedia..."; Flags: runhidden waituntilterminated
+Filename:"{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters:"-ExecutionPolicy Bypass -File ""{app}\\tools\\run-migrations.ps1"" -InstallDir ""{app}"""; StatusMsg:"Menjalankan migrasi database (drizzle-kit) pada mesin ini..."; Flags: runhidden waituntilterminated
 
 [Icons]
 Name:"{autoprograms}\\Rapkumer\\Rapkumer"; Filename:"{app}\\start-rapkumer.cmd"; WorkingDir:"{app}"; IconFilename:"{app}\\rapkumer.ico"

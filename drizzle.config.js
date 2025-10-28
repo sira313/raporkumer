@@ -1,7 +1,8 @@
 import { defineConfig } from 'drizzle-kit';
-import { loadEnv } from 'vite';
 
-const env = loadEnv('', '.', '');
+// Use process.env directly so this config works both in development and on
+// installed target machines where dev dependencies (like vite) are not present.
+const env = process.env || {};
 
 export default defineConfig({
 	out: './drizzle',

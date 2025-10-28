@@ -25,7 +25,12 @@ async function main() {
 					await client.execute({ sql: `DROP INDEX IF EXISTS "${bad}"` });
 					console.info(`[fix-drizzle-indexes] Dropped bad index: ${bad}`);
 				} catch (err) {
-					console.error(`[fix-drizzle-indexes] Failed to drop index ${bad}:`, err);
+					const msg = err && (err.message || err.toString());
+					if (msg && /no such table/i.test(msg)) {
+						console.warn(`[fix-drizzle-indexes] auth_user table not present; cannot drop index ${bad}.`);
+					} else {
+						console.error(`[fix-drizzle-indexes] Failed to drop index ${bad}:`, err);
+					}
 				}
 			}
 		}
@@ -39,14 +44,27 @@ async function main() {
 				});
 				console.info(`[fix-drizzle-indexes] Created canonical index: ${canonical}`);
 			} catch (err) {
-				console.error('[fix-drizzle-indexes] Failed to create canonical index:', err);
+				const msg = err && (err.message || err.toString());
+				if (msg && /no such table/i.test(msg)) {
+					console.warn('[fix-drizzle-indexes] auth_user table not present; skipping creation of canonical index.');
+				} else {
+					console.error('[fix-drizzle-indexes] Failed to create canonical index:', err);
+				}
 			}
 		} else {
 			console.info(`[fix-drizzle-indexes] Canonical index already present: ${canonical}`);
 		}
 	} catch (err) {
-		console.error('[fix-drizzle-indexes] Error while checking/fixing indexes:', err);
-		process.exitCode = 1;
+		// If the auth_user table doesn't exist yet (e.g. before migrations), treat as a
+		// non-fatal condition and allow the workflow to continue. Other errors remain fatal.
+		const msg = err && (err.message || err.toString());
+		if (msg && /no such table/i.test(msg)) {
+			console.warn('[fix-drizzle-indexes] auth_user table not present yet; skipping index fixes.');
+			// don't set non-zero exit code so pipeline can continue to create schema
+		} else {
+			console.error('[fix-drizzle-indexes] Error while checking/fixing indexes:', err);
+			process.exitCode = 1;
+		}
 	} finally {
 		if (typeof client.close === 'function') await client.close();
 	}

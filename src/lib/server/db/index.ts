@@ -1,13 +1,28 @@
 import { env } from '$env/dynamic/private';
+import path from 'node:path';
 import { createClient, type Client } from '@libsql/client';
 import { drizzle } from 'drizzle-orm/libsql/node';
 import * as schema from './schema';
 
 const defaultDbUrl = 'file:./data/database.sqlite3';
+
+function resolveInstalledDbUrl() {
+	// Prefer explicit DB_URL
+	if (env.DB_URL) return env.DB_URL;
+
+	// Try LOCALAPPDATA (typical installed location)
+	const local = env.LOCALAPPDATA || env.APPDATA?.replace(/\\Roaming/i, '\\Local');
+	if (local) {
+		const candidate = path.join(local, 'Rapkumer-data', 'database.sqlite3');
+		return `file:${candidate}`;
+	}
+
+	return defaultDbUrl;
+}
 const clientKey = '__rapkumerLibsqlClient';
 
 function createClientInstance(): Client {
-	const url = env.DB_URL || defaultDbUrl;
+	const url = resolveInstalledDbUrl();
 	const authToken = env.DB_AUTH_TOKEN;
 	console.info(
 		`[db] creating libsql client; DB_URL=${url ? url : '(none)'}${authToken ? ' (auth token present)' : ''}`
