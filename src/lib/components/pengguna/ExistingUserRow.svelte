@@ -29,16 +29,18 @@
 </td>
 <td>
   <div class="flex flex-row">
+    {#if editingId === null}
+      <button
+        type="button"
+        class="btn btn-sm btn-error btn-soft rounded-r-none shadow-none"
+        title="Hapus pengguna"
+        onclick={() => onDelete?.(u)}
+      >
+        <Icon name="del" />
+      </button>
+    {/if}
     <button
-      type="button"
-      class="btn btn-sm btn-error btn-soft rounded-r-none shadow-none"
-      title="Hapus pengguna"
-      onclick={() => onDelete?.(u)}
-    >
-      <Icon name="del" />
-    </button>
-    <button
-      class="btn btn-sm btn-soft rounded-none shadow-none"
+      class={"btn btn-sm btn-soft " + ((editingId === u.id || (editingId !== null && editingId !== u.id)) ? 'rounded-r-none' : 'rounded-none') + " shadow-none"}
       title={editingId === u.id ? 'Batal' : 'Ubah username dan password'}
       onclick={() => onToggleEdit?.(u)}
       disabled={editingId !== null && editingId !== u.id}
