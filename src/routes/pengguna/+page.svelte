@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
+	import { showModal, updateModal } from '$lib/components/global-modal.svelte';
 
 	import { toast } from '$lib/components/toast.svelte';
 
@@ -26,6 +27,34 @@
 	// store values for new rows keyed by temporary id
 	let newValues = $state<Record<number, { nama: string; username: string; password: string; type: string; mataPelajaranId: number | null }>>({});
 
+	// selected ids for bulk actions
+	let selectedIds = $state<number[]>([]);
+
+	function toggleSelect(id: number) {
+		const idx = selectedIds.indexOf(id);
+		if (idx === -1) selectedIds = [...selectedIds, id];
+		else selectedIds = selectedIds.filter((x) => x !== id);
+	}
+
+	function getSelectableIds() {
+		// only real existing users (positive ids) are selectable for bulk actions
+		return users.map((u) => Number(u.id)).filter((n) => Number.isFinite(n) && n > 0);
+	}
+
+	function toggleSelectAll() {
+		const selectable = getSelectableIds();
+		if (selectable.length === 0) {
+			selectedIds = [];
+			return;
+		}
+		const allSelected = selectable.every((id) => selectedIds.indexOf(id) !== -1);
+		if (allSelected) {
+			selectedIds = [];
+		} else {
+			selectedIds = [...selectable];
+		}
+	}
+
 	let editingId = $state<number | null>(null);
 	let editValues = $state<Record<number, { username: string; password: string }>>({});
 </script>
@@ -36,21 +65,144 @@
 			<div class="space-y-2">
 				<h1 class="text-2xl font-bold">Daftar pengguna</h1>
 			</div>
-			<button class="btn btn-outline btn-primary shadow-none sm:self-start" type="button" onclick={() => {
-				// insert a temporary new row at the top
-				const id = nextNewId--;
-				users = [{ id, isNew: true, nama: '', username: '', type: 'admin', mataPelajaranId: mataPelajaran[0]?.id ?? null } as LocalUser, ...users];
-				newValues[id] = { nama: '', username: '', password: '', type: 'admin', mataPelajaranId: mataPelajaran[0]?.id ?? null };
-			}}>
-				<Icon name="plus" />
-				Tambah Pengguna
-			</button>
+			{#if selectedIds.length > 0}
+				<button
+					class="btn btn-error shadow-none sm:self-start"
+					type="button"
+					onclick={() => {
+						// show confirmation modal
+						const selectedUsers = users.filter((u) => selectedIds.indexOf(u.id as number) !== -1);
+						const hasWali = selectedUsers.some((u) => (u as any).type === 'wali_kelas');
+						let bodyContent = `Yakin ingin menghapus ${selectedIds.length} pengguna yang dipilih?`;
+						let positive: any = {
+							label: 'Hapus',
+							icon: 'del',
+							action: async ({ close }: { close: () => void }) => {
+								// send delete request (only positive ids)
+								const idsToDelete = selectedIds.filter((n) => n > 0);
+								if (!idsToDelete.length) {
+									toast({ message: 'Tidak ada pengguna valid untuk dihapus', type: 'error' });
+									return;
+								}
+								const form = new FormData();
+								form.set('ids', idsToDelete.join(','));
+								const res = await fetch('?/delete_users', {
+									method: 'POST',
+									body: form
+								});
+								if (res.ok) {
+									const body = await res.json().catch(() => ({}));
+									// remove deleted users from list
+									users = users.filter((x) => !idsToDelete.includes(x.id as number));
+									selectedIds = [];
+									users = [...users];
+									toast({ message: `Berhasil menghapus ${idsToDelete.length} pengguna`, type: 'success' });
+									close();
+								} else {
+									// try parse json message first and handle different shapes
+									let msg = 'Gagal menghapus';
+									let parsedBody: any = null;
+									try {
+										parsedBody = await res.json().catch(() => null);
+										if (parsedBody) {
+											// prefer explicit message fields
+											if (typeof parsedBody.message === 'string' && parsedBody.message.trim()) {
+												msg = parsedBody.message;
+											} else if (parsedBody.type === 'warning' && typeof parsedBody.message === 'string') {
+											msg = parsedBody.message;
+											} else if (parsedBody.error && typeof parsedBody.error.message === 'string') {
+											msg = parsedBody.error.message;
+											} else {
+											msg = JSON.stringify(parsedBody);
+											}
+										} else {
+										const text = await res.text().catch(() => 'Gagal');
+										msg = text;
+									}
+									} catch (e) {
+									const text = await res.text().catch(() => 'Gagal');
+									msg = text;
+									}
+									// if server sent a structured warning, show it inside the modal and change
+									// the positive button to navigate to /kelas so admin can reassign wali_kelas
+									try {
+										if (parsedBody && parsedBody.type === 'warning' && typeof parsedBody.message === 'string') {
+											// escape message to avoid injecting HTML
+											const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+											const safe = escapeHtml(parsedBody.message);
+											updateModal({
+												title: 'Hapus pengguna',
+												body: `<div class="alert alert-warning flex items-start gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" class="h-5 w-5 shrink-0"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><div class="flex-1">${safe}</div></div>`,
+												onPositive: {
+													label: 'Atur Wali Kelas',
+													icon: 'key',
+													action: ({ close }: { close: () => void }) => {
+														close();
+														window.location.href = '/kelas';
+													}
+												},
+												onNegative: { label: 'Tutup', icon: 'close' },
+												dismissible: true
+											});
+											return;
+										}
+									} catch (e) {
+									// ignore: fall back to showing toast below
+									}
+									toast({ message: msg, type: 'warning' });
+								}
+							}
+						};
+						if (hasWali) {
+							// change modal to warn and offer to open /kelas instead of performing deletion
+							bodyContent = `<div class="alert alert-warning flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" class="h-5 w-5 shrink-0"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><div class="flex-1">Tidak dapat menghapus karena satu atau lebih pengguna terpilih berperan sebagai Wali Kelas. Untuk menggantinya, klik tombol <strong>Ganti Wali Kelas</strong></div>`;
+							positive = {
+								label: 'Ganti Wali Kelas',
+								icon: 'edit',
+								action: ({ close }: { close: () => void }) => {
+									close();
+									window.location.href = '/kelas';
+								}
+							};
+						}
+						showModal({
+							title: 'Hapus pengguna',
+							body: bodyContent,
+							onPositive: positive,
+							onNegative: { label: 'Batal', icon: 'close' },
+							dismissible: true
+						});
+					}}
+				>
+					<Icon name="del" />
+					Hapus Pengguna ({selectedIds.length})
+				</button>
+			{:else}
+				<button class="btn btn-outline btn-primary shadow-none sm:self-start" type="button" onclick={() => {
+					// insert a temporary new row at the top
+					const id = nextNewId--;
+					users = [{ id, isNew: true, nama: '', username: '', type: 'admin', mataPelajaranId: mataPelajaran[0]?.id ?? null } as LocalUser, ...users];
+					newValues[id] = { nama: '', username: '', password: '', type: 'admin', mataPelajaranId: mataPelajaran[0]?.id ?? null };
+				}}>
+					<Icon name="plus" />
+					Tambah Pengguna
+				</button>
+			{/if}
 		</header>
 		<div class="overflow-x-auto">
 			<table class="table">
 				<thead>
 					<tr>
-						{#if !editingId}<th><input type="checkbox" class="checkbox" /></th>{/if}
+						{#if !editingId}
+							<th>
+								<input
+									type="checkbox"
+									class="checkbox"
+									checked={getSelectableIds().length > 0 && getSelectableIds().every((id) => selectedIds.indexOf(id) !== -1)}
+									onclick={() => toggleSelectAll()}
+								/>
+							</th>
+						{/if}
 						<th>Nama</th>
 						<th>Role</th>
 						<th>Dibuat pada</th>
@@ -64,7 +216,12 @@
 						<tr>
 							{#if !editingId}
 								<td>
-									<input type="checkbox" class="checkbox" value={u.id} />
+									<input
+										type="checkbox"
+										class="checkbox"
+										checked={selectedIds.indexOf(u.id) !== -1}
+										onclick={() => toggleSelect(u.id)}
+									/>
 								</td>
 							{/if}
 
@@ -123,32 +280,30 @@
 												if (res.ok) {
 													const body = await res.json().catch(() => ({}));
 													toast({ message: 'Pengguna dibuat', type: 'success' });
-													if (body.user) {
-														const idx = users.findIndex((x) => x.id === u.id);
-														const newUser = {
-															id: body.user.id,
-															username: body.user.username ?? newValues[u.id].username,
-															createdAt: body.user.createdAt ?? new Date().toISOString(),
-															type: body.user.type ?? newValues[u.id].type,
-															pegawaiName: body.displayName || newValues[u.id].nama || body.user.username,
-															// keep other fields expected by the table
-															pegawaiId: null,
-															kelasId: null,
-															kelasName: null,
-															passwordUpdatedAt: body.user.passwordUpdatedAt ?? new Date().toISOString()
-														} as LocalUser;
-														if (idx !== -1) {
-															users[idx] = newUser;
-															// ensure Svelte notices the array update
-															users = [...users];
-														} else {
-															// append if temp row not found
-															users = [newUser, ...users];
-														}
+													// build a new user object from server response when available,
+													// otherwise use client-side values so the row appears immediately
+													const serverUser = body.user ?? null;
+													const newUser = {
+														id: serverUser?.id ?? Date.now(),
+														username: serverUser?.username ?? newValues[u.id].username,
+														createdAt: serverUser?.createdAt ?? new Date().toISOString(),
+														type: serverUser?.type ?? newValues[u.id].type,
+														pegawaiName: body.displayName || newValues[u.id].nama || (serverUser?.username ?? newValues[u.id].username),
+														pegawaiId: null,
+														kelasId: null,
+														kelasName: null,
+														passwordUpdatedAt: serverUser?.passwordUpdatedAt ?? new Date().toISOString()
+													} as LocalUser;
+
+													const idx = users.findIndex((x) => x.id === u.id);
+													if (idx !== -1) {
+														users[idx] = newUser;
+														// ensure Svelte notices the array update
+														users = [...users];
 													} else {
-														// fallback: remove temp row
-														users = users.filter((x) => x.id !== u.id);
+														users = [newUser, ...users];
 													}
+
 													delete newValues[u.id];
 												} else {
 													const text = await res.text().catch(() => 'Gagal');
