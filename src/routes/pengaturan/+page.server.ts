@@ -154,14 +154,8 @@ export const actions: Actions = {
 			return fail(403, { message: 'Autentikasi diperlukan.' });
 		}
 
-		// require permission or admin type
-		const permissions = Array.isArray(locals.user.permissions) ? locals.user.permissions : [];
-	const userType = (locals.user as unknown as { type?: string }).type;
-		if (!permissions.includes('user_set_permissions') && userType !== 'admin') {
-			console.warn('[change-admin-username] unauthorized', { ...logContext, permissions });
-			return fail(403, { message: 'Anda tidak memiliki izin untuk mengubah username Admin.' });
-		}
-
+		// Allow the currently authenticated user to change their own username.
+		// Require current password for confirmation and ensure username uniqueness.
 		const form = await request.formData();
 		const newUsername = String(form.get('adminUsername') ?? '').trim();
 		const currentPassword = String(form.get('adminPassword') ?? '');
@@ -169,30 +163,32 @@ export const actions: Actions = {
 		if (!newUsername) return fail(400, { message: 'Username baru wajib diisi.' });
 		if (!currentPassword) return fail(400, { message: 'Masukkan kata sandi Anda untuk konfirmasi.' });
 
+		// Verify current password
 		const valid = await verifyUserPassword(locals.user.id, currentPassword);
 		if (!valid) return fail(400, { message: 'Kata sandi konfirmasi tidak sesuai.' });
 
+		// Server-side validation: match client-side pattern (letters, numbers, dot, underscore, dash) and min length 3
+		const usernamePattern = /^[A-Za-z0-9._-]{3,}$/;
+		if (!usernamePattern.test(newUsername)) {
+			return fail(400, {
+				message:
+					"Username tidak valid. Gunakan huruf, angka, titik, underscore atau minus. Minimal 3 karakter."
+			});
+		}
+
 		const normalized = newUsername.trim().toLowerCase();
 
-		// check uniqueness
+		// Check uniqueness excluding current user
 		const existing = await db.query.tableAuthUser.findFirst({ where: eq(tableAuthUser.usernameNormalized, normalized) });
-		if (existing) return fail(400, { message: 'Username sudah digunakan.' });
+		if (existing && existing.id !== locals.user.id) return fail(400, { message: 'Username sudah digunakan.' });
 
 		const now = new Date().toISOString();
 
-		// Find the default admin record by normalized 'admin' username OR by type='admin'
-		// Prefer the record with username_normalized = 'admin'
-		const target = await db.query.tableAuthUser.findFirst({ where: eq(tableAuthUser.usernameNormalized, 'admin') })
-			?? await db.query.tableAuthUser.findFirst({ where: eq(tableAuthUser.type, 'admin') });
-
-		if (!target) return fail(404, { message: 'Akun Admin tidak ditemukan.' });
-
-		// Ensure the target record remains an admin (preserve role) when renaming.
 		await db
 			.update(tableAuthUser)
-			.set({ username: newUsername, usernameNormalized: normalized, type: 'admin', updatedAt: now })
-			.where(eq(tableAuthUser.id, target.id));
+			.set({ username: newUsername, usernameNormalized: normalized, updatedAt: now })
+			.where(eq(tableAuthUser.id, locals.user.id));
 
-		return { message: 'Username Admin berhasil diperbarui. Catatan: saat server di-restart, proses default admin mungkin membuat akun default baru jika tidak ditemukan; pertimbangkan memperbarui pengaturan default di kode jika perlu.' };
+		return { message: 'Username berhasil diperbarui.' };
 	}
 };

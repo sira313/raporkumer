@@ -3,6 +3,10 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import UpdateModal from '$lib/components/settings/update-modal.svelte';
+	import { page } from '$app/state';
+	import { isAuthorizedUser } from '../pengguna/permissions';
+
+	let user = $derived(page.data.user);
 	import { toast } from '$lib/components/toast.svelte';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
@@ -119,14 +123,25 @@
 	<UpdateModal open={updateModalOpen} {currentVersion} on:close={() => (updateModalOpen = false)} />
 	<div class="flex mt-4 justify-between flex-col sm:flex-row gap-2">
 		<button
-			class="btn btn-outline btn-secondary shadow-none sm:self-start"
+			class="btn btn-outline btn-secondary shadow-none sm:self-start { !isAuthorizedUser(['app_check_update'], user) ? 'btn-disabled pointer-events-none opacity-60' : '' }"
 			type="button"
 			onclick={() => (updateModalOpen = true)}
+			disabled={!isAuthorizedUser(['app_check_update'], user)}
+			title={!isAuthorizedUser(['app_check_update'], user) ? 'Anda tidak memiliki izin untuk memeriksa pembaruan' : ''}
 		>
 			<Icon name="download" />
 			Cek Update
 		</button>
-		<a class="btn btn-outline btn-info shadow-none" href="/pengguna">
+		<a
+			class="btn btn-outline btn-info shadow-none { !isAuthorizedUser(['user_list'], user) ? 'btn-disabled pointer-events-none opacity-60' : '' }"
+			href={isAuthorizedUser(['user_list'], user) ? '/pengguna' : '#'}
+			aria-disabled={!isAuthorizedUser(['user_list'], user)}
+			tabindex={!isAuthorizedUser(['user_list'], user) ? -1 : 0}
+			title={!isAuthorizedUser(['user_list'], user) ? 'Anda tidak memiliki izin untuk mengakses Manajemen Pengguna' : ''}
+			onclick={(e) => {
+				if (!isAuthorizedUser(['user_list'], user)) e.preventDefault();
+			}}
+		>
 			<Icon name="users" />
 			Manajemen Pengguna
 		</a>

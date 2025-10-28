@@ -37,6 +37,11 @@ export const groupedUserPermissions = {
 		description: 'Sekolah'
 	}
 	,
+	app: {
+		values: [["check_update", 'Cek Pembaruan Aplikasi']],
+		description: 'Aplikasi'
+	}
+    ,
 	rapor: {
 		values: [["manage", 'Kelola Data Rapor']],
 		description: 'Data Rapor'
