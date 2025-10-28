@@ -85,12 +85,19 @@ export async function POST({ request }) {
 			const script = resolve(process.cwd(), 'scripts', 'fix-drizzle-indexes.mjs');
 			console.info('[database-import] running index-fixer script:', script);
 			await new Promise((resolvePromise, rejectPromise) => {
-				const child = execFile(process.execPath, [script], { windowsHide: true }, (err, stdout, stderr) => {
-					if (stdout && String(stdout).trim()) console.info('[fix-drizzle-indexes stdout]', String(stdout).trim());
-					if (stderr && String(stderr).trim()) console.warn('[fix-drizzle-indexes stderr]', String(stderr).trim());
-					if (err) return rejectPromise(err);
-					resolvePromise(null);
-				});
+				const child = execFile(
+					process.execPath,
+					[script],
+					{ windowsHide: true },
+					(err, stdout, stderr) => {
+						if (stdout && String(stdout).trim())
+							console.info('[fix-drizzle-indexes stdout]', String(stdout).trim());
+						if (stderr && String(stderr).trim())
+							console.warn('[fix-drizzle-indexes stderr]', String(stderr).trim());
+						if (err) return rejectPromise(err);
+						resolvePromise(null);
+					}
+				);
 				// safety: if the child doesn't start, reject
 				child.on('error', (e) => rejectPromise(e));
 			});

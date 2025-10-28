@@ -10,7 +10,6 @@ type MataPelajaranList = MataPelajaranWithTp[];
 
 const AGAMA_VARIANT_NAME_SET = new Set<string>(agamaVariantNames);
 
-
 export async function load({ depends, url, parent }) {
 	depends('app:mapel');
 	const { kelasAktif, daftarKelas, user } = await parent();

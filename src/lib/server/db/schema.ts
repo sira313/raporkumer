@@ -221,8 +221,7 @@ export const tableAuthUserRelations = relations(tableAuthUser, ({ many, one }) =
 	// optional relation to pegawai (teacher/staff)
 	pegawai: one(tablePegawai, { fields: [tableAuthUser.pegawaiId], references: [tablePegawai.id] }),
 	// optional relation to kelas (for wali_kelas users)
-	kelas: one(tableKelas, { fields: [tableAuthUser.kelasId], references: [tableKelas.id] })
-,
+	kelas: one(tableKelas, { fields: [tableAuthUser.kelasId], references: [tableKelas.id] }),
 	// optional relation to a preferred mata pelajaran for 'user' accounts
 	mataPelajaran: one(tableMataPelajaran, {
 		fields: [tableAuthUser.mataPelajaranId],

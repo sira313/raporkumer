@@ -9,7 +9,9 @@ const clientKey = '__rapkumerLibsqlClient';
 function createClientInstance(): Client {
 	const url = env.DB_URL || defaultDbUrl;
 	const authToken = env.DB_AUTH_TOKEN;
-	console.info(`[db] creating libsql client; DB_URL=${url ? url : '(none)'}${authToken ? ' (auth token present)' : ''}`);
+	console.info(
+		`[db] creating libsql client; DB_URL=${url ? url : '(none)'}${authToken ? ' (auth token present)' : ''}`
+	);
 	return createClient({ url, authToken });
 }
 
@@ -58,7 +60,8 @@ const dbProxy = new Proxy(
 		get(_t, prop) {
 			const target = currentDb as unknown as Record<string, unknown>;
 			const v = (target as Record<string, unknown>)[String(prop)];
-			if (typeof v === 'function') return (v as unknown as (...args: unknown[]) => unknown).bind(target);
+			if (typeof v === 'function')
+				return (v as unknown as (...args: unknown[]) => unknown).bind(target);
 			return v;
 		},
 		set(_t, prop, value) {

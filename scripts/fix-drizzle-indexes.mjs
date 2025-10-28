@@ -11,11 +11,14 @@ async function main() {
 		// List indexes on auth_user
 		const res = await client.execute({ sql: `PRAGMA index_list('auth_user')` });
 		const rows = res.rows || [];
-		const indexNames = rows.map((r) => (r.name || r[1]));
+		const indexNames = rows.map((r) => r.name || r[1]);
 		console.info('[fix-drizzle-indexes] Found indexes on auth_user:', indexNames);
 
 		// Drop any known-bad index names introduced by older imports/builds
-		const badNames = ['auth_user_usernameNormalized_unique', 'auth_user_usernameNormalized_unique_idx'];
+		const badNames = [
+			'auth_user_usernameNormalized_unique',
+			'auth_user_usernameNormalized_unique_idx'
+		];
 		for (const bad of badNames) {
 			if (indexNames.includes(bad)) {
 				try {
@@ -31,7 +34,9 @@ async function main() {
 		const canonical = 'auth_user_username_normalized_unique';
 		if (!indexNames.includes(canonical)) {
 			try {
-				await client.execute({ sql: `CREATE UNIQUE INDEX IF NOT EXISTS "${canonical}" ON "auth_user" ("username_normalized")` });
+				await client.execute({
+					sql: `CREATE UNIQUE INDEX IF NOT EXISTS "${canonical}" ON "auth_user" ("username_normalized")`
+				});
 				console.info(`[fix-drizzle-indexes] Created canonical index: ${canonical}`);
 			} catch (err) {
 				console.error('[fix-drizzle-indexes] Failed to create canonical index:', err);

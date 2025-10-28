@@ -229,18 +229,18 @@
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
 								<div class="collapse-content">
-									<div class="max-h-[30vh] overflow-y-auto flex flex-col">
-									{#each daftarKelas as kelas (kelas.id)}
-										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
-										<a
-											class="btn btn-ghost btn-sm justify-start shadow-none"
-											href={buildKelasHref(kelas.id)}
-											onclick={handleKelasClick}
-											class:active={kelasAktif?.id === kelas.id}
-										>
-											{label}
-										</a>
-									{/each}
+									<div class="flex max-h-[30vh] flex-col overflow-y-auto">
+										{#each daftarKelas as kelas (kelas.id)}
+											{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
+											<a
+												class="btn btn-ghost btn-sm justify-start shadow-none"
+												href={buildKelasHref(kelas.id)}
+												onclick={handleKelasClick}
+												class:active={kelasAktif?.id === kelas.id}
+											>
+												{label}
+											</a>
+										{/each}
 									</div>
 								</div>
 							</details>

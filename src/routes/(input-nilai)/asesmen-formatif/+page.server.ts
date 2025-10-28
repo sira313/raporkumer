@@ -186,7 +186,12 @@ export async function load({ parent, url, depends }) {
 		selectedMapelValue = mapelOptions[0].value;
 	}
 	// If user is locked to a mapel and no explicit query param is provided, default to user's mapel
-	if ((!requestedValue || requestedValue === '') && maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+	if (
+		(!requestedValue || requestedValue === '') &&
+		maybeUser &&
+		maybeUser.type === 'user' &&
+		maybeUser.mataPelajaranId
+	) {
 		// try to find a mapel in this kelas with the same name and set it
 		try {
 			const assigned = await db.query.tableMataPelajaran.findFirst({

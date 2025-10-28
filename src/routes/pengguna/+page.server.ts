@@ -136,20 +136,19 @@ export const actions = {
 			console.error('Failed to update user credentials', err);
 			return new Response(String(err), { status: 500 });
 		}
-	}
-,
+	},
 	create_user: async ({ request }) => {
 		authority('user_add');
 		const form = await request.formData();
-	const username = String(form.get('username') ?? '').trim();
-	const password = String(form.get('password') ?? '').trim();
-	const nama = String(form.get('nama') ?? '').trim();
-	const roleValue = String(form.get('type') ?? 'user');
-	const mataPelajaranIdRaw = form.get('mataPelajaranId');
-	const mataPelajaranId = mataPelajaranIdRaw ? Number(String(mataPelajaranIdRaw)) : null;
+		const username = String(form.get('username') ?? '').trim();
+		const password = String(form.get('password') ?? '').trim();
+		const nama = String(form.get('nama') ?? '').trim();
+		const roleValue = String(form.get('type') ?? 'user');
+		const mataPelajaranIdRaw = form.get('mataPelajaranId');
+		const mataPelajaranId = mataPelajaranIdRaw ? Number(String(mataPelajaranIdRaw)) : null;
 
-	if (!username) return fail(400, { message: 'username required' });
-	if (!password) return fail(400, { message: 'password required' });
+		if (!username) return fail(400, { message: 'username required' });
+		if (!password) return fail(400, { message: 'password required' });
 
 		try {
 			const { hash, salt } = hashPassword(password);
@@ -184,7 +183,13 @@ export const actions = {
 			// fetch created user record to return the created user object reliably.
 			// select the most-recent row matching usernameNormalized in case multiple exist.
 			const [created] = await db
-				.select({ id: u.id, username: u.username, createdAt: u.createdAt, type: u.type, passwordUpdatedAt: u.passwordUpdatedAt })
+				.select({
+					id: u.id,
+					username: u.username,
+					createdAt: u.createdAt,
+					type: u.type,
+					passwordUpdatedAt: u.passwordUpdatedAt
+				})
 				.from(u)
 				.where(eq(u.usernameNormalized, username.toLowerCase()))
 				.orderBy(desc(u.id))
@@ -193,15 +198,22 @@ export const actions = {
 			console.info(`[pengguna] Created user via action: ${username} -> id=${created?.id}`);
 
 			// include mataPelajaranId in the response so the client can keep track of the selection
-					// diagnostic logs to help track persistence issues after DB imports
-					try {
-						console.info(`[pengguna] create_user diagnostic: cwd=${process.cwd()} DB_URL=${env.DB_URL ?? 'file:./data/database.sqlite3'}`);
-						const [{ count }] = await db.select({ count: sql`COUNT(*)` }).from(u);
-						console.info('[pengguna] total auth_user rows after insert:', count);
-					} catch (diagErr) {
-						console.warn('[pengguna] diagnostic failed:', diagErr);
-					}
-					return { success: true, user: created, displayName: nama, mataPelajaranId: mataPelajaranId ?? null };
+			// diagnostic logs to help track persistence issues after DB imports
+			try {
+				console.info(
+					`[pengguna] create_user diagnostic: cwd=${process.cwd()} DB_URL=${env.DB_URL ?? 'file:./data/database.sqlite3'}`
+				);
+				const [{ count }] = await db.select({ count: sql`COUNT(*)` }).from(u);
+				console.info('[pengguna] total auth_user rows after insert:', count);
+			} catch (diagErr) {
+				console.warn('[pengguna] diagnostic failed:', diagErr);
+			}
+			return {
+				success: true,
+				user: created,
+				displayName: nama,
+				mataPelajaranId: mataPelajaranId ?? null
+			};
 		} catch (err: unknown) {
 			console.error('Failed to create user', err);
 			// detect sqlite unique constraint on normalized username and return a user-friendly error
@@ -209,15 +221,19 @@ export const actions = {
 			const e = err as Record<string, unknown>;
 			const cause = (e.cause as Record<string, unknown> | undefined) ?? undefined;
 			const causeMsg = (
-				(cause && String(cause.message)) || (e.message && String(e.message)) || String(err)
+				(cause && String(cause.message)) ||
+				(e.message && String(e.message)) ||
+				String(err)
 			).toString();
-			if (causeMsg.includes('UNIQUE constraint failed') && causeMsg.includes('auth_user.username_normalized')) {
+			if (
+				causeMsg.includes('UNIQUE constraint failed') &&
+				causeMsg.includes('auth_user.username_normalized')
+			) {
 				return fail(400, { message: 'Username sudah digunakan' });
 			}
 			return fail(500, { message: 'Internal Error' });
 		}
-	}
-,
+	},
 	delete_users: async ({ request }) => {
 		authority('user_delete');
 		let ids: number[] = [];
@@ -231,7 +247,10 @@ export const actions = {
 				const form = await request.formData();
 				const raw = String(form.get('ids') ?? '');
 				// accept comma-separated ids
-				ids = raw.split(',').map((s) => Number(s)).filter(Boolean);
+				ids = raw
+					.split(',')
+					.map((s) => Number(s))
+					.filter(Boolean);
 			}
 		} catch (err) {
 			console.warn('Failed to parse ids for deletion', err);
@@ -263,8 +282,10 @@ export const actions = {
 				const messages = blocked.map((b) => {
 					const name = b.pegawaiName || b.username || 'Pengguna';
 					const kelas = b.kelasName || '';
-					return `${name} adalah Wali Kelas ${kelas || ''}`.trim() +
-						`, tidak dapat dihapus. Untuk menggantinya silahkan buka menu Data Kelas`;
+					return (
+						`${name} adalah Wali Kelas ${kelas || ''}`.trim() +
+						`, tidak dapat dihapus. Untuk menggantinya silahkan buka menu Data Kelas`
+					);
 				});
 				return new Response(JSON.stringify({ type: 'warning', message: messages.join(' | ') }), {
 					status: 400,
