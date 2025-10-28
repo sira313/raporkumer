@@ -7,7 +7,10 @@ const REQUIRED_PERMISSION: UserPermission = 'app_check_update';
 
 export const GET = async ({ locals }) => {
 	if (!isAuthorizedUser([REQUIRED_PERMISSION], locals.user)) {
-		return json({ message: 'Anda tidak memiliki izin untuk memeriksa pembaruan.' }, { status: 403 });
+		return json(
+			{ message: 'Anda tidak memiliki izin untuk memeriksa pembaruan.' },
+			{ status: 403 }
+		);
 	}
 
 	try {

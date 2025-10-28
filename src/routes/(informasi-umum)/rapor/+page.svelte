@@ -183,7 +183,10 @@
 
 	// permission runes (single permission for managing rapor)
 	import { page } from '$app/state';
-	let canRaporManage = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('rapor_manage')));
+	let canRaporManage = $derived.by(() => {
+		const perms = (page.data.user ?? { permissions: [] }).permissions ?? [];
+		return (perms as string[]).includes('rapor_manage');
+	});
 </script>
 
 <div class="grid grid-cols-1 gap-6">
@@ -355,7 +358,9 @@
 							formaction="?/copy-semester"
 							disabled={submitting || !canCopySemester || !canRaporManage}
 							aria-disabled={!canRaporManage}
-							title={!canRaporManage ? 'Anda tidak memiliki izin untuk menyalin semester' : copyButtonTooltip ?? undefined}
+							title={!canRaporManage
+								? 'Anda tidak memiliki izin untuk menyalin semester'
+								: (copyButtonTooltip ?? undefined)}
 						>
 							<Icon name="copy" />
 							Salin Semester Ganjil
@@ -365,7 +370,9 @@
 							type="submit"
 							disabled={submitting || invalid || disabledSave || !canRaporManage}
 							aria-disabled={!canRaporManage}
-							title={!canRaporManage ? 'Anda tidak memiliki izin untuk menyimpan pengaturan rapor' : ''}
+							title={!canRaporManage
+								? 'Anda tidak memiliki izin untuk menyimpan pengaturan rapor'
+								: ''}
 						>
 							<Icon name="save" />
 							{submitting ? 'Menyimpan…' : 'Simpan'}

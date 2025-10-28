@@ -22,33 +22,32 @@ export const groupedUserPermissions = {
 	nilai: {
 		values: [
 			['absen', 'Absen'],
-			['asesmen_formatif', 'Asesmen Formatif'],
+			['asesmen_formatif', 'Asesmen Formatif']
 			// ...
 		],
 		description: 'Input Nilai'
 	},
 	dashboard: {
-		values: [["manage", 'Kelola Tindakan Cepat'] ],
+		values: [['manage', 'Kelola Tindakan Cepat']],
 		description: 'Dashboard'
-	}
-	,
+	},
 	sekolah: {
-		values: [["manage", 'Kelola Data Sekolah']],
+		values: [['manage', 'Kelola Data Sekolah']],
 		description: 'Sekolah'
-	}
-	,
+	},
 	app: {
-		values: [["check_update", 'Cek Pembaruan Aplikasi']],
+		values: [['check_update', 'Cek Pembaruan Aplikasi']],
 		description: 'Aplikasi'
-	}
-    ,
+	},
 	rapor: {
-		values: [["manage", 'Kelola Data Rapor']],
+		values: [['manage', 'Kelola Data Rapor']],
 		description: 'Data Rapor'
-	}
-    ,
+	},
 	kelas: {
-		values: [["manage", 'Kelola Data Kelas'], ["pindah", 'Pindah dan akses kelas lain']],
+		values: [
+			['manage', 'Kelola Data Kelas'],
+			['pindah', 'Pindah dan akses kelas lain']
+		],
 		description: 'Data Kelas'
 	}
 } as const;

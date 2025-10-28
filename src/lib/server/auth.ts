@@ -66,12 +66,8 @@ export async function ensureDefaultAdmin() {
 	});
 	if (existing) {
 		// Ensure default admin permissions are present on the existing admin account.
-		const existingPermissions = Array.isArray(existing.permissions)
-			? existing.permissions
-			: [];
-		const missing = defaultAdminAccount.permissions.filter(
-			(p) => !existingPermissions.includes(p)
-		);
+		const existingPermissions = Array.isArray(existing.permissions) ? existing.permissions : [];
+		const missing = defaultAdminAccount.permissions.filter((p) => !existingPermissions.includes(p));
 		if (missing.length > 0) {
 			const merged = existingPermissions.concat(missing);
 			await db

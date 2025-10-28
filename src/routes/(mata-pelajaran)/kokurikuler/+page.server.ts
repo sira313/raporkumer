@@ -118,7 +118,9 @@ export const actions = {
 		if (locals?.user && (locals.user as unknown as { type?: string }).type === 'wali_kelas') {
 			const u = locals.user as { kelasId?: number; permissions?: string[] };
 			const allowed = Number(u.kelasId);
-			const hasAccessOther = Array.isArray(u.permissions) ? u.permissions.includes('kelas_pindah') : false;
+			const hasAccessOther = Array.isArray(u.permissions)
+				? u.permissions.includes('kelas_pindah')
+				: false;
 			if (Number.isInteger(allowed) && kelasId !== allowed && !hasAccessOther) {
 				throw redirect(303, `/forbidden?required=kelas_id`);
 			}
@@ -171,7 +173,9 @@ export const actions = {
 			if (locals?.user && (locals.user as unknown as { type?: string }).type === 'wali_kelas') {
 				const u = locals.user as { kelasId?: number; permissions?: string[] };
 				const allowed = Number(u.kelasId);
-				const hasAccessOther = Array.isArray(u.permissions) ? u.permissions.includes('kelas_pindah') : false;
+				const hasAccessOther = Array.isArray(u.permissions)
+					? u.permissions.includes('kelas_pindah')
+					: false;
 				if (Number.isInteger(allowed) && !hasAccessOther) {
 					const rows = await db.query.tableKokurikuler.findMany({
 						columns: { id: true, kelasId: true },
@@ -222,7 +226,9 @@ export const actions = {
 		if (locals?.user && (locals.user as unknown as { type?: string }).type === 'wali_kelas') {
 			const u = locals.user as { kelasId?: number; permissions?: string[] };
 			const allowed = Number(u.kelasId);
-			const hasAccessOther = Array.isArray(u.permissions) ? u.permissions.includes('kelas_pindah') : false;
+			const hasAccessOther = Array.isArray(u.permissions)
+				? u.permissions.includes('kelas_pindah')
+				: false;
 			if (Number.isInteger(allowed) && kelasId !== allowed && !hasAccessOther) {
 				throw redirect(303, `/forbidden?required=kelas_id`);
 			}

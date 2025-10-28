@@ -372,7 +372,7 @@
 								<td>
 									<div class="flex flex-row">
 										<a
-											class="btn btn-sm btn-soft shadow-none rounded-r-none"
+											class="btn btn-sm btn-soft rounded-r-none shadow-none"
 											href="/murid/{murid.id}"
 											use:modalRoute={'detail-murid'}
 											title="Lihat detail murid"
@@ -381,7 +381,7 @@
 										</a>
 
 										<a
-											class="btn btn-sm btn-error btn-soft shadow-none rounded-l-none"
+											class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
 											href="/murid/{murid.id}/delete"
 											use:modalRoute={'delete-murid'}
 											title="Hapus data murid"

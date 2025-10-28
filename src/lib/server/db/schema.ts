@@ -19,7 +19,9 @@ export const tableAuthUser = sqliteTable(
 		passwordUpdatedAt: text(),
 		permissions: text({ mode: 'json' }).notNull().default('[]').$type<UserPermission[]>(),
 		// tipe user: admin (penuh), wali_kelas (terbatas ke kelas_id), atau user (default/other)
-		type: text({ enum: ['admin', 'wali_kelas', 'user'] }).notNull().default('admin'),
+		type: text({ enum: ['admin', 'wali_kelas', 'user'] })
+			.notNull()
+			.default('admin'),
 		// referensi opsional ke pegawai (nama wali kelas disimpan di tablePegawai)
 		pegawaiId: int().references(() => tablePegawai.id),
 		// untuk wali_kelas kita bisa menyimpan kelas_id yang diijinkan

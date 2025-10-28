@@ -145,8 +145,7 @@ export const actions: Actions = {
 		applySessionCookie(cookies, session.token, session.expiresAt, secure);
 
 		return { message: 'Kata sandi berhasil diperbarui.' };
-	}
-	,
+	},
 	'change-admin-username': async ({ request, locals }) => {
 		const logContext = { userId: locals.user?.id };
 		if (!locals.user) {
@@ -161,7 +160,8 @@ export const actions: Actions = {
 		const currentPassword = String(form.get('adminPassword') ?? '');
 
 		if (!newUsername) return fail(400, { message: 'Username baru wajib diisi.' });
-		if (!currentPassword) return fail(400, { message: 'Masukkan kata sandi Anda untuk konfirmasi.' });
+		if (!currentPassword)
+			return fail(400, { message: 'Masukkan kata sandi Anda untuk konfirmasi.' });
 
 		// Verify current password
 		const valid = await verifyUserPassword(locals.user.id, currentPassword);
@@ -172,15 +172,18 @@ export const actions: Actions = {
 		if (!usernamePattern.test(newUsername)) {
 			return fail(400, {
 				message:
-					"Username tidak valid. Gunakan huruf, angka, titik, underscore atau minus. Minimal 3 karakter."
+					'Username tidak valid. Gunakan huruf, angka, titik, underscore atau minus. Minimal 3 karakter.'
 			});
 		}
 
 		const normalized = newUsername.trim().toLowerCase();
 
 		// Check uniqueness excluding current user
-		const existing = await db.query.tableAuthUser.findFirst({ where: eq(tableAuthUser.usernameNormalized, normalized) });
-		if (existing && existing.id !== locals.user.id) return fail(400, { message: 'Username sudah digunakan.' });
+		const existing = await db.query.tableAuthUser.findFirst({
+			where: eq(tableAuthUser.usernameNormalized, normalized)
+		});
+		if (existing && existing.id !== locals.user.id)
+			return fail(400, { message: 'Username sudah digunakan.' });
 
 		const now = new Date().toISOString();
 

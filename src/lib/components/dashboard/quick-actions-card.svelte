@@ -7,7 +7,10 @@
 	import { page } from '$app/state';
 
 	// single permission to manage dashboard quick actions
-	let canDashboardManage = $derived(((((page.data.user ?? { permissions: [] }).permissions ?? []) as any[]).includes('dashboard_manage')));
+	let canDashboardManage = $derived.by(() => {
+		const perms = (page.data.user ?? { permissions: [] }).permissions ?? [];
+		return (perms as string[]).includes('dashboard_manage');
+	});
 
 	let downloadingBackup = $state(false);
 
@@ -83,7 +86,7 @@
 		<div class="grid grid-cols-1 gap-2">
 			<button
 				type="button"
-				onclick={() => canDashboardManage ? handleExportInfo() : undefined}
+				onclick={() => (canDashboardManage ? handleExportInfo() : undefined)}
 				class="btn btn-primary w-full shadow-none"
 				disabled={!canDashboardManage}
 				aria-disabled={!canDashboardManage}
@@ -95,12 +98,14 @@
 			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
 				<button
 					type="button"
-					onclick={() => canDashboardManage ? handleBackupDownload() : undefined}
+					onclick={() => (canDashboardManage ? handleBackupDownload() : undefined)}
 					class="btn btn-outline btn-accent w-full shadow-none"
 					disabled={downloadingBackup || !canDashboardManage}
 					aria-disabled={!canDashboardManage}
 					aria-busy={downloadingBackup}
-					title={!canDashboardManage ? 'Anda tidak memiliki izin untuk melakukan tindakan cepat' : ''}
+					title={!canDashboardManage
+						? 'Anda tidak memiliki izin untuk melakukan tindakan cepat'
+						: ''}
 				>
 					{#if downloadingBackup}
 						<span class="loading loading-spinner loading-sm"></span>
@@ -111,11 +116,13 @@
 				</button>
 				<button
 					type="button"
-					onclick={() => canDashboardManage ? handleImport() : undefined}
+					onclick={() => (canDashboardManage ? handleImport() : undefined)}
 					class="btn btn-outline btn-accent w-full shadow-none"
 					disabled={!canDashboardManage}
 					aria-disabled={!canDashboardManage}
-					title={!canDashboardManage ? 'Anda tidak memiliki izin untuk melakukan tindakan cepat' : ''}
+					title={!canDashboardManage
+						? 'Anda tidak memiliki izin untuk melakukan tindakan cepat'
+						: ''}
 				>
 					<Icon name="import" />
 					Import Data

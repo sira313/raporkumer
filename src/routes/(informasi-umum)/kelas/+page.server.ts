@@ -322,13 +322,14 @@ export const actions = {
 					}
 				}
 			});
-			} catch (error) {
-				// Log stack for debugging on server side
-				console.error('Gagal menghapus kelas', (error as any)?.stack ?? error);
-				return fail(500, {
-					fail: 'Gagal menghapus kelas. Periksa log server untuk detail.'
-				});
-			}
+		} catch (error) {
+			// Log stack for debugging on server side
+			const errMsg = error instanceof Error ? (error.stack ?? error.message) : String(error);
+			console.error('Gagal menghapus kelas', errMsg);
+			return fail(500, {
+				fail: 'Gagal menghapus kelas. Periksa log server untuk detail.'
+			});
+		}
 
 		return {
 			message: forceDelete

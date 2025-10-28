@@ -9,10 +9,19 @@
 
 	function formatRole(t?: string) {
 		if (!t) return '';
-		return t.replace(/_/g, ' ').split(' ').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+		return t
+			.replace(/_/g, ' ')
+			.split(' ')
+			.map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+			.join(' ');
 	}
 
-	function handleSaveSuccess({ data: successData }: { form?: HTMLFormElement; data?: Record<string, unknown> }) {
+	function handleSaveSuccess({
+		data: successData
+	}: {
+		form?: HTMLFormElement;
+		data?: Record<string, unknown>;
+	}) {
 		if (successData && 'permissions' in successData && Array.isArray(successData.permissions)) {
 			// update local user object so checkboxes reflect new permissions immediately
 			user = { ...user, permissions: successData.permissions as UserPermission[] };
@@ -21,11 +30,11 @@
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
-	<header class="mb-6 flex-col sm:flex-row flex items-center gap-4">
+	<header class="mb-6 flex flex-col items-center gap-4 sm:flex-row">
 		<div class="flex items-center gap-3">
 			<div>
 				<h2 class="text-xl font-bold">Izin Pengguna: {user.username}</h2>
-				<p class="text-sm text-base-content/70">Atur hak akses untuk pengguna ini.</p>
+				<p class="text-base-content/70 text-sm">Atur hak akses untuk pengguna ini.</p>
 			</div>
 		</div>
 		{#if user.type}
@@ -34,9 +43,8 @@
 			</div>
 		{/if}
 	</header>
-<FormEnhance action="?/set_permissions" onsuccess={handleSaveSuccess}>
-	{#snippet children()}
-		<div class="overflow-x-auto mt-2">
+	<FormEnhance action="?/set_permissions" onsuccess={handleSaveSuccess}>
+		<div class="mt-2 overflow-x-auto">
 			<table class="table w-full">
 				<thead>
 					<tr class="bg-base-300 dark:bg-base-200">
@@ -55,7 +63,13 @@
 							<tr>
 								<td class="text-sm">{desc}</td>
 								<td class="text-center">
-									<input type="checkbox" class="toggle toggle-sm toggle-primary" name={key} value="true" {checked} />
+									<input
+										type="checkbox"
+										class="toggle toggle-sm toggle-primary"
+										name={key}
+										value="true"
+										{checked}
+									/>
 								</td>
 							</tr>
 						{/each}
@@ -64,7 +78,7 @@
 			</table>
 		</div>
 
-		<section class="flex justify-between mt-6">
+		<section class="mt-6 flex justify-between">
 			<Authority permissions={['user_set_permissions']}>
 				<a href="/pengguna" class="btn btn-soft shadow-none">
 					<Icon name="left" />
@@ -76,6 +90,5 @@
 				</button>
 			</Authority>
 		</section>
-	{/snippet}
-</FormEnhance>
+	</FormEnhance>
 </section>

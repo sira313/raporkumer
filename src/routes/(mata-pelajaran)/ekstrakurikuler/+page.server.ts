@@ -73,7 +73,9 @@ export const actions = {
 		if (locals?.user && (locals.user as unknown as { type?: string }).type === 'wali_kelas') {
 			const u = locals.user as { kelasId?: number; permissions?: string[] };
 			const allowed = Number(u.kelasId);
-			const hasAccessOther = Array.isArray(u.permissions) ? u.permissions.includes('kelas_pindah') : false;
+			const hasAccessOther = Array.isArray(u.permissions)
+				? u.permissions.includes('kelas_pindah')
+				: false;
 			if (Number.isInteger(allowed) && kelasId !== allowed && !hasAccessOther) {
 				throw redirect(303, `/forbidden?required=kelas_id`);
 			}
@@ -125,7 +127,9 @@ export const actions = {
 		if (locals?.user && (locals.user as unknown as { type?: string }).type === 'wali_kelas') {
 			const u = locals.user as { kelasId?: number; permissions?: string[] };
 			const allowed = Number(u.kelasId);
-			const hasAccessOther = Array.isArray(u.permissions) ? u.permissions.includes('kelas_pindah') : false;
+			const hasAccessOther = Array.isArray(u.permissions)
+				? u.permissions.includes('kelas_pindah')
+				: false;
 			if (Number.isInteger(allowed) && kelasId !== allowed && !hasAccessOther) {
 				throw redirect(303, `/forbidden?required=kelas_id`);
 			}
@@ -179,21 +183,23 @@ export const actions = {
 		}
 
 		try {
-				// If caller is wali_kelas without akses_lain, ensure all target rows belong to their kelas
-				if (locals?.user && (locals.user as unknown as { type?: string }).type === 'wali_kelas') {
-					const u = locals.user as { kelasId?: number; permissions?: string[] };
-					const allowed = Number(u.kelasId);
-					const hasAccessOther = Array.isArray(u.permissions) ? u.permissions.includes('kelas_pindah') : false;
-					if (Number.isInteger(allowed) && !hasAccessOther) {
-						const rows = await db.query.tableEkstrakurikuler.findMany({
-							columns: { id: true, kelasId: true },
-							where: inArray(tableEkstrakurikuler.id, ids)
-						});
-						const other = rows.some((r) => r.kelasId !== allowed);
-						if (other) throw redirect(303, `/forbidden?required=kelas_id`);
-					}
+			// If caller is wali_kelas without akses_lain, ensure all target rows belong to their kelas
+			if (locals?.user && (locals.user as unknown as { type?: string }).type === 'wali_kelas') {
+				const u = locals.user as { kelasId?: number; permissions?: string[] };
+				const allowed = Number(u.kelasId);
+				const hasAccessOther = Array.isArray(u.permissions)
+					? u.permissions.includes('kelas_pindah')
+					: false;
+				if (Number.isInteger(allowed) && !hasAccessOther) {
+					const rows = await db.query.tableEkstrakurikuler.findMany({
+						columns: { id: true, kelasId: true },
+						where: inArray(tableEkstrakurikuler.id, ids)
+					});
+					const other = rows.some((r) => r.kelasId !== allowed);
+					if (other) throw redirect(303, `/forbidden?required=kelas_id`);
 				}
-				await db.delete(tableEkstrakurikuler).where(inArray(tableEkstrakurikuler.id, ids));
+			}
+			await db.delete(tableEkstrakurikuler).where(inArray(tableEkstrakurikuler.id, ids));
 			return { message: `${ids.length} ekstrakurikuler berhasil dihapus` };
 		} catch (error) {
 			if (isTableMissingError(error)) {

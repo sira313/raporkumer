@@ -61,7 +61,10 @@
 					bind:checked={confirmDelete}
 					value="1"
 				/>
-				<span class="label-text text-sm text-wrap">Saya mengerti bahwa menghapus mata pelajaran ini akan menghapus Tujuan Pembelajaran dan data terkait.</span>
+				<span class="label-text text-sm text-wrap"
+					>Saya mengerti bahwa menghapus mata pelajaran ini akan menghapus Tujuan Pembelajaran dan
+					data terkait.</span
+				>
 			</label>
 		</div>
 
@@ -71,7 +74,11 @@
 				Batal
 			</button>
 
-			<button class="btn btn-error btn-soft shadow-none" type="submit" disabled={submitting || !confirmDelete}>
+			<button
+				class="btn btn-error btn-soft shadow-none"
+				type="submit"
+				disabled={submitting || !confirmDelete}
+			>
 				{#if submitting}
 					<div class="loading loading-spinner"></div>
 				{:else}

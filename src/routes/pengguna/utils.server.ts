@@ -13,10 +13,10 @@ export function authority(...someAllowedPermissions: UserPermission[]) {
 		redirect(303, '/login');
 	}
 
-		if (!isAuthorizedUser(someAllowedPermissions, locals.user)) {
-			const allowed = someAllowedPermissions.join(', ');
-			// Redirect to a friendly, informative Forbidden page that shows required permissions
-			const qs = new URLSearchParams({ required: allowed }).toString();
-			redirect(303, '/forbidden?' + qs);
-		}
+	if (!isAuthorizedUser(someAllowedPermissions, locals.user)) {
+		const allowed = someAllowedPermissions.join(', ');
+		// Redirect to a friendly, informative Forbidden page that shows required permissions
+		const qs = new URLSearchParams({ required: allowed }).toString();
+		redirect(303, '/forbidden?' + qs);
+	}
 }

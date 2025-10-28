@@ -7,7 +7,10 @@ const REQUIRED_PERMISSION: UserPermission = 'app_check_update';
 
 export const POST = async ({ request, locals }) => {
 	if (!isAuthorizedUser([REQUIRED_PERMISSION], locals.user)) {
-		return json({ message: 'Anda tidak memiliki izin untuk memulai unduhan pembaruan.' }, { status: 403 });
+		return json(
+			{ message: 'Anda tidak memiliki izin untuk memulai unduhan pembaruan.' },
+			{ status: 403 }
+		);
 	}
 
 	let payload: { version?: string; assetId?: number };

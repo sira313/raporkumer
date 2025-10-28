@@ -7,7 +7,10 @@ const REQUIRED_PERMISSION: UserPermission = 'app_check_update';
 
 export const GET = async ({ params, locals }) => {
 	if (!isAuthorizedUser([REQUIRED_PERMISSION], locals.user)) {
-		return json({ message: 'Anda tidak memiliki izin untuk melihat status unduhan.' }, { status: 403 });
+		return json(
+			{ message: 'Anda tidak memiliki izin untuk melihat status unduhan.' },
+			{ status: 403 }
+		);
 	}
 
 	const id = params.id;

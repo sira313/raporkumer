@@ -17,7 +17,9 @@ export const actions = {
 		const id = +params.id;
 		try {
 			// Hapus Tujuan Pembelajaran yang terkait dulu agar tidak menabrak constraint
-			await db.delete(tableTujuanPembelajaran).where(eq(tableTujuanPembelajaran.mataPelajaranId, id));
+			await db
+				.delete(tableTujuanPembelajaran)
+				.where(eq(tableTujuanPembelajaran.mataPelajaranId, id));
 
 			// lalu hapus mata pelajaran
 			await db.delete(tableMataPelajaran).where(eq(tableMataPelajaran.id, id));

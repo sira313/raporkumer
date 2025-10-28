@@ -71,7 +71,7 @@
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
 	<div class="space-y-4">
-		<header class="flex gap-3 justify-between">
+		<header class="flex justify-between gap-3">
 			<div class="space-y-2">
 				<h1 class="text-2xl font-bold">Pengaturan Aplikasi</h1>
 				<p class="text-base-content/70 text-sm">
@@ -92,12 +92,12 @@
 					value={appAddress}
 				/>
 				<button
-					class="btn join-item shadow-none btn-soft btn-info"
+					class="btn join-item btn-soft btn-info shadow-none"
 					type="button"
 					onclick={copyAddress}
 					disabled={!appAddress || copying}
 				>
-				<Icon name="copy" />
+					<Icon name="copy" />
 					{copying ? 'Menyalin…' : 'Copy'}
 				</button>
 			</div>
@@ -121,23 +121,34 @@
 		</fieldset>
 	</div>
 	<UpdateModal open={updateModalOpen} {currentVersion} on:close={() => (updateModalOpen = false)} />
-	<div class="flex mt-4 justify-between flex-col sm:flex-row gap-2">
+	<div class="mt-4 flex flex-col justify-between gap-2 sm:flex-row">
 		<button
-			class="btn btn-outline btn-secondary shadow-none sm:self-start { !isAuthorizedUser(['app_check_update'], user) ? 'btn-disabled pointer-events-none opacity-60' : '' }"
+			class="btn btn-outline btn-secondary shadow-none sm:self-start {!isAuthorizedUser(
+				['app_check_update'],
+				user
+			)
+				? 'btn-disabled pointer-events-none opacity-60'
+				: ''}"
 			type="button"
 			onclick={() => (updateModalOpen = true)}
 			disabled={!isAuthorizedUser(['app_check_update'], user)}
-			title={!isAuthorizedUser(['app_check_update'], user) ? 'Anda tidak memiliki izin untuk memeriksa pembaruan' : ''}
+			title={!isAuthorizedUser(['app_check_update'], user)
+				? 'Anda tidak memiliki izin untuk memeriksa pembaruan'
+				: ''}
 		>
 			<Icon name="download" />
 			Cek Update
 		</button>
 		<a
-			class="btn btn-outline btn-info shadow-none { !isAuthorizedUser(['user_list'], user) ? 'btn-disabled pointer-events-none opacity-60' : '' }"
+			class="btn btn-outline btn-info shadow-none {!isAuthorizedUser(['user_list'], user)
+				? 'btn-disabled pointer-events-none opacity-60'
+				: ''}"
 			href={isAuthorizedUser(['user_list'], user) ? '/pengguna' : '#'}
 			aria-disabled={!isAuthorizedUser(['user_list'], user)}
 			tabindex={!isAuthorizedUser(['user_list'], user) ? -1 : 0}
-			title={!isAuthorizedUser(['user_list'], user) ? 'Anda tidak memiliki izin untuk mengakses Manajemen Pengguna' : ''}
+			title={!isAuthorizedUser(['user_list'], user)
+				? 'Anda tidak memiliki izin untuk mengakses Manajemen Pengguna'
+				: ''}
 			onclick={(e) => {
 				if (!isAuthorizedUser(['user_list'], user)) e.preventDefault();
 			}}
@@ -150,35 +161,33 @@
 
 <section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
 	<!-- Change Admin Username -->
-		<FormEnhance action="?/change-admin-username" onsuccess={handleAdminUsernameSuccess}>
-			{#snippet children({ submitting, invalid })}
-			<header class="space-y-2 mb-4">
+	<FormEnhance action="?/change-admin-username" onsuccess={handleAdminUsernameSuccess}>
+		{#snippet children({ submitting, invalid })}
+			<header class="mb-4 space-y-2">
 				<h2 class="text-xl font-semibold">Ganti Username</h2>
 				<p class="text-base-content/70 text-sm">
 					Perbarui username untuk menjaga keamanan akses aplikasi.
 				</p>
 			</header>
-			<div class="flex flex-col sm:flex-row gap-2">
+			<div class="flex flex-col gap-2 sm:flex-row">
 				<div class="w-full">
 					<fieldset class="fieldset">
-					<legend class="fieldset-legend">Username</legend>
-					<div class="form-control">
-						<label class="input dark:bg-base-200 w-full dark:border-none validator">
-							<span class="pl-2"><Icon name="users" /></span>
-							<input
-								type="text"
-								id="adminUsername"
-								name="adminUsername"
-								required
-								pattern="^[A-Za-z0-9._-]&#123;3,&#125;$"
-								title="Gunakan huruf, angka, titik, underscore atau minus. Minimal 3 karakter."
-								placeholder="contoh: laila2"
-							/>
-						</label>
-						<p class="text-base-content/70 text-xs mt-1">
-							Masukkan username baru.
-						</p>
-					</div>
+						<legend class="fieldset-legend">Username</legend>
+						<div class="form-control">
+							<label class="input dark:bg-base-200 validator w-full dark:border-none">
+								<span class="pl-2"><Icon name="users" /></span>
+								<input
+									type="text"
+									id="adminUsername"
+									name="adminUsername"
+									required
+									pattern="^[A-Za-z0-9._-]&#123;3,&#125;$"
+									title="Gunakan huruf, angka, titik, underscore atau minus. Minimal 3 karakter."
+									placeholder="contoh: laila2"
+								/>
+							</label>
+							<p class="text-base-content/70 mt-1 text-xs">Masukkan username baru.</p>
+						</div>
 					</fieldset>
 				</div>
 
@@ -186,7 +195,7 @@
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Konfirmasi dengan Kata Sandi</legend>
 						<div class="form-control">
-							<label class="input dark:bg-base-200 w-full dark:border-none validator">
+							<label class="input dark:bg-base-200 validator w-full dark:border-none">
 								<span class="pl-2"><Icon name="lock" /></span>
 								<input
 									type="password"
@@ -197,7 +206,7 @@
 									autocomplete="current-password"
 								/>
 							</label>
-							<p class="text-base-content/70 text-xs mt-1">
+							<p class="text-base-content/70 mt-1 text-xs">
 								Masukkan kata sandi saat ini untuk konfirmasi perubahan username.
 							</p>
 						</div>
@@ -205,14 +214,14 @@
 				</div>
 			</div>
 
-				<div class="mt-6 flex justify-end">
-					<button class="btn btn-primary shadow-none" type="submit" disabled={submitting || invalid}>
-						<Icon name="save" />
-						{submitting ? 'Menyimpan…' : 'Terapkan'}
-					</button>
-				</div>
-			{/snippet}
-		</FormEnhance>
+			<div class="mt-6 flex justify-end">
+				<button class="btn btn-primary shadow-none" type="submit" disabled={submitting || invalid}>
+					<Icon name="save" />
+					{submitting ? 'Menyimpan…' : 'Terapkan'}
+				</button>
+			</div>
+		{/snippet}
+	</FormEnhance>
 </section>
 
 <section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
@@ -229,7 +238,7 @@
 				<div>
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Kata sandi saat ini</legend>
-						<label class="input dark:bg-base-200 w-full dark:border-none validator">
+						<label class="input dark:bg-base-200 validator w-full dark:border-none">
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
 								type="password"
@@ -244,7 +253,7 @@
 
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Kata sandi baru</legend>
-						<label class="input dark:bg-base-200 w-full dark:border-none validator">
+						<label class="input dark:bg-base-200 validator w-full dark:border-none">
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
 								type="password"
@@ -260,7 +269,7 @@
 
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Konfirmasi kata sandi baru</legend>
-						<label class="input dark:bg-base-200 w-full dark:border-none validator">
+						<label class="input dark:bg-base-200 validator w-full dark:border-none">
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
 								type="password"
@@ -280,14 +289,21 @@
 
 					<div role="alert" class="alert alert-info mt-4">
 						<Icon name="info" />
-						<span>Khusus wali kelas, dapat mengubah kata sandi mereka sendiri. Bila lupa sandi atau username, dapat menghubungi admin untuk melakukan reset.</span>
+						<span
+							>Khusus wali kelas, dapat mengubah kata sandi mereka sendiri. Bila lupa sandi atau
+							username, dapat menghubungi admin untuk melakukan reset.</span
+						>
 					</div>
 					<div role="alert" class="alert alert-warning mt-4">
 						<Icon name="alert" />
 						<span>Khusus Admin, simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
 					</div>
 					<div class="mt-6 flex justify-end">
-						<button class="btn btn-primary shadow-none" type="submit" disabled={submitting || invalid}>
+						<button
+							class="btn btn-primary shadow-none"
+							type="submit"
+							disabled={submitting || invalid}
+						>
 							<Icon name="save" />
 							{submitting ? 'Menyimpan…' : 'Simpan kata sandi'}
 						</button>

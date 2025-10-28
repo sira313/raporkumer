@@ -42,27 +42,27 @@
 		return perms.includes('kelas_pindah');
 	}
 
-	function handleKelasClick(e: MouseEvent, kelasId: number) {
+	function handleKelasClick(e: MouseEvent) {
 		if (hasPindahPermission()) {
 			// allow navigation
 			return;
 		}
 		// prevent navigation and show logout confirmation modal
 		e.preventDefault();
-			showModal({
-				title: 'Konfirmasi Keluar',
-				body: 'Anda tidak mempunyai akses untuk Pindah Kelas. Keluar sekarang?',
-				dismissible: true,
-				onPositive: {
-					label: 'Keluar',
-					icon: 'export',
-					action: ({ close }: { close: () => void }) => {
-						close();
-						logout();
-					}
-				},
-				onNegative: { label: 'Batal', icon: 'close' }
-			});
+		showModal({
+			title: 'Konfirmasi Keluar',
+			body: 'Anda tidak mempunyai akses untuk Pindah Kelas. Keluar sekarang?',
+			dismissible: true,
+			onPositive: {
+				label: 'Keluar',
+				icon: 'export',
+				action: ({ close }: { close: () => void }) => {
+					close();
+					logout();
+				}
+			},
+			onNegative: { label: 'Batal', icon: 'close' }
+		});
 	}
 
 	type HelpMapEntry = { matcher: string | RegExp; file: string };
@@ -221,7 +221,7 @@
 										<a
 											class="btn btn-ghost btn-sm justify-start shadow-none"
 											href={buildKelasHref(kelas.id)}
-											onclick={(e) => handleKelasClick(e, kelas.id)}
+											onclick={handleKelasClick}
 											class:active={kelasAktif?.id === kelas.id}
 										>
 											{label}
