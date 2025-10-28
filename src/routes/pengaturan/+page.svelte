@@ -138,15 +138,15 @@
 		<FormEnhance action="?/change-admin-username" onsuccess={handleAdminUsernameSuccess}>
 			{#snippet children({ submitting, invalid })}
 			<header class="space-y-2 mb-4">
-				<h2 class="text-xl font-semibold">Username Admin</h2>
+				<h2 class="text-xl font-semibold">Ganti Username</h2>
 				<p class="text-base-content/70 text-sm">
-					Perbarui username admin untuk menjaga keamanan akses aplikasi.
+					Perbarui username untuk menjaga keamanan akses aplikasi.
 				</p>
 			</header>
 			<div class="flex flex-col sm:flex-row gap-2">
 				<div class="w-full">
 					<fieldset class="fieldset">
-					<legend class="fieldset-legend">Username Admin</legend>
+					<legend class="fieldset-legend">Username</legend>
 					<div class="form-control">
 						<label class="input dark:bg-base-200 w-full dark:border-none validator">
 							<span class="pl-2"><Icon name="users" /></span>
@@ -157,11 +157,11 @@
 								required
 								pattern="^[A-Za-z0-9._-]&#123;3,&#125;$"
 								title="Gunakan huruf, angka, titik, underscore atau minus. Minimal 3 karakter."
-								placeholder="Masukkan username"
+								placeholder="contoh: laila2"
 							/>
 						</label>
 						<p class="text-base-content/70 text-xs mt-1">
-							Masukkan username baru untuk akun admin.
+							Masukkan username baru.
 						</p>
 					</div>
 					</fieldset>
@@ -183,7 +183,7 @@
 								/>
 							</label>
 							<p class="text-base-content/70 text-xs mt-1">
-								Masukkan kata sandi admin saat ini untuk konfirmasi perubahan username.
+								Masukkan kata sandi saat ini untuk konfirmasi perubahan username.
 							</p>
 						</div>
 					</fieldset>
@@ -193,7 +193,7 @@
 				<div class="mt-6 flex justify-end">
 					<button class="btn btn-primary shadow-none" type="submit" disabled={submitting || invalid}>
 						<Icon name="save" />
-						{submitting ? 'Menyimpan…' : 'Simpan Username Admin'}
+						{submitting ? 'Menyimpan…' : 'Terapkan'}
 					</button>
 				</div>
 			{/snippet}
@@ -203,9 +203,9 @@
 <section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
 	<div class="space-y-4">
 		<header class="space-y-2">
-			<h2 class="text-xl font-semibold">Keamanan Akun</h2>
+			<h2 class="text-xl font-semibold">Ganti Password</h2>
 			<p class="text-base-content/70 text-sm">
-				Perbarui kata sandi admin untuk menjaga keamanan akses aplikasi.
+				Perbarui kata sandi untuk menjaga keamanan akses aplikasi.
 			</p>
 		</header>
 
@@ -263,9 +263,13 @@
 						Gunakan kombinasi huruf dan angka untuk keamanan maksimal.
 					</p>
 
+					<div role="alert" class="alert alert-info mt-4">
+						<Icon name="info" />
+						<span>Khusus wali kelas, dapat mengubah kata sandi mereka sendiri. Bila lupa sandi atau username, dapat menghubungi admin untuk melakukan reset.</span>
+					</div>
 					<div role="alert" class="alert alert-warning mt-4">
 						<Icon name="alert" />
-						<span>Simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
+						<span>Khusus Admin, simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
 					</div>
 					<div class="mt-6 flex justify-end">
 						<button class="btn btn-primary shadow-none" type="submit" disabled={submitting || invalid}>
