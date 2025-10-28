@@ -11,7 +11,7 @@
   let nama = '';
   let username = '';
   let password = '';
-  let type = 'admin';
+  let type = 'user';
   let mataPelajaranId: number | null = null;
 
   $: if (open) {
@@ -19,7 +19,7 @@
     nama = '';
     username = '';
     password = '';
-    type = 'admin';
+    type = 'user';
     mataPelajaranId = mataPelajaran[0]?.id ?? null;
   }
 
@@ -59,23 +59,15 @@
       <div class="py-4 space-y-3">
         <fieldset class="fieldset">
           <legend class="fieldset-legend">Nama</legend>
-          <input id="add-user-nama" class="input w-full" bind:value={nama} placeholder="Nama" />
-          <p class="label">Nama lengkap pengguna (tampil pada daftar)</p>
+          <input id="add-user-nama" class="input w-full dark:bg-base-200 dark:border-none" bind:value={nama} placeholder="Nama" />
+          <p class="label">Nama lengkap pengguna dan gelar (tampil pada daftar)</p>
         </fieldset>
 
-        <fieldset class="fieldset">
-          <legend class="fieldset-legend">Role</legend>
-          <select id="add-user-role" class="select w-full" bind:value={type}>
-            <option value="admin">Admin</option>
-            <option value="wali_kelas">Wali Kelas</option>
-            <option value="user">User</option>
-          </select>
-          <p class="label">Pilih peran pengguna di aplikasi</p>
-        </fieldset>
+
 
         <fieldset class="fieldset">
           <legend class="fieldset-legend">Mata Pelajaran (opsional)</legend>
-          <select id="add-user-mapel" class="select w-full" bind:value={mataPelajaranId}>
+          <select id="add-user-mapel" class="select w-full dark:bg-base-200 dark:border-none" bind:value={mataPelajaranId}>
             {#each mataPelajaran as m}
               <option value={m.id}>{m.nama}</option>
             {/each}
@@ -88,15 +80,15 @@
 
         <fieldset class="fieldset">
           <legend class="fieldset-legend">Akun</legend>
-          <input id="add-user-username" class="input w-full mb-2" bind:value={username} placeholder="Username" />
-          <input id="add-user-password" type="password" class="input w-full" bind:value={password} placeholder="Password" />
+          <input id="add-user-username" class="input w-full mb- dark:bg-base-200 dark:border-none" bind:value={username} placeholder="Username" />
+          <input id="add-user-password" type="password" class="input w-full dark:bg-base-200 dark:border-none" bind:value={password} placeholder="Password" />
           <p class="label">Username dan password untuk login</p>
         </fieldset>
       </div>
 
       <div class="modal-action">
-        <button class="btn btn-ghost" type="button" on:click={close}><Icon name="close" /> Batal</button>
-        <button class="btn btn-primary" type="button" on:click={save}><Icon name="save" /> Simpan</button>
+        <button class="btn btn-soft" type="button" on:click={close}><Icon name="close" /> Batal</button>
+        <button class="btn btn-primary shadow-none" type="button" on:click={save}><Icon name="save" /> Simpan</button>
       </div>
     </div>
   </div>
