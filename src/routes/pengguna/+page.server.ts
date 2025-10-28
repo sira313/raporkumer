@@ -173,6 +173,8 @@ export const actions = {
 				passwordUpdatedAt: timestamp,
 				permissions: [],
 				type: roleValue,
+				// store assigned mata pelajaran when creating a 'user' account
+				mataPelajaranId: mataPelajaranId ?? undefined,
 				pegawaiId: pegawaiId ?? undefined,
 				createdAt: timestamp,
 				updatedAt: timestamp

@@ -43,16 +43,16 @@
     </button>
 
     {#if editingId === u.id}
-  <button class="btn btn-primary btn-sm btn-soft rounded-l-none shadow-none" title="Simpan perubahan" onclick={() => onSaveEdit?.(u)}>
+      <button class="btn btn-primary btn-sm btn-soft rounded-l-none shadow-none" title="Simpan perubahan" onclick={() => onSaveEdit?.(u)}>
         <Icon name="save" />
       </button>
     {:else}
       <button
         class="btn btn-primary btn-sm btn-soft rounded-l-none shadow-none"
-        title={editingId !== null ? 'Disabled while mengubah pengguna lain' : 'Atur hak akses'}
+        title={editingId !== u.id ? 'Disabled while mengubah pengguna lain' : 'Atur hak akses'}
         type="button"
-        onclick={(e) => { e.preventDefault(); if (!(editingId !== null && editingId !== u.id)) onOpenUser?.(u); }}
-        disabled={editingId !== null && editingId !== u.id}
+        onclick={(e) => { e.preventDefault(); if (!(editingId !== null && editingId !== u.id) && !u.isNew) onOpenUser?.(u); }}
+        disabled={editingId !== null && editingId !== u.id || u.isNew}
       >
         <Icon name="key" />
       </button>

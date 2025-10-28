@@ -26,6 +26,8 @@ export const tableAuthUser = sqliteTable(
 		pegawaiId: int().references(() => tablePegawai.id),
 		// untuk wali_kelas kita bisa menyimpan kelas_id yang diijinkan
 		kelasId: int().references(() => tableKelas.id),
+		// untuk akun tipe 'user' kita simpan pilihan mata pelajaran yang diassign saat pembuatan akun
+		mataPelajaranId: int().references(() => tableMataPelajaran.id),
 		...audit
 	},
 	(table) => [unique().on(table.usernameNormalized)]
@@ -220,6 +222,12 @@ export const tableAuthUserRelations = relations(tableAuthUser, ({ many, one }) =
 	pegawai: one(tablePegawai, { fields: [tableAuthUser.pegawaiId], references: [tablePegawai.id] }),
 	// optional relation to kelas (for wali_kelas users)
 	kelas: one(tableKelas, { fields: [tableAuthUser.kelasId], references: [tableKelas.id] })
+,
+	// optional relation to a preferred mata pelajaran for 'user' accounts
+	mataPelajaran: one(tableMataPelajaran, {
+		fields: [tableAuthUser.mataPelajaranId],
+		references: [tableMataPelajaran.id]
+	})
 }));
 
 export const tableAuthSessionRelations = relations(tableAuthSession, ({ one }) => ({

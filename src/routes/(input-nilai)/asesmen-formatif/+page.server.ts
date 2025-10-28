@@ -89,7 +89,7 @@ function buildSummarySentence(parts: ProgressSummaryPart[]): string | null {
 }
 export async function load({ parent, url, depends }) {
 	depends('app:asesmen-formatif');
-	const { kelasAktif } = await parent();
+	const { kelasAktif, user } = await parent();
 	const meta: PageMeta = { title: 'Asesmen Formatif' };
 	const perPage = 20;
 	const requestedPage = Number(url.searchParams.get('page')) || 1;
@@ -116,11 +116,32 @@ export async function load({ parent, url, depends }) {
 		};
 	}
 
-	const mapelRecords = await db.query.tableMataPelajaran.findMany({
+	let mapelRecords = await db.query.tableMataPelajaran.findMany({
 		columns: { id: true, nama: true },
 		where: eq(tableMataPelajaran.kelasId, kelasAktif.id),
 		orderBy: asc(tableMataPelajaran.nama)
 	});
+
+	// If the logged-in user is a simple 'user' and has an assigned mataPelajaranId,
+	// prefer the subject with the same name in the active kelas (so subject exists
+	// across multiple kelas rows with same name).
+	const maybeUser = user as unknown as { type?: string; mataPelajaranId?: number } | undefined;
+	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		try {
+			const assigned = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			});
+			if (assigned && assigned.nama) {
+				const norm = (assigned.nama || '').trim().toLowerCase();
+				mapelRecords = mapelRecords.filter((r) => (r.nama || '').trim().toLowerCase() === norm);
+			} else {
+				mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
+			}
+		} catch (err) {
+			console.warn('[asesmen-formatif] Failed to resolve assigned mapel name', err);
+		}
+	}
 
 	const mapelByName = new Map(mapelRecords.map((record) => [normalizeText(record.nama), record]));
 
@@ -154,11 +175,32 @@ export async function load({ parent, url, depends }) {
 
 	const requestedValue = url.searchParams.get('mapel_id');
 	let selectedMapelValue = requestedValue ?? null;
+	// If user is locked to a mapel and no explicit query param is provided, default to user's mapel
+	if (!selectedMapelValue && maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		selectedMapelValue = String(maybeUser.mataPelajaranId);
+	}
 	if (selectedMapelValue && !mapelOptions.some((option) => option.value === selectedMapelValue)) {
 		selectedMapelValue = null;
 	}
 	if (!selectedMapelValue && mapelOptions.length) {
 		selectedMapelValue = mapelOptions[0].value;
+	}
+	// If user is locked to a mapel and no explicit query param is provided, default to user's mapel
+	if ((!requestedValue || requestedValue === '') && maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		// try to find a mapel in this kelas with the same name and set it
+		try {
+			const assigned = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			});
+			if (assigned && assigned.nama) {
+				const norm = (assigned.nama || '').trim().toLowerCase();
+				const found = mapelRecords.find((r) => (r.nama || '').trim().toLowerCase() === norm);
+				if (found) selectedMapelValue = String(found.id);
+			}
+		} catch (err) {
+			console.warn('[asesmen-formatif] Failed to default to assigned mapel', err);
+		}
 	}
 
 	const isAgamaSelected = selectedMapelValue === AGAMA_MAPEL_VALUE;

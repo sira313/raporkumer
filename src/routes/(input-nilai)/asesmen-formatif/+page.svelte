@@ -205,7 +205,7 @@
 				title="Pilih mata pelajaran"
 				name="mapel_id"
 				bind:value={selectedMapelValue}
-				disabled={data.mapelList.length === 0}
+				disabled={data.mapelList.length === 0 || (page.data.user?.type === 'user' && page.data.user?.mataPelajaranId != null)}
 			>
 				{#if data.mapelList.length === 0}
 					<option value="">Belum ada mata pelajaran</option>

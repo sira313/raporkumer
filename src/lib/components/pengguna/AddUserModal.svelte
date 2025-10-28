@@ -68,7 +68,9 @@
           displayName: body.displayName ?? nama,
           mataPelajaranId: body.mataPelajaranId ?? mataPelajaranId ?? null,
           // ensure there's a `user` object for the parent to consume
-          user: body.user ?? { id: Date.now(), username: body.user?.username ?? username, createdAt: new Date().toISOString(), type: body.user?.type ?? type, passwordUpdatedAt: body.user?.passwordUpdatedAt ?? new Date().toISOString() }
+          user: body.user ?? { id: Date.now(), username: body.user?.username ?? username, createdAt: new Date().toISOString(), type: body.user?.type ?? type, passwordUpdatedAt: body.user?.passwordUpdatedAt ?? new Date().toISOString() },
+          // indicate whether server actually returned the user object (so parent can detect fallback)
+          __server_user_returned: Boolean(body.user && typeof body.user.id !== 'undefined')
         };
         toast({ message: 'Pengguna dibuat', type: 'success' });
         dispatch('saved', { body: mergedBody });

@@ -10,9 +10,10 @@ type MataPelajaranList = MataPelajaranWithTp[];
 
 const AGAMA_VARIANT_NAME_SET = new Set<string>(agamaVariantNames);
 
+
 export async function load({ depends, url, parent }) {
 	depends('app:mapel');
-	const { kelasAktif, daftarKelas } = await parent();
+	const { kelasAktif, daftarKelas, user } = await parent();
 	const daftarKelasEntries = daftarKelas as Array<{ id: number }> | undefined;
 	await ensureAgamaMapelForClasses(daftarKelasEntries?.map((kelas) => kelas.id) ?? []);
 	const fromQuery = url.searchParams.get('kelas_id');
@@ -22,11 +23,41 @@ export async function load({ depends, url, parent }) {
 			? kelasCandidate
 			: null;
 
-	const mapel = kelasId
+	let mapel = kelasId
 		? await db.query.tableMataPelajaran.findMany({
 				where: eq(tableMataPelajaran.kelasId, kelasId)
 			})
 		: [];
+
+	// If the current user is a 'user' role and has an assigned mataPelajaranId,
+	// prefer showing the mata pelajaran with the same name in the active kelas.
+	// This allows an assigned subject to be visible across kelas where the subject
+	// exists using different table rows (same name, different ids).
+	if (user && (user as unknown as { type?: string; mataPelajaranId?: number }).type === 'user') {
+		const assignedId = (user as unknown as { mataPelajaranId?: number }).mataPelajaranId;
+		if (assignedId) {
+			try {
+				// fetch the assigned mapel to obtain its name
+				const assigned = await db.query.tableMataPelajaran.findFirst({
+					columns: { id: true, nama: true, kelasId: true },
+					where: eq(tableMataPelajaran.id, Number(assignedId))
+				});
+				if (assigned && assigned.nama) {
+					const norm = (assigned.nama || '').trim().toLowerCase();
+					mapel = mapel.filter((m) => (m.nama || '').trim().toLowerCase() === norm);
+				} else {
+					// fallback: if assigned mapel not found, keep original restrictive id-match
+					const allowedId = Number(assignedId);
+					if (Number.isInteger(allowedId)) {
+						mapel = mapel.filter((m) => m.id === allowedId);
+					}
+				}
+			} catch (err) {
+				// on error, don't block page — fallback to existing mapel list
+				console.warn('[intrakurikuler] Failed to resolve assigned mapel name', err);
+			}
+		}
+	}
 
 	const tpCountByMapelId = new Map<number, number>();
 	if (mapel.length > 0) {

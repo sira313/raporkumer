@@ -202,9 +202,35 @@ async function handleDelete() {
 				pegawaiId: null,
 				kelasId: null,
 				kelasName: null,
-				passwordUpdatedAt: serverUser?.passwordUpdatedAt ?? new Date().toISOString()
+				passwordUpdatedAt: serverUser?.passwordUpdatedAt ?? new Date().toISOString(),
+							// determine isNew based on whether server actually returned a real id
+							isNew: body.__server_user_returned ? false : true
 			} as LocalUser;
 			users = [newUser, ...users];
+
+						// if server did not return an id (or returned a local fallback), start polling to resolve the created user by username
+						if (!body.__server_user_returned) {
+				const usernameToFind = newUser.username;
+				let attempts = 0;
+				const maxAttempts = 10;
+				const interval = 500; // ms
+				const poll = setInterval(async () => {
+					attempts += 1;
+					try {
+						const resp = await fetch(`/api/pengguna/find?username=${encodeURIComponent(usernameToFind)}`);
+						if (!resp.ok) return;
+						const data = await resp.json().catch(() => null);
+						if (data && data.found && data.user && data.user.id) {
+							// replace temporary id with real id and clear isNew
+							users = users.map((u) => (u.username === usernameToFind && u.isNew ? { ...u, id: data.user.id, isNew: false } : u));
+							clearInterval(poll);
+						}
+					} catch (err) {
+						// ignore transient errors
+					}
+					if (attempts >= maxAttempts) clearInterval(poll);
+				}, interval);
+			}
 		}} />
 	</div>
 </section>

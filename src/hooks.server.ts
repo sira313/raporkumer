@@ -114,7 +114,10 @@ const authGuard: Handle = async ({ event, resolve }) => {
 				permissions: resolved.user.permissions,
 				type: resolved.user.type,
 				kelasId: resolved.user.kelasId,
-				pegawaiId: resolved.user.pegawaiId
+				pegawaiId: resolved.user.pegawaiId,
+				// preferred/assigned mata pelajaran for 'user' accounts (may be undefined)
+				mataPelajaranId:
+					(resolved.user as unknown as { mataPelajaranId?: number }).mataPelajaranId ?? null
 			};
 			event.locals.session = {
 				id: resolved.session.id,

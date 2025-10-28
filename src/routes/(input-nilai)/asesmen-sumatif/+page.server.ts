@@ -62,7 +62,7 @@ type PageState = {
 
 export async function load({ parent, url, depends }) {
 	depends('app:asesmen-sumatif');
-	const { kelasAktif } = await parent();
+	const { kelasAktif, user } = await parent();
 	const meta: PageMeta = { title: 'Asesmen Sumatif' };
 
 	const searchParam = url.searchParams.get('q');
@@ -91,11 +91,32 @@ export async function load({ parent, url, depends }) {
 		};
 	}
 
-	const mapelRecords = await db.query.tableMataPelajaran.findMany({
+	let mapelRecords = await db.query.tableMataPelajaran.findMany({
 		columns: { id: true, nama: true },
 		where: eq(tableMataPelajaran.kelasId, kelasAktif.id),
 		orderBy: asc(tableMataPelajaran.nama)
 	});
+
+	// Restrict for 'user' accounts assigned to a single mata pelajaran.
+	// Prefer matching by subject name within the active kelas so the assigned
+	// subject is visible across kelas rows that share the same name.
+	const maybeUser = user as unknown as { type?: string; mataPelajaranId?: number } | undefined;
+	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		try {
+			const assigned = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			});
+			if (assigned && assigned.nama) {
+				const norm = (assigned.nama || '').trim().toLowerCase();
+				mapelRecords = mapelRecords.filter((r) => (r.nama || '').trim().toLowerCase() === norm);
+			} else {
+				mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
+			}
+		} catch (err) {
+			console.warn('[asesmen-sumatif] Failed to resolve assigned mapel name', err);
+		}
+	}
 
 	const mapelByName = new Map(mapelRecords.map((record) => [normalizeText(record.nama), record]));
 
@@ -129,11 +150,29 @@ export async function load({ parent, url, depends }) {
 
 	const requestedValue = url.searchParams.get('mapel_id');
 	let selectedMapelValue = requestedValue ?? null;
+	if (!selectedMapelValue && maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		selectedMapelValue = String(maybeUser.mataPelajaranId);
+	}
 	if (selectedMapelValue && !mapelOptions.some((option) => option.value === selectedMapelValue)) {
 		selectedMapelValue = null;
 	}
 	if (!selectedMapelValue && mapelOptions.length) {
 		selectedMapelValue = mapelOptions[0].value;
+	}
+	if (!selectedMapelValue && maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		try {
+			const assigned = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			});
+			if (assigned && assigned.nama) {
+				const norm = (assigned.nama || '').trim().toLowerCase();
+				const found = mapelRecords.find((r) => (r.nama || '').trim().toLowerCase() === norm);
+				if (found) selectedMapelValue = String(found.id);
+			}
+		} catch (err) {
+			console.warn('[asesmen-sumatif] Failed to default to assigned mapel', err);
+		}
 	}
 
 	const isAgamaSelected = selectedMapelValue === AGAMA_MAPEL_VALUE;
