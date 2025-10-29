@@ -2,7 +2,7 @@ import { applySessionCookie, authenticateUser, createSession } from '$lib/server
 import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
 import { cookieNames } from '$lib/utils';
 import db from '$lib/server/db';
-import { tableKelas } from '$lib/server/db/schema';
+import { tableKelas, tableMataPelajaran } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
@@ -106,6 +106,42 @@ export const actions: Actions = {
 					}
 				} catch (err) {
 					console.warn('[login action] failed to resolve kelas->sekolah mapping', err);
+				}
+			} else if (authUser.type === 'user') {
+				// For users assigned to a mata pelajaran: if the system has multiple
+				// sekolah, prefer the sekolah that owns the mata pelajaran's kelas.
+				try {
+					const mpId = (authUser as AuthUser).mataPelajaranId;
+					if (mpId) {
+						// quick check whether there are multiple sekolah entries
+						const sekolahSample = await db.query.tableSekolah.findMany({ columns: { id: true }, limit: 2 });
+						const manySekolahs = Array.isArray(sekolahSample) && sekolahSample.length > 1;
+						if (manySekolahs) {
+							try {
+								// resolve mata_pelajaran -> kelas -> sekolahId
+								const mpRow = await db.query.tableMataPelajaran.findFirst({
+									columns: { kelasId: true },
+									where: eq(tableMataPelajaran.id, mpId)
+								});
+								if (mpRow && mpRow.kelasId) {
+									const kelas = await db.query.tableKelas.findFirst({
+										columns: { sekolahId: true },
+										where: eq(tableKelas.id, mpRow.kelasId)
+									});
+									if (kelas && kelas.sekolahId) {
+										cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(kelas.sekolahId), {
+											path: '/',
+											secure
+										});
+									}
+								}
+							} catch (err) {
+								console.warn('[login action] failed to resolve mata_pelajaran->kelas->sekolah mapping', err);
+							}
+						}
+					}
+				} catch (err) {
+					console.warn('[login action] failed to set sekolah for mata pelajaran user', err);
 				}
 			} else {
 				// ensure we don't leave a stale kelas cookie for other user types
