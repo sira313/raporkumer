@@ -6,6 +6,7 @@ import { unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { read, utils } from 'xlsx';
+import { redirect } from '@sveltejs/kit';
 
 const MAX_IMPORT_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -91,6 +92,17 @@ export async function load({ depends, params, parent }) {
 	} catch (err) {
 		// non-fatal
 		console.warn('[tp-rl] failed to resolve assigned local mapel', err);
+	}
+
+	// Server-side enforcement: if the logged-in user is a 'user' assigned to a
+	// specific agama variant that exists in this kelas, do not allow them to
+	// view a different agama variant — redirect to their assigned local mapel.
+	if (assignedLocalMapelId && user && user.type === 'user' && user.mataPelajaranId) {
+		const requestedId = Number(params.id);
+		if (Number.isFinite(requestedId) && requestedId !== assignedLocalMapelId) {
+			// redirect to the assigned local mapel's TP page
+			throw redirect(303, `/intrakurikuler/${assignedLocalMapelId}/tp-rl`);
+		}
 	}
 
 	// If the current mapel is the parent agama page and the logged-in user

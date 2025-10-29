@@ -53,13 +53,22 @@
 	});
 
 	// lock agama select when the logged-in user is a 'user' and assigned to an agama-variant
+	// NOTE: previously this only locked on the agama parent page; keep it locked
+	// universally so the assigned teacher cannot select another agama variant.
 	const isAgamaSelectLocked = $derived.by(() => {
+		// prefer server-resolved assignedLocalMapelId (local variant id in this kelas)
+		// fall back to user's global mataPelajaranId if local id unavailable
+		const assignedLocal = (data?.assignedLocalMapelId ?? null) as number | null;
 		const u = page.data && page.data.user ? page.data.user : null;
-		if (!u || u.type !== 'user' || !u.mataPelajaranId) return false;
-		if (!isAgamaParentMapel) return false;
-		const assignedId = Number(u.mataPelajaranId);
-		if (!Number.isFinite(assignedId)) return false;
-		return agamaOptions.some((opt) => opt.id === assignedId);
+		const fallbackAssigned =
+			u && u.type === 'user' && u.mataPelajaranId ? Number(u.mataPelajaranId) : null;
+		const checkId = Number.isFinite(Number(assignedLocal))
+			? Number(assignedLocal)
+			: Number.isFinite(Number(fallbackAssigned))
+				? Number(fallbackAssigned)
+				: null;
+		if (!checkId) return false;
+		return agamaOptions.some((opt) => opt.id === checkId);
 	});
 
 	$effect(() => {
