@@ -29,6 +29,16 @@
 		cloneBobotState
 	} from '$lib/utils/tp-rl';
 	import Header from '$lib/components/intrakurikuler/header.svelte';
+	import {
+		groupKey as utilGroupKey,
+		groupSelectionPayload as utilGroupSelectionPayload,
+		removeSelectionByKey as utilRemoveSelectionByKey,
+		isGroupSelected as utilIsGroupSelected,
+		computeToggleSelection as utilComputeToggleSelection,
+		computeSelectAllChange as utilComputeSelectAllChange,
+		isEditingGroup as utilIsEditingGroup
+	} from '$lib/utils/tp-rl-selection';
+	import { refreshBobotDrafts as utilRefreshBobotDrafts } from '$lib/utils/tp-rl-bobot';
 
 	// grouping helpers imported from '$lib/utils/tp-rl'
 
@@ -294,17 +304,11 @@
 	// ensureTrailingEntry is imported from utils
 
 	function groupSelectionPayload(group: TujuanPembelajaranGroup): SelectedGroupState {
-		return {
-			lingkupMateri: group.lingkupMateri,
-			ids: group.items.map((item) => item.id)
-		};
+		return utilGroupSelectionPayload(group);
 	}
 
 	function removeSelectionByKey(key: string) {
-		if (!(key in selectedGroups)) return;
-		const rest = { ...selectedGroups };
-		delete rest[key];
-		selectedGroups = rest;
+		selectedGroups = utilRemoveSelectionByKey(selectedGroups, key);
 	}
 
 	function dismissBobotInfoAlert() {
@@ -312,20 +316,12 @@
 	}
 
 	function isGroupSelected(group: TujuanPembelajaranGroup) {
-		return Boolean(selectedGroups[groupKey(group)]);
+		return utilIsGroupSelected(selectedGroups, group);
 	}
 
 	function toggleGroupSelection(group: TujuanPembelajaranGroup, checked: boolean) {
 		if (isInteractionLocked) return;
-		const key = groupKey(group);
-		if (checked) {
-			selectedGroups = {
-				...selectedGroups,
-				[key]: groupSelectionPayload(group)
-			};
-			return;
-		}
-		removeSelectionByKey(key);
+		selectedGroups = utilComputeToggleSelection(selectedGroups, group, checked);
 	}
 
 	function clearSelection() {
@@ -337,9 +333,7 @@
 		if (isInteractionLocked) return;
 		if (checked) {
 			if (selectableGroups.length === 0) return;
-			selectedGroups = Object.fromEntries(
-				selectableGroups.map((group) => [groupKey(group), groupSelectionPayload(group)] as const)
-			);
+			selectedGroups = utilComputeSelectAllChange(selectableGroups, true);
 			return;
 		}
 		if (Object.keys(selectedGroups).length > 0) {
@@ -447,7 +441,7 @@
 		if (selectedGroupList.length > 0) {
 			clearSelection();
 		}
-		removeSelectionByKey(groupKey(group));
+	removeSelectionByKey(utilGroupKey(group));
 		if (bulkDeleteDialog) {
 			closeBulkDeleteDialog();
 		}
@@ -556,15 +550,11 @@
 	}
 
 	function isEditingGroup(group: TujuanPembelajaranGroup) {
-		if (!groupForm || groupForm.mode !== 'edit') return false;
-		const targetSet = new Set(groupForm.targetIds);
-		return (
-			group.items.length === targetSet.size && group.items.every((item) => targetSet.has(item.id))
-		);
+		return utilIsEditingGroup(group, groupForm);
 	}
 
 	function groupKey(group: TujuanPembelajaranGroup) {
-		return `${group.lingkupMateri ?? ''}::${group.items.map((item) => item.id).join('-')}`;
+		return utilGroupKey(group);
 	}
 
 	function openDeleteDialog(group: TujuanPembelajaranGroup) {
@@ -604,22 +594,7 @@
 		state: Record<string, GroupBobotState>,
 		options: RefreshBobotOptions = {}
 	) {
-		const nextDrafts: Record<string, string> = {};
-		for (const [key, entry] of Object.entries(state)) {
-			if (options.preserveKey === key && options.rawValue !== undefined) {
-				nextDrafts[key] = options.rawValue;
-				continue;
-			}
-
-			const existingDraft = bobotDrafts[key];
-			if (entry.isManual && existingDraft !== undefined) {
-				nextDrafts[key] = existingDraft;
-				continue;
-			}
-
-			nextDrafts[key] = formatBobotValue(entry.value);
-		}
-		bobotDrafts = nextDrafts;
+		bobotDrafts = utilRefreshBobotDrafts(state, bobotDrafts, formatBobotValue, options);
 	}
 
 	function syncBobotStateWithGroups(groups: TujuanPembelajaranGroup[]) {
