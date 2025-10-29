@@ -114,7 +114,10 @@ export const actions: Actions = {
 					const mpId = (authUser as AuthUser).mataPelajaranId;
 					if (mpId) {
 						// quick check whether there are multiple sekolah entries
-						const sekolahSample = await db.query.tableSekolah.findMany({ columns: { id: true }, limit: 2 });
+						const sekolahSample = await db.query.tableSekolah.findMany({
+							columns: { id: true },
+							limit: 2
+						});
 						const manySekolahs = Array.isArray(sekolahSample) && sekolahSample.length > 1;
 						if (manySekolahs) {
 							try {
@@ -136,7 +139,10 @@ export const actions: Actions = {
 									}
 								}
 							} catch (err) {
-								console.warn('[login action] failed to resolve mata_pelajaran->kelas->sekolah mapping', err);
+								console.warn(
+									'[login action] failed to resolve mata_pelajaran->kelas->sekolah mapping',
+									err
+								);
 							}
 						}
 					}

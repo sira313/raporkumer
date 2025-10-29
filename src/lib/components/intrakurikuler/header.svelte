@@ -10,6 +10,7 @@
 		isImportDisabled,
 		onOpenImport,
 		showAgamaSelect,
+		isAgamaSelectLocked = false,
 		agamaSelectId,
 		agamaOptions,
 		selectedAgamaId,
@@ -79,6 +80,10 @@
 				aria-label="Pilih Agama"
 				value={selectedAgamaId}
 				onchange={(e) => onAgamaChange && onAgamaChange(e)}
+				disabled={isAgamaSelectLocked}
+				title={isAgamaSelectLocked
+					? 'Dipilih dan dikunci sesuai dengan tugas guru mapel agama'
+					: undefined}
 			>
 				<option value="" disabled>Pilih Agama</option>
 				{#each agamaOptions as option (option.id)}

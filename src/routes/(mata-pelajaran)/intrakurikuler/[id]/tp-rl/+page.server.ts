@@ -16,6 +16,10 @@ function normalizeCell(value: unknown) {
 	return String(value).trim();
 }
 
+function normalizeText(value: string | null | undefined) {
+	return value?.trim().toLowerCase() ?? '';
+}
+
 function isXlsxMime(type: string | null | undefined) {
 	if (!type) return false;
 	return type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -23,14 +27,12 @@ function isXlsxMime(type: string | null | undefined) {
 
 export async function load({ depends, params, parent }) {
 	depends('app:mapel_tp-rl');
-	const { mapel } = await parent();
+	// pull mapel and user from parent so we can adapt behaviour for assigned agama teachers
+	const { mapel, user } = await parent();
 
 	await ensureAgamaMapelForClasses([mapel.kelasId]);
 
-	const tujuanPembelajaran = await db.query.tableTujuanPembelajaran.findMany({
-		where: eq(tableTujuanPembelajaran.mataPelajaranId, +params.id),
-		orderBy: asc(tableTujuanPembelajaran.createdAt)
-	});
+	let tujuanPembelajaran = [];
 
 	let agamaOptions: Array<{
 		id: number;
@@ -40,8 +42,11 @@ export async function load({ depends, params, parent }) {
 	}> = [];
 
 	const targetNames: string[] = [...agamaMapelNames];
+	// prepare container for agama variant mapel in this kelas
+	let kelasAgamaMapel: Array<{ id: number; nama: string }> = [];
+
 	if (targetNames.includes(mapel.nama)) {
-		const kelasAgamaMapel = await db.query.tableMataPelajaran.findMany({
+		kelasAgamaMapel = await db.query.tableMataPelajaran.findMany({
 			columns: { id: true, nama: true },
 			where: and(
 				eq(tableMataPelajaran.kelasId, mapel.kelasId),
@@ -65,10 +70,78 @@ export async function load({ depends, params, parent }) {
 			.filter((item): item is NonNullable<typeof item> => Boolean(item));
 	}
 
+	// compute assignedLocalMapelId: if the logged-in user has an assigned
+	// mataPelajaranId, attempt to resolve a local mapel in this kelas with the
+	// same normalized name as the assigned mapel. This is useful for client
+	// logic to lock the agama select even when the global assigned id differs
+	// across kelas rows.
+	let assignedLocalMapelId: number | null = null;
+	try {
+		if (user && user.type === 'user' && user.mataPelajaranId) {
+			const assigned = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(user.mataPelajaranId))
+			});
+			if (assigned && assigned.nama) {
+				const norm = normalizeText(assigned.nama);
+				const foundLocal = (kelasAgamaMapel ?? []).find((r) => normalizeText(r.nama) === norm);
+				if (foundLocal) assignedLocalMapelId = foundLocal.id;
+			}
+		}
+	} catch (err) {
+		// non-fatal
+		console.warn('[tp-rl] failed to resolve assigned local mapel', err);
+	}
+
+	// If the current mapel is the parent agama page and the logged-in user
+	// is assigned to a specific agama variant that exists in this kelas,
+	// return the tujuan pembelajaran for that assigned variant so the
+	// page shows the correct TP even without client navigation.
+	let agamaSelection = agamaOptions.find((item) => item.isActive)?.id?.toString() ?? '';
+	if (
+		agamaOptions.length > 0 &&
+		user &&
+		user.type === 'user' &&
+		user.mataPelajaranId &&
+		normalizeText(mapel.nama) === normalizeText(agamaMapelOptions[0].name)
+	) {
+		const assignedId = Number(user.mataPelajaranId);
+		if (Number.isFinite(assignedId)) {
+			const assignedLocal = agamaOptions.find((opt) => opt.id === assignedId);
+			if (assignedLocal) {
+				// load tujuan for the assigned variant instead of the parent mapel
+				agamaSelection = String(assignedLocal.id);
+				tujuanPembelajaran = await db.query.tableTujuanPembelajaran.findMany({
+					where: eq(tableTujuanPembelajaran.mataPelajaranId, assignedLocal.id),
+					orderBy: asc(tableTujuanPembelajaran.createdAt)
+				});
+				// mark active
+				agamaOptions = agamaOptions.map((opt) => ({
+					...opt,
+					isActive: opt.id === assignedLocal.id
+				}));
+				return {
+					tujuanPembelajaran,
+					agamaOptions,
+					agamaSelection,
+					assignedLocalMapelId,
+					meta: { title: `Tujuan Pembelajaran - ${assignedLocal.name}` }
+				};
+			}
+		}
+	}
+
+	// default behaviour: load tujuan for the requested mapel id
+	tujuanPembelajaran = await db.query.tableTujuanPembelajaran.findMany({
+		where: eq(tableTujuanPembelajaran.mataPelajaranId, +params.id),
+		orderBy: asc(tableTujuanPembelajaran.createdAt)
+	});
+
 	return {
 		tujuanPembelajaran,
 		agamaOptions,
-		agamaSelection: agamaOptions.find((item) => item.isActive)?.id?.toString() ?? '',
+		agamaSelection,
+		assignedLocalMapelId,
 		meta: { title: `Tujuan Pembelajaran - ${mapel.nama}` }
 	};
 }

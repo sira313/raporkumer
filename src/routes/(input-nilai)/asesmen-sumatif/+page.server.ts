@@ -120,6 +120,36 @@ export async function load({ parent, url, depends }) {
 
 	const mapelByName = new Map(mapelRecords.map((record) => [normalizeText(record.nama), record]));
 
+	// Determine if the logged-in user is assigned to a local mapel in this kelas
+	// and whether that assigned mapel is an agama variant. This is used to
+	// restrict grading links so a guru mapel agama assigned to a variant only
+	// grades students of their agama.
+	let assignedLocalMapelId: number | null = null;
+	let assignedIsAgamaVariant = false;
+	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		try {
+			const assigned = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			});
+			if (assigned && assigned.nama) {
+				const norm = normalizeText(assigned.nama);
+				assignedIsAgamaVariant =
+					norm.startsWith('pendidikan agama') && norm !== normalizeText(AGAMA_BASE_SUBJECT);
+				const found = mapelRecords.find((r) => normalizeText(r.nama) === norm);
+				if (found) assignedLocalMapelId = found.id;
+			} else {
+				const foundById = mapelRecords.find((r) => r.id === Number(maybeUser.mataPelajaranId));
+				if (foundById) assignedLocalMapelId = foundById.id;
+			}
+		} catch (err) {
+			console.warn(
+				'[asesmen-sumatif] Failed to resolve assigned mapel for access restriction',
+				err
+			);
+		}
+	}
+
 	let agamaBaseMapel: (typeof mapelRecords)[number] | null = null;
 	const agamaVariantRecords: typeof mapelRecords = [];
 	const regularOptions: MapelOption[] = [];
@@ -314,6 +344,13 @@ export async function load({ parent, url, depends }) {
 			? (sumatifByMurid.get(murid.id)?.get(targetMapelId) ?? null)
 			: null;
 
+		const canAccess = (() => {
+			if (!maybeUser || maybeUser.type !== 'user' || !maybeUser.mataPelajaranId) return true;
+			if (!assignedIsAgamaVariant) return true;
+			if (!assignedLocalMapelId) return false;
+			return targetMapelId === assignedLocalMapelId;
+		})();
+
 		return {
 			id: murid.id,
 			no: offset + index + 1,
@@ -321,9 +358,10 @@ export async function load({ parent, url, depends }) {
 			nilaiAkhir: formatScore(sumatif?.nilaiAkhir),
 			naLingkup: formatScore(sumatif?.naLingkup),
 			sas: formatScore(sumatif?.sas),
-			nilaiHref: targetMapelId
-				? `/asesmen-sumatif/formulir-asesmen?murid_id=${murid.id}&mapel_id=${targetMapelId}`
-				: null
+			nilaiHref:
+				targetMapelId && canAccess
+					? `/asesmen-sumatif/formulir-asesmen?murid_id=${murid.id}&mapel_id=${targetMapelId}`
+					: null
 		};
 	});
 

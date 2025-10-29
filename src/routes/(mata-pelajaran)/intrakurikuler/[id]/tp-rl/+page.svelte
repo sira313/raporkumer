@@ -32,6 +32,7 @@
 
 	// grouping helpers imported from '$lib/utils/tp-rl'
 
+	import { page } from '$app/state';
 	let { data } = $props();
 	const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
 	const isAgamaParentMapel = $derived(data.mapel.nama === AGAMA_PARENT_NAME);
@@ -49,6 +50,33 @@
 		return Number.isFinite(selectionId)
 			? agamaOptions.find((option) => option.id === selectionId)
 			: undefined;
+	});
+
+	// lock agama select when the logged-in user is a 'user' and assigned to an agama-variant
+	const isAgamaSelectLocked = $derived.by(() => {
+		const u = page.data && page.data.user ? page.data.user : null;
+		if (!u || u.type !== 'user' || !u.mataPelajaranId) return false;
+		if (!isAgamaParentMapel) return false;
+		const assignedId = Number(u.mataPelajaranId);
+		if (!Number.isFinite(assignedId)) return false;
+		return agamaOptions.some((opt) => opt.id === assignedId);
+	});
+
+	$effect(() => {
+		// if locked, default the selection to the assigned agama option (if available)
+		if (isAgamaSelectLocked && (!selectedAgamaId || selectedAgamaId === '')) {
+			const u = page.data && page.data.user ? page.data.user : null;
+			const assignedId = Number(u?.mataPelajaranId ?? NaN);
+			if (Number.isFinite(assignedId) && agamaOptions.find((o) => o.id === assignedId)) {
+				// set the selection and navigate to the assigned mapel's TP page so
+				// tujuan pembelajaran for that variant are loaded by the server.
+				selectedAgamaId = String(assignedId);
+				// navigate only if we're not already viewing the assigned mapel
+				if (Number(data.mapel?.id) !== assignedId) {
+					void goto(`/intrakurikuler/${assignedId}/tp-rl`, { replaceState: true });
+				}
+			}
+		}
 	});
 	const hasActiveAgamaSelection = $derived(Boolean(activeAgamaOption));
 	const mapelDisplayName = $derived.by(() => {
@@ -150,6 +178,31 @@
 		if (nextSelection === lastAgamaSelection) return;
 		lastAgamaSelection = nextSelection;
 		selectedAgamaId = nextSelection;
+	});
+
+	$effect(() => {
+		// When kelas aktif changes and we're viewing the parent agama mapel,
+		// attempt to resolve the assigned local mapel for the logged-in user
+		// in the newly selected kelas and navigate to its TP page so the
+		// tujuan pembelajaran shown correspond to the active kelas.
+		const kelasAktif = page.data?.kelasAktif ?? null;
+		if (!kelasAktif) return;
+		if (!isAgamaParentMapel) return;
+		const u = page.data?.user;
+		if (!u || u.type !== 'user' || !u.mataPelajaranId) return;
+		(async () => {
+			try {
+				const res = await fetch(`/api/assigned-mapel/resolve?kelas_id=${kelasAktif.id}`);
+				if (!res.ok) return;
+				const json = await res.json();
+				const assignedLocalId = Number(json.assignedLocalMapelId ?? null);
+				if (!Number.isFinite(assignedLocalId)) return;
+				if (assignedLocalId === Number(data.mapel?.id)) return;
+				void goto(`/intrakurikuler/${assignedLocalId}/tp-rl`, { replaceState: true });
+			} catch {
+				// ignore network errors silently
+			}
+		})();
 	});
 
 	$effect(() => {
@@ -689,6 +742,7 @@
 		{selectedAgamaId}
 		onAgamaChange={handleAgamaChange}
 		onAgamaElementMounted={(el: HTMLSelectElement) => (agamaSelectElement = el)}
+		{isAgamaSelectLocked}
 		onBack={() => history.back()}
 		{handlePrimaryActionClick}
 		{isTambahTpDisabled}
