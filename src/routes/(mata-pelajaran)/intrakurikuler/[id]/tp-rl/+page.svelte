@@ -112,6 +112,9 @@
 	let agamaSelectElement = $state<HTMLSelectElement | null>(null);
 	let importDialogOpen = $state(false);
 
+	// track kelas aktif id so we can react to "Pindah Kelas" and reload TP data
+	let lastKelasId = $state<number | null>(data.kelasAktif ? (data.kelasAktif.id as number) : null);
+
 	let activeFormId = $state<string | null>(null);
 	let isFormSubmitting = $state(false);
 
@@ -215,6 +218,40 @@
 				void goto(`/intrakurikuler/${assignedLocalId}/tp-rl`, { replaceState: true });
 			} catch {
 				// ignore network errors silently
+			}
+		})();
+	});
+
+	// When kelas aktif changes for non-agama pages (or generally), reload the
+	// tujuan pembelajaran and bobot data so the table reflects the active class.
+	$effect(() => {
+		const kelasAktif = page.data?.kelasAktif ?? null;
+		const nextId = kelasAktif ? kelasAktif.id : null;
+		if (nextId === lastKelasId) return;
+		lastKelasId = nextId;
+		// Try to resolve a corresponding mata pelajaran in the newly active kelas
+		// by the current mapel name. If found, navigate to its TP page so the
+		// URL and server parent load reflect the kelas-scoped mapel id.
+		(async () => {
+			try {
+				const currentName = data?.mapel?.nama ?? '';
+				if (currentName && kelasAktif) {
+					const q = new URLSearchParams({ kelas_id: String(kelasAktif.id), name: currentName });
+					const res = await fetch(`/api/mapel/resolve-by-name?${q.toString()}`);
+					if (res.ok) {
+						const json = await res.json();
+						const mappedId = Number(json?.mapelId ?? null);
+						if (Number.isFinite(mappedId) && mappedId !== Number(data.mapel?.id)) {
+							// navigate to the mapped mapel id so parent() load uses the new id
+							void goto(`/intrakurikuler/${mappedId}/tp-rl`, { replaceState: true });
+							return;
+						}
+					}
+				}
+				// fallback: invalidate loads so page data refreshes even if no mapping
+				await Promise.all([invalidate('app:mapel'), invalidate('app:mapel_tp-rl')]);
+			} catch (err) {
+				// ignore network errors
 			}
 		})();
 	});
