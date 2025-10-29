@@ -77,6 +77,8 @@ export async function load({ depends, params, parent }) {
 	// logic to lock the agama select even when the global assigned id differs
 	// across kelas rows.
 	let assignedLocalMapelId: number | null = null;
+	let assignedGlobalId: number | null = null;
+	let assignedGlobalName: string | null = null;
 	try {
 		if (user && user.type === 'user' && user.mataPelajaranId) {
 			const assigned = await db.query.tableMataPelajaran.findFirst({
@@ -84,6 +86,8 @@ export async function load({ depends, params, parent }) {
 				where: eq(tableMataPelajaran.id, Number(user.mataPelajaranId))
 			});
 			if (assigned && assigned.nama) {
+				assignedGlobalId = assigned.id;
+				assignedGlobalName = assigned.nama;
 				const norm = normalizeText(assigned.nama);
 				const foundLocal = (kelasAgamaMapel ?? []).find((r) => normalizeText(r.nama) === norm);
 				if (foundLocal) assignedLocalMapelId = foundLocal.id;
@@ -137,6 +141,16 @@ export async function load({ depends, params, parent }) {
 					agamaOptions,
 					agamaSelection,
 					assignedLocalMapelId,
+					// server-enforced disabled flag and the locked selection id
+					// Narrow assignedGlobalName to the literal union type before using includes()
+					agamaSelectDisabled: Boolean(
+						assignedGlobalId &&
+							((): boolean => {
+								const name = assignedGlobalName as typeof agamaMapelNames[number] | undefined;
+								return Boolean(name && agamaMapelNames.includes(name));
+							})()
+					),
+					lockedAgamaSelectionId: assignedLocalMapelId ?? assignedGlobalId,
 					meta: { title: `Tujuan Pembelajaran - ${assignedLocal.name}` }
 				};
 			}
@@ -154,6 +168,15 @@ export async function load({ depends, params, parent }) {
 		agamaOptions,
 		agamaSelection,
 		assignedLocalMapelId,
+		// server-enforced disabled flag and the locked selection id
+		agamaSelectDisabled: Boolean(
+			assignedGlobalId &&
+				((): boolean => {
+					const name = assignedGlobalName as typeof agamaMapelNames[number] | undefined;
+					return Boolean(name && agamaMapelNames.includes(name));
+				})()
+		),
+		lockedAgamaSelectionId: assignedLocalMapelId ?? assignedGlobalId,
 		meta: { title: `Tujuan Pembelajaran - ${mapel.nama}` }
 	};
 }

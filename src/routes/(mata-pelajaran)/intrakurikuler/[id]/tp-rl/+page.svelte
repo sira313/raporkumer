@@ -52,12 +52,12 @@
 			: undefined;
 	});
 
-	// lock agama select when the logged-in user is a 'user' and assigned to an agama-variant
-	// NOTE: previously this only locked on the agama parent page; keep it locked
-	// universally so the assigned teacher cannot select another agama variant.
+	// lock/disable agama select when the logged-in user is a 'user' assigned to an agama-variant
+	// Prefer server-provided `agamaSelectDisabled` so server can enforce the disabled
+	// state after class changes; fall back to resolving from assigned ids.
 	const isAgamaSelectLocked = $derived.by(() => {
-		// prefer server-resolved assignedLocalMapelId (local variant id in this kelas)
-		// fall back to user's global mataPelajaranId if local id unavailable
+		if ((data as unknown as { agamaSelectDisabled?: boolean }).agamaSelectDisabled)
+			return Boolean((data as unknown as { agamaSelectDisabled?: boolean }).agamaSelectDisabled);
 		const assignedLocal = (data?.assignedLocalMapelId ?? null) as number | null;
 		const u = page.data && page.data.user ? page.data.user : null;
 		const fallbackAssigned =
@@ -183,7 +183,12 @@
 	});
 
 	$effect(() => {
-		const nextSelection = data.agamaSelection ?? '';
+		const nextSelection =
+			data.agamaSelection ??
+			((data as unknown as { lockedAgamaSelectionId?: number }).lockedAgamaSelectionId
+				? String((data as unknown as { lockedAgamaSelectionId?: number }).lockedAgamaSelectionId)
+				: '') ??
+			'';
 		if (nextSelection === lastAgamaSelection) return;
 		lastAgamaSelection = nextSelection;
 		selectedAgamaId = nextSelection;

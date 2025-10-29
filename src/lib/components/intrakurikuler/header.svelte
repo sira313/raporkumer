@@ -38,21 +38,21 @@
 		if (onAgamaElementMounted && agamaEl) onAgamaElementMounted(agamaEl as HTMLSelectElement);
 	});
 
-	// Ensure the select is truly disabled when requested. Some UI frameworks
-	// may still render interactions; setting the DOM property and adding
-	// an aria-disabled attribute prevents interaction reliably.
-	$: if (agamaEl) {
-		agamaEl.disabled = Boolean(isAgamaSelectLocked);
+	// Ensure the select element reflects the locked/disabled state for
+	// accessibility and visual affordance. Use $effect (runes mode) instead
+	// of legacy `$:` reactive statements.
+	$effect(() => {
+		if (!agamaEl) return;
+		const el = agamaEl as HTMLSelectElement;
+		el.disabled = Boolean(isAgamaSelectLocked);
 		if (isAgamaSelectLocked) {
-			agamaEl.setAttribute('aria-disabled', 'true');
-			// add a utility class to visually indicate disabled state if not
-			// already styled by the framework
-			agamaEl.classList.add('opacity-50', 'pointer-events-none');
+			el.setAttribute('aria-disabled', 'true');
+			el.classList.add('opacity-50', 'pointer-events-none');
 		} else {
-			agamaEl.removeAttribute('aria-disabled');
-			agamaEl.classList.remove('opacity-50', 'pointer-events-none');
+			el.removeAttribute('aria-disabled');
+			el.classList.remove('opacity-50', 'pointer-events-none');
 		}
-	}
+	});
 </script>
 
 <div class="mb-2 flex flex-col gap-3 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
