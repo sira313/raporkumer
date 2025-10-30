@@ -22,6 +22,13 @@
 	});
 
 	const hasKelasAktif = $derived.by(() => !!page.data.kelasAktif);
+	// server-provided small permission flag: if false, UI for managing
+	// mata pelajaran should be disabled for this client (role 'user').
+	const canManageMapel = $derived.by(() => {
+		const u = page.data.user as { canManageMapel?: boolean } | null | undefined;
+		// default to true for backwards compatibility
+		return u?.canManageMapel ?? true;
+	});
 	const totalMapel = $derived.by(
 		() =>
 			data.mapel.daftarWajib.length +
@@ -62,9 +69,10 @@
 		</div>
 		<div class="mt-2 flex sm:mt-0">
 			<a
-				class="btn btn-soft rounded-r-none shadow-none"
-				href="/intrakurikuler/form"
-				use:modalRoute={'add-mapel'}
+				class={`btn btn-soft rounded-r-none shadow-none ${!canManageMapel ? 'opacity-50 pointer-events-none' : ''}`}
+				href={canManageMapel ? '/intrakurikuler/form' : '#'}
+				use:modalRoute={canManageMapel ? 'add-mapel' : ''}
+				aria-disabled={!canManageMapel}
 			>
 				<Icon name="plus" />
 				Tambah Mapel
@@ -73,7 +81,7 @@
 			<!-- dropdown yang tergabung (perhatikan join-item dan hilangkan margin m-1) -->
 			<div class="dropdown dropdown-end">
 				<!-- trigger: gunakan button bertipe btn supaya tampil seperti item lain -->
-				<button title="Export dan Import mata pelajaran" type="button" tabindex="0" class="btn btn-soft rounded-l-none shadow-none">
+				<button title="Export dan Import mata pelajaran" type="button" tabindex="0" class={`btn btn-soft rounded-l-none shadow-none ${!canManageMapel ? 'opacity-50' : ''}`} disabled={!canManageMapel} aria-disabled={!canManageMapel}>
 					<Icon name="down" />
 				</button>
 
@@ -85,7 +93,9 @@
 					<li>
 						<button
 							type="button"
-							class="w-full text-left"
+							class={`w-full text-left ${!canManageMapel ? 'opacity-50 pointer-events-none' : ''}`}
+							disabled={!canManageMapel}
+							aria-disabled={!canManageMapel}
 							onclick={() =>
 								showModal({
 									title: 'Impor Mata Pelajaran',
@@ -100,7 +110,9 @@
 					<li>
 						<button
 							type="button"
-							class="w-full text-left"
+							class={`w-full text-left ${!canManageMapel ? 'opacity-50 pointer-events-none' : ''}`}
+							disabled={!canManageMapel}
+							aria-disabled={!canManageMapel}
 							onclick={async () => {
 								try {
 									const resp = await fetch('/intrakurikuler/export_mapel', { method: 'GET' });
