@@ -207,7 +207,7 @@
 						<Icon name="select" class="hidden sm:block" />
 					</div>
 					<ul
-						class="menu dropdown-content bg-base-100 backdrop-blur-sm ring-opacity-5 z-[1] mt-5 mr-1 w-72 origin-top-right rounded-xl p-4 shadow-xl focus:outline-none"
+						class="menu dropdown-content bg-base-100 ring-opacity-5 z-[1] mt-5 mr-1 w-72 origin-top-right rounded-xl p-4 shadow-xl focus:outline-none"
 					>
 						<!-- alert akun admin -->
 						{#if user?.type === 'admin'}
@@ -244,7 +244,7 @@
 							<details class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6 rounded-b-none">
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-								<div class="collapse-content flex max-h-[30vh] flex-col overflow-y-auto">
+								<div class="flex max-h-[30vh] flex-col overflow-y-auto bg-base-300 border-t-3 border-base-100">
 									{#each daftarKelas as kelas (kelas.id)}
 										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
 										<a
