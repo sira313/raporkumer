@@ -30,11 +30,13 @@
 			}>;
 			hasPenilaian: boolean;
 			nilaiHref: string | null;
+			canNilai?: boolean;
 		}>;
 		jumlahTujuan: number;
 		selectedMapel?: { id: number | null; nama: string } | null;
 		search: string | null;
 		page: PaginationState;
+		allowedAgamaForUser?: string | null;
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -277,18 +279,26 @@
 							<td class="align-top">{murid.no}</td>
 							<td class="align-top">{@html searchQueryMarker(data.search, murid.nama)}</td>
 							<td class="align-top">
-								{#if murid.nilaiHref}
-									<a
-										class="btn btn-sm btn-soft shadow-none"
-										title={`Nilai ${murid.nama}`}
-										href={murid.nilaiHref}
-									>
-										<Icon name="edit" />
-										Nilai
-									</a>
-								{:else}
-									<span class="text-base-content/60 text-xs italic">Pilih mata pelajaran</span>
-								{/if}
+									{#if murid.nilaiHref}
+										<a
+											class="btn btn-sm btn-soft shadow-none"
+											title={`Nilai ${murid.nama}`}
+											href={murid.nilaiHref}
+										>
+											<Icon name="edit" />
+											Nilai
+										</a>
+									{:else}
+										<button
+											type="button"
+											class="btn btn-sm btn-disabled"
+											disabled
+											title={data.allowedAgamaForUser ? `Hanya untuk murid beragama ${data.allowedAgamaForUser}` : 'Pilih mata pelajaran'}
+										>
+											<Icon name="edit" />
+											Nilai
+										</button>
+									{/if}
 							</td>
 							<td class="align-top">
 								{#if murid.progressText}

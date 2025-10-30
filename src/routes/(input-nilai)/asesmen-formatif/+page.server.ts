@@ -189,10 +189,39 @@ export async function load({ parent, url, depends }) {
 		}
 	}
 
-	// If we earlier detected the special Katolik-assigned rule, do not treat the
-	// user as locked to an agama variant for access restriction purposes.
+	// Note: do not change assignedIsAgamaVariant here. The special-case
+	// for Katolik should only affect which mapel is selected in the UI,
+	// but not grant full grading access to all religions.
 	if (treatAssignedKatolikAsBase) {
-		assignedIsAgamaVariant = false;
+		// keep assignedIsAgamaVariant as detected above
+	}
+
+	// Derive a human readable agama label for the assigned agama-variant.
+	// Fetch the assigned mata pelajaran name directly so variant assignments
+	// (including 'Katolik' variant) are detected reliably.
+	let allowedAgamaForUser: string | null = null;
+	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		try {
+			const assignedRec = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			});
+			if (assignedRec && assignedRec.nama) {
+				const nm = normalizeText(assignedRec.nama);
+				if (nm.includes('katolik')) allowedAgamaForUser = 'Katolik';
+				else if (nm.includes('kristen') || nm.includes('protestan')) allowedAgamaForUser = 'Kristen';
+				else if (nm.includes('islam')) allowedAgamaForUser = 'Islam';
+				else if (nm.includes('hindu')) allowedAgamaForUser = 'Hindu';
+				else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist')) allowedAgamaForUser = 'Buddha';
+				else if (nm.includes('khonghucu') || nm.includes('konghucu') || nm.includes('khong hu cu')) allowedAgamaForUser = 'Khonghucu';
+				else if (normalizeText(assignedRec.nama).startsWith('pendidikan agama')) {
+					// Fallback: use the raw mapel name if it's an agama subject we don't explicitly handle
+					allowedAgamaForUser = assignedRec.nama;
+				}
+			}
+		} catch (err) {
+			console.warn('[asesmen-formatif] Failed to resolve assigned mapel for agama label', err);
+		}
 	}
 
 	let agamaBaseMapel: (typeof mapelRecords)[number] | null = null;
@@ -326,7 +355,8 @@ export async function load({ parent, url, depends }) {
 				progressText: null,
 				progressSummaryParts: [] as ProgressSummaryPart[],
 				hasPenilaian: false,
-				nilaiHref: null
+				nilaiHref: null,
+				canNilai: true
 			})),
 			search: searchTerm,
 			page: {
@@ -478,9 +508,6 @@ export async function load({ parent, url, depends }) {
 
 		const canAccess = (() => {
 			if (!maybeUser || maybeUser.type !== 'user' || !maybeUser.mataPelajaranId) return true;
-			// Special-case: teachers assigned to the Katolik agama variant are treated
-			// like admins for the purposes of this page (show parent agama and full access).
-			if (treatAssignedKatolikAsBase) return true;
 			// Only restrict when the assigned mapel is an agama variant.
 			if (!assignedIsAgamaVariant) return true;
 			// If we couldn't resolve an assigned local mapel id in this kelas,
@@ -499,7 +526,8 @@ export async function load({ parent, url, depends }) {
 			nilaiHref:
 				targetMapelId && canAccess
 					? `/asesmen-formatif/formulir-asesmen?murid_id=${murid.id}&mapel_id=${targetMapelId}`
-					: null
+					: null,
+			canNilai: Boolean(canAccess)
 		};
 	});
 
@@ -527,6 +555,7 @@ export async function load({ parent, url, depends }) {
 		tujuanGroups,
 		jumlahTujuan,
 		daftarMurid,
+		allowedAgamaForUser,
 		search: searchTerm,
 		page: {
 			currentPage,
