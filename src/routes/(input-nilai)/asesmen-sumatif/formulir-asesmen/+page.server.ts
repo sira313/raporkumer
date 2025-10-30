@@ -9,7 +9,7 @@ import {
 	tableTujuanPembelajaran
 } from '$lib/server/db/schema';
 import { unflattenFormData } from '$lib/utils';
-import { fail, error } from '@sveltejs/kit';
+import { fail, error, redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 
 const CHEAT_FEATURE_KEY = 'cheat-asesmen-sumatif';
@@ -19,6 +19,31 @@ const DEFAULT_LINGKUP = 'Tanpa lingkup materi';
 function normalizeLingkup(value: string | null | undefined) {
 	const trimmed = value?.trim();
 	return trimmed && trimmed.length > 0 ? trimmed : DEFAULT_LINGKUP;
+}
+
+// Agama subject handling (same mapping used elsewhere in the app)
+function normalizeText(value: string | null | undefined) {
+	return value?.trim().toLowerCase() ?? '';
+}
+
+const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
+const AGAMA_VARIANT_MAP: Record<string, string> = {
+	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
+	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
+	protestan: 'Pendidikan Agama Kristen dan Budi Pekerti',
+	katolik: 'Pendidikan Agama Katolik dan Budi Pekerti',
+	katholik: 'Pendidikan Agama Katolik dan Budi Pekerti',
+	hindu: 'Pendidikan Agama Hindu dan Budi Pekerti',
+	budha: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
+	'khong hu cu': 'Pendidikan Agama Khonghucu dan Budi Pekerti',
+	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
+};
+function resolveAgamaVariantName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return AGAMA_VARIANT_MAP[normalized] ?? null;
 }
 
 function normalizeScore(value: number | null | undefined) {
@@ -121,7 +146,7 @@ export async function load({ url, locals, depends }) {
 	}
 
 	const murid = await db.query.tableMurid.findFirst({
-		columns: { id: true, nama: true, kelasId: true },
+		columns: { id: true, nama: true, kelasId: true, agama: true },
 		where: and(eq(tableMurid.id, muridId), eq(tableMurid.sekolahId, sekolahId))
 	});
 
@@ -136,6 +161,27 @@ export async function load({ url, locals, depends }) {
 
 	if (!mapel || mapel.kelasId !== murid.kelasId) {
 		throw error(404, 'Mata pelajaran tidak ditemukan untuk murid ini.');
+	}
+
+	// If the requested mapel is the agama parent, try to resolve the student's
+	// agama-specific variant in the same kelas and redirect to it so the
+	// form is locked to the correct variant.
+	if (normalizeText(mapel.nama) === normalizeText(AGAMA_BASE_SUBJECT)) {
+		const variantName = resolveAgamaVariantName(murid.agama);
+		if (variantName) {
+			// fetch kelas mapels and try to find the variant
+			const kelasMapels = await db.query.tableMataPelajaran.findMany({
+				columns: { id: true, nama: true, kelasId: true },
+				where: eq(tableMataPelajaran.kelasId, murid.kelasId)
+			});
+			const variantRecord = kelasMapels.find((r) => normalizeText(r.nama) === normalizeText(variantName));
+			if (variantRecord) {
+				const params = new URLSearchParams();
+				params.set('murid_id', String(murid.id));
+				params.set('mapel_id', String(variantRecord.id));
+				throw redirect(303, `${url.pathname}?${params.toString()}`);
+			}
+		}
 	}
 
 	const featureUnlock = await db.query.tableFeatureUnlock.findFirst({

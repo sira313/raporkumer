@@ -101,22 +101,33 @@ export async function load({ parent, url, depends }) {
 	// Prefer matching by subject name within the active kelas so the assigned
 	// subject is visible across kelas rows that share the same name.
 	const maybeUser = user as unknown as { type?: string; mataPelajaranId?: number } | undefined;
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
-		try {
-			const assigned = await db.query.tableMataPelajaran.findFirst({
-				columns: { id: true, nama: true },
-				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
-			});
-			if (assigned && assigned.nama) {
-				const norm = (assigned.nama || '').trim().toLowerCase();
-				mapelRecords = mapelRecords.filter((r) => (r.nama || '').trim().toLowerCase() === norm);
-			} else {
-				mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
+		// Special-case: detect if the assigned mapel is the Katolik agama variant.
+		// In that case, treat the user similar to admin for agama selection on this
+		// page: do not filter the kelas mapel list to the variant and default the
+		// selected mapel to the agama parent. This prevents the teacher from being
+		// locked to a single variant in the UI.
+		let treatAssignedKatolikAsBase = false;
+		if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+			try {
+				const assigned = await db.query.tableMataPelajaran.findFirst({
+					columns: { id: true, nama: true },
+					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+				});
+				if (assigned && assigned.nama) {
+					const norm = normalizeText(assigned.nama);
+					const katolikName = normalizeText(AGAMA_VARIANT_MAP['katolik']);
+					if (norm === katolikName) {
+						treatAssignedKatolikAsBase = true;
+					} else {
+						mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
+					}
+				} else {
+					mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
+				}
+			} catch (err) {
+				console.warn('[asesmen-sumatif] Failed to resolve assigned mapel name', err);
 			}
-		} catch (err) {
-			console.warn('[asesmen-sumatif] Failed to resolve assigned mapel name', err);
 		}
-	}
 
 	const mapelByName = new Map(mapelRecords.map((record) => [normalizeText(record.nama), record]));
 
@@ -150,6 +161,10 @@ export async function load({ parent, url, depends }) {
 		}
 	}
 
+	if (treatAssignedKatolikAsBase) {
+		assignedIsAgamaVariant = false;
+	}
+
 	let agamaBaseMapel: (typeof mapelRecords)[number] | null = null;
 	const agamaVariantRecords: typeof mapelRecords = [];
 	const regularOptions: MapelOption[] = [];
@@ -181,7 +196,11 @@ export async function load({ parent, url, depends }) {
 	const requestedValue = url.searchParams.get('mapel_id');
 	let selectedMapelValue = requestedValue ?? null;
 	if (!selectedMapelValue && maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
-		selectedMapelValue = String(maybeUser.mataPelajaranId);
+		if (treatAssignedKatolikAsBase) {
+			selectedMapelValue = AGAMA_MAPEL_VALUE;
+		} else {
+			selectedMapelValue = String(maybeUser.mataPelajaranId);
+		}
 	}
 	if (selectedMapelValue && !mapelOptions.some((option) => option.value === selectedMapelValue)) {
 		selectedMapelValue = null;
@@ -196,9 +215,13 @@ export async function load({ parent, url, depends }) {
 				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
 			});
 			if (assigned && assigned.nama) {
-				const norm = (assigned.nama || '').trim().toLowerCase();
-				const found = mapelRecords.find((r) => (r.nama || '').trim().toLowerCase() === norm);
-				if (found) selectedMapelValue = String(found.id);
+				if (treatAssignedKatolikAsBase) {
+					selectedMapelValue = AGAMA_MAPEL_VALUE;
+				} else {
+					const norm = (assigned.nama || '').trim().toLowerCase();
+					const found = mapelRecords.find((r) => (r.nama || '').trim().toLowerCase() === norm);
+					if (found) selectedMapelValue = String(found.id);
+				}
 			}
 		} catch (err) {
 			console.warn('[asesmen-sumatif] Failed to default to assigned mapel', err);
@@ -346,6 +369,8 @@ export async function load({ parent, url, depends }) {
 
 		const canAccess = (() => {
 			if (!maybeUser || maybeUser.type !== 'user' || !maybeUser.mataPelajaranId) return true;
+			// If we applied the special Katolik-as-base rule, allow full access.
+			if (treatAssignedKatolikAsBase) return true;
 			if (!assignedIsAgamaVariant) return true;
 			if (!assignedLocalMapelId) return false;
 			return targetMapelId === assignedLocalMapelId;
