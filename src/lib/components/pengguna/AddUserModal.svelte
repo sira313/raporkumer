@@ -12,8 +12,10 @@
 	let username = '';
 	let password = '';
 	let type = 'user';
-	let mataPelajaranId: number | null = null;
+	// use empty string as the initial value so the placeholder option is selected reliably
+	let mataPelajaranId: string | number | null = '';
 	let uniqueMataPelajaran: { id: number; nama: string }[] = [];
+	let filteredMataPelajaran: { id: number; nama: string }[] = [];
 	let initialized = false;
 
 	function uniqueByNama(list: { id: number; nama: string }[]) {
@@ -31,8 +33,8 @@
 		username = '';
 		password = '';
 		type = 'user';
-		// use the deduplicated list for defaults
-		mataPelajaranId = uniqueMataPelajaran[0]?.id ?? null;
+	// start with no selection (empty string) so the placeholder is shown; user must pick a mapel
+	mataPelajaranId = '';
 		initialized = true;
 	}
 
@@ -41,6 +43,15 @@
 
 	// update unique list whenever mataPelajaran prop changes
 	$: uniqueMataPelajaran = uniqueByNama(mataPelajaran ?? []);
+
+	// filter out only the parent subject "Pendidikan Agama dan Budi Pekerti"
+	// Keep specific variants like "Pendidikan Agama Islam dan Budi Pekerti" etc.
+	$: filteredMataPelajaran = uniqueMataPelajaran.filter((m) => {
+		const name = (m.nama ?? '').toString().trim().toLowerCase();
+		// exclude the exact combined parent subject
+		if (name === 'pendidikan agama dan budi pekerti') return false;
+		return true;
+	});
 
 	function close() {
 		// reset initialized so next open will reinitialize fields
@@ -111,31 +122,32 @@
 			<h3 class="text-lg font-bold">Tambah Pengguna</h3>
 			<div class="space-y-3 py-4">
 				<fieldset class="fieldset">
-					<legend class="fieldset-legend">Nama</legend>
-					<input
-						id="add-user-nama"
-						class="input dark:bg-base-200 w-full dark:border-none"
-						bind:value={nama}
-						placeholder="Nama"
-					/>
-					<p class="label">Nama lengkap pengguna dan gelar (tampil pada daftar)</p>
-				</fieldset>
-
-				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Mata Pelajaran (opsional)</legend>
 					<select
 						id="add-user-mapel"
 						class="select dark:bg-base-200 w-full dark:border-none"
 						bind:value={mataPelajaranId}
 					>
-						{#each uniqueMataPelajaran as m (m.id)}
+						<option disabled selected={mataPelajaranId === ''} value="">Pilih Mata Pelajaran</option>
+						{#each filteredMataPelajaran as m (m.id)}
 							<option value={m.id}>{m.nama}</option>
 						{/each}
-						{#if uniqueMataPelajaran.length === 0}
+						{#if filteredMataPelajaran.length === 0}
 							<option disabled>- tidak ada mata pelajaran -</option>
 						{/if}
 					</select>
 					<p class="label">Hubungkan pengguna ke mata pelajaran (jika ada)</p>
+				</fieldset>
+
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">Nama</legend>
+					<input
+						id="add-user-nama"
+						class="input dark:bg-base-200 w-full dark:border-none"
+						bind:value={nama}
+						placeholder="Contoh: Bruce Wayne, Bat."
+					/>
+					<p class="label">Nama lengkap pengguna dan gelar (tampil pada daftar)</p>
 				</fieldset>
 
 				<fieldset class="fieldset">
