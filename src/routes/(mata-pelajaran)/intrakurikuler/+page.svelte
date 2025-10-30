@@ -73,14 +73,14 @@
 			<!-- dropdown yang tergabung (perhatikan join-item dan hilangkan margin m-1) -->
 			<div class="dropdown dropdown-end">
 				<!-- trigger: gunakan button bertipe btn supaya tampil seperti item lain -->
-				<button type="button" tabindex="0" class="btn btn-soft rounded-l-none shadow-none">
+				<button title="Export dan Import mata pelajaran" type="button" tabindex="0" class="btn btn-soft rounded-l-none shadow-none">
 					<Icon name="down" />
 				</button>
 
 				<!-- menu dropdown -->
 				<ul
 					tabindex="-1"
-					class="dropdown-content menu bg-base-100 z-50 mt-2 w-52 rounded-md p-2 shadow-md"
+					class="dropdown-content menu bg-base-100 z-50 mt-2 w-52 rounded-md p-2 shadow-lg"
 				>
 					<li>
 						<button
