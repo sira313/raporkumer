@@ -37,6 +37,13 @@
 	    return (user as any).pegawaiName ?? (user as any).username ?? null;
 	});
 
+	// Whether current user can stop the server (client-side guard)
+	const canStopServer = $derived.by(() => {
+		if (!user) return false;
+		const perms = (user as any).permissions ?? [];
+		return Array.isArray(perms) ? perms.includes('server_stop') : false;
+	});
+
 	function buildKelasHref(kelasId: number) {
 		const params = new URLSearchParams(page.url.search);
 		params.set('kelas_id', String(kelasId));
@@ -278,9 +285,9 @@
 							<button
 								class="btn btn-sm btn-warning rounded-br-lg shadow-none rounded-l-none flex-1 rounded-tr-none"
 								type="button"
-								title="Hentikan server"
+								title={canStopServer ? 'Hentikan server' : 'Anda tidak memiliki izin'}
 								onclick={stopServer}
-								disabled={stoppingServer}
+								disabled={stoppingServer || !canStopServer}
 							>
 								<Icon name="warning" />
 								{stoppingServer ? 'Menghentikan server…' : 'Stop Server'}
