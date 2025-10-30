@@ -30,6 +30,13 @@
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
 	});
 
+	// Human-readable display name for current user (prefer pegawaiName if available)
+	const displayUserName = $derived.by(() => {
+	    if (!user) return null;
+	    // use runtime field `pegawaiName` if the server provided it, otherwise fall back to username
+	    return (user as any).pegawaiName ?? (user as any).username ?? null;
+	});
+
 	function buildKelasHref(kelasId: number) {
 		const params = new URLSearchParams(page.url.search);
 		params.set('kelas_id', String(kelasId));
@@ -193,7 +200,7 @@
 						<Icon name="select" class="hidden sm:block" />
 					</div>
 					<ul
-						class="menu dropdown-content bg-base-100 ring-opacity-5 z-[1] mt-6 w-72 origin-top-right rounded-xl p-4 shadow-md focus:outline-none"
+						class="menu dropdown-content bg-base-100 ring-opacity-5 z-[1] mt-4 w-72 origin-top-right rounded-xl p-4 shadow-xl focus:outline-none"
 					>
 						<!-- alert akun admin -->
 						{#if user?.type === 'admin'}
@@ -204,7 +211,9 @@
 						{:else if user?.type === 'user'}
 							<div role="alert" class="alert alert-info mb-4">
 								<Icon name="info" />
-								<span>Sedang login sebagai Guru Mapel</span>
+								<span>
+									<strong>{displayUserName}</strong> - Guru Mapel
+								</span>
 							</div>
 						{/if}
 
@@ -257,8 +266,9 @@
 							</a>
 						</li>
 						{#if user}{/if}
-						<li>
+						<li class="flex flex-row gap-1 mt-2 justify-between">
 							<button
+								class="btn btn-soft btn-sm"
 								type="button"
 								title="Keluar dari aplikasi"
 								onclick={logout}
@@ -267,9 +277,8 @@
 								<Icon name="export" />
 								{loggingOut ? 'Keluar…' : 'Keluar'}
 							</button>
-						</li>
-						<li>
 							<button
+								class="btn btn-sm btn-warning shadow-none"
 								type="button"
 								title="Hentikan server"
 								onclick={stopServer}

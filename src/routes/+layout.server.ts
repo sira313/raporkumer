@@ -1,6 +1,6 @@
 import db from '$lib/server/db';
 import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
-import { tableKelas } from '$lib/server/db/schema';
+import { tableKelas, tablePegawai } from '$lib/server/db/schema';
 import { cookieNames, findTitleByPath } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
 import { and, asc, eq } from 'drizzle-orm';
@@ -114,5 +114,18 @@ export async function load({ url, locals, cookies }) {
 		cookies.delete(cookieNames.ACTIVE_KELAS_ID, { path: '/', secure });
 	}
 
-	return { sekolah, meta, daftarKelas, kelasAktif, user };
+	// Enrich user with pegawai name when possible so client can display the
+	// human-readable name (e.g. in navbar alerts). Keep original shape
+	// otherwise.
+	let userForClient = user;
+	if (user && user.pegawaiId) {
+		const pegawaiRecord = await db.query.tablePegawai.findFirst({
+			columns: { id: true, nama: true },
+			where: eq(tablePegawai.id, Number(user.pegawaiId))
+		});
+	// avoid `any` cast by using Object.assign to create a shallow clone
+	userForClient = Object.assign({}, user, { pegawaiName: pegawaiRecord?.nama ?? null });
+	}
+
+	return { sekolah, meta, daftarKelas, kelasAktif, user: userForClient };
 }
