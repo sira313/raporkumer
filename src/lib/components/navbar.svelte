@@ -200,13 +200,13 @@
 						<Icon name="select" class="hidden sm:block" />
 					</div>
 					<ul
-						class="menu dropdown-content bg-base-100 ring-opacity-5 z-[1] mt-4 w-72 origin-top-right rounded-xl p-4 shadow-xl focus:outline-none"
+						class="menu dropdown-content bg-base-100 backdrop-blur-sm ring-opacity-5 z-[1] mt-5 mr-1 w-72 origin-top-right rounded-xl p-4 shadow-xl focus:outline-none"
 					>
 						<!-- alert akun admin -->
 						{#if user?.type === 'admin'}
 							<div role="alert" class="alert alert-info mb-4">
 								<Icon name="info" />
-								<span>Sedang login sebagai Admin</span>
+								<span>Login sebagai <strong>Admin</strong></span>
 							</div>
 						{:else if user?.type === 'user'}
 							<div role="alert" class="alert alert-info mb-4">
@@ -234,23 +234,21 @@
 						</div>
 
 						{#if daftarKelas.length}
-							<details class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6">
+							<details class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6 rounded-b-none">
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-								<div class="collapse-content">
-									<div class="flex max-h-[30vh] flex-col overflow-y-auto">
-										{#each daftarKelas as kelas (kelas.id)}
-											{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
-											<a
-												class="btn btn-ghost btn-sm justify-start shadow-none"
-												href={buildKelasHref(kelas.id)}
-												onclick={handleKelasClick}
-												class:active={kelasAktif?.id === kelas.id}
-											>
-												{label}
-											</a>
-										{/each}
-									</div>
+								<div class="collapse-content flex max-h-[30vh] flex-col overflow-y-auto">
+									{#each daftarKelas as kelas (kelas.id)}
+										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
+										<a
+											class="btn btn-ghost btn-sm justify-start shadow-none"
+											href={buildKelasHref(kelas.id)}
+											onclick={handleKelasClick}
+											class:active={kelasAktif?.id === kelas.id}
+										>
+											{label}
+										</a>
+									{/each}
 								</div>
 							</details>
 						{:else}
@@ -259,16 +257,16 @@
 							</p>
 						{/if}
 
-						<li class="mt-2">
-							<a href="/pengaturan">
+						<li class="mt-1">
+							<a class="btn btn-sm rounded-none shadow-none" href="/pengaturan">
 								<Icon name="gear" />
 								Pengaturan
 							</a>
 						</li>
 						{#if user}{/if}
-						<li class="flex flex-row gap-1 mt-2 justify-between">
+						<li class="flex flex-row mt-1">
 							<button
-								class="btn btn-soft btn-sm"
+								class="btn shadow-none btn-sm rounded-bl-lg rounded-r-none rounded-tl-none flex-1"
 								type="button"
 								title="Keluar dari aplikasi"
 								onclick={logout}
@@ -278,14 +276,14 @@
 								{loggingOut ? 'Keluar…' : 'Keluar'}
 							</button>
 							<button
-								class="btn btn-sm btn-warning shadow-none"
+								class="btn btn-sm btn-warning rounded-br-lg shadow-none rounded-l-none flex-1 rounded-tr-none"
 								type="button"
 								title="Hentikan server"
 								onclick={stopServer}
 								disabled={stoppingServer}
 							>
 								<Icon name="warning" />
-								{stoppingServer ? 'Menghentikan server…' : 'Hentikan Server'}
+								{stoppingServer ? 'Menghentikan server…' : 'Stop Server'}
 							</button>
 						</li>
 					</ul>
