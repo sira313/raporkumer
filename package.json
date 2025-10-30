@@ -1,7 +1,7 @@
 {
 	"name": "rapkumer",
 	"private": true,
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"type": "module",
 	"scripts": {
 		"db:push": "node scripts/fix-drizzle-indexes.mjs && drizzle-kit push && node scripts/fix-drizzle-indexes.mjs && node scripts/seed-default-admin.mjs && node scripts/grant-admin-permissions.mjs && node scripts/notify-server-reload.mjs",
