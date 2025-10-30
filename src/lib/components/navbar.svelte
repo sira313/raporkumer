@@ -14,6 +14,14 @@
 		loggingOut?: boolean;
 	};
 
+	// Minimal local type for the user object shape we reference here.
+	type UserLike = {
+		pegawaiName?: string;
+		username?: string;
+		permissions?: string[];
+		type?: 'admin' | 'user';
+	};
+
 	let {
 		stopServer = () => {},
 		stoppingServer = false,
@@ -32,15 +40,15 @@
 
 	// Human-readable display name for current user (prefer pegawaiName if available)
 	const displayUserName = $derived.by(() => {
-	    if (!user) return null;
-	    // use runtime field `pegawaiName` if the server provided it, otherwise fall back to username
-	    return (user as any).pegawaiName ?? (user as any).username ?? null;
+		if (!user) return null;
+		// use runtime field `pegawaiName` if the server provided it, otherwise fall back to username
+		return (user as UserLike)?.pegawaiName ?? (user as UserLike)?.username ?? null;
 	});
 
 	// Whether current user can stop the server (client-side guard)
 	const canStopServer = $derived.by(() => {
 		if (!user) return false;
-		const perms = (user as any).permissions ?? [];
+		const perms = (user as UserLike)?.permissions ?? [];
 		return Array.isArray(perms) ? perms.includes('server_stop') : false;
 	});
 
@@ -241,10 +249,12 @@
 						</div>
 
 						{#if daftarKelas.length}
-							<details class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6 rounded-b-none">
+							<details
+								class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6 rounded-b-none"
+							>
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-								<div class="flex max-h-[30vh] flex-col overflow-y-auto border-t-3 border-base-100">
+								<div class="border-base-100 flex max-h-[30vh] flex-col overflow-y-auto border-t-3">
 									{#each daftarKelas as kelas (kelas.id)}
 										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
 										<a
@@ -271,9 +281,9 @@
 							</a>
 						</li>
 						{#if user}{/if}
-						<li class="flex flex-row mt-1">
+						<li class="mt-1 flex flex-row">
 							<button
-								class="btn shadow-none btn-sm rounded-bl-lg rounded-r-none rounded-tl-none flex-1"
+								class="btn btn-sm flex-1 rounded-tl-none rounded-r-none rounded-bl-lg shadow-none"
 								type="button"
 								title="Keluar dari aplikasi"
 								onclick={logout}
@@ -283,7 +293,7 @@
 								{loggingOut ? 'Keluar…' : 'Keluar'}
 							</button>
 							<button
-								class="btn btn-sm btn-warning rounded-br-lg shadow-none rounded-l-none flex-1 rounded-tr-none"
+								class="btn btn-sm btn-warning flex-1 rounded-l-none rounded-tr-none rounded-br-lg shadow-none"
 								type="button"
 								title={canStopServer ? 'Hentikan server' : 'Anda tidak memiliki izin'}
 								onclick={stopServer}

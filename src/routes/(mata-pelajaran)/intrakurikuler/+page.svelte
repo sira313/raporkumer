@@ -69,7 +69,7 @@
 		</div>
 		<div class="mt-2 flex sm:mt-0">
 			<a
-				class={`btn btn-soft rounded-r-none shadow-none ${!canManageMapel ? 'opacity-50 pointer-events-none' : ''}`}
+				class={`btn btn-soft rounded-r-none shadow-none ${!canManageMapel ? 'pointer-events-none opacity-50' : ''}`}
 				href={canManageMapel ? '/intrakurikuler/form' : '#'}
 				use:modalRoute={canManageMapel ? 'add-mapel' : ''}
 				aria-disabled={!canManageMapel}
@@ -81,7 +81,14 @@
 			<!-- dropdown yang tergabung (perhatikan join-item dan hilangkan margin m-1) -->
 			<div class="dropdown dropdown-end">
 				<!-- trigger: gunakan button bertipe btn supaya tampil seperti item lain -->
-				<button title="Export dan Import mata pelajaran" type="button" tabindex="0" class={`btn btn-soft rounded-l-none shadow-none ${!canManageMapel ? 'opacity-50' : ''}`} disabled={!canManageMapel} aria-disabled={!canManageMapel}>
+				<button
+					title="Export dan Import mata pelajaran"
+					type="button"
+					tabindex="0"
+					class={`btn btn-soft rounded-l-none shadow-none ${!canManageMapel ? 'opacity-50' : ''}`}
+					disabled={!canManageMapel}
+					aria-disabled={!canManageMapel}
+				>
 					<Icon name="down" />
 				</button>
 
@@ -93,7 +100,7 @@
 					<li>
 						<button
 							type="button"
-							class={`w-full text-left ${!canManageMapel ? 'opacity-50 pointer-events-none' : ''}`}
+							class={`w-full text-left ${!canManageMapel ? 'pointer-events-none opacity-50' : ''}`}
 							disabled={!canManageMapel}
 							aria-disabled={!canManageMapel}
 							onclick={() =>
@@ -110,7 +117,7 @@
 					<li>
 						<button
 							type="button"
-							class={`w-full text-left ${!canManageMapel ? 'opacity-50 pointer-events-none' : ''}`}
+							class={`w-full text-left ${!canManageMapel ? 'pointer-events-none opacity-50' : ''}`}
 							disabled={!canManageMapel}
 							aria-disabled={!canManageMapel}
 							onclick={async () => {

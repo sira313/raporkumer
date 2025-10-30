@@ -33,8 +33,8 @@
 		username = '';
 		password = '';
 		type = 'user';
-	// start with no selection (empty string) so the placeholder is shown; user must pick a mapel
-	mataPelajaranId = '';
+		// start with no selection (empty string) so the placeholder is shown; user must pick a mapel
+		mataPelajaranId = '';
 		initialized = true;
 	}
 
@@ -128,7 +128,8 @@
 						class="select dark:bg-base-200 w-full dark:border-none"
 						bind:value={mataPelajaranId}
 					>
-						<option disabled selected={mataPelajaranId === ''} value="">Pilih Mata Pelajaran</option>
+						<option disabled selected={mataPelajaranId === ''} value="">Pilih Mata Pelajaran</option
+						>
 						{#each filteredMataPelajaran as m (m.id)}
 							<option value={m.id}>{m.nama}</option>
 						{/each}

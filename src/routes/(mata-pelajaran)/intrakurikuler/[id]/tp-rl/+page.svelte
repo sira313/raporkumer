@@ -31,7 +31,6 @@
 	import Header from '$lib/components/intrakurikuler/header.svelte';
 	import {
 		groupKey as utilGroupKey,
-		groupSelectionPayload as utilGroupSelectionPayload,
 		removeSelectionByKey as utilRemoveSelectionByKey,
 		isGroupSelected as utilIsGroupSelected,
 		computeToggleSelection as utilComputeToggleSelection,
@@ -260,7 +259,7 @@
 				}
 				// fallback: invalidate loads so page data refreshes even if no mapping
 				await Promise.all([invalidate('app:mapel'), invalidate('app:mapel_tp-rl')]);
-			} catch (err) {
+			} catch {
 				// ignore network errors
 			}
 		})();
@@ -302,10 +301,6 @@
 	}
 
 	// ensureTrailingEntry is imported from utils
-
-	function groupSelectionPayload(group: TujuanPembelajaranGroup): SelectedGroupState {
-		return utilGroupSelectionPayload(group);
-	}
 
 	function removeSelectionByKey(key: string) {
 		selectedGroups = utilRemoveSelectionByKey(selectedGroups, key);
@@ -441,7 +436,7 @@
 		if (selectedGroupList.length > 0) {
 			clearSelection();
 		}
-	removeSelectionByKey(utilGroupKey(group));
+		removeSelectionByKey(utilGroupKey(group));
 		if (bulkDeleteDialog) {
 			closeBulkDeleteDialog();
 		}

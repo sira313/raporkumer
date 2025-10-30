@@ -146,7 +146,7 @@ export async function load({ depends, params, parent }) {
 					agamaSelectDisabled: Boolean(
 						assignedGlobalId &&
 							((): boolean => {
-								const name = assignedGlobalName as typeof agamaMapelNames[number] | undefined;
+								const name = assignedGlobalName as (typeof agamaMapelNames)[number] | undefined;
 								return Boolean(name && agamaMapelNames.includes(name));
 							})()
 					),
@@ -172,7 +172,7 @@ export async function load({ depends, params, parent }) {
 		agamaSelectDisabled: Boolean(
 			assignedGlobalId &&
 				((): boolean => {
-					const name = assignedGlobalName as typeof agamaMapelNames[number] | undefined;
+					const name = assignedGlobalName as (typeof agamaMapelNames)[number] | undefined;
 					return Boolean(name && agamaMapelNames.includes(name));
 				})()
 		),

@@ -213,11 +213,14 @@ export async function load({ parent, url, depends }) {
 			if (assignedRec && assignedRec.nama) {
 				const nm = normalizeText(assignedRec.nama);
 				if (nm.includes('katolik')) allowedAgamaForUser = 'Katolik';
-				else if (nm.includes('kristen') || nm.includes('protestan')) allowedAgamaForUser = 'Kristen';
+				else if (nm.includes('kristen') || nm.includes('protestan'))
+					allowedAgamaForUser = 'Kristen';
 				else if (nm.includes('islam')) allowedAgamaForUser = 'Islam';
 				else if (nm.includes('hindu')) allowedAgamaForUser = 'Hindu';
-				else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist')) allowedAgamaForUser = 'Buddha';
-				else if (nm.includes('khonghucu') || nm.includes('konghucu') || nm.includes('khong hu cu')) allowedAgamaForUser = 'Khonghucu';
+				else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
+					allowedAgamaForUser = 'Buddha';
+				else if (nm.includes('khonghucu') || nm.includes('konghucu') || nm.includes('khong hu cu'))
+					allowedAgamaForUser = 'Khonghucu';
 				else if (normalizeText(assignedRec.nama).startsWith('pendidikan agama')) {
 					// Fallback: use the raw mapel name if it's an agama subject we don't explicitly handle
 					allowedAgamaForUser = assignedRec.nama;
@@ -282,11 +285,11 @@ export async function load({ parent, url, depends }) {
 		maybeUser.type === 'user' &&
 		maybeUser.mataPelajaranId
 	) {
-			// Special-case: if assigned to an agama variant, default to the agama
-			// parent option.
-			if (treatAssignedAgamaVariantAsBase) {
-				selectedMapelValue = AGAMA_MAPEL_VALUE;
-			} else {
+		// Special-case: if assigned to an agama variant, default to the agama
+		// parent option.
+		if (treatAssignedAgamaVariantAsBase) {
+			selectedMapelValue = AGAMA_MAPEL_VALUE;
+		} else {
 			// try to find a mapel in this kelas with the same name and set it
 			try {
 				const assigned = await db.query.tableMataPelajaran.findFirst({

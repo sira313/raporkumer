@@ -102,39 +102,39 @@ export async function load({ parent, url, depends }) {
 	// Prefer matching by subject name within the active kelas so the assigned
 	// subject is visible across kelas rows that share the same name.
 	const maybeUser = user as unknown as { type?: string; mataPelajaranId?: number } | undefined;
-		// Special-case: detect if the assigned mapel is any agama variant (Katolik,
-		// Islam, Kristen, Hindu, Buddha, Khonghucu, etc.). If so, treat the user
-		// like the admin for agama selection in the UI: do not filter the kelas
-		// mapel list to the variant and default the selected mapel to the agama
-		// parent. This prevents the teacher from being locked to a single
-		// variant in the UI while keeping grading access restricted to their
-		// variant (see assignedIsAgamaVariant handling below).
-		let treatAssignedAgamaVariantAsBase = false;
-		if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
-			try {
-				const assigned = await db.query.tableMataPelajaran.findFirst({
-					columns: { id: true, nama: true },
-					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
-				});
-				if (assigned && assigned.nama) {
-						const norm = normalizeText(assigned.nama);
-						// If the assigned mapel matches any known agama variant name,
-						// enable the special UI behaviour.
-						const agamaVariantValues = new Set(
-							Object.values(AGAMA_VARIANT_MAP).map((v) => normalizeText(v))
-						);
-						if (agamaVariantValues.has(norm)) {
-							treatAssignedAgamaVariantAsBase = true;
-						} else {
-							mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
-						}
+	// Special-case: detect if the assigned mapel is any agama variant (Katolik,
+	// Islam, Kristen, Hindu, Buddha, Khonghucu, etc.). If so, treat the user
+	// like the admin for agama selection in the UI: do not filter the kelas
+	// mapel list to the variant and default the selected mapel to the agama
+	// parent. This prevents the teacher from being locked to a single
+	// variant in the UI while keeping grading access restricted to their
+	// variant (see assignedIsAgamaVariant handling below).
+	let treatAssignedAgamaVariantAsBase = false;
+	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		try {
+			const assigned = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			});
+			if (assigned && assigned.nama) {
+				const norm = normalizeText(assigned.nama);
+				// If the assigned mapel matches any known agama variant name,
+				// enable the special UI behaviour.
+				const agamaVariantValues = new Set(
+					Object.values(AGAMA_VARIANT_MAP).map((v) => normalizeText(v))
+				);
+				if (agamaVariantValues.has(norm)) {
+					treatAssignedAgamaVariantAsBase = true;
 				} else {
-					mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
+					mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
 				}
-			} catch (err) {
-				console.warn('[asesmen-sumatif] Failed to resolve assigned mapel name', err);
+			} else {
+				mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
 			}
+		} catch (err) {
+			console.warn('[asesmen-sumatif] Failed to resolve assigned mapel name', err);
 		}
+	}
 
 	const mapelByName = new Map(mapelRecords.map((record) => [normalizeText(record.nama), record]));
 
@@ -187,11 +187,14 @@ export async function load({ parent, url, depends }) {
 			if (assignedRec && assignedRec.nama) {
 				const nm = normalizeText(assignedRec.nama);
 				if (nm.includes('katolik')) allowedAgamaForUser = 'Katolik';
-				else if (nm.includes('kristen') || nm.includes('protestan')) allowedAgamaForUser = 'Kristen';
+				else if (nm.includes('kristen') || nm.includes('protestan'))
+					allowedAgamaForUser = 'Kristen';
 				else if (nm.includes('islam')) allowedAgamaForUser = 'Islam';
 				else if (nm.includes('hindu')) allowedAgamaForUser = 'Hindu';
-				else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist')) allowedAgamaForUser = 'Buddha';
-				else if (nm.includes('khonghucu') || nm.includes('konghucu') || nm.includes('khong hu cu')) allowedAgamaForUser = 'Khonghucu';
+				else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
+					allowedAgamaForUser = 'Buddha';
+				else if (nm.includes('khonghucu') || nm.includes('konghucu') || nm.includes('khong hu cu'))
+					allowedAgamaForUser = 'Khonghucu';
 				else if (normalizeText(assignedRec.nama).startsWith('pendidikan agama')) {
 					// Fallback: use the raw mapel name if it's an agama subject we don't explicitly handle
 					allowedAgamaForUser = assignedRec.nama;

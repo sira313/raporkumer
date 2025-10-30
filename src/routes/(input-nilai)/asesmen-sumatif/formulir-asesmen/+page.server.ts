@@ -174,7 +174,9 @@ export async function load({ url, locals, depends }) {
 				columns: { id: true, nama: true, kelasId: true },
 				where: eq(tableMataPelajaran.kelasId, murid.kelasId)
 			});
-			const variantRecord = kelasMapels.find((r) => normalizeText(r.nama) === normalizeText(variantName));
+			const variantRecord = kelasMapels.find(
+				(r) => normalizeText(r.nama) === normalizeText(variantName)
+			);
 			if (variantRecord) {
 				const params = new URLSearchParams();
 				params.set('murid_id', String(murid.id));

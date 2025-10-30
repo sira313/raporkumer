@@ -295,13 +295,11 @@
 										type="button"
 										class="btn btn-sm btn-disabled"
 										disabled
-										title={
-											murid.canNilai
-												? 'Pilih mata pelajaran'
-												: data.allowedAgamaForUser
+										title={murid.canNilai
+											? 'Pilih mata pelajaran'
+											: data.allowedAgamaForUser
 												? `Hanya untuk murid beragama ${data.allowedAgamaForUser}`
-												: 'Anda tidak memiliki izin untuk menilai murid ini'
-										}
+												: 'Anda tidak memiliki izin untuk menilai murid ini'}
 									>
 										<Icon name="edit" />
 										Nilai
