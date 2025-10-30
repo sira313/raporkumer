@@ -23,6 +23,10 @@ export const groupedUserPermissions = {
 		values: [['check_update', 'Cek Pembaruan Aplikasi']],
 		description: 'Aplikasi'
 	},
+	server: {
+		values: [['stop', 'Hentikan Server']],
+		description: 'Server'
+	},
 	rapor: {
 		values: [['manage', 'Kelola Data Rapor']],
 		description: 'Data Rapor'

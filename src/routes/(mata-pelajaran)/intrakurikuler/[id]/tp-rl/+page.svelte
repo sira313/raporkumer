@@ -29,9 +29,19 @@
 		cloneBobotState
 	} from '$lib/utils/tp-rl';
 	import Header from '$lib/components/intrakurikuler/header.svelte';
+	import {
+		groupKey as utilGroupKey,
+		removeSelectionByKey as utilRemoveSelectionByKey,
+		isGroupSelected as utilIsGroupSelected,
+		computeToggleSelection as utilComputeToggleSelection,
+		computeSelectAllChange as utilComputeSelectAllChange,
+		isEditingGroup as utilIsEditingGroup
+	} from '$lib/utils/tp-rl-selection';
+	import { refreshBobotDrafts as utilRefreshBobotDrafts } from '$lib/utils/tp-rl-bobot';
 
 	// grouping helpers imported from '$lib/utils/tp-rl'
 
+	import { page } from '$app/state';
 	let { data } = $props();
 	const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
 	const isAgamaParentMapel = $derived(data.mapel.nama === AGAMA_PARENT_NAME);
@@ -49,6 +59,42 @@
 		return Number.isFinite(selectionId)
 			? agamaOptions.find((option) => option.id === selectionId)
 			: undefined;
+	});
+
+	// lock/disable agama select when the logged-in user is a 'user' assigned to an agama-variant
+	// Prefer server-provided `agamaSelectDisabled` so server can enforce the disabled
+	// state after class changes; fall back to resolving from assigned ids.
+	const isAgamaSelectLocked = $derived.by(() => {
+		if ((data as unknown as { agamaSelectDisabled?: boolean }).agamaSelectDisabled)
+			return Boolean((data as unknown as { agamaSelectDisabled?: boolean }).agamaSelectDisabled);
+		const assignedLocal = (data?.assignedLocalMapelId ?? null) as number | null;
+		const u = page.data && page.data.user ? page.data.user : null;
+		const fallbackAssigned =
+			u && u.type === 'user' && u.mataPelajaranId ? Number(u.mataPelajaranId) : null;
+		const checkId = Number.isFinite(Number(assignedLocal))
+			? Number(assignedLocal)
+			: Number.isFinite(Number(fallbackAssigned))
+				? Number(fallbackAssigned)
+				: null;
+		if (!checkId) return false;
+		return agamaOptions.some((opt) => opt.id === checkId);
+	});
+
+	$effect(() => {
+		// if locked, default the selection to the assigned agama option (if available)
+		if (isAgamaSelectLocked && (!selectedAgamaId || selectedAgamaId === '')) {
+			const u = page.data && page.data.user ? page.data.user : null;
+			const assignedId = Number(u?.mataPelajaranId ?? NaN);
+			if (Number.isFinite(assignedId) && agamaOptions.find((o) => o.id === assignedId)) {
+				// set the selection and navigate to the assigned mapel's TP page so
+				// tujuan pembelajaran for that variant are loaded by the server.
+				selectedAgamaId = String(assignedId);
+				// navigate only if we're not already viewing the assigned mapel
+				if (Number(data.mapel?.id) !== assignedId) {
+					void goto(`/intrakurikuler/${assignedId}/tp-rl`, { replaceState: true });
+				}
+			}
+		}
 	});
 	const hasActiveAgamaSelection = $derived(Boolean(activeAgamaOption));
 	const mapelDisplayName = $derived.by(() => {
@@ -74,6 +120,9 @@
 	let selectAllCheckbox = $state<HTMLInputElement | null>(null);
 	let agamaSelectElement = $state<HTMLSelectElement | null>(null);
 	let importDialogOpen = $state(false);
+
+	// track kelas aktif id so we can react to "Pindah Kelas" and reload TP data
+	let lastKelasId = $state<number | null>(data.kelasAktif ? (data.kelasAktif.id as number) : null);
 
 	let activeFormId = $state<string | null>(null);
 	let isFormSubmitting = $state(false);
@@ -146,10 +195,74 @@
 	});
 
 	$effect(() => {
-		const nextSelection = data.agamaSelection ?? '';
+		const nextSelection =
+			data.agamaSelection ??
+			((data as unknown as { lockedAgamaSelectionId?: number }).lockedAgamaSelectionId
+				? String((data as unknown as { lockedAgamaSelectionId?: number }).lockedAgamaSelectionId)
+				: '') ??
+			'';
 		if (nextSelection === lastAgamaSelection) return;
 		lastAgamaSelection = nextSelection;
 		selectedAgamaId = nextSelection;
+	});
+
+	$effect(() => {
+		// When kelas aktif changes and we're viewing the parent agama mapel,
+		// attempt to resolve the assigned local mapel for the logged-in user
+		// in the newly selected kelas and navigate to its TP page so the
+		// tujuan pembelajaran shown correspond to the active kelas.
+		const kelasAktif = page.data?.kelasAktif ?? null;
+		if (!kelasAktif) return;
+		if (!isAgamaParentMapel) return;
+		const u = page.data?.user;
+		if (!u || u.type !== 'user' || !u.mataPelajaranId) return;
+		(async () => {
+			try {
+				const res = await fetch(`/api/assigned-mapel/resolve?kelas_id=${kelasAktif.id}`);
+				if (!res.ok) return;
+				const json = await res.json();
+				const assignedLocalId = Number(json.assignedLocalMapelId ?? null);
+				if (!Number.isFinite(assignedLocalId)) return;
+				if (assignedLocalId === Number(data.mapel?.id)) return;
+				void goto(`/intrakurikuler/${assignedLocalId}/tp-rl`, { replaceState: true });
+			} catch {
+				// ignore network errors silently
+			}
+		})();
+	});
+
+	// When kelas aktif changes for non-agama pages (or generally), reload the
+	// tujuan pembelajaran and bobot data so the table reflects the active class.
+	$effect(() => {
+		const kelasAktif = page.data?.kelasAktif ?? null;
+		const nextId = kelasAktif ? kelasAktif.id : null;
+		if (nextId === lastKelasId) return;
+		lastKelasId = nextId;
+		// Try to resolve a corresponding mata pelajaran in the newly active kelas
+		// by the current mapel name. If found, navigate to its TP page so the
+		// URL and server parent load reflect the kelas-scoped mapel id.
+		(async () => {
+			try {
+				const currentName = data?.mapel?.nama ?? '';
+				if (currentName && kelasAktif) {
+					const q = new URLSearchParams({ kelas_id: String(kelasAktif.id), name: currentName });
+					const res = await fetch(`/api/mapel/resolve-by-name?${q.toString()}`);
+					if (res.ok) {
+						const json = await res.json();
+						const mappedId = Number(json?.mapelId ?? null);
+						if (Number.isFinite(mappedId) && mappedId !== Number(data.mapel?.id)) {
+							// navigate to the mapped mapel id so parent() load uses the new id
+							void goto(`/intrakurikuler/${mappedId}/tp-rl`, { replaceState: true });
+							return;
+						}
+					}
+				}
+				// fallback: invalidate loads so page data refreshes even if no mapping
+				await Promise.all([invalidate('app:mapel'), invalidate('app:mapel_tp-rl')]);
+			} catch {
+				// ignore network errors
+			}
+		})();
 	});
 
 	$effect(() => {
@@ -189,18 +302,8 @@
 
 	// ensureTrailingEntry is imported from utils
 
-	function groupSelectionPayload(group: TujuanPembelajaranGroup): SelectedGroupState {
-		return {
-			lingkupMateri: group.lingkupMateri,
-			ids: group.items.map((item) => item.id)
-		};
-	}
-
 	function removeSelectionByKey(key: string) {
-		if (!(key in selectedGroups)) return;
-		const rest = { ...selectedGroups };
-		delete rest[key];
-		selectedGroups = rest;
+		selectedGroups = utilRemoveSelectionByKey(selectedGroups, key);
 	}
 
 	function dismissBobotInfoAlert() {
@@ -208,20 +311,12 @@
 	}
 
 	function isGroupSelected(group: TujuanPembelajaranGroup) {
-		return Boolean(selectedGroups[groupKey(group)]);
+		return utilIsGroupSelected(selectedGroups, group);
 	}
 
 	function toggleGroupSelection(group: TujuanPembelajaranGroup, checked: boolean) {
 		if (isInteractionLocked) return;
-		const key = groupKey(group);
-		if (checked) {
-			selectedGroups = {
-				...selectedGroups,
-				[key]: groupSelectionPayload(group)
-			};
-			return;
-		}
-		removeSelectionByKey(key);
+		selectedGroups = utilComputeToggleSelection(selectedGroups, group, checked);
 	}
 
 	function clearSelection() {
@@ -233,9 +328,7 @@
 		if (isInteractionLocked) return;
 		if (checked) {
 			if (selectableGroups.length === 0) return;
-			selectedGroups = Object.fromEntries(
-				selectableGroups.map((group) => [groupKey(group), groupSelectionPayload(group)] as const)
-			);
+			selectedGroups = utilComputeSelectAllChange(selectableGroups, true);
 			return;
 		}
 		if (Object.keys(selectedGroups).length > 0) {
@@ -343,7 +436,7 @@
 		if (selectedGroupList.length > 0) {
 			clearSelection();
 		}
-		removeSelectionByKey(groupKey(group));
+		removeSelectionByKey(utilGroupKey(group));
 		if (bulkDeleteDialog) {
 			closeBulkDeleteDialog();
 		}
@@ -452,15 +545,11 @@
 	}
 
 	function isEditingGroup(group: TujuanPembelajaranGroup) {
-		if (!groupForm || groupForm.mode !== 'edit') return false;
-		const targetSet = new Set(groupForm.targetIds);
-		return (
-			group.items.length === targetSet.size && group.items.every((item) => targetSet.has(item.id))
-		);
+		return utilIsEditingGroup(group, groupForm);
 	}
 
 	function groupKey(group: TujuanPembelajaranGroup) {
-		return `${group.lingkupMateri ?? ''}::${group.items.map((item) => item.id).join('-')}`;
+		return utilGroupKey(group);
 	}
 
 	function openDeleteDialog(group: TujuanPembelajaranGroup) {
@@ -500,22 +589,7 @@
 		state: Record<string, GroupBobotState>,
 		options: RefreshBobotOptions = {}
 	) {
-		const nextDrafts: Record<string, string> = {};
-		for (const [key, entry] of Object.entries(state)) {
-			if (options.preserveKey === key && options.rawValue !== undefined) {
-				nextDrafts[key] = options.rawValue;
-				continue;
-			}
-
-			const existingDraft = bobotDrafts[key];
-			if (entry.isManual && existingDraft !== undefined) {
-				nextDrafts[key] = existingDraft;
-				continue;
-			}
-
-			nextDrafts[key] = formatBobotValue(entry.value);
-		}
-		bobotDrafts = nextDrafts;
+		bobotDrafts = utilRefreshBobotDrafts(state, bobotDrafts, formatBobotValue, options);
 	}
 
 	function syncBobotStateWithGroups(groups: TujuanPembelajaranGroup[]) {
@@ -689,6 +763,7 @@
 		{selectedAgamaId}
 		onAgamaChange={handleAgamaChange}
 		onAgamaElementMounted={(el: HTMLSelectElement) => (agamaSelectElement = el)}
+		{isAgamaSelectLocked}
 		onBack={() => history.back()}
 		{handlePrimaryActionClick}
 		{isTambahTpDisabled}

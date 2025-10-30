@@ -30,11 +30,13 @@
 			}>;
 			hasPenilaian: boolean;
 			nilaiHref: string | null;
+			canNilai?: boolean;
 		}>;
 		jumlahTujuan: number;
 		selectedMapel?: { id: number | null; nama: string } | null;
 		search: string | null;
 		page: PaginationState;
+		allowedAgamaForUser?: string | null;
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -287,7 +289,17 @@
 										Nilai
 									</a>
 								{:else}
-									<span class="text-base-content/60 text-xs italic">Pilih mata pelajaran</span>
+									<button
+										type="button"
+										class="btn btn-sm btn-disabled"
+										disabled
+										title={data.allowedAgamaForUser
+											? `Hanya untuk murid beragama ${data.allowedAgamaForUser}`
+											: 'Pilih mata pelajaran'}
+									>
+										<Icon name="edit" />
+										Nilai
+									</button>
 								{/if}
 							</td>
 							<td class="align-top">

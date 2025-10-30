@@ -14,6 +14,14 @@
 		loggingOut?: boolean;
 	};
 
+	// Minimal local type for the user object shape we reference here.
+	type UserLike = {
+		pegawaiName?: string;
+		username?: string;
+		permissions?: string[];
+		type?: 'admin' | 'user';
+	};
+
 	let {
 		stopServer = () => {},
 		stoppingServer = false,
@@ -28,6 +36,20 @@
 	const kelasAktifLabel = $derived.by(() => {
 		if (!kelasAktif) return 'Pilih Kelas';
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
+	});
+
+	// Human-readable display name for current user (prefer pegawaiName if available)
+	const displayUserName = $derived.by(() => {
+		if (!user) return null;
+		// use runtime field `pegawaiName` if the server provided it, otherwise fall back to username
+		return (user as UserLike)?.pegawaiName ?? (user as UserLike)?.username ?? null;
+	});
+
+	// Whether current user can stop the server (client-side guard)
+	const canStopServer = $derived.by(() => {
+		if (!user) return false;
+		const perms = (user as UserLike)?.permissions ?? [];
+		return Array.isArray(perms) ? perms.includes('server_stop') : false;
 	});
 
 	function buildKelasHref(kelasId: number) {
@@ -193,18 +215,20 @@
 						<Icon name="select" class="hidden sm:block" />
 					</div>
 					<ul
-						class="menu dropdown-content bg-base-100 ring-opacity-5 z-[1] mt-6 w-72 origin-top-right rounded-xl p-4 shadow-md focus:outline-none"
+						class="menu dropdown-content bg-base-100 ring-opacity-5 z-[1] mt-5 mr-1 w-72 origin-top-right rounded-xl p-4 shadow-xl focus:outline-none"
 					>
 						<!-- alert akun admin -->
 						{#if user?.type === 'admin'}
 							<div role="alert" class="alert alert-info mb-4">
 								<Icon name="info" />
-								<span>Sedang login sebagai Admin</span>
+								<span>Login sebagai <strong>Admin</strong></span>
 							</div>
 						{:else if user?.type === 'user'}
 							<div role="alert" class="alert alert-info mb-4">
 								<Icon name="info" />
-								<span>Sedang login sebagai Guru Mapel</span>
+								<span>
+									<strong>{displayUserName}</strong> - Guru Mapel
+								</span>
 							</div>
 						{/if}
 
@@ -225,23 +249,23 @@
 						</div>
 
 						{#if daftarKelas.length}
-							<details class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6">
+							<details
+								class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6 rounded-b-none"
+							>
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-								<div class="collapse-content">
-									<div class="flex max-h-[30vh] flex-col overflow-y-auto">
-										{#each daftarKelas as kelas (kelas.id)}
-											{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
-											<a
-												class="btn btn-ghost btn-sm justify-start shadow-none"
-												href={buildKelasHref(kelas.id)}
-												onclick={handleKelasClick}
-												class:active={kelasAktif?.id === kelas.id}
-											>
-												{label}
-											</a>
-										{/each}
-									</div>
+								<div class="border-base-100 flex max-h-[30vh] flex-col overflow-y-auto border-t-3">
+									{#each daftarKelas as kelas (kelas.id)}
+										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
+										<a
+											class="btn btn-ghost btn-sm justify-start shadow-none"
+											href={buildKelasHref(kelas.id)}
+											onclick={handleKelasClick}
+											class:active={kelasAktif?.id === kelas.id}
+										>
+											{label}
+										</a>
+									{/each}
 								</div>
 							</details>
 						{:else}
@@ -250,15 +274,16 @@
 							</p>
 						{/if}
 
-						<li class="mt-2">
-							<a href="/pengaturan">
+						<li class="mt-1">
+							<a class="btn btn-sm rounded-none shadow-none" href="/pengaturan">
 								<Icon name="gear" />
 								Pengaturan
 							</a>
 						</li>
 						{#if user}{/if}
-						<li>
+						<li class="mt-1 flex flex-row">
 							<button
+								class="btn btn-sm flex-1 rounded-tl-none rounded-r-none rounded-bl-lg shadow-none"
 								type="button"
 								title="Keluar dari aplikasi"
 								onclick={logout}
@@ -267,16 +292,15 @@
 								<Icon name="export" />
 								{loggingOut ? 'Keluar…' : 'Keluar'}
 							</button>
-						</li>
-						<li>
 							<button
+								class="btn btn-sm btn-warning flex-1 rounded-l-none rounded-tr-none rounded-br-lg shadow-none"
 								type="button"
-								title="Hentikan server"
+								title={canStopServer ? 'Hentikan server' : 'Anda tidak memiliki izin'}
 								onclick={stopServer}
-								disabled={stoppingServer}
+								disabled={stoppingServer || !canStopServer}
 							>
 								<Icon name="warning" />
-								{stoppingServer ? 'Menghentikan server…' : 'Hentikan Server'}
+								{stoppingServer ? 'Menghentikan server…' : 'Stop Server'}
 							</button>
 						</li>
 					</ul>

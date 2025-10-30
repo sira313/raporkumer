@@ -9,6 +9,7 @@ type MataPelajaranWithTp = MataPelajaranBase & { tpCount: number };
 type MataPelajaranList = MataPelajaranWithTp[];
 
 const AGAMA_VARIANT_NAME_SET = new Set<string>(agamaVariantNames);
+const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
 
 export async function load({ depends, url, parent }) {
 	depends('app:mapel');
@@ -43,7 +44,19 @@ export async function load({ depends, url, parent }) {
 				});
 				if (assigned && assigned.nama) {
 					const norm = (assigned.nama || '').trim().toLowerCase();
-					mapel = mapel.filter((m) => (m.nama || '').trim().toLowerCase() === norm);
+					// If the assigned subject is a variant of agama (eg. Pendidikan Agama Islam ...),
+					// allow showing the parent mapel as well so the teacher can access the parent
+					// intrakurikuler page which contains agama-select.
+					const assignedIsAgamaVariant =
+						norm.startsWith('pendidikan agama') && !norm.includes(AGAMA_PARENT_NAME.toLowerCase());
+					if (assignedIsAgamaVariant) {
+						mapel = mapel.filter((m) => {
+							const n = (m.nama || '').trim().toLowerCase();
+							return n === norm || n === AGAMA_PARENT_NAME.toLowerCase();
+						});
+					} else {
+						mapel = mapel.filter((m) => (m.nama || '').trim().toLowerCase() === norm);
+					}
 				} else {
 					// fallback: if assigned mapel not found, keep original restrictive id-match
 					const allowedId = Number(assignedId);
