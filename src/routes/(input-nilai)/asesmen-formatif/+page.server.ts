@@ -126,10 +126,12 @@ export async function load({ parent, url, depends }) {
 	// prefer the subject with the same name in the active kelas (so subject exists
 	// across multiple kelas rows with same name).
 	const maybeUser = user as unknown as { type?: string; mataPelajaranId?: number } | undefined;
-	// Special rule: if the logged-in user is a 'user' assigned to the
-	// 'Pendidikan Agama Katolik dan Budi Pekerti' variant, treat them like
-	// the admin behaviour: show the parent agama subject and default to it.
-	let treatAssignedKatolikAsBase = false;
+	// Special rule: if the logged-in user is a 'user' assigned to any agama
+	// variant (Katolik, Islam, Kristen, Hindu, Buddha, Khonghucu, etc.),
+	// treat them like the admin behaviour: show the parent agama subject and
+	// default to it in the UI. This does NOT grant them wider grading
+	// access; that remains restricted to their assigned variant.
+	let treatAssignedAgamaVariantAsBase = false;
 	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
 		try {
 			const assigned = await db.query.tableMataPelajaran.findFirst({
@@ -138,12 +140,14 @@ export async function load({ parent, url, depends }) {
 			});
 			if (assigned && assigned.nama) {
 				const norm = normalizeText(assigned.nama);
-				const katolikName = normalizeText(AGAMA_VARIANT_MAP['katolik']);
-				// If assigned to the katolik variant, do NOT lock mapelRecords to the
+				const agamaVariantValues = new Set(
+					Object.values(AGAMA_VARIANT_MAP).map((v) => normalizeText(v))
+				);
+				// If assigned to a known agama variant, do NOT lock mapelRecords to the
 				// variant. Instead show the base agama subject and let the select
 				// default to the base (handled further down).
-				if (norm === katolikName) {
-					treatAssignedKatolikAsBase = true;
+				if (agamaVariantValues.has(norm)) {
+					treatAssignedAgamaVariantAsBase = true;
 				} else {
 					mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
 				}
@@ -189,10 +193,10 @@ export async function load({ parent, url, depends }) {
 		}
 	}
 
-	// Note: do not change assignedIsAgamaVariant here. The special-case
-	// for Katolik should only affect which mapel is selected in the UI,
+	// Note: do not change assignedIsAgamaVariant here. The special-case for
+	// agama variants should only affect which mapel is selected in the UI,
 	// but not grant full grading access to all religions.
-	if (treatAssignedKatolikAsBase) {
+	if (treatAssignedAgamaVariantAsBase) {
 		// keep assignedIsAgamaVariant as detected above
 	}
 
@@ -256,10 +260,10 @@ export async function load({ parent, url, depends }) {
 	let selectedMapelValue = requestedValue ?? null;
 	// If user is locked to a mapel and no explicit query param is provided, default to user's mapel
 	if (!selectedMapelValue && maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
-		// If the user's assigned mapel is the katolik agama variant and we have the
+		// If the user's assigned mapel is an agama variant and we have the
 		// special rule enabled, default to the agama parent option instead of the
 		// variant id.
-		if (treatAssignedKatolikAsBase) {
+		if (treatAssignedAgamaVariantAsBase) {
 			selectedMapelValue = AGAMA_MAPEL_VALUE;
 		} else {
 			selectedMapelValue = String(maybeUser.mataPelajaranId);
@@ -278,11 +282,11 @@ export async function load({ parent, url, depends }) {
 		maybeUser.type === 'user' &&
 		maybeUser.mataPelajaranId
 	) {
-		// Special-case: if assigned to katolik variant, default to the agama
-		// parent option.
-		if (treatAssignedKatolikAsBase) {
-			selectedMapelValue = AGAMA_MAPEL_VALUE;
-		} else {
+			// Special-case: if assigned to an agama variant, default to the agama
+			// parent option.
+			if (treatAssignedAgamaVariantAsBase) {
+				selectedMapelValue = AGAMA_MAPEL_VALUE;
+			} else {
 			// try to find a mapel in this kelas with the same name and set it
 			try {
 				const assigned = await db.query.tableMataPelajaran.findFirst({

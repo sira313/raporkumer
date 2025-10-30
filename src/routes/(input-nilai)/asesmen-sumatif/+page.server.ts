@@ -102,12 +102,14 @@ export async function load({ parent, url, depends }) {
 	// Prefer matching by subject name within the active kelas so the assigned
 	// subject is visible across kelas rows that share the same name.
 	const maybeUser = user as unknown as { type?: string; mataPelajaranId?: number } | undefined;
-		// Special-case: detect if the assigned mapel is the Katolik agama variant.
-		// In that case, treat the user similar to admin for agama selection on this
-		// page: do not filter the kelas mapel list to the variant and default the
-		// selected mapel to the agama parent. This prevents the teacher from being
-		// locked to a single variant in the UI.
-		let treatAssignedKatolikAsBase = false;
+		// Special-case: detect if the assigned mapel is any agama variant (Katolik,
+		// Islam, Kristen, Hindu, Buddha, Khonghucu, etc.). If so, treat the user
+		// like the admin for agama selection in the UI: do not filter the kelas
+		// mapel list to the variant and default the selected mapel to the agama
+		// parent. This prevents the teacher from being locked to a single
+		// variant in the UI while keeping grading access restricted to their
+		// variant (see assignedIsAgamaVariant handling below).
+		let treatAssignedAgamaVariantAsBase = false;
 		if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
 			try {
 				const assigned = await db.query.tableMataPelajaran.findFirst({
@@ -115,13 +117,17 @@ export async function load({ parent, url, depends }) {
 					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
 				});
 				if (assigned && assigned.nama) {
-					const norm = normalizeText(assigned.nama);
-					const katolikName = normalizeText(AGAMA_VARIANT_MAP['katolik']);
-					if (norm === katolikName) {
-						treatAssignedKatolikAsBase = true;
-					} else {
-						mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
-					}
+						const norm = normalizeText(assigned.nama);
+						// If the assigned mapel matches any known agama variant name,
+						// enable the special UI behaviour.
+						const agamaVariantValues = new Set(
+							Object.values(AGAMA_VARIANT_MAP).map((v) => normalizeText(v))
+						);
+						if (agamaVariantValues.has(norm)) {
+							treatAssignedAgamaVariantAsBase = true;
+						} else {
+							mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
+						}
 				} else {
 					mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
 				}
@@ -162,9 +168,9 @@ export async function load({ parent, url, depends }) {
 		}
 	}
 
-	if (treatAssignedKatolikAsBase) {
+	if (treatAssignedAgamaVariantAsBase) {
 		// Note: do not change assignedIsAgamaVariant here. The special-case
-		// for Katolik should only affect which mapel is selected in the UI,
+		// for agama variants should only affect which mapel is selected in the UI,
 		// but not grant full grading access to all religions.
 	}
 
@@ -227,7 +233,7 @@ export async function load({ parent, url, depends }) {
 	const requestedValue = url.searchParams.get('mapel_id');
 	let selectedMapelValue = requestedValue ?? null;
 	if (!selectedMapelValue && maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
-		if (treatAssignedKatolikAsBase) {
+		if (treatAssignedAgamaVariantAsBase) {
 			selectedMapelValue = AGAMA_MAPEL_VALUE;
 		} else {
 			selectedMapelValue = String(maybeUser.mataPelajaranId);
@@ -246,7 +252,7 @@ export async function load({ parent, url, depends }) {
 				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
 			});
 			if (assigned && assigned.nama) {
-				if (treatAssignedKatolikAsBase) {
+				if (treatAssignedAgamaVariantAsBase) {
 					selectedMapelValue = AGAMA_MAPEL_VALUE;
 				} else {
 					const norm = (assigned.nama || '').trim().toLowerCase();
