@@ -50,6 +50,7 @@ type MuridRow = {
 	naLingkup: number | null;
 	sas: number | null;
 	nilaiHref: string | null;
+	canNilai: boolean;
 };
 
 type PageState = {
@@ -162,7 +163,37 @@ export async function load({ parent, url, depends }) {
 	}
 
 	if (treatAssignedKatolikAsBase) {
-		assignedIsAgamaVariant = false;
+		// Note: do not change assignedIsAgamaVariant here. The special-case
+		// for Katolik should only affect which mapel is selected in the UI,
+		// but not grant full grading access to all religions.
+	}
+
+	// Derive a human readable agama label for the assigned agama-variant.
+	// Fetch the assigned mata pelajaran name directly so variant assignments
+	// (including 'Katolik' variant) are detected reliably.
+	let allowedAgamaForUser: string | null = null;
+	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		try {
+			const assignedRec = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			});
+			if (assignedRec && assignedRec.nama) {
+				const nm = normalizeText(assignedRec.nama);
+				if (nm.includes('katolik')) allowedAgamaForUser = 'Katolik';
+				else if (nm.includes('kristen') || nm.includes('protestan')) allowedAgamaForUser = 'Kristen';
+				else if (nm.includes('islam')) allowedAgamaForUser = 'Islam';
+				else if (nm.includes('hindu')) allowedAgamaForUser = 'Hindu';
+				else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist')) allowedAgamaForUser = 'Buddha';
+				else if (nm.includes('khonghucu') || nm.includes('konghucu') || nm.includes('khong hu cu')) allowedAgamaForUser = 'Khonghucu';
+				else if (normalizeText(assignedRec.nama).startsWith('pendidikan agama')) {
+					// Fallback: use the raw mapel name if it's an agama subject we don't explicitly handle
+					allowedAgamaForUser = assignedRec.nama;
+				}
+			}
+		} catch (err) {
+			console.warn('[asesmen-sumatif] Failed to resolve assigned mapel for agama label', err);
+		}
 	}
 
 	let agamaBaseMapel: (typeof mapelRecords)[number] | null = null;
@@ -289,7 +320,8 @@ export async function load({ parent, url, depends }) {
 		nilaiAkhir: null,
 		naLingkup: null,
 		sas: null,
-		nilaiHref: null
+		nilaiHref: null,
+		canNilai: true
 	}));
 
 	if (!selectedMapelValue) {
@@ -370,7 +402,6 @@ export async function load({ parent, url, depends }) {
 		const canAccess = (() => {
 			if (!maybeUser || maybeUser.type !== 'user' || !maybeUser.mataPelajaranId) return true;
 			// If we applied the special Katolik-as-base rule, allow full access.
-			if (treatAssignedKatolikAsBase) return true;
 			if (!assignedIsAgamaVariant) return true;
 			if (!assignedLocalMapelId) return false;
 			return targetMapelId === assignedLocalMapelId;
@@ -386,7 +417,8 @@ export async function load({ parent, url, depends }) {
 			nilaiHref:
 				targetMapelId && canAccess
 					? `/asesmen-sumatif/formulir-asesmen?murid_id=${murid.id}&mapel_id=${targetMapelId}`
-					: null
+					: null,
+			canNilai: Boolean(canAccess)
 		};
 	});
 
@@ -396,6 +428,7 @@ export async function load({ parent, url, depends }) {
 		selectedMapelValue,
 		selectedMapel,
 		daftarMurid,
+		allowedAgamaForUser,
 		page: pageState
 	};
 }

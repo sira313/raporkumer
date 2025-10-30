@@ -14,6 +14,7 @@
 		naLingkup: number | null;
 		sas: number | null;
 		nilaiHref: string | null;
+		canNilai: boolean;
 	};
 
 	type PageState = {
@@ -30,6 +31,7 @@
 		selectedMapel: { id: number | null; nama: string } | null;
 		kelasAktif?: { nama?: string; fase?: string } | null;
 		daftarMurid: MuridRow[];
+		allowedAgamaForUser?: string | null;
 		page: PageState;
 	};
 
@@ -279,7 +281,7 @@
 								{/if}
 							</td>
 							<td>
-								{#if murid.nilaiHref}
+								{#if murid.canNilai && murid.nilaiHref}
 									<a
 										class="btn btn-sm btn-soft shadow-none"
 										title={`Nilai ${murid.nama}`}
@@ -288,6 +290,17 @@
 										<Icon name="edit" />
 										Nilai
 									</a>
+								{:else if !murid.canNilai}
+									<!-- Disabled action for teacher assigned to a different agama variant -->
+									<button
+										type="button"
+										class="btn btn-sm btn-disabled"
+										disabled
+										title={data.allowedAgamaForUser ? `Hanya untuk murid beragama ${data.allowedAgamaForUser}` : 'Anda tidak memiliki izin untuk menilai murid ini'}
+									>
+										<Icon name="edit" />
+										Nilai
+									</button>
 								{:else}
 									<span class="text-base-content/60 text-xs italic">Pilih mata pelajaran</span>
 								{/if}
