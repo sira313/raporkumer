@@ -244,7 +244,7 @@
 							<details class="bg-base-300 dark:bg-base-200 collapse-plus collapse mt-6 rounded-b-none">
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-								<div class="flex max-h-[30vh] flex-col overflow-y-auto bg-base-300 border-t-3 border-base-100">
+								<div class="flex max-h-[30vh] flex-col overflow-y-auto border-t-3 border-base-100">
 									{#each daftarKelas as kelas (kelas.id)}
 										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
 										<a
