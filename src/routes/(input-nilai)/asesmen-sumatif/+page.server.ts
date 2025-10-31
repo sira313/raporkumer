@@ -50,6 +50,7 @@ type MuridRow = {
 	naLingkup: number | null;
 	sas: number | null;
 	nilaiHref: string | null;
+	canNilai: boolean;
 };
 
 type PageState = {
@@ -101,6 +102,14 @@ export async function load({ parent, url, depends }) {
 	// Prefer matching by subject name within the active kelas so the assigned
 	// subject is visible across kelas rows that share the same name.
 	const maybeUser = user as unknown as { type?: string; mataPelajaranId?: number } | undefined;
+	// Special-case: detect if the assigned mapel is any agama variant (Katolik,
+	// Islam, Kristen, Hindu, Buddha, Khonghucu, etc.). If so, treat the user
+	// like the admin for agama selection in the UI: do not filter the kelas
+	// mapel list to the variant and default the selected mapel to the agama
+	// parent. This prevents the teacher from being locked to a single
+	// variant in the UI while keeping grading access restricted to their
+	// variant (see assignedIsAgamaVariant handling below).
+	let treatAssignedAgamaVariantAsBase = false;
 	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
 		try {
 			const assigned = await db.query.tableMataPelajaran.findFirst({
@@ -108,8 +117,17 @@ export async function load({ parent, url, depends }) {
 				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
 			});
 			if (assigned && assigned.nama) {
-				const norm = (assigned.nama || '').trim().toLowerCase();
-				mapelRecords = mapelRecords.filter((r) => (r.nama || '').trim().toLowerCase() === norm);
+				const norm = normalizeText(assigned.nama);
+				// If the assigned mapel matches any known agama variant name,
+				// enable the special UI behaviour.
+				const agamaVariantValues = new Set(
+					Object.values(AGAMA_VARIANT_MAP).map((v) => normalizeText(v))
+				);
+				if (agamaVariantValues.has(norm)) {
+					treatAssignedAgamaVariantAsBase = true;
+				} else {
+					mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
+				}
 			} else {
 				mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
 			}
@@ -119,6 +137,73 @@ export async function load({ parent, url, depends }) {
 	}
 
 	const mapelByName = new Map(mapelRecords.map((record) => [normalizeText(record.nama), record]));
+
+	// Determine if the logged-in user is assigned to a local mapel in this kelas
+	// and whether that assigned mapel is an agama variant. This is used to
+	// restrict grading links so a guru mapel agama assigned to a variant only
+	// grades students of their agama.
+	let assignedLocalMapelId: number | null = null;
+	let assignedIsAgamaVariant = false;
+	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		try {
+			const assigned = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			});
+			if (assigned && assigned.nama) {
+				const norm = normalizeText(assigned.nama);
+				assignedIsAgamaVariant =
+					norm.startsWith('pendidikan agama') && norm !== normalizeText(AGAMA_BASE_SUBJECT);
+				const found = mapelRecords.find((r) => normalizeText(r.nama) === norm);
+				if (found) assignedLocalMapelId = found.id;
+			} else {
+				const foundById = mapelRecords.find((r) => r.id === Number(maybeUser.mataPelajaranId));
+				if (foundById) assignedLocalMapelId = foundById.id;
+			}
+		} catch (err) {
+			console.warn(
+				'[asesmen-sumatif] Failed to resolve assigned mapel for access restriction',
+				err
+			);
+		}
+	}
+
+	if (treatAssignedAgamaVariantAsBase) {
+		// Note: do not change assignedIsAgamaVariant here. The special-case
+		// for agama variants should only affect which mapel is selected in the UI,
+		// but not grant full grading access to all religions.
+	}
+
+	// Derive a human readable agama label for the assigned agama-variant.
+	// Fetch the assigned mata pelajaran name directly so variant assignments
+	// (including 'Katolik' variant) are detected reliably.
+	let allowedAgamaForUser: string | null = null;
+	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+		try {
+			const assignedRec = await db.query.tableMataPelajaran.findFirst({
+				columns: { id: true, nama: true },
+				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			});
+			if (assignedRec && assignedRec.nama) {
+				const nm = normalizeText(assignedRec.nama);
+				if (nm.includes('katolik')) allowedAgamaForUser = 'Katolik';
+				else if (nm.includes('kristen') || nm.includes('protestan'))
+					allowedAgamaForUser = 'Kristen';
+				else if (nm.includes('islam')) allowedAgamaForUser = 'Islam';
+				else if (nm.includes('hindu')) allowedAgamaForUser = 'Hindu';
+				else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
+					allowedAgamaForUser = 'Buddha';
+				else if (nm.includes('khonghucu') || nm.includes('konghucu') || nm.includes('khong hu cu'))
+					allowedAgamaForUser = 'Khonghucu';
+				else if (normalizeText(assignedRec.nama).startsWith('pendidikan agama')) {
+					// Fallback: use the raw mapel name if it's an agama subject we don't explicitly handle
+					allowedAgamaForUser = assignedRec.nama;
+				}
+			}
+		} catch (err) {
+			console.warn('[asesmen-sumatif] Failed to resolve assigned mapel for agama label', err);
+		}
+	}
 
 	let agamaBaseMapel: (typeof mapelRecords)[number] | null = null;
 	const agamaVariantRecords: typeof mapelRecords = [];
@@ -151,7 +236,11 @@ export async function load({ parent, url, depends }) {
 	const requestedValue = url.searchParams.get('mapel_id');
 	let selectedMapelValue = requestedValue ?? null;
 	if (!selectedMapelValue && maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
-		selectedMapelValue = String(maybeUser.mataPelajaranId);
+		if (treatAssignedAgamaVariantAsBase) {
+			selectedMapelValue = AGAMA_MAPEL_VALUE;
+		} else {
+			selectedMapelValue = String(maybeUser.mataPelajaranId);
+		}
 	}
 	if (selectedMapelValue && !mapelOptions.some((option) => option.value === selectedMapelValue)) {
 		selectedMapelValue = null;
@@ -166,9 +255,13 @@ export async function load({ parent, url, depends }) {
 				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
 			});
 			if (assigned && assigned.nama) {
-				const norm = (assigned.nama || '').trim().toLowerCase();
-				const found = mapelRecords.find((r) => (r.nama || '').trim().toLowerCase() === norm);
-				if (found) selectedMapelValue = String(found.id);
+				if (treatAssignedAgamaVariantAsBase) {
+					selectedMapelValue = AGAMA_MAPEL_VALUE;
+				} else {
+					const norm = (assigned.nama || '').trim().toLowerCase();
+					const found = mapelRecords.find((r) => (r.nama || '').trim().toLowerCase() === norm);
+					if (found) selectedMapelValue = String(found.id);
+				}
 			}
 		} catch (err) {
 			console.warn('[asesmen-sumatif] Failed to default to assigned mapel', err);
@@ -236,7 +329,8 @@ export async function load({ parent, url, depends }) {
 		nilaiAkhir: null,
 		naLingkup: null,
 		sas: null,
-		nilaiHref: null
+		nilaiHref: null,
+		canNilai: true
 	}));
 
 	if (!selectedMapelValue) {
@@ -314,6 +408,14 @@ export async function load({ parent, url, depends }) {
 			? (sumatifByMurid.get(murid.id)?.get(targetMapelId) ?? null)
 			: null;
 
+		const canAccess = (() => {
+			if (!maybeUser || maybeUser.type !== 'user' || !maybeUser.mataPelajaranId) return true;
+			// If we applied the special Katolik-as-base rule, allow full access.
+			if (!assignedIsAgamaVariant) return true;
+			if (!assignedLocalMapelId) return false;
+			return targetMapelId === assignedLocalMapelId;
+		})();
+
 		return {
 			id: murid.id,
 			no: offset + index + 1,
@@ -321,9 +423,11 @@ export async function load({ parent, url, depends }) {
 			nilaiAkhir: formatScore(sumatif?.nilaiAkhir),
 			naLingkup: formatScore(sumatif?.naLingkup),
 			sas: formatScore(sumatif?.sas),
-			nilaiHref: targetMapelId
-				? `/asesmen-sumatif/formulir-asesmen?murid_id=${murid.id}&mapel_id=${targetMapelId}`
-				: null
+			nilaiHref:
+				targetMapelId && canAccess
+					? `/asesmen-sumatif/formulir-asesmen?murid_id=${murid.id}&mapel_id=${targetMapelId}`
+					: null,
+			canNilai: Boolean(canAccess)
 		};
 	});
 
@@ -333,6 +437,7 @@ export async function load({ parent, url, depends }) {
 		selectedMapelValue,
 		selectedMapel,
 		daftarMurid,
+		allowedAgamaForUser,
 		page: pageState
 	};
 }

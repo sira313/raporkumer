@@ -10,6 +10,7 @@
 		isImportDisabled,
 		onOpenImport,
 		showAgamaSelect,
+		isAgamaSelectLocked = false,
 		agamaSelectId,
 		agamaOptions,
 		selectedAgamaId,
@@ -35,6 +36,22 @@
 
 	onMount(() => {
 		if (onAgamaElementMounted && agamaEl) onAgamaElementMounted(agamaEl as HTMLSelectElement);
+	});
+
+	// Ensure the select element reflects the locked/disabled state for
+	// accessibility and visual affordance. Use $effect (runes mode) instead
+	// of legacy `$:` reactive statements.
+	$effect(() => {
+		if (!agamaEl) return;
+		const el = agamaEl as HTMLSelectElement;
+		el.disabled = Boolean(isAgamaSelectLocked);
+		if (isAgamaSelectLocked) {
+			el.setAttribute('aria-disabled', 'true');
+			el.classList.add('opacity-50', 'pointer-events-none');
+		} else {
+			el.removeAttribute('aria-disabled');
+			el.classList.remove('opacity-50', 'pointer-events-none');
+		}
 	});
 </script>
 
@@ -79,6 +96,10 @@
 				aria-label="Pilih Agama"
 				value={selectedAgamaId}
 				onchange={(e) => onAgamaChange && onAgamaChange(e)}
+				disabled={isAgamaSelectLocked}
+				title={isAgamaSelectLocked
+					? 'Dipilih dan dikunci sesuai dengan tugas guru mapel agama'
+					: undefined}
 			>
 				<option value="" disabled>Pilih Agama</option>
 				{#each agamaOptions as option (option.id)}
