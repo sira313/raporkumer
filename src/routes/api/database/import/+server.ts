@@ -82,8 +82,10 @@ export async function POST({ request }) {
 	// don't leave behind incompatible index names that later cause insert failures.
 	(async () => {
 		try {
-			const script = resolve(process.cwd(), 'scripts', 'fix-drizzle-indexes.mjs');
-			console.info('[database-import] running index-fixer script:', script);
+			// Run the full migrate-installed-db wrapper so the imported DB is normalized,
+			// ensured for missing columns, and any necessary drizzle migrations are applied.
+			const script = resolve(process.cwd(), 'scripts', 'migrate-installed-db.mjs');
+			console.info('[database-import] running migrate-installed-db script:', script);
 			await new Promise((resolvePromise, rejectPromise) => {
 				const child = execFile(
 					process.execPath,
@@ -91,27 +93,24 @@ export async function POST({ request }) {
 					{ windowsHide: true },
 					(err, stdout, stderr) => {
 						if (stdout && String(stdout).trim())
-							console.info('[fix-drizzle-indexes stdout]', String(stdout).trim());
+							console.info('[migrate-installed-db stdout]', String(stdout).trim());
 						if (stderr && String(stderr).trim())
-							console.warn('[fix-drizzle-indexes stderr]', String(stderr).trim());
+							console.warn('[migrate-installed-db stderr]', String(stderr).trim());
 						if (err) return rejectPromise(err);
 						resolvePromise(null);
 					}
 				);
-				// safety: if the child doesn't start, reject
 				child.on('error', (e) => rejectPromise(e));
 			});
-			console.info('[database-import] index-fixer completed');
-			// after fixing indexes on disk, reload client again to ensure any internal
-			// cached schema state is refreshed
+			console.info('[database-import] migrate-installed-db completed');
 			try {
 				await reloadDbClient();
-				console.info('[database-import] reloaded DB client after index-fixer');
+				console.info('[database-import] reloaded DB client after migrate-installed-db');
 			} catch (e) {
-				console.warn('[database-import] failed to reload DB client after fixer (non-fatal):', e);
+				console.warn('[database-import] failed to reload DB client after migrate-installed-db (non-fatal):', e);
 			}
 		} catch (e) {
-			console.warn('[database-import] index-fixer failed (non-fatal):', e);
+			console.warn('[database-import] migrate-installed-db failed (non-fatal):', e);
 		}
 	})();
 	return json({ message: 'Database berhasil diimport.' });

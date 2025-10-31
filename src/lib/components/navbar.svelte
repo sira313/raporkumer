@@ -115,6 +115,7 @@
 		{ matcher: '/nilai-ekstrakurikuler', file: 'nilai-ekstra' },
 		{ matcher: '/catatan-wali-kelas', file: 'catatan-wali' },
 		{ matcher: '/pengaturan', file: 'pengaturan' },
+		{ matcher: '/pengguna', file: 'pengguna' },
 		{ matcher: '/cetak', file: 'cetak' }
 	];
 

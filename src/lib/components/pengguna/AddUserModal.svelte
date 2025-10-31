@@ -162,7 +162,7 @@
 							<option disabled>- tidak ada sekolah -</option>
 						{/if}
 					</select>
-					<p class="label">
+					<p class="label text-wrap">
 						Opsional: kaitkan pengguna ke sekolah tertentu sehingga saat login sekolah aktif bisa
 						disesuaikan.
 					</p>
@@ -181,19 +181,30 @@
 
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Akun</legend>
-					<input
-						id="add-user-username"
-						class="input mb- dark:bg-base-200 w-full dark:border-none"
-						bind:value={username}
-						placeholder="Username"
-					/>
-					<input
-						id="add-user-password"
-						type="password"
-						class="input dark:bg-base-200 w-full dark:border-none"
-						bind:value={password}
-						placeholder="Password"
-					/>
+					<div class="flex flex-col sm:flex-row gap-2">
+						<label class="input validator w-full dark:bg-base-200 dark:border-none">
+						<Icon name="user" />
+						<input
+							id="add-user-username"
+							type="text"
+							required
+							placeholder="Username"
+							title="Only letters, numbers or dash"
+							bind:value={username}
+						/>
+						</label>
+						<label class="input validator w-full dark:bg-base-200 dark:border-none">
+						<Icon name="key" />
+						<input
+							id="add-user-password"
+							type="password"
+							required
+							placeholder="Password"
+							bind:value={password}
+						/>
+						</label>
+					</div>
+					<p class="validator-hint hidden">Isi username dan password dulu!</p>
 					<p class="label">Username dan password untuk login</p>
 				</fieldset>
 			</div>

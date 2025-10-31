@@ -44,23 +44,32 @@ async function main() {
 	// Use fileURLToPath to get a correct Windows path (avoid leading slash like /C:/...)
 	const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-	// Resolve DB_URL: prefer explicit env. If not set, prefer a repo-local DB (./data/database.sqlite3)
-	// for developer workflows; otherwise fall back to %LOCALAPPDATA%/Rapkumer-data for installed apps.
+	// Resolve DB_URL: prefer explicit env. If not set, decide between developer (repo-local)
+	// and installed (LocalAppData) DBs.
 	const envDb = process.env.DB_URL;
 	let dbPath;
 	if (envDb) {
 		console.info('[migrate-installed-db] Using DB_URL from environment:', envDb);
 		dbPath = envDb;
 	} else {
+		const localAppData = resolveLocalAppData();
+		// If the script is running from the LocalAppData tree (typical installer), treat as installed.
+		const projLower = String(projectRoot).toLowerCase();
+		const localLower = String(localAppData).toLowerCase();
+		const looksInstalled = projLower.startsWith(localLower + path.sep) || path.basename(projectRoot).toLowerCase() === 'rapkumer';
+
 		const projectLocal = path.join(projectRoot, 'data', 'database.sqlite3');
-		if (fs.existsSync(projectLocal)) {
+		const installedCandidate = joinDbPath(localAppData);
+
+		if (looksInstalled) {
+			dbPath = `file:${installedCandidate}`;
+			console.info('[migrate-installed-db] Detected installed environment; using installed DB path:', dbPath);
+		} else if (fs.existsSync(projectLocal)) {
 			dbPath = `file:${projectLocal}`;
 			console.info('[migrate-installed-db] No DB_URL set; using project-local DB path:', dbPath);
 		} else {
-			const local = resolveLocalAppData();
-			const candidate = joinDbPath(local);
-			dbPath = `file:${candidate}`;
-			console.info('[migrate-installed-db] No DB_URL set; using installed DB path:', dbPath);
+			dbPath = `file:${installedCandidate}`;
+			console.info('[migrate-installed-db] No DB_URL set and no project DB found; falling back to installed DB path:', dbPath);
 		}
 	}
 
@@ -148,18 +157,71 @@ async function main() {
 				const { createClient: createClientLocal } = await import('@libsql/client');
 				const cleanupClient = createClientLocal({ url: dbPath });
 				try {
-					const found = await cleanupClient.execute({ sql: `SELECT name FROM sqlite_master WHERE type='index' AND lower(name) LIKE '%usernamenormalized%'` });
-					const rows = found.rows || [];
-					for (const r of rows) {
+					// 1) scan sqlite_master for problematic names
+					const foundMaster = await cleanupClient.execute({ sql: `SELECT name FROM sqlite_master WHERE type='index' AND lower(name) LIKE '%usernamenormalized%'` });
+					const masterRows = foundMaster.rows || [];
+					for (const r of masterRows) {
 						const name = (r && (r.name || r[0] || r[1]));
 						if (name) {
 							try {
 								await cleanupClient.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
-								console.info(`[migrate-installed-db] Dropped pre-existing index: ${name}`);
+								console.info(`[migrate-installed-db] Dropped pre-existing index from sqlite_master: ${name}`);
 							} catch (err) {
 								console.warn(`[migrate-installed-db] Failed to drop index ${name}:`, err && (err.message || err.toString()));
 							}
 						}
+					}
+
+					// 2) also check the auth_user table's index list (PRAGMA) for variants
+					try {
+						const idxRes = await cleanupClient.execute({ sql: `PRAGMA index_list('auth_user')` });
+						const idxRows = idxRes.rows || [];
+						for (const r of idxRows) {
+							const name = (r && (r.name || r[0] || r[1]));
+							if (!name) continue;
+							// Use PRAGMA index_info to inspect indexed columns and drop any index
+							// that references the `username_normalized` column (case-insensitive).
+							try {
+								const safeName = String(name).replace(/'/g, "''");
+								const infoRes = await cleanupClient.execute({ sql: `PRAGMA index_info('${safeName}')` });
+								const infoRows = infoRes.rows || [];
+								const cols = infoRows.map((c) => c.name || c[2] || c[1]);
+								const hasUsernameNormalized = cols.some((col) => String(col).toLowerCase() === 'username_normalized');
+								if (hasUsernameNormalized) {
+									try {
+										await cleanupClient.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
+										console.info(`[migrate-installed-db] Dropped pre-existing index (indexed column match): ${name}`);
+									} catch (err) {
+										console.warn(`[migrate-installed-db] Failed to drop pragma index ${name}:`, err && (err.message || err.toString()));
+									}
+								}
+							} catch (err) {
+								console.info('[migrate-installed-db] PRAGMA index_info check skipped/failed for', name, err && (err.message || err.toString()));
+							}
+						}
+					} catch (err) {
+						// ignore PRAGMA failures but log for diagnostics
+						console.info('[migrate-installed-db] PRAGMA index_list check skipped/failed:', err && (err.message || err.toString()));
+					}
+
+					// 3) final catch-all: look for any CREATE INDEX statements that reference the
+					// `username_normalized` column in sqlite_master.sql and drop them. This will
+					// catch mixed-cased names like `auth_user_usernameNormalized_unique`.
+					try {
+						const sqlRes = await cleanupClient.execute({ sql: `SELECT name, sql FROM sqlite_master WHERE type='index' AND sql LIKE '%username_normalized%' COLLATE NOCASE` });
+						const sqlRows = sqlRes.rows || [];
+						for (const r of sqlRows) {
+							const name = (r && (r.name || r[0] || r[1]));
+							if (!name) continue;
+							try {
+								await cleanupClient.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
+								console.info(`[migrate-installed-db] Dropped index referenced in sqlite_master.sql: ${name}`);
+							} catch (err) {
+								console.warn(`[migrate-installed-db] Failed to drop sqlite_master index ${name}:`, err && (err.message || err.toString()));
+							}
+						}
+					} catch (err) {
+						console.info('[migrate-installed-db] sqlite_master sql-scan skipped/failed:', err && (err.message || err.toString()));
 					}
 				} finally {
 					if (typeof cleanupClient.close === 'function') await cleanupClient.close();
