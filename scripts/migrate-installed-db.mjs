@@ -325,20 +325,73 @@ async function main() {
 				msg.includes('SQLITE_ERROR')
 			) {
 				console.info(
-					'[migrate-installed-db] drizzle push failed with index error; attempting fix-drizzle-indexes and retrying'
+					'[migrate-installed-db] drizzle push failed with index error; attempting targeted drop and retry'
 				);
-				try {
-					run(process.execPath, [path.join(projectRoot, 'scripts', 'fix-drizzle-indexes.mjs')], {
-						env: childEnv,
-						cwd: projectRoot
-					});
-					run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
-				} catch (err2) {
-					console.error(
-						'[migrate-installed-db] retry after fix-drizzle-indexes failed:',
-						err2?.message || err2
+				// Try to extract the index name from the error message (e.g. "index auth_user_usernameNormalized_unique already exists")
+				const idxMatch = msg.match(/index\s+(["']?)([^"'\s]+)\1\s+already exists/i);
+				const indexNameFromMsg = idxMatch ? idxMatch[2] : null;
+				if (indexNameFromMsg) {
+					console.info(
+						'[migrate-installed-db] Detected conflicting index from error:',
+						indexNameFromMsg
 					);
-					throw err2;
+					try {
+						const { createClient: createClientLocal2 } = await import('@libsql/client');
+						const dropClient = createClientLocal2({ url: dbPath });
+						try {
+							await dropClient.execute({ sql: `DROP INDEX IF EXISTS "${indexNameFromMsg}"` });
+							console.info(
+								`[migrate-installed-db] Dropped conflicting index reported by drizzle: ${indexNameFromMsg}`
+							);
+						} finally {
+							if (typeof dropClient.close === 'function') await dropClient.close();
+						}
+						// Retry drizzle push once after dropping the specific index
+						run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
+						console.info('[migrate-installed-db] Retry after dropping specific index succeeded');
+						// continue normal flow
+					} catch (err2) {
+						console.error(
+							'[migrate-installed-db] Failed to drop specific index or retry push:',
+							err2?.message || err2
+						);
+						// fall back to running the broader fixer script and rethrow if that fails
+						try {
+							run(
+								process.execPath,
+								[path.join(projectRoot, 'scripts', 'fix-drizzle-indexes.mjs')],
+								{
+									env: childEnv,
+									cwd: projectRoot
+								}
+							);
+							run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
+						} catch (err3) {
+							console.error(
+								'[migrate-installed-db] retry after fix-drizzle-indexes failed:',
+								err3?.message || err3
+							);
+							throw err3;
+						}
+					}
+				} else {
+					// No index name parsed; fall back to running the general fixer and retry once
+					console.info(
+						'[migrate-installed-db] Could not parse index name from error; running generic fixer and retrying'
+					);
+					try {
+						run(process.execPath, [path.join(projectRoot, 'scripts', 'fix-drizzle-indexes.mjs')], {
+							env: childEnv,
+							cwd: projectRoot
+						});
+						run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
+					} catch (err2) {
+						console.error(
+							'[migrate-installed-db] retry after fix-drizzle-indexes failed:',
+							err2?.message || err2
+						);
+						throw err2;
+					}
 				}
 			} else {
 				throw err;
