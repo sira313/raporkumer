@@ -74,7 +74,9 @@ async function main() {
 
 	try {
 		// 1) run DB migrations using the same Node binary running this script
-		run(process.execPath, [path.join(projectRoot, 'scripts', 'migrate-installed-db.mjs')], { cwd: projectRoot });
+		run(process.execPath, [path.join(projectRoot, 'scripts', 'migrate-installed-db.mjs')], {
+			cwd: projectRoot
+		});
 
 		// 2) build using local Vite if available (invoke JS entry with Node to avoid .cmd/.sh shims)
 		const viteBin = path.join(projectRoot, 'node_modules', 'vite', 'bin', 'vite.js');
@@ -85,26 +87,49 @@ async function main() {
 			run('vite', ['build'], { cwd: projectRoot });
 		}
 
+		// Ensure installer/scripts has the latest helper scripts we need for packaging
+		// (copies specific files from scripts/ to installer/scripts/). This keeps
+		// the installer step deterministic when packaging on CI or dev machines.
+		run(process.execPath, [path.join(projectRoot, 'scripts', 'sync-to-installer.mjs')], {
+			cwd: projectRoot
+		});
+
 		// 3) Windows packaging steps require PowerShell. Prefer pwsh then powershell.
 		function findPowerShell() {
 			// Try pwsh on PATH
 			try {
-				const r = spawnSync('pwsh', ['-NoProfile', '-Command', 'exit 0'], { stdio: 'ignore', shell: false });
+				const r = spawnSync('pwsh', ['-NoProfile', '-Command', 'exit 0'], {
+					stdio: 'ignore',
+					shell: false
+				});
 				if (!r.error && r.status === 0) return 'pwsh';
 			} catch {
 				// ignore
 			}
 			// Try legacy powershell on PATH
 			try {
-				const r2 = spawnSync('powershell', ['-NoProfile', '-Command', 'exit 0'], { stdio: 'ignore', shell: false });
+				const r2 = spawnSync('powershell', ['-NoProfile', '-Command', 'exit 0'], {
+					stdio: 'ignore',
+					shell: false
+				});
 				if (!r2.error && r2.status === 0) return 'powershell';
 			} catch {
 				// ignore
 			}
 			// Common install paths
 			const candidates = [];
-			if (process.env.ProgramFiles) candidates.push(path.join(process.env.ProgramFiles, 'PowerShell', '7', 'pwsh.exe'));
-			if (process.env.SystemRoot) candidates.push(path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'));
+			if (process.env.ProgramFiles)
+				candidates.push(path.join(process.env.ProgramFiles, 'PowerShell', '7', 'pwsh.exe'));
+			if (process.env.SystemRoot)
+				candidates.push(
+					path.join(
+						process.env.SystemRoot,
+						'System32',
+						'WindowsPowerShell',
+						'v1.0',
+						'powershell.exe'
+					)
+				);
 			for (const c of candidates) {
 				if (c && fs.existsSync(c)) return c;
 			}
@@ -113,22 +138,58 @@ async function main() {
 
 		const powershell = findPowerShell();
 		if (!powershell) {
-			throw new Error('PowerShell not found on PATH. Windows packaging/signing steps require PowerShell. Run this script from PowerShell or install PowerShell and ensure it is on PATH.');
+			throw new Error(
+				'PowerShell not found on PATH. Windows packaging/signing steps require PowerShell. Run this script from PowerShell or install PowerShell and ensure it is on PATH.'
+			);
 		}
 
 		// prepare-windows.ps1
-		run(powershell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join('installer', 'prepare-windows.ps1')], { cwd: projectRoot });
+		run(
+			powershell,
+			[
+				'-NoProfile',
+				'-ExecutionPolicy',
+				'Bypass',
+				'-File',
+				path.join('installer', 'prepare-windows.ps1')
+			],
+			{ cwd: projectRoot }
+		);
 
 		// sign executables
-		run(powershell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join('installer', 'scripts', 'sign-files.ps1'), '-SignExecutables'], { cwd: projectRoot });
+		run(
+			powershell,
+			[
+				'-NoProfile',
+				'-ExecutionPolicy',
+				'Bypass',
+				'-File',
+				path.join('installer', 'scripts', 'sign-files.ps1'),
+				'-SignExecutables'
+			],
+			{ cwd: projectRoot }
+		);
 
 		// package installer (Inno Setup) via PowerShell -Command may be required to invoke ISCC path
 		// try using the same powershell to run the packaged command from package.json
 		const innoCmd = `& 'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe' 'installer\\raporkumer.iss'`;
-		run(powershell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', innoCmd], { cwd: projectRoot });
+		run(powershell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', innoCmd], {
+			cwd: projectRoot
+		});
 
 		// sign installer
-		run(powershell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join('installer', 'scripts', 'sign-files.ps1'), '-SignInstaller'], { cwd: projectRoot });
+		run(
+			powershell,
+			[
+				'-NoProfile',
+				'-ExecutionPolicy',
+				'Bypass',
+				'-File',
+				path.join('installer', 'scripts', 'sign-files.ps1'),
+				'-SignInstaller'
+			],
+			{ cwd: projectRoot }
+		);
 
 		console.info('\n[prod-signed] All steps completed successfully.');
 	} catch (err) {

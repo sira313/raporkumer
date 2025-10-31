@@ -47,7 +47,11 @@ function runCapture(cmd, args, opts = {}) {
 	const isWin = process.platform === 'win32';
 	const cmdExt = path.extname(cmd || '').toLowerCase();
 	const useShell = opts.shell ?? (isWin && cmdExt === '.cmd');
-	const res = spawnSync(cmd, args || [], { stdio: ['ignore', 'pipe', 'pipe'], shell: useShell, ...opts });
+	const res = spawnSync(cmd, args || [], {
+		stdio: ['ignore', 'pipe', 'pipe'],
+		shell: useShell,
+		...opts
+	});
 	// Write child's stdout/stderr to parent so we keep the same visible logs
 	if (res.stdout && res.stdout.length) process.stdout.write(res.stdout);
 	if (res.stderr && res.stderr.length) process.stderr.write(res.stderr);

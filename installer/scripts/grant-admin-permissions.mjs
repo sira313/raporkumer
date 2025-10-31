@@ -1,5 +1,13 @@
 import { createClient } from '@libsql/client';
 
+// fs/path imports were previously used to derive permissions from source, but we
+// now use a canonical list embedded below to avoid brittle parsing.
+
+// Try to derive permissions list from source file `src/routes/pengguna/permissions.ts`.
+// If parsing fails, fall back to a conservative static list.
+// Use a canonical, explicit list of permissions derived from `src/routes/pengguna/permissions.ts`.
+// Parsing the TS source can be brittle across formatting; keep a fixed authoritative list here
+// so grant-admin-perms is deterministic and idempotent.
 const REQUIRED_PERMISSIONS = [
 	'user_list',
 	'user_detail',
@@ -17,6 +25,7 @@ const REQUIRED_PERMISSIONS = [
 
 const DEFAULT_DB_URL = 'file:./data/database.sqlite3';
 const dbUrl = process.env.DB_URL || DEFAULT_DB_URL;
+
 const client = createClient({ url: dbUrl });
 
 async function mergePermissions(existingJson) {
@@ -35,6 +44,7 @@ async function mergePermissions(existingJson) {
 async function main() {
 	console.info('[grant-admin-perms] Target DB:', dbUrl);
 
+	// Find admin users (type = 'admin' or username_normalized = 'admin')
 	const rows = await client.execute({
 		sql: "SELECT id, username, username_normalized, permissions FROM auth_user WHERE type = 'admin' OR username_normalized = 'admin'"
 	});

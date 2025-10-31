@@ -4,6 +4,7 @@ import { randomBytes, scryptSync } from 'node:crypto';
 const DEFAULT_DB_URL = process.env.DB_URL || 'file:./data/database.sqlite3';
 const client = createClient({ url: DEFAULT_DB_URL });
 
+// Keep this in sync with grant-admin-perms / userPermissions
 const REQUIRED_PERMISSIONS = [
 	'user_list',
 	'user_detail',
@@ -41,6 +42,7 @@ function hashPassword(password) {
 async function main() {
 	console.info('[seed-default-admin] Target DB:', DEFAULT_DB_URL);
 
+	// Look for an existing admin (by type or username_normalized)
 	const rows = await client.execute({
 		sql: "SELECT id, username, username_normalized, permissions FROM auth_user WHERE type = 'admin' OR username_normalized = 'admin'"
 	});
@@ -54,9 +56,8 @@ async function main() {
 			let existing = [];
 			try {
 				existing = JSON.parse(existingJson);
-			} catch (_) {
+			} catch {
 				// ignore parse errors and treat as empty list
-				void _;
 			}
 			const merged = Array.from(new Set([...(existing || []), ...REQUIRED_PERMISSIONS]));
 			await client.execute({
@@ -70,6 +71,7 @@ async function main() {
 		return;
 	}
 
+	// No admin found -> create a default admin account (idempotent)
 	console.info('[seed-default-admin] No admin account found. Creating default Admin user.');
 	const { hash, salt } = hashPassword(DEFAULT_ADMIN.password);
 	const ts = nowIso();

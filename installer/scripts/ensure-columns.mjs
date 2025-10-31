@@ -33,6 +33,7 @@ async function addColumnIfMissing(client, table, column, type) {
 	} catch (err) {
 		const msg = err && (err.message || err.toString());
 		console.error(`[ensure-columns] Failed to add column ${column} to ${table}:`, msg || err);
+		// don't throw - allow migrate process to continue and let drizzle report final error
 	}
 }
 
@@ -40,10 +41,16 @@ async function main() {
 	console.info('[ensure-columns] Target DB:', dbUrl);
 	const client = createClient({ url: dbUrl });
 	try {
+		// Columns referenced by migrations that may be missing in older installed DBs.
+		// If missing, add them so subsequent migration UPDATE statements do not fail.
 		const checks = [
 			{ table: 'tasks', column: 'sekolah_id', type: 'INTEGER' },
 			{ table: 'kelas', column: 'sekolah_id', type: 'INTEGER' },
-			{ table: 'mata_pelajaran', column: 'kelas_id', type: 'INTEGER' }
+			{ table: 'mata_pelajaran', column: 'kelas_id', type: 'INTEGER' },
+			// Columns referenced by newer migrations that older DBs may not have
+			{ table: 'auth_user', column: 'sekolah_id', type: 'INTEGER' },
+			{ table: 'feature_unlock', column: 'sekolah_id', type: 'INTEGER' },
+			{ table: 'tahun_ajaran', column: 'sekolah_id', type: 'INTEGER' }
 		];
 
 		for (const c of checks) {
