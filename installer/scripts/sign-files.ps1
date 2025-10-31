@@ -37,21 +37,59 @@ function Sign-File {
     }
     
     try {
-        $signCommand = Get-SignCommand -FilePath $FilePath
-        Write-ColorMessage "[SIGNING] Signing: $(Split-Path $FilePath -Leaf)" "Yellow"
-        Write-ColorMessage "   Tool: $($signCommand.Tool)" "Gray"
-        
-        # Execute signing with better error handling
-        $process = Start-Process -FilePath $signCommand.Tool -ArgumentList $signCommand.Arguments -Wait -PassThru -NoNewWindow
-        
-        if ($process.ExitCode -eq 0) {
-            Write-ColorMessage "[OK] Successfully signed: $(Split-Path $FilePath -Leaf)" "Green"
-            return $true
-        } else {
+        # Try each configured timestamp server (if any) until sign succeeds
+        $timestampList = @()
+        if ($CertConfig.ContainsKey('TimestampUrls') -and $CertConfig.TimestampUrls.Count -gt 0) {
+            $timestampList = $CertConfig.TimestampUrls
+        } elseif ($CertConfig.ContainsKey('TimestampUrl')) {
+            $timestampList = @($CertConfig.TimestampUrl)
+        }
+
+        if ($timestampList.Count -eq 0) {
+            # Ensure at least a null entry so Get-SignCommand uses defaults
+            $timestampList = @($null)
+        }
+
+        foreach ($ts in $timestampList) {
+            $signCmd = Get-SignCommand -FilePath $FilePath -TimestampUrl $ts
+            Write-ColorMessage "[SIGNING] Signing: $(Split-Path $FilePath -Leaf)" "Yellow"
+            Write-ColorMessage "   Tool: $($signCmd.Tool)" "Gray"
+            if ($ts) { Write-ColorMessage "   Timestamp: $ts" "Gray" }
+
+            # Run signtool and capture output
+            $args = $signCmd.Arguments
+            try {
+                $output = & $signCmd.Tool @args 2>&1
+            }
+            catch {
+                $output = $_.Exception.Message
+            }
+            $exit = $LASTEXITCODE
+
+            if ($exit -eq 0) {
+                Write-ColorMessage "[OK] Successfully signed: $(Split-Path $FilePath -Leaf)" "Green"
+                return $true
+            }
+
+            # If timestamp server issue, try next server
+            $outStr = ($output -join "`n") -as [string]
+            if ($outStr -match "timestamp server|could not be reached|invalid response|time-stamp|timestamp" -or $exit -eq 1) {
+                Write-ColorMessage "   [WARN] Timestamp or network issue detected, trying next timestamp server if available..." "Yellow"
+                Write-ColorMessage "   signtool exit code: $exit" "Yellow"
+                Write-ColorMessage "   signtool output: $outStr" "Yellow"
+                continue
+            }
+
+            # Non-recoverable error, print output and fail
             Write-ColorMessage "[ERROR] Failed to sign: $(Split-Path $FilePath -Leaf)" "Red"
-            Write-ColorMessage "   Exit code: $($process.ExitCode)" "Red"
+            Write-ColorMessage "   Exit code: $exit" "Red"
+            Write-ColorMessage "   signtool output: $outStr" "Red"
             return $false
         }
+
+        # If loop completed without returning success, final failure
+        Write-ColorMessage "[ERROR] All timestamp servers failed for: $(Split-Path $FilePath -Leaf)" "Red"
+        return $false
     }
     catch {
         Write-ColorMessage "[ERROR] Error signing file: $($_.Exception.Message)" "Red"

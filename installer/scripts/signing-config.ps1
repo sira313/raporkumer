@@ -37,8 +37,13 @@ $CertConfig = @{
     # Subject name search (if using certificate store)
     SubjectName = "Apoxicam"  # Adjust this to match your certificate
     
-    # Timestamping
-    TimestampUrl = "http://timestamp.digicert.com"
+    # Timestamping - list of fallback servers (will be tried in order)
+    TimestampUrls = @(
+        "http://timestamp.digicert.com",
+        "http://timestamp.sectigo.com",
+        "http://timestamp.globalsign.com/rfc3161",
+        "http://timestamp.comodoca.com/authenticode"
+    )
     TimestampAlgorithm = "SHA256"
     
     # File digest algorithm
@@ -55,13 +60,24 @@ function Get-SignCommand {
         [Parameter(Mandatory)]
         [string]$FilePath,
         
-        [string]$SignToolPath = (Get-SignToolPath)
+        [string]$SignToolPath = (Get-SignToolPath),
+        [string]$TimestampUrl
     )
     
+    # Use provided timestamp URL if supplied, otherwise fall back to first configured URL
+    $useTimestamp = $TimestampUrl
+    if (-not $useTimestamp) {
+        if ($CertConfig.ContainsKey('TimestampUrls') -and $CertConfig.TimestampUrls.Count -gt 0) {
+            $useTimestamp = $CertConfig.TimestampUrls[0]
+        } else {
+            $useTimestamp = $CertConfig.TimestampUrl
+        }
+    }
+
     $baseArgs = @(
         "sign"
         "/fd", $CertConfig.DigestAlgorithm
-        "/tr", $CertConfig.TimestampUrl
+        "/tr", $useTimestamp
         "/td", $CertConfig.TimestampAlgorithm
         "/d", "`"$($CertConfig.Description)`""
         "/du", $CertConfig.DescriptionUrl

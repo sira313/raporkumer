@@ -77,6 +77,61 @@ async function main() {
 			cwd: projectRoot
 		});
 
+		// Ensure certain columns exist on older installed DBs so migration UPDATEs don't fail.
+		// Prefer running the shipped `scripts/ensure-columns.mjs` if present; otherwise
+		// fall back to an inline implementation so the installer doesn't require a
+		// separate file to be present in the packaged install.
+		const ensureScriptPath = path.join(projectRoot, 'scripts', 'ensure-columns.mjs');
+		if (fs.existsSync(ensureScriptPath)) {
+			run(process.execPath, [ensureScriptPath], { env: childEnv, cwd: projectRoot });
+		} else {
+			console.info('[migrate-installed-db] ensure-columns.mjs not found in install; running inline checks');
+			// Inline ensure-columns logic (best-effort). Use dynamic import so this file
+			// still runs in environments where @libsql/client may or may not be present.
+			try {
+				const { createClient } = await import('@libsql/client');
+				const client = createClient({ url: dbPath });
+				// Ensure common columns that older installs may lack. Keep conservative (NULLable INTEGER)
+				const checks = [
+					{ table: 'tasks', column: 'sekolah_id', type: 'INTEGER' },
+					{ table: 'kelas', column: 'sekolah_id', type: 'INTEGER' },
+					{ table: 'mata_pelajaran', column: 'kelas_id', type: 'INTEGER' },
+					{ table: 'auth_user', column: 'sekolah_id', type: 'INTEGER' },
+					{ table: 'feature_unlock', column: 'sekolah_id', type: 'INTEGER' },
+					{ table: 'tahun_ajaran', column: 'sekolah_id', type: 'INTEGER' }
+				];
+				for (const c of checks) {
+					try {
+						const res = await client.execute({ sql: `PRAGMA table_info('${c.table}')` });
+						const rows = res.rows || [];
+						const names = rows.map((r) => r.name || r[1]);
+						if (!names.includes(c.column)) {
+							console.info(`[migrate-installed-db] Adding missing column ${c.column} to ${c.table}`);
+							try {
+								await client.execute({ sql: `ALTER TABLE "${c.table}" ADD COLUMN "${c.column}" ${c.type}` });
+								console.info(`[migrate-installed-db] Added ${c.column} on ${c.table}`);
+							} catch (err) {
+								console.warn(`[migrate-installed-db] Failed to add ${c.column} on ${c.table}:`, err && (err.message || err.toString()));
+							}
+						} else {
+							console.info(`[migrate-installed-db] Column ${c.column} already present on ${c.table}`);
+						}
+					} catch (err) {
+						const msg = err && (err.message || err.toString());
+						if (msg && /no such table/i.test(msg)) {
+							console.warn(`[migrate-installed-db] Table not present: ${c.table}`);
+						} else {
+							console.error('[migrate-installed-db] Error checking/adding columns:', err);
+						}
+					}
+				}
+				if (typeof client.close === 'function') await client.close();
+			} catch (err) {
+				console.warn('[migrate-installed-db] Inline ensure-columns failed or @libsql/client missing:', err && (err.message || err.toString()));
+				// continue; drizzle push will provide the definitive error if this fails
+			}
+		}
+
 		// Run drizzle push, but be tolerant of a common sqlite "index ... already exists" error
 		// by running fix-drizzle-indexes and retrying once.
 		try {
