@@ -45,9 +45,12 @@ export const userPermissions = Object.entries(groupedUserPermissions) //
 
 export function isAuthorizedUser(
 	allowedPermissions: UserPermission[],
-	user?: Pick<AuthUser, 'permissions'>
+	// include 'type' so we can treat admins as authorized
+	user?: Pick<AuthUser, 'permissions' | 'type'>
 ) {
 	if (!user) return false;
+	// Admins are authorized for everything by policy
+	if ('type' in user && user.type === 'admin') return true;
 	const userPermissions = user.permissions || [];
 	return allowedPermissions.some((r) => userPermissions.includes(r));
 }

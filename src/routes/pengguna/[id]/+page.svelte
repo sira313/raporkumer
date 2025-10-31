@@ -59,17 +59,31 @@
 						</tr>
 						{#each permission.values as [name, desc] (name)}
 							{@const key = `${group}_${name}` as UserPermission}
-							{@const checked = user.permissions.includes(key)}
+							{@const isAdmin = user.type === 'admin'}
+							{@const checked = isAdmin || user.permissions.includes(key)}
 							<tr>
 								<td class="text-sm">{desc}</td>
 								<td class="text-center">
-									<input
-										type="checkbox"
-										class="toggle toggle-sm toggle-primary"
-										name={key}
-										value="true"
-										{checked}
-									/>
+									{#if isAdmin}
+										<!-- Ensure the permission is submitted even if checkbox is disabled -->
+										<input type="hidden" name={key} value="true" />
+										<input
+											type="checkbox"
+											class="toggle toggle-sm toggle-primary"
+											name={key}
+											value="true"
+											checked
+											disabled
+										/>
+									{:else}
+										<input
+											type="checkbox"
+											class="toggle toggle-sm toggle-primary"
+											name={key}
+											value="true"
+											{checked}
+										/>
+									{/if}
 								</td>
 							</tr>
 						{/each}
