@@ -124,9 +124,9 @@
 
 {#if open}
 	<div class="modal modal-open">
-		<div class="modal-box max-w-lg">
-			<h3 class="text-lg font-bold">Tambah Pengguna</h3>
-			<div class="space-y-3 py-4">
+		<div class="modal-box max-w-lg max-h-[90vh] flex flex-col p-4">
+			<h3 class="text-lg font-bold mb-3">Tambah Pengguna</h3>
+			<div class="space-y-3 overflow-y-auto flex-1 px-1">
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Mata Pelajaran (opsional)</legend>
 					<select
@@ -143,7 +143,7 @@
 							<option disabled>- tidak ada mata pelajaran -</option>
 						{/if}
 					</select>
-					<p class="label">Hubungkan pengguna ke mata pelajaran (jika ada)</p>
+					<p class="label text-wrap">Hubungkan pengguna ke mata pelajaran (jika ada)</p>
 				</fieldset>
 
 				<fieldset class="fieldset">
@@ -176,7 +176,7 @@
 						bind:value={nama}
 						placeholder="Contoh: Bruce Wayne, Bat."
 					/>
-					<p class="label">Nama lengkap pengguna dan gelar (tampil pada daftar)</p>
+					<p class="label text-wrap">Nama lengkap pengguna dan gelar (tampil pada daftar)</p>
 				</fieldset>
 
 				<fieldset class="fieldset">
@@ -194,7 +194,7 @@
 						/>
 						</label>
 						<label class="input validator w-full dark:bg-base-200 dark:border-none">
-						<Icon name="key" />
+						<Icon name="lock" />
 						<input
 							id="add-user-password"
 							type="password"
@@ -209,7 +209,7 @@
 				</fieldset>
 			</div>
 
-			<div class="modal-action">
+			<div class="modal-action sticky bottom-0 bg-base-100 dark:bg-base-200 z-10">
 				<button class="btn btn-soft" type="button" on:click={close}
 					><Icon name="close" /> Batal</button
 				>
