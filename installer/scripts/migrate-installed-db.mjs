@@ -35,6 +35,30 @@ function run(cmd, args, opts = {}) {
 	}
 }
 
+function runCapture(cmd, args, opts = {}) {
+	console.info(`\n> ${[cmd, ...(args || [])].join(' ')}`);
+	const isWin = process.platform === 'win32';
+	const cmdExt = path.extname(cmd || '').toLowerCase();
+	const useShell = opts.shell ?? (isWin && cmdExt === '.cmd');
+	const res = spawnSync(cmd, args || [], { stdio: ['ignore', 'pipe', 'pipe'], shell: useShell, ...opts });
+	if (res.stdout && res.stdout.length) process.stdout.write(res.stdout);
+	if (res.stderr && res.stderr.length) process.stderr.write(res.stderr);
+	if (res.error) {
+		console.error('Failed to run:', res.error);
+		process.exitCode = 1;
+		throw res.error;
+	}
+	if (res.status !== 0) {
+		const out = (res.stdout || '').toString();
+		const err = (res.stderr || '').toString();
+		const combined = [res.status, out, err].filter(Boolean).join('\n');
+		const e = new Error(combined || `Process exited with code ${res.status}`);
+		e.code = res.status;
+		throw e;
+	}
+	return res;
+}
+
 async function main() {
 	const envDb = process.env.DB_URL;
 	let dbPath;
@@ -125,7 +149,8 @@ async function main() {
 		}
 
 		try {
-			run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
+			// Use a captured run so stderr is included in thrown error for parsing
+			runCapture(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
 		} catch (err) {
 			const msg = String(err?.message || err || '');
 			if (

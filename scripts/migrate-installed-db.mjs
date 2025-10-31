@@ -39,6 +39,35 @@ function run(cmd, args, opts = {}) {
 	}
 }
 
+// spawnSync but capture stdout/stderr so callers can inspect the underlying
+// child's output (useful for parsing CLI error messages such as sqlite index
+// conflicts). Returns the same object shape as spawnSync.
+function runCapture(cmd, args, opts = {}) {
+	console.info(`\n> ${[cmd, ...(args || [])].join(' ')}`);
+	const isWin = process.platform === 'win32';
+	const cmdExt = path.extname(cmd || '').toLowerCase();
+	const useShell = opts.shell ?? (isWin && cmdExt === '.cmd');
+	const res = spawnSync(cmd, args || [], { stdio: ['ignore', 'pipe', 'pipe'], shell: useShell, ...opts });
+	// Write child's stdout/stderr to parent so we keep the same visible logs
+	if (res.stdout && res.stdout.length) process.stdout.write(res.stdout);
+	if (res.stderr && res.stderr.length) process.stderr.write(res.stderr);
+	if (res.error) {
+		console.error('Failed to run:', res.error);
+		process.exitCode = 1;
+		throw res.error;
+	}
+	if (res.status !== 0) {
+		// Include stdout/stderr in the thrown error message for downstream parsing
+		const out = (res.stdout || '').toString();
+		const err = (res.stderr || '').toString();
+		const combined = [res.status, out, err].filter(Boolean).join('\n');
+		const e = new Error(combined || `Process exited with code ${res.status}`);
+		e.code = res.status;
+		throw e;
+	}
+	return res;
+}
+
 async function main() {
 	// project root (assume script is in scripts/)
 	// Use fileURLToPath to get a correct Windows path (avoid leading slash like /C:/...)
@@ -315,8 +344,8 @@ async function main() {
 				);
 			}
 
-			// Now run drizzle push
-			run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
+			// Now run drizzle push (capture stderr/stdout so we can parse CLI errors)
+			runCapture(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
 		} catch (err) {
 			const msg = String(err?.message || err || '');
 			if (
