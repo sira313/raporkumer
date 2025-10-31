@@ -22,6 +22,8 @@ export const tableAuthUser = sqliteTable(
 		type: text({ enum: ['admin', 'wali_kelas', 'user'] })
 			.notNull()
 			.default('admin'),
+		// optional: directly associate a user to a sekolah so login can pick it reliably
+		sekolahId: int().references(() => tableSekolah.id),
 		// referensi opsional ke pegawai (nama wali kelas disimpan di tablePegawai)
 		pegawaiId: int().references(() => tablePegawai.id),
 		// untuk wali_kelas kita bisa menyimpan kelas_id yang diijinkan
@@ -226,6 +228,11 @@ export const tableAuthUserRelations = relations(tableAuthUser, ({ many, one }) =
 	mataPelajaran: one(tableMataPelajaran, {
 		fields: [tableAuthUser.mataPelajaranId],
 		references: [tableMataPelajaran.id]
+	}),
+	// optional relation to a sekolah (when user was created for a specific sekolah)
+	sekolah: one(tableSekolah, {
+		fields: [tableAuthUser.sekolahId],
+		references: [tableSekolah.id]
 	})
 }));
 

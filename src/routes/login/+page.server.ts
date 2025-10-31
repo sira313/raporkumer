@@ -112,38 +112,39 @@ export const actions: Actions = {
 				// sekolah, prefer the sekolah that owns the mata pelajaran's kelas.
 				try {
 					const mpId = (authUser as AuthUser).mataPelajaranId;
-					if (mpId) {
-						// quick check whether there are multiple sekolah entries
-						const sekolahSample = await db.query.tableSekolah.findMany({
-							columns: { id: true },
-							limit: 2
+					// First prefer an explicit sekolah saved on the user record (if present)
+					const explicitSekolahId = (authUser as AuthUser & { sekolahId?: number }).sekolahId;
+					if (explicitSekolahId) {
+						cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(explicitSekolahId), {
+							path: '/',
+							secure
 						});
-						const manySekolahs = Array.isArray(sekolahSample) && sekolahSample.length > 1;
-						if (manySekolahs) {
-							try {
-								// resolve mata_pelajaran -> kelas -> sekolahId
-								const mpRow = await db.query.tableMataPelajaran.findFirst({
-									columns: { kelasId: true },
-									where: eq(tableMataPelajaran.id, mpId)
+					} else if (mpId) {
+						// Attempt to resolve mata_pelajaran -> kelas -> sekolahId and set the
+						// active sekolah cookie. Do this unconditionally so 'user' accounts
+						// always land on the sekolah that was chosen at account creation.
+						try {
+							const mpRow = await db.query.tableMataPelajaran.findFirst({
+								columns: { kelasId: true },
+								where: eq(tableMataPelajaran.id, mpId)
+							});
+							if (mpRow && mpRow.kelasId) {
+								const kelas = await db.query.tableKelas.findFirst({
+									columns: { sekolahId: true },
+									where: eq(tableKelas.id, mpRow.kelasId)
 								});
-								if (mpRow && mpRow.kelasId) {
-									const kelas = await db.query.tableKelas.findFirst({
-										columns: { sekolahId: true },
-										where: eq(tableKelas.id, mpRow.kelasId)
+								if (kelas && kelas.sekolahId) {
+									cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(kelas.sekolahId), {
+										path: '/',
+										secure
 									});
-									if (kelas && kelas.sekolahId) {
-										cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(kelas.sekolahId), {
-											path: '/',
-											secure
-										});
-									}
 								}
-							} catch (err) {
-								console.warn(
-									'[login action] failed to resolve mata_pelajaran->kelas->sekolah mapping',
-									err
-								);
 							}
+						} catch (err) {
+							console.warn(
+								'[login action] failed to resolve mata_pelajaran->kelas->sekolah mapping',
+								err
+							);
 						}
 					}
 				} catch (err) {

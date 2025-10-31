@@ -5,6 +5,7 @@
 
 	export let open: boolean = false;
 	export let mataPelajaran: { id: number; nama: string }[] = [];
+	export let sekolahList: { id: number; nama: string }[] = [];
 
 	const dispatch = createEventDispatcher();
 
@@ -14,6 +15,7 @@
 	let type = 'user';
 	// use empty string as the initial value so the placeholder option is selected reliably
 	let mataPelajaranId: string | number | null = '';
+	let sekolahId: string | number | null = '';
 	let uniqueMataPelajaran: { id: number; nama: string }[] = [];
 	let filteredMataPelajaran: { id: number; nama: string }[] = [];
 	let initialized = false;
@@ -35,6 +37,7 @@
 		type = 'user';
 		// start with no selection (empty string) so the placeholder is shown; user must pick a mapel
 		mataPelajaranId = '';
+		sekolahId = '';
 		initialized = true;
 	}
 
@@ -67,6 +70,9 @@
 		form.set('nama', nama || '');
 		form.set('type', type || 'user');
 		form.set('mataPelajaranId', String(mataPelajaranId ?? ''));
+		// include sekolahId when provided. Server may use this to resolve a default
+		// mataPelajaran within the chosen sekolah so users are linked to a sekolah.
+		form.set('sekolahId', String(sekolahId ?? ''));
 		try {
 			const res = await fetch('?/create_user', { method: 'POST', body: form });
 			if (res.ok) {
@@ -138,6 +144,28 @@
 						{/if}
 					</select>
 					<p class="label">Hubungkan pengguna ke mata pelajaran (jika ada)</p>
+				</fieldset>
+
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">Sekolah (opsional)</legend>
+					<select
+						id="add-user-sekolah"
+						class="select dark:bg-base-200 w-full dark:border-none"
+						bind:value={sekolahId}
+					>
+						<option disabled selected={sekolahId === ''} value="">Pilih Sekolah</option>
+						{#if sekolahList && sekolahList.length}
+							{#each sekolahList as s (s.id)}
+								<option value={s.id}>{s.nama}</option>
+							{/each}
+						{:else}
+							<option disabled>- tidak ada sekolah -</option>
+						{/if}
+					</select>
+					<p class="label">
+						Opsional: kaitkan pengguna ke sekolah tertentu sehingga saat login sekolah aktif bisa
+						disesuaikan.
+					</p>
 				</fieldset>
 
 				<fieldset class="fieldset">

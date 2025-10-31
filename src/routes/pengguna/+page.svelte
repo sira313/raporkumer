@@ -274,6 +274,7 @@
 		<AddUserModal
 			bind:open={showAddModal}
 			{mataPelajaran}
+			sekolahList={data.sekolahList ?? []}
 			on:saved={(e: CustomEvent) => {
 				const body = e.detail?.body ?? {};
 				const serverUser = body.user ?? null;
