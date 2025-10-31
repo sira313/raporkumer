@@ -33,18 +33,8 @@
 	}
 
 	const logoSrc = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri-bw.png');
-	const jenjangHeading = $derived.by(() => {
-		switch (sekolah?.jenjang) {
-			case 'sd':
-				return 'SEKOLAH DASAR ( SD )';
-			case 'smp':
-				return 'SEKOLAH MENENGAH PERTAMA ( SMP )';
-			case 'sma':
-				return 'SEKOLAH MENENGAH ATAS ( SMA )';
-			default:
-				return sekolah ? 'SEKOLAH' : '';
-		}
-	});
+	// formatted school name used in the cover area
+	const schoolName = $derived.by(() => formatUpper(sekolah?.nama));
 	const coverHeadings = $derived.by(() => [
 		{ text: 'LAPORAN', class: 'text-4xl font-bold tracking-wide uppercase' },
 		{ text: 'HASIL BELAJAR MURID', class: 'text-2xl font-bold uppercase' },
@@ -117,8 +107,8 @@
 			<div class="flex flex-col items-center gap-1 text-center uppercase">
 				<p class="text-2xl font-bold tracking-[0.5em]">R A P O R</p>
 				<p class="text-xl font-semibold">HASIL BELAJAR MURID</p>
-				{#if jenjangHeading}
-					<p class="text-xl font-semibold">{jenjangHeading}</p>
+				{#if schoolName}
+					<p class="text-xl font-semibold">{schoolName}</p>
 				{/if}
 			</div>
 			<div class="flex justify-start">

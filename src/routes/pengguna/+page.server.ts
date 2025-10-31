@@ -1,6 +1,7 @@
 import db from '$lib/server/db';
 import { env } from '$env/dynamic/private';
 import { tableAuthUser, tablePegawai, tableKelas, tableMataPelajaran } from '$lib/server/db/schema';
+import { tableSekolah } from '$lib/server/db/schema';
 import { sql, eq, and, inArray, desc } from 'drizzle-orm';
 import { authority } from './utils.server';
 import { hashPassword } from '$lib/server/auth';
@@ -93,7 +94,13 @@ export async function load({ url }) {
 		.from(tableMataPelajaran)
 		.limit(1000);
 
-	return { meta: { title: 'Manajemen Pengguna' }, users, mataPelajaran };
+	// fetch sekolah list so the Add User modal can offer a sekolah selection
+	const sekolahList = await db
+		.select({ id: tableSekolah.id, nama: tableSekolah.nama })
+		.from(tableSekolah)
+		.limit(1000);
+
+	return { meta: { title: 'Manajemen Pengguna' }, users, mataPelajaran, sekolahList };
 }
 
 export const actions = {
@@ -145,7 +152,9 @@ export const actions = {
 		const nama = String(form.get('nama') ?? '').trim();
 		const roleValue = String(form.get('type') ?? 'user');
 		const mataPelajaranIdRaw = form.get('mataPelajaranId');
-		const mataPelajaranId = mataPelajaranIdRaw ? Number(String(mataPelajaranIdRaw)) : null;
+		let mataPelajaranId = mataPelajaranIdRaw ? Number(String(mataPelajaranIdRaw)) : null;
+		const sekolahIdRaw = form.get('sekolahId');
+		const sekolahId = sekolahIdRaw ? Number(String(sekolahIdRaw)) : null;
 
 		if (!username) return fail(400, { message: 'username required' });
 		if (!password) return fail(400, { message: 'password required' });
@@ -164,6 +173,24 @@ export const actions = {
 				if (p && typeof p.id === 'number') pegawaiId = p.id;
 			}
 
+			// If a sekolahId was provided but no specific mataPelajaranId, try to
+			// resolve any mata_pelajaran owned by that sekolah and assign the first
+			// found mapel to the user so the login flow (which maps mataPelajaran->kelas->sekolah)
+			// can pick the correct sekolah automatically.
+			if (!mataPelajaranId && sekolahId) {
+				try {
+					const [mp] = await db
+						.select({ id: tableMataPelajaran.id })
+						.from(tableMataPelajaran)
+						.leftJoin(tableKelas, eq(tableMataPelajaran.kelasId, tableKelas.id))
+						.where(eq(tableKelas.sekolahId, sekolahId))
+						.limit(1);
+					if (mp && typeof mp.id === 'number') mataPelajaranId = mp.id;
+				} catch (err) {
+					console.warn('[pengguna] failed to resolve mataPelajaran for sekolahId', sekolahId, err);
+				}
+			}
+
 			// @ts-expect-error: allow simple insertion shape here
 			await db.insert(tableAuthUser).values({
 				username,
@@ -175,6 +202,8 @@ export const actions = {
 				type: roleValue,
 				// store assigned mata pelajaran when creating a 'user' account
 				mataPelajaranId: mataPelajaranId ?? undefined,
+				// persist sekolah selection when provided so login reliably selects it
+				sekolahId: sekolahId ?? undefined,
 				pegawaiId: pegawaiId ?? undefined,
 				createdAt: timestamp,
 				updatedAt: timestamp

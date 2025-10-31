@@ -46,8 +46,12 @@
 	});
 
 	// Whether current user can stop the server (client-side guard)
+	// Allow users who explicitly have the `server_stop` permission, or
+	// any user of type 'admin' (administrators can stop the server by default).
 	const canStopServer = $derived.by(() => {
 		if (!user) return false;
+		// Admins should be allowed regardless of explicit permissions
+		if ((user as UserLike).type === 'admin') return true;
 		const perms = (user as UserLike)?.permissions ?? [];
 		return Array.isArray(perms) ? perms.includes('server_stop') : false;
 	});
@@ -115,6 +119,7 @@
 		{ matcher: '/nilai-ekstrakurikuler', file: 'nilai-ekstra' },
 		{ matcher: '/catatan-wali-kelas', file: 'catatan-wali' },
 		{ matcher: '/pengaturan', file: 'pengaturan' },
+		{ matcher: '/pengguna', file: 'pengguna' },
 		{ matcher: '/cetak', file: 'cetak' }
 	];
 

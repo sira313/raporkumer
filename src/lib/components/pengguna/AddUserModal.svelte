@@ -5,6 +5,7 @@
 
 	export let open: boolean = false;
 	export let mataPelajaran: { id: number; nama: string }[] = [];
+	export let sekolahList: { id: number; nama: string }[] = [];
 
 	const dispatch = createEventDispatcher();
 
@@ -14,6 +15,7 @@
 	let type = 'user';
 	// use empty string as the initial value so the placeholder option is selected reliably
 	let mataPelajaranId: string | number | null = '';
+	let sekolahId: string | number | null = '';
 	let uniqueMataPelajaran: { id: number; nama: string }[] = [];
 	let filteredMataPelajaran: { id: number; nama: string }[] = [];
 	let initialized = false;
@@ -35,6 +37,7 @@
 		type = 'user';
 		// start with no selection (empty string) so the placeholder is shown; user must pick a mapel
 		mataPelajaranId = '';
+		sekolahId = '';
 		initialized = true;
 	}
 
@@ -67,6 +70,9 @@
 		form.set('nama', nama || '');
 		form.set('type', type || 'user');
 		form.set('mataPelajaranId', String(mataPelajaranId ?? ''));
+		// include sekolahId when provided. Server may use this to resolve a default
+		// mataPelajaran within the chosen sekolah so users are linked to a sekolah.
+		form.set('sekolahId', String(sekolahId ?? ''));
 		try {
 			const res = await fetch('?/create_user', { method: 'POST', body: form });
 			if (res.ok) {
@@ -118,9 +124,9 @@
 
 {#if open}
 	<div class="modal modal-open">
-		<div class="modal-box max-w-lg">
-			<h3 class="text-lg font-bold">Tambah Pengguna</h3>
-			<div class="space-y-3 py-4">
+		<div class="modal-box flex max-h-[90vh] max-w-lg flex-col p-4">
+			<h3 class="mb-3 text-lg font-bold">Tambah Pengguna</h3>
+			<div class="flex-1 space-y-3 overflow-y-auto px-1">
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Mata Pelajaran (opsional)</legend>
 					<select
@@ -137,7 +143,29 @@
 							<option disabled>- tidak ada mata pelajaran -</option>
 						{/if}
 					</select>
-					<p class="label">Hubungkan pengguna ke mata pelajaran (jika ada)</p>
+					<p class="label text-wrap">Hubungkan pengguna ke mata pelajaran (jika ada)</p>
+				</fieldset>
+
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">Sekolah (opsional)</legend>
+					<select
+						id="add-user-sekolah"
+						class="select dark:bg-base-200 w-full dark:border-none"
+						bind:value={sekolahId}
+					>
+						<option disabled selected={sekolahId === ''} value="">Pilih Sekolah</option>
+						{#if sekolahList && sekolahList.length}
+							{#each sekolahList as s (s.id)}
+								<option value={s.id}>{s.nama}</option>
+							{/each}
+						{:else}
+							<option disabled>- tidak ada sekolah -</option>
+						{/if}
+					</select>
+					<p class="label text-wrap">
+						Opsional: kaitkan pengguna ke sekolah tertentu sehingga saat login sekolah aktif bisa
+						disesuaikan.
+					</p>
 				</fieldset>
 
 				<fieldset class="fieldset">
@@ -148,29 +176,40 @@
 						bind:value={nama}
 						placeholder="Contoh: Bruce Wayne, Bat."
 					/>
-					<p class="label">Nama lengkap pengguna dan gelar (tampil pada daftar)</p>
+					<p class="label text-wrap">Nama lengkap pengguna dan gelar (tampil pada daftar)</p>
 				</fieldset>
 
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Akun</legend>
-					<input
-						id="add-user-username"
-						class="input mb- dark:bg-base-200 w-full dark:border-none"
-						bind:value={username}
-						placeholder="Username"
-					/>
-					<input
-						id="add-user-password"
-						type="password"
-						class="input dark:bg-base-200 w-full dark:border-none"
-						bind:value={password}
-						placeholder="Password"
-					/>
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<label class="input validator dark:bg-base-200 w-full dark:border-none">
+							<Icon name="user" />
+							<input
+								id="add-user-username"
+								type="text"
+								required
+								placeholder="Username"
+								title="Only letters, numbers or dash"
+								bind:value={username}
+							/>
+						</label>
+						<label class="input validator dark:bg-base-200 w-full dark:border-none">
+							<Icon name="lock" />
+							<input
+								id="add-user-password"
+								type="password"
+								required
+								placeholder="Password"
+								bind:value={password}
+							/>
+						</label>
+					</div>
+					<p class="validator-hint hidden">Isi username dan password dulu!</p>
 					<p class="label">Username dan password untuk login</p>
 				</fieldset>
 			</div>
 
-			<div class="modal-action">
+			<div class="modal-action bg-base-100 dark:bg-base-200 sticky bottom-0 z-10">
 				<button class="btn btn-soft" type="button" on:click={close}
 					><Icon name="close" /> Batal</button
 				>
