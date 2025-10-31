@@ -124,9 +124,9 @@
 
 {#if open}
 	<div class="modal modal-open">
-		<div class="modal-box max-w-lg max-h-[90vh] flex flex-col p-4">
-			<h3 class="text-lg font-bold mb-3">Tambah Pengguna</h3>
-			<div class="space-y-3 overflow-y-auto flex-1 px-1">
+		<div class="modal-box flex max-h-[90vh] max-w-lg flex-col p-4">
+			<h3 class="mb-3 text-lg font-bold">Tambah Pengguna</h3>
+			<div class="flex-1 space-y-3 overflow-y-auto px-1">
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Mata Pelajaran (opsional)</legend>
 					<select
@@ -181,27 +181,27 @@
 
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Akun</legend>
-					<div class="flex flex-col sm:flex-row gap-2">
-						<label class="input validator w-full dark:bg-base-200 dark:border-none">
-						<Icon name="user" />
-						<input
-							id="add-user-username"
-							type="text"
-							required
-							placeholder="Username"
-							title="Only letters, numbers or dash"
-							bind:value={username}
-						/>
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<label class="input validator dark:bg-base-200 w-full dark:border-none">
+							<Icon name="user" />
+							<input
+								id="add-user-username"
+								type="text"
+								required
+								placeholder="Username"
+								title="Only letters, numbers or dash"
+								bind:value={username}
+							/>
 						</label>
-						<label class="input validator w-full dark:bg-base-200 dark:border-none">
-						<Icon name="lock" />
-						<input
-							id="add-user-password"
-							type="password"
-							required
-							placeholder="Password"
-							bind:value={password}
-						/>
+						<label class="input validator dark:bg-base-200 w-full dark:border-none">
+							<Icon name="lock" />
+							<input
+								id="add-user-password"
+								type="password"
+								required
+								placeholder="Password"
+								bind:value={password}
+							/>
 						</label>
 					</div>
 					<p class="validator-hint hidden">Isi username dan password dulu!</p>
@@ -209,7 +209,7 @@
 				</fieldset>
 			</div>
 
-			<div class="modal-action sticky bottom-0 bg-base-100 dark:bg-base-200 z-10">
+			<div class="modal-action bg-base-100 dark:bg-base-200 sticky bottom-0 z-10">
 				<button class="btn btn-soft" type="button" on:click={close}
 					><Icon name="close" /> Batal</button
 				>

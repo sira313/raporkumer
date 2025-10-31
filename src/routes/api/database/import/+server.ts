@@ -107,7 +107,10 @@ export async function POST({ request }) {
 				await reloadDbClient();
 				console.info('[database-import] reloaded DB client after migrate-installed-db');
 			} catch (e) {
-				console.warn('[database-import] failed to reload DB client after migrate-installed-db (non-fatal):', e);
+				console.warn(
+					'[database-import] failed to reload DB client after migrate-installed-db (non-fatal):',
+					e
+				);
 			}
 		} catch (e) {
 			console.warn('[database-import] migrate-installed-db failed (non-fatal):', e);

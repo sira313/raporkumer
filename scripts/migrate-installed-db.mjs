@@ -56,20 +56,28 @@ async function main() {
 		// If the script is running from the LocalAppData tree (typical installer), treat as installed.
 		const projLower = String(projectRoot).toLowerCase();
 		const localLower = String(localAppData).toLowerCase();
-		const looksInstalled = projLower.startsWith(localLower + path.sep) || path.basename(projectRoot).toLowerCase() === 'rapkumer';
+		const looksInstalled =
+			projLower.startsWith(localLower + path.sep) ||
+			path.basename(projectRoot).toLowerCase() === 'rapkumer';
 
 		const projectLocal = path.join(projectRoot, 'data', 'database.sqlite3');
 		const installedCandidate = joinDbPath(localAppData);
 
 		if (looksInstalled) {
 			dbPath = `file:${installedCandidate}`;
-			console.info('[migrate-installed-db] Detected installed environment; using installed DB path:', dbPath);
+			console.info(
+				'[migrate-installed-db] Detected installed environment; using installed DB path:',
+				dbPath
+			);
 		} else if (fs.existsSync(projectLocal)) {
 			dbPath = `file:${projectLocal}`;
 			console.info('[migrate-installed-db] No DB_URL set; using project-local DB path:', dbPath);
 		} else {
 			dbPath = `file:${installedCandidate}`;
-			console.info('[migrate-installed-db] No DB_URL set and no project DB found; falling back to installed DB path:', dbPath);
+			console.info(
+				'[migrate-installed-db] No DB_URL set and no project DB found; falling back to installed DB path:',
+				dbPath
+			);
 		}
 	}
 
@@ -101,7 +109,9 @@ async function main() {
 		if (fs.existsSync(ensureScriptPath)) {
 			run(process.execPath, [ensureScriptPath], { env: childEnv, cwd: projectRoot });
 		} else {
-			console.info('[migrate-installed-db] ensure-columns.mjs not found in install; running inline checks');
+			console.info(
+				'[migrate-installed-db] ensure-columns.mjs not found in install; running inline checks'
+			);
 			// Inline ensure-columns logic (best-effort). Use dynamic import so this file
 			// still runs in environments where @libsql/client may or may not be present.
 			try {
@@ -122,15 +132,24 @@ async function main() {
 						const rows = res.rows || [];
 						const names = rows.map((r) => r.name || r[1]);
 						if (!names.includes(c.column)) {
-							console.info(`[migrate-installed-db] Adding missing column ${c.column} to ${c.table}`);
+							console.info(
+								`[migrate-installed-db] Adding missing column ${c.column} to ${c.table}`
+							);
 							try {
-								await client.execute({ sql: `ALTER TABLE "${c.table}" ADD COLUMN "${c.column}" ${c.type}` });
+								await client.execute({
+									sql: `ALTER TABLE "${c.table}" ADD COLUMN "${c.column}" ${c.type}`
+								});
 								console.info(`[migrate-installed-db] Added ${c.column} on ${c.table}`);
 							} catch (err) {
-								console.warn(`[migrate-installed-db] Failed to add ${c.column} on ${c.table}:`, err && (err.message || err.toString()));
+								console.warn(
+									`[migrate-installed-db] Failed to add ${c.column} on ${c.table}:`,
+									err && (err.message || err.toString())
+								);
 							}
 						} else {
-							console.info(`[migrate-installed-db] Column ${c.column} already present on ${c.table}`);
+							console.info(
+								`[migrate-installed-db] Column ${c.column} already present on ${c.table}`
+							);
 						}
 					} catch (err) {
 						const msg = err && (err.message || err.toString());
@@ -143,7 +162,10 @@ async function main() {
 				}
 				if (typeof client.close === 'function') await client.close();
 			} catch (err) {
-				console.warn('[migrate-installed-db] Inline ensure-columns failed or @libsql/client missing:', err && (err.message || err.toString()));
+				console.warn(
+					'[migrate-installed-db] Inline ensure-columns failed or @libsql/client missing:',
+					err && (err.message || err.toString())
+				);
 				// continue; drizzle push will provide the definitive error if this fails
 			}
 		}
@@ -158,16 +180,23 @@ async function main() {
 				const cleanupClient = createClientLocal({ url: dbPath });
 				try {
 					// 1) scan sqlite_master for problematic names
-					const foundMaster = await cleanupClient.execute({ sql: `SELECT name FROM sqlite_master WHERE type='index' AND lower(name) LIKE '%usernamenormalized%'` });
+					const foundMaster = await cleanupClient.execute({
+						sql: `SELECT name FROM sqlite_master WHERE type='index' AND lower(name) LIKE '%usernamenormalized%'`
+					});
 					const masterRows = foundMaster.rows || [];
 					for (const r of masterRows) {
-						const name = (r && (r.name || r[0] || r[1]));
+						const name = r && (r.name || r[0] || r[1]);
 						if (name) {
 							try {
 								await cleanupClient.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
-								console.info(`[migrate-installed-db] Dropped pre-existing index from sqlite_master: ${name}`);
+								console.info(
+									`[migrate-installed-db] Dropped pre-existing index from sqlite_master: ${name}`
+								);
 							} catch (err) {
-								console.warn(`[migrate-installed-db] Failed to drop index ${name}:`, err && (err.message || err.toString()));
+								console.warn(
+									`[migrate-installed-db] Failed to drop index ${name}:`,
+									err && (err.message || err.toString())
+								);
 							}
 						}
 					}
@@ -177,60 +206,89 @@ async function main() {
 						const idxRes = await cleanupClient.execute({ sql: `PRAGMA index_list('auth_user')` });
 						const idxRows = idxRes.rows || [];
 						for (const r of idxRows) {
-							const name = (r && (r.name || r[0] || r[1]));
+							const name = r && (r.name || r[0] || r[1]);
 							if (!name) continue;
 							// Use PRAGMA index_info to inspect indexed columns and drop any index
 							// that references the `username_normalized` column (case-insensitive).
 							try {
 								const safeName = String(name).replace(/'/g, "''");
-								const infoRes = await cleanupClient.execute({ sql: `PRAGMA index_info('${safeName}')` });
+								const infoRes = await cleanupClient.execute({
+									sql: `PRAGMA index_info('${safeName}')`
+								});
 								const infoRows = infoRes.rows || [];
 								const cols = infoRows.map((c) => c.name || c[2] || c[1]);
-								const hasUsernameNormalized = cols.some((col) => String(col).toLowerCase() === 'username_normalized');
+								const hasUsernameNormalized = cols.some(
+									(col) => String(col).toLowerCase() === 'username_normalized'
+								);
 								if (hasUsernameNormalized) {
 									try {
 										await cleanupClient.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
-										console.info(`[migrate-installed-db] Dropped pre-existing index (indexed column match): ${name}`);
+										console.info(
+											`[migrate-installed-db] Dropped pre-existing index (indexed column match): ${name}`
+										);
 									} catch (err) {
-										console.warn(`[migrate-installed-db] Failed to drop pragma index ${name}:`, err && (err.message || err.toString()));
+										console.warn(
+											`[migrate-installed-db] Failed to drop pragma index ${name}:`,
+											err && (err.message || err.toString())
+										);
 									}
 								}
 							} catch (err) {
-								console.info('[migrate-installed-db] PRAGMA index_info check skipped/failed for', name, err && (err.message || err.toString()));
+								console.info(
+									'[migrate-installed-db] PRAGMA index_info check skipped/failed for',
+									name,
+									err && (err.message || err.toString())
+								);
 							}
 						}
 					} catch (err) {
 						// ignore PRAGMA failures but log for diagnostics
-						console.info('[migrate-installed-db] PRAGMA index_list check skipped/failed:', err && (err.message || err.toString()));
+						console.info(
+							'[migrate-installed-db] PRAGMA index_list check skipped/failed:',
+							err && (err.message || err.toString())
+						);
 					}
 
 					// 3) final catch-all: look for any CREATE INDEX statements that reference the
 					// `username_normalized` column in sqlite_master.sql and drop them. This will
 					// catch mixed-cased names like `auth_user_usernameNormalized_unique`.
 					try {
-						const sqlRes = await cleanupClient.execute({ sql: `SELECT name, sql FROM sqlite_master WHERE type='index' AND sql LIKE '%username_normalized%' COLLATE NOCASE` });
+						const sqlRes = await cleanupClient.execute({
+							sql: `SELECT name, sql FROM sqlite_master WHERE type='index' AND sql LIKE '%username_normalized%' COLLATE NOCASE`
+						});
 						const sqlRows = sqlRes.rows || [];
 						for (const r of sqlRows) {
-							const name = (r && (r.name || r[0] || r[1]));
+							const name = r && (r.name || r[0] || r[1]);
 							if (!name) continue;
 							try {
 								await cleanupClient.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
-								console.info(`[migrate-installed-db] Dropped index referenced in sqlite_master.sql: ${name}`);
+								console.info(
+									`[migrate-installed-db] Dropped index referenced in sqlite_master.sql: ${name}`
+								);
 							} catch (err) {
-								console.warn(`[migrate-installed-db] Failed to drop sqlite_master index ${name}:`, err && (err.message || err.toString()));
+								console.warn(
+									`[migrate-installed-db] Failed to drop sqlite_master index ${name}:`,
+									err && (err.message || err.toString())
+								);
 							}
 						}
 					} catch (err) {
-						console.info('[migrate-installed-db] sqlite_master sql-scan skipped/failed:', err && (err.message || err.toString()));
+						console.info(
+							'[migrate-installed-db] sqlite_master sql-scan skipped/failed:',
+							err && (err.message || err.toString())
+						);
 					}
 				} finally {
 					if (typeof cleanupClient.close === 'function') await cleanupClient.close();
 				}
 			} catch (err) {
 				// Non-fatal: log and continue to let the standard fix-drizzle-indexes handle other cases
-				console.info('[migrate-installed-db] Pre-drizzle index cleanup skipped or failed:', err && (err.message || err.toString()));
+				console.info(
+					'[migrate-installed-db] Pre-drizzle index cleanup skipped or failed:',
+					err && (err.message || err.toString())
+				);
 			}
-			
+
 			// Now run drizzle push
 			run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
 		} catch (err) {
