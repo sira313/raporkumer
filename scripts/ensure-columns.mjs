@@ -46,7 +46,11 @@ async function main() {
     const checks = [
       { table: 'tasks', column: 'sekolah_id', type: 'INTEGER' },
       { table: 'kelas', column: 'sekolah_id', type: 'INTEGER' },
-      { table: 'mata_pelajaran', column: 'kelas_id', type: 'INTEGER' }
+      { table: 'mata_pelajaran', column: 'kelas_id', type: 'INTEGER' },
+      // Columns referenced by newer migrations that older DBs may not have
+      { table: 'auth_user', column: 'sekolah_id', type: 'INTEGER' },
+      { table: 'feature_unlock', column: 'sekolah_id', type: 'INTEGER' },
+      { table: 'tahun_ajaran', column: 'sekolah_id', type: 'INTEGER' }
     ];
 
     for (const c of checks) {

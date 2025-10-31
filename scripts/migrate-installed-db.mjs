@@ -40,22 +40,29 @@ function run(cmd, args, opts = {}) {
 }
 
 async function main() {
-	// Resolve DB_URL: prefer existing env, otherwise default to %LOCALAPPDATA%/Rapkumer-data
+	// project root (assume script is in scripts/)
+	// Use fileURLToPath to get a correct Windows path (avoid leading slash like /C:/...)
+	const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+	// Resolve DB_URL: prefer explicit env. If not set, prefer a repo-local DB (./data/database.sqlite3)
+	// for developer workflows; otherwise fall back to %LOCALAPPDATA%/Rapkumer-data for installed apps.
 	const envDb = process.env.DB_URL;
 	let dbPath;
 	if (envDb) {
 		console.info('[migrate-installed-db] Using DB_URL from environment:', envDb);
 		dbPath = envDb;
 	} else {
-		const local = resolveLocalAppData();
-		const candidate = joinDbPath(local);
-		dbPath = `file:${candidate}`;
-		console.info('[migrate-installed-db] No DB_URL set; using installed DB path:', dbPath);
+		const projectLocal = path.join(projectRoot, 'data', 'database.sqlite3');
+		if (fs.existsSync(projectLocal)) {
+			dbPath = `file:${projectLocal}`;
+			console.info('[migrate-installed-db] No DB_URL set; using project-local DB path:', dbPath);
+		} else {
+			const local = resolveLocalAppData();
+			const candidate = joinDbPath(local);
+			dbPath = `file:${candidate}`;
+			console.info('[migrate-installed-db] No DB_URL set; using installed DB path:', dbPath);
+		}
 	}
-
-	// project root (assume script is in scripts/)
-	// Use fileURLToPath to get a correct Windows path (avoid leading slash like /C:/...)
-	const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 	// prepare env for child processes
 	const childEnv = { ...process.env, DB_URL: dbPath };
@@ -134,7 +141,35 @@ async function main() {
 
 		// Run drizzle push, but be tolerant of a common sqlite "index ... already exists" error
 		// by running fix-drizzle-indexes and retrying once.
+		// Aggressive pre-clean: drop any index variants that differ only by case/formatting
+		// (some installs historically created `auth_user_usernameNormalized_unique` etc).
 		try {
+			try {
+				const { createClient: createClientLocal } = await import('@libsql/client');
+				const cleanupClient = createClientLocal({ url: dbPath });
+				try {
+					const found = await cleanupClient.execute({ sql: `SELECT name FROM sqlite_master WHERE type='index' AND lower(name) LIKE '%usernamenormalized%'` });
+					const rows = found.rows || [];
+					for (const r of rows) {
+						const name = (r && (r.name || r[0] || r[1]));
+						if (name) {
+							try {
+								await cleanupClient.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
+								console.info(`[migrate-installed-db] Dropped pre-existing index: ${name}`);
+							} catch (err) {
+								console.warn(`[migrate-installed-db] Failed to drop index ${name}:`, err && (err.message || err.toString()));
+							}
+						}
+					}
+				} finally {
+					if (typeof cleanupClient.close === 'function') await cleanupClient.close();
+				}
+			} catch (err) {
+				// Non-fatal: log and continue to let the standard fix-drizzle-indexes handle other cases
+				console.info('[migrate-installed-db] Pre-drizzle index cleanup skipped or failed:', err && (err.message || err.toString()));
+			}
+			
+			// Now run drizzle push
 			run(drizzleCmd, ['push'], { env: childEnv, cwd: projectRoot });
 		} catch (err) {
 			const msg = String(err?.message || err || '');
