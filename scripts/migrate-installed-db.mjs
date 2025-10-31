@@ -95,6 +95,12 @@ async function main() {
 	const drizzleCmd = fs.existsSync(drizzleBin) ? drizzleBin : 'drizzle-kit';
 
 	try {
+		function normalizeIndexNameForMatch(name) {
+			if (!name) return '';
+			return String(name)
+				.replace(/[^0-9a-z]/gi, '')
+				.toLowerCase();
+		}
 		// mirror package.json db:push sequence
 		run(process.execPath, [path.join(projectRoot, 'scripts', 'fix-drizzle-indexes.mjs')], {
 			env: childEnv,
@@ -179,14 +185,16 @@ async function main() {
 				const { createClient: createClientLocal } = await import('@libsql/client');
 				const cleanupClient = createClientLocal({ url: dbPath });
 				try {
-					// 1) scan sqlite_master for problematic names
+					// 1) scan sqlite_master for any index names and drop those that
+					// normalize to contain 'usernamenormalized' (robust to camelCase/underscore).
 					const foundMaster = await cleanupClient.execute({
-						sql: `SELECT name FROM sqlite_master WHERE type='index' AND lower(name) LIKE '%usernamenormalized%'`
+						sql: `SELECT name FROM sqlite_master WHERE type='index'`
 					});
 					const masterRows = foundMaster.rows || [];
 					for (const r of masterRows) {
 						const name = r && (r.name || r[0] || r[1]);
-						if (name) {
+						const normalized = normalizeIndexNameForMatch(name);
+						if (name && normalized.includes('usernamenormalized')) {
 							try {
 								await cleanupClient.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
 								console.info(
@@ -208,6 +216,22 @@ async function main() {
 						for (const r of idxRows) {
 							const name = r && (r.name || r[0] || r[1]);
 							if (!name) continue;
+							const normalized = normalizeIndexNameForMatch(name);
+							// Prefer name-based match first (fast); fall back to column inspection.
+							if (normalized.includes('usernamenormalized')) {
+								try {
+									await cleanupClient.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
+									console.info(
+										`[migrate-installed-db] Dropped pre-existing index (name match): ${name}`
+									);
+									continue;
+								} catch (err) {
+									console.warn(
+										`[migrate-installed-db] Failed to drop pragma index ${name}:`,
+										err && (err.message || err.toString())
+									);
+								}
+							}
 							// Use PRAGMA index_info to inspect indexed columns and drop any index
 							// that references the `username_normalized` column (case-insensitive).
 							try {
@@ -216,7 +240,7 @@ async function main() {
 									sql: `PRAGMA index_info('${safeName}')`
 								});
 								const infoRows = infoRes.rows || [];
-								const cols = infoRows.map((c) => c.name || c[2] || c[1]);
+								const cols = infoRows.map((c) => c.name || c[2] || c[1] || '');
 								const hasUsernameNormalized = cols.some(
 									(col) => String(col).toLowerCase() === 'username_normalized'
 								);
@@ -260,6 +284,8 @@ async function main() {
 						for (const r of sqlRows) {
 							const name = r && (r.name || r[0] || r[1]);
 							if (!name) continue;
+							const normalized = normalizeIndexNameForMatch(name);
+							if (!normalized.includes('usernamenormalized')) continue;
 							try {
 								await cleanupClient.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
 								console.info(

@@ -7,6 +7,16 @@ function extractName(row) {
 	return row && (row.name || row[0] || row[1] || null);
 }
 
+function normalizeIndexNameForMatch(name) {
+	if (!name) return '';
+	// remove non-alphanumeric characters and lowercase so variants like
+	// `auth_user_usernameNormalized_unique` and `auth_user_username_normalized_unique`
+	// both normalize to the same token for comparison.
+	return String(name)
+		.replace(/[^0-9a-z]/gi, '')
+		.toLowerCase();
+}
+
 async function main() {
 	console.info('[fix-drizzle-indexes] Target DB:', dbUrl);
 	const client = createClient({ url: dbUrl });
@@ -26,30 +36,37 @@ async function main() {
 		console.info('[fix-drizzle-indexes] Found indexes on auth_user (combined):', allNames);
 
 		// For each index on auth_user, inspect indexed columns and drop those that
-		// reference username_normalized (case-insensitive). This is robust against
-		// mixed-cased legacy index names.
+		// reference username_normalized (case-insensitive) OR whose index name
+		// normalizes to a token that contains 'usernamenormalized'. This handles
+		// legacy/camelCase or underscore variants.
 		for (const name of allNames) {
 			if (!name) continue;
+			const normalized = normalizeIndexNameForMatch(name);
+			// quick name-based match to catch variants like usernameNormalized
+			const nameMatches = normalized.includes('usernamenormalized');
+			let columnMatches = false;
 			try {
 				const safe = String(name).replace(/'/g, "''");
 				const info = await client.execute({ sql: `PRAGMA index_info('${safe}')` });
-				const cols = (info.rows || []).map((c) => c.name || c[2] || c[1]);
-				if (cols.some((c) => String(c).toLowerCase() === 'username_normalized')) {
-					try {
-						await client.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
-						console.info(
-							`[fix-drizzle-indexes] Dropped index that referenced username_normalized: ${name}`
-						);
-					} catch (err) {
-						console.warn(
-							`[fix-drizzle-indexes] Failed to drop index ${name}:`,
-							err && (err.message || err.toString())
-						);
-					}
-				}
+				const cols = (info.rows || []).map((c) => c.name || c[2] || c[1] || '');
+				columnMatches = cols.some((c) => String(c).toLowerCase() === 'username_normalized');
 			} catch (_) {
 				// ignore index_info failures for non-auth_user indexes and continue
 				void _;
+			}
+
+			if (nameMatches || columnMatches) {
+				try {
+					await client.execute({ sql: `DROP INDEX IF EXISTS "${name}"` });
+					console.info(
+						`[fix-drizzle-indexes] Dropped index that referenced username_normalized: ${name}`
+					);
+				} catch (err) {
+					console.warn(
+						`[fix-drizzle-indexes] Failed to drop index ${name}:`,
+						err && (err.message || err.toString())
+					);
+				}
 			}
 		}
 
