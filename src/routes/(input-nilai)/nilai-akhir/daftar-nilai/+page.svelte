@@ -37,7 +37,7 @@
 		if (!murid || !hasNilai || exporting) return;
 		try {
 			exporting = true;
-			const XLSX = await import('xlsx');
+			const ExcelJS = (await import('exceljs')).default ?? (await import('exceljs'));
 			const headerRows: (string | number)[][] = [
 				['Rekap Nilai Akhir Murid'],
 				['Nama Murid', murid.nama],
@@ -53,19 +53,38 @@
 				nilai.sudahDinilai ? Number.parseFloat(nilai.nilaiAkhir.toFixed(2)) : null,
 				nilai.sudahDinilai ? 'Sudah Dinilai' : 'Belum Dinilai'
 			]);
-			const worksheet = XLSX.utils.aoa_to_sheet([...headerRows, tableHeader, ...tableRows]);
-			worksheet['!cols'] = [{ wch: 6 }, { wch: 40 }, { wch: 14 }, { wch: 18 }];
-			worksheet['!freeze'] = { xSplit: 0, ySplit: headerRows.length + 1 };
-			const workbook = XLSX.utils.book_new();
-			XLSX.utils.book_append_sheet(workbook, worksheet, 'Nilai Akhir');
+			const workbook = new ExcelJS.Workbook();
+			const worksheet = workbook.addWorksheet('Nilai Akhir');
+			worksheet.addRows([...headerRows, tableHeader, ...tableRows]);
+			// set approximate column widths
+			try {
+				const colDefs = [{ wch: 6 }, { wch: 40 }, { wch: 14 }, { wch: 18 }];
+				for (let i = 0; i < colDefs.length; i += 1) {
+					const def = colDefs[i] as any;
+					if (def && def.wch) worksheet.getColumn(i + 1).width = def.wch;
+				}
+				worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: headerRows.length + 1 }];
+			} catch (e) {
+				// ignore view/width errors in some runtimes
+			}
 			const safeName = murid.nama.replace(/[<>:"/\\|?*]+/g, ' ').trim() || 'murid';
 			const kelasName = kelasAktifLabel ? ` - ${kelasAktifLabel}` : '';
 			const timestamp = new Date().toISOString().slice(0, 10);
 			const fileName = `Nilai Akhir - ${safeName}${kelasName} - ${timestamp}.xlsx`;
-			if (typeof XLSX.writeFileXLSX === 'function') {
-				XLSX.writeFileXLSX(workbook, fileName, { compression: true });
-			} else {
-				XLSX.writeFile(workbook, fileName, { compression: true });
+			try {
+				const buf = await workbook.xlsx.writeBuffer();
+				const blob = new Blob([buf], {
+					type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+				});
+				const link = document.createElement('a');
+				link.href = URL.createObjectURL(blob);
+				link.download = fileName;
+				document.body.appendChild(link);
+				link.click();
+				link.remove();
+				URL.revokeObjectURL(link.href);
+			} catch (e) {
+				console.error('Gagal menulis file Excel di client', e);
 			}
 		} catch (error) {
 			console.error('Gagal mengekspor nilai akhir', error);

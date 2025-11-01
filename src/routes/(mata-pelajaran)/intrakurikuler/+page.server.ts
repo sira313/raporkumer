@@ -107,7 +107,7 @@ export async function load({ depends, url, parent }) {
 	return { kelasId, mapel: { daftarWajib, daftarPilihan, daftarMulok } };
 }
 
-import { read, utils, write } from 'xlsx';
+import { readBufferToAoA, writeAoaToBuffer } from '$lib/utils/excel.js';
 import { fail } from '@sveltejs/kit';
 import { asc } from 'drizzle-orm';
 import { cookieNames } from '$lib/utils';
@@ -152,24 +152,14 @@ export const actions = {
 			return fail(400, { fail: 'Format file harus .xlsx.' });
 		}
 
-		let workbook;
+		let rawRows;
 		try {
 			const buffer = Buffer.from(await file.arrayBuffer());
-			workbook = read(buffer, { type: 'buffer' });
+			rawRows = await readBufferToAoA(buffer);
 		} catch (error) {
 			console.error('Gagal membaca file Excel', error);
 			return fail(400, { fail: 'Gagal membaca file Excel. Pastikan format sesuai.' });
 		}
-
-		const firstSheetName = workbook.SheetNames[0];
-		if (!firstSheetName) return fail(400, { fail: 'File Excel kosong.' });
-
-		const worksheet = workbook.Sheets[firstSheetName];
-		const rawRows = utils.sheet_to_json<(string | number | null | undefined)[]>(worksheet, {
-			header: 1,
-			blankrows: false,
-			defval: ''
-		});
 
 		if (!Array.isArray(rawRows) || rawRows.length === 0) {
 			return fail(400, { fail: 'File Excel tidak berisi data.' });
@@ -405,11 +395,7 @@ export const actions = {
 			}
 		}
 
-		const workbook = utils.book_new();
-		const ws = utils.aoa_to_sheet(rows);
-		utils.book_append_sheet(workbook, ws, 'Mapel & Tujuan');
-
-		const buffer = write(workbook, { bookType: 'xlsx', type: 'buffer' });
+	const buffer = await writeAoaToBuffer(rows);
 
 		// try to include kelas name in filename (sanitize whitespace and dangerous chars)
 		let kelasLabel = `kelas-${kelasId}`;

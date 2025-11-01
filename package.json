@@ -65,6 +65,6 @@
 	"dependencies": {
 		"@libsql/client": "^0.15.9",
 		"drizzle-orm": "^0.44.2",
-		"xlsx": "^0.18.5"
+		"exceljs": "^4.4.0"
 	}
 }
