@@ -156,7 +156,11 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 					orderBy: [asc(tableKokurikuler.createdAt)]
 				});
 				// map to a stable shape expected by the exporter: { id, nama, dimensi }
-				kokRows = rawKok.map((k) => ({ id: k.id, nama: k.tujuan || k.kode || String(k.id), dimensi: k.dimensi as string[] }));
+				kokRows = rawKok.map((k) => ({
+					id: k.id,
+					nama: k.tujuan || k.kode || String(k.id),
+					dimensi: k.dimensi as string[]
+				}));
 				const kokIds = kokRows.map((k) => k.id);
 				const muridIds = muridList.map((m) => m.id);
 				if (kokIds.length && muridIds.length) {
@@ -325,7 +329,10 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	// expose lokasi tanda tangan and tanggal bagi rapor when available so clients
 	// (like the Excel exporter) can render signatures correctly.
-	const sekolahTyped = s as unknown as { lokasiTandaTangan?: string; semesterAktif?: { tanggalBagiRaport?: string } } | null;
+	const sekolahTyped = s as unknown as {
+		lokasiTandaTangan?: string;
+		semesterAktif?: { tanggalBagiRaport?: string };
+	} | null;
 	const lokasiTandaTangan = sekolahTyped?.lokasiTandaTangan ?? null;
 	const tanggalBagiRaport = sekolahTyped?.semesterAktif?.tanggalBagiRaport ?? null;
 

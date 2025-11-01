@@ -73,14 +73,6 @@ function pickAgamaMapel(records: MapelRecord[], muridAgama: string | null | unde
 		}
 	}
 
-    
-
-    
-
-    
-
-    
-
 	let chosenAgamaMapel: MapelRecord | null = null;
 	const variantName = resolveAgamaVariantName(muridAgama);
 	if (variantName) {

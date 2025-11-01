@@ -37,7 +37,9 @@
 				? meta.headers.map((h: any) => ({ id: h.id, nama: String(h.nama || '') }))
 				: [];
 			// kokurikuler metadata (optional)
-			const kokRows: Array<{ id: number; nama: string; dimensi?: string }> = Array.isArray(meta.kokRows)
+			const kokRows: Array<{ id: number; nama: string; dimensi?: string }> = Array.isArray(
+				meta.kokRows
+			)
 				? meta.kokRows.map((k: any) => ({ id: k.id, nama: String(k.nama || '') }))
 				: [];
 			// ekstrakurikuler metadata (optional)
@@ -77,7 +79,16 @@
 			// include kokurikuler column names before the Jumlah column
 			const kokNames = kokRows.length ? kokRows.map((k) => k.nama) : [];
 			const ekstrakNames = ekstrakRows.length ? ekstrakRows.map((k) => k.nama) : [];
-			const header = ['No', 'Nama Siswa', ...subjectCols, ...kokNames, ...ekstrakNames, 'Jumlah', 'Capaian Kelas', 'Ket'];
+			const header = [
+				'No',
+				'Nama Siswa',
+				...subjectCols,
+				...kokNames,
+				...ekstrakNames,
+				'Jumlah',
+				'Capaian Kelas',
+				'Ket'
+			];
 			// Insert a title row above subject headers for a merged "Intrakurikuler" label
 			const intrakurikulerRow = Array(header.length).fill('');
 			// subject columns start at index 2 (0-based) -> column C (1-based col 3)
@@ -172,12 +183,22 @@
 			rows.push([]);
 			rows.push([]);
 			// derive lokasi and tanggal from metadata (prefer top-level keys added by server)
-			const lokasiFromMeta = (meta && (meta.lokasiTandaTangan || (meta.sekolah && meta.sekolah.lokasiTandaTangan))) || 'Lokasi tanda tangan';
-			const tanggalRaw = (meta && (meta.tanggalBagiRaport || (meta.sekolah && meta.sekolah?.semesterAktif?.tanggalBagiRaport))) || null;
+			const lokasiFromMeta =
+				(meta && (meta.lokasiTandaTangan || (meta.sekolah && meta.sekolah.lokasiTandaTangan))) ||
+				'Lokasi tanda tangan';
+			const tanggalRaw =
+				(meta &&
+					(meta.tanggalBagiRaport ||
+						(meta.sekolah && meta.sekolah?.semesterAktif?.tanggalBagiRaport))) ||
+				null;
 			const formattedTanggal = (() => {
 				if (!tanggalRaw) {
 					try {
-						return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+						return new Intl.DateTimeFormat('id-ID', {
+							day: 'numeric',
+							month: 'long',
+							year: 'numeric'
+						}).format(new Date());
 					} catch (e) {
 						return '';
 					}
@@ -185,7 +206,11 @@
 				try {
 					const d = new Date(tanggalRaw);
 					if (Number.isNaN(d.getTime())) return '';
-					return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
+					return new Intl.DateTimeFormat('id-ID', {
+						day: 'numeric',
+						month: 'long',
+						year: 'numeric'
+					}).format(d);
 				} catch (e) {
 					return String(tanggalRaw);
 				}
@@ -193,7 +218,11 @@
 			rows.push(['Mengetahui', ...Array(8).fill(''), `${lokasiFromMeta}, ${formattedTanggal}`]);
 			// put Wali Kelas text on the same row as the Kepala title (rightmost cell)
 			const kelasNama = meta?.kelasNama || (meta?.kelas && meta.kelas.nama) || '';
-			rows.push([`Kepala ${String(schoolName)}`, ...Array(8).fill(''), kelasNama ? `Wali Kelas ${String(kelasNama)}` : 'Wali Kelas']);
+			rows.push([
+				`Kepala ${String(schoolName)}`,
+				...Array(8).fill(''),
+				kelasNama ? `Wali Kelas ${String(kelasNama)}` : 'Wali Kelas'
+			]);
 			// leave ~3 empty rows for signature (visual gap)
 			rows.push([]);
 			rows.push([]);
@@ -201,7 +230,11 @@
 			// Printed name of kepala (also show wali kelas name at the rightmost cell)
 			rows.push([String(kepala || ''), ...Array(8).fill(''), String(wali || '')]);
 			// NIP line for kepala (also show wali kelas NIP at the rightmost cell)
-			rows.push([`NIP ${String(meta?.kepalaSekolah?.nip || '')}`, ...Array(8).fill(''), `NIP ${String(meta?.waliKelas?.nip || '')}`]);
+			rows.push([
+				`NIP ${String(meta?.kepalaSekolah?.nip || '')}`,
+				...Array(8).fill(''),
+				`NIP ${String(meta?.waliKelas?.nip || '')}`
+			]);
 
 			// Add rows to worksheet (add all at once)
 			if (typeof ws.addRows === 'function') {
@@ -323,7 +356,11 @@
 				const titleCell = ws.getCell('A1');
 				if (titleVal !== null && titleVal !== undefined) titleCell.value = String(titleVal).trim();
 				titleCell.font = { bold: true, size: 12 } as any;
-				const centerContinuous = { horizontal: 'centerContinuous', vertical: 'middle', wrapText: false } as any;
+				const centerContinuous = {
+					horizontal: 'centerContinuous',
+					vertical: 'middle',
+					wrapText: false
+				} as any;
 				// apply centerContinuous to every cell in the visual range so Excel shows centered text
 				for (let c = 1; c <= lastCol; c++) {
 					try {
@@ -346,8 +383,13 @@
 					subtitleVal = null;
 				}
 				const subCell = ws.getCell('A2');
-				if (subtitleVal !== null && subtitleVal !== undefined) subCell.value = String(subtitleVal).trim();
-				const centerContinuous = { horizontal: 'centerContinuous', vertical: 'middle', wrapText: false } as any;
+				if (subtitleVal !== null && subtitleVal !== undefined)
+					subCell.value = String(subtitleVal).trim();
+				const centerContinuous = {
+					horizontal: 'centerContinuous',
+					vertical: 'middle',
+					wrapText: false
+				} as any;
 				for (let c = 1; c <= lastCol; c++) {
 					try {
 						ws.getCell(`${colLetter(c)}2`).alignment = centerContinuous;
@@ -462,7 +504,11 @@
 				const ekstraCount = ekstrakRows.length || 0;
 				const ekstraStartCol = subjectEndCol + 1 + kokCount;
 				const ekstraEndCol = ekstraStartCol + ekstraCount - 1;
-				const jumlahCol = ekstraCount ? ekstraEndCol + 1 : kokCount ? kokEndCol + 1 : subjectEndCol + 1;
+				const jumlahCol = ekstraCount
+					? ekstraEndCol + 1
+					: kokCount
+						? kokEndCol + 1
+						: subjectEndCol + 1;
 				const studentStartRow = 6; // header is row 5 (we added Intrakurikuler at row 4), students start at row 6
 				const studentCount =
 					Array.isArray(meta.murid) && meta.murid.length ? meta.murid.length : 30;
@@ -558,7 +604,9 @@
 								bottomVal = null;
 							}
 							const chosen =
-								bottomVal !== null && bottomVal !== undefined && bottomVal !== '' ? bottomVal : topVal;
+								bottomVal !== null && bottomVal !== undefined && bottomVal !== ''
+									? bottomVal
+									: topVal;
 							ws.mergeCells(`${topAddr}:${bottomAddr}`);
 							const cell = ws.getCell(topAddr);
 							if (chosen !== null && chosen !== undefined) cell.value = chosen;
@@ -606,53 +654,52 @@
 					} catch (e) {
 						// ignore
 					}
-						// Merge signature label rows (each should span one cell to the right: A..B)
-						try {
-							const studentStartRow = 6; // header is row 5
-							const studentCount = Array.isArray(meta.murid) && meta.murid.length ? meta.murid.length : 30;
-							const rataRowNum = studentStartRow + studentCount; // RATA-RATA row
-							// Offsets based on how rows were pushed after RATA-RATA above:
-							// +1: blank, +2: blank, +3: blank, +4: 'Mengetahui' row
-							// +5: kepala/wali row, +6: blank, +7: 'Kepala <Sekolah>' row
-							// +8..+10: gap rows, +11: printed kepala name, +12: NIP row
-							const mengetahuiRow = rataRowNum + 4;
-							// based on how rows are pushed above, Kepala <Sekolah> is immediately after 'Mengetahui'
-							const kepalaSekolahTitleRow = rataRowNum + 5;
-							// printed kepala name and NIP are further down (see rows pushed above)
-							const printedKepalaRow = rataRowNum + 9;
-							const nipRow = rataRowNum + 10;
-							const toMerge = [mengetahuiRow, kepalaSekolahTitleRow, printedKepalaRow, nipRow];
-							for (const r of toMerge) {
+					// Merge signature label rows (each should span one cell to the right: A..B)
+					try {
+						const studentStartRow = 6; // header is row 5
+						const studentCount =
+							Array.isArray(meta.murid) && meta.murid.length ? meta.murid.length : 30;
+						const rataRowNum = studentStartRow + studentCount; // RATA-RATA row
+						// Offsets based on how rows were pushed after RATA-RATA above:
+						// +1: blank, +2: blank, +3: blank, +4: 'Mengetahui' row
+						// +5: kepala/wali row, +6: blank, +7: 'Kepala <Sekolah>' row
+						// +8..+10: gap rows, +11: printed kepala name, +12: NIP row
+						const mengetahuiRow = rataRowNum + 4;
+						// based on how rows are pushed above, Kepala <Sekolah> is immediately after 'Mengetahui'
+						const kepalaSekolahTitleRow = rataRowNum + 5;
+						// printed kepala name and NIP are further down (see rows pushed above)
+						const printedKepalaRow = rataRowNum + 9;
+						const nipRow = rataRowNum + 10;
+						const toMerge = [mengetahuiRow, kepalaSekolahTitleRow, printedKepalaRow, nipRow];
+						for (const r of toMerge) {
+							try {
+								const leftAddr = `A${r}`;
+								const rightAddr = `B${r}`;
+								let leftVal = null;
+								let rightVal = null;
 								try {
-									const leftAddr = `A${r}`;
-									const rightAddr = `B${r}`;
-									let leftVal = null;
-									let rightVal = null;
-									try {
-										leftVal = ws.getCell(leftAddr).value;
-									} catch (e) {
-										leftVal = null;
-									}
-									try {
-										rightVal = ws.getCell(rightAddr).value;
-									} catch (e) {
-										rightVal = null;
-									}
-									const chosen =
-										leftVal !== null && leftVal !== undefined && leftVal !== ''
-											? leftVal
-											: rightVal;
-									ws.mergeCells(`${leftAddr}:${rightAddr}`);
-									const cell = ws.getCell(leftAddr);
-									if (chosen !== null && chosen !== undefined) cell.value = chosen;
-									cell.alignment = { horizontal: 'left', vertical: 'middle' } as any;
-								} catch (inner) {
-									// ignore individual merge failures
+									leftVal = ws.getCell(leftAddr).value;
+								} catch (e) {
+									leftVal = null;
 								}
+								try {
+									rightVal = ws.getCell(rightAddr).value;
+								} catch (e) {
+									rightVal = null;
+								}
+								const chosen =
+									leftVal !== null && leftVal !== undefined && leftVal !== '' ? leftVal : rightVal;
+								ws.mergeCells(`${leftAddr}:${rightAddr}`);
+								const cell = ws.getCell(leftAddr);
+								if (chosen !== null && chosen !== undefined) cell.value = chosen;
+								cell.alignment = { horizontal: 'left', vertical: 'middle' } as any;
+							} catch (inner) {
+								// ignore individual merge failures
 							}
-						} catch (e) {
-							// non-fatal
 						}
+					} catch (e) {
+						// non-fatal
+					}
 				} catch (e) {
 					// ignore
 				}
@@ -673,12 +720,17 @@
 				const ekstraCount = ekstrakRows.length || 0;
 				const ekstraStartCol = subjectEndCol + 1 + kokCount;
 				const ekstraEndCol = ekstraStartCol + ekstraCount - 1;
-				const jumlahCol = ekstraCount ? ekstraEndCol + 1 : kokCount ? kokEndCol + 1 : subjectEndCol + 1;
+				const jumlahCol = ekstraCount
+					? ekstraEndCol + 1
+					: kokCount
+						? kokEndCol + 1
+						: subjectEndCol + 1;
 				const capaianCol = jumlahCol + 1;
 				const ketCol = capaianCol + 1;
 
 				const studentStartRow = 6; // header is row 5
-				const studentCount = Array.isArray(meta.murid) && meta.murid.length ? meta.murid.length : 30;
+				const studentCount =
+					Array.isArray(meta.murid) && meta.murid.length ? meta.murid.length : 30;
 				const rataRowNum = studentStartRow + studentCount; // RATA-RATA row
 
 				// Apply thin border to every cell in the rectangle from A4 to {Ket}{RATA}
