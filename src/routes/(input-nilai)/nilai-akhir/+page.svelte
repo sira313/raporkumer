@@ -204,8 +204,8 @@
 				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
 					<th style="width: 50px; min-width: 40px;">Peringkat</th>
 					<th class="w-full" style="min-width: 140px;">Nama</th>
-					<th style="min-width: 140px;">Nilai Rata-rata</th>
-					<th style="width: 120px;">Mapel Dinilai</th>
+					<th style="min-width: 140px;">Rata-rata Intrakurikuler</th>
+					<th style="width: 120px;">Rata-rata Kokurikuler</th>
 					<th style="width: 120px;">Aksi</th>
 				</tr>
 			</thead>
@@ -215,24 +215,44 @@
 						<tr>
 							<td>{murid.peringkat}</td>
 							<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
-							<td>{@html formatScore(murid.nilaiRataRata)}</td>
-							<td>
-								{murid.jumlahMapelDinilai}
-								{#if murid.totalMapelRelevan}
-									<span class="text-base-content/70 text-sm">
-										/&nbsp;{murid.totalMapelRelevan}
-									</span>
-								{/if}
-							</td>
-							<td>
+							<td class="flex gap-2 items-center">
 								<a
-									class="btn btn-sm btn-soft shadow-none"
+									class="btn btn-sm btn-soft shadow-none gap-3 items-center"
 									title={`Lihat nilai akhir ${murid.nama}`}
 									href={murid.detailHref}
 								>
 									<Icon name="eye" />
-									Lihat
+									{@html formatScore(murid.nilaiRataRata)}
+									<div>
+										{murid.jumlahMapelDinilai}
+										{#if murid.totalMapelRelevan}
+											<span>
+												/&nbsp;{murid.totalMapelRelevan}
+											</span>
+										{/if}
+									</div>
 								</a>
+							</td>
+							<td class="">
+								<a
+									class="btn btn-sm btn-soft shadow-none gap-3 items-center"
+									title={`Lihat nilai akhir kokurikuler ${murid.nama}`}
+									href={murid.kokDetailHref ?? `/nilai-akhir/nilai-kokurikuler?murid_id=${murid.id}`}
+								>
+									<Icon name="eye" />
+									<span class="whitespace-nowrap">{murid.kriteriaKokurikuler ?? '—'}</span>
+									<div>
+										{murid.jumlahKokurikulerDinilai}
+										{#if murid.totalKokurikulerRelevan}
+											<span>
+												/&nbsp;{murid.totalKokurikulerRelevan}
+											</span>
+										{/if}
+									</div>
+								</a>
+							</td>
+							<td>
+								<!-- Belum tahu -->
 							</td>
 						</tr>
 					{/each}

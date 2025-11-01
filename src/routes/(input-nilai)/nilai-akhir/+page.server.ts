@@ -1,6 +1,7 @@
 import db from '$lib/server/db';
 import { ensureAsesmenSumatifSchema } from '$lib/server/db/ensure-asesmen-sumatif';
-import { tableAsesmenSumatif, tableMataPelajaran, tableMurid, tableEkstrakurikuler, tableKokurikuler } from '$lib/server/db/schema';
+import { tableAsesmenSumatif, tableMataPelajaran, tableMurid, tableEkstrakurikuler, tableKokurikuler, tableAsesmenKokurikuler } from '$lib/server/db/schema';
+import { sanitizeDimensionList } from '$lib/kokurikuler';
 import { redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 
@@ -88,6 +89,13 @@ type NilaiAkhirRow = {
 	nilaiRataRata: number | null;
 	jumlahMapelDinilai: number;
 	totalMapelRelevan: number;
+	// kokurikuler fields
+	nilaiRataRataKokurikuler: number | null;
+	jumlahKokurikulerDinilai: number;
+	totalKokurikulerRelevan: number;
+	kokDetailHref: string;
+	// kriteria label for kokurikuler (Sangat Baik / Baik / Cukup / Kurang)
+	kriteriaKokurikuler: string | null;
 	detailHref: string;
 	peringkat: number;
 };
@@ -207,7 +215,13 @@ export async function load({ parent, locals, url, depends }) {
 			nilaiRataRata: rataRata,
 			jumlahMapelDinilai: countDinilai,
 			totalMapelRelevan: relevantMapel.length,
-			detailHref: `/nilai-akhir/daftar-nilai?murid_id=${murid.id}`
+			detailHref: `/nilai-akhir/daftar-nilai?murid_id=${murid.id}`,
+			// default kokurikuler values; will be filled below if kokurikuler exists
+			nilaiRataRataKokurikuler: null,
+			jumlahKokurikulerDinilai: 0,
+			totalKokurikulerRelevan: 0,
+			kokDetailHref: `/nilai-akhir/nilai-kokurikuler?murid_id=${murid.id}`,
+			kriteriaKokurikuler: null,
 		};
 	});
 
@@ -264,7 +278,7 @@ export async function load({ parent, locals, url, depends }) {
 		throw redirect(303, `${url.pathname}${params.size ? `?${params}` : ''}`);
 	}
 
-	const daftarNilai = filteredRows.slice(offset, offset + PER_PAGE);
+	const daftarNilai: NilaiAkhirRow[] = filteredRows.slice(offset, offset + PER_PAGE);
 	const page: PageState = {
 		search,
 		currentPage,
@@ -306,6 +320,110 @@ export async function load({ parent, locals, url, depends }) {
 		totalEkstrakurikuler: ekstrakCount,
 		totalKokurikuler: kokurikulerCount
 	};
+
+	// If kokurikuler exist for the class, compute per-murid kokurikuler averages
+	if (kokurikulerCount > 0) {
+		try {
+			// fetch kokurikuler rows for the class with their dimensi
+			const kokRows = await db.query.tableKokurikuler.findMany({
+				columns: { id: true, dimensi: true },
+				where: eq(tableKokurikuler.kelasId, kelasAktif.id),
+				orderBy: asc(tableKokurikuler.createdAt)
+			});
+
+			const kokIds = kokRows.map((k) => k.id);
+			// guard: if no kok rows, skip
+			if (kokIds.length > 0 && muridIds.length > 0) {
+				// try to ensure schema exists (older installs may not have the table)
+				try {
+					// dynamic import of ensure function to avoid hard dependency when table missing
+					const { ensureAsesmenKokurikulerSchema } = await import('$lib/server/db/ensure-asesmen-kokurikuler');
+					await ensureAsesmenKokurikulerSchema();
+				} catch {
+					// ignore if ensure not available
+				}
+
+				// fetch asesmen records for all murids and kok ids
+				const asesmenRecords = await db.query.tableAsesmenKokurikuler.findMany({
+					columns: { muridId: true, kokurikulerId: true, dimensi: true, kategori: true },
+					where: and(inArray(tableAsesmenKokurikuler.muridId, muridIds), inArray(tableAsesmenKokurikuler.kokurikulerId, kokIds))
+				});
+
+				// build map: muridId -> kokId -> map(dimensi -> kategori)
+				const asesmenByMurid = new Map<number, Map<number, Map<string, string>>>();
+				for (const r of asesmenRecords) {
+					let murMap = asesmenByMurid.get(r.muridId);
+					if (!murMap) {
+						murMap = new Map();
+						asesmenByMurid.set(r.muridId, murMap);
+					}
+					let kokMap = murMap.get(r.kokurikulerId);
+					if (!kokMap) {
+						kokMap = new Map();
+						murMap.set(r.kokurikulerId, kokMap);
+					}
+					kokMap.set(r.dimensi, r.kategori);
+				}
+
+				const kategoriToNumber: Record<string, number> = {
+					kurang: 1,
+					cukup: 2,
+					baik: 3,
+					'sangat-baik': 4
+				};
+
+				// for each murid, compute kokurikuler average across kok rows
+				for (const row of daftarNilai) {
+					const muridId = row.id;
+					const murMap = asesmenByMurid.get(muridId) ?? new Map();
+
+					const kokValues: number[] = [];
+					let countedKok = 0;
+
+					for (const k of kokRows) {
+						const dims = sanitizeDimensionList(k.dimensi);
+						const kokMap = murMap.get(k.id) ?? new Map();
+
+						const vals: number[] = [];
+						for (const dim of dims) {
+							const kategori = kokMap.get(dim);
+							const num = kategori ? kategoriToNumber[kategori] ?? null : null;
+							if (num != null && Number.isFinite(num)) vals.push(num);
+						}
+
+						if (vals.length > 0) {
+							const sum = vals.reduce((a, b) => a + b, 0);
+							const nilaiAkhir = Number.parseFloat((sum / vals.length).toFixed(2));
+							kokValues.push(nilaiAkhir);
+							countedKok += 1;
+						}
+					}
+
+					if (kokValues.length > 0) {
+						const avg = kokValues.reduce((a, b) => a + b, 0) / kokValues.length;
+						const avgFixed = Number.parseFloat(avg.toFixed(2));
+						row.nilaiRataRataKokurikuler = avgFixed;
+						// map to kriteria label
+						if (avgFixed >= 3.51) row.kriteriaKokurikuler = 'Sangat Baik';
+						else if (avgFixed >= 2.51) row.kriteriaKokurikuler = 'Baik';
+						else if (avgFixed >= 1.51) row.kriteriaKokurikuler = 'Cukup';
+						else row.kriteriaKokurikuler = 'Kurang';
+					} else {
+						row.nilaiRataRataKokurikuler = null;
+						row.kriteriaKokurikuler = null;
+					}
+					row.jumlahKokurikulerDinilai = countedKok;
+					row.totalKokurikulerRelevan = kokRows.length;
+					// also add kok detail href
+					// keep same domain path as other detail pages
+					row.kokDetailHref = `/nilai-akhir/nilai-kokurikuler?murid_id=${muridId}`;
+				}
+			}
+		} catch {
+			// ignore kokurikuler errors — keep defaults
+			// console.debug('kokurikuler aggregation skipped', err);
+		}
+	}
 
 	return { meta, daftarNilai, page, summary };
 }
