@@ -120,11 +120,11 @@
 				<div
 					class="max-h-[calc(100vh-4.2rem)] min-h-[calc(100vh-4.2rem)] max-w-none overflow-y-auto md:max-h-[calc(100vh-4.6rem)] md:min-h-[calc(100vh-4.6rem)] print:overflow-visible"
 				>
-					<div class="m-4 flex flex-row xl:gap-5">
+					<div class="m-4 flex flex-row xl:gap-4">
 						<div class="w-full max-w-5xl min-w-0 flex-1">
 							{@render children()}
 						</div>
-						<div class="sticky top-6 self-start">
+						<div class="sticky top-4 self-start">
 							<Task variant="sidebar" />
 						</div>
 					</div>

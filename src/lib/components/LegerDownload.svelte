@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Icon from './icon.svelte';
+
 	/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 	export let kelasId: number | null = null;
 
@@ -728,5 +730,5 @@
 <button
 	class="btn btn-primary btn-soft shadow-none"
 	on:click={downloadLeger}
-	title="Download Leger (Excel)">Download Leger (.xlsx)</button
+	title="Download Leger (Excel)"><Icon name="download" />Download Leger (.xlsx)</button
 >
