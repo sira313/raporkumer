@@ -115,6 +115,7 @@ type NilaiAkhirRow = {
 	jumlahEkstrakurikulerDinilai?: number;
 	totalEkstrakurikulerRelevan?: number;
 	eksDetailHref?: string;
+	kriteriaEkstrakurikuler?: string | null;
 	// kriteria label for kokurikuler (Sangat Baik / Baik / Cukup / Kurang)
 	kriteriaKokurikuler: string | null;
 	detailHref: string;
@@ -247,7 +248,8 @@ export async function load({ parent, locals, url, depends }) {
 			nilaiRataRataEkstrakurikuler: null,
 			jumlahEkstrakurikulerDinilai: 0,
 			totalEkstrakurikulerRelevan: 0,
-			eksDetailHref: `/nilai-akhir/nilai-ekstra?murid_id=${murid.id}`
+			eksDetailHref: `/nilai-akhir/nilai-ekstra?murid_id=${murid.id}`,
+			kriteriaEkstrakurikuler: null
 		};
 	});
 
@@ -534,9 +536,16 @@ export async function load({ parent, locals, url, depends }) {
 
 					if (ekstrValues.length > 0) {
 						const avg = ekstrValues.reduce((a, b) => a + b, 0) / ekstrValues.length;
-						row.nilaiRataRataEkstrakurikuler = Number.parseFloat(avg.toFixed(2));
+						const avgFixed = Number.parseFloat(avg.toFixed(2));
+						row.nilaiRataRataEkstrakurikuler = avgFixed;
+						// map to kriteria label (same ranges as kokurikuler)
+						if (avgFixed >= 3.51) row.kriteriaEkstrakurikuler = 'Sangat Baik';
+						else if (avgFixed >= 2.51) row.kriteriaEkstrakurikuler = 'Baik';
+						else if (avgFixed >= 1.51) row.kriteriaEkstrakurikuler = 'Cukup';
+						else row.kriteriaEkstrakurikuler = 'Kurang';
 					} else {
 						row.nilaiRataRataEkstrakurikuler = null;
+						row.kriteriaEkstrakurikuler = null;
 					}
 					row.jumlahEkstrakurikulerDinilai = countedEks;
 					row.totalEkstrakurikulerRelevan = ekstrakRows.length;

@@ -261,7 +261,7 @@
 									href={murid.eksDetailHref ?? `/nilai-akhir/nilai-ekstra?murid_id=${murid.id}`}
 								>
 									<Icon name="eye" />
-									<span class="whitespace-nowrap">{@html formatScore(murid.nilaiRataRataEkstrakurikuler ?? null)}</span>
+									<span class="whitespace-nowrap">{murid.kriteriaEkstrakurikuler ?? '—'}</span>
 									<div>
 										{murid.jumlahEkstrakurikulerDinilai}
 										{#if murid.totalEkstrakurikulerRelevan}
