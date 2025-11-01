@@ -4,6 +4,7 @@ import {
 	tableAsesmenEkstrakurikuler,
 	tableAsesmenSumatif,
 	tableEkstrakurikuler,
+	tableKokurikuler,
 	tableKehadiranMurid,
 	tableKelas,
 	tableMataPelajaran,
@@ -49,6 +50,7 @@ export async function load(event) {
 			total: 0,
 			wajib: 0,
 			mulok: 0,
+			kokurikuler: 0,
 			lainnya: 0
 		},
 		ekstrakurikuler: {
@@ -154,6 +156,22 @@ export async function load(event) {
 			where: eq(tableEkstrakurikuler.kelasId, kelasAktifId)
 		});
 		statistikDashboard.ekstrakurikuler.total = ekstrakurikulerRows.length;
+
+		// kokurikuler (separate table) — tampilkan jumlahnya di bagian Intrakurikuler
+		const kokurikulerRows = await db.query.tableKokurikuler.findMany({
+			columns: { id: true },
+			where: eq(tableKokurikuler.kelasId, kelasAktifId)
+		});
+		statistikDashboard.mapel.kokurikuler = kokurikulerRows.length;
+
+		// debug: show kokurikuler count for active class in server logs to help troubleshooting
+		console.info('[dashboard] kelasAktifId=%s kokurikuler=%d mapel=%o', kelasAktifId, kokurikulerRows.length, {
+			total: statistikDashboard.mapel.total,
+			wajib: statistikDashboard.mapel.wajib,
+			mulok: statistikDashboard.mapel.mulok,
+			kokurikuler: statistikDashboard.mapel.kokurikuler,
+			lainnya: statistikDashboard.mapel.lainnya
+		});
 
 		const muridRows = await db.query.tableMurid.findMany({
 			columns: { id: true },

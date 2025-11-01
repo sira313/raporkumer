@@ -5,6 +5,7 @@
 		total: number;
 		wajib: number;
 		mulok: number;
+		kokurikuler?: number;
 		lainnya: number;
 	};
 
@@ -36,7 +37,7 @@ function mapelParts(m: MapelStat): string {
 	<div class="stat">
 		<div class="stat-figure text-primary">
 			<span class="text-3xl">
-				<Icon name="layers" />
+				<Icon name="book-open" />
 			</span>
 		</div>
 		<div class="stat-title">Intrakurikuler</div>
@@ -56,6 +57,23 @@ function mapelParts(m: MapelStat): string {
 		<div class="stat-value">{ekstrakurikuler.total}</div>
 		<div class="stat-desc">
 			{#if ekstrakurikuler.total}
+				Total di kelas ini
+			{:else}
+				Belum ada data
+			{/if}
+		</div>
+	</div>
+
+	<div class="stat">
+		<div class="stat-figure text-error">
+			<span class="text-3xl">
+				<Icon name="layers" />
+			</span>
+		</div>
+		<div class="stat-title">Kokurikuler</div>
+		<div class="stat-value">{mapel.kokurikuler ?? 0}</div>
+		<div class="stat-desc">
+			{#if mapel.kokurikuler}
 				Total di kelas ini
 			{:else}
 				Belum ada data

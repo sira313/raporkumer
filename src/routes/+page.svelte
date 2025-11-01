@@ -21,7 +21,7 @@
 		}
 	);
 	const mapelStats = $derived(
-		statistikDashboard.mapel ?? { total: 0, wajib: 0, mulok: 0, lainnya: 0 }
+		statistikDashboard.mapel ?? { total: 0, wajib: 0, mulok: 0, kokurikuler: 0, lainnya: 0 }
 	);
 	const progressStats = $derived(
 		statistikDashboard.progress ?? {
