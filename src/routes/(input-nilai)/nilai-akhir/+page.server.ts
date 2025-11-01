@@ -1,6 +1,6 @@
 import db from '$lib/server/db';
 import { ensureAsesmenSumatifSchema } from '$lib/server/db/ensure-asesmen-sumatif';
-import { tableAsesmenSumatif, tableMataPelajaran, tableMurid } from '$lib/server/db/schema';
+import { tableAsesmenSumatif, tableMataPelajaran, tableMurid, tableEkstrakurikuler, tableKokurikuler } from '$lib/server/db/schema';
 import { redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 
@@ -104,6 +104,8 @@ type Summary = {
 	totalMurid: number;
 	totalMuridDinilai: number;
 	totalMapel: number;
+	totalEkstrakurikuler?: number;
+	totalKokurikuler?: number;
 };
 
 export async function load({ parent, locals, url, depends }) {
@@ -272,10 +274,37 @@ export async function load({ parent, locals, url, depends }) {
 	};
 
 	const uniqueMapelCount = new Set(rawMapelRecords.map((mapel) => mapel.nama)).size;
+
+	// compute ekstrakurikuler / kokurikuler counts for the active class so the UI can show them
+	let ekstrakCount = 0;
+	try {
+		const ekstrakRows = await db.query.tableEkstrakurikuler.findMany({
+			columns: { id: true },
+			where: eq(tableEkstrakurikuler.kelasId, kelasAktif.id)
+		});
+		ekstrakCount = ekstrakRows.length;
+	} catch {
+		// ignore — table might not exist in older installations
+		ekstrakCount = 0;
+	}
+
+	let kokurikulerCount = 0;
+	try {
+		const kokuriRows = await db.query.tableKokurikuler.findMany({
+			columns: { id: true },
+			where: eq(tableKokurikuler.kelasId, kelasAktif.id)
+		});
+		kokurikulerCount = kokuriRows.length;
+	} catch {
+		kokurikulerCount = 0;
+	}
+
 	const summary: Summary = {
 		totalMurid: rankedRows.length,
 		totalMuridDinilai: rankedRows.filter((row) => row.jumlahMapelDinilai > 0).length,
-		totalMapel: uniqueMapelCount
+		totalMapel: uniqueMapelCount,
+		totalEkstrakurikuler: ekstrakCount,
+		totalKokurikuler: kokurikulerCount
 	};
 
 	return { meta, daftarNilai, page, summary };

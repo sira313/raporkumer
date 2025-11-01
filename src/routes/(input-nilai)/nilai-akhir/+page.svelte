@@ -14,7 +14,16 @@
 	const currentPage = $derived(data.page.currentPage ?? 1);
 	const totalPages = $derived(Math.max(1, data.page.totalPages ?? 1));
 	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
-	const summary = $derived(data.summary ?? { totalMurid: 0, totalMuridDinilai: 0, totalMapel: 0 });
+	const summary = $derived.by(() => {
+		const s: any = data.summary ?? {};
+		return {
+			totalMurid: s.totalMurid ?? 0,
+			totalMuridDinilai: s.totalMuridDinilai ?? 0,
+			totalMapel: s.totalMapel ?? 0,
+			totalEkstrakurikuler: s.totalEkstrakurikuler ?? 0,
+			totalKokurikuler: s.totalKokurikuler ?? 0
+		};
+	});
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
 	const kelasAktifLabel = $derived.by(() => {
 		if (!kelasAktif) return null;
@@ -131,11 +140,17 @@
 {/if}
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<div class="mb-4">
+	<div class="mb-4 flex justify-between">
+		<div>
 		<h2 class="text-xl font-bold">Rekapitulasi Nilai Akhir</h2>
 		{#if kelasAktifLabel}
 			<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
 		{/if}
+		</div>	
+		<button class="btn btn-soft btn-primary shadow-none">
+			<Icon name="download" />
+			Export leger
+		</button>
 	</div>
 
 	<div class="stats dark:bg-base-200 shadow-md">
@@ -148,6 +163,17 @@
 			<div class="stat-title">Mapel Per Kelas</div>
 			<div class="stat-value text-lg">{summary.totalMapel}</div>
 			<div class="stat-desc text-wrap">Menghitung rata-rata per murid</div>
+		</div>
+
+		<div class="stat">
+			<div class="stat-title">Estrakurikuler</div>
+			<div class="stat-value text-lg">{summary.totalEkstrakurikuler}</div>
+			<div class="stat-desc text-wrap">Jumlah kegiatan ekstrakurikuler</div>
+		</div>
+		<div class="stat">
+			<div class="stat-title">Kokurikuler</div>
+			<div class="stat-value text-lg">{summary.totalKokurikuler}</div>
+			<div class="stat-desc text-wrap">Jumlah kegiatan kokurikuler</div>
 		</div>
 	</div>
 
