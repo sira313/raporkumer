@@ -71,7 +71,8 @@ export const tablePegawai = sqliteTable('pegawai', {
 
 export const tableSekolah = sqliteTable('sekolah', {
 	id: int().primaryKey({ autoIncrement: true }),
-	jenjangPendidikan: text({ enum: ['sd', 'smp', 'sma'] }).notNull(),
+	// include 'slb' as a supported jenjang pendidikan
+	jenjangPendidikan: text({ enum: ['sd', 'smp', 'sma', 'slb'] }).notNull(),
 	// optional variant (e.g. mi, mts, smk, ma, mak, slb-dasar) stored as text
 	jenjangVariant: text(),
 	nama: text().notNull(),

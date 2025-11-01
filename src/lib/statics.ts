@@ -1,6 +1,6 @@
 // Varian / jenjang sederajat — daftar institusi yang setara untuk setiap jenjang
 export const jenjangPendidikanSederajat: Record<
-	Sekolah['jenjangPendidikan'],
+	'sd' | 'smp' | 'sma' | 'slb',
 	{ key: string; label: string }[]
 > = {
 	sd: [
@@ -16,6 +16,9 @@ export const jenjangPendidikanSederajat: Record<
 		{ key: 'smk', label: 'Sekolah Menengah Kejuruan (SMK)' },
 		{ key: 'ma', label: 'Madrasah Aliyah (MA)' },
 		{ key: 'mak', label: 'Madrasah Aliyah Kejuruan (MAK)' }
+	],
+	slb: [
+		{ key: 'slb', label: 'Sekolah Luar Biasa (SLB)' }
 	]
 };
 
