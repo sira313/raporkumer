@@ -47,24 +47,38 @@
 				[]
 			];
 			const tableHeader = ['No', 'Mata Pelajaran', 'Nilai Akhir', 'Status'];
-			const tableRows = daftarNilai.map((nilai) => [
-				nilai.no,
-				nilai.mataPelajaran,
-				nilai.sudahDinilai ? Number.parseFloat(nilai.nilaiAkhir.toFixed(2)) : null,
-				nilai.sudahDinilai ? 'Sudah Dinilai' : 'Belum Dinilai'
-			]);
+			const tableRows = daftarNilai.map(
+				(nilai: {
+					no: number;
+					mataPelajaran: string;
+					sudahDinilai: boolean;
+					nilaiAkhir: number | null;
+				}) => [
+					nilai.no,
+					nilai.mataPelajaran,
+					nilai.sudahDinilai && typeof nilai.nilaiAkhir === 'number'
+						? Number.parseFloat(nilai.nilaiAkhir.toFixed(2))
+						: null,
+					nilai.sudahDinilai ? 'Sudah Dinilai' : 'Belum Dinilai'
+				]
+			);
 			const workbook = new ExcelJS.Workbook();
 			const worksheet = workbook.addWorksheet('Nilai Akhir');
 			worksheet.addRows([...headerRows, tableHeader, ...tableRows]);
 			// set approximate column widths
 			try {
-				const colDefs = [{ wch: 6 }, { wch: 40 }, { wch: 14 }, { wch: 18 }];
+				const colDefs: Array<{ wch?: number }> = [
+					{ wch: 6 },
+					{ wch: 40 },
+					{ wch: 14 },
+					{ wch: 18 }
+				];
 				for (let i = 0; i < colDefs.length; i += 1) {
-					const def = colDefs[i] as any;
+					const def = colDefs[i];
 					if (def && def.wch) worksheet.getColumn(i + 1).width = def.wch;
 				}
 				worksheet.views = [{ state: 'frozen', xSplit: 0, ySplit: headerRows.length + 1 }];
-			} catch (e) {
+			} catch {
 				// ignore view/width errors in some runtimes
 			}
 			const safeName = murid.nama.replace(/[<>:"/\\|?*]+/g, ' ').trim() || 'murid';
@@ -75,11 +89,11 @@
 				const buf = await workbook.xlsx.writeBuffer();
 				const srcView = ArrayBuffer.isView(buf)
 					? new Uint8Array(
-						  (buf as ArrayBufferView).buffer as ArrayBuffer,
-						  (buf as ArrayBufferView).byteOffset,
-						  (buf as ArrayBufferView).byteLength
-					  )
-					: new Uint8Array(buf as ArrayBufferLike as any);
+							(buf as ArrayBufferView).buffer,
+							(buf as ArrayBufferView).byteOffset,
+							(buf as ArrayBufferView).byteLength
+						)
+					: new Uint8Array(buf as ArrayBufferLike);
 				const uint8 = Uint8Array.from(srcView);
 				const blob = new Blob([uint8], {
 					type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

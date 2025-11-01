@@ -18,19 +18,19 @@
 		ekstrakurikuler: EkstrakurikulerStat;
 	}>();
 
-function mapelParts(m: MapelStat): string {
-	const parts: string[] = [];
- 	if (m.wajib) parts.push(`${m.wajib} Wajib`);
- 	if (m.mulok) parts.push(`${m.mulok} Mulok`);
- 	if (m.lainnya) parts.push(`${m.lainnya} Pilihan`);
+	function mapelParts(m: MapelStat): string {
+		const parts: string[] = [];
+		if (m.wajib) parts.push(`${m.wajib} Wajib`);
+		if (m.mulok) parts.push(`${m.mulok} Mulok`);
+		if (m.lainnya) parts.push(`${m.lainnya} Pilihan`);
 
- 	if (parts.length === 0) return '—';
- 	if (parts.length === 1) return parts[0];
- 	if (parts.length === 2) return parts.join(' & ');
+		if (parts.length === 0) return '—';
+		if (parts.length === 1) return parts[0];
+		if (parts.length === 2) return parts.join(' & ');
 
- 	// 3 or more: join with commas except the last which uses ' & '
- 	return parts.slice(0, -1).join(', ') + ' & ' + parts[parts.length - 1];
-}
+		// 3 or more: join with commas except the last which uses ' & '
+		return parts.slice(0, -1).join(', ') + ' & ' + parts[parts.length - 1];
+	}
 </script>
 
 <div class="stats stats-vertical lg:stats-horizontal rounded-box bg-base-100 w-full shadow-md">
@@ -48,23 +48,6 @@ function mapelParts(m: MapelStat): string {
 	</div>
 
 	<div class="stat">
-		<div class="stat-figure text-warning">
-			<span class="text-3xl">
-				<Icon name="activity" />
-			</span>
-		</div>
-		<div class="stat-title">Ekstrakurikuler</div>
-		<div class="stat-value">{ekstrakurikuler.total}</div>
-		<div class="stat-desc">
-			{#if ekstrakurikuler.total}
-				Total di kelas ini
-			{:else}
-				Belum ada data
-			{/if}
-		</div>
-	</div>
-
-	<div class="stat">
 		<div class="stat-figure text-error">
 			<span class="text-3xl">
 				<Icon name="layers" />
@@ -74,6 +57,23 @@ function mapelParts(m: MapelStat): string {
 		<div class="stat-value">{mapel.kokurikuler ?? 0}</div>
 		<div class="stat-desc">
 			{#if mapel.kokurikuler}
+				Total di kelas ini
+			{:else}
+				Belum ada data
+			{/if}
+		</div>
+	</div>
+
+	<div class="stat">
+		<div class="stat-figure text-warning">
+			<span class="text-3xl">
+				<Icon name="activity" />
+			</span>
+		</div>
+		<div class="stat-title">Ekstrakurikuler</div>
+		<div class="stat-value">{ekstrakurikuler.total}</div>
+		<div class="stat-desc">
+			{#if ekstrakurikuler.total}
 				Total di kelas ini
 			{:else}
 				Belum ada data

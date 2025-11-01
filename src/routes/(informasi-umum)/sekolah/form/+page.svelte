@@ -25,7 +25,9 @@
 		setTimeout(() => {
 			const sel = document.querySelector<HTMLSelectElement>('select[name="jenjangPendidikan"]');
 			if (!sel) return;
-			const opt = Array.from(sel.options).find((o) => o.dataset?.variant === initialSekolah.jenjangVariant);
+			const opt = Array.from(sel.options).find(
+				(o) => o.dataset?.variant === initialSekolah.jenjangVariant
+			);
 			if (opt) {
 				opt.selected = true;
 				// ensure hidden input is in sync
@@ -95,12 +97,10 @@
 										<option
 											value={jenjKey}
 											data-variant={variant.key}
-											selected={
-												initialSekolah
-													? // if editing: select the option that matches stored variant key
-														(initialSekolah.jenjangVariant === variant.key)
-													: undefined
-											}
+											selected={initialSekolah
+												? // if editing: select the option that matches stored variant key
+													initialSekolah.jenjangVariant === variant.key
+												: undefined}
 										>
 											{variant.label}
 										</option>

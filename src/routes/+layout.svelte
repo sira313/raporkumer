@@ -120,7 +120,7 @@
 				<div
 					class="max-h-[calc(100vh-4.2rem)] min-h-[calc(100vh-4.2rem)] max-w-none overflow-y-auto md:max-h-[calc(100vh-4.6rem)] md:min-h-[calc(100vh-4.6rem)] print:overflow-visible"
 				>
-					<div class="m-4 flex flex-row lg:m-6 xl:gap-5">
+					<div class="m-4 flex flex-row xl:gap-5">
 						<div class="w-full max-w-5xl min-w-0 flex-1">
 							{@render children()}
 						</div>

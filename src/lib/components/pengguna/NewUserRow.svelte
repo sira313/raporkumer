@@ -4,7 +4,11 @@
 </script>
 
 <td>
-	<input class="input input-sm w-full bg-base-200 dark:bg-base-300 dark:border-none" bind:value={newValues[id].nama} placeholder="Nama" />
+	<input
+		class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
+		bind:value={newValues[id].nama}
+		placeholder="Nama"
+	/>
 </td>
 <td>
 	<select class="select select-sm w-full" bind:value={newValues[id].type}>
@@ -24,12 +28,16 @@
 	</select>
 </td>
 <td>
-	<input class="input input-sm w-full bg-base-200 dark:bg-base-300 dark:border-none" bind:value={newValues[id].username} placeholder="Username" />
+	<input
+		class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
+		bind:value={newValues[id].username}
+		placeholder="Username"
+	/>
 </td>
 <td>
 	<input
 		type="password"
-		class="input input-sm w-full bg-base-200 dark:bg-base-300 dark:border-none"
+		class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
 		bind:value={newValues[id].password}
 		placeholder="Password"
 	/>

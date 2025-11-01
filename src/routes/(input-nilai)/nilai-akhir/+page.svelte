@@ -16,13 +16,14 @@
 	const totalPages = $derived(Math.max(1, data.page.totalPages ?? 1));
 	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
 	const summary = $derived.by(() => {
-		const s: any = data.summary ?? {};
+		const s = (data.summary ?? {}) as Record<string, unknown>;
+		const getNum = (k: string) => Number((s[k] ?? 0) as unknown) || 0;
 		return {
-			totalMurid: s.totalMurid ?? 0,
-			totalMuridDinilai: s.totalMuridDinilai ?? 0,
-			totalMapel: s.totalMapel ?? 0,
-			totalEkstrakurikuler: s.totalEkstrakurikuler ?? 0,
-			totalKokurikuler: s.totalKokurikuler ?? 0
+			totalMurid: getNum('totalMurid'),
+			totalMuridDinilai: getNum('totalMuridDinilai'),
+			totalMapel: getNum('totalMapel'),
+			totalEkstrakurikuler: getNum('totalEkstrakurikuler'),
+			totalKokurikuler: getNum('totalKokurikuler')
 		};
 	});
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
@@ -143,11 +144,11 @@
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
 	<div class="mb-4 flex justify-between">
 		<div>
-		<h2 class="text-xl font-bold">Rekapitulasi Nilai Akhir</h2>
-		{#if kelasAktifLabel}
-			<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
-		{/if}
-		</div>	
+			<h2 class="text-xl font-bold">Rekapitulasi Nilai Akhir</h2>
+			{#if kelasAktifLabel}
+				<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
+			{/if}
+		</div>
 		<LegerDownload kelasId={kelasAktif?.id ?? null} />
 	</div>
 
@@ -216,9 +217,9 @@
 						<tr>
 							<td>{murid.peringkat}</td>
 							<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
-							<td class="flex gap-2 items-center">
+							<td class="flex items-center gap-2">
 								<a
-									class="btn btn-sm btn-soft shadow-none gap-3 items-center"
+									class="btn btn-sm btn-soft items-center gap-3 shadow-none"
 									title={`Lihat nilai akhir ${murid.nama}`}
 									href={murid.detailHref}
 								>
@@ -236,9 +237,10 @@
 							</td>
 							<td>
 								<a
-									class="btn btn-sm btn-soft shadow-none gap-3 items-center"
+									class="btn btn-sm btn-soft items-center gap-3 shadow-none"
 									title={`Lihat nilai akhir kokurikuler ${murid.nama}`}
-									href={murid.kokDetailHref ?? `/nilai-akhir/nilai-kokurikuler?murid_id=${murid.id}`}
+									href={murid.kokDetailHref ??
+										`/nilai-akhir/nilai-kokurikuler?murid_id=${murid.id}`}
 								>
 									<Icon name="eye" />
 									<span class="whitespace-nowrap">{murid.kriteriaKokurikuler ?? '—'}</span>
@@ -254,14 +256,19 @@
 							</td>
 							<td>
 								<a
-									class="btn btn-sm btn-soft shadow-none gap-3 items-center"
+									class="btn btn-sm btn-soft items-center gap-3 shadow-none"
 									title={`Lihat nilai akhir ekstrakurikuler ${murid.nama}`}
-									href={`/nilai-akhir/nilai-ekstra?murid_id=${murid.id}`}
+									href={murid.eksDetailHref ?? `/nilai-akhir/nilai-ekstra?murid_id=${murid.id}`}
 								>
 									<Icon name="eye" />
-									<span class="whitespace-nowrap">&mdash;</span>
+									<span class="whitespace-nowrap">{@html formatScore(murid.nilaiRataRataEkstrakurikuler ?? null)}</span>
 									<div>
-										{summary.totalEkstrakurikuler}
+										{murid.jumlahEkstrakurikulerDinilai}
+										{#if murid.totalEkstrakurikulerRelevan}
+											<span>
+												/&nbsp;{murid.totalEkstrakurikulerRelevan}
+											</span>
+										{/if}
 									</div>
 								</a>
 							</td>

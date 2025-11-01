@@ -31,7 +31,11 @@ export async function load({ parent, url, locals, depends }) {
 
 	const murid = await db.query.tableMurid.findFirst({
 		columns: { id: true, nama: true },
-		where: and(eq(tableMurid.id, muridId), eq(tableMurid.sekolahId, sekolahId), eq(tableMurid.kelasId, kelasAktif.id))
+		where: and(
+			eq(tableMurid.id, muridId),
+			eq(tableMurid.sekolahId, sekolahId),
+			eq(tableMurid.kelasId, kelasAktif.id)
+		)
 	});
 
 	if (!murid) return { meta, status: 'not-found', murid: null, daftarKokurikuler: [] };
@@ -48,7 +52,10 @@ export async function load({ parent, url, locals, depends }) {
 		await ensureAsesmenKokurikulerSchema();
 		asesmenRecords = await db.query.tableAsesmenKokurikuler.findMany({
 			columns: { kokurikulerId: true, dimensi: true, kategori: true },
-			where: and(eq(tableAsesmenKokurikuler.muridId, murid.id), inArray(tableAsesmenKokurikuler.kokurikulerId, kokIds))
+			where: and(
+				eq(tableAsesmenKokurikuler.muridId, murid.id),
+				inArray(tableAsesmenKokurikuler.kokurikulerId, kokIds)
+			)
 		});
 	}
 
@@ -77,7 +84,7 @@ export async function load({ parent, url, locals, depends }) {
 		const values: number[] = [];
 		for (const dim of dims) {
 			const kategori = m.get(dim);
-			const num = kategori ? kategoriToNumber[kategori] ?? null : null;
+			const num = kategori ? (kategoriToNumber[kategori] ?? null) : null;
 			if (num != null && Number.isFinite(num)) values.push(num);
 		}
 

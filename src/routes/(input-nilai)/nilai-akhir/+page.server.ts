@@ -1,6 +1,14 @@
 import db from '$lib/server/db';
 import { ensureAsesmenSumatifSchema } from '$lib/server/db/ensure-asesmen-sumatif';
-import { tableAsesmenSumatif, tableMataPelajaran, tableMurid, tableEkstrakurikuler, tableKokurikuler, tableAsesmenKokurikuler } from '$lib/server/db/schema';
+import {
+	tableAsesmenSumatif,
+	tableMataPelajaran,
+	tableMurid,
+	tableEkstrakurikuler,
+	tableKokurikuler,
+	tableAsesmenKokurikuler,
+	tableAsesmenEkstrakurikuler
+} from '$lib/server/db/schema';
 import { sanitizeDimensionList } from '$lib/kokurikuler';
 import { redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
@@ -65,6 +73,14 @@ function pickAgamaMapel(records: MapelRecord[], muridAgama: string | null | unde
 		}
 	}
 
+    
+
+    
+
+    
+
+    
+
 	let chosenAgamaMapel: MapelRecord | null = null;
 	const variantName = resolveAgamaVariantName(muridAgama);
 	if (variantName) {
@@ -94,6 +110,11 @@ type NilaiAkhirRow = {
 	jumlahKokurikulerDinilai: number;
 	totalKokurikulerRelevan: number;
 	kokDetailHref: string;
+	// ekstrakurikuler fields
+	nilaiRataRataEkstrakurikuler?: number | null;
+	jumlahEkstrakurikulerDinilai?: number;
+	totalEkstrakurikulerRelevan?: number;
+	eksDetailHref?: string;
 	// kriteria label for kokurikuler (Sangat Baik / Baik / Cukup / Kurang)
 	kriteriaKokurikuler: string | null;
 	detailHref: string;
@@ -222,6 +243,11 @@ export async function load({ parent, locals, url, depends }) {
 			totalKokurikulerRelevan: 0,
 			kokDetailHref: `/nilai-akhir/nilai-kokurikuler?murid_id=${murid.id}`,
 			kriteriaKokurikuler: null,
+			// default ekstrakurikuler values; will be filled below if ekstrakurikuler exists
+			nilaiRataRataEkstrakurikuler: null,
+			jumlahEkstrakurikulerDinilai: 0,
+			totalEkstrakurikulerRelevan: 0,
+			eksDetailHref: `/nilai-akhir/nilai-ekstra?murid_id=${murid.id}`
 		};
 	});
 
@@ -337,7 +363,9 @@ export async function load({ parent, locals, url, depends }) {
 				// try to ensure schema exists (older installs may not have the table)
 				try {
 					// dynamic import of ensure function to avoid hard dependency when table missing
-					const { ensureAsesmenKokurikulerSchema } = await import('$lib/server/db/ensure-asesmen-kokurikuler');
+					const { ensureAsesmenKokurikulerSchema } = await import(
+						'$lib/server/db/ensure-asesmen-kokurikuler'
+					);
 					await ensureAsesmenKokurikulerSchema();
 				} catch {
 					// ignore if ensure not available
@@ -346,7 +374,10 @@ export async function load({ parent, locals, url, depends }) {
 				// fetch asesmen records for all murids and kok ids
 				const asesmenRecords = await db.query.tableAsesmenKokurikuler.findMany({
 					columns: { muridId: true, kokurikulerId: true, dimensi: true, kategori: true },
-					where: and(inArray(tableAsesmenKokurikuler.muridId, muridIds), inArray(tableAsesmenKokurikuler.kokurikulerId, kokIds))
+					where: and(
+						inArray(tableAsesmenKokurikuler.muridId, muridIds),
+						inArray(tableAsesmenKokurikuler.kokurikulerId, kokIds)
+					)
 				});
 
 				// build map: muridId -> kokId -> map(dimensi -> kategori)
@@ -387,7 +418,7 @@ export async function load({ parent, locals, url, depends }) {
 						const vals: number[] = [];
 						for (const dim of dims) {
 							const kategori = kokMap.get(dim);
-							const num = kategori ? kategoriToNumber[kategori] ?? null : null;
+							const num = kategori ? (kategoriToNumber[kategori] ?? null) : null;
 							if (num != null && Number.isFinite(num)) vals.push(num);
 						}
 
@@ -422,6 +453,98 @@ export async function load({ parent, locals, url, depends }) {
 		} catch {
 			// ignore kokurikuler errors — keep defaults
 			// console.debug('kokurikuler aggregation skipped', err);
+		}
+	}
+
+	// compute ekstrakurikuler per-murid averages (if ekstrak rows exist)
+	if (ekstrakCount > 0) {
+		try {
+			const ekstrakRows = await db.query.tableEkstrakurikuler.findMany({
+				where: eq(tableEkstrakurikuler.kelasId, kelasAktif.id),
+				orderBy: asc(tableEkstrakurikuler.createdAt),
+				with: { tujuan: { columns: { id: true } } }
+			});
+
+			const ekstrIds = ekstrakRows.map((e) => e.id);
+			if (ekstrIds.length > 0 && muridIds.length > 0) {
+				try {
+					const { ensureAsesmenEkstrakurikulerSchema } = await import(
+						'$lib/server/db/ensure-asesmen-ekstrakurikuler'
+					);
+					await ensureAsesmenEkstrakurikulerSchema();
+				} catch {
+					// ignore
+				}
+
+				const asesmenRecords = await db.query.tableAsesmenEkstrakurikuler.findMany({
+					columns: { ekstrakurikulerId: true, tujuanId: true, muridId: true, kategori: true },
+					where: and(
+						inArray(tableAsesmenEkstrakurikuler.muridId, muridIds),
+						inArray(tableAsesmenEkstrakurikuler.ekstrakurikulerId, ekstrIds)
+					)
+				});
+
+				const asesmenByMurid = new Map<number, Map<number, Map<number, string>>>();
+				for (const r of asesmenRecords) {
+					let murMap = asesmenByMurid.get(r.muridId);
+					if (!murMap) {
+						murMap = new Map();
+						asesmenByMurid.set(r.muridId, murMap);
+					}
+					let eksMap = murMap.get(r.ekstrakurikulerId);
+					if (!eksMap) {
+						eksMap = new Map();
+						murMap.set(r.ekstrakurikulerId, eksMap);
+					}
+					eksMap.set(r.tujuanId, r.kategori);
+				}
+
+				const kategoriToNumber: Record<string, number> = {
+					'perlu-bimbingan': 1,
+					cukup: 2,
+					baik: 3,
+					'sangat-baik': 4
+				};
+
+				for (const row of daftarNilai) {
+					const muridId = row.id;
+					const murMap = asesmenByMurid.get(muridId) ?? new Map();
+
+					const ekstrValues: number[] = [];
+					let countedEks = 0;
+
+					for (const e of ekstrakRows) {
+						const tujuanIds = (e.tujuan ?? []).map((t: { id: number }) => t.id);
+						const eksMap = murMap.get(e.id) ?? new Map<number, string>();
+
+						const vals: number[] = [];
+						for (const tId of tujuanIds) {
+							const kategori = eksMap.get(tId);
+							const num = kategori ? (kategoriToNumber[kategori] ?? null) : null;
+							if (num != null && Number.isFinite(num)) vals.push(num);
+						}
+
+						if (vals.length > 0) {
+							const sum = vals.reduce((a, b) => a + b, 0);
+							const nilaiAkhir = Number.parseFloat((sum / vals.length).toFixed(2));
+							ekstrValues.push(nilaiAkhir);
+							countedEks += 1;
+						}
+					}
+
+					if (ekstrValues.length > 0) {
+						const avg = ekstrValues.reduce((a, b) => a + b, 0) / ekstrValues.length;
+						row.nilaiRataRataEkstrakurikuler = Number.parseFloat(avg.toFixed(2));
+					} else {
+						row.nilaiRataRataEkstrakurikuler = null;
+					}
+					row.jumlahEkstrakurikulerDinilai = countedEks;
+					row.totalEkstrakurikulerRelevan = ekstrakRows.length;
+					row.eksDetailHref = `/nilai-akhir/nilai-ekstra?murid_id=${muridId}`;
+				}
+			}
+		} catch {
+			// ignore ekstrak errors — keep defaults
 		}
 	}
 

@@ -167,13 +167,18 @@ export async function load(event) {
 		statistikDashboard.mapel.kokurikuler = kokurikulerRows.length;
 
 		// debug: show kokurikuler count for active class in server logs to help troubleshooting
-		console.info('[dashboard] kelasAktifId=%s kokurikuler=%d mapel=%o', kelasAktifId, kokurikulerRows.length, {
-			total: statistikDashboard.mapel.total,
-			wajib: statistikDashboard.mapel.wajib,
-			mulok: statistikDashboard.mapel.mulok,
-			kokurikuler: statistikDashboard.mapel.kokurikuler,
-			lainnya: statistikDashboard.mapel.lainnya
-		});
+		console.info(
+			'[dashboard] kelasAktifId=%s kokurikuler=%d mapel=%o',
+			kelasAktifId,
+			kokurikulerRows.length,
+			{
+				total: statistikDashboard.mapel.total,
+				wajib: statistikDashboard.mapel.wajib,
+				mulok: statistikDashboard.mapel.mulok,
+				kokurikuler: statistikDashboard.mapel.kokurikuler,
+				lainnya: statistikDashboard.mapel.lainnya
+			}
+		);
 
 		const muridRows = await db.query.tableMurid.findMany({
 			columns: { id: true },
@@ -257,8 +262,7 @@ export async function load(event) {
 				completed: ekstrakCompleted,
 				total: totalStudents,
 				percentage: calculatePercentage(ekstrakCompleted, totalStudents)
-			}
-			,
+			},
 			kokurikuler: {
 				completed: kokurCompleted,
 				total: totalStudents,

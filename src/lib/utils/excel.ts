@@ -1,4 +1,6 @@
-export async function readBufferToAoA(buffer: ArrayBuffer | Buffer): Promise<Array<Array<string | number>>> {
+export async function readBufferToAoA(
+	buffer: ArrayBuffer | Buffer
+): Promise<Array<Array<string | number>>> {
 	const mod = (await import('./excel.js')) as {
 		readBufferToAoA: (b: ArrayBuffer | Buffer) => Promise<Array<Array<string | number>>>;
 	};

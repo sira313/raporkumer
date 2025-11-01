@@ -34,7 +34,11 @@ export async function load({ parent, url, locals, depends }) {
 
 	const murid = await db.query.tableMurid.findFirst({
 		columns: { id: true, nama: true },
-		where: and(eq(tableMurid.id, muridId), eq(tableMurid.sekolahId, sekolahId), eq(tableMurid.kelasId, kelasAktif.id))
+		where: and(
+			eq(tableMurid.id, muridId),
+			eq(tableMurid.sekolahId, sekolahId),
+			eq(tableMurid.kelasId, kelasAktif.id)
+		)
 	});
 
 	if (!murid) return { meta, status: 'not-found', murid: null, daftarEkstrakurikuler: [] };
@@ -52,7 +56,10 @@ export async function load({ parent, url, locals, depends }) {
 		await ensureAsesmenEkstrakurikulerSchema();
 		asesmenRecords = await db.query.tableAsesmenEkstrakurikuler.findMany({
 			columns: { ekstrakurikulerId: true, tujuanId: true, kategori: true },
-			where: and(eq(tableAsesmenEkstrakurikuler.muridId, murid.id), inArray(tableAsesmenEkstrakurikuler.ekstrakurikulerId, ekstrIds))
+			where: and(
+				eq(tableAsesmenEkstrakurikuler.muridId, murid.id),
+				inArray(tableAsesmenEkstrakurikuler.ekstrakurikulerId, ekstrIds)
+			)
 		});
 	}
 
@@ -69,19 +76,19 @@ export async function load({ parent, url, locals, depends }) {
 
 	const kategoriToNumber: Record<string, number> = {
 		'perlu-bimbingan': 1,
-		'cukup': 2,
-		'baik': 3,
+		cukup: 2,
+		baik: 3,
 		'sangat-baik': 4
 	};
 
 	const daftarEkstrakurikuler = ekstrakRows.map((e, idx) => {
-	const tujuanIds = (e.tujuan ?? []).map((t: { id: number }) => t.id);
+		const tujuanIds = (e.tujuan ?? []).map((t: { id: number }) => t.id);
 		const m = asesmenMap.get(e.id) ?? new Map<number, string>();
 
 		const values: number[] = [];
 		for (const tId of tujuanIds) {
 			const kategori = m.get(tId);
-			const num = kategori ? kategoriToNumber[kategori] ?? null : null;
+			const num = kategori ? (kategoriToNumber[kategori] ?? null) : null;
 			if (num != null && Number.isFinite(num)) values.push(num);
 		}
 

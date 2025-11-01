@@ -17,9 +17,7 @@ export const jenjangPendidikanSederajat: Record<
 		{ key: 'ma', label: 'Madrasah Aliyah (MA)' },
 		{ key: 'mak', label: 'Madrasah Aliyah Kejuruan (MAK)' }
 	],
-	slb: [
-		{ key: 'slb', label: 'Sekolah Luar Biasa (SLB)' }
-	]
+	slb: [{ key: 'slb', label: 'Sekolah Luar Biasa (SLB)' }]
 };
 
 export const jenisKelamin: Record<Murid['jenisKelamin'], string> = {

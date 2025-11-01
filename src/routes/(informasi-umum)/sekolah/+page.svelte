@@ -62,7 +62,8 @@
 		if (!variantKey) return null;
 		// search across all jenjang groups for a variant with the matching key
 		for (const groupKey of Object.keys(jenjangPendidikanSederajat)) {
-			const variants = jenjangPendidikanSederajat[groupKey as keyof typeof jenjangPendidikanSederajat] ?? [];
+			const variants =
+				jenjangPendidikanSederajat[groupKey as keyof typeof jenjangPendidikanSederajat] ?? [];
 			const found = variants.find((v) => v.key === variantKey);
 			if (found) return found.label;
 		}

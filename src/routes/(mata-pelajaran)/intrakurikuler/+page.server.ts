@@ -395,7 +395,7 @@ export const actions = {
 			}
 		}
 
-	const buffer = await writeAoaToBuffer(rows);
+		const buffer = await writeAoaToBuffer(rows);
 
 		// try to include kelas name in filename (sanitize whitespace and dangerous chars)
 		let kelasLabel = `kelas-${kelasId}`;
