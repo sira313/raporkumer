@@ -73,7 +73,15 @@
 			const fileName = `Nilai Akhir - ${safeName}${kelasName} - ${timestamp}.xlsx`;
 			try {
 				const buf = await workbook.xlsx.writeBuffer();
-				const blob = new Blob([buf], {
+				const srcView = ArrayBuffer.isView(buf)
+					? new Uint8Array(
+						  (buf as ArrayBufferView).buffer as ArrayBuffer,
+						  (buf as ArrayBufferView).byteOffset,
+						  (buf as ArrayBufferView).byteLength
+					  )
+					: new Uint8Array(buf as ArrayBufferLike as any);
+				const uint8 = Uint8Array.from(srcView);
+				const blob = new Blob([uint8], {
 					type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 				});
 				const link = document.createElement('a');
