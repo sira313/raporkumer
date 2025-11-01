@@ -170,7 +170,15 @@
 			rows.push([]);
 			rows.push([]);
 			rows.push(['Mengetahui', ...Array(8).fill(''), 'Guru Kelas']);
-			rows.push([kepala, ...Array(10).fill(''), wali]);
+			rows.push([`Kepala ${String(schoolName)}`, ...Array(8).fill(''), '']);
+			// leave ~3 empty rows for signature (visual gap)
+			rows.push([]);
+			rows.push([]);
+			rows.push([]);
+			// Printed name of kepala
+			rows.push([String(kepala || ''), ...Array(10).fill(''), '']);
+			// NIP line
+			rows.push([`NIP ${String(meta?.kepalaSekolah?.nip || '')}`, ...Array(10).fill(''), '']);
 
 			// Add rows to worksheet (add all at once)
 			if (typeof ws.addRows === 'function') {
@@ -581,6 +589,50 @@
 			} catch (e) {
 				// ignore if worksheet API differs
 				console.warn('failed to set jumlah/capaian formulas', e);
+			}
+
+			// Add borders around the table area (from column "No" to "Ket" down to the RATA-RATA row)
+			try {
+				// Recompute column indices (same logic as above) so this block can run independently
+				const subjectCount = subjectCols.length;
+				const subjectStartCol = 3; // C
+				const subjectEndCol = 2 + subjectCount;
+				const kokCount = kokRows.length || 0;
+				const kokStartCol = subjectEndCol + 1;
+				const kokEndCol = kokStartCol + kokCount - 1;
+				const ekstraCount = ekstrakRows.length || 0;
+				const ekstraStartCol = subjectEndCol + 1 + kokCount;
+				const ekstraEndCol = ekstraStartCol + ekstraCount - 1;
+				const jumlahCol = ekstraCount ? ekstraEndCol + 1 : kokCount ? kokEndCol + 1 : subjectEndCol + 1;
+				const capaianCol = jumlahCol + 1;
+				const ketCol = capaianCol + 1;
+
+				const studentStartRow = 6; // header is row 5
+				const studentCount = Array.isArray(meta.murid) && meta.murid.length ? meta.murid.length : 30;
+				const rataRowNum = studentStartRow + studentCount; // RATA-RATA row
+
+				// Apply thin border to every cell in the rectangle from A4 to {Ket}{RATA}
+				const topRow = 4; // start above header so merges remain enclosed
+				const bottomRow = rataRowNum;
+				for (let r = topRow; r <= bottomRow; r++) {
+					for (let c = 1; c <= ketCol; c++) {
+						try {
+							const cell = ws.getCell(`${colLetter(c)}${r}`);
+							// preserve existing border if present by shallow-assigning
+							cell.border = {
+								top: { style: 'thin' },
+								left: { style: 'thin' },
+								bottom: { style: 'thin' },
+								right: { style: 'thin' }
+							} as any;
+						} catch (inner) {
+							// ignore individual cell failures (e.g., out-of-range)
+						}
+					}
+				}
+			} catch (e) {
+				// non-fatal: continue if border application fails on some worksheet implementations
+				console.warn('failed to apply table borders', e);
 			}
 
 			// Write workbook to buffer and trigger download
