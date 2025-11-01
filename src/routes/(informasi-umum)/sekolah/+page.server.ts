@@ -12,6 +12,12 @@ import {
 	tableTasks,
 	tableTahunAjaran,
 	tableTujuanPembelajaran,
+	tableAuthUser,
+	tableAsesmenFormatif,
+	tableAsesmenSumatif,
+	tableAsesmenSumatifTujuan,
+	tableAsesmenEkstrakurikuler,
+	tableAsesmenKokurikuler,
 	tableWaliMurid
 } from '$lib/server/db/schema';
 import { fail } from '@sveltejs/kit';
@@ -178,12 +184,21 @@ export const actions: Actions = {
 					pegawaiIds.add(id);
 				}
 
+				// remove auth_user rows tied to this sekolah early to avoid FK blocks
+				await tx.delete(tableAuthUser).where(eq(tableAuthUser.sekolahId, sekolahId));
+
 				if (kelasIds.length) {
 					const mapelRows = await tx
 						.select({ id: tableMataPelajaran.id })
 						.from(tableMataPelajaran)
 						.where(inArray(tableMataPelajaran.kelasId, kelasIds));
 					const mapelIds = mapelRows.map((row) => row.id);
+
+					// remove auth_user rows that reference mata pelajaran or kelas (they may not have sekolahId)
+					if (mapelIds.length) {
+						await tx.delete(tableAuthUser).where(inArray(tableAuthUser.mataPelajaranId, mapelIds));
+					}
+					await tx.delete(tableAuthUser).where(inArray(tableAuthUser.kelasId, kelasIds));
 
 					if (mapelIds.length) {
 						await tx
@@ -216,12 +231,41 @@ export const actions: Actions = {
 					if (kokurikulerIds.length) {
 						await tx.delete(tableKokurikuler).where(inArray(tableKokurikuler.id, kokurikulerIds));
 					}
+
+					// delete asesmen related to mata pelajaran
+					if (mapelIds.length) {
+						await tx
+							.delete(tableAsesmenFormatif)
+							.where(inArray(tableAsesmenFormatif.mataPelajaranId, mapelIds));
+						await tx
+							.delete(tableAsesmenSumatifTujuan)
+							.where(inArray(tableAsesmenSumatifTujuan.mataPelajaranId, mapelIds));
+						await tx
+							.delete(tableAsesmenSumatif)
+							.where(inArray(tableAsesmenSumatif.mataPelajaranId, mapelIds));
+					}
+
+					// delete asesmen ekstrakurikuler / tujuan ekstrakurikuler if ekstrak exists
+					if (ekstrakIds.length) {
+						await tx
+							.delete(tableAsesmenEkstrakurikuler)
+							.where(inArray(tableAsesmenEkstrakurikuler.ekstrakurikulerId, ekstrakIds));
+					}
+
+					// delete asesmen kokurikuler for kokurikulerIds
+					if (kokurikulerIds.length) {
+						await tx
+							.delete(tableAsesmenKokurikuler)
+							.where(inArray(tableAsesmenKokurikuler.kokurikulerId, kokurikulerIds));
+					}
 				}
 
+				// remove remaining direct sekolah scoped rows
 				await tx.delete(tableTasks).where(eq(tableTasks.sekolahId, sekolahId));
 				await tx.delete(tableMurid).where(eq(tableMurid.sekolahId, sekolahId));
 				await tx.delete(tableKelas).where(eq(tableKelas.sekolahId, sekolahId));
 				await tx.delete(tableTahunAjaran).where(eq(tableTahunAjaran.sekolahId, sekolahId));
+
 				await tx.delete(tableSekolah).where(eq(tableSekolah.id, sekolahId));
 
 				const waliIdsArray = Array.from(waliMuridIds);
@@ -271,8 +315,19 @@ export const actions: Actions = {
 					for (const row of waliRefs) {
 						if (row.id) pegawaiStillUsed.add(row.id);
 					}
+
+					// also consider auth_user.pegawaiId references (users created without sekolahId may reference pegawai)
+					const authPegawaiRefs = await tx
+						.selectDistinct({ id: tableAuthUser.pegawaiId })
+						.from(tableAuthUser)
+						.where(inArray(tableAuthUser.pegawaiId, pegawaiIdsArray));
+					for (const row of authPegawaiRefs) {
+						if (row.id) pegawaiStillUsed.add(row.id);
+					}
 					const pegawaiToDelete = pegawaiIdsArray.filter((id) => !pegawaiStillUsed.has(id));
 					if (pegawaiToDelete.length) {
+						// delete any auth_user rows referencing these pegawai (they may not have sekolahId set)
+						await tx.delete(tableAuthUser).where(inArray(tableAuthUser.pegawaiId, pegawaiToDelete));
 						await tx.delete(tablePegawai).where(inArray(tablePegawai.id, pegawaiToDelete));
 					}
 				}

@@ -1,13 +1,7 @@
-export const jenjangPendidikan: Record<Sekolah['jenjangPendidikan'], string> = {
-	sd: 'SD (Sekolah Dasar)',
-	smp: 'SMP (Sekolah Menengah Pertama)',
-	sma: 'SMA (Sekolah Menengah Atas)'
-};
-
 // Varian / jenjang sederajat — daftar institusi yang setara untuk setiap jenjang
 export const jenjangPendidikanSederajat: Record<
 	Sekolah['jenjangPendidikan'],
-    { key: string; label: string }[]
+	{ key: string; label: string }[]
 > = {
 	sd: [
 		{ key: 'sd', label: 'Sekolah Dasar (SD)' },

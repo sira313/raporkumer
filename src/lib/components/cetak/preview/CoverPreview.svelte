@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PrintCardPage from '$lib/components/cetak/rapor/PrintCardPage.svelte';
-	import { jenjangPendidikan, jenjangPendidikanSederajat } from '$lib/statics';
+	import { jenjangPendidikanSederajat } from '$lib/statics';
 
 	type CoverData = NonNullable<App.PageData['coverData']>;
 	type ComponentData = {
@@ -34,29 +34,29 @@
 	}
 
 	const logoSrc = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri-bw.png');
-	// formatted school name used in the cover area
-	const schoolName = $derived.by(() => formatUpper(sekolah?.nama));
 	// formatted jenjang pendidikan (label) for the cover — e.g. "SD (Sekolah Dasar)"
 	const schoolJenjang = $derived.by(() => {
-			// some preview payloads use `jenjang` as the key while the canonical model
-			// uses `jenjangPendidikan`. Support both and fall back to the raw value
-			// (uppercased) if there's no mapping.
-			const raw = sekolah?.jenjangPendidikan ?? (sekolah as any)?.jenjang ?? null;
-			const variantKey = (sekolah as any)?.jenjangVariant ?? (sekolah as any)?.variant ?? null;
+		// some preview payloads use `jenjang` as the key while the canonical model
+		// uses `jenjangPendidikan`. Support both and fall back to the raw value
+		// (uppercased) if there's no mapping.
+		const sekolahRecord = sekolah as Record<string, unknown> | null;
+		const raw = sekolahRecord?.['jenjangPendidikan'] ?? sekolahRecord?.['jenjang'] ?? null;
+		const variantKey = sekolahRecord?.['jenjangVariant'] ?? sekolahRecord?.['variant'] ?? null;
 
-			if (!raw) return null;
+		if (!raw) return null;
 
-			const key = raw as keyof typeof jenjangPendidikan;
+		const key = String(raw) as keyof typeof jenjangPendidikanSederajat;
 
-			// prefer explicit variant label when available
-			if (variantKey) {
-				const variants = jenjangPendidikanSederajat[key] ?? [];
-				const found = variants.find((v) => v.key === variantKey);
-				if (found) return formatUpper(found.label);
-			}
+		// prefer explicit variant label when available
+		if (variantKey) {
+			const variants = jenjangPendidikanSederajat[key] ?? [];
+			const found = variants.find((v) => v.key === String(variantKey));
+			if (found) return formatUpper(found.label);
+		}
 
-			const mapped = jenjangPendidikan[key];
-			return mapped ? formatUpper(mapped) : formatUpper(String(raw));
+		// fallback to the first variant's label for the jenjang (e.g. "Sekolah Dasar (SD)")
+		const mapped = (jenjangPendidikanSederajat[key] ?? [])[0]?.label;
+		return mapped ? formatUpper(mapped) : formatUpper(String(raw));
 	});
 	const coverHeadings = $derived.by(() => [
 		{ text: 'LAPORAN', class: 'text-4xl font-bold tracking-wide uppercase' },

@@ -4,7 +4,7 @@
 		type DeleteSekolahModalHandle
 	} from '$lib/components/sekolah/delete-sekolah-modal.svelte';
 	import type { SekolahCard } from '$lib/components/sekolah/types';
-	import { jenjangPendidikan } from '$lib/statics.js';
+	import { jenjangPendidikanSederajat } from '$lib/statics.js';
 
 	import { page } from '$app/state';
 
@@ -42,6 +42,21 @@
 	}
 
 	let deleteModalRef: DeleteSekolahModalHandle | null = null;
+
+	function openDeleteSekolah(sekolah: SekolahCard) {
+		try {
+			console.debug('[sekolah page] delete button clicked for', sekolah && sekolah.id);
+			if (canSekolahManage) deleteModalRef?.open(sekolah);
+		} catch (err) {
+			console.error('failed to open delete modal', err);
+		}
+	}
+
+	function getJenjangLabel(key?: Sekolah['jenjangPendidikan'] | null) {
+		if (!key) return '-';
+		const label = (jenjangPendidikanSederajat[key] ?? [])[0]?.label;
+		return label ?? String(key);
+	}
 </script>
 
 <div class="flex flex-col gap-6">
@@ -106,7 +121,7 @@
 							<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
 								<span class="text-base-content/70 font-semibold">Jenjang Pendidikan</span>
 								<span class="text-base-content md:col-span-2">
-									{jenjangPendidikan[sekolah.jenjangPendidikan]}
+									{getJenjangLabel(sekolah.jenjangPendidikan)}
 								</span>
 							</div>
 
@@ -163,7 +178,7 @@
 								type="button"
 								class="btn btn-error btn-soft shadow-none"
 								aria-label="hapus sekolah"
-								onclick={() => (canSekolahManage ? deleteModalRef?.open(sekolah) : undefined)}
+								onclick={() => openDeleteSekolah(sekolah)}
 								disabled={!canSekolahManage}
 								aria-disabled={!canSekolahManage}
 								title={!canSekolahManage ? 'Anda tidak memiliki izin untuk menghapus sekolah' : ''}

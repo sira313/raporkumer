@@ -2,14 +2,16 @@
 	import { goto, invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import { jenjangPendidikan, jenjangPendidikanSederajat } from '$lib/statics';
+	import { jenjangPendidikanSederajat } from '$lib/statics';
 
 	let { data } = $props();
 	const isNew = data.isNew as boolean;
 	const initialSekolah = (isNew ? undefined : data.sekolah) as Sekolah | undefined;
 
 	// typed keys for jenjangPendidikanSederajat to avoid implicit `string` indexing errors
-	const jenjangKeys = Object.keys(jenjangPendidikanSederajat) as Array<keyof typeof jenjangPendidikanSederajat>;
+	const jenjangKeys = Object.keys(jenjangPendidikanSederajat) as Array<
+		keyof typeof jenjangPendidikanSederajat
+	>;
 </script>
 
 {#if data.isInit}
@@ -57,14 +59,16 @@
 								const sel = e.currentTarget as HTMLSelectElement;
 								const option = sel.selectedOptions?.[0];
 								const variant = option?.dataset?.variant ?? '';
-								const hidden = sel.form?.elements.namedItem('jenjangVariant') as HTMLInputElement | null;
+								const hidden = sel.form?.elements.namedItem(
+									'jenjangVariant'
+								) as HTMLInputElement | null;
 								if (hidden) hidden.value = variant;
 							}}
 						>
 							<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
 							{#each jenjangKeys as jenjKey (jenjKey)}
-								<optgroup label={jenjangPendidikan[jenjKey]}>
-									{#each jenjangPendidikanSederajat[jenjKey] as variant}
+								<optgroup label={jenjangPendidikanSederajat[jenjKey][0].label}>
+									{#each jenjangPendidikanSederajat[jenjKey] as variant (variant.key)}
 										<!-- nilai option tetap jenjang utama (sd/smp/sma) supaya sesuai model `jenjangPendidikan` -->
 										<option value={jenjKey} data-variant={variant.key}>{variant.label}</option>
 									{/each}

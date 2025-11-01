@@ -29,7 +29,20 @@
 	export function open(sekolah: SekolahCard) {
 		targetSekolah = sekolah;
 		purgeAck = false;
-		requestAnimationFrame(() => dialogEl?.showModal());
+		requestAnimationFrame(() => {
+			try {
+				console.debug('[DeleteSekolahModal] open() called for', sekolah && sekolah.id);
+				dialogEl?.showModal();
+			} catch (err) {
+				// fallback: some envs/browsers may not support dialog.showModal or it may throw
+				console.debug('[DeleteSekolahModal] showModal failed, applying fallback', err);
+				if (dialogEl) {
+					dialogEl.setAttribute('open', '');
+					// add modal class on document to mimic dialog show if needed (daisyui uses .modal)
+					document.documentElement.classList.add('modal-open');
+				}
+			}
+		});
 	}
 
 	export function close() {
