@@ -2,11 +2,14 @@
 	import { goto, invalidate } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import { jenjangPendidikan } from '$lib/statics';
+	import { jenjangPendidikan, jenjangPendidikanSederajat } from '$lib/statics';
 
 	let { data } = $props();
 	const isNew = data.isNew as boolean;
 	const initialSekolah = (isNew ? undefined : data.sekolah) as Sekolah | undefined;
+
+	// typed keys for jenjangPendidikanSederajat to avoid implicit `string` indexing errors
+	const jenjangKeys = Object.keys(jenjangPendidikanSederajat) as Array<keyof typeof jenjangPendidikanSederajat>;
 </script>
 
 {#if data.isInit}
@@ -49,12 +52,26 @@
 							class="select bg-base-200 validator w-full border dark:border-none"
 							name="jenjangPendidikan"
 							required
+							onchange={(e) => {
+								// set hidden input jenjangVariant from the selected option's data-variant
+								const sel = e.currentTarget as HTMLSelectElement;
+								const option = sel.selectedOptions?.[0];
+								const variant = option?.dataset?.variant ?? '';
+								const hidden = sel.form?.elements.namedItem('jenjangVariant') as HTMLInputElement | null;
+								if (hidden) hidden.value = variant;
+							}}
 						>
 							<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
-							{#each Object.entries(jenjangPendidikan) as [value, label] (value)}
-								<option {value}>{label}</option>
+							{#each jenjangKeys as jenjKey (jenjKey)}
+								<optgroup label={jenjangPendidikan[jenjKey]}>
+									{#each jenjangPendidikanSederajat[jenjKey] as variant}
+										<!-- nilai option tetap jenjang utama (sd/smp/sma) supaya sesuai model `jenjangPendidikan` -->
+										<option value={jenjKey} data-variant={variant.key}>{variant.label}</option>
+									{/each}
+								</optgroup>
 							{/each}
 						</select>
+						<input hidden name="jenjangVariant" />
 					</div>
 					<div class="fieldset">
 						<legend class="fieldset-legend">Lokasi Tanda Tangan</legend>

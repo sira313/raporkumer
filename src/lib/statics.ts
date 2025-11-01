@@ -4,6 +4,28 @@ export const jenjangPendidikan: Record<Sekolah['jenjangPendidikan'], string> = {
 	sma: 'SMA (Sekolah Menengah Atas)'
 };
 
+// Varian / jenjang sederajat — daftar institusi yang setara untuk setiap jenjang
+export const jenjangPendidikanSederajat: Record<
+	Sekolah['jenjangPendidikan'],
+    { key: string; label: string }[]
+> = {
+	sd: [
+		{ key: 'sd', label: 'Sekolah Dasar (SD)' },
+		{ key: 'mi', label: 'Madrasah Ibtidaiyah (MI)' },
+		{ key: 'slb-dasar', label: 'Sekolah Luar Biasa (SLB) tingkat dasar' }
+	],
+	smp: [
+		{ key: 'smp', label: 'Sekolah Menengah Pertama (SMP)' },
+		{ key: 'mts', label: 'Madrasah Tsanawiyah (MTs)' }
+	],
+	sma: [
+		{ key: 'sma', label: 'Sekolah Menengah Atas (SMA)' },
+		{ key: 'smk', label: 'Sekolah Menengah Kejuruan (SMK)' },
+		{ key: 'ma', label: 'Madrasah Aliyah (MA)' },
+		{ key: 'mak', label: 'Madrasah Aliyah Kejuruan (MAK)' }
+	]
+};
+
 export const jenisKelamin: Record<Murid['jenisKelamin'], string> = {
 	L: 'Laki-laki',
 	P: 'Perempuan'

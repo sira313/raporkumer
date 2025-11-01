@@ -71,6 +71,7 @@ export async function getCoverPreviewPayload({ locals, url }: CoverContext) {
 		sekolah: {
 			nama: sekolah.nama,
 			jenjang: sekolah.jenjangPendidikan,
+			jenjangVariant: sekolah.jenjangVariant ?? null,
 			npsn: sekolah.npsn,
 			alamat: {
 				jalan: sekolah.alamat?.jalan ?? '',

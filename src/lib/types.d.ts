@@ -16,6 +16,7 @@ interface CoverPrintData {
 	sekolah: {
 		nama: string;
 		jenjang: 'sd' | 'smp' | 'sma';
+		jenjangVariant?: string | null;
 		npsn: string;
 		alamat: {
 			jalan: string;

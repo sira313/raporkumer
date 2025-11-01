@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PrintCardPage from '$lib/components/cetak/rapor/PrintCardPage.svelte';
+	import { jenjangPendidikan, jenjangPendidikanSederajat } from '$lib/statics';
 
 	type CoverData = NonNullable<App.PageData['coverData']>;
 	type ComponentData = {
@@ -35,6 +36,28 @@
 	const logoSrc = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri-bw.png');
 	// formatted school name used in the cover area
 	const schoolName = $derived.by(() => formatUpper(sekolah?.nama));
+	// formatted jenjang pendidikan (label) for the cover — e.g. "SD (Sekolah Dasar)"
+	const schoolJenjang = $derived.by(() => {
+			// some preview payloads use `jenjang` as the key while the canonical model
+			// uses `jenjangPendidikan`. Support both and fall back to the raw value
+			// (uppercased) if there's no mapping.
+			const raw = sekolah?.jenjangPendidikan ?? (sekolah as any)?.jenjang ?? null;
+			const variantKey = (sekolah as any)?.jenjangVariant ?? (sekolah as any)?.variant ?? null;
+
+			if (!raw) return null;
+
+			const key = raw as keyof typeof jenjangPendidikan;
+
+			// prefer explicit variant label when available
+			if (variantKey) {
+				const variants = jenjangPendidikanSederajat[key] ?? [];
+				const found = variants.find((v) => v.key === variantKey);
+				if (found) return formatUpper(found.label);
+			}
+
+			const mapped = jenjangPendidikan[key];
+			return mapped ? formatUpper(mapped) : formatUpper(String(raw));
+	});
 	const coverHeadings = $derived.by(() => [
 		{ text: 'LAPORAN', class: 'text-4xl font-bold tracking-wide uppercase' },
 		{ text: 'HASIL BELAJAR MURID', class: 'text-2xl font-bold uppercase' },
@@ -107,8 +130,8 @@
 			<div class="flex flex-col items-center gap-1 text-center uppercase">
 				<p class="text-2xl font-bold tracking-[0.5em]">R A P O R</p>
 				<p class="text-xl font-semibold">HASIL BELAJAR MURID</p>
-				{#if schoolName}
-					<p class="text-xl font-semibold">{schoolName}</p>
+				{#if schoolJenjang}
+					<p class="text-xl font-semibold">{schoolJenjang}</p>
 				{/if}
 			</div>
 			<div class="flex justify-start">
