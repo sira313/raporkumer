@@ -165,20 +165,41 @@
 				rows.push(rata);
 			}
 
-			// signature lines
+			// signature lines: include lokasi tanda tangan and tanggal bagi rapor
 			rows.push([]);
 			rows.push([]);
 			rows.push([]);
-			rows.push(['Mengetahui', ...Array(8).fill(''), 'Guru Kelas']);
-			rows.push([`Kepala ${String(schoolName)}`, ...Array(8).fill(''), '']);
+			// derive lokasi and tanggal from metadata (prefer top-level keys added by server)
+			const lokasiFromMeta = (meta && (meta.lokasiTandaTangan || (meta.sekolah && meta.sekolah.lokasiTandaTangan))) || 'Lokasi tanda tangan';
+			const tanggalRaw = (meta && (meta.tanggalBagiRaport || (meta.sekolah && meta.sekolah?.semesterAktif?.tanggalBagiRaport))) || null;
+			const formattedTanggal = (() => {
+				if (!tanggalRaw) {
+					try {
+						return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+					} catch (e) {
+						return '';
+					}
+				}
+				try {
+					const d = new Date(tanggalRaw);
+					if (Number.isNaN(d.getTime())) return '';
+					return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
+				} catch (e) {
+					return String(tanggalRaw);
+				}
+			})();
+			rows.push(['Mengetahui', ...Array(8).fill(''), `${lokasiFromMeta}, ${formattedTanggal}`]);
+			// put Wali Kelas text on the same row as the Kepala title (rightmost cell)
+			const kelasNama = meta?.kelasNama || (meta?.kelas && meta.kelas.nama) || '';
+			rows.push([`Kepala ${String(schoolName)}`, ...Array(8).fill(''), kelasNama ? `Wali Kelas ${String(kelasNama)}` : 'Wali Kelas']);
 			// leave ~3 empty rows for signature (visual gap)
 			rows.push([]);
 			rows.push([]);
 			rows.push([]);
-			// Printed name of kepala
-			rows.push([String(kepala || ''), ...Array(10).fill(''), '']);
-			// NIP line
-			rows.push([`NIP ${String(meta?.kepalaSekolah?.nip || '')}`, ...Array(10).fill(''), '']);
+			// Printed name of kepala (also show wali kelas name at the rightmost cell)
+			rows.push([String(kepala || ''), ...Array(8).fill(''), String(wali || '')]);
+			// NIP line for kepala (also show wali kelas NIP at the rightmost cell)
+			rows.push([`NIP ${String(meta?.kepalaSekolah?.nip || '')}`, ...Array(8).fill(''), `NIP ${String(meta?.waliKelas?.nip || '')}`]);
 
 			// Add rows to worksheet (add all at once)
 			if (typeof ws.addRows === 'function') {

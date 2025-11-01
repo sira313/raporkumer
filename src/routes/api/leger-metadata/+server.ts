@@ -29,6 +29,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	const sekolah = (locals as { sekolah?: unknown }).sekolah ?? null;
 	const kelasIdParam = url.searchParams.get('kelas_id');
 	let waliKelas = null;
+	let kelasNama: string | null = null;
 
 	try {
 		if (kelasIdParam) {
@@ -42,6 +43,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 					const wk = kelas.waliKelas as { nama?: string; nip?: string };
 					waliKelas = { nama: wk.nama || '', nip: wk.nip || '' };
 				}
+				// capture kelas name for client use
+				kelasNama = kelas?.nama ?? null;
 			}
 		}
 	} catch (err) {
@@ -320,11 +323,21 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		? { nama: s.kepalaSekolah.nama || '', nip: s.kepalaSekolah.nip || '' }
 		: null;
 
+	// expose lokasi tanda tangan and tanggal bagi rapor when available so clients
+	// (like the Excel exporter) can render signatures correctly.
+	const sekolahTyped = s as unknown as { lokasiTandaTangan?: string; semesterAktif?: { tanggalBagiRaport?: string } } | null;
+	const lokasiTandaTangan = sekolahTyped?.lokasiTandaTangan ?? null;
+	const tanggalBagiRaport = sekolahTyped?.semesterAktif?.tanggalBagiRaport ?? null;
+
 	return new Response(
 		JSON.stringify({
 			sekolah: s ? { nama: s.nama || '' } : null,
 			kepalaSekolah: kepala,
 			waliKelas,
+			// convenience/top-level metadata used by client exporters
+			lokasiTandaTangan,
+			tanggalBagiRaport,
+			kelasNama,
 			// raw mapel, and computed headers + murid rows with nilai
 			mapel,
 			headers: headerMap,
