@@ -3,6 +3,7 @@ import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import {
 	tableAsesmenEkstrakurikuler,
 	tableAsesmenSumatif,
+	tableAsesmenKokurikuler,
 	tableEkstrakurikuler,
 	tableKokurikuler,
 	tableKehadiranMurid,
@@ -59,7 +60,8 @@ export async function load(event) {
 		progress: {
 			akademik: { percentage: 0, completed: 0, total: 0 },
 			absensi: { percentage: 0, completed: 0, total: 0 },
-			ekstrakurikuler: { percentage: 0, completed: 0, total: 0 }
+			ekstrakurikuler: { percentage: 0, completed: 0, total: 0 },
+			kokurikuler: { percentage: 0, completed: 0, total: 0 }
 		}
 	};
 
@@ -229,6 +231,17 @@ export async function load(event) {
 			ekstrakCompleted = ekstrakSet.size;
 		}
 
+		let kokurCompleted = 0;
+		if (totalStudents > 0) {
+			const asesmenKokurRows = await db
+				.select({ muridId: tableAsesmenKokurikuler.muridId })
+				.from(tableAsesmenKokurikuler)
+				.where(inArray(tableAsesmenKokurikuler.muridId, muridIds));
+
+			const kokurSet = new Set(asesmenKokurRows.map((row) => row.muridId));
+			kokurCompleted = kokurSet.size;
+		}
+
 		statistikDashboard.progress = {
 			akademik: {
 				completed: akademikCompleted,
@@ -244,6 +257,12 @@ export async function load(event) {
 				completed: ekstrakCompleted,
 				total: totalStudents,
 				percentage: calculatePercentage(ekstrakCompleted, totalStudents)
+			}
+			,
+			kokurikuler: {
+				completed: kokurCompleted,
+				total: totalStudents,
+				percentage: calculatePercentage(kokurCompleted, totalStudents)
 			}
 		};
 	}

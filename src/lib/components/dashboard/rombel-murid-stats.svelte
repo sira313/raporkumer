@@ -18,7 +18,7 @@
 				<Icon name="user" />
 			</span>
 		</div>
-		<div class="stat-title">Jumlah Rombel</div>
+		<div class="stat-title">Jumlah Total Rombel</div>
 		<div class="stat-value">{rombel.total}</div>
 		<div class="stat-desc flex flex-wrap gap-1">
 			{#if rombelBadges.length}
@@ -40,7 +40,7 @@
 				<Icon name="users" />
 			</span>
 		</div>
-		<div class="stat-title">Jumlah Murid</div>
+		<div class="stat-title">Jumlah Total Murid</div>
 		<div class="stat-value">{murid.total}</div>
 		<div class="stat-desc">{murid.total ? 'Aktif' : 'Belum ada data'}</div>
 	</div>

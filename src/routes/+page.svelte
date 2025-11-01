@@ -11,12 +11,12 @@
 		data.statistikDashboard ?? {
 			rombel: { total: 0, perFase: [] },
 			murid: { total: 0 },
-			mapel: { total: 0, wajib: 0, mulok: 0, lainnya: 0 },
+			mapel: { total: 0, wajib: 0, mulok: 0, kokurikuler: 0, lainnya: 0 },
 			ekstrakurikuler: { total: 0 },
 			progress: {
 				akademik: { percentage: 0, completed: 0, total: 0 },
-				absensi: { percentage: 0, completed: 0, total: 0 },
-				ekstrakurikuler: { percentage: 0, completed: 0, total: 0 }
+				ekstrakurikuler: { percentage: 0, completed: 0, total: 0 },
+				kokurikuler: { percentage: 0, completed: 0, total: 0 }
 			}
 		}
 	);
@@ -26,8 +26,8 @@
 	const progressStats = $derived(
 		statistikDashboard.progress ?? {
 			akademik: { percentage: 0, completed: 0, total: 0 },
-			absensi: { percentage: 0, completed: 0, total: 0 },
-			ekstrakurikuler: { percentage: 0, completed: 0, total: 0 }
+			ekstrakurikuler: { percentage: 0, completed: 0, total: 0 },
+			kokurikuler: { percentage: 0, completed: 0, total: 0 }
 		}
 	);
 	const ekstrakurikulerStats = $derived(statistikDashboard.ekstrakurikuler ?? { total: 0 });
