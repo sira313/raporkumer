@@ -6,7 +6,9 @@ import {
 	tableMurid,
 	tableAsesmenSumatif,
 	tableKokurikuler,
-	tableAsesmenKokurikuler
+	tableAsesmenKokurikuler,
+	tableEkstrakurikuler,
+	tableAsesmenEkstrakurikuler
 } from '$lib/server/db/schema';
 import { sanitizeDimensionList } from '$lib/kokurikuler';
 
@@ -227,6 +229,92 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		}
 	}
 
+	// fetch ekstrakurikuler rows for kelas and compute per-murid ekstrak values (kriteria)
+	let ekstrakRows: Array<{ id: number; nama: string }> = [];
+	const eksByMuridValues = new Map<number, Record<string, string | null>>();
+	try {
+		if (kelasIdParam) {
+			const id = Number(kelasIdParam);
+			if (Number.isInteger(id)) {
+				const rawEks = await db.query.tableEkstrakurikuler.findMany({
+					where: eq(tableEkstrakurikuler.kelasId, id),
+					columns: { id: true, nama: true, createdAt: true },
+					orderBy: [asc(tableEkstrakurikuler.createdAt)]
+				});
+				ekstrakRows = rawEks.map((e) => ({ id: e.id, nama: e.nama }));
+				const eksIds = ekstrakRows.map((k) => k.id);
+				const muridIds = muridList.map((m) => m.id);
+				if (eksIds.length && muridIds.length) {
+					try {
+						const asesmenEks = await db.query.tableAsesmenEkstrakurikuler.findMany({
+							columns: { muridId: true, ekstrakurikulerId: true, kategori: true },
+							where: and(
+								inArray(tableAsesmenEkstrakurikuler.muridId, muridIds),
+								inArray(tableAsesmenEkstrakurikuler.ekstrakurikulerId, eksIds)
+							)
+						});
+						// build map muridId -> ekstrakId -> kategori[]
+						const asesmenByMuridEks = new Map<number, Map<number, string[]>>();
+						for (const a of asesmenEks) {
+							let mur = asesmenByMuridEks.get(a.muridId);
+							if (!mur) {
+								mur = new Map();
+								asesmenByMuridEks.set(a.muridId, mur);
+							}
+							const arr = mur.get(a.ekstrakurikulerId) ?? [];
+							arr.push(a.kategori);
+							mur.set(a.ekstrakurikulerId, arr);
+						}
+
+						const kategoriToNumberEks: Record<string, number> = {
+							'perlu-bimbingan': 1,
+							cukup: 2,
+							baik: 3,
+							'sangat-baik': 4
+						};
+
+						for (const m of muridList) {
+							const valsForMurid: Record<string, string | null> = {};
+							for (const e of ekstrakRows) {
+								const arr = asesmenByMuridEks.get(m.id)?.get(e.id) ?? [];
+								const nums: number[] = [];
+								for (const cat of arr) {
+									const n = kategoriToNumberEks[cat] ?? null;
+									if (n != null && Number.isFinite(n)) nums.push(n);
+								}
+								if (nums.length > 0) {
+									const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+									const avgFixed = Number.parseFloat(avg.toFixed(2));
+									let kriteria: string | null = null;
+									if (avgFixed >= 3.51) kriteria = 'Sangat Baik';
+									else if (avgFixed >= 2.51) kriteria = 'Baik';
+									else if (avgFixed >= 1.51) kriteria = 'Cukup';
+									else kriteria = 'Kurang';
+									valsForMurid[`eks_${e.id}`] = kriteria;
+								} else {
+									valsForMurid[`eks_${e.id}`] = null;
+								}
+							}
+							eksByMuridValues.set(m.id, valsForMurid);
+						}
+					} catch {
+						// ignore ekstrak assessment errors
+					}
+				}
+			}
+		}
+	} catch {
+		// ignore ekstrak fetch errors
+	}
+
+	// merge ekstrak values into muridRows' nilai records under keys eks_{id}
+	if (ekstrakRows.length) {
+		for (const mr of muridRows) {
+			const extra = eksByMuridValues.get(mr.id) ?? {};
+			mr.nilai = Object.assign({}, mr.nilai, extra);
+		}
+	}
+
 	const s = sekolah as SekolahLike | null;
 	const kepala = s?.kepalaSekolah
 		? { nama: s.kepalaSekolah.nama || '', nip: s.kepalaSekolah.nip || '' }
@@ -241,6 +329,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			mapel,
 			headers: headerMap,
 			kokRows,
+			ekstrakRows,
 			murid: muridRows
 		}),
 		{

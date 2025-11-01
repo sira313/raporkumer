@@ -74,12 +74,13 @@ export const appMenuItems: MenuItem[] = [
 			{
 				title: 'Catatan Wali Kelas',
 				path: '/catatan-wali-kelas'
-			},
-			{
-				title: 'Rekap Nilai',
-				path: '/nilai-akhir'
 			}
 		]
+	},
+	{
+		title: 'Rekap Nilai',
+		icon: 'table',
+		path: '/nilai-akhir'
 	},
 	{
 		title: 'Cetak Dokumen',

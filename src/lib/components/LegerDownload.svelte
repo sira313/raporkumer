@@ -38,6 +38,10 @@
 			const kokRows: Array<{ id: number; nama: string; dimensi?: string }> = Array.isArray(meta.kokRows)
 				? meta.kokRows.map((k: any) => ({ id: k.id, nama: String(k.nama || '') }))
 				: [];
+			// ekstrakurikuler metadata (optional)
+			const ekstrakRows: Array<{ id: number; nama: string }> = Array.isArray(meta.ekstrakRows)
+				? meta.ekstrakRows.map((k: any) => ({ id: k.id, nama: String(k.nama || '') }))
+				: [];
 			// Fallback to raw mapel names if headers missing
 			const subjectCols: string[] = headers.length
 				? headers.map((h) => h.nama)
@@ -70,7 +74,8 @@
 
 			// include kokurikuler column names before the Jumlah column
 			const kokNames = kokRows.length ? kokRows.map((k) => k.nama) : [];
-			const header = ['No', 'Nama Siswa', ...subjectCols, ...kokNames, 'Jumlah', 'Capaian Kelas', 'Ket'];
+			const ekstrakNames = ekstrakRows.length ? ekstrakRows.map((k) => k.nama) : [];
+			const header = ['No', 'Nama Siswa', ...subjectCols, ...kokNames, ...ekstrakNames, 'Jumlah', 'Capaian Kelas', 'Ket'];
 			// Insert a title row above subject headers for a merged "Intrakurikuler" label
 			const intrakurikulerRow = Array(header.length).fill('');
 			// subject columns start at index 2 (0-based) -> column C (1-based col 3)
@@ -79,6 +84,10 @@
 			if (kokNames.length) {
 				const kokStartIndex = 2 + subjectCols.length; // 0-based
 				intrakurikulerRow[kokStartIndex] = 'Kokurikuler';
+			}
+			if (ekstrakNames.length) {
+				const eksStartIndex = 2 + subjectCols.length + kokNames.length;
+				intrakurikulerRow[eksStartIndex] = 'Ekstrakurikuler';
 			}
 			rows.push(intrakurikulerRow);
 			rows.push(header);
@@ -102,6 +111,14 @@
 					if (kokRows.length) {
 						for (const k of kokRows) {
 							const key = `kok_${k.id}`;
+							const val = m.nilai ? m.nilai[key] : null;
+							rowValues.push(val != null ? String(val) : '');
+						}
+					}
+					// append ekstrak values after kok (if any)
+					if (ekstrakRows.length) {
+						for (const e of ekstrakRows) {
+							const key = `eks_${e.id}`;
 							const val = m.nilai ? m.nilai[key] : null;
 							rowValues.push(val != null ? String(val) : '');
 						}
@@ -202,6 +219,22 @@
 						// ignore
 					}
 				}
+				// merge Ekstrakurikuler header if ekstrak columns exist
+				if (ekstrakRows.length) {
+					const kokCount = kokRows.length || 0;
+					const eksStartCol = subjectEndCol + 1 + kokCount;
+					const eksEndCol = eksStartCol + ekstrakRows.length - 1;
+					try {
+						const eksRange = `${colLetter(eksStartCol)}${intrakRowIndex}:${colLetter(eksEndCol)}${intrakRowIndex}`;
+						ws.mergeCells(eksRange);
+						const eksCell = ws.getCell(`${colLetter(eksStartCol)}${intrakRowIndex}`);
+						eksCell.value = 'Ekstrakurikuler';
+						eksCell.font = { bold: true } as any;
+						eksCell.alignment = { horizontal: 'center', vertical: 'middle' } as any;
+					} catch (e) {
+						// ignore
+					}
+				}
 			} catch (e) {
 				// ignore if merge fails for any reason
 				console.warn('failed to merge/style Intrakurikuler row', e);
@@ -209,7 +242,8 @@
 
 			// Additionally merge specific pairs across row 4 and 5 as requested (A4:A5, B4:B5, L4:L5, M4:M5, N4:N5)
 			try {
-				const mergePairs = ['A4:A5', 'B4:B5', 'L4:L5', 'M4:M5', 'N4:N5'];
+				// keep existing merges and also merge O4:O5 and P4:P5 per request
+				const mergePairs = ['A4:A5', 'B4:B5', 'L4:L5', 'M4:M5', 'N4:N5', 'O4:O5', 'P4:P5'];
 				for (const r of mergePairs) {
 					try {
 						const [topAddr, bottomAddr] = r.split(':');
@@ -244,18 +278,63 @@
 				console.warn('failed to apply additional merges for A/B/L/M/N', e);
 			}
 
-			// Style title rows (centered vertically and horizontally across merged cells)
-			const titleRow = ws.getRow(1);
-			titleRow.font = { bold: true, size: 12 };
-			// ensure the merged cells themselves have centered alignment across the full width
-			titleRow.height = 22;
-			// Apply alignment to every cell in the merged range for maximum compatibility
-			// across different Excel clients and ExcelJS versions.
-			for (let c = 1; c <= lastCol; c++) {
-				const cellAddr = `${colLetter(c)}1`;
+			// Style and merge title/subtitle rows so they span to the rightmost column dynamically
+			// Merge A1 -> lastCol (title) and A2 -> lastCol (subtitle) to accommodate dynamic columns
+			// Use centerContinuous (center-across-selection) for title instead of merging,
+			// which tends to render more consistently across Excel clients.
+			try {
+				let titleVal: any = null;
 				try {
-					// use centerContinuous which corresponds to Excel's "Center Across Selection"
-					ws.getCell(cellAddr).alignment = {
+					titleVal = ws.getCell('A1').value;
+				} catch (e) {
+					titleVal = null;
+				}
+				const titleCell = ws.getCell('A1');
+				if (titleVal !== null && titleVal !== undefined) titleCell.value = String(titleVal).trim();
+				titleCell.font = { bold: true, size: 12 } as any;
+				const centerContinuous = { horizontal: 'centerContinuous', vertical: 'middle', wrapText: false } as any;
+				// apply centerContinuous to every cell in the visual range so Excel shows centered text
+				for (let c = 1; c <= lastCol; c++) {
+					try {
+						ws.getCell(`${colLetter(c)}1`).alignment = centerContinuous;
+					} catch (e) {
+						// ignore
+					}
+				}
+				ws.getRow(1).height = 22;
+			} catch (e) {
+				// ignore
+			}
+
+			// Use centerContinuous for subtitle as well
+			try {
+				let subtitleVal: any = null;
+				try {
+					subtitleVal = ws.getCell('A2').value;
+				} catch (e) {
+					subtitleVal = null;
+				}
+				const subCell = ws.getCell('A2');
+				if (subtitleVal !== null && subtitleVal !== undefined) subCell.value = String(subtitleVal).trim();
+				const centerContinuous = { horizontal: 'centerContinuous', vertical: 'middle', wrapText: false } as any;
+				for (let c = 1; c <= lastCol; c++) {
+					try {
+						ws.getCell(`${colLetter(c)}2`).alignment = centerContinuous;
+					} catch (e) {
+						// ignore
+					}
+				}
+				ws.getRow(2).height = 16;
+			} catch (e) {
+				// ignore
+			}
+
+			// Also apply centerContinuous alignment as a compatibility fallback to every cell
+			for (let c = 1; c <= lastCol; c++) {
+				const cellAddr1 = `${colLetter(c)}1`;
+				const cellAddr2 = `${colLetter(c)}2`;
+				try {
+					ws.getCell(cellAddr1).alignment = {
 						horizontal: 'centerContinuous',
 						vertical: 'middle',
 						wrapText: false
@@ -263,16 +342,8 @@
 				} catch (e) {
 					// ignore individual failures but continue
 				}
-			}
-
-			const subtitleRow = ws.getRow(2);
-			// a slightly shorter height for subtitle keeps it visually balanced
-			subtitleRow.height = 16;
-			for (let c = 1; c <= lastCol; c++) {
-				const cellAddr = `${colLetter(c)}2`;
 				try {
-					// use centerContinuous to mimic Excel's "Center Across Selection"
-					ws.getCell(cellAddr).alignment = {
+					ws.getCell(cellAddr2).alignment = {
 						horizontal: 'centerContinuous',
 						vertical: 'middle',
 						wrapText: false
@@ -326,6 +397,25 @@
 						}
 					}
 				}
+				// rotate ekstrak headers similarly (if any ekstrak columns exist)
+				const ekstraCount = ekstrakRows.length || 0;
+				if (ekstraCount) {
+					const ekstraStartCol = subjectEndCol + 1 + kokCount;
+					const ekstraEndCol = ekstraStartCol + ekstraCount - 1;
+					for (let c = ekstraStartCol; c <= ekstraEndCol; c++) {
+						const cell = headerRow.getCell(c);
+						cell.alignment = {
+							textRotation: 90,
+							wrapText: true,
+							vertical: 'bottom',
+							horizontal: 'center'
+						} as any;
+						// narrow ekstrak column width to match rotated header
+						if (ws.columns && ws.columns[c - 1]) {
+							ws.columns[c - 1].width = 6;
+						}
+					}
+				}
 			} catch (e) {
 				console.warn('failed to rotate header text', e);
 			}
@@ -338,7 +428,10 @@
 				const kokCount = kokRows.length || 0;
 				const kokStartCol = subjectEndCol + 1;
 				const kokEndCol = kokStartCol + kokCount - 1;
-				const jumlahCol = kokCount ? kokEndCol + 1 : subjectEndCol + 1;
+				const ekstraCount = ekstrakRows.length || 0;
+				const ekstraStartCol = subjectEndCol + 1 + kokCount;
+				const ekstraEndCol = ekstraStartCol + ekstraCount - 1;
+				const jumlahCol = ekstraCount ? ekstraEndCol + 1 : kokCount ? kokEndCol + 1 : subjectEndCol + 1;
 				const studentStartRow = 6; // header is row 5 (we added Intrakurikuler at row 4), students start at row 6
 				const studentCount =
 					Array.isArray(meta.murid) && meta.murid.length ? meta.murid.length : 30;
@@ -383,6 +476,69 @@
 					} as any;
 				} catch (e) {
 					// ignore
+				}
+				// Merge the 'RATA-RATA' label cell with the cell to its right without losing content
+				try {
+					const rataLeftAddr = `A${rataRowNum}`;
+					const rataRightAddr = `B${rataRowNum}`;
+					let leftVal: any = null;
+					let rightVal: any = null;
+					try {
+						leftVal = ws.getCell(rataLeftAddr).value;
+					} catch (e) {
+						leftVal = null;
+					}
+					try {
+						rightVal = ws.getCell(rataRightAddr).value;
+					} catch (e) {
+						rightVal = null;
+					}
+					const chosen =
+						leftVal !== null && leftVal !== undefined && leftVal !== '' ? leftVal : rightVal;
+					ws.mergeCells(`${rataLeftAddr}:${rataRightAddr}`);
+					const rataCell = ws.getCell(rataLeftAddr);
+					if (chosen !== null && chosen !== undefined) rataCell.value = chosen;
+					rataCell.alignment = { horizontal: 'left', vertical: 'middle' } as any;
+					rataCell.font = { bold: true } as any;
+				} catch (e) {
+					// ignore merge errors for rata-rata
+				}
+				// Ensure the special trailing headers (Jumlah, Capaian Kelas, Ket) are merged
+				// with the cell above (row 4) so headers remain visually consistent even
+				// when the number of subject/kok/ekstra columns change.
+				try {
+					const ketCol = capaianCol + 1;
+					const mergeCols = [jumlahCol, capaianCol, ketCol];
+					for (const colIndex of mergeCols) {
+						try {
+							const topAddr = `${colLetter(colIndex)}4`;
+							const bottomAddr = `${colLetter(colIndex)}5`;
+							// prefer bottom (header) value if present
+							let topVal: any = null;
+							let bottomVal: any = null;
+							try {
+								topVal = ws.getCell(topAddr).value;
+							} catch (err) {
+								topVal = null;
+							}
+							try {
+								bottomVal = ws.getCell(bottomAddr).value;
+							} catch (err) {
+								bottomVal = null;
+							}
+							const chosen =
+								bottomVal !== null && bottomVal !== undefined && bottomVal !== '' ? bottomVal : topVal;
+							ws.mergeCells(`${topAddr}:${bottomAddr}`);
+							const cell = ws.getCell(topAddr);
+							if (chosen !== null && chosen !== undefined) cell.value = chosen;
+							cell.alignment = { horizontal: 'center', vertical: 'middle' } as any;
+							cell.font = { bold: true } as any;
+						} catch (inner) {
+							// ignore individual merge failures
+						}
+					}
+				} catch (e) {
+					// ignore overall failures
 				}
 				// Align special columns (No, Nama Siswa, Jumlah, Capaian Kelas, Ket) to middle vertically and left horizontally
 				try {
