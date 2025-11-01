@@ -58,7 +58,7 @@
 					<label class="mt-4 flex flex-col gap-2">
 						<span class="font-semibold">Nama Ekstrakurikuler</span>
 						<input
-							class="input bg-base-200 w-full dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 							placeholder="Masukkan nama ekstrakurikuler"
 							name="nama"
 							value={namaInput}

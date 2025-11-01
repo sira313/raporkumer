@@ -33,7 +33,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: 0030"
 								name="nis"
 							/>
@@ -44,7 +44,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: 8371612"
 								name="nisn"
 							/>
@@ -58,7 +58,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Chairil Anwar"
 								name="nama"
 							/>
@@ -68,7 +68,7 @@
 						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Kelas</legend>
 							<select
-								class="select bg-base-200 dark:border-none"
+								class="select bg-base-200 dark:bg-base-300 dark:border-none"
 								title="Pilih kelas"
 								name="kelasId"
 								required
@@ -92,7 +92,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Kembayan"
 								name="tempatLahir"
 							/>
@@ -102,7 +102,7 @@
 							<legend class="fieldset-legend">Tanggal Lahir</legend>
 							<input
 								type="date"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								name="tanggalLahir"
 								required
 							/>
@@ -113,7 +113,7 @@
 						<fieldset class="fieldset flex-1">
 							<legend class="fieldset-legend">Jenis Kelamin</legend>
 							<select
-								class="select validator bg-base-200 w-full dark:border-none"
+								class="select validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								name="jenisKelamin"
 								required
 							>
@@ -129,7 +129,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Islam"
 								name="agama"
 							/>
@@ -142,7 +142,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: TK Kencana Pertiwi"
 								name="pendidikanSebelumnya"
 							/>
@@ -152,7 +152,7 @@
 							<legend class="fieldset-legend">Tanggal masuk sekolah ini</legend>
 							<input
 								type="date"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								name="tanggalMasuk"
 								required
 							/>
@@ -176,7 +176,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Agus"
 								name="ayah.nama"
 							/>
@@ -187,7 +187,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Ratih"
 								name="ibu.nama"
 							/>
@@ -200,7 +200,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Tani"
 								name="ayah.pekerjaan"
 							/>
@@ -211,7 +211,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: IRT"
 								name="ibu.pekerjaan"
 							/>
@@ -223,7 +223,7 @@
 						<input
 							required
 							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 							placeholder="Nomor telepon atau WhatsApp"
 							name="ayah.kontak"
 						/>
@@ -245,7 +245,7 @@
 						<input
 							required
 							type="text"
-							class="input validator bg-base-200 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 							placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
 							name="alamat.jalan"
 						/>
@@ -257,7 +257,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Sungai Dangin"
 								name="alamat.desa"
 							/>
@@ -268,7 +268,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Noyan"
 								name="alamat.kecamatan"
 							/>
@@ -281,7 +281,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Sanggau"
 								name="alamat.kabupaten"
 							/>
@@ -292,7 +292,7 @@
 							<input
 								required
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Kalimantan Barat"
 								name="alamat.provinsi"
 							/>
@@ -315,7 +315,7 @@
 							<legend class="fieldset-legend">Nama Wali</legend>
 							<input
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Hendra"
 								name="wali.nama"
 							/>
@@ -325,7 +325,7 @@
 							<legend class="fieldset-legend">Pekerjaan Wali</legend>
 							<input
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: PNS"
 								name="wali.pekerjaan"
 							/>
@@ -337,7 +337,7 @@
 							<legend class="fieldset-legend">Alamat Wali</legend>
 							<input
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Contoh: Jalan Raya Noyan, Dusun Periji"
 								name="wali.alamat"
 							/>
@@ -347,7 +347,7 @@
 							<legend class="fieldset-legend">Kontak</legend>
 							<input
 								type="text"
-								class="input validator bg-base-200 w-full dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Nomor telepon atau WhatsApp"
 								name="wali.kontak"
 							/>
@@ -364,7 +364,7 @@
 
 			{#if invalid}
 				<button
-					class="btn btn-primary btn-soft shadow-none"
+					class="btn btn-primary shadow-none"
 					type="button"
 					onclick={() => (activeTab = (activeTab + 1) % 4)}
 				>

@@ -210,7 +210,7 @@
 
 	function getInputClass(value: string) {
 		return isScoreValid(value)
-			? 'input dark:bg-base-300 dark:border-none'
+			? 'input bg-base-200 dark:bg-base-300 dark:border-none'
 			: 'input input-error dark:bg-base-300 dark:border-none';
 	}
 

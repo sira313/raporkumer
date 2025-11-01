@@ -205,7 +205,7 @@
 					{#snippet children({ submitting })}
 						<div class="relative">
 							<select
-								class="select bg-base-200 w-full dark:border-none"
+								class="select bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								name="sekolahId"
 								bind:value={selectedSekolahId}
 								required
@@ -264,7 +264,7 @@
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Tahun Ajaran</legend>
 							<select
-								class="select bg-base-200 w-full dark:border-none"
+								class="select bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								name="tahunAjaranId"
 								bind:value={selectedTahunAjaranId}
 								required
@@ -283,7 +283,7 @@
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Semester</legend>
 							<select
-								class="select bg-base-200 w-full dark:border-none"
+								class="select bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								name="semesterId"
 								bind:value={selectedSemesterId}
 								required
@@ -305,7 +305,7 @@
 								<input type="hidden" name="ganjil.tanggalBagiRaport" value={tanggalRaporGanjil} />
 							{/if}
 							<input
-								class="input bg-base-200 w-full dark:border-none"
+								class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								type="date"
 								name="ganjil.tanggalBagiRaport"
 								bind:value={tanggalRaporGanjil}
@@ -322,7 +322,7 @@
 								<input type="hidden" name="genap.tanggalBagiRaport" value={tanggalRaporGenap} />
 							{/if}
 							<input
-								class="input bg-base-200 w-full dark:border-none"
+								class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								type="date"
 								name="genap.tanggalBagiRaport"
 								bind:value={tanggalRaporGenap}

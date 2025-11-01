@@ -5,8 +5,7 @@ export const jenjangPendidikanSederajat: Record<
 > = {
 	sd: [
 		{ key: 'sd', label: 'Sekolah Dasar (SD)' },
-		{ key: 'mi', label: 'Madrasah Ibtidaiyah (MI)' },
-		{ key: 'slb-dasar', label: 'Sekolah Luar Biasa (SLB) tingkat dasar' }
+		{ key: 'mi', label: 'Madrasah Ibtidaiyah (MI)' }
 	],
 	smp: [
 		{ key: 'smp', label: 'Sekolah Menengah Pertama (SMP)' },

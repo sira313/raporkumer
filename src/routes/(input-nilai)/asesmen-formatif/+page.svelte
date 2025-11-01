@@ -230,7 +230,7 @@
 			onsubmit={submitSearch}
 		>
 			<!-- Cari nama murid -->
-			<label class="input bg-base-200 w-full dark:border-none">
+			<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
 				<Icon name="search" />
 				<input
 					type="search"
