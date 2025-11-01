@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto, invalidate } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenjangPendidikanSederajat } from '$lib/statics';
@@ -12,6 +13,27 @@
 	const jenjangKeys = Object.keys(jenjangPendidikanSederajat) as Array<
 		keyof typeof jenjangPendidikanSederajat
 	>;
+
+	// When editing, the form enhancer populates the select by jenjangPendidikan (base key).
+	// Because options reuse the same value for multiple variants, the browser will select
+	// the first matching option for that value (usually the base label). To show the
+	// stored variant label (e.g., "Madrasah Ibtidaiyah (MI)") we programmatically
+	// select the option whose data-variant matches initialSekolah.jenjangVariant.
+	onMount(() => {
+		if (!initialSekolah?.jenjangVariant) return;
+		// run after microtask to let any form population actions finish
+		setTimeout(() => {
+			const sel = document.querySelector<HTMLSelectElement>('select[name="jenjangPendidikan"]');
+			if (!sel) return;
+			const opt = Array.from(sel.options).find((o) => o.dataset?.variant === initialSekolah.jenjangVariant);
+			if (opt) {
+				opt.selected = true;
+				// ensure hidden input is in sync
+				const hidden = sel.form?.elements.namedItem('jenjangVariant') as HTMLInputElement | null;
+				if (hidden) hidden.value = String(initialSekolah.jenjangVariant ?? '');
+			}
+		}, 0);
+	});
 </script>
 
 {#if data.isInit}
@@ -70,12 +92,23 @@
 								<optgroup label={jenjangPendidikanSederajat[jenjKey][0].label}>
 									{#each jenjangPendidikanSederajat[jenjKey] as variant (variant.key)}
 										<!-- nilai option tetap jenjang utama (sd/smp/sma) supaya sesuai model `jenjangPendidikan` -->
-										<option value={jenjKey} data-variant={variant.key}>{variant.label}</option>
+										<option
+											value={jenjKey}
+											data-variant={variant.key}
+											selected={
+												initialSekolah
+													? // if editing: select the option that matches stored variant key
+														(initialSekolah.jenjangVariant === variant.key)
+													: undefined
+											}
+										>
+											{variant.label}
+										</option>
 									{/each}
 								</optgroup>
 							{/each}
 						</select>
-						<input hidden name="jenjangVariant" />
+						<input hidden name="jenjangVariant" value={initialSekolah?.jenjangVariant ?? ''} />
 					</div>
 					<div class="fieldset">
 						<legend class="fieldset-legend">Lokasi Tanda Tangan</legend>

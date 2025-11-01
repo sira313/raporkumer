@@ -57,6 +57,17 @@
 		const label = (jenjangPendidikanSederajat[key] ?? [])[0]?.label;
 		return label ?? String(key);
 	}
+
+	function getJenjangVariantLabel(variantKey?: Sekolah['jenjangVariant'] | null) {
+		if (!variantKey) return null;
+		// search across all jenjang groups for a variant with the matching key
+		for (const groupKey of Object.keys(jenjangPendidikanSederajat)) {
+			const variants = jenjangPendidikanSederajat[groupKey as keyof typeof jenjangPendidikanSederajat] ?? [];
+			const found = variants.find((v) => v.key === variantKey);
+			if (found) return found.label;
+		}
+		return String(variantKey);
+	}
 </script>
 
 <div class="flex flex-col gap-6">
@@ -121,7 +132,11 @@
 							<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
 								<span class="text-base-content/70 font-semibold">Jenjang Pendidikan</span>
 								<span class="text-base-content md:col-span-2">
-									{getJenjangLabel(sekolah.jenjangPendidikan)}
+									{#if sekolah.jenjangVariant}
+										{getJenjangVariantLabel(sekolah.jenjangVariant)}
+									{:else}
+										{getJenjangLabel(sekolah.jenjangPendidikan)}
+									{/if}
 								</span>
 							</div>
 
