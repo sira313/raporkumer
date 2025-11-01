@@ -583,6 +583,53 @@
 					} catch (e) {
 						// ignore
 					}
+						// Merge signature label rows (each should span one cell to the right: A..B)
+						try {
+							const studentStartRow = 6; // header is row 5
+							const studentCount = Array.isArray(meta.murid) && meta.murid.length ? meta.murid.length : 30;
+							const rataRowNum = studentStartRow + studentCount; // RATA-RATA row
+							// Offsets based on how rows were pushed after RATA-RATA above:
+							// +1: blank, +2: blank, +3: blank, +4: 'Mengetahui' row
+							// +5: kepala/wali row, +6: blank, +7: 'Kepala <Sekolah>' row
+							// +8..+10: gap rows, +11: printed kepala name, +12: NIP row
+							const mengetahuiRow = rataRowNum + 4;
+							// based on how rows are pushed above, Kepala <Sekolah> is immediately after 'Mengetahui'
+							const kepalaSekolahTitleRow = rataRowNum + 5;
+							// printed kepala name and NIP are further down (see rows pushed above)
+							const printedKepalaRow = rataRowNum + 9;
+							const nipRow = rataRowNum + 10;
+							const toMerge = [mengetahuiRow, kepalaSekolahTitleRow, printedKepalaRow, nipRow];
+							for (const r of toMerge) {
+								try {
+									const leftAddr = `A${r}`;
+									const rightAddr = `B${r}`;
+									let leftVal = null;
+									let rightVal = null;
+									try {
+										leftVal = ws.getCell(leftAddr).value;
+									} catch (e) {
+										leftVal = null;
+									}
+									try {
+										rightVal = ws.getCell(rightAddr).value;
+									} catch (e) {
+										rightVal = null;
+									}
+									const chosen =
+										leftVal !== null && leftVal !== undefined && leftVal !== ''
+											? leftVal
+											: rightVal;
+									ws.mergeCells(`${leftAddr}:${rightAddr}`);
+									const cell = ws.getCell(leftAddr);
+									if (chosen !== null && chosen !== undefined) cell.value = chosen;
+									cell.alignment = { horizontal: 'left', vertical: 'middle' } as any;
+								} catch (inner) {
+									// ignore individual merge failures
+								}
+							}
+						} catch (e) {
+							// non-fatal
+						}
 				} catch (e) {
 					// ignore
 				}
