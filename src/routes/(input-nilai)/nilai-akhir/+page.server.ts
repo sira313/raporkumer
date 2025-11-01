@@ -111,7 +111,7 @@ type Summary = {
 export async function load({ parent, locals, url, depends }) {
 	depends('app:nilai-akhir');
 
-	const meta: PageMeta = { title: 'Rekapitulasi Nilai Akhir' };
+	const meta: PageMeta = { title: 'Rekap Nilai' };
 	const { kelasAktif } = await parent();
 	const sekolahId = locals.sekolah?.id ?? null;
 

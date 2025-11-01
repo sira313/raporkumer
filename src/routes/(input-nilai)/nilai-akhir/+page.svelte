@@ -4,6 +4,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { searchQueryMarker } from '$lib/utils';
 	import { onDestroy } from 'svelte';
+	import LegerDownload from '$lib/components/LegerDownload.svelte';
 
 	let { data } = $props();
 	let searchTerm = $state(data.page.search ?? '');
@@ -147,10 +148,7 @@
 			<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
 		{/if}
 		</div>	
-		<button class="btn btn-soft btn-primary shadow-none">
-			<Icon name="download" />
-			Export leger
-		</button>
+		<LegerDownload kelasId={kelasAktif?.id ?? null} />
 	</div>
 
 	<div class="stats dark:bg-base-200 shadow-md">
