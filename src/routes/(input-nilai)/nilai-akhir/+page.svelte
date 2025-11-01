@@ -164,14 +164,15 @@
 		</div>
 
 		<div class="stat">
-			<div class="stat-title">Estrakurikuler</div>
-			<div class="stat-value text-lg">{summary.totalEkstrakurikuler}</div>
-			<div class="stat-desc text-wrap">Jumlah kegiatan ekstrakurikuler</div>
-		</div>
-		<div class="stat">
 			<div class="stat-title">Kokurikuler</div>
 			<div class="stat-value text-lg">{summary.totalKokurikuler}</div>
 			<div class="stat-desc text-wrap">Jumlah kegiatan kokurikuler</div>
+		</div>
+
+		<div class="stat">
+			<div class="stat-title">Estrakurikuler</div>
+			<div class="stat-value text-lg">{summary.totalEkstrakurikuler}</div>
+			<div class="stat-desc text-wrap">Jumlah kegiatan ekstrakurikuler</div>
 		</div>
 	</div>
 
@@ -236,19 +237,6 @@
 							<td>
 								<a
 									class="btn btn-sm btn-soft shadow-none gap-3 items-center"
-									title={`Lihat nilai akhir ekstrakurikuler ${murid.nama}`}
-									href={`/nilai-akhir/nilai-ekstra?murid_id=${murid.id}`}
-								>
-									<Icon name="eye" />
-									<span class="whitespace-nowrap">&mdash;</span>
-									<div>
-										{summary.totalEkstrakurikuler}
-									</div>
-								</a>
-							</td>
-							<td>
-								<a
-									class="btn btn-sm btn-soft shadow-none gap-3 items-center"
 									title={`Lihat nilai akhir kokurikuler ${murid.nama}`}
 									href={murid.kokDetailHref ?? `/nilai-akhir/nilai-kokurikuler?murid_id=${murid.id}`}
 								>
@@ -261,6 +249,19 @@
 												/&nbsp;{murid.totalKokurikulerRelevan}
 											</span>
 										{/if}
+									</div>
+								</a>
+							</td>
+							<td>
+								<a
+									class="btn btn-sm btn-soft shadow-none gap-3 items-center"
+									title={`Lihat nilai akhir ekstrakurikuler ${murid.nama}`}
+									href={`/nilai-akhir/nilai-ekstra?murid_id=${murid.id}`}
+								>
+									<Icon name="eye" />
+									<span class="whitespace-nowrap">&mdash;</span>
+									<div>
+										{summary.totalEkstrakurikuler}
 									</div>
 								</a>
 							</td>
