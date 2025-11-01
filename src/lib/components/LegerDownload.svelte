@@ -34,6 +34,10 @@
 			const headers: Array<{ id: string | number; nama: string }> = Array.isArray(meta.headers)
 				? meta.headers.map((h: any) => ({ id: h.id, nama: String(h.nama || '') }))
 				: [];
+			// kokurikuler metadata (optional)
+			const kokRows: Array<{ id: number; nama: string; dimensi?: string }> = Array.isArray(meta.kokRows)
+				? meta.kokRows.map((k: any) => ({ id: k.id, nama: String(k.nama || '') }))
+				: [];
 			// Fallback to raw mapel names if headers missing
 			const subjectCols: string[] = headers.length
 				? headers.map((h) => h.nama)
@@ -64,11 +68,18 @@
 			rows.push([String(schoolName).toUpperCase()]);
 			rows.push([]);
 
-			const header = ['No', 'Nama Siswa', ...subjectCols, 'Jumlah', 'Capaian Kelas', 'Ket'];
+			// include kokurikuler column names before the Jumlah column
+			const kokNames = kokRows.length ? kokRows.map((k) => k.nama) : [];
+			const header = ['No', 'Nama Siswa', ...subjectCols, ...kokNames, 'Jumlah', 'Capaian Kelas', 'Ket'];
 			// Insert a title row above subject headers for a merged "Intrakurikuler" label
 			const intrakurikulerRow = Array(header.length).fill('');
 			// subject columns start at index 2 (0-based) -> column C (1-based col 3)
 			intrakurikulerRow[2] = 'Intrakurikuler';
+			// mark Kokurikuler label position if present (placed immediately after subjects)
+			if (kokNames.length) {
+				const kokStartIndex = 2 + subjectCols.length; // 0-based
+				intrakurikulerRow[kokStartIndex] = 'Kokurikuler';
+			}
 			rows.push(intrakurikulerRow);
 			rows.push(header);
 
@@ -86,6 +97,14 @@
 						const key = String(h.id);
 						const val = m.nilai ? m.nilai[key] : null;
 						rowValues.push(val != null ? Number(val) : '');
+					}
+					// append kok values (strings like 'Sangat Baik', etc.) if present
+					if (kokRows.length) {
+						for (const k of kokRows) {
+							const key = `kok_${k.id}`;
+							const val = m.nilai ? m.nilai[key] : null;
+							rowValues.push(val != null ? String(val) : '');
+						}
 					}
 					rowValues.push(''); // Jumlah (could compute if desired)
 					rowValues.push(''); // Capaian Kelas
@@ -113,6 +132,8 @@
 				} else {
 					for (let i = 0; i < subjectCols.length; i++) rataRow.push('');
 				}
+				// for kok columns, leave rata cells empty (kok are categorical)
+				for (let i = 0; i < kokRows.length; i++) rataRow.push('');
 				rataRow.push('');
 				rataRow.push('');
 				rataRow.push('');
@@ -166,6 +187,21 @@
 				intrCell.value = 'Intrakurikuler';
 				intrCell.font = { bold: true } as any;
 				intrCell.alignment = { horizontal: 'center', vertical: 'middle' } as any;
+				// also merge Kokurikuler header if kok columns exist
+				if (kokRows.length) {
+					const kokStartCol = subjectEndCol + 1;
+					const kokEndCol = kokStartCol + kokRows.length - 1;
+					try {
+						const kokRange = `${colLetter(kokStartCol)}${intrakRowIndex}:${colLetter(kokEndCol)}${intrakRowIndex}`;
+						ws.mergeCells(kokRange);
+						const kokCell = ws.getCell(`${colLetter(kokStartCol)}${intrakRowIndex}`);
+						kokCell.value = 'Kokurikuler';
+						kokCell.font = { bold: true } as any;
+						kokCell.alignment = { horizontal: 'center', vertical: 'middle' } as any;
+					} catch (e) {
+						// ignore
+					}
+				}
 			} catch (e) {
 				// ignore if merge fails for any reason
 				console.warn('failed to merge/style Intrakurikuler row', e);
@@ -271,6 +307,25 @@
 						ws.columns[c - 1].width = 6;
 					}
 				}
+				// rotate kok headers similarly (if any kok columns exist)
+				const kokCount = kokRows.length || 0;
+				if (kokCount) {
+					const kokStartCol = subjectEndCol + 1;
+					const kokEndCol = kokStartCol + kokCount - 1;
+					for (let c = kokStartCol; c <= kokEndCol; c++) {
+						const cell = headerRow.getCell(c);
+						cell.alignment = {
+							textRotation: 90,
+							wrapText: true,
+							vertical: 'bottom',
+							horizontal: 'center'
+						} as any;
+						// narrow kok column width to match rotated header
+						if (ws.columns && ws.columns[c - 1]) {
+							ws.columns[c - 1].width = 6;
+						}
+					}
+				}
 			} catch (e) {
 				console.warn('failed to rotate header text', e);
 			}
@@ -278,9 +333,12 @@
 			// Add formulas: Jumlah = SUM(subjects per row), Capaian Kelas = ROUND(AVERAGE(subjects per row),2)
 			try {
 				const subjectCount = subjectCols.length;
-				const subjectStartCol = 3; // 'C'
+				const subjectStartCol = 3; // C
 				const subjectEndCol = 2 + subjectCount; // e.g. C..(2+subjectCount)
-				const jumlahCol = subjectEndCol + 1;
+				const kokCount = kokRows.length || 0;
+				const kokStartCol = subjectEndCol + 1;
+				const kokEndCol = kokStartCol + kokCount - 1;
+				const jumlahCol = kokCount ? kokEndCol + 1 : subjectEndCol + 1;
 				const studentStartRow = 6; // header is row 5 (we added Intrakurikuler at row 4), students start at row 6
 				const studentCount =
 					Array.isArray(meta.murid) && meta.murid.length ? meta.murid.length : 30;

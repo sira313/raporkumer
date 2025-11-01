@@ -4,8 +4,11 @@ import {
 	tableKelas,
 	tableMataPelajaran,
 	tableMurid,
-	tableAsesmenSumatif
+	tableAsesmenSumatif,
+	tableKokurikuler,
+	tableAsesmenKokurikuler
 } from '$lib/server/db/schema';
+import { sanitizeDimensionList } from '$lib/kokurikuler';
 
 type Person = { nama?: string; nip?: string };
 type SekolahLike = { nama?: string; kepalaSekolah?: Person };
@@ -134,6 +137,96 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		return { id: m.id, nama: m.nama, nilai: nilaiRecord };
 	});
 
+	// fetch kokurikuler rows for kelas and compute per-murid kok values (kriteria)
+	// tableKokurikuler doesn't have a `nama` column; use `tujuan` (or `kode`) as display name
+	let kokRows: Array<{ id: number; nama: string; dimensi?: string[] }> = [];
+	const kokByMuridValues = new Map<number, Record<string, string | null>>();
+	try {
+		if (kelasIdParam) {
+			const id = Number(kelasIdParam);
+			if (Number.isInteger(id)) {
+				const rawKok = await db.query.tableKokurikuler.findMany({
+					where: eq(tableKokurikuler.kelasId, id),
+					columns: { id: true, kode: true, dimensi: true, tujuan: true, createdAt: true },
+					orderBy: [asc(tableKokurikuler.createdAt)]
+				});
+				// map to a stable shape expected by the exporter: { id, nama, dimensi }
+				kokRows = rawKok.map((k) => ({ id: k.id, nama: k.tujuan || k.kode || String(k.id), dimensi: k.dimensi as string[] }));
+				const kokIds = kokRows.map((k) => k.id);
+				const muridIds = muridList.map((m) => m.id);
+				if (kokIds.length && muridIds.length) {
+					try {
+						const asesmen = await db.query.tableAsesmenKokurikuler.findMany({
+							columns: { muridId: true, kokurikulerId: true, dimensi: true, kategori: true },
+							where: and(
+								inArray(tableAsesmenKokurikuler.muridId, muridIds),
+								inArray(tableAsesmenKokurikuler.kokurikulerId, kokIds)
+							)
+						});
+						// build map muridId -> kokId -> dimensi -> kategori
+						const asesmenByMurid = new Map<number, Map<number, Map<string, string>>>();
+						for (const a of asesmen) {
+							let mur = asesmenByMurid.get(a.muridId);
+							if (!mur) {
+								mur = new Map();
+								asesmenByMurid.set(a.muridId, mur);
+							}
+							const existing = mur.get(a.kokurikulerId) ?? new Map<string, string>();
+							existing.set(a.dimensi, a.kategori);
+							mur.set(a.kokurikulerId, existing);
+						}
+
+						const kategoriToNumber: Record<string, number> = {
+							kurang: 1,
+							cukup: 2,
+							baik: 3,
+							'sangat-baik': 4
+						};
+
+						for (const m of muridList) {
+							const valsForMurid: Record<string, string | null> = {};
+							for (const k of kokRows) {
+								const kokMap = asesmenByMurid.get(m.id)?.get(k.id) ?? new Map<string, string>();
+								const dims = sanitizeDimensionList(k.dimensi);
+								const vals: number[] = [];
+								for (const d of dims) {
+									const kategori = kokMap.get(d);
+									const num = kategori ? (kategoriToNumber[kategori] ?? null) : null;
+									if (num != null && Number.isFinite(num)) vals.push(num);
+								}
+								if (vals.length > 0) {
+									const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+									const avgFixed = Number.parseFloat(avg.toFixed(2));
+									let kriteria: string | null = null;
+									if (avgFixed >= 3.51) kriteria = 'Sangat Baik';
+									else if (avgFixed >= 2.51) kriteria = 'Baik';
+									else if (avgFixed >= 1.51) kriteria = 'Cukup';
+									else kriteria = 'Kurang';
+									valsForMurid[`kok_${k.id}`] = kriteria;
+								} else {
+									valsForMurid[`kok_${k.id}`] = null;
+								}
+							}
+							kokByMuridValues.set(m.id, valsForMurid);
+						}
+					} catch {
+						// ignore kok assessment errors
+					}
+				}
+			}
+		}
+	} catch {
+		// ignore kok fetch errors
+	}
+
+	// merge kok values into muridRows' nilai records under keys kok_{id}
+	if (kokRows.length) {
+		for (const mr of muridRows) {
+			const extra = kokByMuridValues.get(mr.id) ?? {};
+			mr.nilai = Object.assign({}, mr.nilai, extra);
+		}
+	}
+
 	const s = sekolah as SekolahLike | null;
 	const kepala = s?.kepalaSekolah
 		? { nama: s.kepalaSekolah.nama || '', nip: s.kepalaSekolah.nip || '' }
@@ -147,6 +240,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			// raw mapel, and computed headers + murid rows with nilai
 			mapel,
 			headers: headerMap,
+			kokRows,
 			murid: muridRows
 		}),
 		{
