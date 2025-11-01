@@ -206,7 +206,7 @@
 					<th class="w-full" style="min-width: 140px;">Nama</th>
 					<th style="min-width: 140px;">Rata-rata Intrakurikuler</th>
 					<th style="width: 120px;">Rata-rata Kokurikuler</th>
-					<th style="width: 120px;">Aksi</th>
+					<th style="width: 120px;">Rata-rata Ekstrakurikuler</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -233,7 +233,20 @@
 									</div>
 								</a>
 							</td>
-							<td class="">
+							<td>
+								<a
+									class="btn btn-sm btn-soft shadow-none gap-3 items-center"
+									title={`Lihat nilai akhir ekstrakurikuler ${murid.nama}`}
+									href={`/nilai-akhir/nilai-ekstra?murid_id=${murid.id}`}
+								>
+									<Icon name="eye" />
+									<span class="whitespace-nowrap">&mdash;</span>
+									<div>
+										{summary.totalEkstrakurikuler}
+									</div>
+								</a>
+							</td>
+							<td>
 								<a
 									class="btn btn-sm btn-soft shadow-none gap-3 items-center"
 									title={`Lihat nilai akhir kokurikuler ${murid.nama}`}
@@ -250,9 +263,6 @@
 										{/if}
 									</div>
 								</a>
-							</td>
-							<td>
-								<!-- Belum tahu -->
 							</td>
 						</tr>
 					{/each}
