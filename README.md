@@ -28,7 +28,7 @@ dan pengembang; bagian teknis dan pedoman kontribusi ada di folder `docs/`.
 2. Unduh `RapkumerSetup.exe` dan jalankan installer.
 3. Setelah terpasang, buka aplikasi dari shortcut yang tersedia.
 
-Untuk instruksi instalasi manual dan pengembangan, baca `docs/DEVELOPMENT.md`.
+Untuk instruksi instalasi manual dan pengembangan, baca [docs/DEVELOPMENT.md](https://github.com/sira313/raporkumer/blob/main/docs/DEVELOPMENT.md).
 
 ## Menjalankan Versi Pengembangan (untuk pengembang)
 
