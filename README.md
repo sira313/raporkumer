@@ -33,6 +33,7 @@ Untuk instruksi instalasi manual dan pengembangan, baca [docs/DEVELOPMENT.md](ht
 ## Menjalankan Versi Pengembangan (untuk pengembang)
 
 Persyaratan:
+
 - Node.js 20 LTS (direkomendasikan)
 - pnpm
 
@@ -89,4 +90,3 @@ Lihat [docs/DEVELOPMENT.md](https://github.com/sira313/raporkumer/blob/main/docs
 
 Jika menemukan masalah, buka issue di GitHub repo atau hubungi pemilik/kontributor yang tercantum di halaman
 release atau dalam file [docs/](https://github.com/sira313/raporkumer/blob/main/docs/).
-

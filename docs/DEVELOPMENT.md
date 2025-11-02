@@ -4,6 +4,7 @@ Dokumen ini berisi pedoman singkat untuk pengembang yang ingin menjalankan, memb
 mengontribusikan kode ke proyek Raporkumer.
 
 Catatan utama (ikuti pedoman ini untuk konsistensi proyek):
+
 - Gunakan pnpm untuk semua perintah paket.
 - Periksa tipe dan svelte-check sebelum linting.
 - Gunakan runes Svelte (Svelte 5) dan pola komponen yang ada di `src/lib/components`.
@@ -71,4 +72,3 @@ Jika ada masalah tipe atau lint yang tidak jelas, jalankan `pnpm check:watch` sa
 
 Jika butuh bantuan teknis terkait arsitektur kode atau migrasi, buka issue di GitHub dan sertakan detail lingkungan
 dan langkah reproduksi.
-

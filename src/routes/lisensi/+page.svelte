@@ -63,8 +63,9 @@
 					tidak diizinkan tanpa izin tertulis.
 				</li>
 				<li>
-					<span class="text-base-content font-medium">Berbagi Serupa:</span> jika Anda membuat adaptasi atau
-					turunan dari materi ini, Anda harus mendistribusikannya di bawah lisensi yang sama (CC BY-NC-SA 4.0).
+					<span class="text-base-content font-medium">Berbagi Serupa:</span> jika Anda membuat adaptasi
+					atau turunan dari materi ini, Anda harus mendistribusikannya di bawah lisensi yang sama (CC
+					BY-NC-SA 4.0).
 				</li>
 			</ul>
 			<p class="text-base-content/80 text-sm">
@@ -104,9 +105,9 @@
 				<li><code>static/tutwuri.png</code></li>
 			</ul>
 			<p class="text-base-content/80 text-sm leading-relaxed">
-				Pengecualian ini berarti jika Anda ingin menggunakan salah satu dari aset di atas, periksa lisensi
-				atau izin khusus yang berlaku untuk aset tersebut. Jika lisensi asli tidak disertakan di file
-				aset, hubungi tim pengembang untuk meminta klarifikasi atau izin.
+				Pengecualian ini berarti jika Anda ingin menggunakan salah satu dari aset di atas, periksa
+				lisensi atau izin khusus yang berlaku untuk aset tersebut. Jika lisensi asli tidak
+				disertakan di file aset, hubungi tim pengembang untuk meminta klarifikasi atau izin.
 			</p>
 		</div>
 	</section>
@@ -114,11 +115,13 @@
 	<section class="rounded-box border-base-200/80 bg-base-100/95 border p-6 shadow-md">
 		<h2 class="text-base-content text-xl font-semibold">Sumber & Kredit Ikon</h2>
 		<p class="text-base-content/80 text-sm leading-relaxed">
-			Ikon yang digunakan dalam folder <code>src/lib/icons</code> berasal dari <strong>Feather</strong>.
-			Feather adalah proyek ikon open-source yang tersedia di
-			<a href="https://github.com/feathericons/feather" target="_blank" rel="noreferrer">https://github.com/feathericons/feather</a>
-			dan dirilis di bawah lisensi MIT. Penggunaan ikon harus mematuhi syarat lisensi MIT. Kredit
-			disarankan saat menggunakan ikon di luar konteks teknis internal.
+			Ikon yang digunakan dalam folder <code>src/lib/icons</code> berasal dari
+			<strong>Feather</strong>. Feather adalah proyek ikon open-source yang tersedia di
+			<a href="https://github.com/feathericons/feather" target="_blank" rel="noreferrer"
+				>https://github.com/feathericons/feather</a
+			>
+			dan dirilis di bawah lisensi MIT. Penggunaan ikon harus mematuhi syarat lisensi MIT. Kredit disarankan
+			saat menggunakan ikon di luar konteks teknis internal.
 		</p>
 	</section>
 
