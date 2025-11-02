@@ -35,4 +35,3 @@ Ikon di `src/lib/icons` adalah dari proyek Feather (Feather Icons) yang dirilis 
 
 Dokumen ini hanya ringkasan informasi lisensi untuk kenyamanan pengguna dan pengembang. Untuk kebutuhan
 legal/resmi, baca teks hukum lisensi atau konsultasikan penasihat hukum.
-

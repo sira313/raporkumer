@@ -70,7 +70,7 @@
 		if (!jenjangUpper) return nameUpper;
 		if (!nameUpper) return jenjangUpper;
 
-		const abbreviationPattern = /^(SD|SMP|SMA|SMK|SLB)\b/u;
+		const abbreviationPattern = /^(SD|SMP|SMA|SMK|SLB|PKBM)\b/u;
 		if (
 			nameUpper.startsWith(jenjangUpper) ||
 			nameUpper.includes(jenjangUpper) ||

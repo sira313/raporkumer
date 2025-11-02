@@ -8,6 +8,6 @@ Feather Icons dirilis di bawah lisensi MIT. Penggunaan ikon di luar konteks inte
 distribusi tersendiri) harus mematuhi syarat lisensi MIT.
 
 Rekomendasi:
+
 - Sertakan atribusi sederhana saat menggunakan ikon di tempat publik: "Ikon oleh Feather (https://feathericons.com), lisensi MIT".
 - Untuk audit lisensi, periksa file `LICENSE` pada repo Feather di tautan di atas.
-
