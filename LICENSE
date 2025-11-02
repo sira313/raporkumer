@@ -1,15 +1,61 @@
-Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
+======================================================================================
 
-The content of this repository is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.
+Ringkasan singkat
+-----------------
+Lisensi ini memungkinkan orang untuk menyalin, mendistribusikan, menampilkan, dan membuat adaptasi dari
+karya sepanjang mereka memberikan atribusi kepada pemegang hak (Atribusi), tidak menggunakan karya untuk
+keperluan komersial (NonKomersial), dan jika mereka membuat adaptasi, mendistribusikannya di bawah lisensi
+yang sama (ShareAlike).
 
-You are free to:
-- Share — copy and redistribute the material in any medium or format.
+Tautan resmi:
+- Ringkasan lisensi: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.id
+- Teks hukum lengkap: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.id
 
-Under the following terms:
-- Attribution — You must give appropriate credit, provide a link to the license, and indicate if changes were made.
-- NonCommercial — You may not use the material for commercial purposes.
-- NoDerivatives — If you remix, transform, or build upon the material, you may not distribute the modified material.
-- No additional restrictions — You may not apply legal terms or technological measures that legally restrict others from doing anything the license permits.
+Izin umum (secara ringkas)
+- Anda boleh berbagi (menyalin dan menyebarluaskan) karya ini.
+- Anda boleh membuat adaptasi (mengubah, memodifikasi) asalkan versi turunan
+  dilisensikan di bawah syarat yang sama (ShareAlike).
 
-This is a human-readable summary of (and not a substitute for) the license. The full license text is available at:
-https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
+Pembatasan utama
+- Atribusi: Berikan kredit yang sesuai, tautan ke lisensi, dan beri tahu jika ada perubahan.
+- NonKomersial: Dilarang menggunakan materi untuk tujuan komersial tanpa izin tertulis.
+
+Penafian & hukum lain
+Lisensi ini tidak menggantikan hak privasi, hak potret, paten, merek dagang, atau hak moral. Pastikan
+mematuhi hukum lokal saat menggunakan materi.
+
+Pengecualian pada Aset Statis
+-----------------------------
+Untuk kejelasan: beberapa aset grafis yang disertakan dalam folder `static/` tidak dicakup oleh lisensi
+CC BY-NC-SA 4.0 dari repositori ini. Aset-aset ini dapat memiliki lisensi atau izin terpisah; mereka
+disebutkan di bawah ini dan dikecualikan dari cakupan CC BY-NC-SA 4.0:
+
+- static/bg-certificate.png
+- static/bg-certificate2.png
+- static/garudaPancasila.png
+- static/logo-kumer.png
+- static/tutwuri-bw.png
+- static/tutwuri.png
+
+Jika Anda ingin menggunakan salah satu aset di atas, periksa lisensi atau izin yang terkait dengan
+aset tersebut. Jika lisensi asli tidak tersedia dalam repositori, silakan hubungi tim pengembang untuk
+meminta klarifikasi atau izin penggunaan.
+
+Kredit Ikon
+-----------
+Ikon yang ada di `src/lib/icons` berasal dari proyek Feather (Feather Icons):
+https://github.com/feathericons/feather
+
+Feather Icons dirilis di bawah lisensi MIT. Penggunaan ikon harus mematuhi syarat-syarat lisensi MIT.
+Disarankan untuk mencantumkan kredit/tautan saat ikon digunakan di luar konteks teknis internal.
+
+Catatan tambahan untuk pengembang
+---------------------------------
+- File ini adalah salinan informasi lisensi yang relevan untuk repositori ini dan berisi pengecualian
+  spesifik yang diterapkan oleh pemilik repositori.
+- Untuk kebutuhan hukum formal atau komersial, baca teks hukum lengkap di tautan resmi
+  Creative Commons atau konsultasikan penasihat hukum.
+
+---
+Dibuat dan ditautkan oleh tim Raporkumer.
