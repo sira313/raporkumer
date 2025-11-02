@@ -86,7 +86,7 @@
 
 					<p class="mt-4 font-semibold">Kegiatan Kokurikuler</p>
 					<textarea
-						class="textarea dark:bg-base-200 mt-2 h-28 w-full dark:border-none"
+						class="textarea bg-base-200 dark:bg-base-300 mt-2 h-28 w-full dark:border-none"
 						placeholder="Ketik kegiatan atau tema kegiatan kokurikuler"
 						name="kokurikuler"
 						value={tujuanInput}

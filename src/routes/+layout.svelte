@@ -120,11 +120,11 @@
 				<div
 					class="max-h-[calc(100vh-4.2rem)] min-h-[calc(100vh-4.2rem)] max-w-none overflow-y-auto md:max-h-[calc(100vh-4.6rem)] md:min-h-[calc(100vh-4.6rem)] print:overflow-visible"
 				>
-					<div class="m-4 flex flex-row lg:m-6 xl:gap-5">
+					<div class="m-4 flex flex-row xl:gap-4">
 						<div class="w-full max-w-5xl min-w-0 flex-1">
 							{@render children()}
 						</div>
-						<div class="sticky top-6 self-start">
+						<div class="sticky top-4 self-start">
 							<Task variant="sidebar" />
 						</div>
 					</div>
@@ -133,7 +133,7 @@
 		</div>
 		<div class="drawer-side">
 			<label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
-			<ul class="menu bg-base-100 text-base-content min-h-full w-80 p-4">
+			<ul class="menu bg-base-100 text-base-content min-h-full w-70 p-4">
 				<div class="mt-[4rem] flex items-center gap-2 pb-4 lg:mt-1">
 					{#if data.meta?.logoUrl}
 						<img class="h-8 rounded" src={data.meta.logoUrl} alt="Brand logo" />

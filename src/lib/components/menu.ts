@@ -56,10 +56,6 @@ export const appMenuItems: MenuItem[] = [
 						title: 'Sumatif',
 						path: '/asesmen-sumatif',
 						tags: ['nilai']
-					},
-					{
-						title: 'Nilai Akhir',
-						path: '/nilai-akhir'
 					}
 				]
 			},
@@ -80,6 +76,11 @@ export const appMenuItems: MenuItem[] = [
 				path: '/catatan-wali-kelas'
 			}
 		]
+	},
+	{
+		title: 'Rekap Nilai',
+		icon: 'table',
+		path: '/nilai-akhir'
 	},
 	{
 		title: 'Cetak Dokumen',

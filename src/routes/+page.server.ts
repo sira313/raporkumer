@@ -3,7 +3,9 @@ import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import {
 	tableAsesmenEkstrakurikuler,
 	tableAsesmenSumatif,
+	tableAsesmenKokurikuler,
 	tableEkstrakurikuler,
+	tableKokurikuler,
 	tableKehadiranMurid,
 	tableKelas,
 	tableMataPelajaran,
@@ -49,6 +51,7 @@ export async function load(event) {
 			total: 0,
 			wajib: 0,
 			mulok: 0,
+			kokurikuler: 0,
 			lainnya: 0
 		},
 		ekstrakurikuler: {
@@ -57,7 +60,8 @@ export async function load(event) {
 		progress: {
 			akademik: { percentage: 0, completed: 0, total: 0 },
 			absensi: { percentage: 0, completed: 0, total: 0 },
-			ekstrakurikuler: { percentage: 0, completed: 0, total: 0 }
+			ekstrakurikuler: { percentage: 0, completed: 0, total: 0 },
+			kokurikuler: { percentage: 0, completed: 0, total: 0 }
 		}
 	};
 
@@ -155,6 +159,27 @@ export async function load(event) {
 		});
 		statistikDashboard.ekstrakurikuler.total = ekstrakurikulerRows.length;
 
+		// kokurikuler (separate table) — tampilkan jumlahnya di bagian Intrakurikuler
+		const kokurikulerRows = await db.query.tableKokurikuler.findMany({
+			columns: { id: true },
+			where: eq(tableKokurikuler.kelasId, kelasAktifId)
+		});
+		statistikDashboard.mapel.kokurikuler = kokurikulerRows.length;
+
+		// debug: show kokurikuler count for active class in server logs to help troubleshooting
+		console.info(
+			'[dashboard] kelasAktifId=%s kokurikuler=%d mapel=%o',
+			kelasAktifId,
+			kokurikulerRows.length,
+			{
+				total: statistikDashboard.mapel.total,
+				wajib: statistikDashboard.mapel.wajib,
+				mulok: statistikDashboard.mapel.mulok,
+				kokurikuler: statistikDashboard.mapel.kokurikuler,
+				lainnya: statistikDashboard.mapel.lainnya
+			}
+		);
+
 		const muridRows = await db.query.tableMurid.findMany({
 			columns: { id: true },
 			where: eq(tableMurid.kelasId, kelasAktifId)
@@ -211,6 +236,17 @@ export async function load(event) {
 			ekstrakCompleted = ekstrakSet.size;
 		}
 
+		let kokurCompleted = 0;
+		if (totalStudents > 0) {
+			const asesmenKokurRows = await db
+				.select({ muridId: tableAsesmenKokurikuler.muridId })
+				.from(tableAsesmenKokurikuler)
+				.where(inArray(tableAsesmenKokurikuler.muridId, muridIds));
+
+			const kokurSet = new Set(asesmenKokurRows.map((row) => row.muridId));
+			kokurCompleted = kokurSet.size;
+		}
+
 		statistikDashboard.progress = {
 			akademik: {
 				completed: akademikCompleted,
@@ -226,6 +262,11 @@ export async function load(event) {
 				completed: ekstrakCompleted,
 				total: totalStudents,
 				percentage: calculatePercentage(ekstrakCompleted, totalStudents)
+			},
+			kokurikuler: {
+				completed: kokurCompleted,
+				total: totalStudents,
+				percentage: calculatePercentage(kokurCompleted, totalStudents)
 			}
 		};
 	}

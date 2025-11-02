@@ -15,7 +15,8 @@ interface PageMeta {
 interface CoverPrintData {
 	sekolah: {
 		nama: string;
-		jenjang: 'sd' | 'smp' | 'sma';
+		jenjang: 'sd' | 'smp' | 'sma' | 'slb';
+		jenjangVariant?: string | null;
 		npsn: string;
 		alamat: {
 			jalan: string;
@@ -143,7 +144,7 @@ interface RaporPrintData {
 interface PiagamPrintData {
 	sekolah: {
 		nama: string;
-		jenjang: 'sd' | 'smp' | 'sma';
+		jenjang: 'sd' | 'smp' | 'sma' | 'slb';
 		npsn: string;
 		alamat: {
 			jalan: string;
@@ -231,4 +232,28 @@ interface UpdateDownloadStatus {
 	totalBytes: number | null;
 	error: string | null;
 	installScheduled: boolean;
+}
+
+// Declare exceljs module for TS when types are not present in node_modules
+declare module 'exceljs' {
+	// Minimal typing surface used in the project. Keep conservative types to
+	// avoid pulling a heavy dependency for full typings.
+	export class Workbook {
+		addWorksheet(name: string): Worksheet;
+		xlsx: {
+			writeBuffer(): Promise<ArrayBuffer | ArrayBufferView>;
+		};
+	}
+
+	export interface Worksheet {
+		addRows(rows: Array<unknown>): void;
+		getColumn(index: number): { width?: number };
+		views?: unknown;
+	}
+
+	const ExcelJS: {
+		Workbook: typeof Workbook;
+	};
+
+	export default ExcelJS;
 }

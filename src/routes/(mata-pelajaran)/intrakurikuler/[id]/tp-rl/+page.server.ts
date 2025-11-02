@@ -5,7 +5,7 @@ import { agamaMapelNames, agamaMapelOptions } from '$lib/statics';
 import { unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import { read, utils } from 'xlsx';
+import { readBufferToAoA } from '$lib/utils/excel.js';
 import { redirect } from '@sveltejs/kit';
 
 const MAX_IMPORT_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -325,25 +325,14 @@ export const actions = {
 			return fail(400, { fail: 'Format file harus .xlsx.' });
 		}
 
-		let workbook;
+		let rawRows;
 		try {
-			const buffer = Buffer.from(await file.arrayBuffer());
-			workbook = read(buffer, { type: 'buffer' });
+			const buffer = await file.arrayBuffer();
+			rawRows = await readBufferToAoA(buffer as ArrayBuffer);
 		} catch (error) {
 			console.error('Gagal membaca file Excel', error);
 			return fail(400, { fail: 'Gagal membaca file Excel. Pastikan format sesuai.' });
 		}
-
-		const firstSheetName = workbook.SheetNames[0];
-		if (!firstSheetName) {
-			return fail(400, { fail: 'File Excel kosong.' });
-		}
-
-		const worksheet = workbook.Sheets[firstSheetName];
-		const rawRows = utils.sheet_to_json<(string | number | null | undefined)[]>(worksheet, {
-			header: 1,
-			blankrows: false
-		});
 
 		if (!Array.isArray(rawRows) || rawRows.length === 0) {
 			return fail(400, { fail: 'File Excel tidak berisi data.' });

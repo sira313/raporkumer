@@ -1,6 +1,6 @@
 import db from '$lib/server/db';
 import { tableMataPelajaran, tableTujuanPembelajaran, tableKelas } from '$lib/server/db/schema';
-import { utils, write } from 'xlsx';
+import { writeAoaToBuffer } from '$lib/utils/excel.js';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { cookieNames } from '$lib/utils';
 
@@ -65,11 +65,7 @@ export async function GET({ cookies }) {
 		}
 	}
 
-	const workbook = utils.book_new();
-	const ws = utils.aoa_to_sheet(rows);
-	utils.book_append_sheet(workbook, ws, 'Mapel & Tujuan');
-
-	const buffer = write(workbook, { bookType: 'xlsx', type: 'buffer' });
+	const buffer = await writeAoaToBuffer(rows);
 
 	// include kelas name in filename if possible
 	let kelasLabel = `kelas-${kelasId}`;

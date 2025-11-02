@@ -14,7 +14,7 @@ import { cookieNames, unflattenFormData } from '$lib/utils';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { read, utils } from 'xlsx';
+import { readBufferToAoA } from '$lib/utils/excel.js';
 
 type TahunAjaranRow = typeof tableTahunAjaran.$inferSelect;
 type SemesterRow = typeof tableSemester.$inferSelect;
@@ -72,18 +72,11 @@ async function importKelasDanMuridFromExcel(
 		throw fail(400, { fail: 'Pilih tahun ajaran dan semester sebelum mengimpor data.' });
 	}
 	const buffer = await file.arrayBuffer();
-	const workbook = read(buffer, { type: 'array' });
-	const sheetName = workbook.SheetNames[0];
-	const sheet = sheetName ? workbook.Sheets[sheetName] : undefined;
-	if (!sheet) {
+	const rows = await readBufferToAoA(buffer as ArrayBuffer);
+
+	if (!Array.isArray(rows) || rows.length === 0) {
 		throw fail(400, { fail: 'Sheet pertama pada file tidak ditemukan.' });
 	}
-
-	const rows = utils.sheet_to_json<(string | number)[]>(sheet, {
-		header: 1,
-		blankrows: false,
-		defval: ''
-	});
 
 	const headerIndex = rows.findIndex(
 		(row) =>

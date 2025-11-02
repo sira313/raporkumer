@@ -29,3 +29,11 @@ vite.config.ts.timestamp-*
 
 #cert
 /installer/cert
+
+# sync scripts
+/installer/scripts/ensure-columns.mjs
+/installer/scripts/fix-drizzle-indexes.mjs
+/installer/scripts/grant-admin-permissions.mjs
+/installer/scripts/migrate-installed-db.mjs
+/installer/scripts/notify-server-reload.mjs
+/installer/scripts/seed-default-admin.mjs

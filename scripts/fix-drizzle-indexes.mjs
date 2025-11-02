@@ -72,12 +72,24 @@ async function main() {
 
 		// Ensure canonical index exists
 		try {
-			await client.execute({
-				sql: `CREATE UNIQUE INDEX IF NOT EXISTS "auth_user_username_normalized_unique" ON "auth_user" ("username_normalized")`
-			});
-			console.info(
-				'[fix-drizzle-indexes] Ensured canonical index auth_user_username_normalized_unique exists'
-			);
+			// Prefer to check PRAGMA index_list first and only create if the exact
+			// canonical index name is not present. This avoids creating the index
+			// unnecessarily and makes the script's intent explicit.
+			const idxList = await client.execute({ sql: `PRAGMA index_list('auth_user')` });
+			const idxRows = idxList.rows || [];
+			const idxNames = idxRows.map(extractName).filter(Boolean);
+			if (idxNames.includes('auth_user_username_normalized_unique')) {
+				console.info(
+					'[fix-drizzle-indexes] Canonical index auth_user_username_normalized_unique already present; skipping creation.'
+				);
+			} else {
+				await client.execute({
+					sql: `CREATE UNIQUE INDEX IF NOT EXISTS "auth_user_username_normalized_unique" ON "auth_user" ("username_normalized")`
+				});
+				console.info(
+					'[fix-drizzle-indexes] Created canonical index auth_user_username_normalized_unique'
+				);
+			}
 		} catch (err) {
 			const msg = err && (err.message || err.toString());
 			if (msg && /no such table/i.test(msg)) {

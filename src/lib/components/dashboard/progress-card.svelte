@@ -10,14 +10,14 @@
 	let { progress } = $props<{
 		progress: {
 			akademik: ProgressItem;
-			absensi: ProgressItem;
 			ekstrakurikuler: ProgressItem;
+			kokurikuler: ProgressItem;
 		};
 	}>();
 </script>
 
 <div class="card bg-base-100 rounded-box shadow-md">
-	<div class="card-body">
+	<div class="card-body space-y-4">
 		<h2 class="card-title mb-4">
 			<span class="text-xl">
 				<Icon name="bar-chart" />
@@ -25,7 +25,7 @@
 			Progress Pengisian Data
 		</h2>
 
-		<div class="mb-4">
+		<div>
 			<label class="label" for="progress-akademik">
 				<span class="label-text">Nilai Akademik</span>
 				<span class="label-text-alt font-semibold">{progress.akademik.percentage}%</span>
@@ -41,21 +41,7 @@
 			</p>
 		</div>
 
-		<div class="mb-4">
-			<label class="label" for="progress-absensi">
-				<span class="label-text">Absensi Siswa</span>
-				<span class="label-text-alt font-semibold">{progress.absensi.percentage}%</span>
-			</label>
-			<progress
-				id="progress-absensi"
-				class="progress progress-info w-full"
-				value={progress.absensi.percentage}
-				max="100"
-			></progress>
-			<p class="text-base-content/70 mt-1 text-xs">
-				{progress.absensi.completed} dari {progress.absensi.total} murid telah memiliki rekap absensi.
-			</p>
-		</div>
+		<!-- Absensi Siswa section removed as requested -->
 
 		<div>
 			<label class="label" for="progress-ekskul">
@@ -70,6 +56,22 @@
 			></progress>
 			<p class="text-base-content/70 mt-1 text-xs">
 				{progress.ekstrakurikuler.completed} dari {progress.ekstrakurikuler.total} murid sudah dinilai.
+			</p>
+		</div>
+
+		<div>
+			<label class="label" for="progress-kokur">
+				<span class="label-text">Nilai Kokurikuler</span>
+				<span class="label-text-alt font-semibold">{progress.kokurikuler.percentage}%</span>
+			</label>
+			<progress
+				id="progress-kokur"
+				class="progress progress-error w-full"
+				value={progress.kokurikuler.percentage}
+				max="100"
+			></progress>
+			<p class="text-base-content/70 mt-1 text-xs">
+				{progress.kokurikuler.completed} dari {progress.kokurikuler.total} murid sudah dinilai.
 			</p>
 		</div>
 	</div>

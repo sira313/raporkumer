@@ -174,7 +174,7 @@
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Username</legend>
 						<div class="form-control">
-							<label class="input dark:bg-base-200 validator w-full dark:border-none">
+							<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 								<span class="pl-2"><Icon name="users" /></span>
 								<input
 									type="text"
@@ -195,7 +195,7 @@
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Konfirmasi dengan Kata Sandi</legend>
 						<div class="form-control">
-							<label class="input dark:bg-base-200 validator w-full dark:border-none">
+							<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 								<span class="pl-2"><Icon name="lock" /></span>
 								<input
 									type="password"
@@ -238,7 +238,7 @@
 				<div>
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Kata sandi saat ini</legend>
-						<label class="input dark:bg-base-200 validator w-full dark:border-none">
+						<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
 								type="password"
@@ -253,7 +253,7 @@
 
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Kata sandi baru</legend>
-						<label class="input dark:bg-base-200 validator w-full dark:border-none">
+						<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
 								type="password"
@@ -269,7 +269,7 @@
 
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Konfirmasi kata sandi baru</legend>
-						<label class="input dark:bg-base-200 validator w-full dark:border-none">
+						<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
 								type="password"

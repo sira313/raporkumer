@@ -5,6 +5,7 @@
 		total: number;
 		wajib: number;
 		mulok: number;
+		kokurikuler?: number;
 		lainnya: number;
 	};
 
@@ -16,21 +17,49 @@
 		mapel: MapelStat;
 		ekstrakurikuler: EkstrakurikulerStat;
 	}>();
+
+	function mapelParts(m: MapelStat): string {
+		const parts: string[] = [];
+		if (m.wajib) parts.push(`${m.wajib} Wajib`);
+		if (m.mulok) parts.push(`${m.mulok} Mulok`);
+		if (m.lainnya) parts.push(`${m.lainnya} Pilihan`);
+
+		if (parts.length === 0) return '—';
+		if (parts.length === 1) return parts[0];
+		if (parts.length === 2) return parts.join(' & ');
+
+		// 3 or more: join with commas except the last which uses ' & '
+		return parts.slice(0, -1).join(', ') + ' & ' + parts[parts.length - 1];
+	}
 </script>
 
 <div class="stats stats-vertical lg:stats-horizontal rounded-box bg-base-100 w-full shadow-md">
 	<div class="stat">
 		<div class="stat-figure text-primary">
 			<span class="text-3xl">
+				<Icon name="book-open" />
+			</span>
+		</div>
+		<div class="stat-title">Intrakurikuler</div>
+		<div class="stat-value">{mapel.total}</div>
+		<div class="stat-desc text-wrap">
+			{mapelParts(mapel)}
+		</div>
+	</div>
+
+	<div class="stat">
+		<div class="stat-figure text-error">
+			<span class="text-3xl">
 				<Icon name="layers" />
 			</span>
 		</div>
-		<div class="stat-title">Mata Pelajaran</div>
-		<div class="stat-value">{mapel.total}</div>
+		<div class="stat-title">Kokurikuler</div>
+		<div class="stat-value">{mapel.kokurikuler ?? 0}</div>
 		<div class="stat-desc">
-			{mapel.wajib} Wajib & {mapel.mulok} Mulok
-			{#if mapel.lainnya}
-				& {mapel.lainnya} Pilihan
+			{#if mapel.kokurikuler}
+				Total di kelas ini
+			{:else}
+				Belum ada data
 			{/if}
 		</div>
 	</div>

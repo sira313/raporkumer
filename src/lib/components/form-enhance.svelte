@@ -6,7 +6,7 @@
 	import type { HTMLFormAttributes } from 'svelte/elements';
 	import { toast } from './toast.svelte';
 
-	interface Props {
+	export interface Props {
 		children: Snippet<[{ submitting: boolean; invalid: boolean }]>;
 		action: string;
 		id?: string;
@@ -27,8 +27,10 @@
 		submitStateChange,
 		showToast = true
 	}: Props = $props();
+
 	let submitting = $state(false);
 	let invalid = $state(true);
+	let formEl: HTMLFormElement | null = null;
 
 	type GenericActionResult = ActionResult<Record<string, unknown>, Record<string, unknown>>;
 	type SubmitOutcome = GenericActionResult | Response | undefined;
@@ -79,12 +81,7 @@
 			const actionResult = isActionResult(result) ? result : undefined;
 			const status = result instanceof Response ? result.status : actionResult?.status;
 			const initialType = actionResult?.type;
-			console.debug('[form-enhance] submit result', {
-				action,
-				initialType,
-				resolvedType,
-				status
-			});
+			console.debug('[form-enhance] submit result', { action, initialType, resolvedType, status });
 			try {
 				switch (resolvedType) {
 					case 'success': {
@@ -147,9 +144,8 @@
 		};
 	};
 
+	// action used to populate the form on mount
 	function loader(form: HTMLFormElement) {
-		// well, this is client side loader, doesn't make us of
-		// ssr, but this make form element value loading ease
 		if (init) {
 			populateForm(form, flatten(init));
 			invalid = !form.checkValidity();
@@ -159,17 +155,35 @@
 	$effect(() => {
 		submitStateChange?.(submitting);
 	});
+
+	// Ensure jenjangVariant hidden input gets populated from the selected option right before submit.
+	function preSubmit() {
+		try {
+			const form = formEl;
+			if (!form) return;
+			const sel = form.querySelector<HTMLSelectElement>('select[name="jenjangPendidikan"]');
+			if (!sel) return;
+			const opt = sel.selectedOptions?.[0];
+			const variant = opt?.dataset?.variant ?? '';
+			const hidden = form.elements.namedItem('jenjangVariant') as HTMLInputElement | null;
+			if (hidden) hidden.value = variant;
+		} catch (err) {
+			console.warn('[form-enhance] preSubmit failed to set jenjangVariant', err);
+		}
+	}
 </script>
 
 <form
+	bind:this={formEl}
 	{id}
 	{action}
 	method="POST"
 	{enctype}
 	use:enhance={enhancedSubmit}
 	use:loader
-	oninput={(e) => (invalid = !e.currentTarget.checkValidity())}
-	onchange={(e) => (invalid = !e.currentTarget.checkValidity())}
+	onsubmit={preSubmit}
+	oninput={() => (invalid = !(formEl && formEl.checkValidity()))}
+	onchange={() => (invalid = !(formEl && formEl.checkValidity()))}
 >
 	{@render children({ submitting, invalid })}
 </form>
