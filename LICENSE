@@ -3,10 +3,7 @@ Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-N
 
 Ringkasan singkat
 -----------------
-Lisensi ini memungkinkan orang untuk menyalin, mendistribusikan, menampilkan, dan membuat adaptasi dari
-karya sepanjang mereka memberikan atribusi kepada pemegang hak (Atribusi), tidak menggunakan karya untuk
-keperluan komersial (NonKomersial), dan jika mereka membuat adaptasi, mendistribusikannya di bawah lisensi
-yang sama (ShareAlike).
+Lisensi ini memungkinkan orang untuk menyalin, mendistribusikan, menampilkan, dan membuat adaptasi dari karya sepanjang mereka memberikan atribusi kepada pemegang hak (Atribusi), tidak menggunakan karya untuk keperluan komersial (NonKomersial), dan jika mereka membuat adaptasi, mendistribusikannya di bawah lisensi yang sama (ShareAlike).
 
 Tautan resmi:
 - Ringkasan lisensi: https://creativecommons.org/licenses/by-nc-sa/4.0/deed.id
@@ -22,14 +19,11 @@ Pembatasan utama
 - NonKomersial: Dilarang menggunakan materi untuk tujuan komersial tanpa izin tertulis.
 
 Penafian & hukum lain
-Lisensi ini tidak menggantikan hak privasi, hak potret, paten, merek dagang, atau hak moral. Pastikan
-mematuhi hukum lokal saat menggunakan materi.
+Lisensi ini tidak menggantikan hak privasi, hak potret, paten, merek dagang, atau hak moral. Pastikan mematuhi hukum lokal saat menggunakan materi.
 
 Pengecualian pada Aset Statis
 -----------------------------
-Untuk kejelasan: beberapa aset grafis yang disertakan dalam folder `static/` tidak dicakup oleh lisensi
-CC BY-NC-SA 4.0 dari repositori ini. Aset-aset ini dapat memiliki lisensi atau izin terpisah; mereka
-disebutkan di bawah ini dan dikecualikan dari cakupan CC BY-NC-SA 4.0:
+Untuk kejelasan: beberapa aset grafis yang disertakan dalam folder `static/` tidak dicakup oleh lisensi CC BY-NC-SA 4.0 dari repositori ini. Aset-aset ini dapat memiliki lisensi atau izin terpisah; mereka disebutkan di bawah ini dan dikecualikan dari cakupan CC BY-NC-SA 4.0:
 
 - static/bg-certificate.png
 - static/bg-certificate2.png
@@ -38,9 +32,7 @@ disebutkan di bawah ini dan dikecualikan dari cakupan CC BY-NC-SA 4.0:
 - static/tutwuri-bw.png
 - static/tutwuri.png
 
-Jika Anda ingin menggunakan salah satu aset di atas, periksa lisensi atau izin yang terkait dengan
-aset tersebut. Jika lisensi asli tidak tersedia dalam repositori, silakan hubungi tim pengembang untuk
-meminta klarifikasi atau izin penggunaan.
+Jika Anda ingin menggunakan salah satu aset di atas, periksa lisensi atau izin yang terkait dengan aset tersebut. Jika lisensi asli tidak tersedia dalam repositori, silakan hubungi tim pengembang untuk meminta klarifikasi atau izin penggunaan.
 
 Kredit Ikon
 -----------
@@ -59,3 +51,4 @@ Catatan tambahan untuk pengembang
 
 ---
 Dibuat dan ditautkan oleh tim Raporkumer.
+
