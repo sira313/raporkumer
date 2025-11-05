@@ -28,6 +28,6 @@
 		<div class="mt-12 font-semibold tracking-wide">
 			{formatValue(ttd?.kepalaSekolah)}
 		</div>
-		<div class="mt-1">NIP. {formatValue(ttd?.nip)}</div>
+		<div class="mt-1">{formatValue(ttd?.nip)}</div>
 	</div>
 </footer>

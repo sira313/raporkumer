@@ -165,7 +165,7 @@
 						required
 						type="text"
 						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
-						placeholder="Contoh: 19700305 199309 1 009"
+						placeholder="Contoh: NIP 19700305 199309 1 009"
 						name="kepalaSekolah.nip"
 					/>
 				</div>
