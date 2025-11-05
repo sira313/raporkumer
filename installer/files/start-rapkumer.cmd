@@ -33,8 +33,18 @@ set "DATABASE_URL=%DB_URL%"
 :: === DETEKSI ORIGIN UNTUK CSRF ===
 echo [%date% %time%] Mendeteksi origin CSRF (port %PORT%)...>>"%LOG_FILE%"
 set "RAPKUMER_CSRF_TRUSTED_ORIGINS="
-for /f "usebackq delims=" %%i in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\detect-csrf-origins.ps1" -Port %PORT% -LogPath "%LOG_FILE%"`) do (
-    set "RAPKUMER_CSRF_TRUSTED_ORIGINS=%%i"
+:: Use a temporary file to capture output from PowerShell/Pwsh to avoid cmd parsing issues
+set "CSRF_OUT=%TEMP%\rapkumer-csrf-origins.txt"
+if exist "%CSRF_OUT%" del "%CSRF_OUT%" >nul 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\detect-csrf-origins.ps1" -Port %PORT% -LogPath "%LOG_FILE%" > "%CSRF_OUT%" 2>nul
+if errorlevel 1 (
+    pwsh -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\detect-csrf-origins.ps1" -Port %PORT% -LogPath "%LOG_FILE%" > "%CSRF_OUT%" 2>nul
+)
+if exist "%CSRF_OUT%" (
+    for /f "usebackq delims=" %%i in ("%CSRF_OUT%") do (
+        set "RAPKUMER_CSRF_TRUSTED_ORIGINS=%%i"
+    )
+    del "%CSRF_OUT%" >nul 2>&1
 )
 
 if not defined RAPKUMER_CSRF_TRUSTED_ORIGINS (
@@ -88,8 +98,17 @@ echo [%date% %time%] Node.js tidak ditemukan. Mempersiapkan unduhan otomatis...>
 set "ARCH=x64"
 if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "ARCH=arm64"
 
-:: Ambil versi LTS terbaru dari Node.js API
-for /f "usebackq tokens=* delims=" %%v in (`powershell -NoProfile -Command "(Invoke-RestMethod 'https://nodejs.org/dist/index.json' | Where-Object { $_.lts } | Select-Object -First 1).version"`) do set "NODE_LTS_VERSION=%%v"
+:: Ambil versi LTS terbaru dari Node.js API (pakai file sementara untuk menghindari parsing issues)
+set "NODE_LTS_FILE=%TEMP%\rapkumer-node-lts.txt"
+if exist "%NODE_LTS_FILE%" del "%NODE_LTS_FILE%" >nul 2>&1
+powershell -NoProfile -Command "(Invoke-RestMethod 'https://nodejs.org/dist/index.json' | Where-Object { $_.lts } | Select-Object -First 1).version" > "%NODE_LTS_FILE%" 2>nul
+if errorlevel 1 (
+    pwsh -NoProfile -Command "(Invoke-RestMethod 'https://nodejs.org/dist/index.json' | Where-Object { $_.lts } | Select-Object -First 1).version" > "%NODE_LTS_FILE%" 2>nul
+)
+if exist "%NODE_LTS_FILE%" (
+    for /f "usebackq tokens=* delims=" %%v in ("%NODE_LTS_FILE%") do set "NODE_LTS_VERSION=%%v"
+    del "%NODE_LTS_FILE%" >nul 2>&1
+)
 if not defined NODE_LTS_VERSION set "NODE_LTS_VERSION=v22.11.0"
 
 set "NODE_INSTALLER_URL=https://nodejs.org/dist/%NODE_LTS_VERSION%/node-%NODE_LTS_VERSION%-%ARCH%.msi"
@@ -97,6 +116,9 @@ set "NODE_INSTALLER_PATH=%TEMP%\node-%NODE_LTS_VERSION%-%ARCH%.msi"
 
 echo [%date% %time%] Mengunduh Node.js %NODE_LTS_VERSION% (%ARCH%) dari %NODE_INSTALLER_URL%...>>"%LOG_FILE%"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri '%NODE_INSTALLER_URL%' -OutFile '%NODE_INSTALLER_PATH%' -UseBasicParsing" >>"%LOG_FILE%" 2>&1
+if errorlevel 1 (
+    pwsh -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri '%NODE_INSTALLER_URL%' -OutFile '%NODE_INSTALLER_PATH%' -UseBasicParsing" >>"%LOG_FILE%" 2>&1
+)
 if errorlevel 1 (
     echo Gagal mengunduh Node.js. Silakan instal manual dari https://nodejs.org/en/download/.
     echo [%date% %time%] Unduhan gagal.>>"%LOG_FILE%"
@@ -159,8 +181,18 @@ set "RUNNER_SCRIPT=%TEMP%\rapkumer-run-%RANDOM%.cmd"
 ) >"%RUNNER_SCRIPT%"
 :: Try to resolve node via bundled resolver if NODE_BINARY wasn't set earlier
 if not defined NODE_BINARY (
-    for /f "usebackq delims=" %%N in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\resolve-node.ps1" -BundledNodePath "%ProgramFiles%\nodejs\node.exe"`) do (
-        set "NODE_BINARY=%%N"
+    :: Use a temp file to capture resolver output to avoid cmd parsing issues with || inside backticks
+    set "RESOLVE_NODE_OUT=%TEMP%\rapkumer-resolve-node.txt"
+    if exist "%RESOLVE_NODE_OUT%" del "%RESOLVE_NODE_OUT%" >nul 2>&1
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\resolve-node.ps1" -BundledNodePath "%ProgramFiles%\nodejs\node.exe" > "%RESOLVE_NODE_OUT%" 2>nul
+    if errorlevel 1 (
+        pwsh -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\resolve-node.ps1" -BundledNodePath "%ProgramFiles%\nodejs\node.exe" > "%RESOLVE_NODE_OUT%" 2>nul
+    )
+    if exist "%RESOLVE_NODE_OUT%" (
+        for /f "usebackq delims=" %%N in ("%RESOLVE_NODE_OUT%") do (
+            if not defined NODE_BINARY set "NODE_BINARY=%%N"
+        )
+        del "%RESOLVE_NODE_OUT%" >nul 2>&1
     )
     if not defined NODE_BINARY (
         echo [%date% %time%] start-rapkumer.cmd: NODE_BINARY masih belum ditemukan setelah resolve-node.ps1>>"%LOG_FILE%"
@@ -171,11 +203,17 @@ if not defined NODE_BINARY (
 
 :: Launch runner script in a detached hidden cmd process and wait for server to listen
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath cmd.exe -ArgumentList '/c', '""%RUNNER_SCRIPT%""' -WindowStyle Hidden -WorkingDirectory '%APP_HOME%'" >>"%LOG_FILE%" 2>&1
+if errorlevel 1 (
+    pwsh -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath cmd.exe -ArgumentList '/c', '""%RUNNER_SCRIPT%""' -WindowStyle Hidden -WorkingDirectory '%APP_HOME%'" >>"%LOG_FILE%" 2>&1
+)
 
 :: Wait for the server to start listening on the port (up to ~10 seconds)
 set "WAIT_COUNT=0"
 :wait_server
 powershell -NoProfile -Command "try{ $c = New-Object System.Net.Sockets.TcpClient; $c.Connect('127.0.0.1', %PORT%); $c.Close(); exit 0 } catch { exit 1 }" >nul 2>&1
+if errorlevel 1 (
+    pwsh -NoProfile -Command "try{ $c = New-Object System.Net.Sockets.TcpClient; $c.Connect('127.0.0.1', %PORT%); $c.Close(); exit 0 } catch { exit 1 }" >nul 2>&1
+)
 if not errorlevel 1 (
     echo [%date% %time%] Server is listening on port %PORT% >> "%LOG_FILE%"
     set "LAUNCHED=1"
