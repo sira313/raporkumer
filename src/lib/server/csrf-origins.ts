@@ -6,9 +6,7 @@ import { env } from '$env/dynamic/private';
 // otherwise use LOCALAPPDATA\Rapkumer-data on Windows, else fallback to repo ./data.
 const dataDir =
 	env.RAPKUMER_DATA_DIR ||
-	(env.LOCALAPPDATA
-		? join(env.LOCALAPPDATA, 'Rapkumer-data')
-		: join(process.cwd(), 'data'));
+	(env.LOCALAPPDATA ? join(env.LOCALAPPDATA, 'Rapkumer-data') : join(process.cwd(), 'data'));
 
 const ORIGINS_FILE = join(dataDir, 'csrf-origins.txt');
 const CACHE_TTL = 5_000; // ms

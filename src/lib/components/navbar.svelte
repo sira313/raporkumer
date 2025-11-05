@@ -258,7 +258,7 @@
 									{kelasAktif?.waliKelas?.nama ?? 'Belum ada wali kelas'}
 								</p>
 								<!-- Nama kelas -->
-								<p class="text-base-content/70 text-xs">{(kelasAktifLabel)}</p>
+								<p class="text-base-content/70 text-xs">{kelasAktifLabel}</p>
 							</div>
 						</div>
 
@@ -272,7 +272,7 @@
 									{#each daftarKelas as kelas (kelas.id)}
 										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
 										<a
-											class="btn btn-ghost btn-sm justify-start shadow-none text-left"
+											class="btn btn-ghost btn-sm justify-start text-left shadow-none"
 											href={buildKelasHref(kelas.id)}
 											onclick={handleKelasClick}
 											class:active={kelasAktif?.id === kelas.id}
