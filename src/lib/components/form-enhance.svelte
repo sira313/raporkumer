@@ -39,21 +39,6 @@
 		return typeof value === 'object' && value !== null && 'type' in value;
 	}
 
-	function resolveResultType(result: SubmitOutcome) {
-		if (!result) return 'success';
-		if (result instanceof Response) {
-			if (result.ok) return 'success';
-			if (result.status >= 300 && result.status < 400) return 'redirect';
-			if (result.status >= 400 && result.status < 500) return 'failure';
-			return 'error';
-		}
-		if (isActionResult(result)) {
-			if (result.type) return result.type;
-			return 'success';
-		}
-		return 'success';
-	}
-
 	async function extractSuccessData(result: SubmitOutcome) {
 		try {
 			if (!result) return undefined;
@@ -77,13 +62,17 @@
 	const enhancedSubmit: SubmitFunction = () => {
 		submitting = true;
 		return async ({ update, formElement, result }) => {
-			const resolvedType = resolveResultType(result);
 			const actionResult = isActionResult(result) ? result : undefined;
 			const status = result instanceof Response ? result.status : actionResult?.status;
 			const initialType = actionResult?.type;
-			console.debug('[form-enhance] submit result', { action, initialType, resolvedType, status });
+			console.debug('[form-enhance] submit result', {
+				action,
+				initialType,
+				type: result.type,
+				status
+			});
 			try {
-				switch (resolvedType) {
+				switch (result.type) {
 					case 'success': {
 						const successData = await extractSuccessData(result);
 						const successMessage =
@@ -109,24 +98,15 @@
 						break;
 					}
 					case 'error': {
-						let message = 'Terjadi kesalahan.';
-						if (result instanceof Response) {
-							message = `Error (${result.status})`;
-						} else if (actionResult) {
-							const detail = 'error' in actionResult ? actionResult.error : undefined;
-							const detailMessage =
-								typeof detail === 'object' && detail && 'message' in detail
-									? String(detail.message)
-									: detail
-										? JSON.stringify(detail)
-										: undefined;
-							message = status
-								? `Error (${status}): ${detailMessage ?? 'Terjadi kesalahan.'}`
-								: (detailMessage ?? 'Terjadi kesalahan.');
-						}
+						let message = `Error (${result.status}): ${result.error?.message || JSON.stringify(result.error)} \n\ndebug: "${result.error?.debug}"`;
 						if (showToast) {
-							toast(message, 'error');
+							toast({
+								message: message,
+								type: 'error',
+								persist: true
+							});
 						}
+						console.error(message);
 						break;
 					}
 					default: {

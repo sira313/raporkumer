@@ -1,6 +1,6 @@
 import db from '$lib/server/db';
-import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import type { AcademicContext } from '$lib/server/db/academic';
+import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import {
 	tableAlamat,
 	tableKelas,
@@ -11,10 +11,10 @@ import {
 	tableWaliMurid
 } from '$lib/server/db/schema';
 import { cookieNames, unflattenFormData } from '$lib/utils';
-import { and, desc, eq, inArray } from 'drizzle-orm';
-import { error, fail } from '@sveltejs/kit';
-import type { Actions, PageServerLoad } from './$types';
 import { readBufferToAoA } from '$lib/utils/excel.js';
+import { error, fail } from '@sveltejs/kit';
+import { and, desc, eq, inArray } from 'drizzle-orm';
+import type { Actions, PageServerLoad } from './$types';
 
 type TahunAjaranRow = typeof tableTahunAjaran.$inferSelect;
 type SemesterRow = typeof tableSemester.$inferSelect;
@@ -670,20 +670,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 		description: 'Kelola sekolah aktif, tahun ajaran, semester, dan tanggal bagi rapor.'
 	};
 
-	const sekolahList = await db.query.tableSekolah.findMany({
-		columns: { logo: false },
-		orderBy: [desc(tableSekolah.id)]
-	});
-
 	const activeSekolahId = locals.sekolah?.id ?? null;
 	let tahunAjaranList: Array<TahunAjaranRow & { semester: SemesterRow[] }> = [];
 	let activeTahunAjaranId: number | null = null;
 	let activeSemesterId: number | null = null;
 	let tanggalBagiRaport: AcademicContext['tanggalBagiRaport'] = {};
 
-	if (activeSekolahId) {
+	const [sekolahList, academicContext] = await Promise.all([
+		db.query.tableSekolah.findMany({
+			columns: { logo: false },
+			orderBy: [desc(tableSekolah.id)]
+		}),
+		activeSekolahId ? resolveSekolahAcademicContext(activeSekolahId) : null
+	]);
+
+	if (academicContext) {
 		({ tahunAjaranList, activeTahunAjaranId, activeSemesterId, tanggalBagiRaport } =
-			await resolveSekolahAcademicContext(activeSekolahId));
+			academicContext);
 	}
 
 	return {
