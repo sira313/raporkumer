@@ -9,7 +9,7 @@
 
 <Donate />
 
-<div class="w-full space-y-6">
+<div class="w-full space-y-5">
 	<section class="rounded-box from-primary/15 via-base-100 to-secondary/20 ring-base-200/60 overflow-hidden bg-gradient-to-br p-5 shadow-md ring-1 sm:p-8">
 		<div class="space-y-6">
 			<span class="badge badge-outline bg-base-100/70 text-primary shadow">Tentang Rapkumer v{appVersion}</span>
