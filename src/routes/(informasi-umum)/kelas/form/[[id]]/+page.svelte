@@ -94,10 +94,13 @@
 					<legend class="fieldset-legend">NIP Wali Kelas</legend>
 					<input
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: NIP 19940505 201803 1 008"
 						name="waliKelas.nip"
 					/>
+					<span>
+						Biarkan kosong jika wali kelas tidak memiliki NIP.
+					</span>
 				</div>
 			</div>
 			<div class="mt-6 flex justify-between gap-2">
