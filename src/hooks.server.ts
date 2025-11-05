@@ -6,6 +6,10 @@ import { cookieNames } from '$lib/utils';
 import { error, redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { desc, eq } from 'drizzle-orm';
+import {
+	readCombinedOriginsFromEnvAndFile,
+	normalizeOrigin as normalizeFileOrigin
+} from '$lib/server/csrf-origins';
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const FORM_CONTENT_TYPES = [
@@ -23,14 +27,16 @@ const normalizeOrigin = (value: string | null) => {
 	}
 };
 
-const parseTrustedOrigins = () => {
-	const raw = process.env.RAPKUMER_CSRF_TRUSTED_ORIGINS || '';
-	const candidates = raw
-		.split(',')
-		.map((entry) => entry.trim())
-		.filter(Boolean)
-		.map((entry) => normalizeOrigin(entry));
-	return new Set(candidates.filter((entry): entry is string => Boolean(entry)));
+const parseTrustedOrigins = async () => {
+	// Combine process.env and file-based origins (file has precedence for persistence)
+	const combined = await readCombinedOriginsFromEnvAndFile();
+	// Ensure values are normalized (use local normalizeOrigin for any env entries that slipped through)
+	const normalized = new Set<string>();
+	for (const entry of Array.from(combined)) {
+		const n = normalizeOrigin(entry) ?? normalizeFileOrigin(entry) ?? entry;
+		if (n) normalized.add(n);
+	}
+	return normalized;
 };
 
 const shouldCheckRequest = (request: Request) => {
@@ -59,7 +65,7 @@ const csrfGuard: Handle = async ({ event, resolve }) => {
 		return resolve(event);
 	}
 
-	const trustedOrigins = parseTrustedOrigins();
+	const trustedOrigins = await parseTrustedOrigins();
 	if (trustedOrigins.has(requestOrigin)) {
 		return resolve(event);
 	}
