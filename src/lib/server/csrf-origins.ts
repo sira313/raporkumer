@@ -1,12 +1,13 @@
 import { readFile, writeFile, rename, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
+import { env } from '$env/dynamic/private';
 
 // Prefer install-time data directory for persistence. Use explicit env var if set,
 // otherwise use LOCALAPPDATA\Rapkumer-data on Windows, else fallback to repo ./data.
 const dataDir =
-	process.env.RAPKUMER_DATA_DIR ||
-	(process.env.LOCALAPPDATA
-		? join(process.env.LOCALAPPDATA, 'Rapkumer-data')
+	env.RAPKUMER_DATA_DIR ||
+	(env.LOCALAPPDATA
+		? join(env.LOCALAPPDATA, 'Rapkumer-data')
 		: join(process.cwd(), 'data'));
 
 const ORIGINS_FILE = join(dataDir, 'csrf-origins.txt');
@@ -89,7 +90,7 @@ export async function writeFileTrustedOrigins(origins: string[]): Promise<void> 
 }
 
 export async function readCombinedOriginsFromEnvAndFile(): Promise<Set<string>> {
-	const envRaw = process.env.RAPKUMER_CSRF_TRUSTED_ORIGINS || '';
+	const envRaw = env.RAPKUMER_CSRF_TRUSTED_ORIGINS || '';
 	const envEntries = envRaw
 		.split(',')
 		.map((s) => s.trim())

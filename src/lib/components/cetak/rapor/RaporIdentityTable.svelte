@@ -28,7 +28,7 @@
 			<tr>
 				<td class="align-top" style="width: 170px;">Nama Murid</td>
 				<td class="align-top" style="width: 0.75rem;">:</td>
-				<td class="font-semibold uppercase">{formatUpper(murid?.nama)}</td>
+				<td class="align-top font-semibold uppercase">{formatUpper(murid?.nama)}</td>
 				<td class="align-top" style="width: 110px;">Kelas</td>
 				<td class="align-top" style="width: 0.75rem;">:</td>
 				<td class="font-semibold">{formatValue(rombel?.nama)}</td>

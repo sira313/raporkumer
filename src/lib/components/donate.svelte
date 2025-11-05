@@ -2,7 +2,7 @@
 	import Icon from './icon.svelte';
 </script>
 
-<div role="alert" class="card bg-base-100 mx-auto mb-6 max-w-4xl p-4 shadow-md">
+<div role="alert" class="card bg-base-100 mb-4 max-full p-4 shadow-md">
 	<div class="flex w-full flex-col sm:flex-row sm:items-center sm:gap-4">
 		<div class="flex flex-1 items-center gap-4">
 			<Icon name="info" class="text-info h-5 w-5 shrink-0" />
