@@ -35,8 +35,18 @@ echo [%date% %time%] run-server.cmd: menjalankan Node dengan PORT=%PORT% NODE_EN
 
 :: If NODE_BINARY missing at this point, try to resolve using resolver script
 if not defined NODE_BINARY (
-    for /f "usebackq delims=" %%N in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\resolve-node.ps1"`) do (
-        set "NODE_BINARY=%%N"
+    :: Use temp file to capture resolver output to avoid parsing issues
+    set "RESOLVE_NODE_OUT=%TEMP%\rapkumer-resolve-node.txt"
+    if exist "%RESOLVE_NODE_OUT%" del "%RESOLVE_NODE_OUT%" >nul 2>&1
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\resolve-node.ps1" > "%RESOLVE_NODE_OUT%" 2>nul
+    if errorlevel 1 (
+        pwsh -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\tools\resolve-node.ps1" > "%RESOLVE_NODE_OUT%" 2>nul
+    )
+    if exist "%RESOLVE_NODE_OUT%" (
+        for /f "usebackq delims=" %%N in ("%RESOLVE_NODE_OUT%") do (
+            if not defined NODE_BINARY set "NODE_BINARY=%%N"
+        )
+        del "%RESOLVE_NODE_OUT%" >nul 2>&1
     )
     if not defined NODE_BINARY (
         echo [%date% %time%] run-server.cmd: NODE_BINARY still not found after resolver >>"%LOG_FILE%"
