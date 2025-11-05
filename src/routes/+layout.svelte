@@ -4,9 +4,10 @@
 	import Icon from '$lib/components/icon.svelte';
 	import Menu from '$lib/components/menu.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
-	import Toast, { toast } from '$lib/components/toast.svelte';
 	import Task from '$lib/components/tasks.svelte';
+	import Toast, { toast } from '$lib/components/toast.svelte';
 
+	import NavIndicator from '$lib/components/nav-indicator.svelte';
 	import '../app.css';
 
 	let { data, children } = $props();
@@ -160,3 +161,4 @@
 
 <Toast />
 <GlobalModal />
+<NavIndicator />
