@@ -186,13 +186,16 @@ export const actions = {
 			return fail(400, { fail: `Nama rombel wajib diisi.` });
 		}
 
-		if ((waliNama && !waliNip) || (!waliNama && waliNip)) {
+		// Allow saving when NIP is empty but name is provided.
+		// However, if NIP is provided it must be accompanied by a name.
+		if (!waliNama && waliNip) {
 			return fail(400, {
-				fail: `Lengkapi Nama dan NIP wali kelas atau kosongkan keduanya.`
+				fail: `Jika mengisi NIP, lengkapi juga Nama wali kelas.`
 			});
 		}
 
-		const hasWali = Boolean(waliNama && waliNip);
+		// Consider there is a wali when a name is provided. NIP is optional.
+		const hasWali = Boolean(waliNama);
 
 		const timestamp = new Date().toISOString();
 		const sekolahId = locals.sekolah.id;

@@ -37,3 +37,6 @@ vite.config.ts.timestamp-*
 /installer/scripts/migrate-installed-db.mjs
 /installer/scripts/notify-server-reload.mjs
 /installer/scripts/seed-default-admin.mjs
+
+# csrf
+/data/csrf-origins.txt

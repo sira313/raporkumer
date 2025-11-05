@@ -273,7 +273,7 @@
 						<p class="text-base font-semibold">Kepala {sekolahNamaDisplay}</p>
 						<div class="h-16 w-full"></div>
 						<p class="text-sm font-semibold">{kepalaNamaDisplay}</p>
-						<p class="text-xs">NIP {kepalaNip || '—'}</p>
+						<p class="text-xs">{kepalaNip || '—'}</p>
 					</div>
 					<div class="flex flex-col items-center gap-1.5 text-center">
 						<p class="text-base">
@@ -284,7 +284,7 @@
 						<p class="font-semibold uppercase">Wali Kelas</p>
 						<div class="h-16 w-full"></div>
 						<p class="text-sm font-semibold">{waliNamaDisplay}</p>
-						<p class="text-xs">NIP {waliNip || '—'}</p>
+						<p class="text-xs">{waliNip || '—'}</p>
 					</div>
 				</footer>
 			</div>

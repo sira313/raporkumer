@@ -91,6 +91,15 @@
 		});
 	}
 
+	/**
+	 * Return an excerpt of `text` limited to `limit` characters.
+	 * If text is shorter than or equal to limit, return it unchanged.
+	 */
+	function excerpt(text: string | null | undefined, limit = 16) {
+		if (!text) return text;
+		return text.length > limit ? text.slice(0, limit) + '…' : text;
+	}
+
 	type HelpMapEntry = { matcher: string | RegExp; file: string };
 
 	const helpMaps: HelpMapEntry[] = [
@@ -215,7 +224,7 @@
 						title="Ganti kelas"
 						class="btn btn-soft rounded-full shadow-none"
 					>
-						<span class="hidden sm:block">{kelasAktifLabel}</span>
+						<span class="hidden sm:block">{excerpt(kelasAktifLabel, 16)}</span>
 						<Icon name="users" class="sm:hidden" />
 						<Icon name="select" class="hidden sm:block" />
 					</div>
@@ -263,7 +272,7 @@
 									{#each daftarKelas as kelas (kelas.id)}
 										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
 										<a
-											class="btn btn-ghost btn-sm justify-start shadow-none"
+											class="btn btn-ghost btn-sm justify-start text-left shadow-none"
 											href={buildKelasHref(kelas.id)}
 											onclick={handleKelasClick}
 											class:active={kelasAktif?.id === kelas.id}

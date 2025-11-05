@@ -65,7 +65,7 @@
 							{kelas.semester?.nama ?? 'Semester belum ditetapkan'}
 						</p>
 					</div>
-					<div class={`badge badge-soft ${faseBadgeClass(kelas.fase)}`}>
+					<div class={`badge badge-soft whitespace-nowrap ${faseBadgeClass(kelas.fase)}`}>
 						{kelas.fase || 'Belum diatur'}
 					</div>
 				</div>
@@ -79,7 +79,7 @@
 					<div class="ml-3">
 						<div class="text-base-content/60 text-sm">Wali Kelas</div>
 						<div class="text-xl font-semibold">{kelas.waliKelas?.nama}</div>
-						<p class="text-base-content/70 text-sm">NIP {kelas.waliKelas?.nip}</p>
+						<p class="text-base-content/70 text-sm">{kelas.waliKelas?.nip}</p>
 					</div>
 				</div>
 				<div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-between">

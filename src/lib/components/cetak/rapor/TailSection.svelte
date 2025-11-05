@@ -298,7 +298,7 @@
 					<div class="mt-16 font-semibold tracking-wide">
 						{formatValue(waliKelas?.nama)}
 					</div>
-					<div class="mt-1">NIP. {formatValue(waliKelas?.nip)}</div>
+					<div class="mt-1">{formatValue(waliKelas?.nip)}</div>
 				</div>
 			</div>
 			<div class="text-center">
@@ -306,7 +306,7 @@
 				<div class="mt-16 font-semibold tracking-wide">
 					{formatValue(kepalaSekolah?.nama)}
 				</div>
-				<div class="mt-1">NIP. {formatValue(kepalaSekolah?.nip)}</div>
+				<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
 			</div>
 		</div>
 	</section>
