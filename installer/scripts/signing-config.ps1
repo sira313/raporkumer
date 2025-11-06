@@ -75,20 +75,28 @@ function Get-SignCommand {
     }
 
     $baseArgs = @(
-        "sign"
-        "/fd", $CertConfig.DigestAlgorithm
-        "/tr", $useTimestamp
-        "/td", $CertConfig.TimestampAlgorithm
-        "/d", "`"$($CertConfig.Description)`""
-        "/du", $CertConfig.DescriptionUrl
+        "sign",
+        "/fd", $CertConfig.DigestAlgorithm,
         "/v"  # Verbose output
     )
+
+    # Add timestamp arguments only when a timestamp URL is available
+    if ($useTimestamp) {
+        $baseArgs += @("/tr", $useTimestamp, "/td", $CertConfig.TimestampAlgorithm)
+    }
+
+    # Add description fields (no extra embedded quotes — pass as separate args)
+    if ($CertConfig.Description) { $baseArgs += @("/d", $CertConfig.Description) }
+    if ($CertConfig.DescriptionUrl) { $baseArgs += @("/du", $CertConfig.DescriptionUrl) }
     
     # Check if PFX file exists and has password
     if ((Test-Path $CertConfig.PfxPath) -and (Test-Path $CertConfig.PasswordFile)) {
-        Write-Host "Using PFX certificate: $($CertConfig.PfxPath)" -ForegroundColor Green
+        # Resolve the PFX path to an absolute, normalized path to avoid ".." fragments
+        $resolvedPfx = (Resolve-Path -Path $CertConfig.PfxPath).Path
+        Write-Host "Using PFX certificate: $resolvedPfx" -ForegroundColor Green
         $password = Get-Content $CertConfig.PasswordFile -Raw
-        $baseArgs += @("/f", "`"$($CertConfig.PfxPath)`"", "/p", $password.Trim())
+        # Pass the PFX path and password as separate arguments (no embedded quotes)
+        $baseArgs += @("/f", $resolvedPfx, "/p", $password.Trim())
     }
     # Check if certificate is in store
     elseif ($CertConfig.SubjectName) {
@@ -103,7 +111,9 @@ function Get-SignCommand {
         throw "No certificate configuration found. Please setup either PFX file or certificate store."
     }
     
-    $baseArgs += "`"$FilePath`""
+    # Ensure the file path is an absolute path and pass it as a final argument
+    $resolvedFile = (Resolve-Path -Path $FilePath).Path
+    $baseArgs += $resolvedFile
     
     return @{
         Tool = $SignToolPath
