@@ -5,8 +5,13 @@ param(
 
 $ErrorActionPreference = 'SilentlyContinue'
 
+# port string to use in constructed origins
 $portString = if ($Port -gt 0) { $Port } else { 3000 }
+
+# default origins (always present)
 $origins = @("http://localhost:$portString", "http://127.0.0.1:$portString")
+
+# collect IPv4 candidates
 $ipv4 = New-Object System.Collections.Generic.List[string]
 
 function Write-DebugLog {
@@ -25,8 +30,10 @@ function Add-Ipv4Candidate {
     if (-not $Value) { return }
     if ($Value -notmatch '^\d+\.\d+\.\d+\.\d+$') { return }
     if ($Value -match '^(0\.0\.0\.0|127\.|169\.254\.)') { return }
-    $ipv4.Add($Value)
-    Write-DebugLog "Captured IPv4 candidate $Value"
+    if (-not ($ipv4 -contains $Value)) {
+        $ipv4.Add($Value)
+        Write-DebugLog "Captured IPv4 candidate $Value"
+    }
 }
 
 try {
@@ -87,24 +94,96 @@ try {
     # ignore ipconfig parsing failure
 }
 
-
-
 $uniqueIpv4 = $ipv4 | Select-Object -Unique
 $validIpv4 = @()
 
 if ($uniqueIpv4.Count -gt 0) {
-    # Pilih semua IPv4 yang ditemukan, kecuali loopback dan APIPA (sudah difilter sebelumnya)
+    # Use all discovered IPv4 (loopback/APIPA filtered earlier)
     $validIpv4 = $uniqueIpv4
     Write-DebugLog "All detected IPv4 selected: $($validIpv4 -join ', ')"
 }
 
 if ($validIpv4.Count -gt 0) {
-    $validOrigins = $validIpv4 | ForEach-Object { 'http://' + $_ + ':' + $portString }
+    # For each discovered IPv4, allow both http and https variants (with explicit port)
+    $validOrigins = @()
+    foreach ($ip in $validIpv4) {
+        $validOrigins += 'http://' + $ip + ':' + $portString
+        $validOrigins += 'https://' + $ip + ':' + $portString
+    }
     $origins += $validOrigins
-    Write-DebugLog "Final origin list: $($origins -join ', ')"
+    Write-DebugLog "Final origin list (including IPv4 http/https): $($origins -join ', ')"
 } else {
     Write-DebugLog 'No additional IPv4 detected; using default origins only'
 }
 
+# Normalize and dedupe origins
 $uniqueOrigins = $origins | Where-Object { $_ } | Sort-Object -Unique
+
+# Attempt to write merged origins to data csrf-origins.txt so custom entries are preserved
+try {
+    # Determine data directory in the same order as server code: RAPKUMER_DATA_DIR, LOCALAPPDATA\Rapkumer-data, then ./data
+    $dataDir = $env:RAPKUMER_DATA_DIR
+    if (-not $dataDir) {
+        if ($env:LOCALAPPDATA) {
+            $dataDir = Join-Path $env:LOCALAPPDATA 'Rapkumer-data'
+        } else {
+            $dataDir = Join-Path (Get-Location).Path 'data'
+        }
+    }
+
+    $originsFile = Join-Path $dataDir 'csrf-origins.txt'
+    Write-DebugLog "Resolved dataDir: $dataDir, originsFile: $originsFile"
+
+    # Read existing file entries (if any) and merge
+    $existing = @()
+    if (Test-Path $originsFile) {
+        try {
+            $rawExisting = Get-Content -Path $originsFile -ErrorAction Stop -Raw
+            $existing = $rawExisting -split '[,\n\r]+' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
+        } catch {
+            Write-DebugLog "Failed to read existing origins file: $_"
+            $existing = @()
+        }
+    }
+
+    $merged = @($existing + $uniqueOrigins) | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' } | Sort-Object -Unique
+
+    # Ensure both http and https scheme variants exist for host:port entries so
+    # runtime requests over either scheme are accepted. For example, if file had
+    # http://10.0.0.1:3000, also create https://10.0.0.1:3000 (and vice versa).
+    $schemeVariants = New-Object System.Collections.Generic.List[string]
+    foreach ($o in $merged) {
+        if ($o -match '^http://([^/:]+):(\d+)$') {
+            $host = $Matches[1]
+            $port = $Matches[2]
+            $v = "https://${host}:${port}"
+            if (-not ($merged -contains $v) -and -not ($schemeVariants -contains $v)) { $schemeVariants.Add($v) }
+        } elseif ($o -match '^https://([^/:]+):(\d+)$') {
+            $host = $Matches[1]
+            $port = $Matches[2]
+            $v = "http://${host}:${port}"
+            if (-not ($merged -contains $v) -and -not ($schemeVariants -contains $v)) { $schemeVariants.Add($v) }
+        }
+    }
+    if ($schemeVariants.Count -gt 0) {
+        $merged = @($merged + $schemeVariants) | Sort-Object -Unique
+    }
+
+    # Only write if there are IPv4-derived origins to add or file missing
+    if ($merged.Count -gt 0) {
+        try {
+            New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
+            $tmp = "$originsFile.tmp"
+            ($merged -join ',') | Out-File -FilePath $tmp -Encoding utf8
+            Move-Item -Path $tmp -Destination $originsFile -Force
+            Write-DebugLog "Wrote merged origins to ${originsFile}: $($merged -join ',')"
+        } catch {
+            Write-DebugLog "Failed to write origins file: $_"
+        }
+    }
+} catch {
+    Write-DebugLog "Failed to merge/write csrf-origins file: $_"
+}
+
+# Output comma-separated list for caller (start-rapkumer.cmd will capture this and set env)
 Write-Output ($uniqueOrigins -join ',')

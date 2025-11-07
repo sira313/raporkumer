@@ -11,6 +11,20 @@ import {
 	normalizeOrigin as normalizeFileOrigin
 } from '$lib/server/csrf-origins';
 
+// Log combined trusted origins at startup to aid debugging in packaged prod builds.
+(async () => {
+	try {
+		const _origins = await readCombinedOriginsFromEnvAndFile();
+		try {
+			console.info('[csrf] combined trusted origins at startup:', Array.from(_origins).join(','));
+		} catch {
+			// swallow any console formatting errors
+		}
+	} catch (err) {
+		console.warn('[csrf] failed to read combined trusted origins at startup', err);
+	}
+})();
+
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const FORM_CONTENT_TYPES = [
 	'application/x-www-form-urlencoded',

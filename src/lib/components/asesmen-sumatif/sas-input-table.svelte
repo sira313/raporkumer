@@ -5,7 +5,6 @@
 		sasTesText: string;
 		sasNonTesText: string;
 		getInputClass: (value: string) => string;
-		onsasChange?: (event: CustomEvent<{ target: 'tes' | 'nonTes'; value: string }>) => void;
 	}
 
 	let { sasTesText, sasNonTesText, getInputClass }: Props = $props();

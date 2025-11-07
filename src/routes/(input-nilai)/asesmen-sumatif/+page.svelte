@@ -1,9 +1,12 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- file-level: many intentional href/goto usages in template */
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
 	import { autoSubmit, searchQueryMarker } from '$lib/utils';
 	import { onDestroy } from 'svelte';
+
+	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 
 	type MapelOption = { value: string; nama: string };
 	type MuridRow = {
@@ -21,8 +24,7 @@
 		search: string | null;
 		currentPage: number;
 		totalPages: number;
-		totalItems: number;
-		perPage: number;
+		// totalItems and perPage omitted when not used in this view
 	};
 
 	type PageData = {
@@ -71,7 +73,7 @@
 	}
 
 	function buildSearchUrl(rawValue: string) {
-		const params = new URLSearchParams(page.url.search);
+		const params = new SvelteURLSearchParams(page.url.search);
 		const cleaned = rawValue.trim();
 		const current = params.get('q') ?? '';
 		const searchChanged = cleaned !== current;
@@ -100,7 +102,7 @@
 	}
 
 	function buildPageUrl(pageNumber: number) {
-		const params = new URLSearchParams(page.url.search);
+		const params = new SvelteURLSearchParams(page.url.search);
 		const sanitized = pageNumber < 1 ? 1 : pageNumber;
 		if (sanitized <= 1) {
 			params.delete('page');
@@ -282,6 +284,7 @@
 							</td>
 							<td>
 								{#if murid.nilaiHref && murid.canNilai}
+									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- intentional prebuilt href -->
 									<a
 										class="btn btn-sm btn-soft shadow-none"
 										title={`Nilai ${murid.nama}`}

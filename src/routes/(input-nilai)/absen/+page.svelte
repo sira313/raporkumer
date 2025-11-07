@@ -20,12 +20,10 @@
 		search: string | null;
 		currentPage: number;
 		totalPages: number;
-		totalItems: number;
-		perPage: number;
+		// totalItems and perPage intentionally omitted when not used in this view
 	};
 
 	type PageData = {
-		meta?: PageMeta;
 		page: PageState;
 		daftarMurid: KehadiranRow[];
 		tableReady: boolean;
@@ -70,8 +68,10 @@
 		}
 	});
 
-	function buildUrl(updateParams: (params: URLSearchParams) => void) {
-		const params = new URLSearchParams(page.url.search);
+	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
+
+	function buildUrl(updateParams: (params: SvelteURLSearchParams) => void) {
+		const params = new SvelteURLSearchParams(page.url.search);
 		updateParams(params);
 		const nextQuery = params.toString();
 		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
@@ -79,9 +79,10 @@
 		return nextUrl === currentUrl ? null : nextUrl;
 	}
 
-	async function applyNavigation(updateParams: (params: URLSearchParams) => void) {
+	async function applyNavigation(updateParams: (params: SvelteURLSearchParams) => void) {
 		const target = buildUrl(updateParams);
 		if (!target) return;
+		/* eslint-disable-next-line svelte/no-navigation-without-resolve -- intentional URL build + goto */
 		await goto(target, { replaceState: true, keepFocus: true });
 	}
 

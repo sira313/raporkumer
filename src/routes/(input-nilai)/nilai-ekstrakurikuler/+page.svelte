@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- file-level: intentional prebuilt hrefs and small navigation helpers */
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
@@ -40,9 +41,7 @@
 	type PaginationState = {
 		currentPage: number;
 		totalPages: number;
-		totalItems: number;
-		perPage: number;
-		search: string | null;
+		// totalItems, perPage and search omitted when not used in this view
 	};
 
 	type PageData = {
@@ -50,9 +49,9 @@
 		selectedEkstrakurikulerId: number | null;
 		selectedEkstrakurikuler: EkstrakurikulerDetail | null;
 		daftarMurid: MuridRow[];
-		search: string | null;
 		totalMurid: number;
 		muridCount: number;
+		search?: string | null;
 		page: PaginationState;
 	};
 
@@ -94,8 +93,10 @@
 		handleEkstrakChange(onlyId);
 	});
 
-	function buildUrl(updateParams: (params: URLSearchParams) => void) {
-		const params = new URLSearchParams(page.url.search);
+	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
+
+	function buildUrl(updateParams: (params: SvelteURLSearchParams) => void) {
+		const params = new SvelteURLSearchParams(page.url.search);
 		updateParams(params);
 		const nextQuery = params.toString();
 		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
@@ -103,7 +104,7 @@
 		return nextUrl === currentUrl ? null : nextUrl;
 	}
 
-	async function applyNavigation(updateParams: (params: URLSearchParams) => void) {
+	async function applyNavigation(updateParams: (params: SvelteURLSearchParams) => void) {
 		const target = buildUrl(updateParams);
 		if (!target) return;
 		await goto(target, { replaceState: true, keepFocus: true });
@@ -301,6 +302,7 @@
 								{@html searchQueryMarker(data.search, murid.nama)}
 							</td>
 							<td class="align-top">
+								<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- intentional prebuilt href -->
 								<a
 									class="btn btn-sm btn-soft shadow-none"
 									title={`Nilai ${murid.nama}`}

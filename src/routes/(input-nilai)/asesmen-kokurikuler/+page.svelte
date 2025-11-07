@@ -33,9 +33,7 @@
 	type PaginationState = {
 		currentPage: number;
 		totalPages: number;
-		totalItems: number;
-		perPage: number;
-		search: string | null;
+		// totalItems, perPage and search are omitted when not used by this view
 	};
 
 	type PageData = {
@@ -47,7 +45,7 @@
 		search: string | null;
 		totalMurid: number;
 		muridCount: number;
-		summary: { dimensiCount: number; deskripsi: string } | null;
+		// summary not used in this view; omitted to avoid unused prop lint
 		page: PaginationState;
 	};
 
@@ -90,8 +88,10 @@
 		handleKokurikulerChange(onlyId);
 	});
 
-	function buildUrl(updateParams: (params: URLSearchParams) => void) {
-		const params = new URLSearchParams(page.url.search);
+	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
+
+	function buildUrl(updateParams: (params: SvelteURLSearchParams) => void) {
+		const params = new SvelteURLSearchParams(page.url.search);
 		updateParams(params);
 		const nextQuery = params.toString();
 		const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
@@ -99,9 +99,10 @@
 		return nextUrl === currentUrl ? null : nextUrl;
 	}
 
-	async function applyNavigation(updateParams: (params: URLSearchParams) => void) {
+	async function applyNavigation(updateParams: (params: SvelteURLSearchParams) => void) {
 		const target = buildUrl(updateParams);
 		if (!target) return;
+		/* eslint-disable-next-line svelte/no-navigation-without-resolve -- intentional, builds URL then navigates */
 		await goto(target, { replaceState: true, keepFocus: true });
 	}
 

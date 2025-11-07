@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve */
 	import { page } from '$app/state';
 	import DarkMode from '$lib/components/dark-mode.svelte';
 	import Icon from '$lib/components/icon.svelte';
@@ -56,8 +57,10 @@
 		return Array.isArray(perms) ? perms.includes('server_stop') : false;
 	});
 
+	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
+
 	function buildKelasHref(kelasId: number) {
-		const params = new URLSearchParams(page.url.search);
+		const params = new SvelteURLSearchParams(page.url.search);
 		params.set('kelas_id', String(kelasId));
 		const query = params.toString();
 		return query ? `${page.url.pathname}?${query}` : page.url.pathname;
@@ -229,7 +232,7 @@
 						<Icon name="select" class="hidden sm:block" />
 					</div>
 					<ul
-						class="menu dropdown-content bg-base-100 ring-opacity-5 z-[1] mt-5 mr-1 w-72 origin-top-right rounded-xl p-4 shadow-xl focus:outline-none"
+						class="menu dropdown-content bg-base-100 ring-opacity-5 z-1 mt-5 mr-1 w-72 origin-top-right rounded-xl p-4 shadow-xl focus:outline-none"
 					>
 						<!-- alert akun admin -->
 						{#if user?.type === 'admin'}

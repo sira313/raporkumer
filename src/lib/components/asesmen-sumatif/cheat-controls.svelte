@@ -15,8 +15,9 @@
 		nilaiAkhir: number | null;
 		disabled: boolean;
 		cheatUnlocked: boolean;
-		onapply?: (event: CustomEvent<CheatApplyDetail>) => void;
-		onunlockChange?: (event: CustomEvent<CheatUnlockDetail>) => void;
+		// Events are dispatched via Svelte `createEventDispatcher` (apply, unlockChange)
+		// Consumers should listen with `on:apply` / `on:unlockChange` rather than
+		// passing callbacks as props.
 	};
 
 	type CheatApplyDetail = {

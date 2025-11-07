@@ -33,25 +33,47 @@
 	let formEl: HTMLFormElement | null = null;
 
 	type GenericActionResult = ActionResult<Record<string, unknown>, Record<string, unknown>>;
-	type SubmitOutcome = GenericActionResult | Response | undefined;
+
+	// Narrowed shape for action results and parsed JSON responses we expect to
+	// handle. Keep these local and conservative so we avoid using `any`.
+	interface ActionResultLike {
+		type?: 'success' | 'failure' | 'redirect' | 'error' | string;
+		status?: number;
+		data?: Record<string, unknown>;
+		error?: { message?: string; debug?: string } | unknown;
+	}
+
+	interface SuccessData extends Record<string, unknown> {
+		message?: string;
+		logout?: boolean;
+		loginPath?: string;
+	}
+
+	type SubmitOutcome = GenericActionResult | Response | Record<string, unknown> | undefined;
 
 	function isActionResult(value: SubmitOutcome): value is GenericActionResult {
 		return typeof value === 'object' && value !== null && 'type' in value;
 	}
 
-	async function extractSuccessData(result: SubmitOutcome) {
+	async function extractSuccessData(result: SubmitOutcome): Promise<SuccessData | undefined> {
 		try {
 			if (!result) return undefined;
 			if (result instanceof Response) {
 				const contentType = result.headers.get('content-type') || '';
 				if (contentType.includes('application/json')) {
 					const clone = result.clone();
-					return (await clone.json()) as Record<string, unknown>;
+					return (await clone.json()) as SuccessData;
 				}
 				return undefined;
 			}
 			if (isActionResult(result) && 'data' in result) {
-				return result.data as Record<string, unknown> | undefined;
+				return (result.data as SuccessData) || undefined;
+			}
+			// Some endpoints return a plain JSON object (not a Response nor an ActionResult)
+			// (for example when the enhance shim already parsed JSON). Accept that shape
+			// as success data as well.
+			if (typeof result === 'object' && result !== null) {
+				return result as Record<string, unknown>;
 			}
 		} catch (error) {
 			console.warn('[form-enhance] gagal mengekstrak data sukses', error);
@@ -61,30 +83,76 @@
 
 	const enhancedSubmit: SubmitFunction = () => {
 		submitting = true;
-		return async ({ update, formElement, result }) => {
-			const actionResult = isActionResult(result) ? result : undefined;
-			const status = result instanceof Response ? result.status : actionResult?.status;
+		return async (args: {
+			result?: SubmitOutcome;
+			update?: (() => Promise<void>) | undefined;
+			form?: HTMLFormElement | undefined;
+			formElement?: HTMLFormElement | undefined;
+		}) => {
+			// `result` may be an ActionResult (for server actions) or a Response
+			// (for endpoint responses). Some environments may provide a plain
+			// Response-like object without `type`, so handle both cases. Use a
+			// local `raw` variable to avoid TypeScript narrowing issues.
+			const raw = args.result as SubmitOutcome;
+			const update = args.update;
+			const actionResult = isActionResult(raw) ? (raw as unknown as ActionResultLike) : undefined;
+			const isResponse = raw instanceof Response;
+			const status = isResponse ? (raw as Response).status : actionResult?.status;
 			const initialType = actionResult?.type;
 			console.debug('[form-enhance] submit result', {
 				action,
 				initialType,
-				type: result.type,
+				raw,
 				status
 			});
 			try {
-				switch (result.type) {
+				// Resolve the kind of result we have. Prefer `result.type` when
+				// available (ActionResult). Otherwise, infer from HTTP status on
+				// Response objects.
+				// If the raw result is a plain object with a `message` it is likely a
+				// parsed JSON response from the endpoint; treat that as success.
+				const isPlainObject = typeof raw === 'object' && raw !== null && !isResponse;
+				const resultType = actionResult
+					? actionResult.type
+					: isResponse
+						? (raw as Response).ok
+							? 'success'
+							: 'error'
+						: isPlainObject && 'message' in (raw as Record<string, unknown>)
+							? 'success'
+							: undefined;
+				switch (resultType) {
 					case 'success': {
-						const successData = await extractSuccessData(result);
-						const successMessage =
-							successData && 'message' in successData ? String(successData.message) : 'Sukses';
+						const successData = await extractSuccessData(raw);
+						const successMessage = successData?.message ?? 'Sukses';
 						if (showToast) {
 							toast(successMessage, 'success');
 						}
-						onsuccess?.({ form: formElement, data: successData });
+						const callForm = args.form ?? args.formElement;
+						if (callForm && onsuccess) {
+							onsuccess({ form: callForm, data: successData });
+						}
+						// If the server indicates the user must re-login after this action,
+						// show the toast (above) and then redirect to the login page. Keep a
+						// short delay so the toast is visible before navigation.
+						try {
+							if (successData && successData.logout) {
+								const loginPath = successData.loginPath;
+								setTimeout(() => {
+									try {
+										window.location.href = loginPath ?? '/login';
+									} catch (e) {
+										console.warn('[form-enhance] gagal melakukan redirect ke halaman login', e);
+									}
+								}, 1400);
+							}
+						} catch (e) {
+							console.warn('[form-enhance] gagal memproses logout redirect', e);
+						}
 						break;
 					}
 					case 'redirect': {
-						await update();
+						if (update) await update();
 						break;
 					}
 					case 'failure': {
@@ -98,7 +166,18 @@
 						break;
 					}
 					case 'error': {
-						let message = `Error (${result.status}): ${result.error?.message || JSON.stringify(result.error)} \n\ndebug: "${result.error?.debug}"`;
+						const actionErrMsg =
+							actionResult && typeof actionResult.error === 'object' && actionResult.error !== null
+								? (actionResult.error as { message?: string }).message
+								: undefined;
+						const actionErrDebug =
+							actionResult && typeof actionResult.error === 'object' && actionResult.error !== null
+								? (actionResult.error as { debug?: string }).debug
+								: undefined;
+						let message = `Error (${status ?? '??'}): ${
+							actionErrMsg ||
+							(isResponse ? String((raw as Response).statusText) : JSON.stringify(raw))
+						} \n\ndebug: "${actionErrDebug || ''}"`;
 						if (showToast) {
 							toast({
 								message: message,
@@ -110,7 +189,13 @@
 						break;
 					}
 					default: {
-						await update();
+						// If we couldn't determine a type, still attempt an update so any
+						// server-driven state changes are applied to the page.
+						try {
+							if (update) await update();
+						} catch (e) {
+							console.debug('[form-enhance] update() failed for unknown result type', e);
+						}
 						break;
 					}
 				}
@@ -119,7 +204,8 @@
 				toast(`Gagal mengirim formulir`, 'error');
 			} finally {
 				submitting = false;
-				invalid = !formElement.checkValidity();
+				const localForm = args.form ?? args.formElement;
+				invalid = !(localForm && (localForm as HTMLFormElement).checkValidity());
 			}
 		};
 	};

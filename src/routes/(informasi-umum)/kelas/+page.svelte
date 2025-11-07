@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- file has many intentional href/goto usages handled by the page router */
 	import Icon from '$lib/components/icon.svelte';
 	import DeleteKelasModal from '$lib/components/kelas/delete-kelas-modal.svelte';
 	import { faseBadgeClass } from '$lib/components/kelas/fase';

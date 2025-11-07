@@ -53,6 +53,7 @@
 		return createTableRows(intrakurikulerRows, activeTailBlocks);
 	});
 
+	/* eslint-disable-next-line svelte/prefer-svelte-reactivity */
 	const tableRowElements = new Map<number, HTMLTableRowElement>();
 	function tableRow(node: HTMLTableRowElement, order: number) {
 		tableRowElements.set(order, node);

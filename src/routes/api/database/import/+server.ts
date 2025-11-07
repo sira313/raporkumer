@@ -4,6 +4,8 @@ import { copyFile, mkdir, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { reloadDbClient } from '$lib/server/db';
 import { execFile } from 'node:child_process';
+import { cookieNames } from '$lib/utils';
+import { resolveSession } from '$lib/server/auth';
 
 const DEFAULT_DB_URL = 'file:./data/database.sqlite3';
 
@@ -16,10 +18,28 @@ function resolveDatabasePath(url: string) {
 	throw error(500, 'Database URL tidak didukung untuk import');
 }
 
-export async function POST({ request }) {
+export async function POST({ request, cookies }) {
 	const formData = await request.formData();
 	const file = formData.get('database');
 	console.log('[database-import] menerima permintaan import');
+
+	// Preserve admin access across the DB swap: verify the caller is an admin
+	// using the currently-open DB before we overwrite it. After the import we
+	// will create a fresh session in the newly-imported DB so the client stays
+	// authenticated.
+	const existingToken = cookies?.get?.(cookieNames.AUTH_SESSION);
+	if (!existingToken) {
+		console.warn('[database-import] tidak ada cookie sesi pada permintaan');
+		throw error(403, 'Akses ditolak');
+	}
+	const resolved = await resolveSession(existingToken).catch((e) => {
+		console.warn('[database-import] gagal memverifikasi sesi sebelum import', e);
+		return null;
+	});
+	if (!resolved || !resolved.user || resolved.user.type !== 'admin') {
+		console.warn('[database-import] user tidak memiliki izin admin');
+		throw error(403, 'Akses ditolak');
+	}
 
 	if (!(file instanceof File)) {
 		console.warn('[database-import] gagal: field database tidak ditemukan dalam formData');
@@ -78,6 +98,25 @@ export async function POST({ request }) {
 		console.warn('[database-import] failed to reload DB client (non-fatal):', e);
 	}
 
+	// After an import we require the client to re-authenticate. Clear any
+	// existing auth session cookie so the user is logged out and must sign in
+	// against the newly-imported database. The client will be informed via the
+	// JSON response (logout: true) and should redirect to the login page.
+	try {
+		const secure = process.env.NODE_ENV === 'production';
+		// Expire the session cookie immediately.
+		cookies.set(cookieNames.AUTH_SESSION, '', {
+			path: '/',
+			httpOnly: true,
+			sameSite: 'lax',
+			secure,
+			expires: new Date(0)
+		});
+		console.info('[database-import] cleared auth session cookie to require re-login after import');
+	} catch (e) {
+		console.warn('[database-import] failed to clear auth session cookie (non-fatal):', e);
+	}
+
 	// attempt to normalize indexes automatically after import so older DB dumps
 	// don't leave behind incompatible index names that later cause insert failures.
 	(async () => {
@@ -116,5 +155,9 @@ export async function POST({ request }) {
 			console.warn('[database-import] migrate-installed-db failed (non-fatal):', e);
 		}
 	})();
-	return json({ message: 'Database berhasil diimport.' });
+	return json({
+		message: 'Database berhasil diimport. Silakan login ulang.',
+		logout: true,
+		loginPath: '/login'
+	});
 }

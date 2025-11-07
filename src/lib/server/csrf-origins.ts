@@ -1,5 +1,6 @@
 import { readFile, writeFile, rename, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
+import { networkInterfaces } from 'node:os';
 import { env } from '$env/dynamic/private';
 
 // Prefer install-time data directory for persistence. Use explicit env var if set,
@@ -97,12 +98,69 @@ export async function readCombinedOriginsFromEnvAndFile(): Promise<Set<string>> 
 		.filter((s): s is string => Boolean(s));
 
 	const fileSet = await getFileTrustedOrigins();
-	// Also always check repo ./data as additional source (helpful for dev and build tests)
+	// Also always check repo ./data as an additional source (helpful for dev and
+	// build tests). We prefer the repo-local file when present (so working tree
+	// overrides an AppData persisted file during development). If the repo file
+	// is missing, fall back to the persisted data dir file. The environment
+	// variable is only used when no file-based sources exist at all.
 	const repoSet = await readRepoDataFileOrigins();
-	const result = new Set<string>(envEntries);
-	for (const f of fileSet) result.add(f);
-	for (const f of repoSet) result.add(f);
-	return result;
+
+	// Choose the primary source (repo file > persisted data dir > env)
+	let primary = new Set<string>();
+	if (repoSet.size > 0) primary = new Set<string>(repoSet);
+	else if (fileSet.size > 0) primary = new Set<string>(fileSet);
+	else primary = new Set<string>(envEntries);
+
+	// Always attempt to detect local IPv4 addresses on the host and add them
+	// to the trusted origins set so LAN access works without manual editing.
+	// Construct origins for both http/https and with/without port for
+	// compatibility.
+	const port = (env.RAPKUMER_PORT || env.PORT || '3000').toString();
+	const detected = new Set<string>();
+	try {
+		const nets = networkInterfaces();
+		for (const name of Object.keys(nets)) {
+			const addrs = nets[name];
+			if (!addrs) continue;
+			for (const a of addrs) {
+				if (a.family !== 'IPv4' || a.internal) continue;
+				const ip = a.address;
+				// add both with and without port, and both schemes
+				detected.add(normalizeOrigin(`http://${ip}:${port}`) ?? '');
+				detected.add(normalizeOrigin(`https://${ip}:${port}`) ?? '');
+				detected.add(normalizeOrigin(`http://${ip}`) ?? '');
+				detected.add(normalizeOrigin(`https://${ip}`) ?? '');
+			}
+		}
+	} catch {
+		// ignore detection errors
+	}
+
+	// Ensure localhost/loopback variants are trusted by default (with and
+	// without port) so local browser requests to localhost:3000 aren't
+	// rejected even when no file/env entries exist.
+	const loopbacks = [
+		`http://localhost:${port}`,
+		`https://localhost:${port}`,
+		`http://localhost`,
+		`https://localhost`,
+		`http://127.0.0.1:${port}`,
+		`https://127.0.0.1:${port}`,
+		`http://127.0.0.1`,
+		`https://127.0.0.1`
+	];
+
+	for (const l of loopbacks) {
+		const n = normalizeOrigin(l);
+		if (n) detected.add(n);
+	}
+
+	// Merge detected (filter out invalid/empty entries via normalizeOrigin)
+	for (const d of detected) {
+		if (d) primary.add(d);
+	}
+
+	return primary;
 }
 
 export { normalizeOrigin };

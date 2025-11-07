@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- page uses goto/href for TP/RL navigation */
 	import { goto, invalidate } from '$app/navigation';
 	import Icon from '$lib/components/icon.svelte';
 	import BobotInfoAlert from '$lib/components/tp-rl/bobot-info-alert.svelte';
@@ -42,6 +43,7 @@
 	// grouping helpers imported from '$lib/utils/tp-rl'
 
 	import { page } from '$app/state';
+	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 	let { data } = $props();
 	const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
 	const isAgamaParentMapel = $derived(data.mapel.nama === AGAMA_PARENT_NAME);
@@ -245,7 +247,10 @@
 			try {
 				const currentName = data?.mapel?.nama ?? '';
 				if (currentName && kelasAktif) {
-					const q = new URLSearchParams({ kelas_id: String(kelasAktif.id), name: currentName });
+					const q = new SvelteURLSearchParams({
+						kelas_id: String(kelasAktif.id),
+						name: currentName
+					});
 					const res = await fetch(`/api/mapel/resolve-by-name?${q.toString()}`);
 					if (res.ok) {
 						const json = await res.json();

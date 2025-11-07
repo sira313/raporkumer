@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- static link(s) to external/about pages */
 	import Donate from '$lib/components/donate.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import type { PageData } from './$types';
@@ -11,7 +12,7 @@
 
 <div class="w-full space-y-5">
 	<section
-		class="rounded-box from-primary/15 via-base-100 to-secondary/20 ring-base-200/60 overflow-hidden bg-gradient-to-br p-5 shadow-md ring-1 sm:p-8"
+		class="rounded-box from-primary/15 via-base-100 to-secondary/20 ring-base-200/60 overflow-hidden bg-linear-to-br p-5 shadow-md ring-1 sm:p-8"
 	>
 		<div class="space-y-6">
 			<span class="badge badge-outline bg-base-100/70 text-primary shadow"
@@ -44,20 +45,20 @@
 
 			<div class="flex flex-wrap gap-3">
 				<a
-					class="btn btn-outline"
+					class="btn btn-outline shadow-none"
 					href="https://kurikulum.kemdikbud.go.id/"
 					target="_blank"
 					rel="noreferrer">Pelajari Kurikulum</a
 				>
-				<a class="btn btn-outline" href="/lisensi">Lihat Lisensi</a>
+				<a class="btn btn-outline shadow-none" href="/lisensi">Lihat Lisensi</a>
 				<a
-					class="btn btn-primary ml-auto"
+					class="btn btn-primary ml-auto shadow-none"
 					href="https://t.me/+zj3h_zjBAC02YjZl"
 					target="_blank"
 					rel="noreferrer"
 				>
-					<Icon name="telegram" class="mr-2 text-xl" />
-					Gabung Grup Telegram
+					<Icon name="telegram" class="mr-2 text-xl shadow-none" />
+					Tanya di Telegram
 				</a>
 			</div>
 		</div>

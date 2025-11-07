@@ -7,7 +7,6 @@
 		data
 	}: {
 		data: {
-			meta: PageMeta;
 			ekstrakurikuler: Ekstrakurikuler;
 			tujuan: EkstrakurikulerTujuan[];
 			tujuanTableReady: boolean;

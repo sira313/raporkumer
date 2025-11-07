@@ -20,21 +20,21 @@
 <FormEnhance action="/api/database/import" enctype="multipart/form-data" onsuccess={handleSuccess}>
 	{#snippet children({ submitting, invalid })}
 		<div class="space-y-4">
-			<div class="form-control">
-				<label class="label" for={inputId}>
+			<div class="form-control fieldset">
+				<label class="fieldset-legend" for={inputId}>
 					<span class="label-text font-semibold">Pilih berkas database</span>
 				</label>
 				<input
 					required
 					name="database"
 					type="file"
-					accept=".sqlite,.sqlite3,.db"
-					class="file-input file-input-bordered dark:bg-base-200 w-full dark:border-none"
+					accept=".sqlite3"
+					class="file-input file-input-ghost"
 					id={inputId}
 				/>
 				<div class="label">
 					<span class="label-text-alt text-base-content/70">
-						Format yang didukung: .sqlite, .sqlite3, .db
+						Contoh file: file-backup.sqlite3
 					</span>
 				</div>
 			</div>

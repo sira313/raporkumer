@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve, svelte/prefer-svelte-reactivity -- small Map and URLSearchParams usage and navigation helpers */
 	import { invalidate } from '$app/navigation';
 	import CheatControls from '$lib/components/asesmen-sumatif/cheat-controls.svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
@@ -24,14 +25,12 @@
 
 	type PageData = {
 		murid: { id: number; nama: string };
-		mapel: { id: number; nama: string; kkm: number };
+		mapel: { id: number; kkm: number };
 		hasTujuan: boolean;
 		entries: TujuanEntry[];
 		initialScores: {
-			naLingkup: number | null;
 			sasTes: number | null;
 			sasNonTes: number | null;
-			sas: number | null;
 			nilaiAkhir: number | null;
 		};
 		cheatUnlocked: boolean;
@@ -314,7 +313,7 @@
 					{entries}
 					{formatScore}
 					{getInputClass}
-					onnilaiChange={handleEntryNilaiChange}
+					on:nilaiChange={handleEntryNilaiChange}
 				/>
 			{/if}
 
@@ -323,7 +322,7 @@
 			<h3 class="mt-6 pb-2 text-lg font-bold">
 				Isi Sumatif Akhir Semester di bawah ini untuk {data.murid.nama}.
 			</h3>
-			<SasInputTable {sasTesText} {sasNonTesText} {getInputClass} onsasChange={handleSasChange} />
+			<SasInputTable {sasTesText} {sasNonTesText} {getInputClass} on:sasChange={handleSasChange} />
 
 			<SasSummaryCard {nilaiSas} {formatScore} />
 
