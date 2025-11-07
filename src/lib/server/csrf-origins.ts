@@ -147,7 +147,7 @@ export async function readCombinedOriginsFromEnvAndFile(): Promise<Set<string>> 
 		`http://127.0.0.1:${port}`,
 		`https://127.0.0.1:${port}`,
 		`http://127.0.0.1`,
-		`https://127.0.0.1`,
+		`https://127.0.0.1`
 	];
 
 	for (const l of loopbacks) {
