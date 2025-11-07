@@ -97,12 +97,25 @@ export async function readCombinedOriginsFromEnvAndFile(): Promise<Set<string>> 
 		.filter((s): s is string => Boolean(s));
 
 	const fileSet = await getFileTrustedOrigins();
-	// Also always check repo ./data as additional source (helpful for dev and build tests)
+	// Also always check repo ./data as an additional source (helpful for dev and
+	// build tests). We prefer the repo-local file when present (so working tree
+	// overrides an AppData persisted file during development). If the repo file
+	// is missing, fall back to the persisted data dir file. The environment
+	// variable is only used when no file-based sources exist at all.
 	const repoSet = await readRepoDataFileOrigins();
-	const result = new Set<string>(envEntries);
-	for (const f of fileSet) result.add(f);
-	for (const f of repoSet) result.add(f);
-	return result;
+
+	if (repoSet.size > 0) {
+		// Use only the repo file entries when available.
+		return new Set<string>(repoSet);
+	}
+
+	if (fileSet.size > 0) {
+		// Use persisted data dir entries when repo file absent.
+		return new Set<string>(fileSet);
+	}
+
+	// No file-based entries found — fall back to env-provided values.
+	return new Set<string>(envEntries);
 }
 
 export { normalizeOrigin };
