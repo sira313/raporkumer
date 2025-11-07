@@ -1,5 +1,7 @@
 <script lang="ts">
+	// preview parameter building uses SvelteURLSearchParams; no file-level ESLint disables needed
 	import { page } from '$app/state';
+	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 	import Icon from '$lib/components/icon.svelte';
 	import BiodataPreview from '$lib/components/cetak/preview/BiodataPreview.svelte';
 	import CoverPreview from '$lib/components/cetak/preview/CoverPreview.svelte';
@@ -305,7 +307,7 @@
 		}
 
 		const path = documentPaths[documentType];
-		const params = new URLSearchParams({ murid_id: String(murid.id) });
+		const params = new SvelteURLSearchParams({ murid_id: String(murid.id) });
 		if (data.kelasId) {
 			params.set('kelas_id', data.kelasId);
 		}

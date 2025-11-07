@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- intentional href to home */
 	import { page } from '$app/stores';
 	import Icon from '$lib/components/icon.svelte';
 
@@ -26,7 +27,7 @@
 <div class="flex items-center justify-center">
 	<div class="w-full">
 		<div class="overflow-hidden rounded-lg shadow-md">
-			<div class="from-primary to-secondary bg-gradient-to-r p-8 text-white">
+			<div class="from-primary to-secondary bg-linear-to-r p-8 text-white">
 				<div class="flex items-center gap-6">
 					<div class="flex h-24 w-24 items-center justify-center rounded-lg bg-white/10">
 						<Icon name="lock" class="text-4xl text-white" />
@@ -55,7 +56,7 @@
 						{/if}
 					</div>
 
-					<div class="flex flex-shrink-0 flex-col items-stretch gap-2 md:items-end">
+					<div class="flex shrink-0 flex-col items-stretch gap-2 md:items-end">
 						<div class="flex gap-2">
 							<button class="btn btn-soft shadow-none" on:click={goBack} aria-label="Kembali"
 								>Kembali</button

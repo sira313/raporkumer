@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- layout contains many intentional href links for navigation */
 	import { page } from '$app/state';
 	import GlobalModal from '$lib/components/global-modal.svelte';
 	import Icon from '$lib/components/icon.svelte';
@@ -135,7 +136,7 @@
 		<div class="drawer-side">
 			<label for="my-drawer-2" aria-label="close sidebar" class="drawer-overlay"></label>
 			<ul class="menu bg-base-100 text-base-content min-h-full w-70 p-4">
-				<div class="mt-[4rem] flex items-center gap-2 pb-4 lg:mt-1">
+				<div class="mt-16 flex items-center gap-2 pb-4 lg:mt-1">
 					{#if data.meta?.logoUrl}
 						<img class="h-8 rounded" src={data.meta.logoUrl} alt="Brand logo" />
 					{/if}

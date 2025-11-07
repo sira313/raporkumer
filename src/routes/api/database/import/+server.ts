@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { reloadDbClient } from '$lib/server/db';
 import { execFile } from 'node:child_process';
 import { cookieNames } from '$lib/utils';
-import { ensureDefaultAdmin, resolveSession, createSession } from '$lib/server/auth';
+import { resolveSession } from '$lib/server/auth';
 
 const DEFAULT_DB_URL = 'file:./data/database.sqlite3';
 
@@ -98,30 +98,23 @@ export async function POST({ request, cookies }) {
 		console.warn('[database-import] failed to reload DB client (non-fatal):', e);
 	}
 
-	// Ensure there's an admin account in the newly-imported DB and create a
-	// fresh session for the client so they remain authenticated after the DB
-	// swap. We intentionally do this synchronously here so the response can set
-	// a new cookie for the client.
+	// After an import we require the client to re-authenticate. Clear any
+	// existing auth session cookie so the user is logged out and must sign in
+	// against the newly-imported database. The client will be informed via the
+	// JSON response (logout: true) and should redirect to the login page.
 	try {
-		const admin = await ensureDefaultAdmin();
-		if (admin && admin.id) {
-			const session = await createSession(admin.id, {
-				userAgent: request.headers.get('user-agent') ?? null,
-				ipAddress:
-					(request.headers.get('x-forwarded-for') as string | null) ??
-					request.headers.get('remote-addr') ?? null
-			});
-			const secure = process.env.NODE_ENV === 'production';
-			cookies.set(cookieNames.AUTH_SESSION, session.token, {
-				path: '/',
-				httpOnly: true,
-				sameSite: 'lax',
-				secure
-			});
-			console.info('[database-import] created session in imported DB for admin user', admin.username);
-		}
+		const secure = process.env.NODE_ENV === 'production';
+		// Expire the session cookie immediately.
+		cookies.set(cookieNames.AUTH_SESSION, '', {
+			path: '/',
+			httpOnly: true,
+			sameSite: 'lax',
+			secure,
+			expires: new Date(0)
+		});
+		console.info('[database-import] cleared auth session cookie to require re-login after import');
 	} catch (e) {
-		console.warn('[database-import] failed to create/restore admin session after import (non-fatal):', e);
+		console.warn('[database-import] failed to clear auth session cookie (non-fatal):', e);
 	}
 
 	// attempt to normalize indexes automatically after import so older DB dumps
@@ -162,5 +155,9 @@ export async function POST({ request, cookies }) {
 			console.warn('[database-import] migrate-installed-db failed (non-fatal):', e);
 		}
 	})();
-	return json({ message: 'Database berhasil diimport.' });
+	return json({
+		message: 'Database berhasil diimport. Silakan login ulang.',
+		logout: true,
+		loginPath: '/login'
+	});
 }

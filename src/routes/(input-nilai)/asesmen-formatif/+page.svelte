@@ -1,9 +1,12 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- small URLSearchParams helpers and goto use */
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
 	import { autoSubmit, searchQueryMarker } from '$lib/utils';
 	import { onDestroy } from 'svelte';
+
+	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 
 	type ProgressCategory = 'sangat-baik' | 'baik' | 'perlu-pendalaman' | 'perlu-bimbingan';
 	type PaginationState = {
@@ -67,7 +70,7 @@
 	});
 
 	function buildSearchUrl(rawValue: string) {
-		const params = new URLSearchParams(page.url.search);
+		const params = new SvelteURLSearchParams(page.url.search);
 		const cleaned = rawValue.trim();
 		const current = params.get('q') ?? '';
 		const searchChanged = cleaned !== current;
@@ -96,7 +99,7 @@
 	}
 
 	function buildPageUrl(pageNumber: number) {
-		const params = new URLSearchParams(page.url.search);
+		const params = new SvelteURLSearchParams(page.url.search);
 		const sanitized = pageNumber < 1 ? 1 : pageNumber;
 		if (sanitized <= 1) {
 			params.delete('page');

@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- small page-level navigation helper calls */
 	import { goto, invalidate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';

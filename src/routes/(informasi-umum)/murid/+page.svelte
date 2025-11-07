@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve, svelte/prefer-svelte-reactivity -- local Set/URLSearchParams use and small navigation helpers */
 	import { goto, invalidate, pushState } from '$app/navigation';
 	import { page } from '$app/state';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
@@ -86,8 +87,10 @@
 		});
 	}
 
+	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
+
 	function buildSearchUrl(rawValue: string) {
-		const params = new URLSearchParams(page.url.search);
+		const params = new SvelteURLSearchParams(page.url.search);
 		const cleaned = rawValue.trim();
 		const current = params.get('q') ?? '';
 		const searchChanged = cleaned !== current;
@@ -116,7 +119,7 @@
 	}
 
 	function buildPageUrl(pageNumber: number) {
-		const params = new URLSearchParams(page.url.search);
+		const params = new SvelteURLSearchParams(page.url.search);
 		const sanitized = pageNumber < 1 ? 1 : pageNumber;
 		if (sanitized <= 1) {
 			params.delete('page');

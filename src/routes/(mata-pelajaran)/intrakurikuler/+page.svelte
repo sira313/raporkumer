@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- many navigation links built from data */
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
 	import { showModal } from '$lib/components/global-modal.svelte';
@@ -9,8 +10,7 @@
 	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
 
 	type MapelWithIndicator = MataPelajaran & { tpCount: number };
-	let { data }: { data: { kelasId: number | null; mapel: Record<string, MapelWithIndicator[]> } } =
-		$props();
+	let { data }: { data: { mapel: Record<string, MapelWithIndicator[]> } } = $props();
 
 	const emptyStateMessage = 'Belum ada data mata pelajaran';
 	const agamaMapelNameSet = new Set<string>(agamaMapelNames);

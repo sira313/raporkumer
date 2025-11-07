@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- per-row and per-link navigation is intentional */
 	import Icon from '$lib/components/icon.svelte';
 	import { page } from '$app/state';
 

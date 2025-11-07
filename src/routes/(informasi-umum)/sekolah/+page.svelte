@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- page intentionally uses href/goto for navigation */
 	import Icon from '$lib/components/icon.svelte';
 	import DeleteSekolahModal, {
 		type DeleteSekolahModalHandle

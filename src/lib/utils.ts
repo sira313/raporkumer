@@ -131,9 +131,11 @@ export function modalRoute(anchor: HTMLAnchorElement, name: string) {
 			// that are already running because of `data-sveltekit-preload-data`)
 			const result = await preloadData(href);
 			if (result.type === 'loaded' && result.status === 200) {
+				/* eslint-disable-next-line svelte/no-navigation-without-resolve */
 				pushState(href, { modal: { data: result.data, name: name } });
 			} else {
 				// something bad happened! try navigating
+				/* eslint-disable-next-line svelte/no-navigation-without-resolve */
 				goto(href);
 			}
 		} finally {
