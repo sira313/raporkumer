@@ -252,7 +252,11 @@
 					Hapus
 				</button>
 			{:else}
-				<button class="btn btn-soft rounded-r-none shadow-none" disabled={!canManage} onclick={toggleAddRow}>
+				<button
+					class="btn btn-soft rounded-r-none shadow-none"
+					disabled={!canManage}
+					onclick={toggleAddRow}
+				>
 					<Icon name="plus" />
 					Tambah
 				</button>
