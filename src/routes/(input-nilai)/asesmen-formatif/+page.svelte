@@ -283,11 +283,7 @@
 							<td class="align-top">{@html searchQueryMarker(data.search, murid.nama)}</td>
 							<td class="align-top">
 								{#if murid.nilaiHref}
-									<a
-										class="btn btn-sm btn-soft shadow-none"
-										title={`Nilai ${murid.nama}`}
-										href={murid.nilaiHref}
-									>
+									<a class="btn btn-sm btn-soft shadow-none" href={murid.nilaiHref}>
 										<Icon name="edit" />
 										Nilai
 									</a>

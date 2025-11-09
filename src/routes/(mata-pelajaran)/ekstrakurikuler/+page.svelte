@@ -6,6 +6,9 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import EkstrakurikulerDeleteModal from '$lib/components/ekstrakurikuler/delete-modal.svelte';
+	import ImportEkstraDialog from '$lib/components/ekstrakurikuler/import-ekstra-dialog.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 
 	let {
 		data
@@ -237,7 +240,7 @@
 				</p>
 			{/if}
 		</div>
-		<div class="flex flex-col gap-2 sm:flex-row">
+		<div class="flex flex-row">
 			{#if anySelected}
 				<button
 					type="button"
@@ -249,10 +252,104 @@
 					Hapus
 				</button>
 			{:else}
-				<button class="btn btn-soft shadow-none" disabled={!canManage} onclick={toggleAddRow}>
+				<button
+					class="btn btn-soft rounded-r-none shadow-none"
+					disabled={!canManage}
+					onclick={toggleAddRow}
+				>
 					<Icon name="plus" />
 					Tambah
 				</button>
+
+				<!-- dropdown untuk import dan export -->
+				<div class="dropdown dropdown-end">
+					<button
+						title="Export dan Import ekstrakurikuler"
+						type="button"
+						tabindex="0"
+						class={`btn btn-soft rounded-l-none shadow-none ${!canManage ? 'opacity-50' : ''}`}
+						disabled={!canManage}
+						aria-disabled={!canManage}
+					>
+						<Icon name="down" />
+					</button>
+
+					<!-- menu dropdown -->
+					<ul
+						tabindex="-1"
+						class="dropdown-content menu bg-base-100 z-50 mt-2 w-52 rounded-md p-2 shadow-lg"
+					>
+						<li>
+							<button
+								type="button"
+								class={`w-full text-left ${!canManage ? 'pointer-events-none opacity-50' : ''}`}
+								disabled={!canManage}
+								aria-disabled={!canManage}
+								onclick={() =>
+									showModal({
+										title: 'Impor Ekstrakurikuler',
+										body: ImportEkstraDialog,
+										dismissible: true
+									})}
+							>
+								<Icon name="import" />
+								Impor Ekstrakurikuler
+							</button>
+						</li>
+						<li>
+							<button
+								type="button"
+								class={`w-full text-left ${!canManage ? 'pointer-events-none opacity-50' : ''}`}
+								disabled={!canManage}
+								aria-disabled={!canManage}
+								onclick={async () => {
+									try {
+										const resp = await fetch('/ekstrakurikuler/export_ekstra', { method: 'GET' });
+										if (!resp.ok) {
+											const body = await resp.json().catch(() => ({}));
+											return toast({
+												message: body?.fail || 'Gagal mengekspor data.',
+												type: 'error'
+											});
+										}
+										const blob = await resp.blob();
+										const url = URL.createObjectURL(blob);
+										// prefer filename from Content-Disposition header set by server
+										let filename = `ekstrakurikuler-${new Date().toISOString().slice(0, 10)}.xlsx`;
+										try {
+											const cd =
+												resp.headers.get('content-disposition') ||
+												resp.headers.get('Content-Disposition');
+											if (cd) {
+												// match filename*=UTF-8''encoded or filename="name"
+												const mStar = cd.match(/filename\*=UTF-8''([^;\n\r]+)/i);
+												const mBasic = cd.match(/filename="?([^";]+)"?/i);
+												if (mStar && mStar[1]) filename = decodeURIComponent(mStar[1]);
+												else if (mBasic && mBasic[1]) filename = mBasic[1];
+											}
+										} catch {
+											/* ignore and fallback */
+										}
+										const a = document.createElement('a');
+										a.href = url;
+										a.download = filename;
+										document.body.appendChild(a);
+										a.click();
+										document.body.removeChild(a);
+										URL.revokeObjectURL(url);
+										toast({ message: 'Ekspor berhasil.', type: 'success' });
+									} catch (err) {
+										console.error(err);
+										toast({ message: 'Terjadi kesalahan saat mengekspor.', type: 'error' });
+									}
+								}}
+							>
+								<Icon name="export" />
+								Ekspor Ekstrakurikuler
+							</button>
+						</li>
+					</ul>
+				</div>
 			{/if}
 		</div>
 	</div>

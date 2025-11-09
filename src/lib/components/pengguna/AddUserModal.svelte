@@ -19,6 +19,7 @@
 	let uniqueMataPelajaran: { id: number; nama: string }[] = [];
 	let filteredMataPelajaran: { id: number; nama: string }[] = [];
 	let initialized = false;
+	let showPassword = false;
 
 	function uniqueByNama(list: { id: number; nama: string }[]) {
 		/* eslint-disable-next-line svelte/prefer-svelte-reactivity */
@@ -198,11 +199,19 @@
 							<Icon name="lock" />
 							<input
 								id="add-user-password"
-								type="password"
+								type={showPassword ? 'text' : 'password'}
 								required
 								placeholder="Password"
 								bind:value={password}
 							/>
+							<button
+								type="button"
+								class="cursor-pointer"
+								onclick={() => (showPassword = !showPassword)}
+								aria-label="Toggle password visibility"
+							>
+								<Icon name={showPassword ? 'eye-off' : 'eye'} />
+							</button>
 						</label>
 					</div>
 					<p class="validator-hint hidden">Isi username dan password dulu!</p>
@@ -210,11 +219,11 @@
 				</fieldset>
 			</div>
 
-			<div class="modal-action bg-base-100 dark:bg-base-200 sticky bottom-0 z-10">
-				<button class="btn btn-soft" type="button" on:click={close}
+			<div class="modal-action sticky bottom-0 z-10">
+				<button class="btn btn-soft" type="button" onclick={close}
 					><Icon name="close" /> Batal</button
 				>
-				<button class="btn btn-primary shadow-none" type="button" on:click={save}
+				<button class="btn btn-primary shadow-none" type="button" onclick={save}
 					><Icon name="save" /> Simpan</button
 				>
 			</div>

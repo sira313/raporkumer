@@ -330,7 +330,6 @@
 										class="btn btn-sm btn-soft shadow-none"
 										onclick={() => startEdit(item)}
 										disabled={editingRowId !== null}
-										title="Edit catatan wali"
 									>
 										<Icon name="edit" />
 										Edit

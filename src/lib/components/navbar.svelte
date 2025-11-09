@@ -271,7 +271,9 @@
 							>
 								<!-- opsi pindah kelas -->
 								<summary class="collapse-title font-semibold">Pindah Kelas</summary>
-								<div class="border-base-100 flex max-h-[30vh] flex-col overflow-y-auto border-t-3">
+								<div
+									class="border-base-100 flex max-h-[30vh] flex-col overflow-y-auto border-t-3 p-1"
+								>
 									{#each daftarKelas as kelas (kelas.id)}
 										{@const label = kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama}
 										<a
@@ -300,7 +302,7 @@
 						{#if user}{/if}
 						<li class="mt-1 flex flex-row">
 							<button
-								class="btn btn-sm flex-1 rounded-tl-none rounded-r-none rounded-bl-lg shadow-none"
+								class="btn btn-sm hover:btn-warning flex-1 rounded-tl-none rounded-r-none rounded-bl-lg shadow-none"
 								type="button"
 								title="Keluar dari aplikasi"
 								onclick={logout}
@@ -310,13 +312,12 @@
 								{loggingOut ? 'Keluar…' : 'Keluar'}
 							</button>
 							<button
-								class="btn btn-sm btn-warning flex-1 rounded-l-none rounded-tr-none rounded-br-lg shadow-none"
+								class="btn btn-sm hover:btn-error flex-1 rounded-l-none rounded-tr-none rounded-br-lg shadow-none"
 								type="button"
-								title={canStopServer ? 'Hentikan server' : 'Anda tidak memiliki izin'}
 								onclick={stopServer}
 								disabled={stoppingServer || !canStopServer}
 							>
-								<Icon name="warning" />
+								<Icon name="power" />
 								{stoppingServer ? 'Menghentikan server…' : 'Stop Server'}
 							</button>
 						</li>

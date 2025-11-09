@@ -304,7 +304,6 @@
 								<button
 									type="button"
 									class="btn btn-sm btn-soft shadow-none"
-									title={`Nilai ${murid.nama}`}
 									onclick={() => openModalFor(murid)}
 								>
 									<Icon name="edit" />
