@@ -285,11 +285,7 @@
 							<td>
 								{#if murid.nilaiHref && murid.canNilai}
 									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- intentional prebuilt href -->
-									<a
-										class="btn btn-sm btn-soft shadow-none"
-										title={`Nilai ${murid.nama}`}
-										href={murid.nilaiHref}
-									>
+									<a class="btn btn-sm btn-soft shadow-none" href={murid.nilaiHref}>
 										<Icon name="edit" />
 										Nilai
 									</a>

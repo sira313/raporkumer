@@ -314,7 +314,6 @@
 							<button
 								class="btn btn-sm hover:btn-error flex-1 rounded-l-none rounded-tr-none rounded-br-lg shadow-none"
 								type="button"
-								title={canStopServer ? 'Hentikan server' : 'Anda tidak memiliki izin'}
 								onclick={stopServer}
 								disabled={stoppingServer || !canStopServer}
 							>

@@ -305,7 +305,6 @@
 								<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- intentional prebuilt href -->
 								<a
 									class="btn btn-sm btn-soft shadow-none"
-									title={`Nilai ${murid.nama}`}
 									href={buildNilaiLink(murid.id)}
 									class:btn-disabled={!selectedEkstrakHasTujuan}
 									aria-disabled={!selectedEkstrakHasTujuan}
