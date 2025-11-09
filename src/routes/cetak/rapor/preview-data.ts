@@ -106,12 +106,12 @@ function compareDescriptorAscending(a: CapaianDescriptor, b: CapaianDescriptor):
 function buildDeskripsiLine(muridNama: string, descriptor: CapaianDescriptor): string {
 	const nama = muridNama.trim().length > 0 ? muridNama.trim() : muridNama;
 	const narrative = descriptor.predikat.narrative;
-	
+
 	// Format khusus untuk predikat "Cukup"
 	if (descriptor.predikat.key === 'cukup') {
 		return `Ananda ${nama} cukup mampu ${descriptor.deskripsi}`;
 	}
-	
+
 	return `Ananda ${nama} ${narrative} dalam ${descriptor.deskripsi}`;
 }
 
