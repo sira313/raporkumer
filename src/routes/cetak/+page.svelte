@@ -67,6 +67,7 @@
 	let isBulkMode = $state(false);
 	let bulkPreviewData = $state<Array<{ murid: MuridData; data: PreviewPayload }>>([]);
 	let bulkPrintableNodes = $state<HTMLDivElement[]>([]);
+	let waitingForPrintable = $state(false);
 
 	// increment this to bust background cache after upload
 	let bgRefreshKey = $state<number>(0);
@@ -195,6 +196,7 @@
 		return `Preview ${selectedDocumentEntry?.label ?? 'dokumen'} untuk ${selectedMurid.nama}`;
 	});
 
+	const isPrintLoading = $derived.by(() => previewLoading || waitingForPrintable);
 	const printDisabled = $derived.by(() => !previewDocument || !previewPrintable);
 	const printButtonTitle = $derived.by(() => {
 		if (!previewDocument) {
@@ -224,6 +226,7 @@
 		isBulkMode = false;
 		bulkPreviewData = [];
 		bulkPrintableNodes = [];
+		waitingForPrintable = false;
 	}
 
 	async function handlePreview() {
@@ -414,6 +417,7 @@
 		previewDocument = documentType;
 		previewMetaTitle = `${selectedDocumentEntry?.label ?? 'Dokumen'} - Semua Murid`;
 		previewLoading = false;
+		waitingForPrintable = true;
 		previewAbortController = null;
 
 		await tick();
@@ -454,6 +458,7 @@
 					}
 				});
 				previewPrintable = wrapper;
+				waitingForPrintable = false;
 			}, delay);
 
 			return () => clearTimeout(timeoutId);
@@ -548,6 +553,7 @@
 		{printDisabled}
 		{previewButtonTitle}
 		{printButtonTitle}
+		previewLoading={isPrintLoading}
 	/>
 
 	<PreviewFooter

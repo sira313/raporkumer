@@ -29,7 +29,8 @@
 		previewDisabled = false,
 		printDisabled = false,
 		previewButtonTitle = '',
-		printButtonTitle = ''
+		printButtonTitle = '',
+		previewLoading = false
 	}: {
 		selectedDocument: DocumentType | '';
 		selectedTemplate: '1' | '2';
@@ -43,6 +44,7 @@
 		printDisabled?: boolean;
 		previewButtonTitle?: string;
 		printButtonTitle?: string;
+		previewLoading?: boolean;
 	} = $props();
 
 	const documentOptions: Array<{ value: DocumentType; label: string }> = [
@@ -177,7 +179,11 @@
 		disabled={printDisabled}
 		onclick={onPrint}
 	>
-		<Icon name="print" />
+		{#if previewLoading}
+			<span class="loading loading-spinner loading-sm"></span>
+		{:else}
+			<Icon name="print" />
+		{/if}
 		Cetak
 	</button>
 </div>
