@@ -1,5 +1,8 @@
 <script lang="ts">
 	import FormEnhance from '$lib/components/form-enhance.svelte';
+	import Icon from '$lib/components/icon.svelte';
+
+	let showPassword = $state(false);
 </script>
 
 <section class="card bg-base-100 w-full max-w-md shadow-xl">
@@ -28,15 +31,24 @@
 
 				<div class="fieldset">
 					<label class="fieldset-legend" for="password"> Kata Sandi </label>
-					<input
-						type="password"
-						id="password"
-						name="password"
-						required
-						autocomplete="current-password"
-						placeholder="••••••••"
-						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
-					/>
+					<label class="input input-bordered dark:bg-base-200 w-full dark:border-none">
+						<input
+							type={showPassword ? 'text' : 'password'}
+							id="password"
+							name="password"
+							required
+							autocomplete="current-password"
+							placeholder="••••••••"
+						/>
+						<button
+							type="button"
+							class="cursor-pointer"
+							onclick={() => (showPassword = !showPassword)}
+							aria-label="Toggle password visibility"
+						>
+							<Icon name={showPassword ? 'eye-off' : 'eye'} />
+						</button>
+					</label>
 				</div>
 
 				<button class="btn btn-primary mt-6 w-full" type="submit" disabled={submitting || invalid}>

@@ -9,6 +9,8 @@
 		onOpenUser,
 		onDelete = undefined
 	} = $props();
+
+	let showPassword = $state(false);
 </script>
 
 <td>{u.pegawaiName ?? u.username}</td>
@@ -33,12 +35,21 @@
 </td>
 <td>
 	{#if editingId === u.id}
-		<input
-			type="password"
-			class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
-			placeholder="Buat Password"
-			bind:value={editValues[u.id].password}
-		/>
+		<label class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none">
+			<input
+				type={showPassword ? 'text' : 'password'}
+				placeholder="Buat Password"
+				bind:value={editValues[u.id].password}
+			/>
+			<button
+				type="button"
+				class="cursor-pointer"
+				onclick={() => (showPassword = !showPassword)}
+				aria-label="Toggle password visibility"
+			>
+				<Icon name={showPassword ? 'eye-off' : 'eye'} />
+			</button>
+		</label>
 	{:else}
 		{u.passwordUpdatedAt ? '*****' : '-'}
 	{/if}

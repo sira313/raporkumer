@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
 	let { id, mataPelajaran, newValues, onCancel, onSave } = $props();
+
+	let showPassword = $state(false);
 </script>
 
 <td>
@@ -35,12 +37,21 @@
 	/>
 </td>
 <td>
-	<input
-		type="password"
-		class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
-		bind:value={newValues[id].password}
-		placeholder="Password"
-	/>
+	<label class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none">
+		<input
+			type={showPassword ? 'text' : 'password'}
+			bind:value={newValues[id].password}
+			placeholder="Password"
+		/>
+		<button
+			type="button"
+			class="cursor-pointer"
+			onclick={() => (showPassword = !showPassword)}
+			aria-label="Toggle password visibility"
+		>
+			<Icon name={showPassword ? 'eye-off' : 'eye'} />
+		</button>
+	</label>
 </td>
 <td>
 	<div class="flex flex-row">
