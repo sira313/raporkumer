@@ -106,6 +106,12 @@ function compareDescriptorAscending(a: CapaianDescriptor, b: CapaianDescriptor):
 function buildDeskripsiLine(muridNama: string, descriptor: CapaianDescriptor): string {
 	const nama = muridNama.trim().length > 0 ? muridNama.trim() : muridNama;
 	const narrative = descriptor.predikat.narrative;
+	
+	// Format khusus untuk predikat "Cukup"
+	if (descriptor.predikat.key === 'cukup') {
+		return `Ananda ${nama} cukup mampu ${descriptor.deskripsi}`;
+	}
+	
 	return `Ananda ${nama} ${narrative} dalam ${descriptor.deskripsi}`;
 }
 
@@ -126,12 +132,14 @@ function buildCapaianKompetensi(
 	const sorted = descriptors.slice().sort(compareDescriptorAscending);
 	const lowest = sorted[0];
 	const highest = sorted.at(-1) ?? lowest;
+
+	// Jika hanya 1 tujuan atau highest === lowest, tampilkan 1 kalimat saja
+	if (sorted.length === 1 || highest.tujuanPembelajaranId === lowest.tujuanPembelajaranId) {
+		return buildDeskripsiLine(muridNama, highest);
+	}
+
 	const highestLine = buildDeskripsiLine(muridNama, highest);
 	const lowestLine = buildDeskripsiLine(muridNama, lowest);
-
-	if (sorted.length === 1) {
-		return `${highestLine}\n${lowestLine}`;
-	}
 
 	return `${highestLine}\n${lowestLine}`;
 }
