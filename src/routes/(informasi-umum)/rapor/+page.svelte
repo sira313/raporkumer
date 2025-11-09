@@ -10,7 +10,7 @@
 	const { data } = $props<{ data: PageData }>();
 	const sekolahList = (data.sekolahList ?? []) as Sekolah[];
 	const tahunAjaranList = (data.tahunAjaranList ?? []) as TahunAjaranWithSemester[];
-	const activeSekolahId = data.activeSekolahId ?? null;
+	let activeSekolahId = $state(data.activeSekolahId ?? null);
 	const activeTahunAjaranId = data.activeTahunAjaranId ?? null;
 	const activeSemesterId = data.activeSemesterId ?? null;
 	const tanggalBagiRaport = data.tanggalBagiRaport as {
@@ -20,7 +20,7 @@
 		genap?: string | null;
 	};
 
-	let selectedSekolahId = $state(activeSekolahId ? String(activeSekolahId) : '');
+	let selectedSekolahId = $derived(activeSekolahId ? String(activeSekolahId) : '');
 	let selectedTahunAjaranId = $state(activeTahunAjaranId ? String(activeTahunAjaranId) : '');
 	let selectedSemesterId = $state(activeSemesterId ? String(activeSemesterId) : '');
 	let tanggalRaporGanjil = $state(tanggalBagiRaport.ganjil ?? '');
@@ -105,7 +105,7 @@
 		}
 	});
 
-	let formInitSekolah = $state<Record<string, string>>({
+	let formInitSekolah = $derived({
 		sekolahId: activeSekolahId ? String(activeSekolahId) : ''
 	});
 
@@ -139,7 +139,7 @@
 		}
 
 		if (data.activeSekolahId !== undefined) {
-			selectedSekolahId = data.activeSekolahId ? String(data.activeSekolahId) : '';
+			activeSekolahId = data.activeSekolahId ?? null;
 		}
 
 		if ('activeTahunAjaranId' in data) {
@@ -162,7 +162,6 @@
 		tanggalRaporGanjil = rapor.ganjil ?? '';
 		tanggalRaporGenap = rapor.genap ?? '';
 
-		formInitSekolah = { sekolahId: selectedSekolahId };
 		formInitPengaturan = {
 			tahunAjaranId: selectedTahunAjaranId,
 			semesterId: selectedSemesterId,
@@ -186,6 +185,12 @@
 	let canRaporManage = $derived.by(() => {
 		const perms = (page.data.user ?? { permissions: [] }).permissions ?? [];
 		return (perms as string[]).includes('rapor_manage');
+	});
+
+	// Check if selected school is different from active school
+	let isSekolahChanged = $derived.by(() => {
+		if (!activeSekolahId || !selectedSekolahId) return false;
+		return String(activeSekolahId) !== selectedSekolahId;
 	});
 </script>
 
@@ -221,11 +226,18 @@
 								{/if}
 							</select>
 							<button
-								class="btn btn-soft rounded-l-none shadow-none"
+								class="btn btn-primary rounded-l-none shadow-none"
 								type="submit"
-								disabled={submitting || disabledSekolahActions || !canRaporManage}
-								aria-disabled={!canRaporManage}
-								title={!canRaporManage ? 'Anda tidak memiliki izin untuk mengganti sekolah' : ''}
+								disabled={submitting ||
+									disabledSekolahActions ||
+									!canRaporManage ||
+									!isSekolahChanged}
+								aria-disabled={!canRaporManage || !isSekolahChanged}
+								title={!canRaporManage
+									? 'Anda tidak memiliki izin untuk mengganti sekolah'
+									: !isSekolahChanged
+										? 'Sekolah ini sudah aktif'
+										: ''}
 							>
 								<Icon name="repeat" />
 								{submitting ? 'Menyimpan…' : 'Ganti'}
