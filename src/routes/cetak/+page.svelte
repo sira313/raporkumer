@@ -86,6 +86,11 @@
 	let previewLoading = $state(false);
 	let previewError = $state<string | null>(null);
 
+	// bulk print state
+	let isBulkMode = $state(false);
+	let bulkPreviewData = $state<Array<{ murid: MuridData; data: PreviewPayload }>>([]);
+	let bulkPrintableNodes = $state<HTMLDivElement[]>([]);
+
 	// increment this to bust background cache after upload
 	let bgRefreshKey = $state<number>(0);
 
@@ -246,7 +251,12 @@
 			return 'Preview dokumen terlebih dahulu sebelum mencetak';
 		}
 		if (!previewPrintable) {
-			return 'Preview sedang disiapkan untuk dicetak';
+			return isBulkMode && bulkPreviewData.length > 0
+				? 'Menyiapkan dokumen untuk dicetak, tunggu sebentar...'
+				: 'Preview sedang disiapkan untuk dicetak';
+		}
+		if (isBulkMode) {
+			return `Cetak ${bulkPreviewData.length} ${previewDocumentEntry?.label ?? 'dokumen'} untuk semua murid`;
 		}
 		const targetName = previewMurid?.nama ?? 'murid ini';
 		return `Cetak ${previewDocumentEntry?.label ?? 'dokumen'} untuk ${targetName}`;
@@ -261,6 +271,9 @@
 		previewData = null;
 		previewMurid = null;
 		previewPrintable = null;
+		isBulkMode = false;
+		bulkPreviewData = [];
+		bulkPrintableNodes = [];
 	}
 
 	async function navigateMurid(direction: 'prev' | 'next') {
@@ -365,9 +378,137 @@
 		await tick();
 	}
 
+	async function handleBulkPreview() {
+		const documentType = selectedDocument;
+		if (!documentType) {
+			toast('Pilih dokumen yang ingin dipreview terlebih dahulu.', 'warning');
+			return;
+		}
+		if (!isPreviewableDocument(documentType)) {
+			return;
+		}
+
+		// untuk piagam gunakan ranking options, untuk lainnya gunakan semua murid
+		const muridList = isPiagamSelected
+			? piagamRankingOptions.map((option) => ({
+					id: option.muridId,
+					nama: option.nama,
+					nis: null,
+					nisn: null
+				}))
+			: daftarMurid;
+
+		if (!muridList.length) {
+			const message = isPiagamSelected
+				? 'Tidak ada data peringkat piagam yang dapat dipreview untuk kelas ini.'
+				: 'Tidak ada murid yang dapat dipreview untuk kelas ini.';
+			toast(message, 'warning');
+			return;
+		}
+
+		const path = documentPaths[documentType];
+
+		if (previewAbortController) {
+			previewAbortController.abort();
+		}
+		const controller = new AbortController();
+		previewAbortController = controller;
+
+		previewLoading = true;
+		previewError = null;
+		resetPreviewState();
+
+		const allData: Array<{ murid: MuridData; data: PreviewPayload }> = [];
+
+		for (let i = 0; i < muridList.length; i++) {
+			const murid = muridList[i];
+			const params = new SvelteURLSearchParams({ murid_id: String(murid.id) });
+			if (data.kelasId) {
+				params.set('kelas_id', data.kelasId);
+			}
+
+			try {
+				const response = await fetch(`${path}.json?${params.toString()}`, {
+					signal: controller.signal
+				});
+
+				if (controller.signal.aborted) {
+					return;
+				}
+
+				if (!response.ok) {
+					console.error(`Gagal memuat data untuk ${murid.nama}`);
+					continue;
+				}
+
+				const payload = (await response.json()) as PreviewPayload;
+				allData.push({ murid, data: payload });
+			} catch (err) {
+				if (controller.signal.aborted) {
+					return;
+				}
+				console.error(`Error loading data for ${murid.nama}:`, err);
+			}
+		}
+
+		if (!allData.length) {
+			previewLoading = false;
+			previewAbortController = null;
+			previewError = 'Tidak ada data yang berhasil dimuat untuk murid manapun.';
+			toast('Tidak ada data yang berhasil dimuat untuk murid manapun.', 'error');
+			return;
+		}
+
+		isBulkMode = true;
+		bulkPreviewData = allData;
+		previewDocument = documentType;
+		previewMetaTitle = `${selectedDocumentEntry?.label ?? 'Dokumen'} - Semua Murid`;
+		previewLoading = false;
+		previewAbortController = null;
+
+		await tick();
+	}
+
 	function handlePrintableReady(node: HTMLDivElement | null) {
 		previewPrintable = node;
 	}
+
+	function handleBulkPrintableReady(index: number, node: HTMLDivElement | null) {
+		if (node) {
+			bulkPrintableNodes[index] = node;
+		}
+	}
+
+	// Watch for all bulk printable nodes to be ready
+	$effect(() => {
+		if (!isBulkMode || bulkPreviewData.length === 0) {
+			return;
+		}
+
+		const nodes = bulkPrintableNodes;
+		const expectedCount = bulkPreviewData.length;
+		const readyCount = nodes.filter(Boolean).length;
+
+		if (readyCount === expectedCount) {
+			// All nodes are ready, but for rapor we need to wait for pagination
+			// Rapor needs more time because it dynamically splits tables across pages
+			const isRapor = previewDocument === 'rapor';
+			const delay = isRapor ? 1500 : 300;
+
+			const timeoutId = setTimeout(() => {
+				const wrapper = document.createElement('div');
+				nodes.forEach((n) => {
+					if (n) {
+						const clone = n.cloneNode(true) as HTMLDivElement;
+						wrapper.appendChild(clone);
+					}
+				});
+				previewPrintable = wrapper;
+			}, delay);
+
+			return () => clearTimeout(timeoutId);
+		}
+	});
 
 	function handlePrint() {
 		const doc = previewDocument;
@@ -522,16 +663,43 @@
 				{/each}
 			</select>
 		{/if}
-		<button
-			class="btn btn-soft shadow-none sm:ml-auto"
-			type="button"
-			title={previewButtonTitle}
-			disabled={previewDisabled}
-			onclick={handlePreview}
-		>
-			<Icon name="eye" />
-			Preview
-		</button>
+		<div class="flex flex-row">
+			<button
+				class="btn btn-soft flex-1 rounded-r-none shadow-none"
+				type="button"
+				title={previewButtonTitle}
+				disabled={previewDisabled}
+				onclick={handlePreview}
+			>
+				<Icon name="eye" />
+				Preview
+			</button>
+			<div class="dropdown dropdown-end">
+				<div
+					tabindex="0"
+					role="button"
+					class="btn btn-primary rounded-l-none shadow-none"
+					class:btn-disabled={!selectedDocument}
+					title={selectedDocument ? 'Opsi preview lainnya' : 'Pilih dokumen terlebih dahulu'}
+				>
+					<Icon name="down" />
+				</div>
+				<ul
+					tabindex="-1"
+					class="dropdown-content menu bg-base-100 rounded-box z-1 w-38 p-2 shadow-sm"
+				>
+					<li>
+						<button
+							type="button"
+							onclick={handleBulkPreview}
+							disabled={!selectedDocument || !hasSelectionOptions}
+						>
+							Semua Murid
+						</button>
+					</li>
+				</ul>
+			</div>
+		</div>
 		<button
 			class="btn btn-primary shadow-none"
 			type="button"
@@ -627,6 +795,45 @@
 	<div class="alert alert-error mt-6 flex items-center gap-2 text-sm">
 		<Icon name="error" />
 		<span>{previewError}</span>
+	</div>
+{:else if previewDocument && isBulkMode && bulkPreviewData.length > 0}
+	<div class="mt-6">
+		<div class="alert alert-info mb-4 flex items-center gap-2 text-sm print:hidden">
+			<Icon name="alert" />
+			<span>
+				Menampilkan {bulkPreviewData.length} dokumen {selectedDocumentEntry?.label.toLowerCase() ??
+					'dokumen'} untuk semua murid. Scroll ke bawah untuk melihat semua dokumen.
+			</span>
+		</div>
+		<div class="flex flex-col gap-8">
+			{#each bulkPreviewData as item, index (item.murid.id)}
+				<div class="border-base-300 border-b pb-8 last:border-b-0 last:pb-0">
+					<div class="text-base-content/70 mb-3 text-sm font-semibold">
+						{index + 1}. {item.murid.nama}
+						{#if item.murid.nisn}
+							— NISN: {item.murid.nisn}
+						{:else if item.murid.nis}
+							— NIS: {item.murid.nis}
+						{/if}
+					</div>
+					{#if previewDocument === 'piagam'}
+						{@const PreviewComponent = getPiagamPreviewComponent()}
+						<PreviewComponent
+							data={item.data}
+							onPrintableReady={(node) => handleBulkPrintableReady(index, node)}
+							{bgRefreshKey}
+							template={selectedTemplate}
+						/>
+					{:else}
+						{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
+						<PreviewComponent
+							data={item.data}
+							onPrintableReady={(node) => handleBulkPrintableReady(index, node)}
+						/>
+					{/if}
+				</div>
+			{/each}
+		</div>
 	</div>
 {:else if previewDocument && previewData}
 	{#if previewDocument === 'piagam'}
