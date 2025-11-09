@@ -2,17 +2,12 @@
 	// preview parameter building uses SvelteURLSearchParams; no file-level ESLint disables needed
 	import { page } from '$app/state';
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
-	import Icon from '$lib/components/icon.svelte';
-	import BiodataPreview from '$lib/components/cetak/preview/BiodataPreview.svelte';
-	import CoverPreview from '$lib/components/cetak/preview/CoverPreview.svelte';
-	import RaporPreview from '$lib/components/cetak/preview/RaporPreview.svelte';
-	import PiagamPreview from '$lib/components/cetak/preview/PiagamPreview.svelte';
-	import PiagamPreview2 from '$lib/components/cetak/preview/PiagamPreview2.svelte';
-	import PiagamBgUploadBody from '$lib/components/PiagamBgUploadBody.svelte';
+	import PreviewHeader from '$lib/components/cetak/PreviewHeader.svelte';
+	import DocumentMuridSelector from '$lib/components/cetak/DocumentMuridSelector.svelte';
+	import PreviewFooter from '$lib/components/cetak/PreviewFooter.svelte';
+	import PreviewContent from '$lib/components/cetak/PreviewContent.svelte';
 	import { printElement } from '$lib/utils';
 	import { toast } from '$lib/components/toast.svelte';
-	import { showModal } from '$lib/components/global-modal.svelte';
-	import { deletePiagamBg } from '$lib/components/piagam-bg.client';
 	import { onDestroy, tick } from 'svelte';
 
 	let { data } = $props();
@@ -31,20 +26,6 @@
 		raporData?: NonNullable<App.PageData['raporData']> | null;
 		piagamData?: NonNullable<App.PageData['piagamData']> | null;
 	};
-
-	const previewComponents: Record<DocumentType, typeof CoverPreview> = {
-		cover: CoverPreview,
-		biodata: BiodataPreview,
-		rapor: RaporPreview,
-		piagam: PiagamPreview
-	};
-
-	// template selection for piagam (1 or 2)
-	let selectedTemplate = $state<'1' | '2'>('1');
-
-	function getPiagamPreviewComponent() {
-		return selectedTemplate === '2' ? PiagamPreview2 : PiagamPreview;
-	}
 
 	const documentOptions: Array<{ value: DocumentType; label: string }> = [
 		{ value: 'cover', label: 'Cover' },
@@ -71,13 +52,9 @@
 		return value === 'cover' || value === 'biodata' || value === 'rapor' || value === 'piagam';
 	}
 
-	const averageFormatter = new Intl.NumberFormat('id-ID', {
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2
-	});
-
 	let selectedDocument = $state<DocumentType | ''>('');
 	let selectedMuridId = $state('');
+	let selectedTemplate = $state<'1' | '2'>('1');
 	let previewDocument = $state<DocumentType | ''>('');
 	let previewMetaTitle = $state('');
 	let previewData = $state<PreviewPayload | null>(null);
@@ -95,20 +72,6 @@
 	let bgRefreshKey = $state<number>(0);
 
 	const academicContext = $derived(data.academicContext ?? null);
-	const activeSemester = $derived.by(() => {
-		const context = academicContext;
-		if (!context?.activeSemesterId) return null;
-		for (const tahun of context.tahunAjaranList ?? []) {
-			const match = tahun.semester.find((item) => item.id === context.activeSemesterId);
-			if (match) {
-				return {
-					...match,
-					tahunAjaranNama: tahun.nama
-				};
-			}
-		}
-		return null;
-	});
 
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
 	const kelasAktifLabel = $derived.by(() => {
@@ -117,19 +80,6 @@
 	});
 
 	const piagamRankingOptions = $derived(data.piagamRankingOptions ?? []);
-	const piagamSelectOptions = $derived.by(() =>
-		piagamRankingOptions.map((option) => {
-			const formattedAverage =
-				option.nilaiRataRata != null ? averageFormatter.format(option.nilaiRataRata) : null;
-			const label = formattedAverage
-				? `Peringkat ${option.peringkat} — ${option.nama} (${formattedAverage})`
-				: `Peringkat ${option.peringkat} — ${option.nama}`;
-			return {
-				value: String(option.muridId),
-				label
-			};
-		})
-	);
 	const hasPiagamRankingOptions = $derived.by(() => piagamRankingOptions.length > 0);
 	const daftarMurid = $derived(data.daftarMurid ?? []);
 	const muridCount = $derived.by(() => daftarMurid.length);
@@ -276,22 +226,6 @@
 		bulkPrintableNodes = [];
 	}
 
-	async function navigateMurid(direction: 'prev' | 'next') {
-		if (!canNavigateMurid) return;
-		const list = navigationMuridIds;
-		const currentIndex = selectedMuridIndex;
-		if (currentIndex < 0) return;
-		const offset = direction === 'next' ? 1 : -1;
-		const targetIndex = currentIndex + offset;
-		if (targetIndex < 0 || targetIndex >= list.length) return;
-		const targetId = list[targetIndex];
-		selectedMuridId = targetId;
-		await tick();
-		if (isPreviewMatchingSelection) {
-			await handlePreview();
-		}
-	}
-
 	async function handlePreview() {
 		const documentType = selectedDocument;
 		if (!documentType) {
@@ -376,6 +310,22 @@
 		previewAbortController = null;
 
 		await tick();
+	}
+
+	async function navigateMurid(direction: 'prev' | 'next') {
+		if (!canNavigateMurid) return;
+		const list = navigationMuridIds;
+		const currentIndex = selectedMuridIndex;
+		if (currentIndex < 0) return;
+		const offset = direction === 'next' ? 1 : -1;
+		const targetIndex = currentIndex + offset;
+		if (targetIndex < 0 || targetIndex >= list.length) return;
+		const targetId = list[targetIndex];
+		selectedMuridId = targetId;
+		await tick();
+		if (isPreviewMatchingSelection) {
+			await handlePreview();
+		}
 	}
 
 	async function handleBulkPreview() {
@@ -536,6 +486,11 @@
 		}
 	}
 
+	async function handleBgRefresh() {
+		bgRefreshKey = Date.now();
+		if (previewDocument === 'piagam') await handlePreview();
+	}
+
 	$effect(() => {
 		if (keydownHandler) {
 			window.removeEventListener('keydown', keydownHandler);
@@ -569,287 +524,51 @@
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-		<div>
-			<h2 class="text-xl font-bold">
-				{headingTitle}
-			</h2>
-			{#if kelasAktifLabel}
-				<p class="text-base-content/80 block text-sm">
-					{kelasAktifLabel}
-					{#if activeSemester}
-						- Semester {activeSemester.nama} ({activeSemester.tahunAjaranNama})
-					{:else if academicContext?.activeSemesterId}
-						- Semester aktif tidak ditemukan dalam daftar tahun ajaran.
-					{:else}
-						- Semester belum disetel di menu Rapor.
-					{/if}
-				</p>
-			{/if}
-		</div>
-		<div class="flex items-center gap-2 self-end sm:self-auto">
-			<button
-				class="btn btn-circle btn-soft shadow-none"
-				type="button"
-				onclick={() => navigateMurid('prev')}
-				title="Murid sebelumnya"
-				aria-label="Murid sebelumnya"
-				disabled={!canNavigateMurid || !hasPrevMurid}
-			>
-				<Icon name="left" />
-			</button>
-			<button
-				class="btn btn-circle btn-soft shadow-none"
-				type="button"
-				onclick={() => navigateMurid('next')}
-				title="Murid berikutnya"
-				aria-label="Murid berikutnya"
-				disabled={!canNavigateMurid || !hasNextMurid}
-			>
-				<Icon name="right" />
-			</button>
-		</div>
-	</div>
-	<div class="mb-2 flex flex-col gap-2 sm:flex-row">
-		<select
-			class="select bg-base-200 w-full dark:border-none"
-			bind:value={selectedDocument}
-			title="Pilih dokumen yang ingin dipreview"
-		>
-			<option value="">Pilih dokumen…</option>
-			{#each documentOptions as option (option.value)}
-				<option value={option.value}>{option.label}</option>
-			{/each}
-		</select>
-		{#if isPiagamSelected}
-			<select
-				class="select bg-base-200 w-full max-w-30 dark:border-none"
-				bind:value={selectedTemplate}
-				title="Pilih template piagam"
-			>
-				<option value="1">Template 1</option>
-				<option value="2">Template 2</option>
-			</select>
-		{/if}
-		{#if isPiagamSelected}
-			<select
-				class="select bg-base-200 w-full dark:border-none"
-				bind:value={selectedMuridId}
-				title="Pilih peringkat piagam yang ingin dipreview"
-				disabled={!hasPiagamRankingOptions}
-			>
-				<option value="">Pilih peringkat…</option>
-				{#each piagamSelectOptions as option (option.value)}
-					<option value={option.value}>{option.label}</option>
-				{/each}
-			</select>
-		{:else}
-			<select
-				class="select bg-base-200 w-full dark:border-none"
-				bind:value={selectedMuridId}
-				title="Pilih murid yang ingin dipreview dokumennya"
-				disabled={!hasMurid}
-			>
-				<option value="">Pilih murid…</option>
-				{#each daftarMurid as murid (murid.id)}
-					<option value={String(murid.id)}>
-						{murid.nama}
-						{#if murid.nisn}
-							— {murid.nisn}
-						{:else if murid.nis}
-							— {murid.nis}
-						{/if}
-					</option>
-				{/each}
-			</select>
-		{/if}
-		<div class="flex flex-row">
-			<button
-				class="btn btn-soft flex-1 rounded-r-none shadow-none"
-				type="button"
-				title={previewButtonTitle}
-				disabled={previewDisabled}
-				onclick={handlePreview}
-			>
-				<Icon name="eye" />
-				Preview
-			</button>
-			<div class="dropdown dropdown-end">
-				<div
-					tabindex="0"
-					role="button"
-					class="btn btn-primary rounded-l-none shadow-none"
-					class:btn-disabled={!selectedDocument}
-					title={selectedDocument ? 'Opsi preview lainnya' : 'Pilih dokumen terlebih dahulu'}
-				>
-					<Icon name="down" />
-				</div>
-				<ul
-					tabindex="-1"
-					class="dropdown-content menu bg-base-100 rounded-box z-1 w-38 p-2 shadow-sm"
-				>
-					<li>
-						<button
-							type="button"
-							onclick={handleBulkPreview}
-							disabled={!selectedDocument || !hasSelectionOptions}
-						>
-							Semua Murid
-						</button>
-					</li>
-				</ul>
-			</div>
-		</div>
-		<button
-			class="btn btn-primary shadow-none"
-			type="button"
-			title={printButtonTitle}
-			disabled={printDisabled}
-			onclick={handlePrint}
-		>
-			<Icon name="print" />
-			Cetak
-		</button>
-	</div>
-	<div class="mt-4 flex flex-col gap-3 text-sm sm:flex-row sm:items-start sm:justify-between">
-		{#if hasMurid}
-			<p>
-				Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dan cetak dokumen dilakukan
-				per murid.
-			</p>
-		{:else}
-			<p class="text-warning">
-				Belum ada data murid yang bisa dipreview. Tambahkan murid terlebih dahulu pada menu
-				Informasi Umum › Murid.
-			</p>
-		{/if}
-		<div class="flex items-center gap-2 self-end sm:self-auto">
-			{#if isPiagamSelected}
-				<button
-					class="btn btn-sm btn-error btn-soft shadow-none"
-					type="button"
-					onclick={() => {
-						showModal({
-							title: 'Hapus Background Piagam',
-							body: `Hapus background piagam template ${selectedTemplate}?<br />Ini akan mengembalikan background ke default.`,
-							dismissible: true,
-							onNegative: {
-								label: 'Batal',
-								action: ({ close }) => close()
-							},
-							onPositive: {
-								label: 'Hapus',
-								icon: 'del',
-								action: async ({ close }) => {
-									try {
-										await deletePiagamBg(selectedTemplate);
-										bgRefreshKey = Date.now();
-										toast('Background piagam dikembalikan ke default.', 'success');
-										if (previewDocument === 'piagam') await handlePreview();
-									} catch (err) {
-										console.error(err);
-										toast('Gagal menghapus background piagam.', 'error');
-									} finally {
-										close();
-									}
-								}
-							}
-						});
-					}}
-				>
-					<Icon name="del" />
-					Hapus BG
-				</button>
+	<PreviewHeader
+		{headingTitle}
+		{kelasAktifLabel}
+		{academicContext}
+		{canNavigateMurid}
+		{hasPrevMurid}
+		{hasNextMurid}
+		onNavigatePrev={() => navigateMurid('prev')}
+		onNavigateNext={() => navigateMurid('next')}
+	/>
 
-				<button
-					class="btn btn-sm btn-soft shadow-none"
-					type="button"
-					onclick={() =>
-						showModal({
-							title: `Unggah Background Piagam — Template ${selectedTemplate}`,
-							body: PiagamBgUploadBody,
-							bodyProps: {
-								template: selectedTemplate,
-								onUploaded: async () => {
-									bgRefreshKey = Date.now();
-									if (previewDocument === 'piagam') await handlePreview();
-								}
-							},
-							dismissible: true
-						})}
-				>
-					<Icon name="image" />
-					Ganti BG
-				</button>
-			{/if}
-		</div>
-	</div>
+	<DocumentMuridSelector
+		bind:selectedDocument
+		bind:selectedTemplate
+		bind:selectedMuridId
+		{daftarMurid}
+		{piagamRankingOptions}
+		onPreview={handlePreview}
+		onBulkPreview={handleBulkPreview}
+		onPrint={handlePrint}
+		{previewDisabled}
+		{printDisabled}
+		{previewButtonTitle}
+		{printButtonTitle}
+	/>
+
+	<PreviewFooter
+		{hasMurid}
+		{muridCount}
+		{isPiagamSelected}
+		{selectedTemplate}
+		onBgRefresh={handleBgRefresh}
+	/>
 </div>
 
-{#if previewLoading}
-	<div class="text-base-content/70 mt-6 flex items-center gap-3 text-sm">
-		<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-		<span>Menyiapkan preview dokumen…</span>
-	</div>
-{:else if previewError}
-	<div class="alert alert-error mt-6 flex items-center gap-2 text-sm">
-		<Icon name="error" />
-		<span>{previewError}</span>
-	</div>
-{:else if previewDocument && isBulkMode && bulkPreviewData.length > 0}
-	<div class="mt-6">
-		<div class="alert alert-info mb-4 flex items-center gap-2 text-sm print:hidden">
-			<Icon name="alert" />
-			<span>
-				Menampilkan {bulkPreviewData.length} dokumen {selectedDocumentEntry?.label.toLowerCase() ??
-					'dokumen'} untuk semua murid. Scroll ke bawah untuk melihat semua dokumen.
-			</span>
-		</div>
-		<div class="flex flex-col gap-8">
-			{#each bulkPreviewData as item, index (item.murid.id)}
-				<div class="border-base-300 border-b pb-8 last:border-b-0 last:pb-0">
-					<div class="text-base-content/70 mb-3 text-sm font-semibold">
-						{index + 1}. {item.murid.nama}
-						{#if item.murid.nisn}
-							— NISN: {item.murid.nisn}
-						{:else if item.murid.nis}
-							— NIS: {item.murid.nis}
-						{/if}
-					</div>
-					{#if previewDocument === 'piagam'}
-						{@const PreviewComponent = getPiagamPreviewComponent()}
-						<PreviewComponent
-							data={item.data}
-							onPrintableReady={(node) => handleBulkPrintableReady(index, node)}
-							{bgRefreshKey}
-							template={selectedTemplate}
-						/>
-					{:else}
-						{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
-						<PreviewComponent
-							data={item.data}
-							onPrintableReady={(node) => handleBulkPrintableReady(index, node)}
-						/>
-					{/if}
-				</div>
-			{/each}
-		</div>
-	</div>
-{:else if previewDocument && previewData}
-	{#if previewDocument === 'piagam'}
-		{@const PreviewComponent = getPiagamPreviewComponent()}
-		<div class="mt-6">
-			<PreviewComponent
-				data={previewData}
-				onPrintableReady={handlePrintableReady}
-				{bgRefreshKey}
-				template={selectedTemplate}
-			/>
-		</div>
-	{:else}
-		{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
-		<div class="mt-6">
-			<PreviewComponent data={previewData} onPrintableReady={handlePrintableReady} />
-		</div>
-	{/if}
-{/if}
+<PreviewContent
+	{previewDocument}
+	{previewData}
+	{previewLoading}
+	{previewError}
+	{isBulkMode}
+	{bulkPreviewData}
+	{selectedDocumentEntry}
+	{selectedTemplate}
+	{bgRefreshKey}
+	onPrintableReady={handlePrintableReady}
+	onBulkPrintableReady={handleBulkPrintableReady}
+/>
