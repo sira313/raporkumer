@@ -203,18 +203,13 @@
 				<legend class="fieldset-legend">Ganti sekolah</legend>
 				<FormEnhance action="?/switch" init={formInitSekolah} onsuccess={handleSwitchSuccess}>
 					{#snippet children({ submitting })}
-						<div class="relative">
+						<div class="flex flex-row">
 							<select
-								class="select bg-base-200 dark:bg-base-300 w-full dark:border-none"
+								class="select bg-base-200 dark:bg-base-300 w-full rounded-r-none dark:border-none"
 								name="sekolahId"
 								bind:value={selectedSekolahId}
 								required
 								disabled={disabledSekolahActions || submitting || !canRaporManage}
-								onchange={(event) => {
-									const value = event.currentTarget.value;
-									selectedSekolahId = value;
-									event.currentTarget.form?.requestSubmit();
-								}}
 							>
 								<option value="" disabled>Pilih Sekolah</option>
 								{#if sekolahList.length === 0}
@@ -225,6 +220,16 @@
 									{/each}
 								{/if}
 							</select>
+							<button
+								class="btn btn-soft rounded-l-none shadow-none"
+								type="submit"
+								disabled={submitting || disabledSekolahActions || !canRaporManage}
+								aria-disabled={!canRaporManage}
+								title={!canRaporManage ? 'Anda tidak memiliki izin untuk mengganti sekolah' : ''}
+							>
+								<Icon name="repeat" />
+								{submitting ? 'Menyimpan…' : 'Ganti'}
+							</button>
 						</div>
 					{/snippet}
 				</FormEnhance>

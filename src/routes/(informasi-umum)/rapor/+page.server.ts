@@ -711,7 +711,7 @@ export const actions: Actions = {
 		}
 
 		const sekolah = await db.query.tableSekolah.findFirst({
-			columns: { id: true },
+			columns: { id: true, nama: true },
 			where: eq(tableSekolah.id, sekolahId)
 		});
 
@@ -729,7 +729,7 @@ export const actions: Actions = {
 		const context = await resolveSekolahAcademicContext(sekolah.id);
 
 		return {
-			message: 'Sekolah aktif diperbarui',
+			message: `Sekolah aktif: ${sekolah.nama}`,
 			activeSekolahId: sekolah.id,
 			...context
 		};
