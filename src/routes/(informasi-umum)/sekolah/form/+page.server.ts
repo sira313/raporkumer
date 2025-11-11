@@ -4,10 +4,39 @@ import { cookieNames, unflattenFormData } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
-export function load({ url }) {
+export async function load({ url, locals }) {
 	const isInit = url.searchParams.has('init');
 	const isNew = url.searchParams.get('mode') === 'new';
-	return { isInit, isNew, meta: { title: isNew ? 'Tambah Sekolah' : 'Form Sekolah' } };
+	const sekolahIdParam = url.searchParams.get('sekolahId');
+	
+	// Jika ada parameter sekolahId, load sekolah tersebut
+	let sekolahToEdit: Sekolah | Omit<Sekolah, 'logo'> | undefined = undefined;
+	if (sekolahIdParam && !isNew) {
+		const sekolahId = Number(sekolahIdParam);
+		if (Number.isInteger(sekolahId) && sekolahId > 0) {
+			const sekolah = await db.query.tableSekolah.findFirst({
+				where: eq(tableSekolah.id, sekolahId),
+				with: {
+					alamat: true,
+					kepalaSekolah: true
+				}
+			});
+			if (!sekolah) {
+				error(404, 'Sekolah tidak ditemukan');
+			}
+			sekolahToEdit = sekolah;
+		}
+	} else if (!isNew) {
+		// Jika tidak ada parameter sekolahId dan bukan mode new, gunakan sekolah aktif
+		sekolahToEdit = locals.sekolah;
+	}
+	
+	return { 
+		isInit, 
+		isNew, 
+		sekolah: sekolahToEdit,
+		meta: { title: isNew ? 'Tambah Sekolah' : 'Form Sekolah' } 
+	};
 }
 
 export const actions = {
