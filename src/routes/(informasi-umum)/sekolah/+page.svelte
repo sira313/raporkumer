@@ -218,7 +218,7 @@
 								Tahun Ajaran
 							</a>
 							<a
-								href="/sekolah/form"
+								href={`/sekolah/form?sekolahId=${sekolah.id}`}
 								class="btn btn-soft shadow-none {!canSekolahManage
 									? 'pointer-events-none opacity-50'
 									: ''}"

@@ -4,10 +4,43 @@ import { cookieNames, unflattenFormData } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
-export function load({ url }) {
+export async function load({ url, locals }) {
 	const isInit = url.searchParams.has('init');
 	const isNew = url.searchParams.get('mode') === 'new';
-	return { isInit, isNew, meta: { title: isNew ? 'Tambah Sekolah' : 'Form Sekolah' } };
+	const sekolahIdParam = url.searchParams.get('sekolahId');
+
+	// Jika ada parameter sekolahId, load sekolah tersebut
+	let sekolahToEdit: Sekolah | Omit<Sekolah, 'logo'> | undefined = undefined;
+	if (sekolahIdParam && !isNew) {
+		const sekolahId = Number(sekolahIdParam);
+		if (Number.isInteger(sekolahId) && sekolahId > 0) {
+			const sekolah = await db.query.tableSekolah.findFirst({
+				where: eq(tableSekolah.id, sekolahId),
+				with: {
+					alamat: true,
+					kepalaSekolah: true
+				}
+			});
+			if (!sekolah) {
+				error(404, 'Sekolah tidak ditemukan');
+			}
+			// Exclude logo and logoDinas from form init (can't populate file inputs anyway)
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { logo, logoType, logoDinas, logoDinasType, ...sekolahData } = sekolah;
+			sekolahToEdit = sekolahData as Sekolah;
+		}
+	} else if (!isNew) {
+		// Jika tidak ada parameter sekolahId dan bukan mode new, gunakan sekolah aktif
+		// locals.sekolah already has logo excluded by type
+		sekolahToEdit = locals.sekolah;
+	}
+
+	return {
+		isInit,
+		isNew,
+		sekolah: sekolahToEdit,
+		meta: { title: isNew ? 'Tambah Sekolah' : 'Form Sekolah' }
+	};
 }
 
 export const actions = {

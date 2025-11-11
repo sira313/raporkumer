@@ -49,7 +49,9 @@
 					<Icon name="del" class="text-error" />
 					<Icon name="collapse-all" class="text-error" />
 				</div>
-				<ul class="menu dropdown-content bg-base-100 rounded-box z-1 mt-2 w-48 p-2 shadow-md">
+				<ul
+					class="border-base-300 menu dropdown-content bg-base-100 rounded-box z-1 mt-2 w-43 border p-2 shadow-md"
+				>
 					<li>
 						<button
 							type="button"
