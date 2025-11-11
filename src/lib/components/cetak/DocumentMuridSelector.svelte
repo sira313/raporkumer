@@ -158,7 +158,7 @@
 			</div>
 			<ul
 				tabindex="-1"
-				class="dropdown-content menu bg-base-100 rounded-box z-1 w-38 p-2 shadow-sm"
+				class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-1 mt-2 w-38 border p-2 shadow-xl"
 			>
 				<li>
 					<button

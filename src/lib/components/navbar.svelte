@@ -232,7 +232,7 @@
 						<Icon name="select" class="hidden sm:block" />
 					</div>
 					<ul
-						class="menu dropdown-content bg-base-100 ring-opacity-5 z-1 mt-5 mr-1 w-72 origin-top-right rounded-xl p-4 shadow-xl focus:outline-none"
+						class="border-base-300 menu dropdown-content bg-base-100 ring-opacity-5 z-1 mt-5 mr-1 w-72 origin-top-right rounded-xl border p-4 shadow-xl focus:outline-none"
 					>
 						<!-- alert akun admin -->
 						{#if user?.type === 'admin'}

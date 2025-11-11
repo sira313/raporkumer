@@ -21,7 +21,7 @@
 	const legalUrl = 'https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.id';
 </script>
 
-<div class="mx-auto flex max-w-4xl flex-col gap-8">
+<div class="flex w-full flex-col gap-4">
 	<section class="rounded-box border-base-200/80 bg-base-100/95 border p-8 shadow-md sm:p-10">
 		<div class="space-y-3">
 			<span class="badge badge-outline badge-lg bg-base-100/70 text-primary shadow">Lisensi</span>
@@ -37,7 +37,7 @@
 		</div>
 	</section>
 
-	<section class="grid gap-6 sm:grid-cols-3">
+	<section class="grid gap-4 sm:grid-cols-3">
 		{#each summary as item, index (index)}
 			<article class="rounded-box border-base-200/80 bg-base-100/95 border p-6 shadow-md">
 				<h2 class="text-base-content text-xl font-semibold">{item.title}</h2>

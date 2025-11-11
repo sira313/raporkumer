@@ -95,7 +95,7 @@
 				<!-- menu dropdown -->
 				<ul
 					tabindex="-1"
-					class="dropdown-content menu bg-base-100 z-50 mt-2 w-52 rounded-md p-2 shadow-lg"
+					class="dropdown-content menu bg-base-100 border-base-300 z-50 mt-2 w-49 rounded-md border p-2 shadow-lg"
 				>
 					<li>
 						<button

@@ -34,7 +34,7 @@
 </script>
 
 <!-- Kontainer Utama Grid -->
-<div class="grid max-w-5xl grid-cols-1 gap-5 md:grid-cols-2">
+<div class="grid w-full grid-cols-1 gap-5 md:grid-cols-2">
 	<!-- Kolom 1: Data Utama & Statistik -->
 	<div class="flex flex-col gap-5">
 		<SekolahOverviewCard {sekolah} />

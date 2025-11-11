@@ -21,7 +21,7 @@
 			<h1 class="text-base-content text-3xl font-bold md:text-4xl">
 				Rapkumer — Aplikasi Rapor Kurikulum Merdeka
 			</h1>
-			<p class="text-base-content/90 max-w-2xl text-base md:text-lg">
+			<p class="text-base-content/90 text-base md:text-lg">
 				Rapkumer membantu guru dan operator sekolah mengelola nilai murid secara cepat, rapi, dan
 				siap cetak sesuai kurikulum terbaru.
 			</p>
@@ -43,7 +43,7 @@
 				</div>
 			</div>
 
-			<div class="flex flex-wrap gap-3">
+			<div class="flex flex-col gap-3 sm:flex-row">
 				<a
 					class="btn btn-outline shadow-none"
 					href="https://kurikulum.kemdikbud.go.id/"
@@ -52,7 +52,7 @@
 				>
 				<a class="btn btn-outline shadow-none" href="/lisensi">Lihat Lisensi</a>
 				<a
-					class="btn btn-primary ml-auto shadow-none"
+					class="btn btn-primary shadow-none sm:ml-auto"
 					href="https://t.me/+zj3h_zjBAC02YjZl"
 					target="_blank"
 					rel="noreferrer"
@@ -143,7 +143,7 @@
 
 			<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				<article
-					class="rounded-box border-base-200 bg-base-100/90 flex h-full flex-col justify-between border p-4 shadow-md"
+					class="rounded-box border-base-200 dark:bg-base-200 flex h-full flex-col justify-between border p-4 shadow-md dark:shadow-none"
 				>
 					<div class="space-y-2">
 						<span class="badge badge-primary badge-outline">UI &amp; UX</span>
@@ -156,7 +156,7 @@
 				</article>
 
 				<article
-					class="rounded-box border-base-200 bg-base-100/90 flex h-full flex-col justify-between border p-4 shadow-md"
+					class="rounded-box border-base-200 dark:bg-base-200 flex h-full flex-col justify-between border p-4 shadow-md dark:shadow-none"
 				>
 					<div class="space-y-2">
 						<span class="badge badge-secondary badge-outline">Asesmen</span>
@@ -173,7 +173,7 @@
 				</article>
 
 				<article
-					class="rounded-box border-base-200 bg-base-100/90 flex h-full flex-col justify-between border p-4 shadow-md"
+					class="rounded-box border-base-200 dark:bg-base-200 flex h-full flex-col justify-between border p-4 shadow-md dark:shadow-none"
 				>
 					<div class="space-y-2">
 						<span class="badge badge-accent badge-outline">Donasi</span>
