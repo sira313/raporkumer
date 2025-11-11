@@ -277,7 +277,7 @@
 					<!-- menu dropdown -->
 					<ul
 						tabindex="-1"
-						class="border border-base-300 dropdown-content menu bg-base-100 z-50 mt-2 w-52 rounded-md p-2 shadow-lg"
+						class="border-base-300 dropdown-content menu bg-base-100 z-50 mt-2 w-52 rounded-md border p-2 shadow-lg"
 					>
 						<li>
 							<button

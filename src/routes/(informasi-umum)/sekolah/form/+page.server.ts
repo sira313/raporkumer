@@ -8,7 +8,7 @@ export async function load({ url, locals }) {
 	const isInit = url.searchParams.has('init');
 	const isNew = url.searchParams.get('mode') === 'new';
 	const sekolahIdParam = url.searchParams.get('sekolahId');
-	
+
 	// Jika ada parameter sekolahId, load sekolah tersebut
 	let sekolahToEdit: Sekolah | Omit<Sekolah, 'logo'> | undefined = undefined;
 	if (sekolahIdParam && !isNew) {
@@ -24,18 +24,22 @@ export async function load({ url, locals }) {
 			if (!sekolah) {
 				error(404, 'Sekolah tidak ditemukan');
 			}
-			sekolahToEdit = sekolah;
+			// Exclude logo and logoDinas from form init (can't populate file inputs anyway)
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { logo, logoType, logoDinas, logoDinasType, ...sekolahData } = sekolah;
+			sekolahToEdit = sekolahData as Sekolah;
 		}
 	} else if (!isNew) {
 		// Jika tidak ada parameter sekolahId dan bukan mode new, gunakan sekolah aktif
+		// locals.sekolah already has logo excluded by type
 		sekolahToEdit = locals.sekolah;
 	}
-	
-	return { 
-		isInit, 
-		isNew, 
+
+	return {
+		isInit,
+		isNew,
 		sekolah: sekolahToEdit,
-		meta: { title: isNew ? 'Tambah Sekolah' : 'Form Sekolah' } 
+		meta: { title: isNew ? 'Tambah Sekolah' : 'Form Sekolah' }
 	};
 }
 
