@@ -187,6 +187,17 @@
 		const withCap = before + first + rest;
 		return withCap.replace(/[.!?]+$/u, '').trim() + '.';
 	}
+
+	function paragraphPaddingClass(text: string | null | undefined): string {
+		if (rapor?.tpMode === 'compact') return 'py-2';
+		if (rapor?.tpMode === 'full-desc') {
+			const t = (text ?? '').toLowerCase();
+			if (/perlu bimbingan|masih perlu bimbingan/.test(t)) return 'pb-2';
+			// For "tercapai" criteria (sangat-baik / baik / cukup), add top padding
+			return 'pt-2 py-2';
+		}
+		return '';
+	}
 </script>
 
 {#if tailKey === 'kokurikuler'}
@@ -237,8 +248,7 @@
 								{formatValue(ekskul.nama)}
 							</td>
 							<td
-								class={'border-base-300 border px-3 py-2 align-top ' +
-									(rapor?.tpMode === 'compact' || rapor?.tpMode === 'full-desc' ? 'py-2' : '')}
+								class={'border-base-300 border px-3 py-2 align-top ' + paragraphPaddingClass(ekskul.deskripsi)}
 							>
 								<div class="flex flex-col gap-2">
 									{#each descriptionBlocks(formatValue(ekskul.deskripsi)) as block, bidx (bidx)}
