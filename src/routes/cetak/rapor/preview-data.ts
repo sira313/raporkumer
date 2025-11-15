@@ -115,10 +115,23 @@ function buildDeskripsiLine(muridNama: string, descriptor: CapaianDescriptor): s
 	return `Ananda ${nama} ${narrative} dalam ${descriptor.deskripsi}`;
 }
 
+function joinList(items: string[]): string {
+	if (!items.length) return '';
+	if (items.length === 1) return items[0];
+	if (items.length === 2) return `${items[0]} dan ${items[1]}`;
+	return items.slice(0, -1).join(', ') + ', dan ' + items.at(-1);
+}
+
+function capitalizeFirst(s: string) {
+	if (!s) return s;
+	return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function buildCapaianKompetensi(
 	muridNama: string,
 	tujuanScores: TujuanScoreEntry[],
-	kkm: number | null | undefined
+	kkm: number | null | undefined,
+	mode: 'compact' | 'full' | 'full-desc' = 'compact'
 ): string {
 	if (!tujuanScores.length) {
 		return 'Belum ada penilaian sumatif.';
@@ -130,18 +143,121 @@ function buildCapaianKompetensi(
 	}));
 
 	const sorted = descriptors.slice().sort(compareDescriptorAscending);
-	const lowest = sorted[0];
-	const highest = sorted.at(-1) ?? lowest;
 
-	// Jika hanya 1 tujuan atau highest === lowest, tampilkan 1 kalimat saja
-	if (sorted.length === 1 || highest.tujuanPembelajaranId === lowest.tujuanPembelajaranId) {
-		return buildDeskripsiLine(muridNama, highest);
+	// If not full, keep previous compact behavior: show highest and lowest descriptors
+	if (mode === 'compact') {
+		const lowest = sorted[0];
+		const highest = sorted.at(-1) ?? lowest;
+
+		// Jika hanya 1 tujuan atau highest === lowest, tampilkan 1 kalimat saja
+		if (sorted.length === 1 || highest.tujuanPembelajaranId === lowest.tujuanPembelajaranId) {
+			return buildDeskripsiLine(muridNama, highest);
+		}
+
+		const highestLine = buildDeskripsiLine(muridNama, highest);
+		const lowestLine = buildDeskripsiLine(muridNama, lowest);
+
+		return `${highestLine}\n${lowestLine}`;
 	}
 
-	const highestLine = buildDeskripsiLine(muridNama, highest);
-	const lowestLine = buildDeskripsiLine(muridNama, lowest);
+	// Full mode: group all tujuan by predikat from highest to lowest and list each
+	if (mode === 'full') {
+		const groups: Record<PredikatKey, CapaianDescriptor[]> = {
+			'sangat-baik': [],
+			baik: [],
+			cukup: [],
+			'perlu-bimbingan': []
+		};
 
-	return `${highestLine}\n${lowestLine}`;
+		for (const d of sorted) {
+			groups[d.predikat.key].push(d);
+		}
+
+		const order: PredikatKey[] = ['sangat-baik', 'baik', 'cukup', 'perlu-bimbingan'];
+		const lines: string[] = [];
+
+		for (const key of order) {
+			const list = groups[key];
+			if (!list.length) continue;
+
+			// Map to heading phrases similar to examples
+			let headingPhrase = '';
+			if (key === 'sangat-baik') headingPhrase = 'Menunjukkan penguasaan yang sangat baik dalam:';
+			else if (key === 'baik') headingPhrase = 'Menunjukkan penguasaan yang baik dalam:';
+			else if (key === 'cukup') headingPhrase = 'Cukup menguasai dalam:';
+			else headingPhrase = 'Masih perlu bimbingan dalam:';
+
+			lines.push(headingPhrase);
+
+			// Sort list by nilai descending then by id
+			list.sort((a, b) => {
+				if (a.nilai !== b.nilai) return b.nilai - a.nilai;
+				return a.tujuanPembelajaranId - b.tujuanPembelajaranId;
+			});
+
+			for (const item of list) {
+				lines.push(`- ${item.deskripsi}`);
+			}
+
+			// Blank line between groups
+			lines.push('');
+		}
+
+		// Remove trailing blank if present
+		if (lines.length > 0 && lines.at(-1) === '') lines.pop();
+
+		// Prepend student name line? The example shows name then grouped sections; follow that
+		return `Ananda ${muridNama}\n${lines.join('\n')}`;
+	}
+
+	// Full-desc mode: produce paragraph-style descriptive sentences per predikat group
+	// e.g. "Ananda NAME menunjukkan penguasaan yang baik dalam tujuan A, tujuan B, dan tujuan C. Cukup mampu dalam ... Masih perlu bimbingan dalam ..."
+	if (mode === 'full-desc') {
+		const groups: Record<PredikatKey, CapaianDescriptor[]> = {
+			'sangat-baik': [],
+			baik: [],
+			cukup: [],
+			'perlu-bimbingan': []
+		};
+		for (const d of sorted) {
+			groups[d.predikat.key].push(d);
+		}
+
+		const order: PredikatKey[] = ['sangat-baik', 'baik', 'cukup', 'perlu-bimbingan'];
+		const sentences: string[] = [];
+
+		for (let i = 0; i < order.length; i++) {
+			const key = order[i];
+			const list = groups[key];
+			if (!list.length) continue;
+
+			// sanitize descriptions
+			const descs = list.map((it) => it.deskripsi.replace(/[.!?]+$/gu, '').trim());
+			const joined = joinList(descs);
+
+			let phrase = '';
+			if (key === 'sangat-baik')
+				phrase = `menunjukkan penguasaan yang sangat baik dalam ${joined}.`;
+			else if (key === 'baik') phrase = `menunjukkan penguasaan yang baik dalam ${joined}.`;
+			else if (key === 'cukup') phrase = `cukup mampu ${joined}.`;
+			else phrase = `masih perlu bimbingan dalam ${joined}.`;
+
+			if (sentences.length === 0) {
+				// first sentence: include student name and ensure lowercase verb (phrase already lowercase)
+				sentences.push(`Ananda ${muridNama} ${phrase}`);
+			} else {
+				// subsequent sentences: capitalize first letter
+				sentences.push(capitalizeFirst(phrase));
+			}
+		}
+
+		return sentences.join(' ');
+	}
+
+	// Fallback: return highest descriptor line
+	const fallback = sorted.at(-1) ?? sorted[0];
+	if (fallback) return buildDeskripsiLine(muridNama, fallback);
+	return '';
 }
 
 function requireInteger(paramName: string, value: string | null): number {
@@ -238,6 +354,15 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	if (kelasId && murid.kelasId !== kelasId) {
 		throw error(400, 'Murid tidak terdaftar pada kelas yang diminta.');
 	}
+
+	const fullTPParam = url.searchParams.get('full_tp');
+	const fullTPParamStr = String(fullTPParam ?? '').toLowerCase();
+	const tpMode: 'compact' | 'full' | 'full-desc' =
+		fullTPParamStr === '1' || fullTPParamStr === 'true'
+			? 'full'
+			: fullTPParamStr === 'desc' || fullTPParamStr === 'full-desc'
+				? 'full-desc'
+				: 'compact';
 
 	const [asesmenSumatif, asesmenEkstrakurikuler, asesmenKokurikuler, asesmenSumatifTujuan] =
 		await Promise.all([
@@ -377,7 +502,7 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 				displayName,
 				kelompok: jenisMapel[mapel.jenis] ?? null,
 				nilaiAkhir: formatNilai(item.nilaiAkhir ?? null),
-				deskripsi: buildCapaianKompetensi(muridNama, tujuanScores, mapel.kkm)
+				deskripsi: buildCapaianKompetensi(muridNama, tujuanScores, mapel.kkm, tpMode)
 			};
 		})
 		.sort((a, b) => {
@@ -430,7 +555,7 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	const ekstrakurikuler = Array.from(ekstrakurikulerGrouped.values())
 		.map((entry) => ({
 			nama: entry.nama,
-			deskripsi: buildEkstrakurikulerDeskripsi(entry.parts) ?? 'Belum ada catatan.'
+			deskripsi: buildEkstrakurikulerDeskripsi(entry.parts, murid.nama) ?? 'Belum ada catatan.'
 		}))
 		.sort((a, b) => a.nama.localeCompare(b.nama, LOCALE_ID));
 
@@ -531,6 +656,9 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			tanggal: ttdTanggal
 		}
 	};
+
+	// include TP mode so the client can render compact/full differences
+	raporData.tpMode = tpMode;
 
 	return {
 		meta: {

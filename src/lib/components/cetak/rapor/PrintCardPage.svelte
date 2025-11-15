@@ -53,6 +53,8 @@
 	);
 </script>
 
+<!-- removed page-edge visual guide: no extra border at page edge -->
+
 <div class={cardClasses} style="break-inside: avoid-page;">
 	<div class={contentContainerClasses}>
 		<div class={bodyClasses} bind:this={contentRef} use:applySplit>

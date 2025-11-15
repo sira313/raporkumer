@@ -1,6 +1,7 @@
 {
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
 	"svelte.enable-ts-plugin": true,
+	"explorer.autoReveal": true,
 	"eslint.format.enable": true,
 	"files.associations": {
 		"*.css": "tailwindcss"

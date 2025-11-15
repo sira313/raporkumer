@@ -12,6 +12,7 @@ import {
 import { sanitizeDimensionList } from '$lib/kokurikuler';
 import { redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
+import type { PageServerLoad } from './$types';
 
 const PER_PAGE = 20;
 
@@ -108,7 +109,7 @@ type NilaiAkhirRow = {
 	totalEkstrakurikulerRelevan?: number;
 	eksDetailHref?: string;
 	kriteriaEkstrakurikuler?: string | null;
-	// kriteria label for kokurikuler (Sangat Baik / Baik / Cukup / Kurang)
+	// kriteria label for kokurikuler (Sangat Baik / Baik / Cukup / Perlu bimbingan)
 	kriteriaKokurikuler: string | null;
 	detailHref: string;
 	peringkat: number;
@@ -130,7 +131,7 @@ type Summary = {
 	totalKokurikuler?: number;
 };
 
-export async function load({ parent, locals, url, depends }) {
+export const load: PageServerLoad = async ({ parent, locals, url, depends }) => {
 	depends('app:nilai-akhir');
 
 	const meta: PageMeta = { title: 'Rekap Nilai' };
@@ -391,7 +392,7 @@ export async function load({ parent, locals, url, depends }) {
 				}
 
 				const kategoriToNumber: Record<string, number> = {
-					kurang: 1,
+					'perlu-bimbingan': 1,
 					cukup: 2,
 					baik: 3,
 					'sangat-baik': 4
@@ -432,7 +433,7 @@ export async function load({ parent, locals, url, depends }) {
 						if (avgFixed >= 3.51) row.kriteriaKokurikuler = 'Sangat Baik';
 						else if (avgFixed >= 2.51) row.kriteriaKokurikuler = 'Baik';
 						else if (avgFixed >= 1.51) row.kriteriaKokurikuler = 'Cukup';
-						else row.kriteriaKokurikuler = 'Kurang';
+						else row.kriteriaKokurikuler = 'Perlu bimbingan';
 					} else {
 						row.nilaiRataRataKokurikuler = null;
 						row.kriteriaKokurikuler = null;
@@ -534,7 +535,7 @@ export async function load({ parent, locals, url, depends }) {
 						if (avgFixed >= 3.51) row.kriteriaEkstrakurikuler = 'Sangat Baik';
 						else if (avgFixed >= 2.51) row.kriteriaEkstrakurikuler = 'Baik';
 						else if (avgFixed >= 1.51) row.kriteriaEkstrakurikuler = 'Cukup';
-						else row.kriteriaEkstrakurikuler = 'Kurang';
+						else row.kriteriaEkstrakurikuler = 'Perlu bimbingan';
 					} else {
 						row.nilaiRataRataEkstrakurikuler = null;
 						row.kriteriaEkstrakurikuler = null;
@@ -550,4 +551,4 @@ export async function load({ parent, locals, url, depends }) {
 	}
 
 	return { meta, daftarNilai, page, summary };
-}
+};

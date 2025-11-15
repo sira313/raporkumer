@@ -186,7 +186,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 						}
 
 						const kategoriToNumber: Record<string, number> = {
-							kurang: 1,
+							'perlu-bimbingan': 1,
 							cukup: 2,
 							baik: 3,
 							'sangat-baik': 4
@@ -210,7 +210,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 									if (avgFixed >= 3.51) kriteria = 'Sangat Baik';
 									else if (avgFixed >= 2.51) kriteria = 'Baik';
 									else if (avgFixed >= 1.51) kriteria = 'Cukup';
-									else kriteria = 'Kurang';
+									else kriteria = 'Perlu bimbingan';
 									valsForMurid[`kok_${k.id}`] = kriteria;
 								} else {
 									valsForMurid[`kok_${k.id}`] = null;
@@ -296,7 +296,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 									if (avgFixed >= 3.51) kriteria = 'Sangat Baik';
 									else if (avgFixed >= 2.51) kriteria = 'Baik';
 									else if (avgFixed >= 1.51) kriteria = 'Cukup';
-									else kriteria = 'Kurang';
+									else kriteria = 'Perlu bimbingan';
 									valsForMurid[`eks_${e.id}`] = kriteria;
 								} else {
 									valsForMurid[`eks_${e.id}`] = null;

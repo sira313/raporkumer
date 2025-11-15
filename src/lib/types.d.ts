@@ -139,6 +139,9 @@ interface RaporPrintData {
 		tempat: string;
 		tanggal: string;
 	};
+
+	// Mode for tujuan pembelajaran display: compact | full | full-desc
+	tpMode?: 'compact' | 'full' | 'full-desc';
 }
 
 interface PiagamPrintData {

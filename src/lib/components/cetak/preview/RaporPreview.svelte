@@ -53,23 +53,36 @@
 		return createTableRows(intrakurikulerRows, activeTailBlocks);
 	});
 
-	/* eslint-disable-next-line svelte/prefer-svelte-reactivity */
-	const tableRowElements = new Map<number, HTMLTableRowElement>();
+	/* eslint-disable svelte/prefer-svelte-reactivity */
+	// Support multiple <tr> elements for a single logical row (rowspan-style groups).
+	const tableRowElements = new Map<number, Set<HTMLTableRowElement>>();
 	function tableRow(node: HTMLTableRowElement, order: number) {
-		tableRowElements.set(order, node);
+		let set = tableRowElements.get(order);
+		if (!set) {
+			set = new Set();
+			tableRowElements.set(order, set);
+		}
+		set.add(node);
+
 		let currentOrder = order;
 		return {
 			update(newOrder: number) {
 				if (newOrder === currentOrder) return;
-				tableRowElements.delete(currentOrder);
+				tableRowElements.get(currentOrder)?.delete(node);
 				currentOrder = newOrder;
-				tableRowElements.set(currentOrder, node);
+				let newSet = tableRowElements.get(currentOrder);
+				if (!newSet) {
+					newSet = new Set();
+					tableRowElements.set(currentOrder, newSet);
+				}
+				newSet.add(node);
 			},
 			destroy() {
-				tableRowElements.delete(currentOrder);
+				tableRowElements.get(currentOrder)?.delete(node);
 			}
 		};
 	}
+	/* eslint-enable svelte/prefer-svelte-reactivity */
 
 	type TablePage = {
 		rows: TableRow[];
@@ -121,9 +134,15 @@
 			continuationPrototypeTableSection
 		);
 
-		const rowHeights = rows.map(
-			(row) => tableRowElements.get(row.order)?.getBoundingClientRect().height ?? 0
-		);
+		const rowHeights = rows.map((row) => {
+			const set = tableRowElements.get(row.order);
+			if (!set || set.size === 0) return 0;
+			let total = 0;
+			for (const el of set) {
+				total += el.getBoundingClientRect().height;
+			}
+			return total;
+		});
 		if (rowHeights.some((height) => height === 0)) {
 			queueSplit();
 			return;

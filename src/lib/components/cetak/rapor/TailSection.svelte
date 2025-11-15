@@ -131,6 +131,62 @@
 			.filter((sentence: string) => sentence.length > 0);
 		return sentences.length > 0 ? sentences : [kokurikulerNarrative].filter(Boolean);
 	});
+
+	// Helpers copied/adapted from RaporIntrakTable to support "full" description rendering
+
+	type DescriptionBlock = { kind: 'text'; text: string } | { kind: 'list'; items: string[] };
+
+	function descriptionBlocks(value: string | null | undefined): DescriptionBlock[] {
+		const formatted = formatValue(value);
+		if (formatted === '—') return [{ kind: 'text', text: formatted }];
+
+		const lines = formatted
+			.split(/\r?\n/)
+			.map((l: string) => l.trim())
+			.filter((l: string) => l.length > 0);
+
+		const blocks: DescriptionBlock[] = [];
+		let currentList: string[] | null = null;
+
+		for (const line of lines) {
+			if (/^[-•*]\s+/.test(line)) {
+				const item = line
+					.replace(/^[-•*]\s+/, '')
+					.replace(/[.!?]+$/u, '')
+					.trim();
+				if (!currentList) {
+					currentList = [];
+					blocks.push({ kind: 'list', items: currentList });
+				}
+				currentList.push(item);
+				continue;
+			}
+
+			// Non-list line: close any open list
+			currentList = null;
+
+			const withoutTrailingPeriod = line.replace(/\.+$/u, '');
+			const endsWithTerminal = /[!?:]$/.test(withoutTrailingPeriod);
+			const text = endsWithTerminal ? withoutTrailingPeriod : `${withoutTrailingPeriod}.`;
+			blocks.push({ kind: 'text', text });
+		}
+
+		return blocks.length > 0 ? blocks : [{ kind: 'text', text: formatted }];
+	}
+
+	function formatTujuanForFull(s: string): string {
+		if (!s) return s;
+		const trimmed = s.trim();
+		if (!trimmed) return trimmed;
+		let i = 0;
+		while (i < trimmed.length && !/[A-Za-zÀ-ÖØ-öø-ÿ]/u.test(trimmed[i])) i++;
+		if (i >= trimmed.length) return trimmed + '.';
+		const before = trimmed.slice(0, i);
+		const first = trimmed[i].toUpperCase();
+		const rest = trimmed.slice(i + 1);
+		const withCap = before + first + rest;
+		return withCap.replace(/[.!?]+$/u, '').trim() + '.';
+	}
 </script>
 
 {#if tailKey === 'kokurikuler'}
@@ -180,8 +236,25 @@
 							<td class="border-base-300 border px-3 py-2 align-top">
 								{formatValue(ekskul.nama)}
 							</td>
-							<td class="border-base-300 border px-3 py-2 align-top whitespace-pre-line">
-								{formatValue(ekskul.deskripsi)}
+							<td
+								class={'border-base-300 border px-3 py-2 align-top ' +
+									(rapor?.tpMode === 'compact' || rapor?.tpMode === 'full-desc' ? 'py-2' : '')}
+							>
+								<div class="flex flex-col gap-2">
+									{#each descriptionBlocks(formatValue(ekskul.deskripsi)) as block, bidx (bidx)}
+										{#if block.kind === 'text'}
+											<span class="whitespace-pre-line">{block.text}</span>
+										{:else}
+											<ul class="list-disc pl-4">
+												{#each block.items as it (it)}
+													<li class="leading-tight">
+														{rapor?.tpMode === 'full' ? formatTujuanForFull(it) : it}
+													</li>
+												{/each}
+											</ul>
+										{/if}
+									{/each}
+								</div>
 							</td>
 						</tr>
 					{/each}
@@ -226,7 +299,7 @@
 			</thead>
 			<tbody>
 				<tr>
-					<td class="border-base-300 min-h-[80px] border px-3 py-3 align-top whitespace-pre-line">
+					<td class="border-base-300 min-h-20 border px-3 py-3 align-top whitespace-pre-line">
 						{formatValue(rapor?.catatanWali)}
 					</td>
 				</tr>
@@ -286,7 +359,7 @@
 				<div class="flex flex-col items-center text-center">
 					<p>Orang Tua/Wali Murid</p>
 					<div
-						class="border-base-300 mt-20 h-[1px] w-full max-w-[220px] border-b border-dashed"
+						class="border-base-300 mt-20 h-px w-full max-w-[220px] border-b border-dashed"
 						aria-hidden="true"
 					></div>
 				</div>

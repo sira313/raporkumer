@@ -4,13 +4,14 @@ import { tableAsesmenKokurikuler, tableKokurikuler, tableMurid } from '$lib/serv
 import { sanitizeDimensionList } from '$lib/kokurikuler';
 import { error } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
+import type { PageServerLoad } from '../$types';
 
 function formatScore(value: number | null | undefined) {
 	if (value == null || Number.isNaN(value)) return null;
 	return Number.parseFloat(value.toFixed(2));
 }
 
-export async function load({ parent, url, locals, depends }) {
+export const load: PageServerLoad = async ({ parent, url, locals, depends }) => {
 	depends('app:nilai-akhir-kokurikuler');
 	const meta: PageMeta = { title: 'Nilai Kokurikuler' };
 	const { kelasAktif } = await parent();
@@ -71,7 +72,7 @@ export async function load({ parent, url, locals, depends }) {
 	}
 
 	const kategoriToNumber: Record<string, number> = {
-		kurang: 1,
+		'perlu-bimbingan': 1,
 		cukup: 2,
 		baik: 3,
 		'sangat-baik': 4
@@ -101,7 +102,7 @@ export async function load({ parent, url, locals, depends }) {
 			if (nilaiAkhir >= 3.51) kriteria = 'Sangat Baik';
 			else if (nilaiAkhir >= 2.51) kriteria = 'Baik';
 			else if (nilaiAkhir >= 1.51) kriteria = 'Cukup';
-			else kriteria = 'Kurang';
+			else kriteria = 'Perlu bimbingan';
 		}
 
 		return {
@@ -117,4 +118,4 @@ export async function load({ parent, url, locals, depends }) {
 	});
 
 	return { meta, status: 'ready', murid, daftarKokurikuler };
-}
+};

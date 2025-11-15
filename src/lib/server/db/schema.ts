@@ -624,7 +624,7 @@ export const tableAsesmenKokurikuler = sqliteTable(
 			.references(() => tableKokurikuler.id, { onDelete: 'cascade' })
 			.notNull(),
 		dimensi: text().notNull(),
-		kategori: text({ enum: ['sangat-baik', 'baik', 'cukup', 'kurang'] }).notNull(),
+		kategori: text({ enum: ['sangat-baik', 'baik', 'cukup', 'perlu-bimbingan'] }).notNull(),
 		dinilaiPada: text(),
 		...audit
 	},
