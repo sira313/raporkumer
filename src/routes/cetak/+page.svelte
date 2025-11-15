@@ -63,6 +63,9 @@
 	let previewLoading = $state(false);
 	let previewError = $state<string | null>(null);
 
+	// show full TP listing: 'compact' | 'full' | 'full-desc'
+	let fullTP = $state<'compact' | 'full' | 'full-desc'>('compact');
+
 	// bulk print state
 	let isBulkMode = $state(false);
 	let bulkPreviewData = $state<Array<{ murid: MuridData; data: PreviewPayload }>>([]);
@@ -261,6 +264,8 @@
 		if (data.kelasId) {
 			params.set('kelas_id', data.kelasId);
 		}
+		if (fullTP === 'full') params.set('full_tp', '1');
+		else if (fullTP === 'full-desc') params.set('full_tp', 'desc');
 
 		if (previewAbortController) {
 			previewAbortController.abort();
@@ -379,6 +384,8 @@
 			if (data.kelasId) {
 				params.set('kelas_id', data.kelasId);
 			}
+			if (fullTP === 'full') params.set('full_tp', '1');
+			else if (fullTP === 'full-desc') params.set('full_tp', 'desc');
 
 			try {
 				const response = await fetch(`${path}.json?${params.toString()}`, {
@@ -561,6 +568,15 @@
 		{muridCount}
 		{isPiagamSelected}
 		{selectedTemplate}
+		isRaporSelected={selectedDocument === 'rapor'}
+		tpMode={fullTP}
+		onToggleFullTP={(value: 'compact' | 'full' | 'full-desc') => {
+			fullTP = value;
+			if (previewDocument === 'rapor') {
+				if (isBulkMode) handleBulkPreview();
+				else handlePreview();
+			}
+		}}
 		onBgRefresh={handleBgRefresh}
 	/>
 </div>

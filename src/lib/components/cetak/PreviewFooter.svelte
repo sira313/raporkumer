@@ -10,13 +10,19 @@
 		muridCount = 0,
 		isPiagamSelected = false,
 		selectedTemplate = '1',
-		onBgRefresh
+		onBgRefresh,
+		isRaporSelected = false,
+		tpMode = 'compact',
+		onToggleFullTP = () => {}
 	}: {
 		hasMurid: boolean;
 		muridCount: number;
 		isPiagamSelected: boolean;
 		selectedTemplate: '1' | '2';
 		onBgRefresh: () => void;
+		isRaporSelected: boolean;
+		tpMode: 'compact' | 'full' | 'full-desc';
+		onToggleFullTP: (value: 'compact' | 'full' | 'full-desc') => void;
 	} = $props();
 
 	async function handleDeleteBg() {
@@ -82,11 +88,27 @@
 				<Icon name="del" />
 				Hapus BG
 			</button>
-
 			<button class="btn btn-sm btn-soft shadow-none" type="button" onclick={handleUploadBg}>
 				<Icon name="image" />
 				Ganti BG
 			</button>
+		{/if}
+
+		{#if isRaporSelected}
+			<label class="sr-only" for="tp-mode-select">TP mode</label>
+			<select
+				id="tp-mode-select"
+				class="select select-sm w-35"
+				value={tpMode}
+				onchange={(e) => {
+					const val = (e.target as HTMLSelectElement).value as 'compact' | 'full' | 'full-desc';
+					onToggleFullTP(val);
+				}}
+			>
+				<option value="compact">Compact TP</option>
+				<option value="full">Full TP</option>
+				<option value="full-desc">Full desc</option>
+			</select>
 		{/if}
 	</div>
 </div>

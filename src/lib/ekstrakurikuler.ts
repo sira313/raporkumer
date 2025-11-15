@@ -33,47 +33,68 @@ export function buildEkstrakurikulerDeskripsi(
 	parts: Array<{
 		kategori: EkstrakurikulerNilaiKategori;
 		tujuan: string;
-	}>
+	}>,
+	studentName?: string | null
 ): string | null {
-	const fragments = parts
-		.map((part) => {
-			const label = ekstrakurikulerNilaiLabelByValue[part.kategori];
-			const tujuan = (part.tujuan ?? '').trim();
-			if (!label || !tujuan) return null;
-			const labelLower = label.toLocaleLowerCase(LOCALE_ID);
-			const tujuanText = tujuan.charAt(0).toLocaleLowerCase(LOCALE_ID) + tujuan.slice(1);
-			const fragment = `${labelLower} dalam ${tujuanText}`.trim();
-			return fragment ? fragment : null;
-		})
-		.filter((value): value is string => Boolean(value));
+	if (!parts || parts.length === 0) return null;
+
+	const order: EkstrakurikulerNilaiKategori[] = ['sangat-baik', 'baik', 'cukup', 'perlu-bimbingan'];
+
+	const groups = new Map<EkstrakurikulerNilaiKategori, string[]>();
+	for (const part of parts) {
+		if (!isEkstrakurikulerNilaiKategori(part.kategori)) continue;
+		const t = (part.tujuan ?? '').replace(/[.!?]+$/gu, '').trim();
+		if (!t) continue;
+		const arr = groups.get(part.kategori) ?? [];
+		arr.push(t);
+		groups.set(part.kategori, arr);
+	}
+
+	const fragments: string[] = [];
+	for (const key of order) {
+		const list = groups.get(key) ?? [];
+		if (!list.length) continue;
+		// Prepare tujuan text: make first char lower-case for inline appearance
+		const tujuanItems = list.map((s) => {
+			if (!s) return s;
+			return s.charAt(0).toLocaleLowerCase(LOCALE_ID) + s.slice(1);
+		});
+		const joined = joinWithCommaAnd(tujuanItems);
+		const label = ekstrakurikulerNilaiLabelByValue[key];
+		const fragment = `${label.toLocaleLowerCase(LOCALE_ID)} dalam ${joined}`.trim();
+		fragments.push(fragment);
+	}
 
 	if (!fragments.length) return null;
 
+	// Normalize: follow kokurikuler pattern — prefix with `Ananda {name}` and
+	// keep the first fragment as a sentence continuation (lowercased) after the name.
+	const introName = (() => {
+		const trimmed = studentName?.trim();
+		return trimmed && trimmed.length > 0 ? `Ananda ${trimmed}` : 'Ananda';
+	})();
+
 	const normalized = fragments
-		.map((fragment, index) => {
-			const trimmed = fragment.trim();
-			if (!trimmed) return null;
-			if (index === 0) {
-				return capitalizeLocale(trimmed, LOCALE_ID);
+		.map((frag) => frag.trim())
+		.filter(Boolean)
+		.map((frag, idx) => {
+			if (idx === 0) {
+				// first fragment should follow the intro name and be lowercased
+				return `${introName} ${frag.toLocaleLowerCase(LOCALE_ID)}`.trim();
 			}
-			return lowercaseFirst(trimmed, LOCALE_ID);
-		})
-		.filter((value): value is string => Boolean(value));
+			// subsequent fragments are capitalized (sentence start)
+			return capitalizeLocale(frag, LOCALE_ID);
+		});
 
 	if (!normalized.length) return null;
 
-	const sentence = joinWithCommaAnd(normalized);
+	const sentence = normalized.map((s) => s.replace(/[.!?]+$/u, '').trim()).join('. ');
 	return sentence.endsWith('.') ? sentence : `${sentence}.`;
 }
 
 function capitalizeLocale(value: string, locale = LOCALE_ID) {
 	const lower = value.toLocaleLowerCase(locale);
 	return lower.charAt(0).toLocaleUpperCase(locale) + lower.slice(1);
-}
-
-function lowercaseFirst(value: string, locale = LOCALE_ID) {
-	if (!value) return value;
-	return value.charAt(0).toLocaleLowerCase(locale) + value.slice(1);
 }
 
 function joinWithCommaAnd(values: string[]): string {

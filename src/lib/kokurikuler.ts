@@ -12,7 +12,7 @@ export const nilaiKategoriOptions = [
 	{ value: 'sangat-baik', label: 'Sangat baik' },
 	{ value: 'baik', label: 'Baik' },
 	{ value: 'cukup', label: 'Cukup' },
-	{ value: 'kurang', label: 'Kurang' }
+	{ value: 'perlu-bimbingan', label: 'Perlu bimbingan' }
 ] as const;
 
 export type NilaiKategori = (typeof nilaiKategoriOptions)[number]['value'];
