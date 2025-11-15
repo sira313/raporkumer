@@ -13,14 +13,17 @@ descs
 dexie
 diinput
 diperjualbelikan
+exceljs
 Extrakurikuler
 Fathonah
 FOREIGNKEY
 Formatif
 Hendra
 ilike
+Inno
 Intrak
 IPAS
+ISCC
 Jokowi
 keepfocus
 Kembayan
@@ -44,6 +47,7 @@ popovertarget
 Rafif
 rapkumer
 Rapor
+raporkumer
 Raport
 Ratih
 replacestate
@@ -61,4 +65,5 @@ Teruslah
 trakteer
 tutwuri
 unflatten
+walis
 Zaki
