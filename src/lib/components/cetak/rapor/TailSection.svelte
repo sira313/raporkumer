@@ -248,7 +248,8 @@
 								{formatValue(ekskul.nama)}
 							</td>
 							<td
-								class={'border-base-300 border px-3 py-2 align-top ' + paragraphPaddingClass(ekskul.deskripsi)}
+								class={'border-base-300 border px-3 py-2 align-top ' +
+									paragraphPaddingClass(ekskul.deskripsi)}
 							>
 								<div class="flex flex-col gap-2">
 									{#each descriptionBlocks(formatValue(ekskul.deskripsi)) as block, bidx (bidx)}

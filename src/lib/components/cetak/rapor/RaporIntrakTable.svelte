@@ -203,18 +203,18 @@
 										? 'py-2'
 										: rapor?.tpMode === 'full-desc'
 											? predikatClassFromParagraph(
-												row.entry.deskripsi,
-												row.subIndex === undefined ||
-												topSubIndexByEntry.get(row.index) === row.subIndex
-											)
+													row.entry.deskripsi,
+													row.subIndex === undefined ||
+														topSubIndexByEntry.get(row.index) === row.subIndex
+												)
 											: predikatClassFromParagraph(
-												row.entry.deskripsi,
-												row.subIndex === undefined ||
-												topSubIndexByEntry.get(row.index) === row.subIndex
-											) +
-											(rapor?.tpMode === 'full' && ridx === 0 && (rows[0]?.order ?? 0) !== 0
-												? ' pt-2'
-												: ''))}
+													row.entry.deskripsi,
+													row.subIndex === undefined ||
+														topSubIndexByEntry.get(row.index) === row.subIndex
+												) +
+												(rapor?.tpMode === 'full' && ridx === 0 && (rows[0]?.order ?? 0) !== 0
+													? ' pt-2'
+													: ''))}
 							>
 								<div class="flex flex-col gap-2">
 									{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
@@ -254,18 +254,18 @@
 											? 'py-2'
 											: rapor?.tpMode === 'full-desc'
 												? predikatClassFromParagraph(
-													row.entry.deskripsi,
-													row.subIndex === undefined ||
-													topSubIndexByEntry.get(row.index) === row.subIndex
-												)
+														row.entry.deskripsi,
+														row.subIndex === undefined ||
+															topSubIndexByEntry.get(row.index) === row.subIndex
+													)
 												: predikatClassFromParagraph(
-													row.entry.deskripsi,
-													row.subIndex === undefined ||
-													topSubIndexByEntry.get(row.index) === row.subIndex
-												) +
-												(rapor?.tpMode === 'full' && ridx === 0 && (rows[0]?.order ?? 0) !== 0
-													? ' pt-2'
-													: ''))}
+														row.entry.deskripsi,
+														row.subIndex === undefined ||
+															topSubIndexByEntry.get(row.index) === row.subIndex
+													) +
+													(rapor?.tpMode === 'full' && ridx === 0 && (rows[0]?.order ?? 0) !== 0
+														? ' pt-2'
+														: ''))}
 								>
 									<div class="flex flex-col gap-2">
 										{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
@@ -304,18 +304,18 @@
 											? 'py-2'
 											: rapor?.tpMode === 'full-desc'
 												? predikatClassFromParagraph(
-													row.entry.deskripsi,
-													row.subIndex === undefined ||
-													topSubIndexByEntry.get(row.index) === row.subIndex
-												)
+														row.entry.deskripsi,
+														row.subIndex === undefined ||
+															topSubIndexByEntry.get(row.index) === row.subIndex
+													)
 												: predikatClassFromParagraph(
-													row.entry.deskripsi,
-													row.subIndex === undefined ||
-													topSubIndexByEntry.get(row.index) === row.subIndex
-												) +
-												(rapor?.tpMode === 'full' && ridx === 0 && (rows[0]?.order ?? 0) !== 0
-													? ' pt-2'
-													: ''))}
+														row.entry.deskripsi,
+														row.subIndex === undefined ||
+															topSubIndexByEntry.get(row.index) === row.subIndex
+													) +
+													(rapor?.tpMode === 'full' && ridx === 0 && (rows[0]?.order ?? 0) !== 0
+														? ' pt-2'
+														: ''))}
 								>
 									<div class="flex flex-col gap-2">
 										{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}

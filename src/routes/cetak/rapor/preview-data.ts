@@ -241,7 +241,8 @@ function buildCapaianKompetensi(
 			const joined = joinList(descs);
 
 			let phrase = '';
-			if (key === 'sangat-baik') phrase = `menunjukkan penguasaan yang sangat baik dalam ${joined}.`;
+			if (key === 'sangat-baik')
+				phrase = `menunjukkan penguasaan yang sangat baik dalam ${joined}.`;
 			else if (key === 'baik') phrase = `menunjukkan penguasaan yang baik dalam ${joined}.`;
 			else phrase = `cukup mampu ${joined}.`;
 
