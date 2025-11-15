@@ -50,8 +50,6 @@ export function buildEkstrakurikulerDeskripsi(
 		groups.set(part.kategori, arr);
 	}
 
-    
-
 	// Separate fragments into 'tercapai' (sangat-baik/baik/cukup) and 'perlu-bimbingan'
 	const tercapaiKeys: EkstrakurikulerNilaiKategori[] = ['sangat-baik', 'baik', 'cukup'];
 	const tercapaiFragments: string[] = [];
