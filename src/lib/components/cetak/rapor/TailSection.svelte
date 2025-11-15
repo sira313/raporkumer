@@ -189,14 +189,18 @@
 	}
 
 	function paragraphPaddingClass(text: string | null | undefined): string {
-		if (rapor?.tpMode === 'compact') return 'py-2';
-		if (rapor?.tpMode === 'full-desc') {
-			const t = (text ?? '').toLowerCase();
-			if (/perlu bimbingan|masih perlu bimbingan/.test(t)) return 'pb-2';
-			// For "tercapai" criteria (sangat-baik / baik / cukup), add top padding
+		// Apply predikat-based padding for all TP modes for ekstrakurikuler
+		const t = (text ?? '').toLowerCase();
+		if (!t) return 'py-2';
+		if (/perlu bimbingan|masih perlu bimbingan/.test(t)) return 'pb-2';
+		// "Tercapai" group (sangat-baik, baik, cukup) should have top padding
+		if (/\bsangat\s*(baik|menguasai|menunjukkan|unggul|istimewa|sangat baik)/.test(t) ||
+			/menunjukkan penguasaan yang sangat baik/.test(t)) {
 			return 'pt-2 py-2';
 		}
-		return '';
+		if (/menunjukkan penguasaan yang baik/.test(t) || /\bbaik\b/.test(t)) return 'pt-2 pb-2';
+		if (/cukup/.test(t) || /cukup menguasai/.test(t)) return 'pt-2 pb-2';
+		return 'py-2';
 	}
 </script>
 
