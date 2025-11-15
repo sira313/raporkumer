@@ -210,8 +210,13 @@ function buildCapaianKompetensi(
 		return `Ananda ${muridNama}\n${lines.join('\n')}`;
 	}
 
-	// Full-desc mode: produce paragraph-style descriptive sentences per predikat group
-	// e.g. "Ananda NAME menunjukkan penguasaan yang baik dalam tujuan A, tujuan B, dan tujuan C. Cukup mampu dalam ... Masih perlu bimbingan dalam ..."
+	// Full-desc mode: produce paragraph-style descriptive sentences grouped as
+	// - "tercapai": includes 'sangat-baik', 'baik', 'cukup'
+	// - "tidak tercapai": includes 'perlu-bimbingan'
+	// Example output:
+	//   Ananda Budi menunjukkan penguasaan yang sangat baik dalam tujuan a, tujuan b, dan tujuan c. Menunjukkan penguasaan yang baik dalam tujuan e, dan tujuan f. Cukup mampu tujuan g, tujuan h, dan tujuan i.
+	//
+	//   Ananda Budi masih perlu bimbingan dalam tujuan j, dan tujuan k.
 	if (mode === 'full-desc') {
 		const groups: Record<PredikatKey, CapaianDescriptor[]> = {
 			'sangat-baik': [],
@@ -223,15 +228,15 @@ function buildCapaianKompetensi(
 			groups[d.predikat.key].push(d);
 		}
 
-		const order: PredikatKey[] = ['sangat-baik', 'baik', 'cukup', 'perlu-bimbingan'];
-		const sentences: string[] = [];
+		const achievedOrder: PredikatKey[] = ['sangat-baik', 'baik', 'cukup'];
+		const achievedSentences: string[] = [];
 
-		for (let i = 0; i < order.length; i++) {
-			const key = order[i];
+		// Build the "tercapai" paragraph by concatenating sentences for sangat-baik, baik, cukup
+		for (let i = 0; i < achievedOrder.length; i++) {
+			const key = achievedOrder[i];
 			const list = groups[key];
 			if (!list.length) continue;
 
-			// sanitize descriptions
 			const descs = list.map((it) => it.deskripsi.replace(/[.!?]+$/gu, '').trim());
 			const joined = joinList(descs);
 
@@ -239,19 +244,33 @@ function buildCapaianKompetensi(
 			if (key === 'sangat-baik')
 				phrase = `menunjukkan penguasaan yang sangat baik dalam ${joined}.`;
 			else if (key === 'baik') phrase = `menunjukkan penguasaan yang baik dalam ${joined}.`;
-			else if (key === 'cukup') phrase = `cukup mampu ${joined}.`;
-			else phrase = `masih perlu bimbingan dalam ${joined}.`;
+			else phrase = `cukup mampu ${joined}.`;
 
-			if (sentences.length === 0) {
-				// first sentence: include student name and ensure lowercase verb (phrase already lowercase)
-				sentences.push(`Ananda ${muridNama} ${phrase}`);
+			if (achievedSentences.length === 0) {
+				achievedSentences.push(`Ananda ${muridNama} ${phrase}`);
 			} else {
-				// subsequent sentences: capitalize first letter
-				sentences.push(capitalizeFirst(phrase));
+				achievedSentences.push(capitalizeFirst(phrase));
 			}
 		}
 
-		return sentences.join(' ');
+		const achievedParagraph = achievedSentences.length ? achievedSentences.join(' ') : '';
+
+		// Build the "tidak tercapai" paragraph for 'perlu-bimbingan' if any
+		const needList = groups['perlu-bimbingan'];
+		let notAchievedParagraph = '';
+		if (needList.length) {
+			const descs = needList.map((it) => it.deskripsi.replace(/[.!?]+$/gu, '').trim());
+			const joined = joinList(descs);
+			// use narrative 'masih perlu bimbingan' but make full sentence with name
+			notAchievedParagraph = `Ananda ${muridNama} ${'masih perlu bimbingan'} dalam ${joined}.`;
+		}
+
+		if (achievedParagraph && notAchievedParagraph) {
+			return `${achievedParagraph}\n\n${notAchievedParagraph}`;
+		}
+		if (achievedParagraph) return achievedParagraph;
+		if (notAchievedParagraph) return notAchievedParagraph;
+		return '';
 	}
 
 	// Fallback: return highest descriptor line

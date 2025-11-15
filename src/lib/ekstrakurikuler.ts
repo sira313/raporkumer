@@ -50,11 +50,13 @@ export function buildEkstrakurikulerDeskripsi(
 		groups.set(part.kategori, arr);
 	}
 
-	const fragments: string[] = [];
+	// Separate fragments into 'tercapai' (sangat-baik/baik/cukup) and 'perlu-bimbingan'
+	const tercapaiKeys: EkstrakurikulerNilaiKategori[] = ['sangat-baik', 'baik', 'cukup'];
+	const tercapaiFragments: string[] = [];
+	const needFragments: string[] = [];
 	for (const key of order) {
 		const list = groups.get(key) ?? [];
 		if (!list.length) continue;
-		// Prepare tujuan text: make first char lower-case for inline appearance
 		const tujuanItems = list.map((s) => {
 			if (!s) return s;
 			return s.charAt(0).toLocaleLowerCase(LOCALE_ID) + s.slice(1);
@@ -62,10 +64,14 @@ export function buildEkstrakurikulerDeskripsi(
 		const joined = joinWithCommaAnd(tujuanItems);
 		const label = ekstrakurikulerNilaiLabelByValue[key];
 		const fragment = `${label.toLocaleLowerCase(LOCALE_ID)} dalam ${joined}`.trim();
-		fragments.push(fragment);
+		if (tercapaiKeys.includes(key)) {
+			tercapaiFragments.push(fragment);
+		} else {
+			needFragments.push(fragment);
+		}
 	}
 
-	if (!fragments.length) return null;
+	if (!tercapaiFragments.length && !needFragments.length) return null;
 
 	// Normalize: follow kokurikuler pattern — prefix with `Ananda {name}` and
 	// keep the first fragment as a sentence continuation (lowercased) after the name.
@@ -74,22 +80,38 @@ export function buildEkstrakurikulerDeskripsi(
 		return trimmed && trimmed.length > 0 ? `Ananda ${trimmed}` : 'Ananda';
 	})();
 
-	const normalized = fragments
-		.map((frag) => frag.trim())
-		.filter(Boolean)
-		.map((frag, idx) => {
-			if (idx === 0) {
-				// first fragment should follow the intro name and be lowercased
-				return `${introName} ${frag.toLocaleLowerCase(LOCALE_ID)}`.trim();
-			}
-			// subsequent fragments are capitalized (sentence start)
-			return capitalizeLocale(frag, LOCALE_ID);
-		});
+	const paragraphs: string[] = [];
 
-	if (!normalized.length) return null;
+	// Build tercapai paragraph (if any)
+	if (tercapaiFragments.length) {
+		const normalized = tercapaiFragments
+			.map((frag) => frag.trim())
+			.filter(Boolean)
+			.map((frag, idx) => {
+				if (idx === 0) {
+					// first fragment should follow the intro name and be lowercased
+					return `${introName} ${frag.toLocaleLowerCase(LOCALE_ID)}`.trim();
+				}
+				// subsequent fragments are capitalized (sentence start)
+				return capitalizeLocale(frag, LOCALE_ID);
+			});
+		const sentence = normalized.map((s) => s.replace(/[.!?]+$/u, '').trim()).join('. ');
+		paragraphs.push(sentence.endsWith('.') ? sentence : `${sentence}.`);
+	}
 
-	const sentence = normalized.map((s) => s.replace(/[.!?]+$/u, '').trim()).join('. ');
-	return sentence.endsWith('.') ? sentence : `${sentence}.`;
+	// Build need/bimbingan paragraph (if any) — put in its own paragraph
+	if (needFragments.length) {
+		// extract tujuan strings from needFragments: each fragment is like "perlu bimbingan dalam x, dan y"
+		// we want only the list of tujuan joined, so recreate from groups['perlu-bimbingan']
+		const needList = groups.get('perlu-bimbingan') ?? [];
+		const tujuanItems = needList.map((s) => s.charAt(0).toLocaleLowerCase(LOCALE_ID) + s.slice(1));
+		const joined = joinWithCommaAnd(tujuanItems);
+		const needSentence = `${introName} masih perlu bimbingan dalam ${joined}.`;
+		paragraphs.push(needSentence);
+	}
+
+	if (!paragraphs.length) return null;
+	return paragraphs.join('\n\n');
 }
 
 function capitalizeLocale(value: string, locale = LOCALE_ID) {
