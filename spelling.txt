@@ -3,8 +3,10 @@ Anwar
 Benyamin
 Beranda
 bidx
+bval
 cally
 Chairil
+cval
 daisyui
 Dangin
 Dapodik
@@ -28,8 +30,10 @@ Jokowi
 keepfocus
 Kembayan
 ketidakhadiran
+krit
 Kumer
 libsql
+manapun
 Mandasari
 mdsvex
 multilast
@@ -44,6 +48,7 @@ NPSN
 penginputan
 Periji
 popovertarget
+Previewable
 Rafif
 rapkumer
 Rapor

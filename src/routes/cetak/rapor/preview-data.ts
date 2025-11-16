@@ -60,32 +60,38 @@ const PREDIKAT_ORDER: Record<PredikatKey, number> = {
 	'sangat-baik': 3
 };
 
-function determinePredikat(nilai: number, kkm: number | null | undefined): PredikatDetail {
-	const numericKkm = typeof kkm === 'number' && Number.isFinite(kkm) ? kkm : 0;
+function determinePredikat(
+	nilai: number,
+	kkm: number | null | undefined,
+	kritCukup?: number,
+	kritBaik?: number
+): PredikatDetail {
+	// Apply the requested mathematical rules:
+	// - Perlu bimbingan: nilai < KKM
+	// - Cukup: KKM ≤ nilai ≤ kritCukup (default 85)
+	// - Baik: (kritCukup + 1) ≤ nilai ≤ kritBaik (default 95)
+	// - Sangat baik: nilai ≥ (kritBaik + 1)
+
+	const numericKkm = typeof kkm === 'number' && Number.isFinite(kkm) ? Math.round(kkm) : 0;
 	const baseKkm = Math.max(0, numericKkm);
-	const thresholdCukup = baseKkm * 1.15;
-	const thresholdBaik = baseKkm * 1.3;
+	const cUpper =
+		typeof kritCukup === 'number' && Number.isFinite(kritCukup) ? Math.round(kritCukup) : 85;
+	const bUpper =
+		typeof kritBaik === 'number' && Number.isFinite(kritBaik) ? Math.round(kritBaik) : 95;
+
 	if (nilai < baseKkm) {
-		return {
-			key: 'perlu-bimbingan',
-			label: 'Perlu Bimbingan',
-			narrative: 'masih perlu bimbingan'
-		};
+		return { key: 'perlu-bimbingan', label: 'Perlu Bimbingan', narrative: 'masih perlu bimbingan' };
 	}
-	if (nilai < thresholdCukup) {
-		return {
-			key: 'cukup',
-			label: 'Cukup',
-			narrative: 'menunjukkan penguasaan yang cukup'
-		};
+
+	// nilai is >= baseKkm here
+	if (nilai <= cUpper) {
+		return { key: 'cukup', label: 'Cukup', narrative: 'menunjukkan penguasaan yang cukup' };
 	}
-	if (nilai < thresholdBaik) {
-		return {
-			key: 'baik',
-			label: 'Baik',
-			narrative: 'menunjukkan penguasaan yang baik'
-		};
+
+	if (nilai <= bUpper) {
+		return { key: 'baik', label: 'Baik', narrative: 'menunjukkan penguasaan yang baik' };
 	}
+
 	return {
 		key: 'sangat-baik',
 		label: 'Sangat Baik',
@@ -131,7 +137,9 @@ function buildCapaianKompetensi(
 	muridNama: string,
 	tujuanScores: TujuanScoreEntry[],
 	kkm: number | null | undefined,
-	mode: 'compact' | 'full' | 'full-desc' = 'compact'
+	mode: 'compact' | 'full' | 'full-desc' = 'compact',
+	kritCukup?: number,
+	kritBaik?: number
 ): string {
 	if (!tujuanScores.length) {
 		return 'Belum ada penilaian sumatif.';
@@ -139,7 +147,7 @@ function buildCapaianKompetensi(
 
 	const descriptors = tujuanScores.map<CapaianDescriptor>((entry) => ({
 		...entry,
-		predikat: determinePredikat(entry.nilai, kkm)
+		predikat: determinePredikat(entry.nilai, kkm, kritCukup, kritBaik)
 	}));
 
 	const sorted = descriptors.slice().sort(compareDescriptorAscending);
@@ -383,6 +391,12 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 				? 'full-desc'
 				: 'compact';
 
+	// read optional intrakurikuler criteria overrides from query params
+	const kritCukupParam = url.searchParams.get('krit_cukup');
+	const kritBaikParam = url.searchParams.get('krit_baik');
+	const kritCukup = kritCukupParam ? Number(kritCukupParam) : undefined;
+	const kritBaik = kritBaikParam ? Number(kritBaikParam) : undefined;
+
 	const [asesmenSumatif, asesmenEkstrakurikuler, asesmenKokurikuler, asesmenSumatifTujuan] =
 		await Promise.all([
 			db.query.tableAsesmenSumatif.findMany({
@@ -521,7 +535,14 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 				displayName,
 				kelompok: jenisMapel[mapel.jenis] ?? null,
 				nilaiAkhir: formatNilai(item.nilaiAkhir ?? null),
-				deskripsi: buildCapaianKompetensi(muridNama, tujuanScores, mapel.kkm, tpMode)
+				deskripsi: buildCapaianKompetensi(
+					muridNama,
+					tujuanScores,
+					mapel.kkm,
+					tpMode,
+					kritCukup,
+					kritBaik
+				)
 			};
 		})
 		.sort((a, b) => {

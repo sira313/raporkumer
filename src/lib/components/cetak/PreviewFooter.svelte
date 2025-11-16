@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
 	import { showModal } from '$lib/components/global-modal.svelte';
+	import AturKriteriaModal from './AturKriteriaModal.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import { deletePiagamBg } from '$lib/components/piagam-bg.client';
 	import PiagamBgUploadBody from '$lib/components/PiagamBgUploadBody.svelte';
@@ -11,6 +12,7 @@
 		isPiagamSelected = false,
 		selectedTemplate = '1',
 		onBgRefresh,
+		onSetKriteria = (cukup: number, baik: number) => {},
 		isRaporSelected = false,
 		tpMode = 'compact',
 		onToggleFullTP = () => {}
@@ -23,6 +25,7 @@
 		isRaporSelected: boolean;
 		tpMode: 'compact' | 'full' | 'full-desc';
 		onToggleFullTP: (value: 'compact' | 'full' | 'full-desc') => void;
+		onSetKriteria: (cukup: number, baik: number) => void;
 	} = $props();
 
 	async function handleDeleteBg() {
@@ -74,7 +77,7 @@
 		</p>
 	{:else}
 		<p class="text-warning">
-			Belum ada data murid yang bisa dipreview. Tambahkan murid terlebih dahulu pada menu Informasi
+			Belum ada data murid yang bisa di-preview. Tambahkan murid terlebih dahulu pada menu Informasi
 			Umum › Murid.
 		</p>
 	{/if}
@@ -95,10 +98,45 @@
 		{/if}
 
 		{#if isRaporSelected}
+			<button
+				class="btn btn-sm btn-soft mr-1"
+				type="button"
+				title="Atur Kriteria"
+				onclick={() => {
+					showModal({
+						title: 'Atur Kriteria Penilaian Intrakurikuler',
+						body: AturKriteriaModal,
+						dismissible: true,
+						onPositive: {
+							label: 'Simpan',
+							action: ({ close }: { close: () => void }) => {
+								// read inputs from dialog DOM
+								const cuk = document.getElementById('krit-cukup') as HTMLInputElement | null;
+								const baik = document.getElementById('krit-baik') as HTMLInputElement | null;
+								let cval = 85;
+								let bval = 95;
+								if (cuk) cval = Math.round(Number(cuk.value) || cval);
+								if (baik) bval = Math.round(Number(baik.value) || bval);
+								if (bval < cval) {
+									const tmp = bval;
+									bval = cval;
+									cval = tmp;
+								}
+								onSetKriteria(cval, bval);
+								close();
+							}
+						},
+						// show cancel button too
+						onNegative: { label: 'Batal' }
+					});
+				}}
+			>
+				Atur Kriteria
+			</button>
 			<label class="sr-only" for="tp-mode-select">TP mode</label>
 			<select
 				id="tp-mode-select"
-				class="select select-sm w-35"
+				class="select select-sm dark:bg-base-200 w-35 dark:border-none"
 				value={tpMode}
 				onchange={(e) => {
 					const val = (e.target as HTMLSelectElement).value as 'compact' | 'full' | 'full-desc';

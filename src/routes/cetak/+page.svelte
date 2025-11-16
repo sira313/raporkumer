@@ -66,6 +66,10 @@
 	// show full TP listing: 'compact' | 'full' | 'full-desc'
 	let fullTP = $state<'compact' | 'full' | 'full-desc'>('compact');
 
+	// Kriteria intrakurikuler (defaults per spec)
+	let kritCukup = $state<number>(85);
+	let kritBaik = $state<number>(95);
+
 	// bulk print state
 	let isBulkMode = $state(false);
 	let bulkPreviewData = $state<Array<{ murid: MuridData; data: PreviewPayload }>>([]);
@@ -185,7 +189,7 @@
 		() => !selectedDocument || !hasSelectionOptions || !selectedMurid
 	);
 	const previewButtonTitle = $derived.by(() => {
-		if (!selectedDocument) return 'Pilih dokumen yang ingin dipreview terlebih dahulu';
+		if (!selectedDocument) return 'Pilih dokumen yang ingin di-preview terlebih dahulu';
 		if (!hasSelectionOptions) {
 			return selectedDocument === 'piagam'
 				? 'Tidak ada data peringkat yang tersedia untuk piagam di kelas ini'
@@ -264,6 +268,9 @@
 		if (data.kelasId) {
 			params.set('kelas_id', data.kelasId);
 		}
+		// include intrakurikuler criteria if present
+		params.set('krit_cukup', String(kritCukup));
+		params.set('krit_baik', String(kritBaik));
 		if (fullTP === 'full') params.set('full_tp', '1');
 		else if (fullTP === 'full-desc') params.set('full_tp', 'desc');
 
@@ -384,6 +391,9 @@
 			if (data.kelasId) {
 				params.set('kelas_id', data.kelasId);
 			}
+			// include intrakurikuler criteria for bulk requests as well
+			params.set('krit_cukup', String(kritCukup));
+			params.set('krit_baik', String(kritBaik));
 			if (fullTP === 'full') params.set('full_tp', '1');
 			else if (fullTP === 'full-desc') params.set('full_tp', 'desc');
 
@@ -570,6 +580,15 @@
 		{selectedTemplate}
 		isRaporSelected={selectedDocument === 'rapor'}
 		tpMode={fullTP}
+		onSetKriteria={(cukup: number, baik: number) => {
+			kritCukup = cukup;
+			kritBaik = baik;
+			// If a rapor preview is already shown, refresh it using new criteria
+			if (previewDocument === 'rapor') {
+				if (isBulkMode) handleBulkPreview();
+				else handlePreview();
+			}
+		}}
 		onToggleFullTP={(value: 'compact' | 'full' | 'full-desc') => {
 			fullTP = value;
 			if (previewDocument === 'rapor') {
