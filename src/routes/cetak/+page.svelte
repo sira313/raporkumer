@@ -8,7 +8,7 @@
 	import PreviewContent from '$lib/components/cetak/PreviewContent.svelte';
 	import { printElement } from '$lib/utils';
 	import { toast } from '$lib/components/toast.svelte';
-	import { onDestroy, tick } from 'svelte';
+	import { onDestroy, tick, onMount } from 'svelte';
 
 	let { data } = $props();
 
@@ -65,6 +65,23 @@
 
 	// show full TP listing: 'compact' | 'full' | 'full-desc'
 	let fullTP = $state<'compact' | 'full' | 'full-desc'>('compact');
+
+	// Kriteria intrakurikuler (defaults per spec)
+
+	let kritCukup = $state<number>(85);
+	let kritBaik = $state<number>(95);
+
+	// Load persisted criteria from localStorage (if available)
+	onMount(() => {
+		try {
+			const lc = localStorage.getItem('rapor.kriteria.cukup');
+			const lb = localStorage.getItem('rapor.kriteria.baik');
+			if (lc !== null && !Number.isNaN(Number(lc))) kritCukup = Number(lc);
+			if (lb !== null && !Number.isNaN(Number(lb))) kritBaik = Number(lb);
+		} catch {
+			// ignore (e.g., SSR or private mode restrictions)
+		}
+	});
 
 	// bulk print state
 	let isBulkMode = $state(false);
@@ -185,16 +202,16 @@
 		() => !selectedDocument || !hasSelectionOptions || !selectedMurid
 	);
 	const previewButtonTitle = $derived.by(() => {
-		if (!selectedDocument) return 'Pilih dokumen yang ingin dipreview terlebih dahulu';
+		if (!selectedDocument) return 'Pilih dokumen yang ingin di-preview terlebih dahulu';
 		if (!hasSelectionOptions) {
 			return selectedDocument === 'piagam'
 				? 'Tidak ada data peringkat yang tersedia untuk piagam di kelas ini'
-				: 'Tidak ada murid yang dapat dipreview untuk kelas ini';
+				: 'Tidak ada murid yang dapat di-preview untuk kelas ini';
 		}
 		if (!selectedMurid) {
 			return selectedDocument === 'piagam'
-				? 'Pilih peringkat piagam yang ingin dipreview terlebih dahulu'
-				: 'Pilih murid yang ingin dipreview terlebih dahulu';
+				? 'Pilih peringkat piagam yang ingin di-preview terlebih dahulu'
+				: 'Pilih murid yang ingin di-preview terlebih dahulu';
 		}
 		return `Preview ${selectedDocumentEntry?.label ?? 'dokumen'} untuk ${selectedMurid.nama}`;
 	});
@@ -235,7 +252,7 @@
 	async function handlePreview() {
 		const documentType = selectedDocument;
 		if (!documentType) {
-			toast('Pilih dokumen yang ingin dipreview terlebih dahulu.', 'warning');
+			toast('Pilih dokumen yang ingin di-preview terlebih dahulu.', 'warning');
 			return;
 		}
 		if (!isPreviewableDocument(documentType)) {
@@ -244,8 +261,8 @@
 		if (!hasSelectionOptions) {
 			const message =
 				documentType === 'piagam'
-					? 'Tidak ada data peringkat piagam yang dapat dipreview untuk kelas ini.'
-					: 'Tidak ada murid yang dapat dipreview untuk kelas ini.';
+					? 'Tidak ada data peringkat piagam yang dapat di-preview untuk kelas ini.'
+					: 'Tidak ada murid yang dapat di-preview untuk kelas ini.';
 			toast(message, 'warning');
 			return;
 		}
@@ -253,8 +270,8 @@
 		if (!murid) {
 			const message =
 				documentType === 'piagam'
-					? 'Pilih peringkat piagam yang ingin dipreview.'
-					: 'Pilih murid yang ingin dipreview.';
+					? 'Pilih peringkat piagam yang ingin di-preview.'
+					: 'Pilih murid yang ingin di-preview.';
 			toast(message, 'warning');
 			return;
 		}
@@ -264,6 +281,9 @@
 		if (data.kelasId) {
 			params.set('kelas_id', data.kelasId);
 		}
+		// include intrakurikuler criteria if present
+		params.set('krit_cukup', String(kritCukup));
+		params.set('krit_baik', String(kritBaik));
 		if (fullTP === 'full') params.set('full_tp', '1');
 		else if (fullTP === 'full-desc') params.set('full_tp', 'desc');
 
@@ -339,7 +359,7 @@
 	async function handleBulkPreview() {
 		const documentType = selectedDocument;
 		if (!documentType) {
-			toast('Pilih dokumen yang ingin dipreview terlebih dahulu.', 'warning');
+			toast('Pilih dokumen yang ingin di-preview terlebih dahulu.', 'warning');
 			return;
 		}
 		if (!isPreviewableDocument(documentType)) {
@@ -358,8 +378,8 @@
 
 		if (!muridList.length) {
 			const message = isPiagamSelected
-				? 'Tidak ada data peringkat piagam yang dapat dipreview untuk kelas ini.'
-				: 'Tidak ada murid yang dapat dipreview untuk kelas ini.';
+				? 'Tidak ada data peringkat piagam yang dapat di-preview untuk kelas ini.'
+				: 'Tidak ada murid yang dapat di-preview untuk kelas ini.';
 			toast(message, 'warning');
 			return;
 		}
@@ -384,6 +404,9 @@
 			if (data.kelasId) {
 				params.set('kelas_id', data.kelasId);
 			}
+			// include intrakurikuler criteria for bulk requests as well
+			params.set('krit_cukup', String(kritCukup));
+			params.set('krit_baik', String(kritBaik));
 			if (fullTP === 'full') params.set('full_tp', '1');
 			else if (fullTP === 'full-desc') params.set('full_tp', 'desc');
 
@@ -569,7 +592,24 @@
 		{isPiagamSelected}
 		{selectedTemplate}
 		isRaporSelected={selectedDocument === 'rapor'}
+		{kritCukup}
+		{kritBaik}
 		tpMode={fullTP}
+		onSetKriteria={(cukup: number, baik: number) => {
+			kritCukup = cukup;
+			kritBaik = baik;
+			try {
+				localStorage.setItem('rapor.kriteria.cukup', String(kritCukup));
+				localStorage.setItem('rapor.kriteria.baik', String(kritBaik));
+			} catch {
+				// ignore storage errors
+			}
+			// If a rapor preview is already shown, refresh it using new criteria
+			if (previewDocument === 'rapor') {
+				if (isBulkMode) handleBulkPreview();
+				else handlePreview();
+			}
+		}}
 		onToggleFullTP={(value: 'compact' | 'full' | 'full-desc') => {
 			fullTP = value;
 			if (previewDocument === 'rapor') {
