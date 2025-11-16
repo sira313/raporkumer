@@ -13,6 +13,8 @@
 		selectedTemplate = '1',
 		onBgRefresh,
 		onSetKriteria = (cukup: number, baik: number) => {},
+		kritCukup = 85,
+		kritBaik = 95,
 		isRaporSelected = false,
 		tpMode = 'compact',
 		onToggleFullTP = () => {}
@@ -26,6 +28,8 @@
 		tpMode: 'compact' | 'full' | 'full-desc';
 		onToggleFullTP: (value: 'compact' | 'full' | 'full-desc') => void;
 		onSetKriteria: (cukup: number, baik: number) => void;
+		kritCukup: number;
+		kritBaik: number;
 	} = $props();
 
 	async function handleDeleteBg() {
@@ -126,6 +130,7 @@
 								close();
 							}
 						},
+						bodyProps: { cukupUpper: kritCukup, baikUpper: kritBaik },
 						// show cancel button too
 						onNegative: { label: 'Batal' }
 					});
