@@ -12,7 +12,7 @@
 		isPiagamSelected = false,
 		selectedTemplate = '1',
 		onBgRefresh,
-		onSetKriteria = (cukup: number, baik: number) => {},
+		onSetKriteria = () => {},
 		kritCukup = 85,
 		kritBaik = 95,
 		isRaporSelected = false,

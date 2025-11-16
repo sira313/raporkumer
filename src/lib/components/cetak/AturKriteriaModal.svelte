@@ -18,7 +18,7 @@
 					id="krit-perlu"
 					class="input input-bordered w-full"
 					disabled
-					value={'< KKM'}
+					value="< KKM"
 					aria-label="Perlu Bimbingan"
 				/>
 				<p class="text-base-content/60 mt-1 text-xs">

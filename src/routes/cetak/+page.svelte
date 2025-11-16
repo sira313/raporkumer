@@ -78,7 +78,7 @@
 			const lb = localStorage.getItem('rapor.kriteria.baik');
 			if (lc !== null && !Number.isNaN(Number(lc))) kritCukup = Number(lc);
 			if (lb !== null && !Number.isNaN(Number(lb))) kritBaik = Number(lb);
-		} catch (e) {
+		} catch {
 			// ignore (e.g., SSR or private mode restrictions)
 		}
 	});
@@ -601,7 +601,7 @@
 			try {
 				localStorage.setItem('rapor.kriteria.cukup', String(kritCukup));
 				localStorage.setItem('rapor.kriteria.baik', String(kritBaik));
-			} catch (e) {
+			} catch {
 				// ignore storage errors
 			}
 			// If a rapor preview is already shown, refresh it using new criteria
