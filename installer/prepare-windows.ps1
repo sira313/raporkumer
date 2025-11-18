@@ -109,9 +109,8 @@ Copy-Item (Join-Path $projectRoot 'installer/files/start-rapkumer.cmd') (Join-Pa
 
 $toolsDir = Join-Path $appStage 'tools'
 New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null
-Copy-Item (Join-Path $projectRoot 'installer/scripts/detect-csrf-origins.ps1') (Join-Path $toolsDir 'detect-csrf-origins.ps1') -Force
 Copy-Item (Join-Path $projectRoot 'installer/scripts/resolve-node.ps1') (Join-Path $toolsDir 'resolve-node.ps1') -Force
-Copy-Item (Join-Path $projectRoot 'installer/scripts/run-server.cmd') (Join-Path $toolsDir 'run-server.cmd') -Force
+Copy-Item (Join-Path $projectRoot 'installer/scripts/resolve-node.ps1') (Join-Path $toolsDir 'resolve-node.ps1') -Force
 Copy-Item (Join-Path $projectRoot 'installer/scripts/run-migrations.ps1') (Join-Path $toolsDir 'run-migrations.ps1') -Force
 
 # Also copy the convenience wrappers from installer/ to the staged app root so end-users
