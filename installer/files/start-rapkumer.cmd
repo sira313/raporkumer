@@ -25,16 +25,16 @@ if exist "%ProgramFiles%\nodejs\node.exe" set "NODE_BINARY=%ProgramFiles%\nodejs
 cd /d "%APP_HOME%"
 echo [%date% %time%] Simple start: launching Rapkumer with %NODE_BINARY% >> "%LOG_FILE%"
 
-:: Launch Node without creating a visible window and redirect output to the log
-:: Use /B to run without opening a new window and cmd /c so redirection applies to the child process
-start "" /B cmd /c ""%NODE_BINARY%" build\index.js >> "%LOG_FILE%" 2>&1"
-
-:: Optional: open default browser (set OPEN_BROWSER=0 to disable)
-if not defined OPEN_BROWSER set "OPEN_BROWSER=1"
-if "%OPEN_BROWSER%"=="1" (
-    timeout /t 2 /nobreak >nul
-    start "" "http://localhost:%PORT%"
+:: Launch the Node-based launcher script (start-rapkumer.mjs) in background.
+:: The JS launcher handles logging, polling for server readiness and opening the browser.
+set "LAUNCHER=%APP_HOME%\start-rapkumer.mjs"
+if not exist "%LAUNCHER%" (
+    echo Launcher script not found: "%LAUNCHER%"
+    exit /b 1
 )
+
+:: Launch the launcher using the best available Node binary
+start "" /B cmd /c ""%NODE_BINARY%" "%LAUNCHER%" >> "%LOG_FILE%" 2>&1"
 
 endlocal
 exit /b 0

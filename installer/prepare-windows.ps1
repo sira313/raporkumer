@@ -106,6 +106,9 @@ Set-Content -Path (Join-Path $appStage 'package.json') -Value $runtimeJson -Enco
 
 Write-Host 'Copying runtime helper scripts...'
 Copy-Item (Join-Path $projectRoot 'installer/files/start-rapkumer.cmd') (Join-Path $appStage 'start-rapkumer.cmd') -Force
+# Also copy the JS launcher if present so installer can run Node+JS directly
+$mjsLauncher = Join-Path $projectRoot 'installer/files/start-rapkumer.mjs'
+if (Test-Path $mjsLauncher) { Copy-Item $mjsLauncher (Join-Path $appStage 'start-rapkumer.mjs') -Force }
 
 $toolsDir = Join-Path $appStage 'tools'
 New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null
@@ -113,6 +116,9 @@ Copy-Item (Join-Path $projectRoot 'installer/scripts/detect-csrf-origins.ps1') (
 Copy-Item (Join-Path $projectRoot 'installer/scripts/resolve-node.ps1') (Join-Path $toolsDir 'resolve-node.ps1') -Force
 Copy-Item (Join-Path $projectRoot 'installer/scripts/run-server.cmd') (Join-Path $toolsDir 'run-server.cmd') -Force
 Copy-Item (Join-Path $projectRoot 'installer/scripts/run-migrations.ps1') (Join-Path $toolsDir 'run-migrations.ps1') -Force
+# Copy any helper tools placed under installer/files/tools (e.g. create-desktop-shortcut.ps1)
+$extraTool = Join-Path $projectRoot 'installer/files/tools/create-desktop-shortcut.ps1'
+if (Test-Path $extraTool) { Copy-Item $extraTool (Join-Path $toolsDir 'create-desktop-shortcut.ps1') -Force }
 
 # Also copy the convenience wrappers from installer/ to the staged app root so end-users
 # see a top-level double-clickable script (run-migrations.cmd) alongside the app.
@@ -167,15 +173,36 @@ if (Test-Path $envSample) {
     Copy-Item $envSample (Join-Path $appStage '.env.example') -Force
 }
 
-Write-Host 'Installing production dependencies with npm (omit dev)...'
+Write-Host 'Installing production dependencies into staged app (prefer pnpm if available)...'
 Push-Location $appStage
 if (Test-Path 'node_modules') { Remove-Item 'node_modules' -Recurse -Force }
+# Remove any lockfiles so the staging process produces a clean node_modules
 if (Test-Path 'package-lock.json') { Remove-Item 'package-lock.json' -Force }
-npm install --omit=dev --no-package-lock
+if (Test-Path 'pnpm-lock.yaml') { Remove-Item 'pnpm-lock.yaml' -Force }
+
+if (Test-CommandExists 'pnpm') {
+    Write-Host 'pnpm detected; using pnpm to install production dependencies into staged app.'
+    # Use --prod to install only production deps. Use --no-lockfile to avoid leaving pnpm-lock.yaml in the stage.
+    # --shamefully-hoist makes node_modules layout more compatible for bundling.
+    try {
+        pnpm install --prod --no-lockfile --shamefully-hoist
+    } catch {
+        Write-Warning 'pnpm install failed; falling back to npm install --omit=dev.'
+        npm install --omit=dev --no-package-lock
+    }
+} else {
+    Write-Host 'pnpm not found; using npm to install production dependencies.'
+    npm install --omit=dev --no-package-lock
+}
+
 Write-Host 'Installing drizzle-kit into staged app so migrations can run on target...'
 # Install only drizzle-kit (no-save) into staged app to keep install minimal but provide the CLI
 try {
-    npm install --no-package-lock --no-save drizzle-kit
+    if (Test-CommandExists 'pnpm') {
+        pnpm add --no-save drizzle-kit
+    } else {
+        npm install --no-package-lock --no-save drizzle-kit
+    }
 } catch {
     Write-Warning 'Failed to install drizzle-kit into staged app; migrations on target may not be possible.'
 }

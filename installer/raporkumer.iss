@@ -32,11 +32,15 @@ SetupIconFile={#StagePath}\rapkumer.ico
 
 [Files]
 Source:"{#StagePath}\\*"; DestDir:"{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Ensure the JS launcher and installer helper scripts are explicitly included
+Source:"{#StagePath}\\start-rapkumer.mjs"; DestDir:"{app}"; Flags: ignoreversion
+Source:"{#StagePath}\\tools\\create-desktop-shortcut.ps1"; DestDir:"{app}\\tools"; Flags: ignoreversion
 
 [Run]
 Filename:"{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters:"-ExecutionPolicy Bypass -File ""{app}\\tools\\ensure-node.ps1"" -InstallDir ""{app}"""; StatusMsg:"Memastikan Node.js tersedia..."; Flags: runhidden waituntilterminated
 Filename:"{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters:"-ExecutionPolicy Bypass -File ""{app}\\tools\\run-migrations.ps1"" -InstallDir ""{app}"""; StatusMsg:"Menjalankan migrasi database (drizzle-kit) pada mesin ini..."; Flags: runhidden waituntilterminated
+Filename:"{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters:"-ExecutionPolicy Bypass -File ""{app}\\tools\\create-desktop-shortcut.ps1"" -InstallDir ""{app}"""; StatusMsg:"Membuat shortcut desktop Rapkumer..."; Flags: runhidden waituntilterminated
 
 [Icons]
-Name:"{autoprograms}\\Rapkumer\\Rapkumer"; Filename:"{app}\\start-rapkumer.cmd"; WorkingDir:"{app}"; IconFilename:"{app}\\rapkumer.ico"
-Name:"{autodesktop}\\Rapkumer"; Filename:"{app}\\start-rapkumer.cmd"; WorkingDir:"{app}"; IconFilename:"{app}\\rapkumer.ico"
+; Start Menu and Desktop shortcuts are created post-install by create-desktop-shortcut.ps1
+; (This ensures the bundled Node runtime exists before creating shortcuts.)

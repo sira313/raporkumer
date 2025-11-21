@@ -136,7 +136,8 @@ async function main() {
                 '-ExecutionPolicy',
                 'Bypass',
                 '-File',
-                path.join('installer', 'prepare-windows.ps1')
+                path.join('installer', 'prepare-windows.ps1'),
+                '-SkipBuild'
             ],
             { cwd: projectRoot }
         );
