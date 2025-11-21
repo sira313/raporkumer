@@ -22,7 +22,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 ; Do not require administrator privileges when installing to per-user LocalAppData
 PrivilegesRequired=lowest
-UninstallDisplayIcon={app}\start-rapkumer.cmd
+UninstallDisplayIcon={app}\rapkumer.ico
 VersionInfoVersion={#AppVersion}
 SetupIconFile={#StagePath}\rapkumer.ico
 ; Code signing configuration (commented out by default)

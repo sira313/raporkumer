@@ -105,8 +105,7 @@ $runtimeJson = $runtimePackage | ConvertTo-Json -Depth 5
 Set-Content -Path (Join-Path $appStage 'package.json') -Value $runtimeJson -Encoding UTF8
 
 Write-Host 'Copying runtime helper scripts...'
-Copy-Item (Join-Path $projectRoot 'installer/files/start-rapkumer.cmd') (Join-Path $appStage 'start-rapkumer.cmd') -Force
-# Also copy the JS launcher if present so installer can run Node+JS directly
+# Copy the JS launcher so installer can run Node+JS directly
 $mjsLauncher = Join-Path $projectRoot 'installer/files/start-rapkumer.mjs'
 if (Test-Path $mjsLauncher) { Copy-Item $mjsLauncher (Join-Path $appStage 'start-rapkumer.mjs') -Force }
 
