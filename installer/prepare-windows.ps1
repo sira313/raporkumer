@@ -111,9 +111,7 @@ if (Test-Path $mjsLauncher) { Copy-Item $mjsLauncher (Join-Path $appStage 'start
 
 $toolsDir = Join-Path $appStage 'tools'
 New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null
-Copy-Item (Join-Path $projectRoot 'installer/scripts/detect-csrf-origins.ps1') (Join-Path $toolsDir 'detect-csrf-origins.ps1') -Force
 Copy-Item (Join-Path $projectRoot 'installer/scripts/resolve-node.ps1') (Join-Path $toolsDir 'resolve-node.ps1') -Force
-Copy-Item (Join-Path $projectRoot 'installer/scripts/run-server.cmd') (Join-Path $toolsDir 'run-server.cmd') -Force
 Copy-Item (Join-Path $projectRoot 'installer/scripts/run-migrations.ps1') (Join-Path $toolsDir 'run-migrations.ps1') -Force
 # Copy any helper tools placed under installer/files/tools (e.g. create-desktop-shortcut.ps1)
 $extraTool = Join-Path $projectRoot 'installer/files/tools/create-desktop-shortcut.ps1'
