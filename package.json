@@ -25,7 +25,7 @@
 		"check:watch": "svelte-kit sync && node scripts/svelte-check-wrapper.mjs --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-		"prod": "rm -f data/*.sqlite3 || true && pnpm db:push && pnpm build && pnpm package:win && pnpm package:win:installer",
+		"prod": "node scripts/prod.mjs",
 		"prod:signed": "node scripts/prod-signed.mjs"
 	},
 	"devDependencies": {

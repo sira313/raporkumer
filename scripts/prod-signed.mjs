@@ -170,12 +170,35 @@ async function main() {
 			{ cwd: projectRoot }
 		);
 
-		// package installer (Inno Setup) via PowerShell -Command may be required to invoke ISCC path
-		// try using the same powershell to run the packaged command from package.json
-		const innoCmd = `& 'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe' 'installer\\raporkumer.iss'`;
-		run(powershell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', innoCmd], {
-			cwd: projectRoot
-		});
+		// package installer (Inno Setup)
+		// Prefer invoking ISCC.exe directly when present to avoid quoting/command parsing issues
+		const innoCandidates = [];
+		if (process.env['ProgramFiles(x86)']) {
+			innoCandidates.push(path.join(process.env['ProgramFiles(x86)'], 'Inno Setup 6', 'ISCC.exe'));
+		}
+		if (process.env.ProgramFiles) {
+			innoCandidates.push(path.join(process.env.ProgramFiles, 'Inno Setup 6', 'ISCC.exe'));
+		}
+		// common fallback
+		innoCandidates.push(path.join('C:\\Program Files (x86)', 'Inno Setup 6', 'ISCC.exe'));
+
+		let isccPath = null;
+		for (const p of innoCandidates) {
+			if (p && fs.existsSync(p)) {
+				isccPath = p;
+				break;
+			}
+		}
+
+		if (isccPath) {
+			run(isccPath, [path.join('installer', 'raporkumer.iss')], { cwd: projectRoot });
+		} else {
+			// fallback: try running via PowerShell -Command with explicit call operator
+			const innoCmd = `& 'C:C\\\\Program Files (x86)\\\\Inno Setup 6\\\\ISCC.exe' 'installer\\\\raporkumer.iss'`;
+			run(powershell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', innoCmd], {
+				cwd: projectRoot
+			});
+		}
 
 		// sign installer
 		run(
