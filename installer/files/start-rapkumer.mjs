@@ -58,8 +58,8 @@ function nodeBinary() {
 const NODE = nodeBinary();
 writeLog(`Using node binary: ${NODE}`);
 
-// Launch the actual server process (node build/index.js)
-const serverScript = path.join(APP_HOME, 'build', 'index.js');
+// Launch the actual server process via wrapper that loads .env first
+const serverScript = path.join(APP_HOME, 'scripts', 'start-with-dotenv.mjs');
 if (!fs.existsSync(serverScript)) {
 	writeLog(`Server entry not found: ${serverScript}`);
 	console.error('Server entry not found:', serverScript);
@@ -77,10 +77,45 @@ console.log(startingMsg);
 let serverPid = null;
 try {
 	const outFd = fs.openSync(LOG_FILE, 'a');
+
+	// Load `.env` from the app directory (if present) and pass into child env.
+	// This ensures keys like BODY_SIZE_LIMIT and DB_URL (written by the installer)
+	// are visible to the spawned Node server process.
+	function loadDotenv(dir) {
+		const p = path.join(dir, '.env');
+		const result = {};
+		try {
+			if (!fs.existsSync(p)) return result;
+			const txt = fs.readFileSync(p, { encoding: 'utf8' });
+			for (const line of txt.split(/\r?\n/)) {
+				const trimmed = line.trim();
+				if (!trimmed || trimmed.startsWith('#')) continue;
+				const idx = trimmed.indexOf('=');
+				if (idx === -1) continue;
+				let key = trimmed.substring(0, idx).trim();
+				let val = trimmed.substring(idx + 1).trim();
+				if (
+					(val.startsWith('"') && val.endsWith('"')) ||
+					(val.startsWith("'") && val.endsWith("'"))
+				) {
+					val = val.slice(1, -1);
+				}
+				result[key] = val;
+			}
+		} catch (e) {
+			writeLog('Failed to load .env: ' + (e && e.message ? e.message : e));
+		}
+		return result;
+	}
+
+	const loadedEnv = loadDotenv(APP_HOME);
+	const childEnv = { ...process.env, ...loadedEnv };
+
 	const child = spawn(NODE, [serverScript], {
 		cwd: APP_HOME,
 		detached: true,
-		stdio: ['ignore', outFd, outFd]
+		stdio: ['ignore', outFd, outFd],
+		env: childEnv
 	});
 	// Allow the child to continue running after this process exits
 	child.unref();

@@ -1,5 +1,6 @@
 import { env } from '$env/dynamic/private';
 import path from 'node:path';
+import fs from 'node:fs';
 import { createClient, type Client } from '@libsql/client';
 import { drizzle } from 'drizzle-orm/libsql/node';
 import * as schema from './schema';
@@ -7,16 +8,40 @@ import * as schema from './schema';
 const defaultDbUrl = 'file:./data/database.sqlite3';
 
 function resolveInstalledDbUrl() {
-	// Prefer explicit DB_URL
+	// Prefer explicit DB_URL from environment
 	if (env.DB_URL) return env.DB_URL;
 
-	// Try LOCALAPPDATA (typical installed location)
-	const local = env.LOCALAPPDATA || env.APPDATA?.replace(/\\Roaming/i, '\\Local');
-	if (local) {
-		const candidate = path.join(local, 'Rapkumer-data', 'database.sqlite3');
-		return `file:${candidate}`;
+	// Next, allow users to override via a `.env` file located in the process
+	// working directory (this is where the installer places a .env and where
+	// the launcher sets `cwd` to the installed app directory). This keeps the
+	// runtime default deterministic (repo-local) but gives an easy opt-out.
+	try {
+		const cwd = path.resolve(process.cwd());
+		const dotenvPath = path.join(cwd, '.env');
+		if (fs.existsSync(dotenvPath)) {
+			const content = fs.readFileSync(dotenvPath, { encoding: 'utf8' });
+			const m = content.match(/^\s*DB_URL\s*=\s*(.+)\s*$/m);
+			if (m && m[1]) {
+				let val = m[1].trim();
+				// strip surrounding quotes if present
+				if (
+					(val.startsWith('"') && val.endsWith('"')) ||
+					(val.startsWith("'") && val.endsWith("'"))
+				) {
+					val = val.slice(1, -1);
+				}
+				return val;
+			}
+		}
+	} catch (e) {
+		const errMsg =
+			typeof e === 'object' && e !== null && 'message' in e
+				? String((e as { message?: unknown }).message)
+				: String(e);
+		console.warn('[db] failed to read .env for DB_URL override:', errMsg);
 	}
 
+	// Always fall back to the repo-local bundled DB by default
 	return defaultDbUrl;
 }
 const clientKey = '__rapkumerLibsqlClient';

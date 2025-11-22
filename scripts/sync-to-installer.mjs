@@ -10,7 +10,8 @@ const filesToSync = [
 	'grant-admin-permissions.mjs',
 	'migrate-installed-db.mjs',
 	'notify-server-reload.mjs',
-	'seed-default-admin.mjs'
+	'seed-default-admin.mjs',
+	'start-with-dotenv.mjs'
 ];
 
 function repoRoot() {

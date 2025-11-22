@@ -34,6 +34,7 @@ SetupIconFile={#StagePath}\rapkumer.ico
 Source:"{#StagePath}\\*"; DestDir:"{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Ensure the JS launcher and installer helper scripts are explicitly included
 Source:"{#StagePath}\\start-rapkumer.mjs"; DestDir:"{app}"; Flags: ignoreversion
+Source:"{#StagePath}\\scripts\\start-with-dotenv.mjs"; DestDir:"{app}\\scripts"; Flags: ignoreversion
 Source:"{#StagePath}\\tools\\create-desktop-shortcut.ps1"; DestDir:"{app}\\tools"; Flags: ignoreversion
 
 [Run]
@@ -44,3 +45,53 @@ Filename:"{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters:"-Executio
 [Icons]
 ; Start Menu and Desktop shortcuts are created post-install by create-desktop-shortcut.ps1
 ; (This ensures the bundled Node runtime exists before creating shortcuts.)
+
+[Code]
+procedure CreateDotEnv();
+var
+	EnvPath, DBPath, S: String;
+	Lines: TStringList;
+begin
+	EnvPath := ExpandConstant('{app}\.env');
+	DBPath := 'file:' + ExpandConstant('{localappdata}\Rapkumer-data\database.sqlite3');
+
+	{ If file does not exist, create a new .env with quoted DB_URL and BODY_SIZE_LIMIT }
+	if not FileExists(EnvPath) then
+	begin
+		S := 'DB_URL="' + DBPath + '"' + #13#10 + 'BODY_SIZE_LIMIT=5M' + #13#10;
+		if not SaveStringToFile(EnvPath, S, False) then
+			MsgBox('Gagal membuat file .env di ' + EnvPath, mbError, MB_OK);
+		exit;
+	end;
+
+	{ File exists: load and ensure required keys are present (append if missing).
+	  We keep this simple: if a key is missing we append a correct version.
+	  This avoids overwriting user customizations while ensuring required vars exist. }
+	Lines := TStringList.Create;
+	try
+		Lines.LoadFromFile(EnvPath);
+		S := Lines.Text;
+	finally
+		Lines.Free;
+	end;
+
+	{ Ensure DB_URL exists and is quoted. If there is no DB_URL at all, append one.
+	  If DB_URL exists but is not quoted, append a quoted DB_URL (user can remove the unquoted one). }
+	if Pos('DB_URL=', S) = 0 then
+		S := S + 'DB_URL="' + DBPath + '"' + #13#10
+	else if Pos('DB_URL="', S) = 0 then
+		S := S + 'DB_URL="' + DBPath + '"' + #13#10;
+
+	{ Ensure BODY_SIZE_LIMIT exists }
+	if Pos('BODY_SIZE_LIMIT=', S) = 0 then
+		S := S + 'BODY_SIZE_LIMIT=5M' + #13#10;
+
+	if not SaveStringToFile(EnvPath, S, False) then
+		MsgBox('Gagal memperbarui file .env di ' + EnvPath, mbError, MB_OK);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+	if CurStep = ssPostInstall then
+		CreateDotEnv();
+end;

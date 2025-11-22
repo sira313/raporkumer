@@ -150,6 +150,19 @@ foreach ($s in $requiredScripts) {
     }
 }
 
+# Also copy any helper scripts prepared in installer/scripts into the staged app's scripts/ directory.
+# This ensures small helpers like start-with-dotenv.mjs are available in the staged package.
+$installerScriptsDir = Join-Path $projectRoot 'installer\scripts'
+if (Test-Path $installerScriptsDir) {
+    if (-not (Test-Path $scriptsDir)) { New-Item -ItemType Directory -Path $scriptsDir -Force | Out-Null }
+    Write-Host "Copying installer-provided helper scripts from $installerScriptsDir to staged app scripts/"
+    try {
+        Copy-Item (Join-Path $installerScriptsDir '*') -Destination $scriptsDir -Recurse -Force
+    } catch {
+        Write-Warning "Failed to copy installer scripts: $_"
+    }
+}
+
 # Copy drizzle config, migrations and schema so drizzle-kit can run on the installed app
 $drizzleConfig = Join-Path $projectRoot 'drizzle.config.js'
 if (Test-Path $drizzleConfig) { Copy-Item $drizzleConfig (Join-Path $appStage 'drizzle.config.js') -Force }

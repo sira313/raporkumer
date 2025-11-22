@@ -1,5 +1,7 @@
 import { applySessionCookie, ensureDefaultAdmin, resolveSession } from '$lib/server/auth';
 import db from '$lib/server/db';
+import fs from 'node:fs';
+import path from 'node:path';
 import { tableSekolah } from '$lib/server/db/schema';
 import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
 import { cookieNames } from '$lib/utils';
@@ -10,6 +12,35 @@ import {
 	readCombinedOriginsFromEnvAndFile,
 	normalizeOrigin as normalizeFileOrigin
 } from '$lib/server/csrf-origins';
+
+// Load .env from process.cwd() at server startup so runtime respects installer /
+// developer overrides (DB_URL, BODY_SIZE_LIMIT, etc.). We intentionally only set
+// variables that are not already present in process.env so explicit env wins.
+try {
+	const dot = path.join(process.cwd(), '.env');
+	if (fs.existsSync(dot)) {
+		const contents = fs.readFileSync(dot, { encoding: 'utf8' });
+		for (const line of contents.split(/\r?\n/)) {
+			const trimmed = line.trim();
+			if (!trimmed || trimmed.startsWith('#')) continue;
+			const idx = trimmed.indexOf('=');
+			if (idx === -1) continue;
+			const key = trimmed.slice(0, idx).trim();
+			let val = trimmed.slice(idx + 1).trim();
+			if (
+				(val.startsWith('"') && val.endsWith('"')) ||
+				(val.startsWith("'") && val.endsWith("'"))
+			) {
+				val = val.slice(1, -1);
+			}
+			if (!(key in process.env)) {
+				process.env[key] = val;
+			}
+		}
+	}
+} catch {
+	// ignore failures — we will gracefully fall back to existing process.env
+}
 
 // Log combined trusted origins at startup to aid debugging in packaged prod builds.
 (async () => {
