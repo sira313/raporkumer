@@ -90,6 +90,13 @@ export const tableSekolah = sqliteTable('sekolah', {
 		.references(() => tablePegawai.id)
 		.notNull(),
 	lokasiTandaTangan: text(),
+	// Default weight distribution for sumatif: lingkup 60%, STS 20%, SAS 20%
+	sumatifBobotLingkup: int().default(60).notNull(),
+	sumatifBobotSts: int().default(20).notNull(),
+	sumatifBobotSas: int().default(20).notNull(),
+	// Rapor: kriteria intrakurikuler (batas atas untuk kategori Cukup / Baik)
+	raporKriteriaCukup: int().default(85).notNull(),
+	raporKriteriaBaik: int().default(95).notNull(),
 	...audit
 });
 
@@ -366,6 +373,8 @@ export const tableMataPelajaran = sqliteTable('mata_pelajaran', {
 		.references(() => tableKelas.id)
 		.notNull(),
 	nama: text().notNull(),
+	// optional short code for subjects (e.g. PAPB for Pendidikan Agama dan Budi Pekerti)
+	kode: text(),
 	kkm: int().notNull().default(0),
 	jenis: text({ enum: ['wajib', 'pilihan', 'mulok'] }).notNull(),
 	...audit
@@ -393,6 +402,9 @@ export const tableAsesmenSumatif = sqliteTable(
 			.references(() => tableMataPelajaran.id, { onDelete: 'cascade' })
 			.notNull(),
 		naLingkup: real(),
+		stsTes: real(),
+		stsNonTes: real(),
+		sts: real(),
 		sasTes: real(),
 		sasNonTes: real(),
 		sas: real(),

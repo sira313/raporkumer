@@ -46,6 +46,7 @@
 			<thead class="bg-base-300">
 				<tr class="text-sm font-semibold">
 					<th class="pl-2">Mata Pelajaran</th>
+					<th>Kode</th>
 					<th>Jenis</th>
 					<th>KKM</th>
 					<th>Lingkup Materi</th>
@@ -56,6 +57,7 @@
 				<!-- Mapel 1 with two tujuan rows -->
 				<tr>
 					<td class="pl-2 font-medium">Mapel 1</td>
+					<td class="font-mono">MP001</td>
 					<td>wajib</td>
 					<td>70</td>
 					<td>Lingkup A</td>
@@ -66,18 +68,21 @@
 					<td></td>
 					<td></td>
 					<td></td>
+					<td></td>
 					<td>Tujuan B</td>
 				</tr>
 
 				<!-- Mapel 2 with two tujuan rows -->
 				<tr>
 					<td class="pl-2 font-medium">Mapel 2</td>
+					<td class="font-mono">MP002</td>
 					<td>pilihan</td>
 					<td>70</td>
 					<td>Lingkup 1</td>
 					<td>Tujuan 1</td>
 				</tr>
 				<tr>
+					<td></td>
 					<td></td>
 					<td></td>
 					<td></td>
@@ -115,7 +120,8 @@
 				/>
 				<label class="label" for={fileInputId}>
 					<span class="label-text-alt text-base-content/60 text-xs text-wrap"
-						>Maksimal 2MB. Pastikan kolom Nama, Jenis (wajib/pilihan/mulok), dan KKM tersedia.</span
+						>Maksimal 2MB. Pastikan kolom Nama, Kode (opsional), Jenis (wajib/pilihan/mulok), dan
+						KKM tersedia.</span
 					>
 					{#if fileName}
 						<span class="label-text-alt text-base-content/60 text-xs"

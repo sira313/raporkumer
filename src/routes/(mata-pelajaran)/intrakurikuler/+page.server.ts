@@ -165,7 +165,8 @@ export const actions = {
 			return fail(400, { fail: 'File Excel tidak berisi data.' });
 		}
 
-		// Expect header row containing: Mata Pelajaran, Lingkup Materi, Tujuan Pembelajaran
+		// Identify header columns by name (robust against different column orders)
+		// find header row index first (row that contains Mata Pelajaran, Lingkup, Tujuan)
 		const headerIndex = rawRows.findIndex((row) => {
 			const cols = (row ?? []).map((c) => normalizeCell(c).toLowerCase());
 			return (
@@ -175,46 +176,74 @@ export const actions = {
 			);
 		});
 
-		if (headerIndex === -1) {
+		const headerRow = rawRows[headerIndex] ?? [];
+		const normalizedHeaderCols = (headerRow ?? []).map((c) => normalizeCell(c).toLowerCase());
+
+		const findColIndex = (names: string[]) =>
+			normalizedHeaderCols.findIndex((h) => names.some((n) => h.includes(n)));
+
+		const idxMapel = findColIndex(['mata pelajaran', 'mapel']);
+		const idxKode = findColIndex(['kode']);
+		const idxJenis = findColIndex(['jenis']);
+		const idxKkm = findColIndex(['kkm']);
+		const idxLingkup = findColIndex(['lingkup']);
+		const idxTujuan = findColIndex(['tujuan']);
+
+		if (idxMapel === -1 || idxLingkup === -1 || idxTujuan === -1) {
 			return fail(400, {
 				fail: 'Template tidak valid. Pastikan kolom Mata Pelajaran, Lingkup Materi, dan Tujuan Pembelajaran tersedia.'
 			});
 		}
 
+		// Debug: print detected headers to server log to troubleshoot kode not being read
+		try {
+			console.debug('[import_mapel] detected headers:', normalizedHeaderCols);
+		} catch {
+			/* ignore logging errors */
+		}
+
 		const dataRows = rawRows.slice(headerIndex + 1).filter(Boolean);
 		if (!dataRows.length) return fail(400, { fail: 'Tidak ada data pada file.' });
 
-		// Parse rows into mapel -> meta (jenis, kkm) -> groups of lingkup -> tujuan
 		type ParsedEntry = { lingkup: string; deskripsi: string };
-		type ParsedMapel = { jenis?: string; kkm?: number | null; entries: ParsedEntry[] };
+		type ParsedMapel = {
+			kode?: string;
+			jenis?: string;
+			kkm?: number | null;
+			entries: ParsedEntry[];
+		};
 
 		const parsed = new Map<string, ParsedMapel>();
 		let currentMapel = '';
+		let currentKode = '';
 		let currentJenis = '';
 		let currentKkmRaw = '';
 		let currentLingkup = '';
 
 		for (const row of dataRows as (string | number | null | undefined)[][]) {
-			const col0 = normalizeCell(row?.[0] ?? ''); // Mata Pelajaran
-			const col1 = normalizeCell(row?.[1] ?? ''); // Jenis
-			const col2 = normalizeCell(row?.[2] ?? ''); // KKM
-			const col3 = normalizeCell(row?.[3] ?? ''); // Lingkup Materi
-			const col4 = normalizeCell(row?.[4] ?? ''); // Tujuan Pembelajaran
+			const get = (i: number) => normalizeCell(row?.[i] ?? '');
 
-			if (col0) {
-				currentMapel = col0;
+			const colMapel = get(idxMapel);
+			const colKode = idxKode >= 0 ? get(idxKode) : '';
+			const colJenis = idxJenis >= 0 ? get(idxJenis) : '';
+			const colKkm = idxKkm >= 0 ? get(idxKkm) : '';
+			const colLingkup = get(idxLingkup);
+			const colTujuan = get(idxTujuan);
+
+			if (colMapel) {
+				currentMapel = colMapel;
+				currentKode = '';
 				currentJenis = '';
 				currentKkmRaw = '';
 				currentLingkup = '';
 			}
-			if (!currentMapel) {
-				// skip rows before first mapel name
-				continue;
-			}
-			if (col1) currentJenis = col1;
-			if (col2) currentKkmRaw = col2;
-			if (col3) currentLingkup = col3;
-			if (!col4) continue; // no tujuan
+			if (!currentMapel) continue; // skip until first mapel
+
+			if (colKode) currentKode = colKode;
+			if (colJenis) currentJenis = colJenis;
+			if (colKkm) currentKkmRaw = colKkm;
+			if (colLingkup) currentLingkup = colLingkup;
+			if (!colTujuan) continue; // no tujuan
 
 			const key = currentMapel;
 			let entry = parsed.get(key);
@@ -224,10 +253,15 @@ export const actions = {
 						? Number(currentKkmRaw)
 						: null
 					: undefined;
-				entry = { jenis: currentJenis || undefined, kkm: parsedKkm ?? undefined, entries: [] };
+				entry = {
+					kode: currentKode || undefined,
+					jenis: currentJenis || undefined,
+					kkm: parsedKkm ?? undefined,
+					entries: []
+				};
 				parsed.set(key, entry);
 			} else {
-				// update meta if new values provided in subsequent rows
+				if (currentKode) entry.kode = currentKode;
 				if (currentJenis) entry.jenis = currentJenis;
 				if (currentKkmRaw) {
 					const parsedKkm = Number.isFinite(Number(currentKkmRaw)) ? Number(currentKkmRaw) : null;
@@ -235,7 +269,7 @@ export const actions = {
 				}
 			}
 
-			entry.entries.push({ lingkup: currentLingkup, deskripsi: col4 });
+			entry.entries.push({ lingkup: currentLingkup, deskripsi: colTujuan });
 		}
 
 		if (parsed.size === 0)
@@ -266,8 +300,17 @@ export const actions = {
 						nama: mapelName,
 						jenis: (meta.jenis as 'wajib' | 'pilihan' | 'mulok') ?? 'wajib',
 						kkm: typeof meta.kkm === 'number' ? meta.kkm : 0,
-						kelasId
+						kelasId,
+						kode:
+							meta.kode ??
+							((mapelName || '').toLowerCase().startsWith('pendidikan agama') ? 'PAPB' : null)
 					};
+					// debug: show what will be inserted (help verify kode presence)
+					try {
+						console.debug('[import_mapel] insertValues for', mapelName, insertValues);
+					} catch (err) {
+						console.warn('[import_mapel] debug log failed', err);
+					}
 					const insertRes = await tx
 						.insert(tableMataPelajaran)
 						.values(insertValues)
@@ -282,7 +325,14 @@ export const actions = {
 					const updates: Record<string, unknown> = {};
 					if (meta.jenis && meta.jenis !== undefined) updates.jenis = meta.jenis;
 					if (typeof meta.kkm === 'number') updates.kkm = meta.kkm;
+					if (meta.kode && meta.kode !== undefined) updates.kode = meta.kode;
 					if (Object.keys(updates).length > 0) {
+						// debug: show updates for existing mapel id
+						try {
+							console.debug('[import_mapel] updating mapel id', mapelId, 'updates:', updates);
+						} catch (err) {
+							console.warn('[import_mapel] debug log failed', err);
+						}
 						await tx
 							.update(tableMataPelajaran)
 							.set(updates)
@@ -358,11 +408,24 @@ export const actions = {
 			orderBy: [asc(tableTujuanPembelajaran.mataPelajaranId), asc(tableTujuanPembelajaran.id)]
 		});
 
-		// Build workbook with one sheet grouped by Mata Pelajaran -> Lingkup -> Tujuan
-		const header = ['Mata Pelajaran', 'Lingkup Materi', 'Tujuan Pembelajaran'];
+		// Build workbook with one sheet grouped by Mata Pelajaran -> Kode -> Jenis -> KKM -> Lingkup -> Tujuan
+		const header = [
+			'Mata Pelajaran',
+			'Kode',
+			'Jenis',
+			'KKM',
+			'Lingkup Materi',
+			'Tujuan Pembelajaran'
+		];
 
 		// group tujuan by mapel and lingkup preserving order
-		const mapelOrder = mapelRows.map((m) => ({ id: m.id, nama: m.nama }));
+		const mapelOrder = mapelRows.map((m) => ({
+			id: m.id,
+			nama: m.nama,
+			kode: m.kode ?? '',
+			jenis: m.jenis ?? '',
+			kkm: typeof m.kkm === 'number' ? String(m.kkm) : ''
+		}));
 		const tpByMapel = new Map<number, Array<{ lingkup: string; deskripsi: string }>>();
 		for (const tp of tpRows) {
 			const list = tpByMapel.get(tp.mataPelajaranId) ?? [];
@@ -374,23 +437,33 @@ export const actions = {
 		for (const m of mapelOrder) {
 			const entries = tpByMapel.get(m.id) ?? [];
 			if (entries.length === 0) {
-				rows.push([m.nama, '', '']);
+				rows.push([m.nama, m.kode || '', m.jenis || '', m.kkm || '', '', '']);
 				continue;
 			}
-			// First entry includes mapel name
+			// First entry includes mapel name + meta
 			let first = true;
 			let lastLingkup = '';
 			for (const e of entries) {
 				if (first) {
-					rows.push([m.nama, e.lingkup || '', e.deskripsi || '']);
+					rows.push([
+						m.nama,
+						m.kode || '',
+						m.jenis || '',
+						m.kkm || '',
+						e.lingkup || '',
+						e.deskripsi || ''
+					]);
 					first = false;
 					lastLingkup = e.lingkup || '';
 					continue;
 				}
-				// If the lingkup is same as last and empty mapel row desired
+				// Subsequent rows: blank mapel/meta cells, include lingkup only if different
 				const mapelCell = '';
+				const kodeCell = '';
+				const jenisCell = '';
+				const kkmCell = '';
 				const lingkupCell = e.lingkup && e.lingkup !== lastLingkup ? e.lingkup : '';
-				rows.push([mapelCell, lingkupCell, e.deskripsi || '']);
+				rows.push([mapelCell, kodeCell, jenisCell, kkmCell, lingkupCell, e.deskripsi || '']);
 				lastLingkup = e.lingkup || lastLingkup;
 			}
 		}

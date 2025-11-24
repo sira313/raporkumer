@@ -30,6 +30,7 @@ export const actions = {
 			nama?: string;
 			jenis?: string;
 			kkm?: string;
+			kode?: string;
 		}>(await request.formData());
 
 		const sekolahId = locals.sekolah?.id;
@@ -47,6 +48,7 @@ export const actions = {
 		}
 
 		const kkmValue = formMapel.kkm ? Number(formMapel.kkm) : Number.NaN;
+		const kode = formMapel.kode?.toString().trim() ?? '';
 		if (Number.isNaN(kkmValue)) {
 			return fail(400, { fail: 'KKM tidak valid.' });
 		}
@@ -56,9 +58,10 @@ export const actions = {
 		const kkm = Math.max(0, Math.round(kkmValue));
 
 		if (isAgamaGroup) {
+			// enforce PAPB code for agama group and update KKM and kode across all variants
 			await db
 				.update(tableMataPelajaran)
-				.set({ kkm, updatedAt: now })
+				.set({ kkm, kode: 'PAPB', updatedAt: now })
 				.where(
 					and(
 						eq(tableMataPelajaran.kelasId, existing.kelasId),
@@ -79,10 +82,11 @@ export const actions = {
 			return fail(400, { fail: 'Jenis mata pelajaran tidak valid.' });
 		}
 
-		await db
-			.update(tableMataPelajaran)
-			.set({ nama, jenis: jenisRaw, kkm, updatedAt: now })
-			.where(eq(tableMataPelajaran.id, id));
+		// For non-agama subjects update kode if provided
+		const updates: Record<string, unknown> = { nama, jenis: jenisRaw, kkm, updatedAt: now };
+		if (kode) updates.kode = kode;
+
+		await db.update(tableMataPelajaran).set(updates).where(eq(tableMataPelajaran.id, id));
 
 		return { message: `Data mata pelajaran berhasil diperbarui` };
 	}

@@ -33,8 +33,14 @@
 			const ws: any = workbook.addWorksheet('Leger');
 
 			// Build headers from server-provided headers (which collapse agama variants)
-			const headers: Array<{ id: string | number; nama: string }> = Array.isArray(meta.headers)
-				? meta.headers.map((h: any) => ({ id: h.id, nama: String(h.nama || '') }))
+			const headers: Array<{ id: string | number; nama: string; kode?: string }> = Array.isArray(
+				meta.headers
+			)
+				? meta.headers.map((h: any) => ({
+						id: h.id,
+						nama: String(h.nama || ''),
+						kode: String(h.kode || '')
+					}))
 				: [];
 			// kokurikuler metadata (optional)
 			const kokRows: Array<{ id: number; nama: string; dimensi?: string }> = Array.isArray(
@@ -48,9 +54,9 @@
 				: [];
 			// Fallback to raw mapel names if headers missing
 			const subjectCols: string[] = headers.length
-				? headers.map((h) => h.nama)
+				? headers.map((h) => (h.kode && String(h.kode).trim() ? String(h.kode).trim() : h.nama))
 				: Array.isArray(meta.mapel) && meta.mapel.length
-					? meta.mapel.map((m: any) => String(m.nama || '').trim()).filter(Boolean)
+					? meta.mapel.map((m: any) => String(m.kode || m.nama || '').trim()).filter(Boolean)
 					: [
 							'Pendidikan Agama',
 							'Pancasila',

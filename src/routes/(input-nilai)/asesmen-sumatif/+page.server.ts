@@ -48,6 +48,7 @@ type MuridRow = {
 	nama: string;
 	nilaiAkhir: number | null;
 	naLingkup: number | null;
+	sts: number | null;
 	sas: number | null;
 	nilaiHref: string | null;
 	canNilai: boolean;
@@ -328,6 +329,7 @@ export async function load({ parent, url, depends }) {
 		nama: murid.nama,
 		nilaiAkhir: null,
 		naLingkup: null,
+		sts: null,
 		sas: null,
 		nilaiHref: null,
 		canNilai: true
@@ -365,6 +367,7 @@ export async function load({ parent, url, depends }) {
 						muridId: true,
 						mataPelajaranId: true,
 						naLingkup: true,
+						sts: true,
 						sas: true,
 						nilaiAkhir: true
 					},
@@ -422,6 +425,7 @@ export async function load({ parent, url, depends }) {
 			nama: murid.nama,
 			nilaiAkhir: formatScore(sumatif?.nilaiAkhir),
 			naLingkup: formatScore(sumatif?.naLingkup),
+			sts: formatScore(sumatif?.sts),
 			sas: formatScore(sumatif?.sas),
 			nilaiHref:
 				targetMapelId && canAccess

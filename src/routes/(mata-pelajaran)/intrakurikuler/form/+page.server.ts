@@ -3,6 +3,7 @@ import { tableKelas, tableMataPelajaran } from '$lib/server/db/schema';
 import { cookieNames, unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
+import { agamaMapelNames } from '$lib/statics';
 
 export async function load({ parent }) {
 	const { kelasAktif } = await parent();
@@ -15,6 +16,7 @@ export const actions = {
 			nama?: string;
 			jenis?: string;
 			kkm?: string;
+			kode?: string;
 		}>(await request.formData());
 
 		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID);
@@ -43,6 +45,7 @@ export const actions = {
 		const nama = formMapel.nama?.trim();
 		const jenis = formMapel.jenis?.toLowerCase() as MataPelajaran['jenis'] | undefined;
 		const kkmValue = formMapel.kkm ? Number(formMapel.kkm) : Number.NaN;
+		let kode = formMapel.kode?.toString().trim() ?? '';
 
 		if (!nama || !jenis || Number.isNaN(kkmValue)) {
 			return fail(400, { fail: 'Harap lengkapi data mata pelajaran.' });
@@ -54,11 +57,18 @@ export const actions = {
 
 		const kkm = Math.max(0, Math.round(kkmValue));
 
+		// If this is a Pendidikan Agama and Budi Pekerti (parent or variant), enforce code PAPB
+		const AGAMA_SET = new Set<string>(agamaMapelNames);
+		if (AGAMA_SET.has(nama)) {
+			kode = 'PAPB';
+		}
+
 		await db.insert(tableMataPelajaran).values({
 			nama,
 			jenis,
 			kkm,
-			kelasId
+			kelasId,
+			kode: kode || null
 		});
 		return { message: `Data mata pelajaran berhasil ditambah` };
 	}

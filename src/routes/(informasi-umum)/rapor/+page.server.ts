@@ -8,7 +8,8 @@ import {
 	tableSekolah,
 	tableSemester,
 	tableTahunAjaran,
-	tableWaliMurid
+	tableWaliMurid,
+	tableAuthUser
 } from '$lib/server/db/schema';
 import { cookieNames, unflattenFormData } from '$lib/utils';
 import { readBufferToAoA } from '$lib/utils/excel.js';
@@ -725,6 +726,19 @@ export const actions: Actions = {
 			secure
 		});
 		locals.sekolahDirty = true;
+
+		// Persist the selected sekolah on the user's account so admin users
+		// will retain their last-active sekolah across server restarts.
+		try {
+			if (locals.user && (locals.user as { id?: number; type?: string }).type === 'admin') {
+				await db
+					.update(tableAuthUser)
+					.set({ sekolahId: sekolah.id })
+					.where(eq(tableAuthUser.id, Number((locals.user as { id?: number }).id)));
+			}
+		} catch (err) {
+			console.warn('[rapor.switch] failed to persist sekolahId to user record', err);
+		}
 
 		const context = await resolveSekolahAcademicContext(sekolah.id);
 

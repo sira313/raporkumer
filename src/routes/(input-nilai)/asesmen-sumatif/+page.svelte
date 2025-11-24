@@ -1,12 +1,20 @@
 <script lang="ts">
-	/* eslint-disable svelte/no-navigation-without-resolve -- file-level: many intentional href/goto usages in template */
+	/* eslint-disable svelte/no-navigation-without-resolve, @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any -- file-level: many intentional href/goto usages and loose any/unused vars */
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
 	import { autoSubmit, searchQueryMarker } from '$lib/utils';
 	import { onDestroy } from 'svelte';
+	import { toast } from '$lib/components/toast.svelte';
+	import { invalidate } from '$app/navigation';
 
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
+	import SumatifBobotModal from '$lib/components/sumatif-bobot-modal.svelte';
+	import { downloadTemplateXLSX } from '$lib/excel/template';
+	import { showModal } from '$lib/components/global-modal.svelte';
+	import AgamaSelectBody from '$lib/components/asesmen-sumatif/AgamaSelectBody.svelte';
+	import { agamaVariantOptions, agamaParentName } from '$lib/statics';
+	import ImportModalBody from '$lib/components/asesmen-sumatif/ImportModalBody.svelte';
 
 	type MapelOption = { value: string; nama: string };
 	type MuridRow = {
@@ -15,6 +23,7 @@
 		nama: string;
 		nilaiAkhir: number | null;
 		naLingkup: number | null;
+		sts: number | null;
 		sas: number | null;
 		nilaiHref: string | null;
 		canNilai: boolean;
@@ -42,6 +51,332 @@
 	let selectedMapelValue = $state(data.selectedMapelValue ?? '');
 	let searchTerm = $state(data.page.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+	// Modal / bobot sumatif state
+	let showBobotModal = $state(false);
+	let bobotLingkup = $state<number>(60);
+	let bobotSts = $state<number>(20);
+	let bobotSas = $state<number>(20);
+	let bobotLoading = $state(false);
+	let bobotSaving = $state(false);
+	let bobotError = $state<string | null>(null);
+
+	async function resetBobotToDefault() {
+		bobotSaving = true;
+		bobotError = null;
+		try {
+			const res = await fetch('/api/sekolah/sumatif-bobot', {
+				method: 'PUT',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ lingkup: 60, sts: 20, sas: 20 })
+			});
+			const payload = await res.json();
+			if (!res.ok) {
+				throw new Error(payload?.error ?? 'Gagal mengembalikan ke default.');
+			}
+			toast(payload?.message ?? 'Bobot dikembalikan ke default.', 'success');
+			// update local state
+			bobotLingkup = 60;
+			bobotSts = 20;
+			bobotSas = 20;
+			bobotError = null;
+			showBobotModal = false;
+			await invalidate('app:asesmen-sumatif');
+			await invalidate('app:asesmen-sumatif/formulir');
+		} catch (err) {
+			bobotError = String((err as Error)?.message ?? 'Gagal mengembalikan ke default.');
+			toast(bobotError, 'error');
+		} finally {
+			bobotSaving = false;
+		}
+	}
+
+	// Download template as Excel (.xlsx) — delegated to modular helper in $lib
+	async function downloadTemplate() {
+		try {
+			// Determine which mata pelajaran to use
+			const mapelIdStr =
+				selectedMapelValue ?? data.selectedMapel?.id ?? data.mapelList?.[0]?.value ?? '';
+			const mapelId = Number(mapelIdStr);
+			let lingkupGroups: { name: string; tpCount: number }[] | undefined = undefined;
+			if (Number.isInteger(mapelId) && mapelId > 0) {
+				try {
+					const res = await fetch(`/api/tujuan-count/${mapelId}`);
+					if (res.ok) {
+						const json = await res.json();
+						if (json?.groups && Array.isArray(json.groups)) {
+							lingkupGroups = json.groups.map((g: { name: string; count: number }) => ({
+								name: String(g.name ?? ''),
+								tpCount: Number(g.count || 0)
+							}));
+						}
+					}
+				} catch (_) {
+					// ignore and use defaults
+				}
+			}
+
+			const currentMapelName =
+				data.selectedMapel?.nama ?? data.mapelList?.[0]?.nama ?? 'Nama Mata Pelajaran';
+			// If the current mapel is the generic agama mapel, prompt to choose specific agama
+			if (currentMapelName === agamaParentName) {
+				let getter: () => string = () => agamaVariantOptions[0].key;
+				showModal({
+					title: 'Pilih Agama untuk Template',
+					body: AgamaSelectBody,
+					bodyProps: {
+						setGetter: (fn: () => string) => (getter = fn),
+						options: agamaVariantOptions
+					},
+					onPositive: {
+						label: 'Download',
+						icon: 'download',
+						action: async ({ close }: { close: () => void }) => {
+							const chosenKey = getter();
+							const chosen =
+								agamaVariantOptions.find((o) => o.key === chosenKey) ?? agamaVariantOptions[0];
+							close();
+							try {
+								// Try to resolve a local mapel id for the chosen agama variant so
+								// we can fetch accurate lingkup/TP counts from the DB and include
+								// the resolved mapel id in the downloaded filename.
+								let finalLingkupGroups = lingkupGroups;
+								let resolvedMapelId: number | null = null;
+								const kelasId = (data as any).kelasAktif?.id ?? null;
+								if (kelasId && chosen && chosen.name) {
+									try {
+										const q = new URLSearchParams({ kelas_id: String(kelasId), name: chosen.name });
+										const resResolve = await fetch(`/api/mapel/resolve-by-name?${q.toString()}`);
+										if (resResolve.ok) {
+											const body = await resResolve.json().catch(() => ({}) as any);
+											const resolvedId = Number(body?.mapelId ?? NaN);
+											if (Number.isInteger(resolvedId) && resolvedId > 0) {
+												resolvedMapelId = resolvedId;
+												try {
+													const resGroups = await fetch(`/api/tujuan-count/${resolvedId}`);
+													if (resGroups.ok) {
+														const json = await resGroups.json().catch(() => ({}) as any);
+														if (json?.groups && Array.isArray(json.groups)) {
+															finalLingkupGroups = json.groups.map(
+																(g: { name: string; count: number }) => ({
+																	name: String(g.name ?? ''),
+																	tpCount: Number(g.count || 0)
+																})
+															);
+														}
+													}
+												} catch (_) {
+													// ignore and fall back to defaults
+												}
+											}
+										}
+									} catch (_) {
+										// ignore resolve errors
+									}
+								}
+								await downloadTemplateXLSX({
+									mapelName: chosen.name,
+									kelasName: data.kelasAktif?.nama ?? 'Nama Kelas',
+									daftarMurid: data.daftarMurid,
+									lingkupGroups: finalLingkupGroups,
+									mapelId: resolvedMapelId,
+									kelasId: kelasId
+								});
+							} catch (err) {
+								toast('Gagal membuat template: ' + String((err as Error)?.message ?? err), 'error');
+							}
+						}
+					},
+					onNegative: { label: 'Batal', icon: 'close' },
+					dismissible: true
+				});
+				return;
+			}
+
+			await downloadTemplateXLSX({
+				mapelName: currentMapelName,
+				kelasName: data.kelasAktif?.nama ?? 'Nama Kelas',
+				daftarMurid: data.daftarMurid,
+				lingkupGroups,
+				mapelId: Number.isInteger(mapelId) && mapelId > 0 ? mapelId : null,
+				kelasId: (data as any).kelasAktif?.id ?? null
+			});
+		} catch (err) {
+			toast('Gagal membuat template: ' + String((err as Error)?.message ?? err), 'error');
+		}
+	}
+
+	async function openImportModal() {
+		const currentMapelName =
+			data.selectedMapel?.nama ?? data.mapelList?.[0]?.nama ?? 'Nama Mata Pelajaran';
+
+		// If the selected mata pelajaran is the generic agama parent, open the
+		// file-import modal and let that modal show the agama select (so we
+		// don't use a separate "Pilih Agama untuk Import" modal).
+		if (currentMapelName === agamaParentName) {
+			openFileImportModal(null, { showAgamaSelect: true, agamaOptions: agamaVariantOptions });
+			return;
+		}
+
+		// not agama parent — resolve a numeric id when possible
+		const mapelIdStr =
+			selectedMapelValue ?? data.selectedMapel?.id ?? data.mapelList?.[0]?.value ?? '';
+		const mapelId = Number(mapelIdStr);
+		openFileImportModal(Number.isInteger(mapelId) && mapelId > 0 ? mapelId : null);
+	}
+
+	function openFileImportModal(
+		resolvedMapelId: number | null,
+		opts?: {
+			showAgamaSelect?: boolean;
+			agamaOptions?: { key: string; label: string; name: string }[];
+		}
+	) {
+		let uploader: () => File | null = () => null;
+		let agamaGetter: () => string = () => agamaVariantOptions[0].key;
+
+		showModal({
+			title: 'Import Nilai dari Excel',
+			body: ImportModalBody,
+			bodyProps: {
+				setUploader: (fn: () => File | null) => (uploader = fn),
+				// if requested, let the modal expose a getter for chosen agama key
+				...(opts?.showAgamaSelect
+					? {
+							showAgamaSelect: true,
+							agamaOptions: opts?.agamaOptions,
+							setAgamaGetter: (fn: () => string) => (agamaGetter = fn)
+						}
+					: {})
+			},
+			onPositive: {
+				label: 'Import',
+				icon: 'import',
+				action: async ({ close }: { close: () => void }) => {
+					const file = uploader();
+					if (!file) {
+						toast('Pilih file terlebih dahulu.', 'error');
+						return;
+					}
+					try {
+						const form = new FormData();
+						form.append('file', file);
+
+						let finalMapelId: number | null = resolvedMapelId;
+
+						// if modal had agama selector, resolve chosen agama to a mapel id
+						if (opts?.showAgamaSelect) {
+							const chosenKey = agamaGetter();
+							const chosen =
+								(opts?.agamaOptions ?? agamaVariantOptions).find((o) => o.key === chosenKey) ??
+								(opts?.agamaOptions ?? agamaVariantOptions)[0];
+							const kelasId = (data as any).kelasAktif?.id;
+							if (kelasId && chosen && chosen.name) {
+								try {
+									const q = new URLSearchParams({ kelas_id: String(kelasId), name: chosen.name });
+									const resResolve = await fetch(`/api/mapel/resolve-by-name?${q.toString()}`);
+									if (resResolve.ok) {
+										const body = await resResolve.json().catch(() => ({}) as any);
+										const resolvedId = Number(body?.mapelId ?? NaN);
+										if (Number.isInteger(resolvedId) && resolvedId > 0) {
+											finalMapelId = resolvedId;
+										}
+									}
+								} catch (_) {
+									// ignore resolve errors and fall back to selectedMapelValue
+								}
+							}
+						}
+
+						if (finalMapelId != null) form.append('mapel_id', String(finalMapelId));
+						else
+							form.append('mapel_id', selectedMapelValue ?? String(data.selectedMapel?.id ?? ''));
+
+						const kelasId = (data as any).kelasAktif?.id;
+						if (kelasId) form.append('kelas_id', String(kelasId));
+						const res = await fetch('/api/asesmen-sumatif/import', { method: 'POST', body: form });
+						const json = await res.json().catch(() => ({}) as any);
+						if (!res.ok) {
+							throw new Error(json?.error ?? 'Gagal mengimpor file.');
+						}
+						toast(json?.message ?? 'Import selesai.', 'success');
+						close();
+						await invalidate('app:asesmen-sumatif');
+						await invalidate('app:asesmen-sumatif/formulir');
+					} catch (err) {
+						toast('Gagal mengimpor: ' + String((err as Error)?.message ?? err), 'error');
+					}
+				}
+			},
+			onNegative: { label: 'Batal', icon: 'close' },
+			dismissible: true
+		});
+	}
+
+	async function openBobotModal() {
+		bobotLoading = true;
+		bobotError = null;
+		try {
+			const res = await fetch('/api/sekolah/sumatif-bobot');
+			if (!res.ok) throw new Error('Gagal memuat bobot.');
+			const jsonData = await res.json();
+			bobotLingkup = Number(jsonData.lingkup ?? 60);
+			bobotSts = Number(jsonData.sts ?? 20);
+			bobotSas = Number(jsonData.sas ?? 20);
+			showBobotModal = true;
+		} catch (err) {
+			bobotError = String((err as Error)?.message ?? 'Gagal memuat bobot.');
+			toast(bobotError, 'error');
+		} finally {
+			bobotLoading = false;
+		}
+	}
+
+	async function saveBobot(event?: CustomEvent) {
+		bobotSaving = true;
+		bobotError = null;
+
+		// accept values from modal event detail, otherwise fall back to current parent state
+		const lingkupVal = event?.detail?.lingkup ?? bobotLingkup;
+		const stsVal = event?.detail?.sts ?? bobotSts;
+		const sasVal = event?.detail?.sas ?? bobotSas;
+
+		const total = (Number(lingkupVal) || 0) + (Number(stsVal) || 0) + (Number(sasVal) || 0);
+		if (total !== 100) {
+			bobotError = 'Jumlah bobot harus berjumlah 100.';
+			bobotSaving = false;
+			return;
+		}
+		try {
+			const res = await fetch('/api/sekolah/sumatif-bobot', {
+				method: 'PUT',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					lingkup: Math.round(Number(lingkupVal)),
+					sts: Math.round(Number(stsVal)),
+					sas: Math.round(Number(sasVal))
+				})
+			});
+			const payload = await res.json();
+			if (!res.ok) {
+				throw new Error(payload?.error ?? 'Gagal menyimpan bobot.');
+			}
+			toast(payload?.message ?? 'Bobot tersimpan.', 'success');
+			// update parent's state to the saved values
+			bobotLingkup = Math.round(Number(lingkupVal));
+			bobotSts = Math.round(Number(stsVal));
+			bobotSas = Math.round(Number(sasVal));
+			showBobotModal = false;
+			// refresh related loads
+			await invalidate('app:asesmen-sumatif');
+			await invalidate('app:asesmen-sumatif/formulir');
+		} catch (err) {
+			bobotError = String((err as Error)?.message ?? 'Gagal menyimpan bobot.');
+			toast(bobotError, 'error');
+		} finally {
+			bobotSaving = false;
+		}
+	}
 
 	$effect(() => {
 		const latestSelected = data.selectedMapelValue ?? '';
@@ -158,7 +493,7 @@
 	});
 </script>
 
-<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
+<div class="card bg-base-100 cursor-default rounded-lg border-none p-4 shadow-md">
 	<div class="mb-4 flex flex-wrap items-center justify-between gap-2">
 		<div>
 			<h2 class="text-xl font-bold">
@@ -176,9 +511,15 @@
 				</p>
 			{/if}
 		</div>
+		<div class="flex items-center gap-2">
+			<button type="button" class="btn btn-soft shadow-none" onclick={openBobotModal}>
+				<Icon name="gear" />
+				Atur Bobot
+			</button>
+		</div>
 	</div>
 
-	<div class="flex flex-col items-center gap-2 sm:flex-row">
+	<div class="flex flex-col justify-between gap-2 sm:flex-row">
 		<form class="w-full md:max-w-80" method="get" use:autoSubmit>
 			<select
 				class="select bg-base-200 w-full dark:border-none"
@@ -203,26 +544,37 @@
 				<input type="hidden" name="q" value={searchTerm.trim()} />
 			{/if}
 		</form>
-		<form
-			class="w-full"
-			data-sveltekit-keepfocus
-			data-sveltekit-replacestate
-			onsubmit={submitSearch}
-		>
-			<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
-				<Icon name="search" />
-				<input
-					type="search"
-					name="q"
-					value={searchTerm}
-					spellcheck="false"
-					autocomplete="name"
-					placeholder="Cari nama murid..."
-					oninput={handleSearchInput}
-				/>
-			</label>
-		</form>
+		<div class="flex flex-col gap-2 sm:flex-row">
+			<button class="btn btn-soft shadow-none" onclick={downloadTemplate}>
+				<Icon name="download" />
+				Download Template
+			</button>
+			<button class="btn btn-soft shadow-none" onclick={openImportModal}>
+				<Icon name="import" />
+				Import Nilai
+			</button>
+		</div>
 	</div>
+
+	<form
+		class="mt-2 w-full"
+		data-sveltekit-keepfocus
+		data-sveltekit-replacestate
+		onsubmit={submitSearch}
+	>
+		<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
+			<Icon name="search" />
+			<input
+				type="search"
+				name="q"
+				value={searchTerm}
+				spellcheck="false"
+				autocomplete="name"
+				placeholder="Cari nama murid..."
+				oninput={handleSearchInput}
+			/>
+		</label>
+	</form>
 
 	{#if !hasMapel}
 		<div class="alert alert-soft alert-info mt-6">
@@ -274,10 +626,15 @@
 										{#if murid.naLingkup != null}
 											<p>Lingkup Materi: {formatScore(murid.naLingkup)}</p>
 										{/if}
+										{#if murid.sts != null}
+											<p>STS: {formatScore(murid.sts)}</p>
+										{/if}
 										{#if murid.sas != null}
 											<p>SAS: {formatScore(murid.sas)}</p>
 										{/if}
 									</div>
+
+									<!-- modal moved to component -->
 								{:else}
 									<span class="text-base-content/60 text-sm italic">Belum dinilai</span>
 								{/if}
@@ -325,3 +682,20 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Sumatif bobot modal moved outside the card to avoid card focus styles -->
+<SumatifBobotModal
+	open={showBobotModal}
+	lingkup={bobotLingkup}
+	sts={bobotSts}
+	sas={bobotSas}
+	loading={bobotLoading}
+	saving={bobotSaving}
+	error={bobotError}
+	on:close={() => (showBobotModal = false)}
+	on:reset={() => {
+		// always reset to server default (defined in +server.ts)
+		void resetBobotToDefault();
+	}}
+	on:save={saveBobot}
+/>

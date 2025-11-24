@@ -103,7 +103,7 @@
 
 		{#if isRaporSelected}
 			<button
-				class="btn btn-sm btn-soft mr-1"
+				class="btn btn-sm btn-soft mr-1 shadow-none"
 				type="button"
 				title="Atur Kriteria"
 				onclick={() => {

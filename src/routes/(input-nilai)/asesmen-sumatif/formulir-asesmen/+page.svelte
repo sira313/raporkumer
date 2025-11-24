@@ -26,9 +26,13 @@
 	type PageData = {
 		murid: { id: number; nama: string };
 		mapel: { id: number; kkm: number };
+		sumatifWeights: { lingkup: number; sts: number; sas: number };
+		hasLingkupComplete: boolean;
 		hasTujuan: boolean;
 		entries: TujuanEntry[];
 		initialScores: {
+			stsTes: number | null;
+			stsNonTes: number | null;
 			sasTes: number | null;
 			sasNonTes: number | null;
 			nilaiAkhir: number | null;
@@ -40,6 +44,9 @@
 		tujuanScores: { tujuanPembelajaranId: number; nilai: number | null }[];
 		aggregates: {
 			naLingkup: number | null;
+			stsTes: number | null;
+			stsNonTes: number | null;
+			sts: number | null;
 			sasTes: number | null;
 			sasNonTes: number | null;
 			sas: number | null;
@@ -56,6 +63,13 @@
 	let sasNonTesText = $state(
 		data.initialScores.sasNonTes != null ? data.initialScores.sasNonTes.toFixed(2) : ''
 	);
+	// Sumatif Tengah Semester (STS) - new inputs, initially empty (backend doesn't persist yet)
+	let stsTesText = $state(
+		data.initialScores.stsTes != null ? data.initialScores.stsTes.toFixed(2) : ''
+	);
+	let stsNonTesText = $state(
+		data.initialScores.stsNonTes != null ? data.initialScores.stsNonTes.toFixed(2) : ''
+	);
 	let cheatUnlocked = $state(data.cheatUnlocked);
 
 	$effect(() => {
@@ -63,6 +77,9 @@
 		sasTesText = data.initialScores.sasTes != null ? data.initialScores.sasTes.toFixed(2) : '';
 		sasNonTesText =
 			data.initialScores.sasNonTes != null ? data.initialScores.sasNonTes.toFixed(2) : '';
+		stsTesText = data.initialScores.stsTes != null ? data.initialScores.stsTes.toFixed(2) : '';
+		stsNonTesText =
+			data.initialScores.stsNonTes != null ? data.initialScores.stsNonTes.toFixed(2) : '';
 		cheatUnlocked = data.cheatUnlocked;
 	});
 
@@ -145,17 +162,67 @@
 	const sasTesValue = $derived.by(() => normalizeScoreText(sasTesText));
 	const sasNonTesValue = $derived.by(() => normalizeScoreText(sasNonTesText));
 
+	const stsTesValue = $derived.by(() => normalizeScoreText(stsTesText));
+	const stsNonTesValue = $derived.by(() => normalizeScoreText(stsNonTesText));
+
 	const nilaiSas = $derived.by(() => {
 		const values = [sasTesValue, sasNonTesValue].filter((value): value is number => value != null);
 		if (!values.length) return null;
 		return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 100) / 100;
 	});
 
-	const nilaiAkhir = $derived.by(() => {
-		const values = [naSumatifLingkup, nilaiSas].filter((value): value is number => value != null);
+	const nilaiSts = $derived.by(() => {
+		const values = [stsTesValue, stsNonTesValue].filter((value): value is number => value != null);
 		if (!values.length) return null;
 		return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 100) / 100;
 	});
+
+	const nilaiAkhir = $derived.by(() => {
+		// Determine effective weights using rules:
+		// - All present: base weights
+		// - STS missing only: lingkup 70 / sas 30
+		// - SAS missing only: lingkup 70 / sts 30
+		// - Both missing: lingkup 100
+		const base = {
+			lingkup: data.sumatifWeights?.lingkup ?? 60,
+			sts: data.sumatifWeights?.sts ?? 20,
+			sas: data.sumatifWeights?.sas ?? 20
+		};
+		let eff = base;
+		if (nilaiSts == null && nilaiSas == null) eff = { lingkup: 100, sts: 0, sas: 0 };
+		else if (nilaiSts == null) eff = { lingkup: 70, sts: 0, sas: 30 };
+		else if (nilaiSas == null) eff = { lingkup: 70, sts: 30, sas: 0 };
+		let weighted = 0;
+		let totalW = 0;
+		if (naSumatifLingkup != null) {
+			weighted += naSumatifLingkup * eff.lingkup;
+			totalW += eff.lingkup;
+		}
+		if (nilaiSts != null) {
+			weighted += nilaiSts * eff.sts;
+			totalW += eff.sts;
+		}
+		if (nilaiSas != null) {
+			weighted += nilaiSas * eff.sas;
+			totalW += eff.sas;
+		}
+		if (totalW === 0) return null;
+		return Math.round((weighted / totalW) * 100) / 100;
+	});
+
+	// Effective weights used by the UI: if STS not provided, use 70/0/30
+	const effectiveSumatifWeights = $derived.by(() => {
+		const base = {
+			lingkup: data.sumatifWeights?.lingkup ?? 60,
+			sts: data.sumatifWeights?.sts ?? 20,
+			sas: data.sumatifWeights?.sas ?? 20
+		};
+		if (nilaiSts == null && nilaiSas == null) return { lingkup: 100, sts: 0, sas: 0 };
+		if (nilaiSts == null) return { lingkup: 70, sts: 0, sas: 30 };
+		if (nilaiSas == null) return { lingkup: 70, sts: 30, sas: 0 };
+		return base;
+	});
+	const kkm = $derived.by(() => Math.max(0, data.mapel.kkm ?? 0));
 
 	const nilaiAkhirCategory = $derived.by((): NilaiAkhirCategory | null => {
 		const nilai = nilaiAkhir;
@@ -203,8 +270,6 @@
 		lingkupSummaries.reduce((sum, item) => sum + (item.bobot ?? 0), 0)
 	);
 
-	const kkm = $derived.by(() => Math.max(0, data.mapel.kkm ?? 0));
-
 	const kembaliHref = `/asesmen-sumatif?mapel_id=${data.mapel.id}`;
 
 	function getInputClass(value: string) {
@@ -218,8 +283,20 @@
 		entries = entries.map((entry, idx) => (idx === index ? { ...entry, nilaiText: value } : entry));
 	}
 
-	function handleSasChange(event: CustomEvent<{ target: 'tes' | 'nonTes'; value: string }>) {
-		const { target, value } = event.detail;
+	function handleSasChange(
+		event: CustomEvent<{ namePrefix?: string; target: 'tes' | 'nonTes'; value: string }>
+	) {
+		const { namePrefix, target, value } = event.detail;
+		const prefix = namePrefix ?? 'sas';
+		if (prefix === 'sts') {
+			if (target === 'tes') {
+				stsTesText = value;
+				return;
+			}
+			stsNonTesText = value;
+			return;
+		}
+		// default: sas (Akhir Semester)
 		if (target === 'tes') {
 			sasTesText = value;
 			return;
@@ -228,12 +305,26 @@
 	}
 
 	function handleCheatApply(
-		event: CustomEvent<{ entries: EntryDraft[]; sasTesText: string; sasNonTesText: string }>
+		event: CustomEvent<{
+			entries: EntryDraft[];
+			sasTesText: string;
+			sasNonTesText: string;
+			stsTesText: string;
+			stsNonTesText: string;
+		}>
 	): void {
-		const { entries: drafts, sasTesText: sasTes, sasNonTesText: sasNonTes } = event.detail;
+		const {
+			entries: drafts,
+			sasTesText: sasTes,
+			sasNonTesText: sasNonTes,
+			stsTesText: stsTes,
+			stsNonTesText: stsNonTes
+		} = event.detail;
 		entries = drafts;
 		sasTesText = sasTes;
 		sasNonTesText = sasNonTes;
+		stsTesText = stsTes;
+		stsNonTesText = stsNonTes;
 	}
 
 	function handleCheatUnlockChange(event: CustomEvent<{ cheatUnlocked: boolean }>): void {
@@ -256,6 +347,8 @@
 					nilaiText: toInputText(nilai)
 				};
 			});
+			stsTesText = toInputText(payload.aggregates.stsTes);
+			stsNonTesText = toInputText(payload.aggregates.stsNonTes);
 			sasTesText = toInputText(payload.aggregates.sasTes);
 			sasNonTesText = toInputText(payload.aggregates.sasNonTes);
 		}
@@ -288,7 +381,7 @@
 				<button
 					type="submit"
 					class="btn btn-primary shadow-none sm:ml-auto"
-					disabled={!data.hasTujuan || submitting}
+					disabled={!data.hasTujuan || !data.hasLingkupComplete || submitting}
 				>
 					<Icon name="save" />
 					{submitting ? 'Menyimpan...' : 'Simpan'}
@@ -308,6 +401,15 @@
 						<strong>Intrakurikuler</strong> terlebih dahulu.
 					</span>
 				</div>
+			{:else if !data.hasLingkupComplete}
+				<div class="alert alert-soft alert-warning mt-4">
+					<Icon name="alert" />
+					<span>
+						Semua kolom <strong>Lingkup Materi</strong> harus diisi sebelum menyimpan penilaian
+						sumatif. Silakan lengkapi Lingkup Materi pada menu
+						<strong>Intrakurikuler</strong>.
+					</span>
+				</div>
 			{:else}
 				<TujuanTable
 					{entries}
@@ -320,13 +422,44 @@
 			<LingkupSummaryCard {naSumatifLingkup} {lingkupSummaries} {totalBobot} {formatScore} />
 
 			<h3 class="mt-6 pb-2 text-lg font-bold">
+				Isi Sumatif Tengah Semester di bawah ini untuk {data.murid.nama}.
+			</h3>
+			<SasInputTable
+				tesText={stsTesText}
+				nonTesText={stsNonTesText}
+				namePrefix="sts"
+				tesLabel="Nilai Tes Sumatif Tengah Semester (STS)"
+				nonTesLabel="Nilai Non Tes Sumatif Tengah Semester (STS)"
+				{getInputClass}
+				on:sasChange={handleSasChange}
+			/>
+
+			<SasSummaryCard
+				nilaiSas={nilaiSts}
+				{formatScore}
+				title="NA Sumatif Tengah Semester"
+				subtitle="Rata-rata dari nilai Tes dan Non Tes STS"
+			/>
+
+			<h3 class="mt-6 pb-2 text-lg font-bold">
 				Isi Sumatif Akhir Semester di bawah ini untuk {data.murid.nama}.
 			</h3>
-			<SasInputTable {sasTesText} {sasNonTesText} {getInputClass} on:sasChange={handleSasChange} />
+			<SasInputTable
+				tesText={sasTesText}
+				nonTesText={sasNonTesText}
+				{getInputClass}
+				on:sasChange={handleSasChange}
+			/>
 
 			<SasSummaryCard {nilaiSas} {formatScore} />
 
-			<NilaiAkhirCard {nilaiAkhir} {nilaiAkhirCategory} {kkm} {formatScore} />
+			<NilaiAkhirCard
+				{nilaiAkhir}
+				{nilaiAkhirCategory}
+				{kkm}
+				{formatScore}
+				sumatifWeights={effectiveSumatifWeights}
+			/>
 		{/snippet}
 	</FormEnhance>
 </div>

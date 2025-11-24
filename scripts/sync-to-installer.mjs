@@ -9,6 +9,7 @@ const filesToSync = [
 	'fix-drizzle-indexes.mjs',
 	'grant-admin-permissions.mjs',
 	'migrate-installed-db.mjs',
+	'start-build.mjs',
 	'notify-server-reload.mjs',
 	'seed-default-admin.mjs'
 ];
@@ -54,7 +55,7 @@ async function main() {
 				const st = await fs.stat(src);
 				await fs.chmod(dest, st.mode);
 			} catch {
-				// non-fatal
+				void 0;
 			}
 			console.info('[sync-to-installer] copied', f);
 			results.copied.push(f);
@@ -62,6 +63,33 @@ async function main() {
 			console.error('[sync-to-installer] failed to copy', f, err && (err.message || err));
 			results.failed.push(f);
 		}
+	}
+
+	// Also ensure installer-only files (like start-rapkumer.mjs) are placed into the staged application
+	try {
+		const stagedDir = path.join(root, 'dist', 'windows', 'stage', 'Rapkumer');
+		const srcSpecial = path.join(root, 'installer', 'files', 'start-rapkumer.mjs');
+		const destSpecial = path.join(stagedDir, 'start-rapkumer.mjs');
+		if (existsSync(srcSpecial) && existsSync(stagedDir)) {
+			await fs.copyFile(srcSpecial, destSpecial);
+			try {
+				const st = await fs.stat(srcSpecial);
+				await fs.chmod(destSpecial, st.mode);
+			} catch {
+				void 0;
+			}
+			console.info('[sync-to-installer] copied installer file to stage:', 'start-rapkumer.mjs');
+			results.copied.push('installer/files/start-rapkumer.mjs -> stage');
+		} else if (existsSync(srcSpecial) && !existsSync(stagedDir)) {
+			console.warn('[sync-to-installer] stage dir not found, skipping copy of start-rapkumer.mjs');
+			results.missing.push('stage-dir');
+		}
+	} catch (err) {
+		console.error(
+			'[sync-to-installer] failed to copy installer special files:',
+			err && (err.message || err)
+		);
+		results.failed.push('installer/files/start-rapkumer.mjs');
 	}
 
 	console.info('\n[sync-to-installer] Summary:');

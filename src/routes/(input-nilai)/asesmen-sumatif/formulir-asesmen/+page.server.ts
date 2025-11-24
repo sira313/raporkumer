@@ -202,6 +202,10 @@ export async function load({ url, locals, depends }) {
 		orderBy: [asc(tableTujuanPembelajaran.lingkupMateri), asc(tableTujuanPembelajaran.id)]
 	});
 
+	const hasLingkupComplete = tujuanPembelajaran.every(
+		(t) => normalizeLingkup(t.lingkupMateri) !== DEFAULT_LINGKUP
+	);
+
 	const tujuanIds = tujuanPembelajaran.map((item) => item.id);
 	const lingkupBobotMap = deriveLingkupBobot(tujuanPembelajaran);
 
@@ -222,6 +226,9 @@ export async function load({ url, locals, depends }) {
 	const sumatifRecord = await db.query.tableAsesmenSumatif.findFirst({
 		columns: {
 			naLingkup: true,
+			stsTes: true,
+			stsNonTes: true,
+			sts: true,
 			sasTes: true,
 			sasNonTes: true,
 			sas: true,
@@ -253,10 +260,19 @@ export async function load({ url, locals, depends }) {
 		murid: { id: murid.id, nama: murid.nama },
 		mapel: { id: mapel.id, nama: mapel.nama, kkm: mapel.kkm ?? 0 },
 		hasTujuan: entries.length > 0,
+		hasLingkupComplete,
 		entries,
 		cheatUnlocked: Boolean(featureUnlock),
+		sumatifWeights: {
+			lingkup: Number(locals.sekolah?.sumatifBobotLingkup ?? 60),
+			sts: Number(locals.sekolah?.sumatifBobotSts ?? 20),
+			sas: Number(locals.sekolah?.sumatifBobotSas ?? 20)
+		},
 		initialScores: {
 			naLingkup: normalizeScore(sumatifRecord?.naLingkup ?? null),
+			stsTes: normalizeScore(sumatifRecord?.stsTes ?? null),
+			stsNonTes: normalizeScore(sumatifRecord?.stsNonTes ?? null),
+			sts: normalizeScore(sumatifRecord?.sts ?? null),
 			sasTes: normalizeScore(sumatifRecord?.sasTes ?? null),
 			sasNonTes: normalizeScore(sumatifRecord?.sasNonTes ?? null),
 			sas: normalizeScore(sumatifRecord?.sas ?? null),
@@ -273,6 +289,8 @@ export const actions = {
 			entries?: Record<string, { tujuanPembelajaranId?: string; nilai?: string }>;
 			sasTes?: string;
 			sasNonTes?: string;
+			stsTes?: string;
+			stsNonTes?: string;
 		}>(await request.formData());
 
 		const muridId = Number(formPayload.muridId ?? '');
@@ -317,6 +335,16 @@ export const actions = {
 			return fail(400, { fail: 'Belum ada tujuan pembelajaran untuk mata pelajaran ini.' });
 		}
 
+		// Ensure every tujuan has a non-empty lingkup; require teacher to set this first.
+		const tujuanLingkupComplete = tujuanList.every(
+			(t) => normalizeLingkup(t.lingkupMateri) !== DEFAULT_LINGKUP
+		);
+		if (!tujuanLingkupComplete) {
+			return fail(400, {
+				fail: "Semua kolom 'Lingkup Materi' pada tujuan pembelajaran harus diisi sebelum menyimpan penilaian sumatif. Silakan lengkapi Lingkup Materi di menu Intrakurikuler."
+			});
+		}
+
 		const lingkupBobotMap = deriveLingkupBobot(tujuanList);
 		const tujuanSet = new Set(tujuanList.map((item) => item.id));
 		const rawEntries = Object.values(formPayload.entries ?? {});
@@ -341,6 +369,9 @@ export const actions = {
 			const nilai = parseScore(payload?.nilai, `tujuan pembelajaran nomor ${index + 1}`, errors);
 			nilaiByTujuan.set(tujuan.id, nilai);
 		});
+
+		const stsTes = parseScore(formPayload.stsTes, 'tes Sumatif Tengah Semester', errors);
+		const stsNonTes = parseScore(formPayload.stsNonTes, 'non tes Sumatif Tengah Semester', errors);
 
 		const sasTes = parseScore(formPayload.sasTes, 'tes Sumatif Akhir Semester', errors);
 		const sasNonTes = parseScore(formPayload.sasNonTes, 'non tes Sumatif Akhir Semester', errors);
@@ -403,6 +434,13 @@ export const actions = {
 			naLingkup = Math.round((averageSum / averageCount) * 100) / 100;
 		}
 
+		const stsValues = [stsTes, stsNonTes].filter((value): value is number => value != null);
+		let sts: number | null = null;
+		if (stsValues.length) {
+			const sum = stsValues.reduce((total, value) => total + value, 0);
+			sts = Math.round((sum / stsValues.length) * 100) / 100;
+		}
+
 		const sasValues = [sasTes, sasNonTes].filter((value): value is number => value != null);
 		let sas: number | null = null;
 		if (sasValues.length) {
@@ -410,11 +448,36 @@ export const actions = {
 			sas = Math.round((sum / sasValues.length) * 100) / 100;
 		}
 
-		const finalValues = [naLingkup, sas].filter((value): value is number => value != null);
+		// Compute final nilaiAkhir using sekolah-level weights (fallback to 60/20/20)
+		// Base sekolah weights
+		const baseWeights = {
+			lingkup: Number(locals.sekolah?.sumatifBobotLingkup ?? 60),
+			sts: Number(locals.sekolah?.sumatifBobotSts ?? 20),
+			sas: Number(locals.sekolah?.sumatifBobotSas ?? 20)
+		};
+
+		// If STS is not provided, use fallback distribution: Lingkup 70%, SAS 30%.
+		const effectiveWeights = sts == null ? { lingkup: 70, sts: 0, sas: 30 } : baseWeights;
+
 		let nilaiAkhir: number | null = null;
-		if (finalValues.length) {
-			const sum = finalValues.reduce((total, value) => total + value, 0);
-			nilaiAkhir = Math.round((sum / finalValues.length) * 100) / 100;
+		let weightedSumFinal = 0;
+		let usedWeightFinal = 0;
+
+		if (naLingkup != null) {
+			weightedSumFinal += naLingkup * effectiveWeights.lingkup;
+			usedWeightFinal += effectiveWeights.lingkup;
+		}
+		if (sts != null) {
+			weightedSumFinal += sts * effectiveWeights.sts;
+			usedWeightFinal += effectiveWeights.sts;
+		}
+		if (sas != null) {
+			weightedSumFinal += sas * effectiveWeights.sas;
+			usedWeightFinal += effectiveWeights.sas;
+		}
+
+		if (usedWeightFinal > 0) {
+			nilaiAkhir = Math.round((weightedSumFinal / usedWeightFinal) * 100) / 100;
 		}
 
 		const hasTujuanScores = Array.from(nilaiByTujuan.values()).some((value) => value != null);
@@ -483,6 +546,9 @@ export const actions = {
 					muridId: murid.id,
 					mataPelajaranId: mapel.id,
 					naLingkup,
+					stsTes,
+					stsNonTes,
+					sts,
 					sasTes,
 					sasNonTes,
 					sas,
@@ -493,6 +559,9 @@ export const actions = {
 					target: [tableAsesmenSumatif.muridId, tableAsesmenSumatif.mataPelajaranId],
 					set: {
 						naLingkup,
+						stsTes,
+						stsNonTes,
+						sts,
 						sasTes,
 						sasNonTes,
 						sas,
@@ -511,6 +580,9 @@ export const actions = {
 				})),
 				aggregates: {
 					naLingkup,
+					stsTes,
+					stsNonTes,
+					sts,
 					sasTes,
 					sasNonTes,
 					sas,

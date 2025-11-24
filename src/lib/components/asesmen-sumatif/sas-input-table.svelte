@@ -2,20 +2,33 @@
 	import { createEventDispatcher } from 'svelte';
 
 	interface Props {
-		sasTesText: string;
-		sasNonTesText: string;
+		tesText: string;
+		nonTesText: string;
 		getInputClass: (value: string) => string;
+		/** prefix used for input `name` attributes, e.g. 'sas' or 'sts' */
+		namePrefix?: string;
+		/** label for the tes row */
+		tesLabel?: string;
+		/** label for the non-tes row */
+		nonTesLabel?: string;
 	}
 
-	let { sasTesText, sasNonTesText, getInputClass }: Props = $props();
+	let {
+		tesText,
+		nonTesText,
+		getInputClass,
+		namePrefix = 'sas',
+		tesLabel = 'Nilai Tes Sumatif Akhir Semester (SAS)',
+		nonTesLabel = 'Nilai Non Tes Sumatif Akhir Semester (SAS)'
+	}: Props = $props();
 
 	const dispatch = createEventDispatcher<{
-		sasChange: { target: 'tes' | 'nonTes'; value: string };
+		sasChange: { namePrefix: string; target: 'tes' | 'nonTes'; value: string };
 	}>();
 
 	function handleInput(targetKey: 'tes' | 'nonTes', event: Event) {
 		const target = event.currentTarget as HTMLInputElement;
-		dispatch('sasChange', { target: targetKey, value: target.value });
+		dispatch('sasChange', { namePrefix, target: targetKey, value: target.value });
 	}
 </script>
 
@@ -33,18 +46,18 @@
 		<tbody>
 			<tr>
 				<td>1</td>
-				<td>Nilai Tes Sumatif Akhir Semester (SAS)</td>
+				<td>{tesLabel}</td>
 				<td>
 					<input
 						type="number"
-						name="sasTes"
-						class={getInputClass(sasTesText)}
-						value={sasTesText}
+						name={`${namePrefix}Tes`}
+						class={getInputClass(tesText)}
+						value={tesText}
 						placeholder="Isi nilai"
 						min="0"
 						max="100"
 						step="0.01"
-						required
+						required={namePrefix !== 'sts'}
 						inputmode="decimal"
 						title="Rentang 0-100 dengan maksimal 2 angka desimal"
 						spellcheck="false"
@@ -54,18 +67,18 @@
 			</tr>
 			<tr>
 				<td>2</td>
-				<td>Nilai Non Tes Sumatif Akhir Semester (SAS)</td>
+				<td>{nonTesLabel}</td>
 				<td>
 					<input
 						type="number"
-						name="sasNonTes"
-						class={getInputClass(sasNonTesText)}
-						value={sasNonTesText}
+						name={`${namePrefix}NonTes`}
+						class={getInputClass(nonTesText)}
+						value={nonTesText}
 						placeholder="Isi nilai"
 						min="0"
 						max="100"
 						step="0.01"
-						required
+						required={namePrefix !== 'sts'}
 						inputmode="decimal"
 						title="Rentang 0-100 dengan maksimal 2 angka desimal"
 						spellcheck="false"

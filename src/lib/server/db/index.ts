@@ -1,22 +1,53 @@
 import { env } from '$env/dynamic/private';
 import path from 'node:path';
+import fs from 'node:fs';
 import { createClient, type Client } from '@libsql/client';
 import { drizzle } from 'drizzle-orm/libsql/node';
 import * as schema from './schema';
 
 const defaultDbUrl = 'file:./data/database.sqlite3';
 
+// Try to read a local `.env` file at runtime (dependency-free) so a built `node` run
+// can pick up `DB_URL` / `DB_AUTH_TOKEN` without requiring an external loader.
+function loadDotEnvIfPresent() {
+	if (process.env.DB_URL || process.env.DB_AUTH_TOKEN) return;
+
+	try {
+		const envPath = path.resolve(process.cwd(), '.env');
+		if (!fs.existsSync(envPath)) return;
+		const raw = fs.readFileSync(envPath, 'utf8');
+		for (const line of raw.split(/\r?\n/)) {
+			const m = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*)\s*$/);
+			if (!m) continue;
+			const key = m[1];
+			let val = m[2] ?? '';
+			// Remove surrounding quotes if present
+			if (
+				(val.startsWith('"') && val.endsWith('"')) ||
+				(val.startsWith("'") && val.endsWith("'"))
+			) {
+				val = val.slice(1, -1);
+			}
+			if (key === 'DB_URL' || key === 'DB_AUTH_TOKEN') {
+				process.env[key] = val;
+			}
+		}
+	} catch (e) {
+		// Non-fatal: if reading fails, just continue and fall back to other heuristics
+		console.warn('[db] failed to read .env file:', e);
+	}
+}
+
+loadDotEnvIfPresent();
+
 function resolveInstalledDbUrl() {
-	// Prefer explicit DB_URL
+	// Prefer an explicit runtime `process.env.DB_URL` first (allows .env or env vars at node runtime),
+	// then SvelteKit's dynamic `env.DB_URL`.
+	if (process.env.DB_URL) return process.env.DB_URL;
 	if (env.DB_URL) return env.DB_URL;
 
-	// Try LOCALAPPDATA (typical installed location)
-	const local = env.LOCALAPPDATA || env.APPDATA?.replace(/\\Roaming/i, '\\Local');
-	if (local) {
-		const candidate = path.join(local, 'Rapkumer-data', 'database.sqlite3');
-		return `file:${candidate}`;
-	}
-
+	// If user didn't set DB_URL, prefer the repository-local database file so
+	// local development and packaged runs default to `data/database.sqlite3`.
 	return defaultDbUrl;
 }
 const clientKey = '__rapkumerLibsqlClient';

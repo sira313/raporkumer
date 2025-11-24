@@ -24,6 +24,8 @@
 		entries: EntryDraft[];
 		sasTesText: string;
 		sasNonTesText: string;
+		stsTesText: string;
+		stsNonTesText: string;
 	};
 
 	type CheatUnlockDetail = {
@@ -219,7 +221,9 @@
 		dispatch('apply', {
 			entries: result.drafts,
 			sasTesText: toInputText(result.sasTes),
-			sasNonTesText: toInputText(result.sasNonTes)
+			sasNonTesText: toInputText(result.sasNonTes),
+			stsTesText: toInputText(result.sasTes),
+			stsNonTesText: toInputText(result.sasNonTes)
 		});
 		cheatModalError = null;
 		close();

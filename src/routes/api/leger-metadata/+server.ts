@@ -52,16 +52,21 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 	}
 
 	// fetch mata pelajaran for kelas (if kelas provided)
-	let mapel: Array<{ id: number; nama: string; jenis?: string }> = [];
+	let mapel: Array<{ id: number; nama: string; jenis?: string; kode?: string }> = [];
 	try {
 		if (kelasIdParam) {
 			const id = Number(kelasIdParam);
 			if (Number.isInteger(id)) {
 				const m = await db.query.tableMataPelajaran.findMany({
 					where: eq(tableMataPelajaran.kelasId, id),
-					columns: { id: true, nama: true, jenis: true }
+					columns: { id: true, nama: true, jenis: true, kode: true }
 				});
-				mapel = m.map((x) => ({ id: x.id, nama: x.nama, jenis: x.jenis }));
+				mapel = m.map((x) => ({
+					id: x.id,
+					nama: x.nama,
+					jenis: x.jenis,
+					kode: x.kode ?? undefined
+				}));
 			}
 		}
 	} catch (err) {
@@ -109,12 +114,24 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	// Build header list: collapse agama variants into single AGAMA_BASE
 	const AGAMA_BASE = 'Pendidikan Agama dan Budi Pekerti';
-	const headerMap: Array<{ id: string | number; nama: string; sourceIds?: number[] }> = [];
+	const headerMap: Array<{
+		id: string | number;
+		nama: string;
+		kode?: string;
+		sourceIds?: number[];
+	}> = [];
 	const nonAgama = mapel.filter((m) => !isAgamaSubject(m.nama));
-	for (const m of nonAgama) headerMap.push({ id: m.id, nama: m.nama, sourceIds: [m.id] });
+	for (const m of nonAgama)
+		headerMap.push({ id: m.id, nama: m.nama, kode: m.kode ?? undefined, sourceIds: [m.id] });
 	const agamaEntries = mapel.filter((m) => isAgamaSubject(m.nama));
 	if (agamaEntries.length) {
-		headerMap.push({ id: 'agama', nama: AGAMA_BASE, sourceIds: agamaEntries.map((x) => x.id) });
+		// use the standard code 'PAPB' for Pendidikan Agama dan Budi Pekerti
+		headerMap.push({
+			id: 'agama',
+			nama: AGAMA_BASE,
+			kode: 'PAPB',
+			sourceIds: agamaEntries.map((x) => x.id)
+		});
 	}
 	// sort headers by name (id order might be acceptable too)
 	headerMap.sort((a, b) => a.nama.localeCompare(b.nama, 'id'));

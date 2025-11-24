@@ -11,9 +11,24 @@ set "DB_URL=file:%DBFILE%"
 
 echo Using DB: %DBFILE%
 
-REM locate node.exe; assume node is in PATH
+REM Locate node.exe. Try PATH first, then several common install locations
+set "NODE_PATH="
 where node >nul 2>&1
-if errorlevel 1 (
+if not errorlevel 1 (
+  for /f "delims=" %%i in ('where node') do set "NODE_PATH=%%i" & goto :_node_found
+)
+
+:: Check common Node.js installation locations
+if exist "%ProgramFiles%\nodejs\node.exe" set "NODE_PATH=%ProgramFiles%\nodejs\node.exe"
+if not defined NODE_PATH if exist "%ProgramFiles(x86)%\nodejs\node.exe" set "NODE_PATH=%ProgramFiles(x86)%\nodejs\node.exe"
+if not defined NODE_PATH if exist "%USERPROFILE%\AppData\Local\Programs\nodejs\node.exe" set "NODE_PATH=%USERPROFILE%\AppData\Local\Programs\nodejs\node.exe"
+if not defined NODE_PATH if defined NVM_HOME if exist "%NVM_HOME%\node.exe" set "NODE_PATH=%NVM_HOME%\node.exe"
+if not defined NODE_PATH if defined NVM_SYMLINK if exist "%NVM_SYMLINK%\node.exe" set "NODE_PATH=%NVM_SYMLINK%\node.exe"
+
+:_node_found
+if defined NODE_PATH (
+  echo Found Node at %NODE_PATH%
+) else (
   echo Node.js not found in PATH. Please install Node or run this from an environment with node available.
   pause
   exit /b 1
@@ -58,25 +73,18 @@ if not errorlevel 1 (
 :: Run Node migration script (this still performs its own checks/fallbacks)
 :: Ensure DB_URL is available to Node child processes and run index-fix first to avoid drizzle errors
 echo Running Node maintenance scripts with DB_URL=%DB_URL%
-where node >nul 2>&1
-if errorlevel 1 (
-  echo Node.js not found in PATH. Please install Node or run this from an environment with node available.
-  pause
-  exit /b 1
-)
-
 :: Run fix-drizzle-indexes first (safer if drizzle push would otherwise fail on duplicate indexes)
 if exist "%~dp0scripts\fix-drizzle-indexes.mjs" (
-  node "%~dp0scripts\fix-drizzle-indexes.mjs"
+  "%NODE_PATH%" "%~dp0scripts\fix-drizzle-indexes.mjs"
 ) else (
-  node "%~dp0..\scripts\fix-drizzle-indexes.mjs" 2>nul || node "scripts\fix-drizzle-indexes.mjs" 2>nul || echo fix-drizzle-indexes.mjs not found; skipping
+  "%NODE_PATH%" "%~dp0..\scripts\fix-drizzle-indexes.mjs" 2>nul || "%NODE_PATH%" "scripts\fix-drizzle-indexes.mjs" 2>nul || echo fix-drizzle-indexes.mjs not found; skipping
 )
 
 :: Then run the migrate-installed-db wrapper which will run drizzle push and additional checks
 if exist "%~dp0scripts\migrate-installed-db.mjs" (
-  node "%~dp0scripts\migrate-installed-db.mjs"
+  "%NODE_PATH%" "%~dp0scripts\migrate-installed-db.mjs"
 ) else (
-  node "%~dp0..\scripts\migrate-installed-db.mjs" 2>nul || node "scripts\migrate-installed-db.mjs" 2>nul || echo migrate-installed-db.mjs not found; skipping
+  "%NODE_PATH%" "%~dp0..\scripts\migrate-installed-db.mjs" 2>nul || "%NODE_PATH%" "scripts\migrate-installed-db.mjs" 2>nul || echo migrate-installed-db.mjs not found; skipping
 )
 popd
 

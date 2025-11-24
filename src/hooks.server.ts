@@ -1,3 +1,4 @@
+import '$lib/server/load-env';
 import { applySessionCookie, ensureDefaultAdmin, resolveSession } from '$lib/server/auth';
 import db from '$lib/server/db';
 import { tableSekolah } from '$lib/server/db/schema';
@@ -256,7 +257,36 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
-export const handle = sequence(csrfGuard, authGuard, cookieParser);
+function parseAsBytes(value: string | undefined, fallback = '512K') {
+	const v = (value ?? fallback).trim();
+	if (!v) return NaN;
+	const last = v[v.length - 1].toUpperCase();
+	const multiplier =
+		{
+			K: 1024,
+			M: 1024 * 1024,
+			G: 1024 * 1024 * 1024
+		}[last] ?? 1;
+	const numeric = multiplier !== 1 ? v.substring(0, v.length - 1) : v;
+	return Number(numeric) * multiplier;
+}
+
+// Compose the middleware sequence but ensure every internal `resolve` call
+// uses the `bodySizeLimit` derived from `process.env.BODY_SIZE_LIMIT` so
+// parsing limits follow the .env configuration in dev and prod.
+const _composed = sequence(csrfGuard, authGuard, cookieParser);
+export const handle: Handle = async ({ event, resolve }) => {
+	const bodySizeLimit = parseAsBytes(process.env.BODY_SIZE_LIMIT, '512K');
+	// Expose the parsed limit on `locals` so other server-side code can
+	// inspect it if needed. We avoid passing it to `resolve` because
+	// SvelteKit's ResolveOptions type doesn't allow custom keys.
+	// Note: this does not change how SvelteKit parses the raw request body
+	// (that happens earlier), but makes the configured limit available.
+	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+	// @ts-ignore -- allow adding a custom property to locals
+	event.locals.bodySizeLimit = bodySizeLimit;
+	return _composed({ event, resolve });
+};
 
 const sqliteErrors = {
 	SQLITE_CONSTRAINT_UNIQUE: 'Terdapat duplikasi data',

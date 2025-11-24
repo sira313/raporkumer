@@ -7,9 +7,11 @@
 		nilaiAkhirCategory: NilaiAkhirCategory | null;
 		kkm: number;
 		formatScore: (value: number | null) => string;
+		// optional sekolah-level weights
+		sumatifWeights?: { lingkup: number; sts: number; sas: number };
 	}
 
-	let { nilaiAkhir, nilaiAkhirCategory, kkm, formatScore }: Props = $props();
+	let { nilaiAkhir, nilaiAkhirCategory, kkm, formatScore, sumatifWeights }: Props = $props();
 
 	const fallbackClass = 'alert-soft alert-warning';
 </script>
@@ -23,7 +25,14 @@
 	<span>
 		<p class="text-lg">Nilai Akhir</p>
 		<p class="text-2xl font-bold">{formatScore(nilaiAkhir)}</p>
-		<p class="text-sm">Rata-rata dari NA Sumatif Lingkup Materi dan NA Sumatif Akhir Semester</p>
+		<p class="text-sm">
+			{#if sumatifWeights}
+				Pembobotan default — Lingkup Materi {sumatifWeights.lingkup}%, STS {sumatifWeights.sts}%,
+				SAS {sumatifWeights.sas}% (komponen kosong diabaikan)
+			{:else}
+				Rata-rata dari NA Sumatif Lingkup Materi dan NA Sumatif Akhir Semester
+			{/if}
+		</p>
 		<p class="text-sm font-semibold">
 			KKM {kkm}
 			{#if nilaiAkhir == null}

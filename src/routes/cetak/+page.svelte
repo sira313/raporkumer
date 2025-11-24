@@ -72,14 +72,19 @@
 	let kritBaik = $state<number>(95);
 
 	// Load persisted criteria from localStorage (if available)
-	onMount(() => {
+	// Load persisted criteria from server (if available). Falls back to defaults.
+	onMount(async () => {
 		try {
-			const lc = localStorage.getItem('rapor.kriteria.cukup');
-			const lb = localStorage.getItem('rapor.kriteria.baik');
-			if (lc !== null && !Number.isNaN(Number(lc))) kritCukup = Number(lc);
-			if (lb !== null && !Number.isNaN(Number(lb))) kritBaik = Number(lb);
+			const res = await fetch('/api/sekolah/rapor-kriteria');
+			if (res.ok) {
+				const json = await res.json();
+				const lc = json?.cukup;
+				const lb = json?.baik;
+				if (lc !== undefined && !Number.isNaN(Number(lc))) kritCukup = Number(lc);
+				if (lb !== undefined && !Number.isNaN(Number(lb))) kritBaik = Number(lb);
+			}
 		} catch {
-			// ignore (e.g., SSR or private mode restrictions)
+			// ignore network errors — keep defaults
 		}
 	});
 
@@ -596,14 +601,28 @@
 		{kritBaik}
 		tpMode={fullTP}
 		onSetKriteria={(cukup: number, baik: number) => {
+			// optimistic update in UI
 			kritCukup = cukup;
 			kritBaik = baik;
-			try {
-				localStorage.setItem('rapor.kriteria.cukup', String(kritCukup));
-				localStorage.setItem('rapor.kriteria.baik', String(kritBaik));
-			} catch {
-				// ignore storage errors
-			}
+			// persist to server (requires sekolah_manage permission)
+			fetch('/api/sekolah/rapor-kriteria', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ cukup: kritCukup, baik: kritBaik })
+			})
+				.then(async (res) => {
+					if (res.ok) {
+						toast('Kriteria rapor tersimpan di server.', 'success');
+					} else {
+						const payload = await res.json().catch(() => ({}));
+						console.error('Gagal menyimpan kriteria rapor', payload);
+						toast(payload?.error ?? 'Gagal menyimpan kriteria rapor.', 'error');
+					}
+				})
+				.catch((err) => {
+					console.error('Error saving kriteria rapor', err);
+					toast('Gagal menyimpan kriteria rapor (jaringan).', 'error');
+				});
 			// If a rapor preview is already shown, refresh it using new criteria
 			if (previewDocument === 'rapor') {
 				if (isBulkMode) handleBulkPreview();

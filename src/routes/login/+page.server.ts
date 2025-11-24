@@ -82,6 +82,21 @@ export const actions: Actions = {
 		});
 		applySessionCookie(cookies, session.token, session.expiresAt, secure);
 
+		// If the user record contains a preferred sekolahId, persist it into
+		// the active-sekolah cookie so that accounts (e.g. admin) retain their
+		// last-active sekolah across restarts/logins.
+		try {
+			const authUser = user as AuthUser & { sekolahId?: number };
+			if (authUser.sekolahId) {
+				cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(authUser.sekolahId), {
+					path: '/',
+					secure
+				});
+			}
+		} catch (err) {
+			console.warn('[login action] failed to set sekolah from user record', err);
+		}
+
 		// If the authenticated user is a wali_kelas, set the active-kelas-id cookie
 		// so the UI will select their assigned class immediately after login.
 		try {

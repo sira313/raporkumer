@@ -100,9 +100,9 @@
 	</div>
 	<div role="alert" class="alert alert-info">
 		<Icon name="info" class="text-xl" />
-		<span
-			>Pengaturan ini sementara tersimpan di localStorage browser dan akan hilang jika cache
-			dibersihkan atau membuka aplikasi Rapkumer dengan browser yang berbeda.</span
+		<span>
+			Pengaturan ini akan disimpan di server untuk sekolah aktif. Perubahan akan berlaku untuk semua
+			pengguna yang mengakses sekolah ini (tergantung izin server).</span
 		>
 	</div>
 </div>

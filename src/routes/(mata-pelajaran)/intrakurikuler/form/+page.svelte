@@ -18,6 +18,7 @@
 		nama?: string;
 		jenis?: MataPelajaran['jenis'];
 		kkm?: number | null;
+		kode?: string | null;
 		kelas?: KelasLite | null;
 	} & Record<string, unknown>;
 
@@ -47,9 +48,23 @@
 			? {
 					nama: mapel.nama,
 					kkm: mapel.kkm ?? '',
-					jenis: mapel.jenis
+					jenis: mapel.jenis,
+					kode: mapel.kode ?? ''
 				}
 			: undefined;
+	let localKode = $state(mapel?.kode ?? '');
+	if (mode === 'edit' && isAgamaGroup) {
+		localKode = 'PAPB';
+	}
+
+	function onNamaInput(e: Event) {
+		const v = ((e.target as HTMLInputElement)?.value ?? '').trim();
+		if (AGAMA_MAPEL_NAME_SET.has(v)) {
+			localKode = 'PAPB';
+		} else if (mode !== 'edit') {
+			if (localKode === 'PAPB') localKode = '';
+		}
+	}
 	const heading = mode === 'edit' ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran';
 	const namaPlaceholder =
 		mode === 'edit' && isAgamaParent
@@ -101,6 +116,7 @@
 				required
 				disabled={disableNama}
 				value={mapel?.nama ?? ''}
+				oninput={onNamaInput}
 			/>
 			<p class="label text-wrap">Nama mata pelajaran jangan disingkat!</p>
 		</fieldset>
@@ -115,6 +131,18 @@
 				disabled={!kelasAktif}
 				min="0"
 			/>
+		</fieldset>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Kode</legend>
+			<input
+				type="text"
+				class="input validator bg-base-200 w-full dark:border-none"
+				placeholder="Contoh: PAPB"
+				name="kode"
+				bind:value={localKode}
+				disabled={isAgamaGroup ? true : !kelasAktif}
+			/>
+			<p class="label text-wrap">Singkatan/kode singkat untuk mata pelajaran (opsional).</p>
 		</fieldset>
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Jenis Mata Pelajaran</legend>

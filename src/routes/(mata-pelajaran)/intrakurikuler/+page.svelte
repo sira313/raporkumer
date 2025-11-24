@@ -220,7 +220,8 @@
 					<thead>
 						<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
 							<th style="width: 60px;">No</th>
-							<th style="min-width: 280px;">Mata Pelajaran</th>
+							<th style="min-width: 240px;">Mata Pelajaran</th>
+							<th style="width: 120px;">Kode</th>
 							<th style="width: 100px;">KKM</th>
 							<th style="width: 180px;">Tujuan Pembelajaran</th>
 							<th>Aksi</th>
@@ -231,6 +232,9 @@
 							<tr>
 								<td>{index + 1}</td>
 								<td class="font-medium">{mapel.nama}</td>
+								<td class="font-mono text-sm"
+									>{mapel.kode ?? (mapel.nama === agamaParentName ? 'PAPB' : '—')}</td
+								>
 								<td>{formatKkm(mapel.kkm)}</td>
 								<td>
 									<div class="indicator">
@@ -276,7 +280,7 @@
 							</tr>
 						{:else}
 							<tr>
-								<td class="py-6 text-center italic opacity-60" colspan="5">{emptyStateMessage}</td>
+								<td class="py-6 text-center italic opacity-60" colspan="6">{emptyStateMessage}</td>
 							</tr>
 						{/each}
 					</tbody>

@@ -90,6 +90,10 @@ if (Test-Path $databasePath) {
     Write-Warning 'Default SQLite database not found; continuing without bundling data/database.sqlite3.'
 }
 
+    # Do not bundle Node runtime into the staged app; the installer expects
+    # end-users to install Node.js beforehand. This keeps the installer small.
+    Write-Host 'Not bundling Node runtime into staged app (require Node.js on target).' -ForegroundColor Yellow
+
 Write-Host 'Generating runtime package manifest...'
 $packageJsonPath = Join-Path $projectRoot 'package.json'
 $package = Get-Content $packageJsonPath -Raw | ConvertFrom-Json
@@ -105,11 +109,16 @@ $runtimeJson = $runtimePackage | ConvertTo-Json -Depth 5
 Set-Content -Path (Join-Path $appStage 'package.json') -Value $runtimeJson -Encoding UTF8
 
 Write-Host 'Copying runtime helper scripts...'
-Copy-Item (Join-Path $projectRoot 'installer/files/start-rapkumer.cmd') (Join-Path $appStage 'start-rapkumer.cmd') -Force
+# Also include the new ESM starter so shortcuts can point to .mjs
+$startMjs = Join-Path $projectRoot 'installer/files/start-rapkumer.mjs'
+if (Test-Path $startMjs) { Copy-Item $startMjs (Join-Path $appStage 'start-rapkumer.mjs') -Force }
+
+# Ensure start-build.mjs (used by start-rapkumer.mjs) is available at the app root
+$startBuildSrc = Join-Path $projectRoot 'scripts/start-build.mjs'
+if (Test-Path $startBuildSrc) { Copy-Item $startBuildSrc (Join-Path $appStage 'start-build.mjs') -Force }
 
 $toolsDir = Join-Path $appStage 'tools'
 New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null
-Copy-Item (Join-Path $projectRoot 'installer/scripts/resolve-node.ps1') (Join-Path $toolsDir 'resolve-node.ps1') -Force
 Copy-Item (Join-Path $projectRoot 'installer/scripts/resolve-node.ps1') (Join-Path $toolsDir 'resolve-node.ps1') -Force
 Copy-Item (Join-Path $projectRoot 'installer/scripts/run-migrations.ps1') (Join-Path $toolsDir 'run-migrations.ps1') -Force
 
@@ -164,6 +173,19 @@ if (Test-Path $schemaSrc) {
 $envSample = Join-Path $projectRoot '.env.example'
 if (Test-Path $envSample) {
     Copy-Item $envSample (Join-Path $appStage '.env.example') -Force
+}
+
+# Create a default .env for the installed app that points to the user's
+# local appdata folder so the installed app stores its DB in an per-user
+# location. Do not overwrite an existing .env in the staged app.
+$envTarget = Join-Path $appStage '.env'
+if (-not (Test-Path $envTarget)) {
+    $envContent = 'DB_URL=file:%LOCALAPPDATA%/Rapkumer-data/database.sqlite3'
+    $envContent += "`nBODY_SIZE_LIMIT=5M"
+    Set-Content -Path $envTarget -Value $envContent -Encoding UTF8
+    Write-Host "Wrote default .env to $envTarget" -ForegroundColor Green
+} else {
+    Write-Host '.env already exists in staged app; skipping creation.' -ForegroundColor Yellow
 }
 
 Write-Host 'Installing production dependencies with npm (omit dev)...'

@@ -70,10 +70,10 @@
 				{#snippet children({ submitting })}
 					<input type="hidden" name="sekolahId" value={sekolah.id} />
 					<div class="flex max-h-[85vh] flex-col sm:max-h-[90vh]">
-						<header class="border-base-300 bg-base-100 flex-shrink-0 border-b p-4">
+						<header class="border-base-300 bg-base-100 shrink-0 border-b p-4">
 							<div class="flex items-start gap-3">
 								<span
-									class="bg-error/10 text-error flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full"
+									class="bg-error/10 text-error flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
 									aria-hidden="true"
 								>
 									<Icon name="warning" class="text-xl" />
@@ -158,7 +158,7 @@
 								{/if}
 							</div>
 						</section>
-						<footer class="border-base-300 bg-base-100 flex-shrink-0 border-t p-4">
+						<footer class="border-base-300 bg-base-100 shrink-0 border-t p-4">
 							<div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
 								<button
 									type="button"
