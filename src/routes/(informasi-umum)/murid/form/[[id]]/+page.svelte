@@ -4,20 +4,35 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { jenisKelamin } from '$lib/statics';
 	import MuridPhotoUpload from '$lib/components/murid-photo-upload.svelte';
+	// deletion handled elsewhere; removed unused modal/toast imports
 	let { data } = $props();
 	let activeTab = $state(0);
 	let fotoPreview = $state<string | null>(
 		data.murid?.foto ? `/api/murid-photo/${data.murid.id}` : null
 	);
+
+	// openDeleteModal removed — deletion moved to dedicated route/modal
 </script>
 
 <FormEnhance
 	action="?/save"
 	enctype="multipart/form-data"
 	init={data.murid}
-	onsuccess={async () => {
+	onsuccess={async ({ data: res }) => {
 		await invalidate('app:murid');
+		// navigate back to detail modal first, then dispatch update event
 		history.back();
+		try {
+			const foto = res?.foto ?? null;
+			const id = res?.id ?? data.murid?.id;
+			const t = Date.now();
+			// delay dispatch slightly so the detail modal can mount its listener
+			setTimeout(() => {
+				window.dispatchEvent(new CustomEvent('murid:updated', { detail: { id, foto, t } }));
+			}, 120);
+		} catch {
+			void 0;
+		}
 	}}
 >
 	{#snippet children({ submitting, invalid })}
@@ -365,9 +380,8 @@
 					<MuridPhotoUpload
 						initialPreview={fotoPreview}
 						muridId={data.murid?.id}
-						on:deleted={async () => {
+						on:deleted={() => {
 							if (data.murid) data.murid.foto = null;
-							await invalidate('app:murid');
 						}}
 					/>
 				</div>
@@ -405,3 +419,5 @@
 		</div>
 	{/snippet}
 </FormEnhance>
+
+<!-- delete-confirm modal logic merged into top-level script -->

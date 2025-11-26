@@ -163,7 +163,12 @@ export const actions = {
 				}
 			}
 		});
-		return { message: `Data murid berhasil disimpan` };
+		// return the created/updated murid id and foto filename (if any)
+		return {
+			message: `Data murid berhasil disimpan`,
+			id: formMurid.id,
+			foto: formMurid.foto ?? null
+		};
 	}
 };
 

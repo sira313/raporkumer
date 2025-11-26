@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import Icon from '$lib/components/icon.svelte';
+	// Icon not used in this component
+	import { showModal } from '$lib/components/global-modal.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -43,20 +45,42 @@
 
 	async function deleteFoto() {
 		if (!muridId) return;
-		if (!confirm('Hapus foto murid? Tindakan ini tidak dapat dibatalkan.')) return;
-		deleting = true;
-		try {
-			const res = await fetch(`/api/murid-photo/${muridId}`, { method: 'DELETE' });
-			if (!res.ok) throw new Error(await res.text());
-			preview = null;
-			dispatch('deleted');
-			alert('Foto berhasil dihapus');
-		} catch (err) {
-			console.error(err);
-			alert('Gagal menghapus foto');
-		} finally {
-			deleting = false;
-		}
+		showModal({
+			title: 'Hapus foto murid',
+			body: '<p>Hapus foto murid? Tindakan ini tidak dapat dibatalkan.</p>',
+			onPositive: {
+				label: 'Hapus',
+				icon: 'del',
+				action: async ({ close }: { close: () => void }) => {
+					deleting = true;
+					try {
+						const res = await fetch(`/api/murid-photo/${muridId}`, { method: 'DELETE' });
+						if (!res.ok) {
+							let msg = 'Gagal menghapus foto';
+							try {
+								const json = await res.json().catch(() => null);
+								if (json && typeof json.message === 'string') msg = json.message;
+							} catch {
+								void 0;
+							}
+							toast({ message: msg, type: 'warning' });
+						} else {
+							preview = null;
+							dispatch('deleted');
+							toast({ message: 'Foto berhasil dihapus', type: 'success' });
+							close();
+						}
+					} catch (err) {
+						console.error(err);
+						toast({ message: 'Gagal menghapus foto', type: 'error' });
+					} finally {
+						deleting = false;
+					}
+				}
+			},
+			onNegative: { label: 'Batal', icon: 'close' },
+			dismissible: true
+		});
 	}
 </script>
 
@@ -91,7 +115,7 @@
 
 		<button
 			type="button"
-			class="btn btn-outline btn-error mt-2"
+			class="btn btn-outline btn-error mt-2 shadow-none"
 			on:click={deleteFoto}
 			disabled={!preview || deleting}
 			aria-label="Hapus Foto Murid"

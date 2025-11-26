@@ -3,6 +3,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { jenisKelamin } from '$lib/statics.js';
 	import { modalRoute } from '$lib/utils.js';
+	import { onMount, onDestroy } from 'svelte';
 
 	let { data } = $props();
 
@@ -16,11 +17,39 @@
 		!data?.murid?.foto
 			? null
 			: typeof data.murid.foto === 'string'
-			? (data.murid.foto.startsWith('http') || data.murid.foto.startsWith('data:') || data.murid.foto.startsWith('/')
-				? data.murid.foto
-				: `/api/murid-photo/${data.murid.id}?v=${encodeURIComponent(data.murid.foto)}`)
-			: `/api/murid-photo/${data.murid.id}?t=${Date.now()}`
+				? data.murid.foto.startsWith('http') ||
+					data.murid.foto.startsWith('data:') ||
+					data.murid.foto.startsWith('/')
+					? data.murid.foto
+					: `/api/murid-photo/${data.murid.id}?v=${encodeURIComponent(data.murid.foto)}`
+				: `/api/murid-photo/${data.murid.id}?t=${Date.now()}`
 	);
+
+	let _muridUpdatedHandler: ((e: CustomEvent<Record<string, unknown>>) => void) | null = null;
+
+	onMount(() => {
+		_muridUpdatedHandler = (e: CustomEvent<Record<string, unknown>>) => {
+			try {
+				const detail = (e?.detail ?? null) as Record<string, unknown> | null;
+				if (!detail) return;
+				// match by id
+				if (String(detail.id) === String(data?.murid?.id)) {
+					// include timestamp in foto field to bust cache when filename unchanged
+					const newFoto = detail?.foto ? `${detail.foto}${detail.t ? `?t=${detail.t}` : ''}` : null;
+					// reassign `data` so runes reactivity picks up change
+					data = { ...data, murid: { ...(data.murid ?? {}), foto: newFoto } };
+				}
+			} catch (err) {
+				console.debug('murid:updated handler error', err);
+			}
+		};
+		window.addEventListener('murid:updated', _muridUpdatedHandler as EventListener);
+	});
+
+	onDestroy(() => {
+		if (_muridUpdatedHandler)
+			window.removeEventListener('murid:updated', _muridUpdatedHandler as EventListener);
+	});
 </script>
 
 {#snippet field(label: string, value?: string | null)}

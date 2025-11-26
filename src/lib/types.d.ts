@@ -43,6 +43,8 @@ interface BiodataPrintData {
 		nama: string;
 	};
 	murid: {
+		id?: number;
+		foto?: string | null;
 		nama: string;
 		nis: string;
 		nisn: string;
