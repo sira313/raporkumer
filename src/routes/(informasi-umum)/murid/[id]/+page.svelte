@@ -24,17 +24,52 @@
 			<!-- data Murid -->
 			<input type="radio" name="tab-detil-murid" class="tab" aria-label="Data Murid" checked />
 			<div class="tab-content bg-base-100 p-4">
-				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-					{@render field('NIS', data.murid.nis)}
-					{@render field('NISN', data.murid.nisn)}
-					{@render field('Nama', data.murid.nama)}
-					{@render field('Kelas', kelas)}
-					{@render field('Tempat Lahir', data.murid.tempatLahir)}
-					{@render field('Tanggal Lahir', data.murid.tanggalLahir)}
-					{@render field('Jenis Kelamin', jenisKelamin[data.murid.jenisKelamin])}
-					{@render field('Agama', data.murid.agama)}
-					{@render field('Pendidikan Sebelumnya', data.murid.pendidikanSebelumnya)}
-					{@render field('Tanggal Masuk Sekolah Ini', data.murid.tanggalMasuk)}
+				<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+					<!-- Foto murid (placeholder) -->
+					<div class="flex items-start sm:col-span-1 sm:pr-4">
+						<div
+							class="bg-base-200 flex aspect-3/4 w-full max-w-xs items-center justify-center overflow-hidden rounded-lg object-cover"
+							role="img"
+							aria-label="Foto murid (placeholder)"
+						>
+							<!-- Simple placeholder: initials or icon -->
+							<div class="p-4 text-center opacity-60">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="mx-auto h-16 w-12 text-gray-400"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									stroke-width="1.5"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"
+									/>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										d="M6 20c0-2.21 3.582-4 6-4s6 1.79 6 4"
+									/>
+								</svg>
+								<p class="mt-2 text-sm">Foto belum tersedia</p>
+							</div>
+						</div>
+					</div>
+					<!-- Data fields (kept as two-column grid inside the right area) -->
+					<div class="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2">
+						{@render field('NIS', data.murid.nis)}
+						{@render field('NISN', data.murid.nisn)}
+						{@render field('Nama', data.murid.nama)}
+						{@render field('Kelas', kelas)}
+						{@render field('Tempat Lahir', data.murid.tempatLahir)}
+						{@render field('Tanggal Lahir', data.murid.tanggalLahir)}
+						{@render field('Jenis Kelamin', jenisKelamin[data.murid.jenisKelamin])}
+						{@render field('Agama', data.murid.agama)}
+						{@render field('Pendidikan Sebelumnya', data.murid.pendidikanSebelumnya)}
+						{@render field('Tanggal Masuk Sekolah Ini', data.murid.tanggalMasuk)}
+					</div>
 				</div>
 			</div>
 			<!-- data Orang Tua -->
