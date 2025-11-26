@@ -7,6 +7,20 @@
 	let { data } = $props();
 
 	let kelas = `${data.murid.kelas?.nama || '-'} Fase ${data.murid.kelas?.fase || '-'}`;
+
+	// compute a robust image src for the detail modal:
+	// - if `data.murid.foto` is a URL or data URI, use it directly
+	// - otherwise fallback to the internal API endpoint and add a cache-busting
+	//   query param so updated photos are fetched instead of a cached image
+	const photoSrc = $derived(
+		!data?.murid?.foto
+			? null
+			: typeof data.murid.foto === 'string'
+			? (data.murid.foto.startsWith('http') || data.murid.foto.startsWith('data:') || data.murid.foto.startsWith('/')
+				? data.murid.foto
+				: `/api/murid-photo/${data.murid.id}?v=${encodeURIComponent(data.murid.foto)}`)
+			: `/api/murid-photo/${data.murid.id}?t=${Date.now()}`
+	);
 </script>
 
 {#snippet field(label: string, value?: string | null)}
@@ -30,12 +44,8 @@
 						<div
 							class="bg-base-200 flex aspect-3/4 w-full max-w-xs items-center justify-center overflow-hidden rounded-lg object-cover"
 						>
-							{#if data.murid.foto}
-								<img
-									src={`/api/murid-photo/${data.murid.id}`}
-									alt="Foto murid"
-									class="h-full w-full object-cover"
-								/>
+							{#if photoSrc}
+								<img src={photoSrc} alt="Foto murid" class="h-full w-full object-cover" />
 							{:else}
 								<!-- Simple placeholder: initials or icon -->
 								<div class="p-4 text-center opacity-60">
