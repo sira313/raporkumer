@@ -303,6 +303,8 @@ export const tableMurid = sqliteTable(
 		ibuId: int().references(() => tableWaliMurid.id),
 		ayahId: int().references(() => tableWaliMurid.id),
 		waliId: int().references(() => tableWaliMurid.id),
+		// optional: path/filename (or url) ke foto murid
+		foto: text(),
 		...audit
 	},
 	(t) => [unique().on(t.sekolahId, t.semesterId, t.nis)]

@@ -4,12 +4,67 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { jenisKelamin } from '$lib/statics';
 
+	import { onDestroy } from 'svelte';
 	let { data } = $props();
 	let activeTab = $state(0);
+	let fotoPreview = $state<string | null>(
+		data.murid?.foto ? `/api/murid-photo/${data.murid.id}` : null
+	);
+	let deleting = $state(false);
+
+	function handleFotoChange(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) {
+			fotoPreview = null;
+			return;
+		}
+		const allowed = ['image/png', 'image/jpeg'];
+		if (!allowed.includes(file.type)) {
+			input.value = '';
+			alert('Format file tidak didukung; hanya JPG dan PNG yang diizinkan');
+			fotoPreview = null;
+			return;
+		}
+		if (file.size > 500 * 1024) {
+			input.value = '';
+			alert('Ukuran file foto tidak boleh lebih dari 500KB');
+			fotoPreview = null;
+			return;
+		}
+		const reader = new FileReader();
+		reader.onload = () => (fotoPreview = reader.result as string);
+		reader.readAsDataURL(file);
+	}
+
+	async function deleteFoto() {
+		if (!data.murid?.id) return;
+		if (!confirm('Hapus foto murid? Tindakan ini tidak dapat dibatalkan.')) return;
+		deleting = true;
+		try {
+			const res = await fetch(`/api/murid-photo/${data.murid.id}`, { method: 'DELETE' });
+			if (!res.ok) throw new Error(await res.text());
+			// update UI
+			fotoPreview = null;
+			if (data.murid) data.murid.foto = null;
+			// clear file input if present
+			const input = document.querySelector<HTMLInputElement>('input[name="foto"]');
+			if (input) input.value = '';
+			// refresh parent lists if needed
+			await invalidate('app:murid');
+			alert('Foto berhasil dihapus');
+		} catch (err) {
+			console.error(err);
+			alert('Gagal menghapus foto');
+		} finally {
+			deleting = false;
+		}
+	}
 </script>
 
 <FormEnhance
 	action="?/save"
+	enctype="multipart/form-data"
 	init={data.murid}
 	onsuccess={async () => {
 		await invalidate('app:murid');
@@ -354,6 +409,52 @@
 						</fieldset>
 					</div>
 				</div>
+
+				<!-- Foto Murid -->
+				<input type="radio" bind:group={activeTab} value={4} class="tab" aria-label="Foto Murid" />
+				<div class="tab-content bg-base-100 p-4">
+					<div class="flex flex-col gap-4 sm:flex-row">
+						<div class="flex-1 sm:max-w-xs">
+							<div
+								class="bg-base-200 flex aspect-3/4 w-full items-center justify-center overflow-hidden rounded-lg"
+							>
+								{#if fotoPreview}
+									<img
+										src={fotoPreview}
+										alt="Preview foto murid"
+										class="h-full w-full object-cover"
+									/>
+								{:else}
+									<div class="p-4 text-center opacity-60">
+										<p class="text-sm">Foto belum dipilih</p>
+									</div>
+								{/if}
+							</div>
+						</div>
+						<div class="flex-1">
+							<fieldset class="fieldset">
+								<legend class="fieldset-legend">Upload Foto Murid</legend>
+								<input
+									name="foto"
+									type="file"
+									accept="image/png,image/jpeg"
+									class="file-input file-input-ghost w-full"
+									onchange={handleFotoChange}
+								/>
+								<p class="mt-2 text-sm text-gray-500">Maksimum ukuran 500KB. Hanya JPG / PNG.</p>
+							</fieldset>
+							<button
+								type="button"
+								class="btn btn-outline btn-error mt-2"
+								onclick={deleteFoto}
+								disabled={!data.murid?.foto || deleting}
+								aria-label="Hapus Foto Murid"
+							>
+								Hapus Foto
+							</button>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<div class="border-base-200 mt-4 flex flex-col gap-2 sm:flex-row">
@@ -366,7 +467,7 @@
 				<button
 					class="btn btn-primary shadow-none"
 					type="button"
-					onclick={() => (activeTab = (activeTab + 1) % 4)}
+					onclick={() => (activeTab = (activeTab + 1) % 5)}
 				>
 					<Icon name="double-arrow" class="h-4 w-4" />
 					Selanjutnya
