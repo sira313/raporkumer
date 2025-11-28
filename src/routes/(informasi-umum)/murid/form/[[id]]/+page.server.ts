@@ -43,6 +43,37 @@ export const actions = {
 				.toLowerCase();
 			return cleaned.substring(0, 80) || 'murid';
 		}
+
+		async function generateUniqueFilename(
+			dbTrans: DBTransaction,
+			base: string,
+			ext: string,
+			dir: string,
+			currentId?: number | null
+		) {
+			let i = 0;
+			let candidate = `${base}${ext}`;
+			while (true) {
+				// check DB for existing usage
+				const existing = await dbTrans.query.tableMurid.findFirst({
+					where: eq(tableMurid.foto, candidate),
+					columns: { id: true }
+				});
+				const usedByOther = !!(existing && (!currentId || existing.id !== currentId));
+				// check filesystem
+				let existsOnDisk = false;
+				try {
+					await fs.stat(path.join(dir, candidate));
+					existsOnDisk = true;
+				} catch {
+					existsOnDisk = false;
+				}
+				if (!usedByOther && !existsOnDisk) return candidate;
+				i += 1;
+				candidate = `${base}-${i}${ext}`;
+				if (i > 1000) throw error(500, 'Gagal membuat nama file unik');
+			}
+		}
 		formMurid.sekolahId = locals.sekolah!.id;
 		if (!formMurid.kelasId) {
 			error(400, 'Kelas harus dipilih');
@@ -82,7 +113,7 @@ export const actions = {
 					await fs.mkdir(dir, { recursive: true });
 					const ext = uploadedFile.type === 'image/png' ? '.png' : '.jpg';
 					const base = slugifyName(formMurid.nama || murid.nama || `murid-${murid.id}`);
-					const filename = `${base}-${murid.id}${ext}`;
+					const filename = await generateUniqueFilename(db, base, ext, dir, murid.id);
 					const filePath = path.join(dir, filename);
 					// remove old file if exists and different
 					if (murid.foto && murid.foto !== filename) {
@@ -141,7 +172,7 @@ export const actions = {
 					await fs.mkdir(dir, { recursive: true });
 					const ext = uploadedFile.type === 'image/png' ? '.png' : '.jpg';
 					const base = slugifyName(formMurid.nama || `murid-${formMurid.id}`);
-					const filename = `${base}-${formMurid.id}${ext}`;
+					const filename = await generateUniqueFilename(db, base, ext, dir, formMurid.id);
 					const filePath = path.join(dir, filename);
 					// remove old file if exists
 					const existing = await db.query.tableMurid.findFirst({

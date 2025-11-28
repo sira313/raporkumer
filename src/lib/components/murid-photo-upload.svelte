@@ -115,7 +115,7 @@
 
 		<button
 			type="button"
-			class="btn btn-outline btn-error mt-2 shadow-none"
+			class="btn btn-outline btn-sm btn-error mt-2 shadow-none"
 			on:click={deleteFoto}
 			disabled={!preview || deleting}
 			aria-label="Hapus Foto Murid"
