@@ -69,7 +69,7 @@ begin
 			if not FileExists(LogFile) then
 				SaveStringToFile(LogFile, '', False);
 		EnvPath := ExpandConstant('{app}\.env');
-		S := 'DB_URL=file:' + DbPath + #13#10 + 'BODY_SIZE_LIMIT=5M' + #13#10 + 'photo=file:' + ExpandConstant('{localappdata}\Rapkumer-data\uploads');
+		S := 'DB_URL="file:' + DbPath + '"' + #13#10 + 'BODY_SIZE_LIMIT=5M' + #13#10 + 'photo="file:' + ExpandConstant('{localappdata}\Rapkumer-data\uploads') + '"';
 		if SaveStringToFile(EnvPath, S, False) then
 			Log(Format('Wrote .env to %s', [EnvPath]))
 		else
