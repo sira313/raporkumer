@@ -118,7 +118,7 @@
 	}
 </script>
 
-<div class="card bg-base-100 rounded-box mx-auto w-full max-w-4xl border border-none p-4 shadow-md">
+<div class="card bg-base-100 rounded-box w-full border border-none p-4 shadow-md">
 	<h2 class="mb-6 text-xl font-bold">
 		<span class="opacity-50">Ekstrakurikuler:</span>
 		{data.ekstrakurikuler.nama}
