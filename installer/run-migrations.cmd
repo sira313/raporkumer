@@ -1,6 +1,13 @@
 @echo off
 REM Wrapper to run migrations against the installed Rapkumer-data DB
 SETLOCAL
+:: Accept optional flags to run in silent/non-interactive mode (skip final pause)
+set "NO_PAUSE=0"
+for %%a in (%*) do (
+  if /I "%%~a"=="/SILENT" set "NO_PAUSE=1"
+  if /I "%%~a"=="/NOPAUSE" set "NO_PAUSE=1"
+  if /I "%%~a"=="/QUIET" set "NO_PAUSE=1"
+)
 if not defined LOCALAPPDATA (
   echo LOCALAPPDATA not defined. Exiting.
   exit /b 1
@@ -89,4 +96,8 @@ if exist "%~dp0scripts\migrate-installed-db.mjs" (
 popd
 
 echo Done.
-pause
+if "%NO_PAUSE%"=="1" (
+  echo (silent) skipping pause
+) else (
+  pause
+)
