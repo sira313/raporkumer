@@ -285,14 +285,28 @@
 					Hapus
 				</button>
 			{:else}
-				<a
-					class="btn btn-soft mt-4 flex items-center shadow-none sm:mt-0"
-					href="/murid/form"
-					use:modalRoute={'add-murid'}
-				>
-					<Icon name="plus" />
-					Tambah Murid
-				</a>
+				<div class="flex flex-row">
+					<a
+						class="btn btn-soft mt-4 flex items-center rounded-r-none shadow-none sm:mt-0"
+						href="/murid/form"
+						use:modalRoute={'add-murid'}
+					>
+						<Icon name="plus" />
+						Tambah Murid
+					</a>
+					<div class="dropdown dropdown-end">
+						<div tabindex="0" role="button" class="btn btn-soft rounded-l-none shadow-none">
+							<Icon name="down" />
+						</div>
+						<ul
+							tabindex="-1"
+							class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-1 mt-2 w-50 border p-2 shadow-lg"
+						>
+							<li><a>Lihat Semua Foto</a></li>
+							<li><a>Upload Semua Foto</a></li>
+						</ul>
+					</div>
+				</div>
 			{/if}
 		</div>
 	</div>
