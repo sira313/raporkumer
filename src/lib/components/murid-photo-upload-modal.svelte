@@ -27,12 +27,13 @@
 
 	$effect(() => {
 		if (isOpen && dialogRef) {
-			// Reset modal state when opening
-			resetModal();
 			// Use setTimeout to ensure it runs after DOM is ready
 			setTimeout(() => {
 				dialogRef?.showModal?.();
 			}, 0);
+		} else if (!isOpen && dialogRef) {
+			// Close modal when isOpen becomes false
+			dialogRef?.close();
 		}
 	});
 
@@ -108,10 +109,6 @@
 						detail: { id: muridId, foto: result.foto, t: Date.now() }
 					})
 				);
-				// Close only this modal, keep parent modal open
-				resetModal();
-				isOpen = false;
-				dialogRef?.close();
 			}
 		} catch (err) {
 			console.error(err);
@@ -138,7 +135,10 @@
 			toast({ message: 'Pilih file foto terlebih dahulu', type: 'warning' });
 			return;
 		}
-		saveUploadFoto();
+		saveUploadFoto().then(() => {
+			// Close modal after upload finishes
+			isOpen = false;
+		});
 	}
 
 	function handleBatal() {
