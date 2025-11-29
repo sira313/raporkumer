@@ -377,13 +377,7 @@
 				<!-- Foto Murid -->
 				<input type="radio" bind:group={activeTab} value={4} class="tab" aria-label="Foto Murid" />
 				<div class="tab-content bg-base-100 p-4">
-					<MuridPhotoUpload
-						initialPreview={fotoPreview}
-						muridId={data.murid?.id}
-						on:deleted={() => {
-							if (data.murid) data.murid.foto = null;
-						}}
-					/>
+					<MuridPhotoUpload initialPreview={fotoPreview} />
 				</div>
 			</div>
 		</div>
