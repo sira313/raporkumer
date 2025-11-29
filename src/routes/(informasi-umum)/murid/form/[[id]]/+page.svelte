@@ -3,13 +3,9 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenisKelamin } from '$lib/statics';
-	import MuridPhotoUpload from '$lib/components/murid-photo-upload.svelte';
 	// deletion handled elsewhere; removed unused modal/toast imports
 	let { data } = $props();
 	let activeTab = $state(0);
-	let fotoPreview = $state<string | null>(
-		data.murid?.foto ? `/api/murid-photo/${data.murid.id}` : null
-	);
 
 	// openDeleteModal removed — deletion moved to dedicated route/modal
 </script>
@@ -373,12 +369,6 @@
 						</fieldset>
 					</div>
 				</div>
-
-				<!-- Foto Murid -->
-				<input type="radio" bind:group={activeTab} value={4} class="tab" aria-label="Foto Murid" />
-				<div class="tab-content bg-base-100 p-4">
-					<MuridPhotoUpload initialPreview={fotoPreview} />
-				</div>
 			</div>
 		</div>
 		<div class="border-base-200 mt-4 flex flex-col gap-2 sm:flex-row">
@@ -391,7 +381,7 @@
 				<button
 					class="btn btn-primary shadow-none"
 					type="button"
-					onclick={() => (activeTab = (activeTab + 1) % 5)}
+					onclick={() => (activeTab = (activeTab + 1) % 4)}
 				>
 					<Icon name="double-arrow" class="h-4 w-4" />
 					Selanjutnya
@@ -399,7 +389,7 @@
 			{/if}
 
 			<div
-				class="tooltip tooltip-left tooltip-error {data.murid?.id ? 'sm:ml-auto' : ''}"
+				class="tooltip tooltip-left tooltip-error sm:ml-auto {data.murid?.id}"
 				data-tip={submitting || invalid
 					? 'Ada data lain yang belum terisi, mohon periksa terlebih dahulu!'
 					: ''}
