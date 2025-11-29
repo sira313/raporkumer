@@ -404,18 +404,25 @@
 				</button>
 			{/if}
 
-			<button
-				class="btn shadow-none {data.murid?.id ? 'btn-secondary' : 'btn-primary'} sm:ml-auto"
-				type="submit"
-				disabled={submitting || invalid}
+			<div
+				class="tooltip tooltip-left tooltip-error {data.murid?.id ? 'sm:ml-auto' : ''}"
+				data-tip={submitting || invalid
+					? 'Ada data lain yang belum terisi, mohon periksa terlebih dahulu!'
+					: ''}
 			>
-				{#if submitting}
-					<span class="loading loading-spinner"></span>
-				{:else}
-					<Icon name="save" />
-				{/if}
-				Simpan
-			</button>
+				<button
+					class="btn shadow-none {data.murid?.id ? 'btn-secondary' : 'btn-primary'}"
+					type="submit"
+					disabled={submitting || invalid}
+				>
+					{#if submitting}
+						<span class="loading loading-spinner"></span>
+					{:else}
+						<Icon name="save" />
+					{/if}
+					Simpan
+				</button>
+			</div>
 		</div>
 	{/snippet}
 </FormEnhance>
