@@ -3,7 +3,8 @@ import {
 	tableAsesmenFormatif,
 	tableMataPelajaran,
 	tableMurid,
-	tableTujuanPembelajaran
+	tableTujuanPembelajaran,
+	tableAuthUserMataPelajaran
 } from '$lib/server/db/schema';
 import { ensureAsesmenFormatifSchema } from '$lib/server/db/ensure-asesmen-formatif';
 import { asc, and, eq, inArray } from 'drizzle-orm';
@@ -125,7 +126,9 @@ export async function load({ parent, url, depends }) {
 	// If the logged-in user is a simple 'user' and has an assigned mataPelajaranId,
 	// prefer the subject with the same name in the active kelas (so subject exists
 	// across multiple kelas rows with same name).
-	const maybeUser = user as unknown as { type?: string; mataPelajaranId?: number } | undefined;
+	const maybeUser = user as unknown as
+		| { id?: number; type?: string; mataPelajaranId?: number }
+		| undefined;
 	// Special rule: if the logged-in user is a 'user' assigned to any agama
 	// variant (Katolik, Islam, Kristen, Hindu, Buddha, Khonghucu, etc.),
 	// treat them like the admin behaviour: show the parent agama subject and
@@ -200,36 +203,73 @@ export async function load({ parent, url, depends }) {
 		// keep assignedIsAgamaVariant as detected above
 	}
 
-	// Derive a human readable agama label for the assigned agama-variant.
-	// Fetch the assigned mata pelajaran name directly so variant assignments
-	// (including 'Katolik' variant) are detected reliably.
-	let allowedAgamaForUser: string | null = null;
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+	// Derive human readable agama labels for the assigned agama-variant(s).
+	// Support both multi-mapel (join table) and legacy single-mapel.
+	const allowedAgamaVariants = new Set<string>();
+	if (maybeUser && maybeUser.type === 'user' && maybeUser.id) {
 		try {
-			const assignedRec = await db.query.tableMataPelajaran.findFirst({
-				columns: { id: true, nama: true },
-				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			// First try multi-mapel from join table
+			const multiMapels = await db.query.tableAuthUserMataPelajaran.findMany({
+				columns: { mataPelajaranId: true },
+				where: eq(tableAuthUserMataPelajaran.authUserId, maybeUser.id)
 			});
-			if (assignedRec && assignedRec.nama) {
-				const nm = normalizeText(assignedRec.nama);
-				if (nm.includes('katolik')) allowedAgamaForUser = 'Katolik';
-				else if (nm.includes('kristen') || nm.includes('protestan'))
-					allowedAgamaForUser = 'Kristen';
-				else if (nm.includes('islam')) allowedAgamaForUser = 'Islam';
-				else if (nm.includes('hindu')) allowedAgamaForUser = 'Hindu';
-				else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
-					allowedAgamaForUser = 'Buddha';
-				else if (nm.includes('khonghucu') || nm.includes('konghucu') || nm.includes('khong hu cu'))
-					allowedAgamaForUser = 'Khonghucu';
-				else if (normalizeText(assignedRec.nama).startsWith('pendidikan agama')) {
-					// Fallback: use the raw mapel name if it's an agama subject we don't explicitly handle
-					allowedAgamaForUser = assignedRec.nama;
+
+			if (multiMapels.length > 0) {
+				// Get mapel names from join table assignments
+				const assignedMapels = await db.query.tableMataPelajaran.findMany({
+					columns: { id: true, nama: true },
+					where: inArray(
+						tableMataPelajaran.id,
+						multiMapels.map((m) => m.mataPelajaranId)
+					)
+				});
+
+				for (const mapel of assignedMapels) {
+					const nm = normalizeText(mapel.nama);
+					if (nm.includes('katolik')) allowedAgamaVariants.add('Katolik');
+					else if (nm.includes('kristen') || nm.includes('protestan'))
+						allowedAgamaVariants.add('Kristen');
+					else if (nm.includes('islam')) allowedAgamaVariants.add('Islam');
+					else if (nm.includes('hindu')) allowedAgamaVariants.add('Hindu');
+					else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
+						allowedAgamaVariants.add('Buddha');
+					else if (
+						nm.includes('khonghucu') ||
+						nm.includes('konghucu') ||
+						nm.includes('khong hu cu')
+					)
+						allowedAgamaVariants.add('Khonghucu');
+				}
+			} else if (maybeUser.mataPelajaranId) {
+				// Fallback: check legacy single mataPelajaranId
+				const assignedRec = await db.query.tableMataPelajaran.findFirst({
+					columns: { id: true, nama: true },
+					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+				});
+				if (assignedRec && assignedRec.nama) {
+					const nm = normalizeText(assignedRec.nama);
+					if (nm.includes('katolik')) allowedAgamaVariants.add('Katolik');
+					else if (nm.includes('kristen') || nm.includes('protestan'))
+						allowedAgamaVariants.add('Kristen');
+					else if (nm.includes('islam')) allowedAgamaVariants.add('Islam');
+					else if (nm.includes('hindu')) allowedAgamaVariants.add('Hindu');
+					else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
+						allowedAgamaVariants.add('Buddha');
+					else if (
+						nm.includes('khonghucu') ||
+						nm.includes('konghucu') ||
+						nm.includes('khong hu cu')
+					)
+						allowedAgamaVariants.add('Khonghucu');
 				}
 			}
 		} catch (err) {
-			console.warn('[asesmen-formatif] Failed to resolve assigned mapel for agama label', err);
+			console.warn('[asesmen-formatif] Failed to resolve assigned agama variants', err);
 		}
 	}
+
+	const allowedAgamaForUser =
+		allowedAgamaVariants.size > 0 ? Array.from(allowedAgamaVariants)[0] : null;
 
 	let agamaBaseMapel: (typeof mapelRecords)[number] | null = null;
 	const agamaVariantRecords: typeof mapelRecords = [];
@@ -514,11 +554,40 @@ export async function load({ parent, url, depends }) {
 		}
 
 		const canAccess = (() => {
-			if (!maybeUser || maybeUser.type !== 'user' || !maybeUser.mataPelajaranId) return true;
-			// Only restrict when the assigned mapel is an agama variant.
+			if (!maybeUser || maybeUser.type !== 'user') return true;
+
+			// If agama is selected and user has assigned agama variants, restrict by agama
+			if (isAgamaSelected && allowedAgamaVariants.size > 0) {
+				const muridVariant = resolveAgamaVariantName(murid.agama);
+				const muridAgamaDisplay = muridVariant
+					? (() => {
+							const nm = normalizeText(muridVariant);
+							if (nm.includes('katolik')) return 'Katolik';
+							else if (nm.includes('kristen') || nm.includes('protestan')) return 'Kristen';
+							else if (nm.includes('islam')) return 'Islam';
+							else if (nm.includes('hindu')) return 'Hindu';
+							else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
+								return 'Buddha';
+							else if (
+								nm.includes('khonghucu') ||
+								nm.includes('konghucu') ||
+								nm.includes('khong hu cu')
+							)
+								return 'Khonghucu';
+							return null;
+						})()
+					: null;
+
+				// Allow access only if murid's agama is in user's assigned agama variants
+				const allowed = muridAgamaDisplay && allowedAgamaVariants.has(muridAgamaDisplay);
+				console.log(
+					`[asesmen-formatif] canAccess check: murid.id=${murid.id}, murid.agama="${murid.agama}", muridAgamaDisplay="${muridAgamaDisplay}", allowed=${allowed}, allowedVariants=[${Array.from(allowedAgamaVariants).join(', ')}]`
+				);
+				return allowed ?? false;
+			}
+
+			// For non-agama mapel, check standard assignment
 			if (!assignedIsAgamaVariant) return true;
-			// If we couldn't resolve an assigned local mapel id in this kelas,
-			// deny access to grading links (safe default).
 			if (!assignedLocalMapelId) return false;
 			return targetMapelId === assignedLocalMapelId;
 		})();
