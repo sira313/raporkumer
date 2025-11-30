@@ -302,8 +302,8 @@
 							tabindex="-1"
 							class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-1 mt-2 w-50 border p-2 shadow-lg"
 						>
-							<li><button type="button" class="btn btn-ghost btn-sm">Lihat Semua Foto</button></li>
-							<li><button type="button" class="btn btn-ghost btn-sm">Upload Semua Foto</button></li>
+							<li><a href="/murid/photos">Lihat Semua Foto</a></li>
+							<li><div>Upload Semua Foto</div></li>
 						</ul>
 					</div>
 				</div>
