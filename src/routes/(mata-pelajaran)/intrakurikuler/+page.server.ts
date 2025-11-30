@@ -61,10 +61,37 @@ export async function load({ depends, url, parent }) {
 							assignedMapels.map((m) => m.mataPelajaranId)
 						)
 					});
+					console.log('[intrakurikuler] Linda assignedMapelRecords:', assignedMapelRecords);
 
 					// Build a set of allowed mapel names (normalize for comparison)
 					const allowedNames = new Set(
 						assignedMapelRecords.map((m) => (m.nama || '').trim().toLowerCase())
+					);
+
+					// Check if any assigned mapel is an agama variant
+					let hasAgamaVariant = false;
+					for (const record of assignedMapelRecords) {
+						const norm = (record.nama || '').trim().toLowerCase();
+						if (
+							norm.startsWith('pendidikan agama') &&
+							!norm.includes(AGAMA_PARENT_NAME.toLowerCase())
+						) {
+							hasAgamaVariant = true;
+							break;
+						}
+					}
+					console.log('[intrakurikuler] hasAgamaVariant:', hasAgamaVariant);
+
+					// If has agama variant, also add the parent agama mapel name
+					if (hasAgamaVariant) {
+						allowedNames.add(AGAMA_PARENT_NAME.toLowerCase());
+						console.log('[intrakurikuler] Added parent agama to allowedNames');
+					}
+
+					console.log('[intrakurikuler] allowedNames:', Array.from(allowedNames));
+					console.log(
+						'[intrakurikuler] mapel before filter:',
+						mapel.map((m) => ({ id: m.id, nama: m.nama }))
 					);
 
 					// Filter current kelas' mapel by name match
@@ -72,6 +99,10 @@ export async function load({ depends, url, parent }) {
 						const mNorm = (m.nama || '').trim().toLowerCase();
 						return allowedNames.has(mNorm);
 					});
+					console.log(
+						'[intrakurikuler] mapel after filter:',
+						mapel.map((m) => ({ id: m.id, nama: m.nama }))
+					);
 				} else {
 					// Fallback: check legacy single mataPelajaranId
 					const assignedId = (user as unknown as { mataPelajaranId?: number }).mataPelajaranId;

@@ -482,8 +482,9 @@ export const actions = {
 				passwordUpdatedAt: timestamp,
 				permissions: permissions,
 				type: roleValue,
-				// Set mataPelajaranId to first item (for backward compatibility with old code that checks mataPelajaranId)
-				mataPelajaranId: mataPelajaranIds.length > 0 ? mataPelajaranIds[0] : undefined,
+				// For backward compatibility: only set mataPelajaranId if single mapel
+				// Multi-mapel users should have null so system uses join table instead
+				mataPelajaranId: mataPelajaranIds.length === 1 ? mataPelajaranIds[0] : undefined,
 				// Set kelasId to first item (for backward compatibility with old code that checks kelasId)
 				kelasId: kelasIds.length > 0 ? kelasIds[0] : undefined,
 				// persist sekolah selection when provided so login reliably selects it

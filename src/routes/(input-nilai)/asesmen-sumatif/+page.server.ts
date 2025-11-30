@@ -153,7 +153,26 @@ export async function load({ parent, url, depends }) {
 				// Build a set of allowed mapel names (normalize for comparison)
 				const allowedNames = new Set(assignedMapelRecords.map((m) => normalizeText(m.nama)));
 
+				// Check if any assigned mapel is an agama variant
+				let hasAgamaVariant = false;
+				for (const record of assignedMapelRecords) {
+					const norm = normalizeText(record.nama);
+					if (
+						norm.startsWith('pendidikan agama') &&
+						!norm.includes(normalizeText(AGAMA_BASE_SUBJECT))
+					) {
+						hasAgamaVariant = true;
+						break;
+					}
+				}
+
+				// If has agama variant, also add the parent agama mapel name
+				if (hasAgamaVariant) {
+					allowedNames.add(normalizeText(AGAMA_BASE_SUBJECT));
+				}
+
 				console.log(`[asesmen-sumatif] load: allowedNames=`, Array.from(allowedNames));
+				console.log(`[asesmen-sumatif] load: hasAgamaVariant=${hasAgamaVariant}`);
 
 				// Filter current kelas' mapel by name match
 				const beforeFilter = mapelRecords.length;
