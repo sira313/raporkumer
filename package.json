@@ -67,6 +67,7 @@
 	"dependencies": {
 		"@libsql/client": "^0.15.15",
 		"drizzle-orm": "^0.44.7",
-		"exceljs": "^4.4.0"
+		"exceljs": "^4.4.0",
+		"unzipper": "^0.12.3"
 	}
 }

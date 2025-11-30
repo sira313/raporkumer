@@ -45,9 +45,22 @@
 
 	let selectAllCheckbox: HTMLInputElement | null = null;
 	let formSubmitting = $state(false);
+	let isBulkPhotoUploadOpen = $state(false);
+	let dropdownToggle: HTMLDivElement | null = $state(null);
 
 	function handleSubmittingChange(value: boolean) {
 		formSubmitting = value;
+	}
+
+	function openBulkPhotoUploadModal() {
+		// Close dropdown first with small delay
+		if (dropdownToggle) {
+			dropdownToggle.blur();
+		}
+		// Open modal after dropdown closes
+		setTimeout(() => {
+			isBulkPhotoUploadOpen = true;
+		}, 100);
 	}
 
 	function toggleSelect(id: number, checked: boolean) {
@@ -295,7 +308,12 @@
 						Tambah Murid
 					</a>
 					<div class="dropdown dropdown-end">
-						<div tabindex="0" role="button" class="btn btn-soft rounded-l-none shadow-none">
+						<div
+							bind:this={dropdownToggle}
+							tabindex="0"
+							role="button"
+							class="btn btn-soft rounded-l-none shadow-none"
+						>
 							<Icon name="down" />
 						</div>
 						<ul
@@ -303,7 +321,15 @@
 							class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-1 mt-2 w-50 border p-2 shadow-lg"
 						>
 							<li><a href="/murid/photos">Lihat Semua Foto</a></li>
-							<li><div>Upload Semua Foto</div></li>
+							<li>
+								<button
+									type="button"
+									onclick={openBulkPhotoUploadModal}
+									class="text-left"
+								>
+									Upload Semua Foto
+								</button>
+							</li>
 						</ul>
 					</div>
 				</div>
@@ -436,4 +462,4 @@
 	</div>
 </div>
 
-<MuridModals {formSubmitting} {submitBulkDelete} />
+<MuridModals {formSubmitting} {submitBulkDelete} bind:isBulkPhotoUploadOpen />

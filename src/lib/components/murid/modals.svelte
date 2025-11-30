@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { invalidate } from '$app/navigation';
 	import Icon from '$lib/components/icon.svelte';
 	import DeleteMurid from '../../../routes/(informasi-umum)/murid/[id]/delete/+page.svelte';
 	import DetailMurid from '../../../routes/(informasi-umum)/murid/[id]/+page.svelte';
 	import FormMurid from '../../../routes/(informasi-umum)/murid/form/[[id]]/+page.svelte';
+	import MuridBulkPhotoUploadModal from '$lib/components/murid-bulk-photo-upload-modal.svelte';
 
 	type BulkModalData = {
 		type: 'bulk';
@@ -15,9 +17,14 @@
 		}[];
 	};
 
-	let { formSubmitting, submitBulkDelete } = $props<{
+	let {
+		formSubmitting,
+		submitBulkDelete,
+		isBulkPhotoUploadOpen = $bindable(false)
+	} = $props<{
 		formSubmitting: boolean;
 		submitBulkDelete: (event: Event) => void;
+		isBulkPhotoUploadOpen?: boolean;
 	}>();
 
 	const bulkModalData = $derived.by(() => {
@@ -27,6 +34,12 @@
 		}
 		return null;
 	});
+
+	function handleBulkPhotoUploadSuccess() {
+		console.debug('[MuridModals] Bulk photo upload success');
+		invalidate('app:murid');
+		isBulkPhotoUploadOpen = false;
+	}
 </script>
 
 {#if ['add-murid', 'edit-murid'].includes(page.state.modal?.name)}
@@ -102,3 +115,8 @@
 		</dialog>
 	{/if}
 {/if}
+
+<MuridBulkPhotoUploadModal
+	bind:isOpen={isBulkPhotoUploadOpen}
+	onSuccess={handleBulkPhotoUploadSuccess}
+/>
