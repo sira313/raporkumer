@@ -122,7 +122,6 @@
 		return 2;
 	}
 
-	/* eslint-disable svelte/prefer-svelte-reactivity */
 	const topSubIndexByEntry = $derived.by(() => {
 		const groups = new Map<number, Array<{ subIndex?: number; text: string }>>();
 		for (const r of rows) {
@@ -150,7 +149,6 @@
 		}
 		return m;
 	});
-	/* eslint-enable svelte/prefer-svelte-reactivity */
 
 	function formatTujuanForFull(s: string): string {
 		if (!s) return s;

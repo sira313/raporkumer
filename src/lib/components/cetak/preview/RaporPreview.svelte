@@ -53,7 +53,6 @@
 		return createTableRows(intrakurikulerRows, activeTailBlocks);
 	});
 
-	/* eslint-disable svelte/prefer-svelte-reactivity */
 	// Support multiple <tr> elements for a single logical row (rowspan-style groups).
 	const tableRowElements = new Map<number, Set<HTMLTableRowElement>>();
 	function tableRow(node: HTMLTableRowElement, order: number) {
@@ -82,7 +81,6 @@
 			}
 		};
 	}
-	/* eslint-enable svelte/prefer-svelte-reactivity */
 
 	type TablePage = {
 		rows: TableRow[];

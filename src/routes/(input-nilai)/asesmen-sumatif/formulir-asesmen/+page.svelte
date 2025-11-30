@@ -1,5 +1,5 @@
 <script lang="ts">
-	/* eslint-disable svelte/no-navigation-without-resolve, svelte/prefer-svelte-reactivity -- small Map and URLSearchParams usage and navigation helpers */
+	/* eslint-disable svelte/no-navigation-without-resolve -- small Map and URLSearchParams usage and navigation helpers */
 	import { invalidate } from '$app/navigation';
 	import CheatControls from '$lib/components/asesmen-sumatif/cheat-controls.svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';

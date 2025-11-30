@@ -57,7 +57,6 @@
 	});
 
 	function uniqueByNama(list: { id: number; nama: string }[]) {
-		/* eslint-disable-next-line svelte/prefer-svelte-reactivity */
 		const map = new Map<string, { id: number; nama: string }>();
 		for (const m of list) {
 			// keep the first occurrence for a given nama

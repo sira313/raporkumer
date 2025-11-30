@@ -1,5 +1,5 @@
 <script lang="ts">
-	/* eslint-disable svelte/no-navigation-without-resolve, svelte/prefer-svelte-reactivity -- local Set/URLSearchParams use and small navigation helpers */
+	/* eslint-disable svelte/no-navigation-without-resolve -- local Set/URLSearchParams use and small navigation helpers */
 	import { goto, invalidate, pushState } from '$app/navigation';
 	import { page } from '$app/state';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
@@ -302,8 +302,8 @@
 							tabindex="-1"
 							class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-1 mt-2 w-50 border p-2 shadow-lg"
 						>
-							<li><a>Lihat Semua Foto</a></li>
-							<li><a>Upload Semua Foto</a></li>
+							<li><button type="button" class="btn btn-ghost btn-sm">Lihat Semua Foto</button></li>
+							<li><button type="button" class="btn btn-ghost btn-sm">Upload Semua Foto</button></li>
 						</ul>
 					</div>
 				</div>
