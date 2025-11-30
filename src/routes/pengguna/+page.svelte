@@ -275,6 +275,7 @@
 			bind:open={showAddModal}
 			{mataPelajaran}
 			sekolahList={data.sekolahList ?? []}
+			kelasList={data.kelasList ?? []}
 			on:saved={(e: CustomEvent) => {
 				const body = e.detail?.body ?? {};
 				const serverUser = body.user ?? null;

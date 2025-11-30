@@ -158,6 +158,8 @@ export async function getBiodataPreviewPayload({ locals, url }: BiodataContext) 
 			nama: sekolah.nama
 		},
 		murid: {
+			id: murid.id,
+			foto: murid.foto ?? null,
 			nama: murid.nama,
 			nis: murid.nis,
 			nisn: murid.nisn,

@@ -1,5 +1,4 @@
 <script lang="ts">
-	/* eslint-disable svelte/prefer-svelte-reactivity -- local Set usage for selection and derived helpers */
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import type { PageData } from './$types';

@@ -3,17 +3,32 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenisKelamin } from '$lib/statics';
-
+	// deletion handled elsewhere; removed unused modal/toast imports
 	let { data } = $props();
 	let activeTab = $state(0);
+
+	// openDeleteModal removed — deletion moved to dedicated route/modal
 </script>
 
 <FormEnhance
 	action="?/save"
+	enctype="multipart/form-data"
 	init={data.murid}
-	onsuccess={async () => {
+	onsuccess={async ({ data: res }) => {
 		await invalidate('app:murid');
+		// navigate back to detail modal first, then dispatch update event
 		history.back();
+		try {
+			const foto = res?.foto ?? null;
+			const id = res?.id ?? data.murid?.id;
+			const t = Date.now();
+			// delay dispatch slightly so the detail modal can mount its listener
+			setTimeout(() => {
+				window.dispatchEvent(new CustomEvent('murid:updated', { detail: { id, foto, t } }));
+			}, 120);
+		} catch {
+			void 0;
+		}
 	}}
 >
 	{#snippet children({ submitting, invalid })}
@@ -373,18 +388,27 @@
 				</button>
 			{/if}
 
-			<button
-				class="btn shadow-none {data.murid?.id ? 'btn-secondary' : 'btn-primary'} sm:ml-auto"
-				type="submit"
-				disabled={submitting || invalid}
+			<div
+				class="tooltip tooltip-left tooltip-error sm:ml-auto {data.murid?.id}"
+				data-tip={submitting || invalid
+					? 'Ada data lain yang belum terisi, mohon periksa terlebih dahulu!'
+					: ''}
 			>
-				{#if submitting}
-					<span class="loading loading-spinner"></span>
-				{:else}
-					<Icon name="save" />
-				{/if}
-				Simpan
-			</button>
+				<button
+					class="btn shadow-none {data.murid?.id ? 'btn-secondary' : 'btn-primary'}"
+					type="submit"
+					disabled={submitting || invalid}
+				>
+					{#if submitting}
+						<span class="loading loading-spinner"></span>
+					{:else}
+						<Icon name="save" />
+					{/if}
+					Simpan
+				</button>
+			</div>
 		</div>
 	{/snippet}
 </FormEnhance>
+
+<!-- delete-confirm modal logic merged into top-level script -->

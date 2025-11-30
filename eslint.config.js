@@ -20,7 +20,11 @@ export default ts.config(
 		languageOptions: {
 			globals: { ...globals.browser, ...globals.node }
 		},
-		rules: { 'no-undef': 'off', 'svelte/no-at-html-tags': 'off' }
+		rules: {
+			'no-undef': 'off',
+			'svelte/no-at-html-tags': 'off',
+			'svelte/prefer-svelte-reactivity': 'off'
+		}
 	},
 	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],

@@ -36,7 +36,7 @@
 		<PrintCardPage contentClass="gap-6 text-[13px] leading-relaxed">
 			<BiodataHeader {sekolah} />
 			<BiodataIdentityTable {murid} {orangTua} {wali} class="mt-2 flex-1" />
-			<BiodataFooter {ttd} class="mt-auto pt-12" />
+			<BiodataFooter {ttd} {murid} class="mt-auto pt-12" />
 		</PrintCardPage>
 	</div>
 </div>

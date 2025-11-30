@@ -1,3 +1,5 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import db from '$lib/server/db/index.js';
 import { tableAlamat, tableKelas, tableMurid, tableWaliMurid } from '$lib/server/db/schema.js';
 import { unflattenFormData } from '$lib/utils.js';
@@ -18,7 +20,60 @@ export async function load({ params }) {
 
 export const actions = {
 	async save({ locals, request, params }) {
-		const formMurid = unflattenFormData<Murid>(await request.formData());
+		const formData = await request.formData();
+		const uploadedFile = formData.get('foto') as File | null;
+		const formMurid = unflattenFormData<Murid>(formData);
+
+		function uploadsDir() {
+			const envPhoto = process.env.photo || 'file:./data/uploads';
+			const raw = envPhoto.startsWith('file:') ? envPhoto.slice(5) : envPhoto;
+			return path.resolve(raw);
+		}
+
+		function slugifyName(name: string) {
+			if (!name) return 'murid';
+			// remove unicode combining marks (diacritics), keep letters/numbers/spaces/dash
+			// use unicode property escapes to allow international letters
+			const cleaned = name
+				.normalize('NFKD')
+				.replace(/[\u0300-\u036f]/g, '')
+				.replace(/[^\p{L}\p{N}\s-]/gu, '')
+				.trim()
+				.replace(/\s+/g, '-')
+				.toLowerCase();
+			return cleaned.substring(0, 80) || 'murid';
+		}
+
+		async function generateUniqueFilename(
+			dbTrans: DBTransaction,
+			base: string,
+			ext: string,
+			dir: string,
+			currentId?: number | null
+		) {
+			let i = 0;
+			let candidate = `${base}${ext}`;
+			while (true) {
+				// check DB for existing usage
+				const existing = await dbTrans.query.tableMurid.findFirst({
+					where: eq(tableMurid.foto, candidate),
+					columns: { id: true }
+				});
+				const usedByOther = !!(existing && (!currentId || existing.id !== currentId));
+				// check filesystem
+				let existsOnDisk = false;
+				try {
+					await fs.stat(path.join(dir, candidate));
+					existsOnDisk = true;
+				} catch {
+					existsOnDisk = false;
+				}
+				if (!usedByOther && !existsOnDisk) return candidate;
+				i += 1;
+				candidate = `${base}-${i}${ext}`;
+				if (i > 1000) throw error(500, 'Gagal membuat nama file unik');
+			}
+		}
 		formMurid.sekolahId = locals.sekolah!.id;
 		if (!formMurid.kelasId) {
 			error(400, 'Kelas harus dipilih');
@@ -42,6 +97,35 @@ export const actions = {
 					where: eq(tableMurid.id, +params.id)
 				});
 				if (!murid) error(404, `Data murid tidak ditemukan`);
+
+				// handle uploaded foto (update)
+				if (uploadedFile && uploadedFile.size) {
+					const allowed = ['image/png', 'image/jpeg'];
+					if (uploadedFile.size > 500 * 1024) {
+						error(400, 'Ukuran file foto tidak boleh lebih dari 500KB');
+					}
+					if (!allowed.includes(uploadedFile.type)) {
+						error(400, 'Format file tidak didukung; hanya JPG dan PNG yang diizinkan');
+					}
+
+					const buffer = Buffer.from(await uploadedFile.arrayBuffer());
+					const dir = uploadsDir();
+					await fs.mkdir(dir, { recursive: true });
+					const ext = uploadedFile.type === 'image/png' ? '.png' : '.jpg';
+					const base = slugifyName(formMurid.nama || murid.nama || `murid-${murid.id}`);
+					const filename = await generateUniqueFilename(db, base, ext, dir, murid.id);
+					const filePath = path.join(dir, filename);
+					// remove old file if exists and different
+					if (murid.foto && murid.foto !== filename) {
+						try {
+							await fs.unlink(path.join(dir, murid.foto));
+						} catch {
+							// ignore
+						}
+					}
+					await fs.writeFile(filePath, buffer, { mode: 0o644 });
+					formMurid.foto = filename;
+				}
 
 				await db
 					.update(tableAlamat)
@@ -72,9 +156,50 @@ export const actions = {
 					.values(formMurid)
 					.returning({ id: tableMurid.id });
 				formMurid.id = murid?.id;
+
+				// handle uploaded foto (new insert)
+				if (uploadedFile && uploadedFile.size) {
+					const allowed = ['image/png', 'image/jpeg'];
+					if (uploadedFile.size > 500 * 1024) {
+						error(400, 'Ukuran file foto tidak boleh lebih dari 500KB');
+					}
+					if (!allowed.includes(uploadedFile.type)) {
+						error(400, 'Format file tidak didukung; hanya JPG dan PNG yang diizinkan');
+					}
+
+					const buffer = Buffer.from(await uploadedFile.arrayBuffer());
+					const dir = uploadsDir();
+					await fs.mkdir(dir, { recursive: true });
+					const ext = uploadedFile.type === 'image/png' ? '.png' : '.jpg';
+					const base = slugifyName(formMurid.nama || `murid-${formMurid.id}`);
+					const filename = await generateUniqueFilename(db, base, ext, dir, formMurid.id);
+					const filePath = path.join(dir, filename);
+					// remove old file if exists
+					const existing = await db.query.tableMurid.findFirst({
+						where: eq(tableMurid.id, formMurid.id),
+						columns: { foto: true }
+					});
+					if (existing?.foto && existing.foto !== filename) {
+						try {
+							await fs.unlink(path.join(dir, existing.foto));
+						} catch {
+							// ignore
+						}
+					}
+					await fs.writeFile(filePath, buffer, { mode: 0o644 });
+					await db
+						.update(tableMurid)
+						.set({ foto: filename })
+						.where(eq(tableMurid.id, formMurid.id));
+				}
 			}
 		});
-		return { message: `Data murid berhasil disimpan` };
+		// return the created/updated murid id and foto filename (if any)
+		return {
+			message: `Data murid berhasil disimpan`,
+			id: formMurid.id,
+			foto: formMurid.foto ?? null
+		};
 	}
 };
 

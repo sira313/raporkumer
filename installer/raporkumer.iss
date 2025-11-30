@@ -1,5 +1,5 @@
 #define AppName "Rapor Kurikulum Merdeka"
-#define AppVersion "1.2.0"
+#define AppVersion "1.3.0"
 #define StagePath "..\\dist\\windows\\stage\\Rapkumer"
 
 [Setup]
@@ -36,6 +36,7 @@ Source:"files\\start-rapkumer.mjs"; DestDir:"{app}"; Flags: ignoreversion
 
 [Run]
 Filename:"{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters:"-ExecutionPolicy Bypass -File ""{app}\\tools\\run-migrations.ps1"" -InstallDir ""{app}"""; StatusMsg:"Menjalankan migrasi database (drizzle-kit) pada mesin ini..."; Flags: runhidden waituntilterminated
+Filename:"{sys}\\cmd.exe"; Parameters:"/c ""{app}\\run-migrations.cmd"" /SILENT"; StatusMsg:"Menjalankan run-migrations.cmd (silent)..."; Flags: runhidden waituntilterminated
 
 [Icons]
 Name:"{autoprograms}\\Rapkumer\\Rapkumer"; Filename:"{sys}\\cmd.exe"; Parameters:"/c node ""{app}\\start-rapkumer.mjs"""; WorkingDir:"{app}"; IconFilename:"{app}\\rapkumer.ico"
@@ -68,7 +69,7 @@ begin
 			if not FileExists(LogFile) then
 				SaveStringToFile(LogFile, '', False);
 		EnvPath := ExpandConstant('{app}\.env');
-		S := 'DB_URL=file:' + DbPath + #13#10 + 'BODY_SIZE_LIMIT=5M';
+		S := 'DB_URL="file:' + DbPath + '"' + #13#10 + 'BODY_SIZE_LIMIT=5M' + #13#10 + 'photo="file:' + ExpandConstant('{localappdata}\Rapkumer-data\uploads') + '"';
 		if SaveStringToFile(EnvPath, S, False) then
 			Log(Format('Wrote .env to %s', [EnvPath]))
 		else

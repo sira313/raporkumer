@@ -3,10 +3,117 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { jenisKelamin } from '$lib/statics.js';
 	import { modalRoute } from '$lib/utils.js';
+	import { onMount, onDestroy } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
+	import { showModal } from '$lib/components/global-modal.svelte';
+	import { toast } from '$lib/components/toast.svelte';
+	import MuridPhotoUploadModal from '$lib/components/murid-photo-upload-modal.svelte';
 
 	let { data } = $props();
 
 	let kelas = `${data.murid.kelas?.nama || '-'} Fase ${data.murid.kelas?.fase || '-'}`;
+	let deletingFoto = $state(false);
+	let isUploadModalOpen = $state(false);
+
+	// Track if data was updated while modal was open
+	let dataWasUpdated = $state(false);
+
+	// compute a robust image src for the detail modal:
+	// - if `data.murid.foto` is a URL or data URI, use it directly
+	// - otherwise fallback to the internal API endpoint and add a cache-busting
+	//   query param so updated photos are fetched instead of a cached image
+	const photoSrc = $derived(
+		!data?.murid?.foto
+			? null
+			: typeof data.murid.foto === 'string'
+				? data.murid.foto.startsWith('http') ||
+					data.murid.foto.startsWith('data:') ||
+					data.murid.foto.startsWith('/')
+					? data.murid.foto
+					: `/api/murid-photo/${data.murid.id}?v=${encodeURIComponent(data.murid.foto)}`
+				: `/api/murid-photo/${data.murid.id}?t=${Date.now()}`
+	);
+
+	let _muridUpdatedHandler: ((e: CustomEvent<Record<string, unknown>>) => void) | null = null;
+
+	onMount(() => {
+		_muridUpdatedHandler = (e: CustomEvent<Record<string, unknown>>) => {
+			try {
+				const detail = (e?.detail ?? null) as Record<string, unknown> | null;
+				if (!detail) return;
+				// match by id
+				if (String(detail.id) === String(data?.murid?.id)) {
+					// include timestamp in foto field to bust cache when filename unchanged
+					const newFoto = detail?.foto ? `${detail.foto}${detail.t ? `?t=${detail.t}` : ''}` : null;
+					// reassign `data` so runes reactivity picks up change
+					data = { ...data, murid: { ...(data.murid ?? {}), foto: newFoto } };
+					// Mark that data was updated, will force refresh on next modal open
+					dataWasUpdated = true;
+				}
+			} catch (err) {
+				console.debug('murid:updated handler error', err);
+			}
+		};
+		window.addEventListener('murid:updated', _muridUpdatedHandler as EventListener);
+	});
+
+	onDestroy(() => {
+		if (_muridUpdatedHandler)
+			window.removeEventListener('murid:updated', _muridUpdatedHandler as EventListener);
+		// Invalidate data when component destroys if there were updates
+		if (dataWasUpdated) {
+			invalidateAll().catch((err) => console.error('Invalidate error:', err));
+		}
+	});
+
+	async function deleteFoto() {
+		if (!data.murid?.id) return;
+		showModal({
+			title: 'Hapus foto murid',
+			body: '<p>Hapus foto murid? Tindakan ini tidak dapat dibatalkan.</p>',
+			onPositive: {
+				label: 'Hapus',
+				icon: 'del',
+				action: async ({ close }: { close: () => void }) => {
+					deletingFoto = true;
+					try {
+						const res = await fetch(`/api/murid-photo/${data.murid.id}`, { method: 'DELETE' });
+						if (!res.ok) {
+							let msg = 'Gagal menghapus foto';
+							try {
+								const json = await res.json().catch(() => null);
+								if (json && typeof json.message === 'string') msg = json.message;
+							} catch {
+								void 0;
+							}
+							toast({ message: msg, type: 'warning' });
+						} else {
+							data = { ...data, murid: { ...data.murid, foto: null } };
+							// Dispatch custom event to notify other components
+							window.dispatchEvent(
+								new CustomEvent('murid:updated', {
+									detail: { id: data.murid.id, foto: null, t: Date.now() }
+								})
+							);
+							toast({ message: 'Foto berhasil dihapus', type: 'success' });
+							close();
+						}
+					} catch (err) {
+						console.error(err);
+						toast({ message: 'Gagal menghapus foto', type: 'error' });
+					} finally {
+						deletingFoto = false;
+					}
+				}
+			},
+			onNegative: { label: 'Batal', icon: 'close' },
+			dismissible: true
+		});
+	}
+
+	function handleUploadSuccess(filename: string) {
+		data = { ...data, murid: { ...data.murid, foto: filename } };
+	}
 </script>
 
 {#snippet field(label: string, value?: string | null)}
@@ -24,17 +131,57 @@
 			<!-- data Murid -->
 			<input type="radio" name="tab-detil-murid" class="tab" aria-label="Data Murid" checked />
 			<div class="tab-content bg-base-100 p-4">
-				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-					{@render field('NIS', data.murid.nis)}
-					{@render field('NISN', data.murid.nisn)}
-					{@render field('Nama', data.murid.nama)}
-					{@render field('Kelas', kelas)}
-					{@render field('Tempat Lahir', data.murid.tempatLahir)}
-					{@render field('Tanggal Lahir', data.murid.tanggalLahir)}
-					{@render field('Jenis Kelamin', jenisKelamin[data.murid.jenisKelamin])}
-					{@render field('Agama', data.murid.agama)}
-					{@render field('Pendidikan Sebelumnya', data.murid.pendidikanSebelumnya)}
-					{@render field('Tanggal Masuk Sekolah Ini', data.murid.tanggalMasuk)}
+				<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+					<!-- Foto murid (placeholder) -->
+					<div class="flex flex-col justify-between text-center sm:col-span-1 sm:pr-4">
+						<div
+							class="bg-base-200 flex aspect-3/4 w-full max-w-xs items-center justify-center overflow-hidden rounded-lg object-cover"
+						>
+							{#if photoSrc}
+								<img src={photoSrc} alt="Foto murid" class="h-full w-full object-cover" />
+							{:else}
+								<!-- Simple placeholder: initials or icon -->
+								<div class="p-4 text-center opacity-60">
+									<Icon name="user" class="mx-auto text-6xl" />
+									<p class="mt-2 text-sm">Foto belum tersedia</p>
+								</div>
+							{/if}
+						</div>
+						<div class="mt-4 flex flex-row sm:mx-auto sm:mt-0">
+							<button
+								class="btn btn-soft rounded-l-md shadow-none"
+								type="button"
+								onclick={() => (isUploadModalOpen = true)}
+								aria-label="Ubah Foto Murid"
+							>
+								<Icon name="edit" />
+								Ubah
+							</button>
+							<button
+								class="btn btn-soft btn-error rounded-r-md shadow-none"
+								type="button"
+								onclick={deleteFoto}
+								disabled={deletingFoto || !photoSrc}
+								aria-label="Hapus Foto Murid"
+							>
+								<Icon name="del" />
+								Hapus
+							</button>
+						</div>
+					</div>
+					<!-- Data fields (kept as two-column grid inside the right area) -->
+					<div class="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2">
+						{@render field('NIS', data.murid.nis)}
+						{@render field('NISN', data.murid.nisn)}
+						{@render field('Nama', data.murid.nama)}
+						{@render field('Kelas', kelas)}
+						{@render field('Tempat Lahir', data.murid.tempatLahir)}
+						{@render field('Tanggal Lahir', data.murid.tanggalLahir)}
+						{@render field('Jenis Kelamin', jenisKelamin[data.murid.jenisKelamin])}
+						{@render field('Agama', data.murid.agama)}
+						{@render field('Pendidikan Sebelumnya', data.murid.pendidikanSebelumnya)}
+						{@render field('Tanggal Masuk Sekolah Ini', data.murid.tanggalMasuk)}
+					</div>
 				</div>
 			</div>
 			<!-- data Orang Tua -->
@@ -92,3 +239,11 @@
 		Edit
 	</a>
 </div>
+
+<!-- Upload Foto Modal -->
+<MuridPhotoUploadModal
+	bind:isOpen={isUploadModalOpen}
+	muridId={data.murid?.id}
+	muridNama={data.murid?.nama}
+	onSuccess={handleUploadSuccess}
+/>

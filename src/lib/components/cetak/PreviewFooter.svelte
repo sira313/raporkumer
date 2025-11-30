@@ -17,7 +17,8 @@
 		kritBaik = 95,
 		isRaporSelected = false,
 		tpMode = 'compact',
-		onToggleFullTP = () => {}
+		onToggleFullTP = () => {},
+		kelasId = null
 	}: {
 		hasMurid: boolean;
 		muridCount: number;
@@ -30,6 +31,7 @@
 		onSetKriteria: (cukup: number, baik: number) => void;
 		kritCukup: number;
 		kritBaik: number;
+		kelasId: string | number | null;
 	} = $props();
 
 	async function handleDeleteBg() {
@@ -71,6 +73,49 @@
 			dismissible: true
 		});
 	}
+
+	let isDownloadingBA = $state(false);
+
+	async function handleDownloadBA() {
+		if (!kelasId) {
+			toast('Kelas tidak ditemukan.', 'error');
+			return;
+		}
+
+		isDownloadingBA = true;
+		try {
+			const response = await fetch('/api/cetak/ba', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ kelasId: Number(kelasId) })
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(errorData?.error ?? 'Gagal membuat Berita Acara.');
+			}
+
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `BA_Rapor_${new Date().toLocaleDateString('id-ID', {
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit'
+			})}.xlsx`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			toast('Berita Acara berhasil diunduh.', 'success');
+		} catch (err) {
+			console.error('Error downloading BA:', err);
+			toast(err instanceof Error ? err.message : 'Gagal mendownload Berita Acara.', 'error');
+		} finally {
+			isDownloadingBA = false;
+		}
+	}
 </script>
 
 <div class="mt-4 flex flex-col gap-3 text-sm sm:flex-row sm:items-start sm:justify-between">
@@ -102,6 +147,16 @@
 		{/if}
 
 		{#if isRaporSelected}
+			<button
+				class="btn btn-sm btn-soft shadow-none"
+				type="button"
+				title="Download Berita Acara"
+				disabled={!kelasId || isDownloadingBA}
+				onclick={handleDownloadBA}
+			>
+				<Icon name="download" />
+				Download BA
+			</button>
 			<button
 				class="btn btn-sm btn-soft mr-1 shadow-none"
 				type="button"

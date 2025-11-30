@@ -1,6 +1,11 @@
 import db from '$lib/server/db/index.js';
 import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama.js';
-import { tableMataPelajaran, tableTujuanPembelajaran } from '$lib/server/db/schema.js';
+import {
+	tableMataPelajaran,
+	tableTujuanPembelajaran,
+	tableAuthUserMataPelajaran,
+	tableAuthUser
+} from '$lib/server/db/schema.js';
 import { agamaMapelNames, agamaMapelOptions } from '$lib/statics';
 import { unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
@@ -46,7 +51,40 @@ export async function load({ depends, params, parent }) {
 	// prepare container for agama variant mapel in this kelas
 	let kelasAgamaMapel: Array<{ id: number; nama: string }> = [];
 
-	if (targetNames.includes(mapel.nama)) {
+	// Collect user's assigned agama variant names early (for filtering agamaOptions)
+	const userAssignedAgamaNames = new Set<string>();
+	if (user && user.type === 'user' && user.id) {
+		try {
+			const userAssignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({
+				columns: { mataPelajaranId: true },
+				where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
+			});
+
+			if (userAssignedMapels.length > 0) {
+				const assignedRecords = await db.query.tableMataPelajaran.findMany({
+					columns: { nama: true },
+					where: inArray(
+						tableMataPelajaran.id,
+						userAssignedMapels.map((m) => m.mataPelajaranId)
+					)
+				});
+
+				for (const record of assignedRecords) {
+					if (targetNames.includes(record.nama)) {
+						userAssignedAgamaNames.add((record.nama || '').trim().toLowerCase());
+					}
+				}
+			}
+		} catch (err) {
+			console.warn('[tp-rl] failed to collect userAssignedAgamaNames', err);
+		}
+	}
+
+	// Check if mapel is agama parent OR if user has agama variant assigned
+	const shouldShowAgamaOptions =
+		targetNames.includes(mapel.nama) || userAssignedAgamaNames.size > 0;
+
+	if (shouldShowAgamaOptions) {
 		kelasAgamaMapel = await db.query.tableMataPelajaran.findMany({
 			columns: { id: true, nama: true },
 			where: and(
@@ -56,11 +94,21 @@ export async function load({ depends, params, parent }) {
 		});
 
 		const mapelByName = new Map(kelasAgamaMapel.map((item) => [item.nama, item]));
+
 		agamaOptions = agamaMapelOptions
 			.filter((option) => option.key !== 'umum')
 			.map((option) => {
 				const variant = mapelByName.get(option.name);
 				if (!variant) return null;
+
+				// For multi-mapel users, only include agama options they have assigned
+				if (
+					userAssignedAgamaNames.size > 1 &&
+					!userAssignedAgamaNames.has((option.name || '').trim().toLowerCase())
+				) {
+					return null;
+				}
+
 				return {
 					id: variant.id,
 					label: option.label,
@@ -76,22 +124,112 @@ export async function load({ depends, params, parent }) {
 	// same normalized name as the assigned mapel. This is useful for client
 	// logic to lock the agama select even when the global assigned id differs
 	// across kelas rows.
+	// For multi-mapel users, also check the join table for any agama assignment.
 	let assignedLocalMapelId: number | null = null;
 	let assignedGlobalId: number | null = null;
 	let assignedGlobalName: string | null = null;
+	let userHasMultiAgama = false;
 	try {
-		if (user && user.type === 'user' && user.mataPelajaranId) {
-			const assigned = await db.query.tableMataPelajaran.findFirst({
-				columns: { id: true, nama: true },
-				where: eq(tableMataPelajaran.id, Number(user.mataPelajaranId))
-			});
-			if (assigned && assigned.nama) {
-				assignedGlobalId = assigned.id;
-				assignedGlobalName = assigned.nama;
-				const norm = normalizeText(assigned.nama);
-				const foundLocal = (kelasAgamaMapel ?? []).find((r) => normalizeText(r.nama) === norm);
-				if (foundLocal) assignedLocalMapelId = foundLocal.id;
+		console.log('[tp-rl] user:', {
+			id: user?.id,
+			type: user?.type,
+			mataPelajaranId: user?.mataPelajaranId
+		});
+		if (user && user.type === 'user') {
+			// Check if user has multi-mapel in join table FIRST, regardless of legacy mataPelajaranId
+			if (user.id) {
+				const userAssignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({
+					columns: { mataPelajaranId: true },
+					where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
+				});
+
+				console.log('[tp-rl] userAssignedMapels count:', userAssignedMapels.length);
+
+				if (userAssignedMapels.length > 1) {
+					// User has multi-mapel - clear legacy mataPelajaranId if set (one-time fix for existing users)
+					if (user.mataPelajaranId) {
+						console.log('[tp-rl] Clearing mataPelajaranId for multi-mapel user');
+						await db
+							.update(tableAuthUser)
+							.set({ mataPelajaranId: null })
+							.where(eq(tableAuthUser.id, user.id));
+						user.mataPelajaranId = null; // Update in-memory copy
+					}
+				}
 			}
+
+			// First priority: check legacy mataPelajaranId field
+			if (user.mataPelajaranId) {
+				console.log('[tp-rl] User has legacy mataPelajaranId:', user.mataPelajaranId);
+				const assigned = await db.query.tableMataPelajaran.findFirst({
+					columns: { id: true, nama: true },
+					where: eq(tableMataPelajaran.id, Number(user.mataPelajaranId))
+				});
+				if (assigned && assigned.nama) {
+					assignedGlobalId = assigned.id;
+					assignedGlobalName = assigned.nama;
+					const norm = normalizeText(assigned.nama);
+					const foundLocal = (kelasAgamaMapel ?? []).find((r) => normalizeText(r.nama) === norm);
+					if (foundLocal) assignedLocalMapelId = foundLocal.id;
+				}
+			}
+			// Second priority: for multi-mapel users, check join table for any agama assignment
+			else if (user.id) {
+				console.log('[tp-rl] Checking join table for user:', user.id);
+				const userAssignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({
+					columns: { mataPelajaranId: true },
+					where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
+				});
+
+				console.log('[tp-rl] userAssignedMapels count:', userAssignedMapels.length);
+
+				if (userAssignedMapels.length > 0) {
+					const assignedRecords = await db.query.tableMataPelajaran.findMany({
+						columns: { id: true, nama: true },
+						where: inArray(
+							tableMataPelajaran.id,
+							userAssignedMapels.map((m) => m.mataPelajaranId)
+						)
+					});
+
+					console.log('[tp-rl] assignedRecords:', assignedRecords);
+
+					// Count how many agama variants this user has assigned
+					const agamaVariantsCount = assignedRecords.filter((r) =>
+						targetNames.includes(r.nama)
+					).length;
+					console.log(
+						'[tp-rl] agamaVariantsCount:',
+						agamaVariantsCount,
+						'targetNames:',
+						targetNames
+					);
+					userHasMultiAgama = agamaVariantsCount > 1;
+					console.log('[tp-rl] userHasMultiAgama set to:', userHasMultiAgama);
+
+					// Find first agama variant in user's assignments
+					for (const record of assignedRecords) {
+						if (targetNames.includes(record.nama)) {
+							assignedGlobalName = record.nama;
+							const norm = normalizeText(record.nama);
+							const foundLocal = (kelasAgamaMapel ?? []).find(
+								(r) => normalizeText(r.nama) === norm
+							);
+							if (foundLocal) {
+								assignedLocalMapelId = foundLocal.id;
+								assignedGlobalId = record.id;
+							}
+							break;
+						}
+					}
+				} else {
+					console.log('[tp-rl] User has no assigned mapel in join table');
+				}
+			} else {
+				console.log('[tp-rl] User has no ID');
+			}
+		} else {
+			console.log('[tp-rl] User is not type "user" or user is null');
 		}
 	} catch (err) {
 		// non-fatal
@@ -99,9 +237,11 @@ export async function load({ depends, params, parent }) {
 	}
 
 	// Server-side enforcement: if the logged-in user is a 'user' assigned to a
-	// specific agama variant that exists in this kelas, do not allow them to
+	// SINGLE agama variant that exists in this kelas, do not allow them to
 	// view a different agama variant — redirect to their assigned local mapel.
-	if (assignedLocalMapelId && user && user.type === 'user' && user.mataPelajaranId) {
+	// For multi-mapel users with multiple agama variants, allow access to all pages
+	// (client-side logic will handle locking when appropriate).
+	if (assignedLocalMapelId && user && user.type === 'user' && !userHasMultiAgama) {
 		const requestedId = Number(params.id);
 		if (Number.isFinite(requestedId) && requestedId !== assignedLocalMapelId) {
 			// redirect to the assigned local mapel's TP page
@@ -113,47 +253,47 @@ export async function load({ depends, params, parent }) {
 	// is assigned to a specific agama variant that exists in this kelas,
 	// return the tujuan pembelajaran for that assigned variant so the
 	// page shows the correct TP even without client navigation.
+	// Supports both legacy (mataPelajaranId) and multi-mapel (join table) users.
 	let agamaSelection = agamaOptions.find((item) => item.isActive)?.id?.toString() ?? '';
 	if (
 		agamaOptions.length > 0 &&
 		user &&
 		user.type === 'user' &&
-		user.mataPelajaranId &&
+		assignedLocalMapelId &&
 		normalizeText(mapel.nama) === normalizeText(agamaMapelOptions[0].name)
 	) {
-		const assignedId = Number(user.mataPelajaranId);
-		if (Number.isFinite(assignedId)) {
-			const assignedLocal = agamaOptions.find((opt) => opt.id === assignedId);
-			if (assignedLocal) {
-				// load tujuan for the assigned variant instead of the parent mapel
-				agamaSelection = String(assignedLocal.id);
-				tujuanPembelajaran = await db.query.tableTujuanPembelajaran.findMany({
-					where: eq(tableTujuanPembelajaran.mataPelajaranId, assignedLocal.id),
-					orderBy: asc(tableTujuanPembelajaran.createdAt)
-				});
-				// mark active
-				agamaOptions = agamaOptions.map((opt) => ({
-					...opt,
-					isActive: opt.id === assignedLocal.id
-				}));
-				return {
-					tujuanPembelajaran,
-					agamaOptions,
-					agamaSelection,
-					assignedLocalMapelId,
-					// server-enforced disabled flag and the locked selection id
-					// Narrow assignedGlobalName to the literal union type before using includes()
-					agamaSelectDisabled: Boolean(
+		const assignedLocal = agamaOptions.find((opt) => opt.id === assignedLocalMapelId);
+		if (assignedLocal) {
+			// load tujuan for the assigned variant instead of the parent mapel
+			agamaSelection = String(assignedLocal.id);
+			tujuanPembelajaran = await db.query.tableTujuanPembelajaran.findMany({
+				where: eq(tableTujuanPembelajaran.mataPelajaranId, assignedLocal.id),
+				orderBy: asc(tableTujuanPembelajaran.createdAt)
+			});
+			// mark active
+			agamaOptions = agamaOptions.map((opt) => ({
+				...opt,
+				isActive: opt.id === assignedLocal.id
+			}));
+			return {
+				tujuanPembelajaran,
+				agamaOptions,
+				agamaSelection,
+				assignedLocalMapelId,
+				// server-enforced disabled flag: only disable for single-assignment (legacy) users
+				// For multi-mapel users, client-side logic handles locking based on parent page check
+				agamaSelectDisabled: Boolean(
+					user?.type === 'user' &&
+						user?.mataPelajaranId && // Only if user has legacy single mataPelajaranId
 						assignedGlobalId &&
-							((): boolean => {
-								const name = assignedGlobalName as (typeof agamaMapelNames)[number] | undefined;
-								return Boolean(name && agamaMapelNames.includes(name));
-							})()
-					),
-					lockedAgamaSelectionId: assignedLocalMapelId ?? assignedGlobalId,
-					meta: { title: `Tujuan Pembelajaran - ${assignedLocal.name}` }
-				};
-			}
+						((): boolean => {
+							const name = assignedGlobalName as (typeof agamaMapelNames)[number] | undefined;
+							return Boolean(name && agamaMapelNames.includes(name));
+						})()
+				),
+				lockedAgamaSelectionId: assignedLocalMapelId ?? assignedGlobalId,
+				meta: { title: `Tujuan Pembelajaran - ${assignedLocal.name}` }
+			};
 		}
 	}
 
@@ -163,20 +303,38 @@ export async function load({ depends, params, parent }) {
 		orderBy: asc(tableTujuanPembelajaran.createdAt)
 	});
 
+	const agamaSelectDisabledValue = Boolean(
+		user?.type === 'user' &&
+			user?.mataPelajaranId && // Only if user has legacy single mataPelajaranId
+			assignedGlobalId &&
+			((): boolean => {
+				const name = assignedGlobalName as (typeof agamaMapelNames)[number] | undefined;
+				return Boolean(name && agamaMapelNames.includes(name));
+			})()
+	);
+
+	console.log('[tp-rl] Final return:', {
+		mapelId: params.id,
+		userType: user?.type,
+		userMataPelajaranId: user?.mataPelajaranId,
+		userHasMultiAgama,
+		assignedGlobalId,
+		assignedGlobalName,
+		assignedLocalMapelId,
+		agamaSelectDisabledValue,
+		agamaOptionsCount: agamaOptions.length
+	});
+
 	return {
 		tujuanPembelajaran,
 		agamaOptions,
 		agamaSelection,
 		assignedLocalMapelId,
-		// server-enforced disabled flag and the locked selection id
-		agamaSelectDisabled: Boolean(
-			assignedGlobalId &&
-				((): boolean => {
-					const name = assignedGlobalName as (typeof agamaMapelNames)[number] | undefined;
-					return Boolean(name && agamaMapelNames.includes(name));
-				})()
-		),
+		// server-enforced disabled flag: only disable for single-assignment (legacy) users
+		// For multi-mapel users, client-side logic handles locking based on parent page check
+		agamaSelectDisabled: agamaSelectDisabledValue,
 		lockedAgamaSelectionId: assignedLocalMapelId ?? assignedGlobalId,
+		userHasMultiAgama,
 		meta: { title: `Tujuan Pembelajaran - ${mapel.nama}` }
 	};
 }

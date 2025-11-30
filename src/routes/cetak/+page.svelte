@@ -600,6 +600,7 @@
 		{kritCukup}
 		{kritBaik}
 		tpMode={fullTP}
+		kelasId={data.kelasId}
 		onSetKriteria={(cukup: number, baik: number) => {
 			// optimistic update in UI
 			kritCukup = cukup;

@@ -2,10 +2,12 @@
 	let modal = $state<HTMLDialogElement | null>(null);
 	type ModalState = ModalProps<Record<string, unknown>>;
 	let modalProps = $state<ModalState | null>(null);
+	let isLoading = $state(false);
 
 	function clearModal() {
 		const handler = modalProps?.onClose;
 		modalProps = null;
+		isLoading = false;
 		handler?.();
 	}
 
@@ -13,6 +15,7 @@
 		props: ModalProps<BodyProps>
 	) {
 		modalProps = props as ModalState;
+		isLoading = false;
 		requestAnimationFrame(() => modal?.showModal());
 	}
 
@@ -37,6 +40,10 @@
 		if (!modal) return;
 		modal.close();
 		clearModal();
+	}
+
+	export function setLoading(state: boolean) {
+		isLoading = state;
 	}
 </script>
 
@@ -105,15 +112,25 @@
 						<button
 							class="btn btn-primary gap-2 shadow-none"
 							type="button"
+							disabled={isLoading}
 							onclick={() => {
 								if (props.onPositive?.action) {
-									props.onPositive.action({ close: hideModal });
+									setLoading(true);
+									Promise.resolve(props.onPositive.action({ close: hideModal }))
+										.catch(() => {
+											// error handling done in action
+										})
+										.finally(() => {
+											setLoading(false);
+										});
 								} else {
 									hideModal();
 								}
 							}}
 						>
-							{#if props.onPositive.icon}
+							{#if isLoading}
+								<span class="loading loading-spinner loading-sm"></span>
+							{:else if props.onPositive.icon}
 								<Icon name={props.onPositive.icon} />
 							{/if}
 							{props.onPositive.label}

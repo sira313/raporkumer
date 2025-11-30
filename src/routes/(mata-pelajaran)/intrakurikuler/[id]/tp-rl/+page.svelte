@@ -66,9 +66,34 @@
 	// lock/disable agama select when the logged-in user is a 'user' assigned to an agama-variant
 	// Prefer server-provided `agamaSelectDisabled` so server can enforce the disabled
 	// state after class changes; fall back to resolving from assigned ids.
+	// IMPORTANT: Only lock if viewing a specific variant (not the parent page), to allow
+	// multi-mapel users to switch between their assigned variants from the parent page.
 	const isAgamaSelectLocked = $derived.by(() => {
-		if ((data as unknown as { agamaSelectDisabled?: boolean }).agamaSelectDisabled)
-			return Boolean((data as unknown as { agamaSelectDisabled?: boolean }).agamaSelectDisabled);
+		// If on parent agama page, never lock (allow switching between assigned variants)
+		if (isAgamaParentMapel) {
+			console.log('[tp-rl] isAgamaParentMapel=true, returning false (unlocked)');
+			return false;
+		}
+
+		// Check server-provided disabled flag for specific variant pages
+		const serverDisabled = (data as unknown as { agamaSelectDisabled?: boolean })
+			.agamaSelectDisabled;
+		const userHasMultiAgama = (data as unknown as { userHasMultiAgama?: boolean })
+			.userHasMultiAgama;
+		console.log('[tp-rl] serverDisabled:', serverDisabled, 'userHasMultiAgama:', userHasMultiAgama);
+
+		// For multi-mapel users, never lock the select (let them switch variants)
+		if (userHasMultiAgama) {
+			console.log('[tp-rl] userHasMultiAgama=true, returning false (unlocked for multi-mapel)');
+			return false;
+		}
+
+		if (serverDisabled) {
+			console.log('[tp-rl] server returned agamaSelectDisabled=true, returning true (locked)');
+			return Boolean(serverDisabled);
+		}
+
+		// Fallback: check if user has single assigned agama that matches current variant
 		const assignedLocal = (data?.assignedLocalMapelId ?? null) as number | null;
 		const u = page.data && page.data.user ? page.data.user : null;
 		const fallbackAssigned =
@@ -78,23 +103,45 @@
 			: Number.isFinite(Number(fallbackAssigned))
 				? Number(fallbackAssigned)
 				: null;
-		if (!checkId) return false;
-		return agamaOptions.some((opt) => opt.id === checkId);
+		console.log(
+			'[tp-rl] assignedLocal:',
+			assignedLocal,
+			'fallbackAssigned:',
+			fallbackAssigned,
+			'checkId:',
+			checkId
+		);
+		console.log('[tp-rl] data.mapel?.id:', data.mapel?.id);
+		if (!checkId) {
+			console.log('[tp-rl] no checkId, returning false (unlocked)');
+			return false;
+		}
+		// Only lock if the specific variant matches assigned agama
+		const shouldLock = data.mapel?.id === checkId;
+		console.log('[tp-rl] shouldLock:', shouldLock);
+		return shouldLock;
 	});
 
 	$effect(() => {
-		// if locked, default the selection to the assigned agama option (if available)
+		// if locked (viewing specific variant), default the selection to the assigned agama option
 		if (isAgamaSelectLocked && (!selectedAgamaId || selectedAgamaId === '')) {
-			const u = page.data && page.data.user ? page.data.user : null;
-			const assignedId = Number(u?.mataPelajaranId ?? NaN);
-			if (Number.isFinite(assignedId) && agamaOptions.find((o) => o.id === assignedId)) {
-				// set the selection and navigate to the assigned mapel's TP page so
-				// tujuan pembelajaran for that variant are loaded by the server.
-				selectedAgamaId = String(assignedId);
-				// navigate only if we're not already viewing the assigned mapel
-				if (Number(data.mapel?.id) !== assignedId) {
-					void goto(`/intrakurikuler/${assignedId}/tp-rl`, { replaceState: true });
-				}
+			const assignedLocal = data?.assignedLocalMapelId;
+			if (assignedLocal && agamaOptions.find((o) => o.id === assignedLocal)) {
+				selectedAgamaId = String(assignedLocal);
+			}
+		}
+		// if on parent page and no selection yet, default to first option or assigned variant
+		else if (
+			isAgamaParentMapel &&
+			(!selectedAgamaId || selectedAgamaId === '') &&
+			agamaOptions.length > 0
+		) {
+			const assignedLocal = data?.assignedLocalMapelId;
+			if (assignedLocal && agamaOptions.find((o) => o.id === assignedLocal)) {
+				selectedAgamaId = String(assignedLocal);
+			} else {
+				// default to first available option
+				selectedAgamaId = String(agamaOptions[0]?.id ?? '');
 			}
 		}
 	});
