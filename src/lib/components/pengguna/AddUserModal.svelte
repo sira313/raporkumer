@@ -28,6 +28,7 @@
 	let sekolahId = $state<string | number | null>('');
 	let initialized = $state(false);
 	let showPassword = $state(false);
+	let selectAllKelas = $state(false);
 
 	// Derived state
 	let uniqueMataPelajaran = $derived.by(() => uniqueByNama(mataPelajaran ?? []));
@@ -40,7 +41,6 @@
 		});
 	});
 
-	// Filter kelas by sekolahId jika dipilih
 	let filteredKelasList = $derived.by(() => {
 		if (!sekolahId) return kelasList ?? [];
 		const sId = Number(sekolahId);
@@ -83,8 +83,26 @@
 
 	// if modal is closed, allow re-initialization next time it opens
 	$effect(() => {
-		if (!open) initialized = false;
+		if (!open) {
+			initialized = false;
+			selectAllKelas = false;
+			kelasIds.clear();
+		}
 	});
+
+	function toggleSelectAllKelas() {
+		selectAllKelas = !selectAllKelas;
+		if (selectAllKelas) {
+			// Select all visible kelas
+			for (const k of filteredKelasList) {
+				kelasIds.add(k.id);
+			}
+		} else {
+			// Deselect all kelas
+			kelasIds.clear();
+		}
+		kelasIds = new Set(kelasIds);
+	}
 
 	function close() {
 		// reset initialized so next open will reinitialize fields
@@ -188,6 +206,10 @@
 						id="add-user-sekolah"
 						class="select dark:bg-base-200 w-full dark:border-none"
 						bind:value={sekolahId}
+						onchange={() => {
+							kelasIds.clear();
+							selectAllKelas = false;
+						}}
 					>
 						<option disabled selected={sekolahId === ''} value="">Pilih Sekolah</option>
 						{#if sekolahList && sekolahList.length}
@@ -247,6 +269,15 @@
 							<p class="text-xs opacity-75">Pilih satu atau lebih kelas yang bisa diakses</p>
 							{#if filteredKelasList.length > 0}
 								<div class="space-y-2">
+									<label class="bg-base-300 flex cursor-pointer gap-2 rounded p-2 font-semibold">
+										<input
+											type="checkbox"
+											class="checkbox checkbox-sm"
+											checked={selectAllKelas}
+											onchange={toggleSelectAllKelas}
+										/>
+										<span class="text-sm">Pilih Semua</span>
+									</label>
 									{#each filteredKelasList as k (k.id)}
 										<label class="flex cursor-pointer gap-2">
 											<input
@@ -321,7 +352,7 @@
 			</div>
 
 			<div class="modal-action sticky bottom-0 z-10">
-				<button class="btn btn-soft" type="button" onclick={close}
+				<button class="btn btn-soft shadow-none" type="button" onclick={close}
 					><Icon name="close" /> Batal</button
 				>
 				<button class="btn btn-primary shadow-none" type="button" onclick={save} disabled={!isValid}

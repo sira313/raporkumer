@@ -6,7 +6,8 @@ import {
 	tableKelas,
 	tableMataPelajaran,
 	tableAuthUserMataPelajaran,
-	tableAuthUserKelas
+	tableAuthUserKelas,
+	tableSemester
 } from '$lib/server/db/schema';
 import { tableSekolah } from '$lib/server/db/schema';
 import { sql, eq, and, inArray, desc } from 'drizzle-orm';
@@ -339,15 +340,42 @@ export async function load({ url }) {
 		.limit(1000);
 
 	// fetch kelas list so the Add User modal can offer kelas selection for multi-kelas
-	const kelasList = await db
+	// Include semester information to deduplicate kelas across ganjil/genap
+	const kelasListRaw = await db
 		.select({
 			id: tableKelas.id,
 			nama: tableKelas.nama,
 			fase: tableKelas.fase,
-			sekolahId: tableKelas.sekolahId
+			sekolahId: tableKelas.sekolahId,
+			tahunAjaranId: tableKelas.tahunAjaranId,
+			semesterId: tableKelas.semesterId,
+			semesterTipe: tableSemester.tipe
 		})
 		.from(tableKelas)
+		.leftJoin(tableSemester, eq(tableKelas.semesterId, tableSemester.id))
 		.limit(1000);
+
+	// Deduplicate kelas: for each (nama + tahunAjaranId), keep only one entry
+	// Prefer 'ganjil' semester if available, otherwise take the first one found
+	const kelasList = (() => {
+		const seen = new Map<string, (typeof kelasListRaw)[0]>();
+		for (const kelas of kelasListRaw) {
+			const key = `${kelas.nama ?? ''}_${kelas.tahunAjaranId ?? ''}`;
+			const existing = seen.get(key);
+			if (!existing) {
+				seen.set(key, kelas);
+			} else if (kelas.semesterTipe === 'ganjil' && existing.semesterTipe !== 'ganjil') {
+				// Prefer ganjil semester
+				seen.set(key, kelas);
+			}
+		}
+		return Array.from(seen.values()).map((k) => ({
+			id: k.id,
+			nama: k.nama,
+			fase: k.fase,
+			sekolahId: k.sekolahId
+		}));
+	})();
 
 	return { meta: { title: 'Manajemen Pengguna' }, users, mataPelajaran, sekolahList, kelasList };
 }
