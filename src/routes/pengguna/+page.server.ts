@@ -1,6 +1,12 @@
 import db from '$lib/server/db';
 import { env } from '$env/dynamic/private';
-import { tableAuthUser, tablePegawai, tableKelas, tableMataPelajaran } from '$lib/server/db/schema';
+import {
+	tableAuthUser,
+	tablePegawai,
+	tableKelas,
+	tableMataPelajaran,
+	tableAuthUserMataPelajaran
+} from '$lib/server/db/schema';
 import { tableSekolah } from '$lib/server/db/schema';
 import { sql, eq, and, inArray, desc } from 'drizzle-orm';
 import { authority } from './utils.server';
@@ -378,8 +384,21 @@ export const actions = {
 		const password = String(form.get('password') ?? '').trim();
 		const nama = String(form.get('nama') ?? '').trim();
 		const roleValue = String(form.get('type') ?? 'user');
-		const mataPelajaranIdRaw = form.get('mataPelajaranId');
-		let mataPelajaranId = mataPelajaranIdRaw ? Number(String(mataPelajaranIdRaw)) : null;
+
+		// Parse multi-mapel: mataPelajaranIds adalah JSON array string
+		let mataPelajaranIds: number[] = [];
+		const mataPelajaranIdsRaw = form.get('mataPelajaranIds');
+		if (mataPelajaranIdsRaw) {
+			try {
+				const parsed = JSON.parse(String(mataPelajaranIdsRaw));
+				if (Array.isArray(parsed)) {
+					mataPelajaranIds = parsed.map((id) => Number(id)).filter((id) => !isNaN(id));
+				}
+			} catch (err) {
+				console.warn('[pengguna] failed to parse mataPelajaranIds', err);
+			}
+		}
+
 		const sekolahIdRaw = form.get('sekolahId');
 		const sekolahId = sekolahIdRaw ? Number(String(sekolahIdRaw)) : null;
 
@@ -400,24 +419,25 @@ export const actions = {
 				if (p && typeof p.id === 'number') pegawaiId = p.id;
 			}
 
-			// If a sekolahId was provided but no specific mataPelajaranId, try to
-			// resolve any mata_pelajaran owned by that sekolah and assign the first
-			// found mapel to the user so the login flow (which maps mataPelajaran->kelas->sekolah)
-			// can pick the correct sekolah automatically.
-			if (!mataPelajaranId && sekolahId) {
+			// If no mataPelajaranIds selected but sekolahId provided, try to
+			// resolve any mata_pelajaran owned by that sekolah and use the first
+			if (mataPelajaranIds.length === 0 && sekolahId) {
 				try {
-					const [mp] = await db
+					const mpList = await db
 						.select({ id: tableMataPelajaran.id })
 						.from(tableMataPelajaran)
 						.leftJoin(tableKelas, eq(tableMataPelajaran.kelasId, tableKelas.id))
 						.where(eq(tableKelas.sekolahId, sekolahId))
 						.limit(1);
-					if (mp && typeof mp.id === 'number') mataPelajaranId = mp.id;
+					if (mpList.length > 0 && mpList[0].id) {
+						mataPelajaranIds = [mpList[0].id];
+					}
 				} catch (err) {
 					console.warn('[pengguna] failed to resolve mataPelajaran for sekolahId', sekolahId, err);
 				}
 			}
 
+			// Insert auth_user record
 			// @ts-expect-error: allow simple insertion shape here
 			await db.insert(tableAuthUser).values({
 				username,
@@ -427,8 +447,8 @@ export const actions = {
 				passwordUpdatedAt: timestamp,
 				permissions: [],
 				type: roleValue,
-				// store assigned mata pelajaran when creating a 'user' account
-				mataPelajaranId: mataPelajaranId ?? undefined,
+				// Set mataPelajaranId to first item (for backward compatibility with old code that checks mataPelajaranId)
+				mataPelajaranId: mataPelajaranIds.length > 0 ? mataPelajaranIds[0] : undefined,
 				// persist sekolah selection when provided so login reliably selects it
 				sekolahId: sekolahId ?? undefined,
 				pegawaiId: pegawaiId ?? undefined,
@@ -451,9 +471,33 @@ export const actions = {
 				.orderBy(desc(u.id))
 				.limit(1);
 
-			console.info(`[pengguna] Created user via action: ${username} -> id=${created?.id}`);
+			if (!created) {
+				throw new Error('Failed to retrieve created user');
+			}
 
-			// include mataPelajaranId in the response so the client can keep track of the selection
+			// Insert many-to-many entries untuk semua mata pelajaran yang dipilih
+			for (const mapelId of mataPelajaranIds) {
+				try {
+					await db.insert(tableAuthUserMataPelajaran).values({
+						authUserId: created.id,
+						mataPelajaranId: mapelId,
+						createdAt: timestamp,
+						updatedAt: timestamp
+					});
+				} catch (err) {
+					// Ignore duplicate errors (if somehow same mapel was added twice)
+					if (String(err).includes('UNIQUE')) {
+						console.warn(`[pengguna] duplicate mapel entry: user ${created.id}, mapel ${mapelId}`);
+					} else {
+						throw err;
+					}
+				}
+			}
+
+			console.info(
+				`[pengguna] Created user via action: ${username} -> id=${created.id}, mapels=${mataPelajaranIds.length}`
+			);
+
 			// diagnostic logs to help track persistence issues after DB imports
 			try {
 				console.info(
@@ -468,7 +512,7 @@ export const actions = {
 				success: true,
 				user: created,
 				displayName: nama,
-				mataPelajaranId: mataPelajaranId ?? null
+				mataPelajaranIds: mataPelajaranIds
 			};
 		} catch (err: unknown) {
 			console.error('Failed to create user', err);

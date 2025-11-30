@@ -239,6 +239,8 @@ export const tableAuthUserRelations = relations(tableAuthUser, ({ many, one }) =
 		fields: [tableAuthUser.mataPelajaranId],
 		references: [tableMataPelajaran.id]
 	}),
+	// many-to-many: guru bisa mengajar multiple mata pelajaran
+	mataPelajaranList: many(tableAuthUserMataPelajaran),
 	// optional relation to a sekolah (when user was created for a specific sekolah)
 	sekolah: one(tableSekolah, {
 		fields: [tableAuthUser.sekolahId],
@@ -369,6 +371,27 @@ export const tableKehadiranMuridRelations = relations(tableKehadiranMurid, ({ on
 	})
 }));
 
+// Join table untuk many-to-many relationship antara auth_user dan mata_pelajaran
+// Memungkinkan satu guru mengajar multiple mata pelajaran
+export const tableAuthUserMataPelajaran = sqliteTable(
+	'auth_user_mata_pelajaran',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		authUserId: int()
+			.references(() => tableAuthUser.id, { onDelete: 'cascade' })
+			.notNull(),
+		mataPelajaranId: int()
+			.references(() => tableMataPelajaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		...audit
+	},
+	(table) => [
+		unique().on(table.authUserId, table.mataPelajaranId),
+		index('auth_user_mata_pelajaran_user_idx').on(table.authUserId),
+		index('auth_user_mata_pelajaran_mapel_idx').on(table.mataPelajaranId)
+	]
+);
+
 export const tableMataPelajaran = sqliteTable('mata_pelajaran', {
 	id: int().primaryKey({ autoIncrement: true }),
 	kelasId: int()
@@ -470,7 +493,9 @@ export const tableMataPelajaranRelations = relations(tableMataPelajaran, ({ one,
 	asesmenFormatif: many(tableAsesmenFormatif),
 	asesmenSumatif: many(tableAsesmenSumatif),
 	asesmenSumatifTujuan: many(tableAsesmenSumatifTujuan),
-	kelas: one(tableKelas, { fields: [tableMataPelajaran.kelasId], references: [tableKelas.id] })
+	kelas: one(tableKelas, { fields: [tableMataPelajaran.kelasId], references: [tableKelas.id] }),
+	// many-to-many: mata pelajaran bisa diajar oleh multiple guru
+	authUsers: many(tableAuthUserMataPelajaran)
 }));
 
 export const tableTujuanPembelajaranRelations = relations(tableTujuanPembelajaran, ({ one }) => ({
@@ -479,6 +504,20 @@ export const tableTujuanPembelajaranRelations = relations(tableTujuanPembelajara
 		references: [tableMataPelajaran.id]
 	})
 }));
+
+export const tableAuthUserMataPelajaranRelations = relations(
+	tableAuthUserMataPelajaran,
+	({ one }) => ({
+		authUser: one(tableAuthUser, {
+			fields: [tableAuthUserMataPelajaran.authUserId],
+			references: [tableAuthUser.id]
+		}),
+		mataPelajaran: one(tableMataPelajaran, {
+			fields: [tableAuthUserMataPelajaran.mataPelajaranId],
+			references: [tableMataPelajaran.id]
+		})
+	})
+);
 
 export const tableAsesmenFormatifRelations = relations(tableAsesmenFormatif, ({ one }) => ({
 	murid: one(tableMurid, {

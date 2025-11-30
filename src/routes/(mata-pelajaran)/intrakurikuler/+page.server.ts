@@ -1,6 +1,11 @@
 import db from '$lib/server/db';
 import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama';
-import { tableMataPelajaran, tableTujuanPembelajaran, tableKelas } from '$lib/server/db/schema';
+import {
+	tableMataPelajaran,
+	tableTujuanPembelajaran,
+	tableKelas,
+	tableAuthUserMataPelajaran
+} from '$lib/server/db/schema';
 import { agamaVariantNames } from '$lib/statics';
 import { eq, inArray } from 'drizzle-orm';
 
@@ -29,44 +34,68 @@ export async function load({ depends, url, parent }) {
 			})
 		: [];
 
-	// If the current user is a 'user' role and has an assigned mataPelajaranId,
-	// prefer showing the mata pelajaran with the same name in the active kelas.
-	// This allows an assigned subject to be visible across kelas where the subject
-	// exists using different table rows (same name, different ids).
-	if (user && (user as unknown as { type?: string; mataPelajaranId?: number }).type === 'user') {
-		const assignedId = (user as unknown as { mataPelajaranId?: number }).mataPelajaranId;
-		if (assignedId) {
+	// If the current user is a 'user' role, filter to show only assigned mata pelajaran.
+	// First check join table auth_user_mata_pelajaran for multi-mapel support,
+	// then fallback to legacy mataPelajaranId field if join table is empty.
+	if (
+		user &&
+		(user as unknown as { id?: number; type?: string; mataPelajaranId?: number }).type === 'user'
+	) {
+		const userId = (user as unknown as { id?: number }).id;
+		if (userId) {
 			try {
-				// fetch the assigned mapel to obtain its name
-				const assigned = await db.query.tableMataPelajaran.findFirst({
-					columns: { id: true, nama: true, kelasId: true },
-					where: eq(tableMataPelajaran.id, Number(assignedId))
+				// Try to fetch from join table (multi-mapel)
+				const assignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({
+					columns: { mataPelajaranId: true },
+					where: eq(tableAuthUserMataPelajaran.authUserId, userId)
 				});
-				if (assigned && assigned.nama) {
-					const norm = (assigned.nama || '').trim().toLowerCase();
-					// If the assigned subject is a variant of agama (eg. Pendidikan Agama Islam ...),
-					// allow showing the parent mapel as well so the teacher can access the parent
-					// intrakurikuler page which contains agama-select.
-					const assignedIsAgamaVariant =
-						norm.startsWith('pendidikan agama') && !norm.includes(AGAMA_PARENT_NAME.toLowerCase());
-					if (assignedIsAgamaVariant) {
-						mapel = mapel.filter((m) => {
-							const n = (m.nama || '').trim().toLowerCase();
-							return n === norm || n === AGAMA_PARENT_NAME.toLowerCase();
-						});
-					} else {
-						mapel = mapel.filter((m) => (m.nama || '').trim().toLowerCase() === norm);
-					}
+
+				if (assignedMapels.length > 0) {
+					// User has multi-mapel assignments
+					const allowedIds = new Set(assignedMapels.map((m) => m.mataPelajaranId));
+					mapel = mapel.filter((m) => allowedIds.has(m.id));
 				} else {
-					// fallback: if assigned mapel not found, keep original restrictive id-match
-					const allowedId = Number(assignedId);
-					if (Number.isInteger(allowedId)) {
-						mapel = mapel.filter((m) => m.id === allowedId);
+					// Fallback: check legacy single mataPelajaranId
+					const assignedId = (user as unknown as { mataPelajaranId?: number }).mataPelajaranId;
+					if (assignedId) {
+						try {
+							// fetch the assigned mapel to obtain its name
+							const assigned = await db.query.tableMataPelajaran.findFirst({
+								columns: { id: true, nama: true, kelasId: true },
+								where: eq(tableMataPelajaran.id, Number(assignedId))
+							});
+							if (assigned && assigned.nama) {
+								const norm = (assigned.nama || '').trim().toLowerCase();
+								// If the assigned subject is a variant of agama (eg. Pendidikan Agama Islam ...),
+								// allow showing the parent mapel as well so the teacher can access the parent
+								// intrakurikuler page which contains agama-select.
+								const assignedIsAgamaVariant =
+									norm.startsWith('pendidikan agama') &&
+									!norm.includes(AGAMA_PARENT_NAME.toLowerCase());
+								if (assignedIsAgamaVariant) {
+									mapel = mapel.filter((m) => {
+										const n = (m.nama || '').trim().toLowerCase();
+										return n === norm || n === AGAMA_PARENT_NAME.toLowerCase();
+									});
+								} else {
+									mapel = mapel.filter((m) => (m.nama || '').trim().toLowerCase() === norm);
+								}
+							} else {
+								// fallback: if assigned mapel not found, keep original restrictive id-match
+								const allowedId = Number(assignedId);
+								if (Number.isInteger(allowedId)) {
+									mapel = mapel.filter((m) => m.id === allowedId);
+								}
+							}
+						} catch (err) {
+							// on error, don't block page — fallback to existing mapel list
+							console.warn('[intrakurikuler] Failed to resolve assigned mapel name', err);
+						}
 					}
 				}
 			} catch (err) {
 				// on error, don't block page — fallback to existing mapel list
-				console.warn('[intrakurikuler] Failed to resolve assigned mapel name', err);
+				console.warn('[intrakurikuler] Failed to fetch assigned mapel from join table', err);
 			}
 		}
 	}
