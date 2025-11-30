@@ -6,11 +6,13 @@
 	let {
 		open = $bindable(false),
 		mataPelajaran = [],
-		sekolahList = []
+		sekolahList = [],
+		kelasList = []
 	} = $props<{
 		open?: boolean;
 		mataPelajaran?: { id: number; nama: string }[];
 		sekolahList?: { id: number; nama: string }[];
+		kelasList?: { id: number; nama: string; fase?: string | null; sekolahId: number }[];
 	}>();
 
 	const dispatch = createEventDispatcher();
@@ -21,6 +23,8 @@
 	let type = $state('user');
 	// Multi-mapel: simpan sebagai Set of checked mata pelajaran IDs
 	let mataPelajaranIds = $state(new Set<number>());
+	// Multi-kelas: simpan sebagai Set of checked kelas IDs
+	let kelasIds = $state(new Set<number>());
 	let sekolahId = $state<string | number | null>('');
 	let initialized = $state(false);
 	let showPassword = $state(false);
@@ -34,6 +38,13 @@
 			if (name === 'pendidikan agama dan budi pekerti') return false;
 			return true;
 		});
+	});
+
+	// Filter kelas by sekolahId jika dipilih
+	let filteredKelasList = $derived.by(() => {
+		if (!sekolahId) return kelasList ?? [];
+		const sId = Number(sekolahId);
+		return (kelasList ?? []).filter((k: { sekolahId?: number | null }) => k.sekolahId === sId);
 	});
 
 	// Validasi: semua field wajib terisi
@@ -64,6 +75,8 @@
 			type = 'user';
 			// Clear multi-mapel selection
 			mataPelajaranIds = new Set<number>();
+			// Clear multi-kelas selection
+			kelasIds = new Set<number>();
 			sekolahId = '';
 			initialized = true;
 		}
@@ -91,6 +104,16 @@
 		mataPelajaranIds = mataPelajaranIds;
 	}
 
+	function toggleKelas(id: number) {
+		if (kelasIds.has(id)) {
+			kelasIds.delete(id);
+		} else {
+			kelasIds.add(id);
+		}
+		// Trigger reactivity
+		kelasIds = kelasIds;
+	}
+
 	async function save() {
 		const form = new FormData();
 		form.set('username', username || '');
@@ -99,6 +122,8 @@
 		form.set('type', type || 'user');
 		// Send multiple mapel as JSON array
 		form.set('mataPelajaranIds', JSON.stringify(Array.from(mataPelajaranIds)));
+		// Send multiple kelas as JSON array
+		form.set('kelasIds', JSON.stringify(Array.from(kelasIds)));
 		// include sekolahId when provided. Server may use this to resolve a default
 		// mataPelajaran within the chosen sekolah so users are linked to a sekolah.
 		form.set('sekolahId', String(sekolahId ?? ''));
@@ -113,6 +138,7 @@
 					username: body.user?.username ?? username,
 					displayName: body.displayName ?? nama,
 					mataPelajaranIds: body.mataPelajaranIds ?? Array.from(mataPelajaranIds),
+					kelasIds: body.kelasIds ?? Array.from(kelasIds),
 					// ensure there's a `user` object for the parent to consume
 					user: body.user ?? {
 						id: Date.now(),
@@ -156,6 +182,29 @@
 		<div class="modal-box flex max-h-[90vh] max-w-lg flex-col p-4">
 			<h3 class="mb-3 text-lg font-bold">Tambah Pengguna</h3>
 			<div class="flex-1 space-y-3 overflow-y-auto px-1">
+				<!-- Sekolah -->
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">Sekolah</legend>
+					<select
+						id="add-user-sekolah"
+						class="select dark:bg-base-200 w-full dark:border-none"
+						bind:value={sekolahId}
+					>
+						<option disabled selected={sekolahId === ''} value="">Pilih Sekolah</option>
+						{#if sekolahList && sekolahList.length}
+							{#each sekolahList as s (s.id)}
+								<option value={s.id}>{s.nama}</option>
+							{/each}
+						{:else}
+							<option disabled>- tidak ada sekolah -</option>
+						{/if}
+					</select>
+					<p class="label text-wrap">
+						Opsional: kaitkan pengguna ke sekolah tertentu sehingga saat login sekolah aktif bisa
+						disesuaikan.
+					</p>
+				</fieldset>
+
 				<!-- Mata Pelajaran Collapse -->
 				<div tabindex="0" role="button" class="bg-base-200 border-base-300 collapse-arrow collapse">
 					<div class="collapse-title font-semibold">
@@ -187,28 +236,39 @@
 					</div>
 				</div>
 
-				<!-- Sekolah -->
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend">Sekolah</legend>
-					<select
-						id="add-user-sekolah"
-						class="select dark:bg-base-200 w-full dark:border-none"
-						bind:value={sekolahId}
-					>
-						<option disabled selected={sekolahId === ''} value="">Pilih Sekolah</option>
-						{#if sekolahList && sekolahList.length}
-							{#each sekolahList as s (s.id)}
-								<option value={s.id}>{s.nama}</option>
-							{/each}
-						{:else}
-							<option disabled>- tidak ada sekolah -</option>
+				<!-- Kelas -->
+				<div tabindex="0" role="button" class="bg-base-200 border-base-300 collapse-arrow collapse">
+					<div class="collapse-title font-semibold">
+						Kelas {#if kelasIds.size > 0}
+							<span class="badge badge-sm badge-secondary">{kelasIds.size}</span>
 						{/if}
-					</select>
-					<p class="label text-wrap">
-						Opsional: kaitkan pengguna ke sekolah tertentu sehingga saat login sekolah aktif bisa
-						disesuaikan.
-					</p>
-				</fieldset>
+					</div>
+					<div class="collapse-content text-sm">
+						<div class="space-y-3">
+							<p class="text-xs opacity-75">Pilih satu atau lebih kelas yang bisa diakses</p>
+							{#if filteredKelasList.length > 0}
+								<div class="space-y-2">
+									{#each filteredKelasList as k (k.id)}
+										<label class="flex cursor-pointer gap-2">
+											<input
+												type="checkbox"
+												class="checkbox checkbox-sm"
+												checked={kelasIds.has(k.id)}
+												onchange={() => toggleKelas(k.id)}
+											/>
+											<span class="text-sm"
+												>{k.nama}
+												{#if k.fase}({k.fase}){/if}</span
+											>
+										</label>
+									{/each}
+								</div>
+							{:else}
+								<p class="text-xs opacity-75">- tidak ada kelas -</p>
+							{/if}
+						</div>
+					</div>
+				</div>
 
 				<!-- Nama -->
 				<fieldset class="fieldset">

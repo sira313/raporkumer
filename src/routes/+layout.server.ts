@@ -1,9 +1,9 @@
 import db from '$lib/server/db';
 import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
-import { tableKelas, tablePegawai } from '$lib/server/db/schema';
+import { tableKelas, tablePegawai, tableAuthUserKelas } from '$lib/server/db/schema';
 import { cookieNames, findTitleByPath } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
 
 export async function load({ url, locals, cookies }) {
 	const meta: PageMeta = {
@@ -16,6 +16,7 @@ export async function load({ url, locals, cookies }) {
 	const academicContext = sekolah?.id ? await resolveSekolahAcademicContext(sekolah.id) : null;
 
 	// Query daftarKelas: for wali_kelas, get ALL kelas they manage (not just active semester)
+	// For user type (guru), get kelas from tableAuthUserKelas join table
 	// For other users, get kelas from active semester only
 	let daftarKelas: Array<{
 		id: number;
@@ -24,7 +25,7 @@ export async function load({ url, locals, cookies }) {
 		waliKelas: { id: number; nama: string } | null;
 	}> = [];
 	if (sekolah?.id) {
-		const userWithType = user as { type?: string; pegawaiId?: number } | null;
+		const userWithType = user as { type?: string; id?: number; pegawaiId?: number } | null;
 		if (userWithType?.type === 'wali_kelas' && userWithType.pegawaiId) {
 			// Wali kelas: get ALL kelas where waliKelasId = pegawaiId (across all semesters)
 			daftarKelas = await db.query.tableKelas.findMany({
@@ -36,8 +37,25 @@ export async function load({ url, locals, cookies }) {
 				),
 				orderBy: asc(tableKelas.nama)
 			});
+		} else if (userWithType?.type === 'user' && userWithType.id) {
+			// User type (guru): get kelas from tableAuthUserKelas join table
+			// First query join table to get allowed kelas IDs
+			const allowedKelasRecords = await db.query.tableAuthUserKelas.findMany({
+				columns: { kelasId: true },
+				where: eq(tableAuthUserKelas.authUserId, userWithType.id)
+			});
+
+			if (allowedKelasRecords.length > 0) {
+				const allowedKelasIds = allowedKelasRecords.map((r) => r.kelasId);
+				daftarKelas = await db.query.tableKelas.findMany({
+					columns: { id: true, nama: true, fase: true },
+					with: { waliKelas: { columns: { id: true, nama: true } } },
+					where: inArray(tableKelas.id, allowedKelasIds),
+					orderBy: asc(tableKelas.nama)
+				});
+			}
 		} else {
-			// Admin/user: get kelas from active semester only
+			// Admin/other: get kelas from active semester only
 			daftarKelas = await db.query.tableKelas.findMany({
 				columns: { id: true, nama: true, fase: true },
 				with: { waliKelas: { columns: { id: true, nama: true } } },
@@ -64,7 +82,12 @@ export async function load({ url, locals, cookies }) {
 			// If the current user is a wali_kelas, they may only access their own kelas
 			// unless they have explicit permission `kelas_pindah` AND they own that kelas
 			if (user) {
-				const userWithType = user as { type?: string; kelasId?: number; pegawaiId?: number };
+				const userWithType = user as {
+					type?: string;
+					id?: number;
+					kelasId?: number;
+					pegawaiId?: number;
+				};
 				if (userWithType.type === 'wali_kelas' && Number.isInteger(Number(userWithType.kelasId))) {
 					const allowed = Number(userWithType.kelasId);
 					if (kelasIdNumber !== allowed) {
@@ -95,6 +118,20 @@ export async function load({ url, locals, cookies }) {
 							console.warn('[layout] failed to verify kelas ownership', err);
 							throw redirect(303, `/forbidden?required=kelas_id`);
 						}
+					}
+				} else if (userWithType.type === 'user' && userWithType.id) {
+					// User type (guru): verify they have access to the requested kelas via tableAuthUserKelas
+					const hasAccess = await db.query.tableAuthUserKelas.findFirst({
+						columns: { id: true },
+						where: and(
+							eq(tableAuthUserKelas.authUserId, userWithType.id),
+							eq(tableAuthUserKelas.kelasId, kelasIdNumber)
+						)
+					});
+
+					if (!hasAccess) {
+						// Deny access when a user type tries to switch to a kelas they don't have access to
+						throw redirect(303, `/forbidden?required=kelas_id`);
 					}
 				}
 			}

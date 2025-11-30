@@ -241,6 +241,8 @@ export const tableAuthUserRelations = relations(tableAuthUser, ({ many, one }) =
 	}),
 	// many-to-many: guru bisa mengajar multiple mata pelajaran
 	mataPelajaranList: many(tableAuthUserMataPelajaran),
+	// many-to-many: guru bisa mengakses multiple kelas
+	kelasList: many(tableAuthUserKelas),
 	// optional relation to a sekolah (when user was created for a specific sekolah)
 	sekolah: one(tableSekolah, {
 		fields: [tableAuthUser.sekolahId],
@@ -255,7 +257,7 @@ export const tableAuthSessionRelations = relations(tableAuthSession, ({ one }) =
 	})
 }));
 
-export const tableKelasRelations = relations(tableKelas, ({ one }) => ({
+export const tableKelasRelations = relations(tableKelas, ({ one, many }) => ({
 	sekolah: one(tableSekolah, { fields: [tableKelas.sekolahId], references: [tableSekolah.id] }),
 	tahunAjaran: one(tableTahunAjaran, {
 		fields: [tableKelas.tahunAjaranId],
@@ -265,7 +267,9 @@ export const tableKelasRelations = relations(tableKelas, ({ one }) => ({
 		fields: [tableKelas.semesterId],
 		references: [tableSemester.id]
 	}),
-	waliKelas: one(tablePegawai, { fields: [tableKelas.waliKelasId], references: [tablePegawai.id] })
+	waliKelas: one(tablePegawai, { fields: [tableKelas.waliKelasId], references: [tablePegawai.id] }),
+	// many-to-many: kelas bisa diakses oleh multiple guru
+	authUsers: many(tableAuthUserKelas)
 }));
 
 export const tableWaliMurid = sqliteTable('wali_murid', {
@@ -389,6 +393,27 @@ export const tableAuthUserMataPelajaran = sqliteTable(
 		unique().on(table.authUserId, table.mataPelajaranId),
 		index('auth_user_mata_pelajaran_user_idx').on(table.authUserId),
 		index('auth_user_mata_pelajaran_mapel_idx').on(table.mataPelajaranId)
+	]
+);
+
+// Join table untuk many-to-many relationship antara auth_user dan kelas
+// Memungkinkan satu guru mengakses multiple kelas (dengan permission kelas_pindah)
+export const tableAuthUserKelas = sqliteTable(
+	'auth_user_kelas',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		authUserId: int()
+			.references(() => tableAuthUser.id, { onDelete: 'cascade' })
+			.notNull(),
+		kelasId: int()
+			.references(() => tableKelas.id, { onDelete: 'cascade' })
+			.notNull(),
+		...audit
+	},
+	(table) => [
+		unique().on(table.authUserId, table.kelasId),
+		index('auth_user_kelas_user_idx').on(table.authUserId),
+		index('auth_user_kelas_kelas_idx').on(table.kelasId)
 	]
 );
 
@@ -518,6 +543,17 @@ export const tableAuthUserMataPelajaranRelations = relations(
 		})
 	})
 );
+
+export const tableAuthUserKelasRelations = relations(tableAuthUserKelas, ({ one }) => ({
+	authUser: one(tableAuthUser, {
+		fields: [tableAuthUserKelas.authUserId],
+		references: [tableAuthUser.id]
+	}),
+	kelas: one(tableKelas, {
+		fields: [tableAuthUserKelas.kelasId],
+		references: [tableKelas.id]
+	})
+}));
 
 export const tableAsesmenFormatifRelations = relations(tableAsesmenFormatif, ({ one }) => ({
 	murid: one(tableMurid, {

@@ -37,6 +37,7 @@ export async function load({ depends, url, parent }) {
 	// If the current user is a 'user' role, filter to show only assigned mata pelajaran.
 	// First check join table auth_user_mata_pelajaran for multi-mapel support,
 	// then fallback to legacy mataPelajaranId field if join table is empty.
+	// IMPORTANT: We match by mapel ID AND by mapel name (since same subject can exist in different classes)
 	if (
 		user &&
 		(user as unknown as { id?: number; type?: string; mataPelajaranId?: number }).type === 'user'
@@ -52,8 +53,25 @@ export async function load({ depends, url, parent }) {
 
 				if (assignedMapels.length > 0) {
 					// User has multi-mapel assignments
-					const allowedIds = new Set(assignedMapels.map((m) => m.mataPelajaranId));
-					mapel = mapel.filter((m) => allowedIds.has(m.id));
+					// Fetch the actual mapel records to get their names
+					const assignedMapelRecords = await db.query.tableMataPelajaran.findMany({
+						columns: { id: true, nama: true },
+						where: inArray(
+							tableMataPelajaran.id,
+							assignedMapels.map((m) => m.mataPelajaranId)
+						)
+					});
+
+					// Build a set of allowed mapel names (normalize for comparison)
+					const allowedNames = new Set(
+						assignedMapelRecords.map((m) => (m.nama || '').trim().toLowerCase())
+					);
+
+					// Filter current kelas' mapel by name match
+					mapel = mapel.filter((m) => {
+						const mNorm = (m.nama || '').trim().toLowerCase();
+						return allowedNames.has(mNorm);
+					});
 				} else {
 					// Fallback: check legacy single mataPelajaranId
 					const assignedId = (user as unknown as { mataPelajaranId?: number }).mataPelajaranId;

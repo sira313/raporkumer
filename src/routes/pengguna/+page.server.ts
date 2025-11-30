@@ -5,7 +5,8 @@ import {
 	tablePegawai,
 	tableKelas,
 	tableMataPelajaran,
-	tableAuthUserMataPelajaran
+	tableAuthUserMataPelajaran,
+	tableAuthUserKelas
 } from '$lib/server/db/schema';
 import { tableSekolah } from '$lib/server/db/schema';
 import { sql, eq, and, inArray, desc } from 'drizzle-orm';
@@ -323,7 +324,11 @@ export async function load({ url }) {
 
 	// fetch mata pelajaran to populate select in the inline-add row
 	const mataPelajaran = await db
-		.select({ id: tableMataPelajaran.id, nama: tableMataPelajaran.nama })
+		.select({
+			id: tableMataPelajaran.id,
+			nama: tableMataPelajaran.nama,
+			kelasId: tableMataPelajaran.kelasId
+		})
 		.from(tableMataPelajaran)
 		.limit(1000);
 
@@ -333,7 +338,18 @@ export async function load({ url }) {
 		.from(tableSekolah)
 		.limit(1000);
 
-	return { meta: { title: 'Manajemen Pengguna' }, users, mataPelajaran, sekolahList };
+	// fetch kelas list so the Add User modal can offer kelas selection for multi-kelas
+	const kelasList = await db
+		.select({
+			id: tableKelas.id,
+			nama: tableKelas.nama,
+			fase: tableKelas.fase,
+			sekolahId: tableKelas.sekolahId
+		})
+		.from(tableKelas)
+		.limit(1000);
+
+	return { meta: { title: 'Manajemen Pengguna' }, users, mataPelajaran, sekolahList, kelasList };
 }
 
 export const actions = {
@@ -399,6 +415,20 @@ export const actions = {
 			}
 		}
 
+		// Parse multi-kelas: kelasIds adalah JSON array string
+		let kelasIds: number[] = [];
+		const kelasIdsRaw = form.get('kelasIds');
+		if (kelasIdsRaw) {
+			try {
+				const parsed = JSON.parse(String(kelasIdsRaw));
+				if (Array.isArray(parsed)) {
+					kelasIds = parsed.map((id) => Number(id)).filter((id) => !isNaN(id));
+				}
+			} catch (err) {
+				console.warn('[pengguna] failed to parse kelasIds', err);
+			}
+		}
+
 		const sekolahIdRaw = form.get('sekolahId');
 		const sekolahId = sekolahIdRaw ? Number(String(sekolahIdRaw)) : null;
 
@@ -437,24 +467,34 @@ export const actions = {
 				}
 			}
 
+			// Auto-assign 'kelas_pindah' permission to user type (guru) dengan multiple kelas
+			const permissions: string[] = [];
+			if (roleValue === 'user' && kelasIds.length > 1) {
+				permissions.push('kelas_pindah');
+			}
+
 			// Insert auth_user record
-			// @ts-expect-error: allow simple insertion shape here
-			await db.insert(tableAuthUser).values({
+			const insertData = {
 				username,
 				usernameNormalized: username.toLowerCase(),
 				passwordHash: hash,
 				passwordSalt: salt,
 				passwordUpdatedAt: timestamp,
-				permissions: [],
+				permissions: permissions,
 				type: roleValue,
 				// Set mataPelajaranId to first item (for backward compatibility with old code that checks mataPelajaranId)
 				mataPelajaranId: mataPelajaranIds.length > 0 ? mataPelajaranIds[0] : undefined,
+				// Set kelasId to first item (for backward compatibility with old code that checks kelasId)
+				kelasId: kelasIds.length > 0 ? kelasIds[0] : undefined,
 				// persist sekolah selection when provided so login reliably selects it
 				sekolahId: sekolahId ?? undefined,
 				pegawaiId: pegawaiId ?? undefined,
 				createdAt: timestamp,
 				updatedAt: timestamp
-			});
+			};
+
+			// @ts-expect-error: drizzle type inference issue with spread
+			await db.insert(tableAuthUser).values(insertData);
 
 			// fetch created user record to return the created user object reliably.
 			// select the most-recent row matching usernameNormalized in case multiple exist.
@@ -494,8 +534,29 @@ export const actions = {
 				}
 			}
 
+			// Insert many-to-many entries untuk semua kelas yang dipilih
+			for (const kelasIdItem of kelasIds) {
+				try {
+					await db.insert(tableAuthUserKelas).values({
+						authUserId: created.id,
+						kelasId: kelasIdItem,
+						createdAt: timestamp,
+						updatedAt: timestamp
+					});
+				} catch (err) {
+					// Ignore duplicate errors (if somehow same kelas was added twice)
+					if (String(err).includes('UNIQUE')) {
+						console.warn(
+							`[pengguna] duplicate kelas entry: user ${created.id}, kelas ${kelasIdItem}`
+						);
+					} else {
+						throw err;
+					}
+				}
+			}
+
 			console.info(
-				`[pengguna] Created user via action: ${username} -> id=${created.id}, mapels=${mataPelajaranIds.length}`
+				`[pengguna] Created user via action: ${username} -> id=${created.id}, mapels=${mataPelajaranIds.length}, kelas=${kelasIds.length}`
 			);
 
 			// diagnostic logs to help track persistence issues after DB imports
@@ -512,7 +573,8 @@ export const actions = {
 				success: true,
 				user: created,
 				displayName: nama,
-				mataPelajaranIds: mataPelajaranIds
+				mataPelajaranIds: mataPelajaranIds,
+				kelasIds: kelasIds
 			};
 		} catch (err: unknown) {
 			console.error('Failed to create user', err);

@@ -107,10 +107,19 @@ export async function load({ parent, url, depends }) {
 	// Restrict for 'user' accounts assigned to mata pelajaran.
 	// First check join table auth_user_mata_pelajaran for multi-mapel support,
 	// then fallback to legacy mataPelajaranId field if join table is empty.
+	// IMPORTANT: Match by mapel name (since same subject can exist in different classes)
 	const maybeUser = user as unknown as
 		| { id?: number; type?: string; mataPelajaranId?: number }
 		| undefined;
 	const assignedMapelIds = new Set<number>();
+
+	console.log(
+		`[asesmen-sumatif] load: user type=${maybeUser?.type}, id=${maybeUser?.id}, mataPelajaranId=${maybeUser?.mataPelajaranId}`
+	);
+	console.log(
+		`[asesmen-sumatif] load: kelasAktif.id=${kelasAktif.id}, initial mapelRecords count=${mapelRecords.length}`,
+		mapelRecords.map((m) => ({ id: m.id, nama: m.nama }))
+	);
 
 	if (maybeUser && maybeUser.type === 'user' && maybeUser.id) {
 		try {
@@ -120,12 +129,46 @@ export async function load({ parent, url, depends }) {
 				where: eq(tableAuthUserMataPelajaran.authUserId, maybeUser.id)
 			});
 
+			console.log(
+				`[asesmen-sumatif] load: multiMapels from join table count=${multiMapels.length}`,
+				multiMapels
+			);
+
 			if (multiMapels.length > 0) {
 				// User has multi-mapel assignments
-				for (const m of multiMapels) {
-					assignedMapelIds.add(m.mataPelajaranId);
-				}
-				mapelRecords = mapelRecords.filter((r) => assignedMapelIds.has(r.id));
+				// Fetch the actual mapel records to get their names
+				const assignedMapelRecords = await db.query.tableMataPelajaran.findMany({
+					columns: { id: true, nama: true },
+					where: inArray(
+						tableMataPelajaran.id,
+						multiMapels.map((m) => m.mataPelajaranId)
+					)
+				});
+
+				console.log(
+					`[asesmen-sumatif] load: assignedMapelRecords count=${assignedMapelRecords.length}`,
+					assignedMapelRecords
+				);
+
+				// Build a set of allowed mapel names (normalize for comparison)
+				const allowedNames = new Set(assignedMapelRecords.map((m) => normalizeText(m.nama)));
+
+				console.log(`[asesmen-sumatif] load: allowedNames=`, Array.from(allowedNames));
+
+				// Filter current kelas' mapel by name match
+				const beforeFilter = mapelRecords.length;
+				mapelRecords = mapelRecords.filter((r) => {
+					const rNorm = normalizeText(r.nama);
+					const allowed = allowedNames.has(rNorm);
+					console.log(
+						`[asesmen-sumatif] filter: r.nama="${r.nama}" (norm="${rNorm}") allowed=${allowed}`
+					);
+					return allowed;
+				});
+
+				console.log(
+					`[asesmen-sumatif] load: after filter ${beforeFilter} → ${mapelRecords.length}`
+				);
 			} else if (maybeUser.mataPelajaranId) {
 				// Fallback: check legacy single mataPelajaranId
 				const assignedId = Number(maybeUser.mataPelajaranId);
