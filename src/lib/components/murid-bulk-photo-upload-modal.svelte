@@ -99,7 +99,7 @@
 			}
 
 			const result = await res.json();
-			const { uploaded = 0, failed = 0, message = 'Upload selesai' } = result;
+			const { uploaded = 0, failed = 0 } = result;
 
 			if (failed > 0) {
 				toast({

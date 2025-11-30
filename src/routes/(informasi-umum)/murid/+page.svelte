@@ -322,11 +322,7 @@
 						>
 							<li><a href="/murid/photos">Lihat Semua Foto</a></li>
 							<li>
-								<button
-									type="button"
-									onclick={openBulkPhotoUploadModal}
-									class="text-left"
-								>
+								<button type="button" onclick={openBulkPhotoUploadModal} class="text-left">
 									Upload Semua Foto
 								</button>
 							</li>

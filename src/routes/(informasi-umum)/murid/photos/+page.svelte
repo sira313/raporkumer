@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/icon.svelte';
 
 	let { data } = $props();
@@ -18,10 +17,6 @@
 		}
 		return null;
 	};
-
-	const handleBack = () => {
-		goto('/murid');
-	};
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
@@ -32,10 +27,12 @@
 				{data.kelas.nama} - Fase {data.kelas.fase ?? '-'}
 			</p>
 		</div>
-		<button onclick={handleBack} class="btn btn-soft mt-4 flex items-center shadow-none sm:mt-0">
-			<Icon name="left" />
-			Kembali
-		</button>
+		<form action="/murid" method="get">
+			<button type="submit" class="btn btn-soft mt-4 flex items-center shadow-none sm:mt-0">
+				<Icon name="left" />
+				Kembali
+			</button>
+		</form>
 	</div>
 
 	{#if data.daftarMurid.length === 0}
