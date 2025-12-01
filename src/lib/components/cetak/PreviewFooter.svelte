@@ -155,7 +155,7 @@
 				onclick={handleDownloadBA}
 			>
 				<Icon name="download" />
-				Download BA
+				Berita Acara
 			</button>
 			<button
 				class="btn btn-sm btn-soft mr-1 shadow-none"
