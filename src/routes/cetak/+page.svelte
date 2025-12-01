@@ -223,15 +223,18 @@
 	});
 
 	const isPrintLoading = $derived.by(() => previewLoading || waitingForPrintable);
-	const printDisabled = $derived.by(() => !previewDocument || !previewPrintable);
+	const printDisabled = $derived.by(() => !previewDocument || !previewPrintable || isPrintLoading);
 	const printButtonTitle = $derived.by(() => {
 		if (!previewDocument) {
 			return 'Preview dokumen terlebih dahulu sebelum mencetak';
 		}
-		if (!previewPrintable) {
+		if (isPrintLoading) {
 			return isBulkMode && bulkPreviewData.length > 0
 				? 'Menyiapkan dokumen untuk dicetak, tunggu sebentar...'
 				: 'Preview sedang disiapkan untuk dicetak';
+		}
+		if (!previewPrintable) {
+			return 'Preview sedang disiapkan untuk dicetak';
 		}
 		if (isBulkMode) {
 			return `Cetak ${bulkPreviewData.length} ${previewDocumentEntry?.label ?? 'dokumen'} untuk semua murid`;
@@ -501,12 +504,14 @@
 		}
 	});
 
-	// Reset printable node when showBgLogo changes to update background state
+	// When bulk mode showBgLogo changes, reset bulk nodes to wait for re-render
 	$effect(() => {
+		if (!isBulkMode) {
+			return;
+		}
 		void showBgLogo; // track dependency
-		previewPrintable = null;
 		bulkPrintableNodes = [];
-		waitingForPrintable = false;
+		waitingForPrintable = true;
 	});
 
 	function handlePrint() {

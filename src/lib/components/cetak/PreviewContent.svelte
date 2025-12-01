@@ -102,18 +102,22 @@
 							template={selectedTemplate}
 						/>
 					{:else if previewDocument === 'biodata'}
-						<BiodataPreview
-							data={item.data}
-							onPrintableReady={(node) => onBulkPrintableReady(index, node)}
-							{showBgLogo}
-						/>
+						{#key showBgLogo}
+							<BiodataPreview
+								data={item.data}
+								onPrintableReady={(node) => onBulkPrintableReady(index, node)}
+								{showBgLogo}
+							/>
+						{/key}
 					{:else}
 						{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
-						<PreviewComponent
-							data={item.data}
-							onPrintableReady={(node) => onBulkPrintableReady(index, node)}
-							{showBgLogo}
-						/>
+						{#key showBgLogo}
+							<PreviewComponent
+								data={item.data}
+								onPrintableReady={(node) => onBulkPrintableReady(index, node)}
+								{showBgLogo}
+							/>
+						{/key}
 					{/if}
 				</div>
 			{/each}
@@ -132,12 +136,16 @@
 		</div>
 	{:else if previewDocument === 'biodata'}
 		<div class="mt-6">
-			<BiodataPreview data={previewData} {onPrintableReady} {showBgLogo} />
+			{#key showBgLogo}
+				<BiodataPreview data={previewData} {onPrintableReady} {showBgLogo} />
+			{/key}
 		</div>
 	{:else}
 		{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
 		<div class="mt-6">
-			<PreviewComponent data={previewData} {onPrintableReady} {showBgLogo} />
+			{#key showBgLogo}
+				<PreviewComponent data={previewData} {onPrintableReady} {showBgLogo} />
+			{/key}
 		</div>
 	{/if}
 {/if}
