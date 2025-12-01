@@ -65,6 +65,7 @@
 			<div
 				style={backgroundStyle +
 					'; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; opacity: 0.2;'}
+				class="print:opacity-100"
 			></div>
 		{/if}
 		<div class={bodyClasses} bind:this={contentRef} use:applySplit>

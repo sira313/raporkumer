@@ -345,6 +345,13 @@ function fallbackTempat(sekolah: NonNullable<App.Locals['sekolah']>): string {
 	return alamat.kabupaten || alamat.kecamatan || alamat.desa || '';
 }
 
+function buildLogoUrl(sekolah: NonNullable<App.Locals['sekolah']>): string | null {
+	if (!sekolah.id) return null;
+	const updatedAt = sekolah.updatedAt ? Date.parse(sekolah.updatedAt) : NaN;
+	const suffix = Number.isFinite(updatedAt) ? `?v=${updatedAt}` : '';
+	return `/sekolah/logo/${sekolah.id}${suffix}`;
+}
+
 export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	const sekolah = locals.sekolah;
 	if (!sekolah?.id) {
@@ -657,7 +664,7 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		sekolah: {
 			nama: sekolah.nama,
 			alamat: composeAlamat(sekolah),
-			logoUrl: null
+			logoUrl: buildLogoUrl(sekolah)
 		},
 		murid: {
 			nama: murid.nama,

@@ -170,7 +170,7 @@
 <section class={resolvedSectionClass} bind:this={sectionRef} use:applySplit>
 	<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
 		{#if shouldRenderHeader}
-			<thead class="bg-base-300">
+			<thead class="bg-base-300 opacity-80">
 				<tr>
 					<th class="border-base-300 border px-3 py-2 text-left">No.</th>
 					<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>

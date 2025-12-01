@@ -112,6 +112,7 @@
 						<PreviewComponent
 							data={item.data}
 							onPrintableReady={(node) => onBulkPrintableReady(index, node)}
+							{showBgLogo}
 						/>
 					{/if}
 				</div>
@@ -136,7 +137,7 @@
 	{:else}
 		{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
 		<div class="mt-6">
-			<PreviewComponent data={previewData} {onPrintableReady} />
+			<PreviewComponent data={previewData} {onPrintableReady} {showBgLogo} />
 		</div>
 	{/if}
 {/if}

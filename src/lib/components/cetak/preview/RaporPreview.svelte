@@ -17,9 +17,14 @@
 		meta?: { title?: string | null } | null;
 	};
 
-	let { data = {}, onPrintableReady = () => {} } = $props<{
+	let {
+		data = {},
+		onPrintableReady = () => {},
+		showBgLogo = false
+	} = $props<{
 		data?: ComponentData;
 		onPrintableReady?: (node: HTMLDivElement | null) => void;
+		showBgLogo?: boolean;
 	}>();
 
 	let printable: HTMLDivElement | null = null;
@@ -33,6 +38,14 @@
 	const kepalaSekolah = $derived.by(() => rapor?.kepalaSekolah ?? null);
 	const ttd = $derived.by(() => rapor?.ttd ?? null);
 	const hasKokurikuler = $derived.by(() => Boolean(rapor?.hasKokurikuler));
+
+	const logoUrl = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri.png');
+	const backgroundStyle = $derived.by(() => {
+		if (!showBgLogo) return '';
+		// Escape single quotes in URL for CSS
+		const escapedUrl = logoUrl.replace(/'/g, "\\'");
+		return `background-image: url('${escapedUrl}'); background-position: center center; background-repeat: no-repeat; background-size: 45%; background-attachment: local; position: relative;`;
+	});
 
 	let firstCardContent = $state<HTMLDivElement | null>(null);
 	let firstTableSection = $state<HTMLElement | null>(null);
@@ -212,7 +225,12 @@
 	class="bg-base-300 dark:bg-base-200 card preview w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
 >
 	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
-		<PrintCardPage breakAfter bind:contentRef={firstCardContent} splitTrigger={triggerSplitOnMount}>
+		<PrintCardPage
+			breakAfter
+			bind:contentRef={firstCardContent}
+			splitTrigger={triggerSplitOnMount}
+			{backgroundStyle}
+		>
 			<header class="pb-4 text-center">
 				<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
 				<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
@@ -236,7 +254,7 @@
 		</PrintCardPage>
 
 		{#each intermediatePageRows as pageRows, pageIndex (pageIndex)}
-			<PrintCardPage breakAfter splitTrigger={triggerSplitOnMount}>
+			<PrintCardPage breakAfter splitTrigger={triggerSplitOnMount} {backgroundStyle}>
 				<RaporIntrakTable
 					rows={pageRows}
 					tableRowAction={tableRow}
@@ -252,7 +270,7 @@
 		{/each}
 
 		{#if finalPageRows.length > 0}
-			<PrintCardPage splitTrigger={triggerSplitOnMount}>
+			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
 				<RaporIntrakTable
 					rows={finalPageRows}
 					tableRowAction={tableRow}
@@ -282,7 +300,7 @@
 					>
 						<section bind:this={continuationPrototypeTableSection} use:triggerSplitOnMount>
 							<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
-								<thead class="bg-base-300">
+								<thead class="bg-base-300 opacity-80">
 									<tr>
 										<th class="border-base-300 border px-3 py-2 text-left">No.</th>
 										<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>

@@ -137,7 +137,7 @@
 		</p>
 	{/if}
 	<div class="flex items-center gap-2 self-end sm:self-auto">
-		{#if isBiodataSelected}
+		{#if isBiodataSelected || isRaporSelected}
 			<label class="swap shadow-none">
 				<input
 					type="checkbox"

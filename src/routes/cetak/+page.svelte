@@ -501,6 +501,14 @@
 		}
 	});
 
+	// Reset printable node when showBgLogo changes to update background state
+	$effect(() => {
+		void showBgLogo; // track dependency
+		previewPrintable = null;
+		bulkPrintableNodes = [];
+		waitingForPrintable = false;
+	});
+
 	function handlePrint() {
 		const doc = previewDocument;
 		if (!doc) {
