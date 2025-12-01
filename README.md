@@ -18,7 +18,7 @@ dan pengembang; bagian teknis dan pedoman kontribusi ada di folder `docs/`.
 
 ## Siapa yang Cocok Menggunakan
 
-- Kepala sekolah, guru, wali kelas, dan operator sekolah yang bertanggung jawab atas administrasi rapor
+- Mereka yang bosan akan sistem yang penuh bug dan berani mencoba hal baru.
 
 ## Quickstart — Versi Pengguna (Windows installer)
 
