@@ -18,7 +18,10 @@
 		isRaporSelected = false,
 		tpMode = 'compact',
 		onToggleFullTP = () => {},
-		kelasId = null
+		kelasId = null,
+		isBiodataSelected = false,
+		showBgLogo = false,
+		onToggleBgLogo = () => {}
 	}: {
 		hasMurid: boolean;
 		muridCount: number;
@@ -32,6 +35,9 @@
 		kritCukup: number;
 		kritBaik: number;
 		kelasId: string | number | null;
+		isBiodataSelected?: boolean;
+		showBgLogo?: boolean;
+		onToggleBgLogo?: (value: boolean) => void;
 	} = $props();
 
 	async function handleDeleteBg() {
@@ -118,7 +124,7 @@
 	}
 </script>
 
-<div class="mt-4 flex flex-col gap-3 text-sm sm:flex-row sm:items-start sm:justify-between">
+<div class="mt-4 flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
 	{#if hasMurid}
 		<p>
 			Terdapat <strong>{muridCount}</strong> murid di kelas ini. Preview dan cetak dokumen dilakukan
@@ -131,6 +137,17 @@
 		</p>
 	{/if}
 	<div class="flex items-center gap-2 self-end sm:self-auto">
+		{#if isBiodataSelected}
+			<label class="swap shadow-none">
+				<input
+					type="checkbox"
+					checked={showBgLogo}
+					onchange={(e) => onToggleBgLogo((e.currentTarget as HTMLInputElement).checked)}
+				/>
+				<div class="btn btn-soft swap-on btn-sm shadow-none">BG ON</div>
+				<div class="btn btn-soft swap-off btn-sm shadow-none">BG OFF</div>
+			</label>
+		{/if}
 		{#if isPiagamSelected}
 			<button
 				class="btn btn-sm btn-error btn-soft shadow-none"

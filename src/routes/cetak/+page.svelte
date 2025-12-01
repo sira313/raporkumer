@@ -62,6 +62,7 @@
 	let previewPrintable = $state<HTMLDivElement | null>(null);
 	let previewLoading = $state(false);
 	let previewError = $state<string | null>(null);
+	let showBgLogo = $state(false);
 
 	// show full TP listing: 'compact' | 'full' | 'full-desc'
 	let fullTP = $state<'compact' | 'full' | 'full-desc'>('compact');
@@ -597,10 +598,15 @@
 		{isPiagamSelected}
 		{selectedTemplate}
 		isRaporSelected={selectedDocument === 'rapor'}
+		isBiodataSelected={selectedDocument === 'biodata'}
 		{kritCukup}
 		{kritBaik}
 		tpMode={fullTP}
 		kelasId={data.kelasId}
+		{showBgLogo}
+		onToggleBgLogo={(value) => {
+			showBgLogo = value;
+		}}
 		onSetKriteria={(cukup: number, baik: number) => {
 			// optimistic update in UI
 			kritCukup = cukup;
@@ -651,6 +657,7 @@
 	{selectedDocumentEntry}
 	{selectedTemplate}
 	{bgRefreshKey}
+	{showBgLogo}
 	onPrintableReady={handlePrintableReady}
 	onBulkPrintableReady={handleBulkPrintableReady}
 />
