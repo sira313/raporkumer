@@ -18,7 +18,7 @@ dan pengembang; bagian teknis dan pedoman kontribusi ada di folder `docs/`.
 
 ## Siapa yang Cocok Menggunakan
 
-- Mereka yang bosan akan sistem yang penuh bug dan berani mencoba hal baru.
+- Mereka yang bosan akan sistem lama yang penuh bug, lelet birokasi dan berani mencoba hal baru.
 
 ## Quickstart — Versi Pengguna (Windows installer)
 
