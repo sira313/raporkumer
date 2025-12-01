@@ -34,7 +34,8 @@
 		selectedTemplate = '1',
 		bgRefreshKey = 0,
 		onPrintableReady,
-		onBulkPrintableReady
+		onBulkPrintableReady,
+		showBgLogo = false
 	}: {
 		previewDocument: DocumentType | '';
 		previewData: PreviewPayload | null;
@@ -47,6 +48,7 @@
 		bgRefreshKey: number;
 		onPrintableReady: (node: HTMLDivElement | null) => void;
 		onBulkPrintableReady: (index: number, node: HTMLDivElement | null) => void;
+		showBgLogo?: boolean;
 	} = $props();
 
 	const previewComponents: Record<DocumentType, typeof CoverPreview> = {
@@ -99,11 +101,18 @@
 							{bgRefreshKey}
 							template={selectedTemplate}
 						/>
+					{:else if previewDocument === 'biodata'}
+						<BiodataPreview
+							data={item.data}
+							onPrintableReady={(node) => onBulkPrintableReady(index, node)}
+							{showBgLogo}
+						/>
 					{:else}
 						{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
 						<PreviewComponent
 							data={item.data}
 							onPrintableReady={(node) => onBulkPrintableReady(index, node)}
+							{showBgLogo}
 						/>
 					{/if}
 				</div>
@@ -121,10 +130,14 @@
 				template={selectedTemplate}
 			/>
 		</div>
+	{:else if previewDocument === 'biodata'}
+		<div class="mt-6">
+			<BiodataPreview data={previewData} {onPrintableReady} {showBgLogo} />
+		</div>
 	{:else}
 		{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
 		<div class="mt-6">
-			<PreviewComponent data={previewData} {onPrintableReady} />
+			<PreviewComponent data={previewData} {onPrintableReady} {showBgLogo} />
 		</div>
 	{/if}
 {/if}

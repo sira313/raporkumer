@@ -246,9 +246,9 @@
 							<img src={logoRight} alt={sekolahLogoAlt} class="h-20 w-20 object-contain" />
 						</div>
 					</header>
-					<div class="flex flex-col gap-[2px]" aria-hidden="true">
-						<div class="bg-base-content/80 h-[2px] w-full print:bg-[#000]"></div>
-						<div class="border-base-content/60 border-t print:border-[#000]"></div>
+					<div class="flex flex-col gap-0.5" aria-hidden="true">
+						<div class="bg-base-content/80 h-0.5 w-full print:bg-black"></div>
+						<div class="border-base-content/60 border-t print:border-black"></div>
 					</div>
 				</section>
 

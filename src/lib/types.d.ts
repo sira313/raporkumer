@@ -41,6 +41,7 @@ interface CoverPrintData {
 interface BiodataPrintData {
 	sekolah: {
 		nama: string;
+		logoUrl?: string | null;
 	};
 	murid: {
 		id?: number;

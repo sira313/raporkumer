@@ -11,6 +11,7 @@
 		contentClass = '',
 		orientation = 'portrait',
 		paddingClass = 'p-[20mm]',
+		backgroundStyle = '',
 		children
 	} = $props<{
 		breakAfter?: boolean;
@@ -20,6 +21,7 @@
 		contentClass?: string;
 		orientation?: 'portrait' | 'landscape';
 		paddingClass?: string;
+		backgroundStyle?: string;
 		children?: () => unknown;
 	}>();
 
@@ -49,14 +51,23 @@
 	});
 
 	const bodyClasses = $derived.by(() =>
-		['flex min-h-0 flex-1 flex-col text-[12px]', contentClass].filter(Boolean).join(' ')
+		['flex min-h-0 flex-1 flex-col text-[12px] relative z-10', contentClass]
+			.filter(Boolean)
+			.join(' ')
 	);
 </script>
 
 <!-- removed page-edge visual guide: no extra border at page edge -->
 
 <div class={cardClasses} style="break-inside: avoid-page;">
-	<div class={contentContainerClasses}>
+	<div class={contentContainerClasses} style="position: relative;">
+		{#if backgroundStyle}
+			<div
+				style={backgroundStyle +
+					'; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; opacity: 0.2;'}
+				class="print:opacity-100"
+			></div>
+		{/if}
 		<div class={bodyClasses} bind:this={contentRef} use:applySplit>
 			{@render children?.()}
 		</div>

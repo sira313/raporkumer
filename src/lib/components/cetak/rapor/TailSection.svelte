@@ -210,7 +210,7 @@
 	{#if hasKokurikuler}
 		<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 			<table class="border-base-300 w-full border">
-				<thead class="bg-base-300">
+				<thead class="bg-base-300 opacity-80">
 					<tr>
 						<th class="border-base-300 border px-3 py-2 text-left">Kokurikuler</th>
 					</tr>
@@ -232,7 +232,7 @@
 {:else if tailKey === 'ekstrakurikuler'}
 	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 		<table class="border-base-300 w-full border">
-			<thead class="bg-base-300">
+			<thead class="bg-base-300 opacity-80">
 				<tr>
 					<th class="border-base-300 border px-3 py-2 text-left" style="width: 40px;">No.</th>
 					<th class="border-base-300 border px-3 py-2 text-left">Ekstrakurikuler</th>
@@ -282,7 +282,7 @@
 {:else if tailKey === 'ketidakhadiran'}
 	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 		<table class="border-base-300 w-full border">
-			<thead class="bg-base-300">
+			<thead class="bg-base-300 opacity-80">
 				<tr>
 					<th class="border-base-300 border px-3 py-2 text-left" colspan="2">Ketidakhadiran</th>
 				</tr>
@@ -309,7 +309,7 @@
 			</tbody>
 		</table>
 		<table class="border-base-300 w-full border">
-			<thead class="bg-base-300">
+			<thead class="bg-base-300 opacity-80">
 				<tr>
 					<th class="border-base-300 border px-3 py-2 text-left">Catatan Wali Kelas</th>
 				</tr>
@@ -326,7 +326,7 @@
 {:else if tailKey === 'tanggapan'}
 	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 		<table class="border-base-300 w-full border">
-			<thead class="bg-base-300">
+			<thead class="bg-base-300 opacity-80">
 				<tr>
 					<th class="border-base-300 border px-3 py-2 text-left">
 						Tanggapan Orang Tua/Wali Murid
@@ -345,7 +345,7 @@
 		</table>
 		{#if decisionLabels}
 			<table class="border-base-300 w-full border">
-				<thead class="bg-base-300">
+				<thead class="bg-base-300 opacity-80">
 					<tr>
 						<th class="border-base-300 border px-3 py-2 text-left">Keputusan</th>
 					</tr>

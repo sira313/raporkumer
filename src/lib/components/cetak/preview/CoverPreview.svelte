@@ -8,9 +8,14 @@
 		meta?: { title?: string | null } | null;
 	};
 
-	let { data = {}, onPrintableReady = () => {} } = $props<{
+	let {
+		data = {},
+		onPrintableReady = () => {},
+		showBgLogo = false
+	} = $props<{
 		data?: ComponentData;
 		onPrintableReady?: (node: HTMLDivElement | null) => void;
+		showBgLogo?: boolean;
 	}>();
 
 	const coverData = $derived.by(() => data?.coverData ?? null);
@@ -84,6 +89,14 @@
 		];
 	});
 
+	const logoUrl = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri.png');
+	const backgroundStyle = $derived.by(() => {
+		if (!showBgLogo) return '';
+		// Escape single quotes in URL for CSS
+		const escapedUrl = logoUrl.replace(/'/g, "\\'");
+		return `background-image: url('${escapedUrl}'); background-position: center center; background-repeat: no-repeat; background-size: 45%; background-attachment: local; position: relative;`;
+	});
+
 	let printable: HTMLDivElement | null = null;
 
 	$effect(() => {
@@ -99,6 +112,7 @@
 			breakAfter
 			cardClass="shadow-md"
 			contentClass="justify-between gap-12 text-[1rem] text-center"
+			{backgroundStyle}
 		>
 			<div class="flex flex-col items-center gap-6">
 				<div class="w-44">
@@ -126,7 +140,11 @@
 			</div>
 		</PrintCardPage>
 
-		<PrintCardPage cardClass="shadow-md" contentClass="justify-start gap-12 text-[1rem]">
+		<PrintCardPage
+			cardClass="shadow-md"
+			contentClass="justify-start gap-12 text-[1rem]"
+			{backgroundStyle}
+		>
 			<div class="flex flex-col items-center gap-1 text-center uppercase">
 				<p class="text-2xl font-bold tracking-[0.5em]">R A P O R</p>
 				<p class="text-xl font-semibold">HASIL BELAJAR MURID</p>

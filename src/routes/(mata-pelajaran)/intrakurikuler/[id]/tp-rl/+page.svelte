@@ -708,22 +708,21 @@
 			next[key] = { value: 0, isManual: false };
 			const { state, manualSum } = applyBobotDistribution(next);
 			bobotState = state;
-			// refreshBobotDrafts is kept in page to preserve draft handling
-			bobotDrafts = Object.fromEntries(
-				Object.entries(state).map(([k, e]) => [k, formatBobotValue(e.value)])
-			);
+			// Preserve raw input instead of formatting
+			refreshBobotDrafts(state, { preserveKey: key, rawValue: '' });
 			notifyBobotOverflow(manualSum > BOBOT_TOTAL);
 			return;
 		}
 
-		const parsed = Number.parseFloat(trimmed);
+		// Normalize input: replace comma with dot for consistent parsing across locales
+		const normalized = trimmed.replace(',', '.');
+		const parsed = Number.parseFloat(normalized);
 		const sanitized = sanitizeBobotValue(parsed);
 		next[key] = { value: sanitized, isManual: true };
 		const { state, manualSum } = applyBobotDistribution(next);
 		bobotState = state;
-		bobotDrafts = Object.fromEntries(
-			Object.entries(state).map(([k, e]) => [k, formatBobotValue(e.value)])
-		);
+		// Preserve raw input as draft, don't auto-format while typing
+		refreshBobotDrafts(state, { preserveKey: key, rawValue: trimmed });
 		notifyBobotOverflow(manualSum > BOBOT_TOTAL);
 	}
 
@@ -771,7 +770,7 @@
 			return;
 		}
 
-		const total = computeTotalBobot();
+		const total = computeTotalBobot(bobotState);
 		if (Math.abs(total - BOBOT_TOTAL) > 0.01) {
 			toast('Total bobot harus tepat 100% untuk menyimpan.', 'warning');
 			isEditingBobot = true;

@@ -113,6 +113,13 @@ function fallbackTempat(sekolah: NonNullable<App.Locals['sekolah']>): string {
 	return alamat.kabupaten || alamat.kecamatan || alamat.desa || '';
 }
 
+function buildLogoUrl(sekolah: NonNullable<App.Locals['sekolah']>): string | null {
+	if (!sekolah.id) return null;
+	const updatedAt = sekolah.updatedAt ? Date.parse(sekolah.updatedAt) : NaN;
+	const suffix = Number.isFinite(updatedAt) ? `?v=${updatedAt}` : '';
+	return `/sekolah/logo/${sekolah.id}${suffix}`;
+}
+
 export async function getBiodataPreviewPayload({ locals, url }: BiodataContext) {
 	const sekolah = locals.sekolah;
 	if (!sekolah?.id) {
@@ -155,7 +162,8 @@ export async function getBiodataPreviewPayload({ locals, url }: BiodataContext) 
 
 	const biodataData: BiodataPrintData = {
 		sekolah: {
-			nama: sekolah.nama
+			nama: sekolah.nama,
+			logoUrl: buildLogoUrl(sekolah)
 		},
 		murid: {
 			id: murid.id,
