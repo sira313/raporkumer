@@ -303,9 +303,9 @@ pnpm prod          # atau pnpm prod:signed
 
 ---
 
-## Tahap 5: Shortcut
+## Tahap 5: Shortcut & Manual Migration Helper
 
-Installer membuat 2 shortcut:
+Installer membuat 2 shortcut untuk menjalankan aplikasi:
 
 1. **Start Menu** → `Programs → Rapkumer → Rapkumer`
 2. **Desktop** → `Rapkumer` icon
@@ -314,6 +314,16 @@ Ketika diklik shortcut, jalankan:
 
 ```cmd
 node start-rapkumer.mjs
+```
+
+**Bonus: `run-migrations.bat`** (Optional untuk pengguna)
+
+Installer juga menyertakan `run-migrations.bat` sebagai convenience wrapper. Pengguna bisa double-click file ini untuk **manual re-run migrations** setelah instalasi (misalnya jika ada update database schema):
+
+```cmd
+@echo off
+REM Convenience wrapper untuk manual migration
+node scripts\migrate-installed-db.mjs
 ```
 
 ---
@@ -570,38 +580,30 @@ if not DirExists(DbDir) then
 
 ### **Fase 4: Migrasi Database (Setup [Run])**
 
-Setelah post-install, dua skrip dijalankan secara berurutan (hidden, `runhidden`):
+Setelah post-install, installer **langsung menjalankan** migration script via Node:
 
-#### **a) PowerShell: `run-migrations.ps1`**
-
-```powershell
-$dbFile = Join-Path $local 'Rapkumer-data\database.sqlite3'
-$env:DB_URL = "file:$dbFile"
-& node $script   # Run: scripts/migrate-installed-db.mjs
+```cmd
+node "{app}\scripts\migrate-installed-db.mjs"
 ```
 
-#### **b) Batch: `run-migrations.cmd`**
+**Yang dilakukan oleh migration script (`migrate-installed-db.mjs`):**
 
-```batch
-set DBFILE=%LOCALAPPDATA%\Rapkumer-data\database.sqlite3
-set "DB_URL=file:%DBFILE%"
-```
+1. **Deteksi database path**: Tentukan lokasi database user di `Rapkumer-data/`
 
-**Yang dilakukan oleh migration scripts (`migrate-installed-db.mjs`):**
-
-1. **Pre-check dengan sqlite3**: Cek apakah kolom yang diperlukan sudah ada:
+2. **Pre-check kolom**: Cek apakah kolom yang diperlukan sudah ada:
    - `tasks.sekolah_id`
    - `kelas.sekolah_id`
    - `mata_pelajaran.kelas_id`
-   - Jika tidak ada, tambahkan via SQL
+   - `auth_user.permissions` dan kolom lainnya
+   - Jika tidak ada, tambahkan via `ensure-columns.mjs`
 
-2. **Fix Drizzle Indexes**: Jalankan `fix-drizzle-indexes.mjs`
-   - Mengatasi duplicate index errors
+3. **Fix Drizzle Indexes**: Jalankan `fix-drizzle-indexes.mjs`
+   - Mengatasi duplicate index errors dari versi database lama
 
-3. **Drizzle Push**: Jalankan `drizzle-kit push`
+4. **Drizzle Push**: Jalankan `drizzle-kit push`
    - Apply semua migration di folder `drizzle/` ke database pengguna
 
-4. **Additional Checks**: Jalankan script validasi lanjutan
+5. **Additional Checks**: Jalankan script validasi lanjutan
 
 ---
 
@@ -617,7 +619,7 @@ Keduanya menggunakan **script yang sama**: `scripts/migrate-installed-db.mjs`
 ```
 
 Di development, jalankan: `pnpm db:push`  
-Di instalasi, jalankan lewat: PowerShell/Batch → `migrate-installed-db.mjs`
+Di instalasi, jalankan langsung via: `node scripts/migrate-installed-db.mjs`
 
 #### **Perbedaan Utama**
 
