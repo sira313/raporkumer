@@ -140,10 +140,12 @@ if (Test-Path $migrateJs) {
 
 # Copy a minimal set of project scripts required by the migrator into the staged app
 $requiredScripts = @(
+    'ensure-columns.mjs',
     'fix-drizzle-indexes.mjs',
     'seed-default-admin.mjs',
     'grant-admin-permissions.mjs',
-    'notify-server-reload.mjs'
+    'notify-server-reload.mjs',
+    'start-build.mjs'
 )
 foreach ($s in $requiredScripts) {
     $src = Join-Path $projectRoot ('scripts\' + $s)
