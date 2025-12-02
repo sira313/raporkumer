@@ -745,7 +745,7 @@
 		shouldShowBobotInfoAlert = false;
 	}
 
-	function toggleBobotEditing() {
+	async function toggleBobotEditing() {
 		if (!hasGroups || isEditModeActive) return;
 		if (!isEditingBobot) {
 			bobotStateBeforeEditing = cloneBobotState(bobotState);
@@ -777,18 +777,50 @@
 			return;
 		}
 
-		const next: Record<string, GroupBobotState> = {};
+		// Save bobot to server via form submission
+		const formData = new FormData();
 		for (const [key, entry] of Object.entries(bobotState)) {
-			next[key] = { value: sanitizeBobotValue(entry.value), isManual: true };
+			const sanitized = sanitizeBobotValue(entry.value);
+			formData.append(`bobot[${key}]`, String(sanitized));
 		}
-		bobotState = next;
-		refreshBobotDrafts(next);
-		bobotOverflowActive = false;
-		isEditingBobot = false;
-		bobotDrafts = {};
-		shouldShowBobotInfoAlert = false;
-		bobotStateBeforeEditing = null;
-		toast('Bobot berhasil disimpan.', 'success');
+
+		try {
+			const response = await fetch('?/savebobot', {
+				method: 'POST',
+				body: formData
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+				const errorMsg = errorData?.fail || 'Gagal menyimpan bobot ke server.';
+				toast(errorMsg, 'error');
+				return;
+			}
+
+			const resultData = await response.json().catch(() => ({}));
+
+			const next: Record<string, GroupBobotState> = {};
+			for (const [key, entry] of Object.entries(bobotState)) {
+				next[key] = { value: sanitizeBobotValue(entry.value), isManual: true };
+			}
+			bobotState = next;
+			refreshBobotDrafts(next);
+			bobotOverflowActive = false;
+			isEditingBobot = false;
+			bobotDrafts = {};
+			shouldShowBobotInfoAlert = false;
+			bobotStateBeforeEditing = null;
+
+			// Invalidate data so UI reflects saved bobot
+			await invalidate('app:mapel_tp-rl');
+
+			toast(resultData?.message || 'Bobot berhasil disimpan.', 'success');
+		} catch (error) {
+			console.error('Error saving bobot:', error);
+			toast('Terjadi kesalahan saat menyimpan bobot.', 'error');
+			// Restore editing mode on error
+			isEditingBobot = true;
+		}
 	}
 </script>
 

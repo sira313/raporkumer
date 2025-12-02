@@ -462,6 +462,77 @@ export const actions = {
 		return { message: `Lingkup materi dan tujuan pembelajaran telah dihapus.` };
 	},
 
+	async savebobot({ params, request }: { params: Record<string, string>; request: Request }) {
+		const mataPelajaranId = Number(params.id);
+		if (!Number.isFinite(mataPelajaranId)) {
+			return fail(400, { fail: 'Mata pelajaran tidak valid.' });
+		}
+
+		const formData = await request.formData();
+
+		// Extract bobot values from FormData with format bobot[key]=value
+		// FormData entries will be like: ["bobot[key]", "value"]
+		const bobotMap: Record<string, number> = {};
+		for (const [key, value] of formData.entries()) {
+			if (key.startsWith('bobot[') && key.endsWith(']')) {
+				const bobotKey = key.slice(6, -1); // Extract key from bobot[key]
+				const numValue = Number(value);
+				if (Number.isFinite(numValue)) {
+					bobotMap[bobotKey] = numValue;
+				}
+			}
+		}
+
+		if (Object.keys(bobotMap).length === 0) {
+			return fail(400, { fail: 'Tidak ada bobot untuk disimpan.' });
+		} // Get all TP for this mapel to update
+		const allTP = await db.query.tableTujuanPembelajaran.findMany({
+			where: eq(tableTujuanPembelajaran.mataPelajaranId, mataPelajaranId)
+		});
+
+		if (allTP.length === 0) {
+			return fail(400, { fail: 'Tidak ada tujuan pembelajaran yang ditemukan.' });
+		}
+
+		// Group TP by lingkupMateri to find which ones need update
+		const groupMap = new Map<string, typeof allTP>();
+		for (const tp of allTP) {
+			const key = (tp.lingkupMateri ?? '').trim().toLowerCase();
+			if (!groupMap.has(key)) {
+				groupMap.set(key, []);
+			}
+			groupMap.get(key)!.push(tp);
+		}
+
+		// Update bobot for each lingkupMateri group
+		// Key format from client: "lingkupMateri::id1-id2" (from groupKey function)
+		let updateCount = 0;
+		for (const [key, value] of Object.entries(bobotMap)) {
+			// Extract lingkupMateri from group key (everything before ::)
+			const lingkupMateri = key.split('::')[0]?.trim() ?? '';
+			const tpGroup = groupMap.get(lingkupMateri.toLowerCase());
+			if (!tpGroup || tpGroup.length === 0) continue;
+
+			const bobotValue = Number(value);
+			if (!Number.isFinite(bobotValue) || bobotValue < 0) continue;
+
+			// Update all TP in this group with the same bobot
+			for (const tp of tpGroup) {
+				if (tp.bobot !== bobotValue) {
+					await db
+						.update(tableTujuanPembelajaran)
+						.set({ bobot: bobotValue })
+						.where(eq(tableTujuanPembelajaran.id, tp.id));
+					updateCount++;
+				}
+			}
+		}
+
+		return {
+			message: updateCount > 0 ? 'Bobot berhasil disimpan.' : 'Tidak ada perubahan pada bobot.'
+		};
+	},
+
 	async import({ params, request }) {
 		const mataPelajaranId = Number(params.id);
 		if (!Number.isFinite(mataPelajaranId)) {
