@@ -68,6 +68,14 @@ async function main() {
 		// Columns referenced by migrations that may be missing in older installed DBs.
 		// If missing, add them so subsequent migration UPDATE statements do not fail.
 		const checks = [
+			{ table: 'sekolah', column: 'jenjang_variant', type: 'TEXT' },
+			// Sekolah bobot columns (sumatif distribution)
+			{ table: 'sekolah', column: 'sumatif_bobot_lingkup', type: 'INTEGER DEFAULT 60' },
+			{ table: 'sekolah', column: 'sumatif_bobot_sts', type: 'INTEGER DEFAULT 20' },
+			{ table: 'sekolah', column: 'sumatif_bobot_sas', type: 'INTEGER DEFAULT 20' },
+			// Sekolah rapor kriteria columns
+			{ table: 'sekolah', column: 'rapor_kriteria_cukup', type: 'INTEGER DEFAULT 85' },
+			{ table: 'sekolah', column: 'rapor_kriteria_baik', type: 'INTEGER DEFAULT 95' },
 			{ table: 'tasks', column: 'sekolah_id', type: 'INTEGER' },
 			{ table: 'tasks', column: 'kelas_id', type: 'INTEGER' },
 			{ table: 'kelas', column: 'sekolah_id', type: 'INTEGER' },
