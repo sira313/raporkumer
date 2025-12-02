@@ -26,8 +26,8 @@
 		"check:watch": "svelte-kit sync && node scripts/svelte-check-wrapper.mjs --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-		"prod": "node scripts/prod-unsigned.mjs",
-		"prod:signed": "node scripts/prod-signed.mjs"
+		"prod": "node scripts/cleanup-db.mjs && node scripts/prod-unsigned.mjs",
+		"prod:signed": "node scripts/cleanup-db.mjs && node scripts/prod-signed.mjs"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.4.1",
