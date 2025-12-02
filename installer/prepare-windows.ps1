@@ -117,18 +117,9 @@ if (Test-Path $startMjs) { Copy-Item $startMjs (Join-Path $appStage 'start-rapku
 $startBuildSrc = Join-Path $projectRoot 'scripts/start-build.mjs'
 if (Test-Path $startBuildSrc) { Copy-Item $startBuildSrc (Join-Path $appStage 'start-build.mjs') -Force }
 
-$toolsDir = Join-Path $appStage 'tools'
-New-Item -ItemType Directory -Path $toolsDir -Force | Out-Null
-Copy-Item (Join-Path $projectRoot 'installer/scripts/resolve-node.ps1') (Join-Path $toolsDir 'resolve-node.ps1') -Force
-Copy-Item (Join-Path $projectRoot 'installer/scripts/run-migrations.ps1') (Join-Path $toolsDir 'run-migrations.ps1') -Force
-
-# Also copy the convenience wrappers from installer/ to the staged app root so end-users
-# see a top-level double-clickable script (run-migrations.cmd) alongside the app.
-$wrapperCmd = Join-Path $projectRoot 'installer\run-migrations.cmd'
-if (Test-Path $wrapperCmd) { Copy-Item $wrapperCmd (Join-Path $appStage 'run-migrations.cmd') -Force }
-
-$wrapperPs = Join-Path $projectRoot 'installer\run-migrations.ps1'
-if (Test-Path $wrapperPs) { Copy-Item $wrapperPs (Join-Path $appStage 'run-migrations.ps1') -Force }
+# Copy convenience wrapper for manual migrations (optional for users)
+$wrapperBat = Join-Path $projectRoot 'installer\run-migrations.bat'
+if (Test-Path $wrapperBat) { Copy-Item $wrapperBat (Join-Path $appStage 'run-migrations.bat') -Force }
 
 # Copy migrate helper JS so the convenience wrapper can run it from the staged app
 $migrateJs = Join-Path $projectRoot 'scripts\migrate-installed-db.mjs'
@@ -140,10 +131,12 @@ if (Test-Path $migrateJs) {
 
 # Copy a minimal set of project scripts required by the migrator into the staged app
 $requiredScripts = @(
+    'ensure-columns.mjs',
     'fix-drizzle-indexes.mjs',
     'seed-default-admin.mjs',
     'grant-admin-permissions.mjs',
-    'notify-server-reload.mjs'
+    'notify-server-reload.mjs',
+    'start-build.mjs'
 )
 foreach ($s in $requiredScripts) {
     $src = Join-Path $projectRoot ('scripts\' + $s)

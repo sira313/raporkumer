@@ -1,5 +1,5 @@
 #define AppName "Rapor Kurikulum Merdeka"
-#define AppVersion "1.3.3"
+#define AppVersion "1.3.4"
 #define StagePath "..\\dist\\windows\\stage\\Rapkumer"
 
 [Setup]
@@ -35,8 +35,7 @@ Source:"{#StagePath}\\*"; DestDir:"{app}"; Flags: ignoreversion recursesubdirs c
 Source:"files\\start-rapkumer.mjs"; DestDir:"{app}"; Flags: ignoreversion
 
 [Run]
-Filename:"{sys}\\WindowsPowerShell\\v1.0\\powershell.exe"; Parameters:"-ExecutionPolicy Bypass -File ""{app}\\tools\\run-migrations.ps1"" -InstallDir ""{app}"""; StatusMsg:"Menjalankan migrasi database (drizzle-kit) pada mesin ini..."; Flags: runhidden waituntilterminated
-Filename:"{sys}\\cmd.exe"; Parameters:"/c ""{app}\\run-migrations.cmd"" /SILENT"; StatusMsg:"Menjalankan run-migrations.cmd (silent)..."; Flags: runhidden waituntilterminated
+Filename:"node"; Parameters:"""{app}\\scripts\\migrate-installed-db.mjs"""; WorkingDir:"{app}"; StatusMsg:"Menjalankan migrasi database (drizzle-kit) pada mesin ini..."; Flags: runhidden waituntilterminated
 
 [Icons]
 Name:"{autoprograms}\\Rapkumer\\Rapkumer"; Filename:"{sys}\\cmd.exe"; Parameters:"/c node ""{app}\\start-rapkumer.mjs"""; WorkingDir:"{app}"; IconFilename:"{app}\\rapkumer.ico"
