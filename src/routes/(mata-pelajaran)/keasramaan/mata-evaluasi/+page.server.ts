@@ -116,6 +116,77 @@ export const actions = {
 		}
 	},
 
+	create: async ({ request }) => {
+		const formData = await request.formData();
+		const nama = formData.get('nama')?.toString().trim() ?? '';
+		const kelasIdStr = formData.get('kelasId')?.toString().trim() ?? '';
+
+		if (!nama) {
+			return fail(400, { fail: 'Nama mata evaluasi wajib diisi' });
+		}
+
+		const kelasId = kelasIdStr ? Number(kelasIdStr) : null;
+		if (!kelasId || !Number.isInteger(kelasId)) {
+			return fail(400, { fail: 'Kelas tidak valid' });
+		}
+
+		// Parse indikator data from formData
+		const indicatorMap = new Map<
+			number,
+			{
+				deskripsi: string;
+			}
+		>();
+
+		for (const [key, value] of formData.entries()) {
+			const match = key.match(/^indikator\.(\d+)\.deskripsi$/);
+			if (match) {
+				const idx = Number(match[1]);
+				const deskripsi = (value as string).trim();
+				if (deskripsi.length > 0) {
+					if (!indicatorMap.has(idx)) {
+						indicatorMap.set(idx, { deskripsi });
+					}
+				}
+			}
+		}
+
+		const indicators = Array.from(indicatorMap.values());
+
+		try {
+			await db.transaction(async (tx) => {
+				// Insert mata evaluasi
+				const keasramaanResult = await tx
+					.insert(tableKeasramaan)
+					.values({ kelasId, nama })
+					.returning({ id: tableKeasramaan.id });
+
+				const newId = keasramaanResult[0]?.id ?? null;
+				if (!newId) {
+					throw new Error('Failed to get inserted mata evaluasi ID');
+				}
+
+				// Insert indicators
+				if (indicators.length > 0) {
+					await tx.insert(tableKeasramaanIndikator).values(
+						indicators.map((ind) => ({
+							keasramaanId: newId,
+							deskripsi: ind.deskripsi
+						}))
+					);
+				}
+			});
+
+			return { message: 'Mata evaluasi berhasil ditambahkan' };
+		} catch (error) {
+			if (isTableMissingError(error)) {
+				return fail(500, { fail: TABLE_MISSING_MESSAGE });
+			}
+			console.error('Create error:', error);
+			throw error;
+		}
+	},
+
 	save: async ({ request }) => {
 		const formData = await request.formData();
 		const mataEvaluasiIdRaw = formData.get('mataEvaluasiId');

@@ -26,9 +26,76 @@
 		nama: string;
 		indikator: Array<{ id?: number; deskripsi: string }>;
 	} | null>(null);
+	let isCreating = $state(false);
+	let newGroupData = $state<{
+		nama: string;
+		indikator: Array<{ deskripsi: string }>;
+	} | null>(null);
 	let deleteConfirmId = $state<number | null>(null);
+	let selectedGroups = $state<Set<number>>(new Set());
+	let isSubmitting = $state(false);
 
 	const isEditMode = $derived(editingGroupId !== null);
+	const isCreateMode = $derived(isCreating);
+	const hasSelection = $derived(selectedGroups.size > 0 && !isEditMode && !isCreateMode);
+	const isInteractionLocked = $derived(isEditMode || isCreateMode);
+
+	function openCreate() {
+		if (isEditMode || isCreateMode) return;
+		clearSelection();
+		isCreating = true;
+		newGroupData = {
+			nama: '',
+			indikator: [{ deskripsi: '' }]
+		};
+	}
+
+	function closeCreate() {
+		isCreating = false;
+		newGroupData = null;
+	}
+
+	function addIndicatorFieldInCreate() {
+		if (!newGroupData) return;
+		newGroupData.indikator = [...newGroupData.indikator, { deskripsi: '' }];
+	}
+
+	function removeIndicatorFieldInCreate(index: number) {
+		if (!newGroupData) return;
+		newGroupData.indikator = newGroupData.indikator.filter((_, i) => i !== index);
+	}
+
+	function updateIndicatorFieldInCreate(index: number, value: string) {
+		if (!newGroupData) return;
+		newGroupData.indikator[index].deskripsi = value;
+
+		// Ensure trailing empty field like tp-rl does
+		ensureTrailingIndicatorInCreate();
+	}
+
+	function ensureTrailingIndicatorInCreate() {
+		if (!newGroupData) return;
+		const entries = newGroupData.indikator;
+
+		// Remove consecutive empty fields at the end
+		while (entries.length > 1) {
+			const last = entries[entries.length - 1];
+			const prev = entries[entries.length - 2];
+			if (last.deskripsi.trim() === '' && prev.deskripsi.trim() === '') {
+				entries.pop();
+			} else {
+				break;
+			}
+		}
+
+		// Ensure there's always one empty field at the end
+		const last = entries[entries.length - 1];
+		if (!last || last.deskripsi.trim() !== '') {
+			newGroupData.indikator = [...entries, { deskripsi: '' }];
+		} else {
+			newGroupData.indikator = [...entries];
+		}
+	}
 
 	function openEdit(group: MataEvaluasi) {
 		editingGroupId = group.id;
@@ -43,6 +110,30 @@
 		editingGroupData = null;
 	}
 
+	function toggleSelection(id: number) {
+		if (isEditMode) return;
+		const newSet = new Set(selectedGroups);
+		if (newSet.has(id)) {
+			newSet.delete(id);
+		} else {
+			newSet.add(id);
+		}
+		selectedGroups = newSet;
+	}
+
+	function toggleSelectAll(checked: boolean) {
+		if (isEditMode) return;
+		if (checked) {
+			selectedGroups = new Set(mataEvaluasi.map((m) => m.id));
+		} else {
+			selectedGroups = new Set();
+		}
+	}
+
+	function clearSelection() {
+		selectedGroups = new Set();
+	}
+
 	function removeIndicatorField(index: number) {
 		if (!editingGroupData) return;
 		editingGroupData.indikator = editingGroupData.indikator.filter((_, i) => i !== index);
@@ -52,14 +143,31 @@
 		if (!editingGroupData) return;
 		editingGroupData.indikator[index].deskripsi = value;
 
-		// Auto-add new field if user types in the last field and it's empty before
-		const lastIndex = editingGroupData.indikator.length - 1;
-		if (
-			index === lastIndex &&
-			value.trim().length > 0 &&
-			editingGroupData.indikator.every((ind, i) => i < lastIndex || ind.deskripsi.trim().length > 0)
-		) {
-			editingGroupData.indikator = [...editingGroupData.indikator, { deskripsi: '' }];
+		// Ensure trailing empty field like tp-rl does
+		ensureTrailingIndicatorInEdit();
+	}
+
+	function ensureTrailingIndicatorInEdit() {
+		if (!editingGroupData) return;
+		const entries = editingGroupData.indikator;
+
+		// Remove consecutive empty fields at the end
+		while (entries.length > 1) {
+			const last = entries[entries.length - 1];
+			const prev = entries[entries.length - 2];
+			if (last.deskripsi.trim() === '' && prev.deskripsi.trim() === '') {
+				entries.pop();
+			} else {
+				break;
+			}
+		}
+
+		// Ensure there's always one empty field at the end
+		const last = entries[entries.length - 1];
+		if (!last || last.deskripsi.trim() !== '') {
+			editingGroupData.indikator = [...entries, { deskripsi: '' }];
+		} else {
+			editingGroupData.indikator = [...entries];
 		}
 	}
 
@@ -80,6 +188,7 @@
 			} else {
 				toast(result.message || 'Berhasil menghapus mata evaluasi', 'success');
 				deleteConfirmId = null;
+				clearSelection();
 				await invalidate('app:keasramaan');
 			}
 		} catch (error) {
@@ -88,8 +197,57 @@
 		}
 	}
 
+	async function submitCreate() {
+		if (!newGroupData || !newGroupData.nama.trim()) {
+			toast('Nama mata evaluasi wajib diisi', 'warning');
+			return;
+		}
+
+		if (!kelasAktif?.id) {
+			toast('Kelas belum dipilih', 'warning');
+			return;
+		}
+
+		// Filter out empty indicators
+		const indicators = newGroupData.indikator.filter((ind) => ind.deskripsi.trim().length > 0);
+
+		const formData = new FormData();
+		formData.append('kelasId', String(kelasAktif.id));
+		formData.append('nama', newGroupData.nama.trim());
+		indicators.forEach((ind, idx) => {
+			formData.append(`indikator.${idx}.deskripsi`, ind.deskripsi.trim());
+		});
+
+		try {
+			isSubmitting = true;
+			const response = await fetch('?/create', {
+				method: 'POST',
+				body: formData
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				toast(result.fail || 'Gagal menambahkan mata evaluasi', 'error');
+			} else {
+				toast(result.message || 'Berhasil menambahkan mata evaluasi', 'success');
+				closeCreate();
+				await invalidate('app:keasramaan');
+			}
+		} catch (error) {
+			toast('Terjadi kesalahan saat menambahkan', 'error');
+			console.error(error);
+		} finally {
+			isSubmitting = false;
+		}
+	}
+
 	const kelasLabel = $derived(
-		kelasAktif ? (kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama) : '-'
+		kelasAktif
+			? kelasAktif.fase
+				? `${kelasAktif.nama} - ${kelasAktif.fase}`
+				: kelasAktif.nama
+			: '-'
 	);
 </script>
 
@@ -102,6 +260,44 @@
 		</div>
 	</div>
 
+	<!-- Action Buttons Row -->
+	<div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+		<button
+			type="button"
+			class="btn btn-soft shadow-none"
+			onclick={() => history.back()}
+			title="Kembali ke halaman sebelumnya"
+		>
+			<Icon name="left" />
+			Kembali
+		</button>
+
+		<button
+			type="button"
+			class="btn btn-soft shadow-none sm:ml-auto sm:max-w-40"
+			onclick={openCreate}
+			disabled={isInteractionLocked || !tableReady}
+			class:btn-error={hasSelection}
+			class:btn-secondary={isInteractionLocked}
+		>
+			<Icon name={hasSelection ? 'del' : isInteractionLocked ? 'close' : 'plus'} />
+			{hasSelection ? 'Hapus Dipilih' : isInteractionLocked ? 'Batalkan' : 'Tambah Matev'}
+		</button>
+
+		{#if isCreateMode}
+			<button
+				type="button"
+				class="btn btn-primary shadow-none sm:max-w-40"
+				onclick={submitCreate}
+				disabled={isSubmitting || !newGroupData || !newGroupData.nama.trim()}
+				aria-busy={isSubmitting}
+			>
+				<Icon name="save" />
+				Simpan
+			</button>
+		{/if}
+	</div>
+
 	{#if !tableReady}
 		<div class="alert border-error/60 bg-error/10 text-error-content mt-4 border border-dashed">
 			<Icon name="warning" />
@@ -111,195 +307,304 @@
 		</div>
 	{/if}
 
-	<!-- Mata Evaluasi Groups -->
-	<div class="mt-6 space-y-4">
-		{#each mataEvaluasi as group (group.id)}
-			{#if isEditMode && editingGroupId === group.id && editingGroupData}
-				<!-- Edit Mode -->
-				<div class="fieldset border border-primary/30 bg-primary/5 rounded-lg p-4">
-					<legend class="fieldset-legend px-2 text-base font-semibold text-primary">
-						Edit Mata Evaluasi
-					</legend>
-
-					<FormEnhance
-						action="?/save"
-						onsuccess={() => {
-							closeEdit();
-							invalidate('app:keasramaan');
-						}}
-						submitStateChange={() => {
-							/* no-op */
-						}}
-					>
-						{#snippet children({ submitting })}
-							{#if editingGroupData}
-								<!-- Input Nama Mata Evaluasi -->
-								<div class="form-control">
-									<label class="label" for={`mata-evaluasi-name-${group.id}`}>
-										<span class="label-text font-semibold">Nama Mata Evaluasi</span>
-									</label>
-									<input
-										id={`mata-evaluasi-name-${group.id}`}
-										type="text"
-										name="mataEvaluasiNama"
-										class="input input-bordered validator"
-										bind:value={editingGroupData.nama}
-										required
-										disabled={submitting}
-									/>
-								</div>
-
-								<!-- Hidden ID -->
-								<input type="hidden" name="mataEvaluasiId" value={group.id} />
-
-								<!-- Indikator Fields -->
-								<div class="space-y-2">
-									<span class="label-text font-semibold">Indikator</span>
-
-									{#each editingGroupData.indikator as indicator, idx (idx)}
-										<div class="flex gap-2">
-											<input
-												type="hidden"
-												name={`indikator.${idx}.id`}
-												value={indicator.id ?? ''}
-											/>
-											<textarea
-												class="textarea input-bordered validator w-full"
-												name={`indikator.${idx}.deskripsi`}
-												placeholder="Tuliskan indikator"
-												value={indicator.deskripsi}
-												oninput={(e) =>
-													updateIndicatorField(idx, (e.target as HTMLTextAreaElement).value)}
-												disabled={submitting}
-											></textarea>
-											{#if editingGroupData.indikator.length > 1 || indicator.deskripsi.trim().length > 0}
-												<button
-													type="button"
-													class="btn btn-sm btn-error btn-soft"
-													onclick={() => removeIndicatorField(idx)}
-													disabled={submitting}
-													title="Hapus indikator"
-												>
-													<Icon name="del" />
-												</button>
-											{/if}
-										</div>
-									{/each}
-								</div>
-
-								<!-- Action Buttons -->
-								<div class="flex gap-2 pt-2">
-									<button
-										type="button"
-										class="btn btn-sm btn-soft"
-										onclick={closeEdit}
-										disabled={submitting}
-									>
-										<Icon name="close" />
-										Batal
-									</button>
-									<button
-										type="submit"
-										class="btn btn-sm btn-primary"
-										disabled={submitting}
-										aria-busy={submitting}
-									>
-										<Icon name="save" />
-										Simpan
-									</button>
-								</div>
-							{/if}
-						{/snippet}
-					</FormEnhance>
-				</div>
-			{:else}
-				<!-- Display Mode -->
-				<div class="fieldset border border-base-200 rounded-lg p-4 dark:border-base-700">
-					<legend class="fieldset-legend px-2 text-base font-semibold">{group.nama}</legend>
-
-					<div class="space-y-2">
-						{#each group.indikator as indicator (indicator.id)}
-							<div class="flex items-start gap-2 rounded bg-base-100/50 p-2 dark:bg-base-800/30">
-								<span class="mt-1 inline-block h-2 w-2 rounded-full bg-base-content/40 shrink-0"></span>
-								<span class="text-sm">{indicator.deskripsi}</span>
+	<!-- Table -->
+	<div class="bg-base-100 dark:bg-base-200 mt-6 overflow-x-auto rounded-md shadow-md">
+		<table class="border-base-200 table border dark:border-none">
+			<thead>
+				<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
+					<th style="width: 50px; min-width: 40px;">
+						<input
+							type="checkbox"
+							class="checkbox"
+							aria-label="Pilih semua mata evaluasi"
+							checked={mataEvaluasi.length > 0 && selectedGroups.size === mataEvaluasi.length}
+							indeterminate={selectedGroups.size > 0 && selectedGroups.size < mataEvaluasi.length}
+							onchange={(event) =>
+								toggleSelectAll((event.currentTarget as HTMLInputElement).checked)}
+							disabled={isEditMode || !tableReady || mataEvaluasi.length === 0}
+						/>
+					</th>
+					<th style="width: 50px; min-width: 40px;">No</th>
+					<th style="width: 30%;">Mata Evaluasi</th>
+					<th style="width: 60%">Indikator</th>
+					<th>Aksi</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#if isCreateMode && newGroupData}
+					<!-- Create Mode Row -->
+					<tr>
+						<td class="align-top"><input type="checkbox" class="checkbox" disabled /></td>
+						<td class="text-primary animate-pulse align-top font-semibold">1</td>
+						<td class="align-top">
+							<textarea
+								class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 h-24 w-full"
+								bind:value={newGroupData.nama}
+								placeholder="Contoh: Kepemimpinan"
+								disabled={isSubmitting}
+								required
+							></textarea>
+						</td>
+						<td class="align-top">
+							<div class="flex flex-col gap-2">
+								{#each newGroupData.indikator as indicator, indicatorIdx (indicatorIdx)}
+									<div class="flex flex-col gap-2 sm:flex-row">
+										<textarea
+											class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 w-full dark:border-none"
+											bind:value={indicator.deskripsi}
+											oninput={() =>
+												updateIndicatorFieldInCreate(indicatorIdx, indicator.deskripsi)}
+											placeholder="Contoh: Mampu memimpin kegiatan kelompok."
+											disabled={isSubmitting}
+											required={indicatorIdx === 0}
+										></textarea>
+										{#if newGroupData.indikator.length > 1 && indicator.deskripsi.trim().length > 0}
+											<button
+												type="button"
+												class="btn btn-sm btn-soft btn-error shadow-none"
+												onclick={() => removeIndicatorFieldInCreate(indicatorIdx)}
+												disabled={isSubmitting}
+												title="Hapus indikator"
+											>
+												<Icon name="del" />
+											</button>
+										{/if}
+									</div>
+								{/each}
 							</div>
-						{/each}
-						{#if group.indikator.length === 0}
-							<p class="text-sm text-base-content/50 italic">Belum ada indikator</p>
+						</td>
+						<td class="align-top">
+							<div class="flex gap-1">
+								<button
+									type="button"
+									class="btn btn-sm btn-soft shadow-none"
+									onclick={closeCreate}
+									disabled={isSubmitting}
+									title="Batalkan"
+								>
+									<Icon name="close" />
+								</button>
+								<button
+									type="button"
+									class="btn btn-sm btn-primary shadow-none"
+									onclick={submitCreate}
+									disabled={isSubmitting || !newGroupData.nama.trim()}
+									aria-busy={isSubmitting}
+									title="Simpan"
+								>
+									<Icon name="save" />
+								</button>
+							</div>
+						</td>
+					</tr>
+				{/if}
+
+				{#if mataEvaluasi.length > 0}
+					{#each mataEvaluasi as group, idx (group.id)}
+						{#if isEditMode && editingGroupId === group.id && editingGroupData}
+							<!-- Edit Mode Row -->
+							<tr>
+								<td class="align-top"><input type="checkbox" class="checkbox" disabled /></td>
+								<td class="text-primary animate-pulse align-top font-semibold">{idx + 1}</td>
+								<td class="align-top">
+									<textarea
+										class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 h-24 w-full"
+										bind:value={editingGroupData.nama}
+										placeholder="Tuliskan mata evaluasi"
+										disabled={isSubmitting}
+										required
+									></textarea>
+								</td>
+								<td class="align-top">
+									<div class="flex flex-col gap-2">
+										{#each editingGroupData.indikator as indicator, indicatorIdx (indicatorIdx)}
+											<div class="flex flex-col gap-2 sm:flex-row">
+												<textarea
+													class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 w-full dark:border-none"
+													bind:value={indicator.deskripsi}
+													oninput={() => updateIndicatorField(indicatorIdx, indicator.deskripsi)}
+													placeholder="Tuliskan indikator"
+													disabled={isSubmitting}
+													required={indicatorIdx === 0}
+												></textarea>
+												{#if editingGroupData.indikator.length > 1 && indicator.deskripsi.trim().length > 0}
+													<button
+														type="button"
+														class="btn btn-sm btn-soft btn-error shadow-none"
+														onclick={() => removeIndicatorField(indicatorIdx)}
+														disabled={isSubmitting}
+														title="Hapus indikator"
+													>
+														<Icon name="del" />
+													</button>
+												{/if}
+											</div>
+										{/each}
+									</div>
+								</td>
+								<td class="align-top">
+									<div class="flex gap-1">
+										<button
+											type="button"
+											class="btn btn-sm btn-soft shadow-none"
+											onclick={closeEdit}
+											disabled={isSubmitting}
+											title="Batalkan"
+										>
+											<Icon name="close" />
+										</button>
+										<button
+											type="button"
+											class="btn btn-sm btn-primary shadow-none"
+											onclick={async () => {
+												// Create and submit form for save action
+												const data = editingGroupData!;
+												const formData = new FormData();
+												formData.append('mataEvaluasiId', String(editingGroupId));
+												formData.append('mataEvaluasiNama', data.nama);
+												data.indikator.forEach((ind, idx) => {
+													if (ind.deskripsi.trim().length > 0) {
+														formData.append(`indikator.${idx}.id`, String(ind.id ?? ''));
+														formData.append(`indikator.${idx}.deskripsi`, ind.deskripsi);
+													}
+												});
+
+												try {
+													isSubmitting = true;
+													const response = await fetch('?/save', {
+														method: 'POST',
+														body: formData
+													});
+
+													const result = await response.json();
+													if (!response.ok) {
+														toast(result.fail || 'Gagal menyimpan', 'error');
+													} else {
+														toast(result.message || 'Berhasil disimpan', 'success');
+														closeEdit();
+														await invalidate('app:keasramaan');
+													}
+												} catch (error) {
+													toast('Terjadi kesalahan', 'error');
+													console.error(error);
+												} finally {
+													isSubmitting = false;
+												}
+											}}
+											disabled={isSubmitting}
+											aria-busy={isSubmitting}
+											title="Simpan"
+										>
+											<Icon name="save" />
+										</button>
+									</div>
+								</td>
+							</tr>
+						{:else}
+							<!-- Display Mode Row -->
+							<tr class="hover:bg-base-200/50 dark:hover:bg-base-700/50">
+								<td class="align-top">
+									<input
+										type="checkbox"
+										class="checkbox"
+										aria-label={`Pilih ${group.nama}`}
+										checked={selectedGroups.has(group.id)}
+										onchange={() => toggleSelection(group.id)}
+										disabled={isEditMode || !tableReady}
+									/>
+								</td>
+								<td class="align-top">{idx + 1}</td>
+								<td class="align-top font-semibold">{group.nama}</td>
+								<td class="align-top">
+									<div class="space-y-1">
+										{#each group.indikator as indicator, indIdx (indicator.id)}
+											<div class="flex gap-2 text-sm">
+												<span class="shrink-0">{indIdx + 1}.</span>
+												<span>{indicator.deskripsi}</span>
+											</div>
+										{/each}
+										{#if group.indikator.length === 0}
+											<p class="text-base-content/50 text-sm italic">-</p>
+										{/if}
+									</div>
+								</td>
+								<td class="align-top">
+									<div class="flex gap-1">
+										<button
+											type="button"
+											class="btn btn-sm btn-soft shadow-none"
+											onclick={() => openEdit(group)}
+											disabled={isEditMode || !tableReady}
+											title="Edit mata evaluasi"
+										>
+											<Icon name="edit" />
+										</button>
+										<button
+											type="button"
+											class="btn btn-sm btn-error btn-soft shadow-none"
+											onclick={() => (deleteConfirmId = group.id)}
+											disabled={isEditMode || !tableReady}
+											title="Hapus mata evaluasi"
+										>
+											<Icon name="del" />
+										</button>
+									</div>
+								</td>
+							</tr>
 						{/if}
-					</div>
+					{/each}
+				{:else if tableReady}
+					<tr>
+						<td class="py-8 text-center italic opacity-50" colspan="5">Belum ada mata evaluasi</td>
+					</tr>
+				{/if}
+			</tbody>
+		</table>
+	</div>
 
-					<!-- Action Buttons -->
-					<div class="mt-3 flex gap-2">
-						<button
-							type="button"
-							class="btn btn-sm btn-soft"
-							onclick={() => openEdit(group)}
-							disabled={isEditMode || !tableReady}
-							title="Edit mata evaluasi"
-						>
-							<Icon name="edit" />
-							Edit
-						</button>
-						<button
-							type="button"
-							class="btn btn-sm btn-error btn-soft"
-							onclick={() => (deleteConfirmId = group.id)}
-							disabled={isEditMode || !tableReady}
-							title="Hapus mata evaluasi"
-						>
-							<Icon name="del" />
-							Hapus
-						</button>
-					</div>
-				</div>
-			{/if}
-
-			<!-- Delete Confirmation Modal -->
-			{#if deleteConfirmId === group.id}
-				<div class="modal modal-open">
-					<div class="modal-box">
-						<h3 class="text-lg font-bold">Hapus Mata Evaluasi?</h3>
+	<!-- Delete Confirmation Modal -->
+	{#if deleteConfirmId !== null}
+		<div class="modal modal-open">
+			<div class="modal-box">
+				<h3 class="text-lg font-bold">Hapus Mata Evaluasi?</h3>
+				{#each mataEvaluasi as group (group.id)}
+					{#if deleteConfirmId === group.id}
 						<p class="py-4">
 							Anda akan menghapus mata evaluasi <strong>{group.nama}</strong> beserta semua indikatornya.
 							Tindakan ini tidak dapat dibatalkan.
 						</p>
-						<div class="modal-action">
-							<button
-								type="button"
-								class="btn"
-								onclick={() => (deleteConfirmId = null)}
-								title="Batal menghapus"
-							>
-								Batal
-							</button>
-							<button
-								type="button"
-								class="btn btn-error"
-								onclick={() => deleteGroup(group.id)}
-								title="Konfirmasi penghapusan"
-							>
-								Hapus
-							</button>
-						</div>
-					</div>
+					{/if}
+				{/each}
+				<div class="modal-action">
 					<button
 						type="button"
-						class="modal-backdrop"
+						class="btn btn-soft shadow-none"
 						onclick={() => (deleteConfirmId = null)}
-						title="Tutup modal"
-					></button>
+						title="Batal menghapus"
+					>
+						Batal
+					</button>
+					<button
+						type="button"
+						class="btn btn-error shadow-none"
+						onclick={async () => {
+							const groupToDelete = mataEvaluasi.find((g) => g.id === deleteConfirmId);
+							if (groupToDelete) {
+								await deleteGroup(groupToDelete.id);
+							}
+						}}
+						title="Konfirmasi penghapusan"
+					>
+						Hapus
+					</button>
 				</div>
-			{/if}
-		{/each}
-	</div>
-
-	{#if mataEvaluasi.length === 0 && tableReady}
-		<div class="mt-6 flex flex-col items-center justify-center rounded-lg border border-dashed border-base-300 bg-base-50 p-8">
-			<Icon name="info" class="mb-2 text-2xl opacity-50" />
-			<p class="text-center text-sm text-base-content/60">
-				Belum ada mata evaluasi keasramaan. Tambahkan dari halaman <strong>Daftar Nilai Keasramaan</strong>.
-			</p>
+			</div>
+			<button
+				type="button"
+				class="modal-backdrop"
+				onclick={() => (deleteConfirmId = null)}
+				title="Tutup modal"
+			></button>
 		</div>
 	{/if}
 </div>
