@@ -162,8 +162,6 @@ export async function load({ parent, url, depends }) {
 		}
 	}
 
-	const mapelByName = new Map(mapelRecords.map((record) => [normalizeText(record.nama), record]));
-
 	// Determine if the logged-in user is assigned to a local mapel in this kelas
 	// and whether that assigned mapel is an agama variant. This is used to
 	// restrict grading links so a guru mapel agama assigned to a variant only
@@ -296,6 +294,26 @@ export async function load({ parent, url, depends }) {
 		);
 		if (!exists) {
 			mapelOptions.unshift({ value: AGAMA_MAPEL_VALUE, nama: AGAMA_BASE_SUBJECT });
+		}
+	}
+
+	// Build mapelByName to include agama variants even if they're not in mapelRecords
+	// This ensures pickMapelIdForMurid can find the correct mapel ID for students with agama assignment
+	const mapelByName = new Map(mapelRecords.map((record) => [normalizeText(record.nama), record]));
+
+	// Add agama variants to mapelByName if not already present
+	for (const record of agamaVariantRecords) {
+		const key = normalizeText(record.nama);
+		if (!mapelByName.has(key)) {
+			mapelByName.set(key, record);
+		}
+	}
+
+	// Add agama base subject to mapelByName if present
+	if (agamaBaseMapel) {
+		const key = normalizeText(agamaBaseMapel.nama);
+		if (!mapelByName.has(key)) {
+			mapelByName.set(key, agamaBaseMapel);
 		}
 	}
 
