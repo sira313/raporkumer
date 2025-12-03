@@ -103,6 +103,7 @@
 			nama: group.nama,
 			indikator: [...group.indikator]
 		};
+		ensureTrailingIndicatorInEdit();
 	}
 
 	function closeEdit() {
