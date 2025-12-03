@@ -9,7 +9,7 @@
 	import { modalRoute } from '$lib/utils';
 	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
 
-	type MapelWithIndicator = MataPelajaran & { tpCount: number };
+	type MapelWithIndicator = MataPelajaran & { tpCount: number; editTpMapelId?: number };
 	let { data }: { data: { mapel: Record<string, MapelWithIndicator[]> } } = $props();
 
 	const emptyStateMessage = 'Belum ada data mata pelajaran';
@@ -249,7 +249,7 @@
 										></span>
 										<a
 											class="btn btn-sm btn-soft shadow-none"
-											href={`/intrakurikuler/${mapel.id}/tp-rl`}
+											href={`/intrakurikuler/${mapel.editTpMapelId ?? mapel.id}/tp-rl`}
 										>
 											<Icon name="edit" />
 											Edit TP

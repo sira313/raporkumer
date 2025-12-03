@@ -10,7 +10,7 @@ import { agamaVariantNames } from '$lib/statics';
 import { eq, inArray } from 'drizzle-orm';
 
 type MataPelajaranBase = Omit<MataPelajaran, 'tujuanPembelajaran'>;
-type MataPelajaranWithTp = MataPelajaranBase & { tpCount: number };
+type MataPelajaranWithTp = MataPelajaranBase & { tpCount: number; editTpMapelId?: number };
 type MataPelajaranList = MataPelajaranWithTp[];
 
 const AGAMA_VARIANT_NAME_SET = new Set<string>(agamaVariantNames);
@@ -162,9 +162,65 @@ export async function load({ depends, url, parent }) {
 		}
 	}
 
+	// Build a map of agama parent ID to first variant ID for users with assigned agama
+	// This ensures Edit TP link goes to the correct variant, not the parent
+	const agamaParentToVariantMap = new Map<number, number>();
+	const agamaVariantInKelas = mapel.filter((item) => AGAMA_VARIANT_NAME_SET.has(item.nama));
+	const agamaParentInKelas = mapel.find(
+		(item) => item.nama?.trim().toLowerCase() === AGAMA_PARENT_NAME.toLowerCase()
+	);
+	if (agamaParentInKelas && agamaVariantInKelas.length > 0) {
+		// Map parent ID to the user's assigned variant, or first variant if no specific assignment
+		let targetVariantId = agamaVariantInKelas[0].id;
+
+		// Try to find user's assigned agama variant
+		if (user && (user as unknown as { id?: number; type?: string }).type === 'user') {
+			const userId = (user as unknown as { id?: number }).id;
+			if (userId) {
+				try {
+					const assignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({
+						columns: { mataPelajaranId: true },
+						where: eq(tableAuthUserMataPelajaran.authUserId, userId)
+					});
+					if (assignedMapels.length > 0) {
+						const assignedRecords = await db.query.tableMataPelajaran.findMany({
+							columns: { id: true, nama: true },
+							where: inArray(
+								tableMataPelajaran.id,
+								assignedMapels.map((m) => m.mataPelajaranId)
+							)
+						});
+						// Find first assigned variant in this kelas
+						for (const record of assignedRecords) {
+							const norm = (record.nama || '').trim().toLowerCase();
+							if (
+								norm.startsWith('pendidikan agama') &&
+								!norm.includes(AGAMA_PARENT_NAME.toLowerCase())
+							) {
+								const foundInKelas = agamaVariantInKelas.find((v) => v.id === record.id);
+								if (foundInKelas) {
+									targetVariantId = foundInKelas.id;
+									break;
+								}
+							}
+						}
+					}
+				} catch (err) {
+					console.warn('[intrakurikuler] Failed to resolve assigned agama variant', err);
+				}
+			}
+		}
+
+		agamaParentToVariantMap.set(agamaParentInKelas.id, targetVariantId);
+	}
+
 	const mapelWithIndicator: MataPelajaranWithTp[] = mapel.map((item) => ({
 		...item,
-		tpCount: tpCountByMapelId.get(item.id) ?? 0
+		tpCount: tpCountByMapelId.get(item.id) ?? 0,
+		// If this is an agama parent and user has assigned variant, use variant ID for Edit TP link
+		editTpMapelId: agamaParentToVariantMap.has(item.id)
+			? agamaParentToVariantMap.get(item.id)
+			: item.id
 	}));
 
 	const mapelTampil = mapelWithIndicator.filter((item) => !AGAMA_VARIANT_NAME_SET.has(item.nama));
