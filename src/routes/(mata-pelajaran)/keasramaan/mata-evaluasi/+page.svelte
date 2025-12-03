@@ -41,6 +41,13 @@
 	const hasSelection = $derived(selectedGroups.size > 0 && !isEditMode && !isCreateMode);
 	const isInteractionLocked = $derived(isEditMode || isCreateMode);
 
+	const isPrimaryButtonDisabled = $derived.by(() => {
+		if (hasSelection) return false;
+		if (isInteractionLocked) return false; // Allow clicking to cancel
+		if (!tableReady) return true;
+		return false;
+	});
+
 	function openCreate() {
 		if (isEditMode || isCreateMode) return;
 		clearSelection();
@@ -125,6 +132,22 @@
 
 	function clearSelection() {
 		selectedGroups = new Set();
+	}
+
+	function handlePrimaryActionClick() {
+		if (hasSelection) {
+			// TODO: implement bulk delete
+			return;
+		}
+		if (isCreateMode) {
+			closeCreate();
+			return;
+		}
+		if (isEditMode) {
+			closeEdit();
+			return;
+		}
+		openCreate();
 	}
 
 	function removeIndicatorField(index: number) {
@@ -264,8 +287,8 @@
 		<button
 			type="button"
 			class="btn btn-soft shadow-none sm:ml-auto sm:max-w-40"
-			onclick={openCreate}
-			disabled={isInteractionLocked || !tableReady}
+			onclick={handlePrimaryActionClick}
+			disabled={isPrimaryButtonDisabled}
 			class:btn-error={hasSelection}
 			class:btn-secondary={isInteractionLocked}
 		>

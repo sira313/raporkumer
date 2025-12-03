@@ -73,13 +73,13 @@
 					<li>
 						<button type="button" class="w-full text-left" aria-disabled="false">
 							<Icon name="import" />
-							Impor Keasramaan
+							Impor matev
 						</button>
 					</li>
 					<li>
 						<button type="button" class="w-full text-left" aria-disabled="false">
 							<Icon name="export" />
-							Ekspor Keasramaan
+							Ekspor matev
 						</button>
 					</li>
 				</ul>
