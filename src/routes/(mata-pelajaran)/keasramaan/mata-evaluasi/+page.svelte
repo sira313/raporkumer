@@ -2,7 +2,8 @@
 	import { invalidate } from '$app/navigation';
 	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
-	import FormEnhance from '$lib/components/form-enhance.svelte';
+	import MataEvaluasiCreateRow from '$lib/components/keasramaan/MataEvaluasiCreateRow.svelte';
+	import DeleteConfirmModal from '$lib/components/keasramaan/DeleteConfirmModal.svelte';
 
 	let { data }: { data: Record<string, unknown> } = $props();
 
@@ -55,21 +56,15 @@
 		newGroupData = null;
 	}
 
-	function addIndicatorFieldInCreate() {
-		if (!newGroupData) return;
-		newGroupData.indikator = [...newGroupData.indikator, { deskripsi: '' }];
-	}
-
 	function removeIndicatorFieldInCreate(index: number) {
 		if (!newGroupData) return;
-		newGroupData.indikator = newGroupData.indikator.filter((_, i) => i !== index);
+		updateIndicatorFieldInCreate(index, '');
+		ensureTrailingIndicatorInCreate();
 	}
 
 	function updateIndicatorFieldInCreate(index: number, value: string) {
 		if (!newGroupData) return;
 		newGroupData.indikator[index].deskripsi = value;
-
-		// Ensure trailing empty field like tp-rl does
 		ensureTrailingIndicatorInCreate();
 	}
 
@@ -77,7 +72,6 @@
 		if (!newGroupData) return;
 		const entries = newGroupData.indikator;
 
-		// Remove consecutive empty fields at the end
 		while (entries.length > 1) {
 			const last = entries[entries.length - 1];
 			const prev = entries[entries.length - 2];
@@ -88,7 +82,6 @@
 			}
 		}
 
-		// Ensure there's always one empty field at the end
 		const last = entries[entries.length - 1];
 		if (!last || last.deskripsi.trim() !== '') {
 			newGroupData.indikator = [...entries, { deskripsi: '' }];
@@ -136,14 +129,13 @@
 
 	function removeIndicatorField(index: number) {
 		if (!editingGroupData) return;
-		editingGroupData.indikator = editingGroupData.indikator.filter((_, i) => i !== index);
+		updateIndicatorField(index, '');
+		ensureTrailingIndicatorInEdit();
 	}
 
 	function updateIndicatorField(index: number, value: string) {
 		if (!editingGroupData) return;
 		editingGroupData.indikator[index].deskripsi = value;
-
-		// Ensure trailing empty field like tp-rl does
 		ensureTrailingIndicatorInEdit();
 	}
 
@@ -151,7 +143,6 @@
 		if (!editingGroupData) return;
 		const entries = editingGroupData.indikator;
 
-		// Remove consecutive empty fields at the end
 		while (entries.length > 1) {
 			const last = entries[entries.length - 1];
 			const prev = entries[entries.length - 2];
@@ -162,7 +153,6 @@
 			}
 		}
 
-		// Ensure there's always one empty field at the end
 		const last = entries[entries.length - 1];
 		if (!last || last.deskripsi.trim() !== '') {
 			editingGroupData.indikator = [...entries, { deskripsi: '' }];
@@ -208,7 +198,6 @@
 			return;
 		}
 
-		// Filter out empty indicators
 		const indicators = newGroupData.indikator.filter((ind) => ind.deskripsi.trim().length > 0);
 
 		const formData = new FormData();
@@ -332,71 +321,19 @@
 			</thead>
 			<tbody>
 				{#if isCreateMode && newGroupData}
-					<!-- Create Mode Row -->
-					<tr>
-						<td class="align-top"><input type="checkbox" class="checkbox" disabled /></td>
-						<td class="text-primary animate-pulse align-top font-semibold">1</td>
-						<td class="align-top">
-							<textarea
-								class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 h-24 w-full"
-								bind:value={newGroupData.nama}
-								placeholder="Contoh: Kepemimpinan"
-								disabled={isSubmitting}
-								required
-							></textarea>
-						</td>
-						<td class="align-top">
-							<div class="flex flex-col gap-2">
-								{#each newGroupData.indikator as indicator, indicatorIdx (indicatorIdx)}
-									<div class="flex flex-col gap-2 sm:flex-row">
-										<textarea
-											class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 w-full dark:border-none"
-											bind:value={indicator.deskripsi}
-											oninput={() =>
-												updateIndicatorFieldInCreate(indicatorIdx, indicator.deskripsi)}
-											placeholder="Contoh: Mampu memimpin kegiatan kelompok."
-											disabled={isSubmitting}
-											required={indicatorIdx === 0}
-										></textarea>
-										{#if newGroupData.indikator.length > 1 && indicator.deskripsi.trim().length > 0}
-											<button
-												type="button"
-												class="btn btn-sm btn-soft btn-error shadow-none"
-												onclick={() => removeIndicatorFieldInCreate(indicatorIdx)}
-												disabled={isSubmitting}
-												title="Hapus indikator"
-											>
-												<Icon name="del" />
-											</button>
-										{/if}
-									</div>
-								{/each}
-							</div>
-						</td>
-						<td class="align-top">
-							<div class="flex gap-1">
-								<button
-									type="button"
-									class="btn btn-sm btn-soft shadow-none"
-									onclick={closeCreate}
-									disabled={isSubmitting}
-									title="Batalkan"
-								>
-									<Icon name="close" />
-								</button>
-								<button
-									type="button"
-									class="btn btn-sm btn-primary shadow-none"
-									onclick={submitCreate}
-									disabled={isSubmitting || !newGroupData.nama.trim()}
-									aria-busy={isSubmitting}
-									title="Simpan"
-								>
-									<Icon name="save" />
-								</button>
-							</div>
-						</td>
-					</tr>
+					<MataEvaluasiCreateRow
+						{newGroupData}
+						{isSubmitting}
+						onUpdateNama={(value) => {
+							if (newGroupData) {
+								newGroupData.nama = value;
+							}
+						}}
+						onUpdateIndicator={updateIndicatorFieldInCreate}
+						onRemoveIndicator={removeIndicatorFieldInCreate}
+						onSave={submitCreate}
+						onCancel={closeCreate}
+					/>
 				{/if}
 
 				{#if mataEvaluasi.length > 0}
@@ -409,7 +346,12 @@
 								<td class="align-top">
 									<textarea
 										class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 h-24 w-full"
-										bind:value={editingGroupData.nama}
+										value={editingGroupData.nama}
+										oninput={(e) => {
+											if (editingGroupData) {
+												editingGroupData.nama = e.currentTarget.value;
+											}
+										}}
 										placeholder="Tuliskan mata evaluasi"
 										disabled={isSubmitting}
 										required
@@ -421,8 +363,8 @@
 											<div class="flex flex-col gap-2 sm:flex-row">
 												<textarea
 													class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 w-full dark:border-none"
-													bind:value={indicator.deskripsi}
-													oninput={() => updateIndicatorField(indicatorIdx, indicator.deskripsi)}
+													value={indicator.deskripsi}
+													oninput={(e) => updateIndicatorField(indicatorIdx, e.currentTarget.value)}
 													placeholder="Tuliskan indikator"
 													disabled={isSubmitting}
 													required={indicatorIdx === 0}
@@ -457,7 +399,6 @@
 											type="button"
 											class="btn btn-sm btn-primary shadow-none"
 											onclick={async () => {
-												// Create and submit form for save action
 												const data = editingGroupData!;
 												const formData = new FormData();
 												formData.append('mataEvaluasiId', String(editingGroupId));
@@ -563,48 +504,12 @@
 	</div>
 
 	<!-- Delete Confirmation Modal -->
-	{#if deleteConfirmId !== null}
-		<div class="modal modal-open">
-			<div class="modal-box">
-				<h3 class="text-lg font-bold">Hapus Mata Evaluasi?</h3>
-				{#each mataEvaluasi as group (group.id)}
-					{#if deleteConfirmId === group.id}
-						<p class="py-4">
-							Anda akan menghapus mata evaluasi <strong>{group.nama}</strong> beserta semua indikatornya.
-							Tindakan ini tidak dapat dibatalkan.
-						</p>
-					{/if}
-				{/each}
-				<div class="modal-action">
-					<button
-						type="button"
-						class="btn btn-soft shadow-none"
-						onclick={() => (deleteConfirmId = null)}
-						title="Batal menghapus"
-					>
-						Batal
-					</button>
-					<button
-						type="button"
-						class="btn btn-error shadow-none"
-						onclick={async () => {
-							const groupToDelete = mataEvaluasi.find((g) => g.id === deleteConfirmId);
-							if (groupToDelete) {
-								await deleteGroup(groupToDelete.id);
-							}
-						}}
-						title="Konfirmasi penghapusan"
-					>
-						Hapus
-					</button>
-				</div>
-			</div>
-			<button
-				type="button"
-				class="modal-backdrop"
-				onclick={() => (deleteConfirmId = null)}
-				title="Tutup modal"
-			></button>
-		</div>
-	{/if}
+	<DeleteConfirmModal
+		{deleteConfirmId}
+		{mataEvaluasi}
+		onConfirm={deleteGroup}
+		onCancel={() => {
+			deleteConfirmId = null;
+		}}
+	/>
 </div>
