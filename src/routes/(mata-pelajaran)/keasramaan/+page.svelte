@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/icon.svelte';
 	import MataEvaluasiDisplay from '$lib/components/keasramaan/MataEvaluasiDisplay.svelte';
 
@@ -26,6 +27,9 @@
 				: kelasAktif.nama
 			: '-'
 	);
+
+	// eslint-disable-next-line svelte/no-navigation-without-resolve
+	const navigateToMatEval = () => goto('/keasramaan/mata-evaluasi');
 </script>
 
 <div class="alert alert-info alert-soft mb-4 flex items-center gap-2 text-sm">
@@ -43,14 +47,15 @@
 		</div>
 		<!-- Tombol untuk mengelola mata evaluasi -->
 		<div class="flex flex-row">
-			<a
-				href="/keasramaan/mata-evaluasi"
+			<button
+				type="button"
 				class="btn btn-soft rounded-r-none shadow-none"
 				title="Kelola mata evaluasi keasramaan"
+				onclick={navigateToMatEval}
 			>
 				<Icon name="edit" />
 				Kelola Mata Evaluasi
-			</a>
+			</button>
 			<div class="dropdown dropdown-end">
 				<button
 					title="Export dan Import keasramaan"

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
-	import MataEvaluasiIndicators from './MataEvaluasiIndicators.svelte';
 
 	interface MataEvaluasi {
 		id: number;
