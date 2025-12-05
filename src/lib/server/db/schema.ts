@@ -762,16 +762,20 @@ export const tableKeasramaanRelations = relations(tableKeasramaan, ({ one, many 
 		fields: [tableKeasramaan.kelasId],
 		references: [tableKelas.id]
 	}),
-	indikator: many(tableKeasramaanIndikator)
+	indikator: many(tableKeasramaanIndikator),
+	asesmen: many(tableAsesmenKeasramaan)
 }));
 
-export const tableKeasramaanIndikatorRelations = relations(tableKeasramaanIndikator, ({ one, many }) => ({
-	keasramaan: one(tableKeasramaan, {
-		fields: [tableKeasramaanIndikator.keasramaanId],
-		references: [tableKeasramaan.id]
-	}),
-	tujuan: many(tableKeasramaanTujuan)
-}));
+export const tableKeasramaanIndikatorRelations = relations(
+	tableKeasramaanIndikator,
+	({ one, many }) => ({
+		keasramaan: one(tableKeasramaan, {
+			fields: [tableKeasramaanIndikator.keasramaanId],
+			references: [tableKeasramaan.id]
+		}),
+		tujuan: many(tableKeasramaanTujuan)
+	})
+);
 
 export const tableKeasramaanTujuan = sqliteTable('keasramaan_tujuan', {
 	id: int().primaryKey({ autoIncrement: true }),
@@ -782,9 +786,50 @@ export const tableKeasramaanTujuan = sqliteTable('keasramaan_tujuan', {
 	...audit
 });
 
-export const tableKeasramaanTujuanRelations = relations(tableKeasramaanTujuan, ({ one }) => ({
+export const tableKeasramaanTujuanRelations = relations(tableKeasramaanTujuan, ({ one, many }) => ({
 	indikator: one(tableKeasramaanIndikator, {
 		fields: [tableKeasramaanTujuan.indikatorId],
 		references: [tableKeasramaanIndikator.id]
+	}),
+	asesmen: many(tableAsesmenKeasramaan)
+}));
+
+export const tableAsesmenKeasramaan = sqliteTable(
+	'asesmen_keasramaan',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		muridId: int()
+			.references(() => tableMurid.id, { onDelete: 'cascade' })
+			.notNull(),
+		keasramaanId: int()
+			.references(() => tableKeasramaan.id, { onDelete: 'cascade' })
+			.notNull(),
+		tujuanId: int()
+			.references(() => tableKeasramaanTujuan.id, { onDelete: 'cascade' })
+			.notNull(),
+		kategori: text({ enum: ['sangat-baik', 'baik', 'cukup', 'perlu-bimbingan'] }).notNull(),
+		dinilaiPada: text(),
+		...audit
+	},
+	(table) => [
+		unique().on(table.muridId, table.keasramaanId, table.tujuanId),
+		index('asesmen_keasramaan_murid_idx').on(table.muridId),
+		index('asesmen_keasramaan_keasramaan_idx').on(table.keasramaanId),
+		index('asesmen_keasramaan_tujuan_idx').on(table.tujuanId)
+	]
+);
+
+export const tableAsesmenKeasramaanRelations = relations(tableAsesmenKeasramaan, ({ one }) => ({
+	murid: one(tableMurid, {
+		fields: [tableAsesmenKeasramaan.muridId],
+		references: [tableMurid.id]
+	}),
+	keasramaan: one(tableKeasramaan, {
+		fields: [tableAsesmenKeasramaan.keasramaanId],
+		references: [tableKeasramaan.id]
+	}),
+	tujuan: one(tableKeasramaanTujuan, {
+		fields: [tableAsesmenKeasramaan.tujuanId],
+		references: [tableKeasramaanTujuan.id]
 	})
 }));

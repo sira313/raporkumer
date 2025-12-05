@@ -72,6 +72,10 @@ export const appMenuItems: MenuItem[] = [
 				path: '/nilai-ekstrakurikuler'
 			},
 			{
+				title: 'Keasramaan',
+				path: '/asesmen-keasramaan'
+			},
+			{
 				title: 'Absen',
 				path: '/absen'
 			},

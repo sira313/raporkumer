@@ -301,5 +301,34 @@ export const actions = {
 			console.error('Save error:', error);
 			throw error;
 		}
+	},
+
+	bulkDelete: async ({ request }) => {
+		const formData = await request.formData();
+		const ids: number[] = [];
+
+		for (const [key, value] of formData.entries()) {
+			const match = key.match(/^ids\.(\d+)$/);
+			if (match) {
+				const id = Number(value);
+				if (Number.isInteger(id) && id > 0) {
+					ids.push(id);
+				}
+			}
+		}
+
+		if (ids.length === 0) {
+			return fail(400, { fail: 'Tidak ada mata evaluasi yang dipilih' });
+		}
+
+		try {
+			await db.delete(tableKeasramaan).where(inArray(tableKeasramaan.id, ids));
+			return { message: `${ids.length} mata evaluasi berhasil dihapus` };
+		} catch (error) {
+			if (isTableMissingError(error)) {
+				return fail(500, { fail: TABLE_MISSING_MESSAGE });
+			}
+			throw error;
+		}
 	}
 };

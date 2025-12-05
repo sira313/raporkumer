@@ -3,7 +3,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import MataEvaluasiCreateRow from '$lib/components/keasramaan/MataEvaluasiCreateRow.svelte';
-	import DeleteConfirmModal from '$lib/components/keasramaan/DeleteConfirmModal.svelte';
+	import DeleteMataEvaluasiModal from '$lib/components/keasramaan/delete-modal.svelte';
 
 	let { data }: { data: Record<string, unknown> } = $props();
 
@@ -32,9 +32,13 @@
 		nama: string;
 		indikator: Array<{ deskripsi: string }>;
 	} | null>(null);
-	let deleteConfirmId = $state<number | null>(null);
 	let selectedGroups = $state<Set<number>>(new Set());
 	let isSubmitting = $state(false);
+	let deleteModalState = $state<
+		| { source: 'bulk'; ids: number[] }
+		| { source: 'single'; ids: number[]; item: MataEvaluasi }
+		| null
+	>(null);
 
 	const isEditMode = $derived(editingGroupId !== null);
 	const isCreateMode = $derived(isCreating);
@@ -47,6 +51,23 @@
 		if (!tableReady) return true;
 		return false;
 	});
+
+	const deleteModalTitle = $derived.by(() => {
+		if (!deleteModalState) return 'Hapus Mata Evaluasi';
+		return deleteModalState.source === 'bulk'
+			? `Hapus ${deleteModalState.ids.length} Mata Evaluasi`
+			: 'Hapus Mata Evaluasi';
+	});
+
+	const deleteModalItem = $derived.by(() =>
+		deleteModalState?.source === 'single' ? deleteModalState.item : null
+	);
+
+	const deleteModalIds = $derived.by(() => deleteModalState?.ids ?? []);
+
+	const deleteModalMode = $derived.by(() =>
+		deleteModalState?.source === 'single' ? 'single' : 'bulk'
+	);
 
 	function openCreate() {
 		if (isEditMode || isCreateMode) return;
@@ -137,7 +158,7 @@
 
 	function handlePrimaryActionClick() {
 		if (hasSelection) {
-			// TODO: implement bulk delete
+			deleteBulk();
 			return;
 		}
 		if (isCreateMode) {
@@ -149,6 +170,26 @@
 			return;
 		}
 		openCreate();
+	}
+
+	async function deleteBulk() {
+		if (selectedGroups.size === 0) return;
+
+		const selectedIds = Array.from(selectedGroups);
+		deleteModalState = {
+			source: 'bulk',
+			ids: selectedIds
+		};
+	}
+
+	function closeDeleteModal() {
+		deleteModalState = null;
+	}
+
+	async function handleDeleteSuccess() {
+		closeDeleteModal();
+		clearSelection();
+		await invalidate('app:keasramaan');
 	}
 
 	function removeIndicatorField(index: number) {
@@ -186,29 +227,14 @@
 	}
 
 	async function deleteGroup(id: number) {
-		const form = new FormData();
-		form.append('id', String(id));
+		const group = mataEvaluasi.find((m) => m.id === id);
+		if (!group) return;
 
-		try {
-			const response = await fetch('?/delete', {
-				method: 'POST',
-				body: form
-			});
-
-			const result = await response.json();
-
-			if (!response.ok) {
-				toast(result.fail || 'Gagal menghapus mata evaluasi', 'error');
-			} else {
-				toast(result.message || 'Berhasil menghapus mata evaluasi', 'success');
-				deleteConfirmId = null;
-				clearSelection();
-				await invalidate('app:keasramaan');
-			}
-		} catch (error) {
-			toast('Terjadi kesalahan saat menghapus', 'error');
-			console.error(error);
-		}
+		deleteModalState = {
+			source: 'single',
+			ids: [id],
+			item: group
+		};
 	}
 
 	async function submitCreate() {
@@ -289,11 +315,16 @@
 			type="button"
 			class="btn btn-soft shadow-none sm:ml-auto sm:max-w-40"
 			onclick={handlePrimaryActionClick}
-			disabled={isPrimaryButtonDisabled}
+			disabled={isPrimaryButtonDisabled || isSubmitting}
 			class:btn-error={hasSelection}
 			class:btn-secondary={isInteractionLocked}
+			aria-busy={hasSelection && isSubmitting}
 		>
-			<Icon name={hasSelection ? 'del' : isInteractionLocked ? 'close' : 'plus'} />
+			{#if hasSelection && isSubmitting}
+				<span class="loading loading-spinner"></span>
+			{:else}
+				<Icon name={hasSelection ? 'del' : isInteractionLocked ? 'close' : 'plus'} />
+			{/if}
 			{hasSelection ? 'Hapus Dipilih' : isInteractionLocked ? 'Batalkan' : 'Tambah Matev'}
 		</button>
 
@@ -334,7 +365,7 @@
 							indeterminate={selectedGroups.size > 0 && selectedGroups.size < mataEvaluasi.length}
 							onchange={(event) =>
 								toggleSelectAll((event.currentTarget as HTMLInputElement).checked)}
-							disabled={isEditMode || !tableReady || mataEvaluasi.length === 0}
+							disabled={isEditMode || !tableReady || mataEvaluasi.length === 0 || isSubmitting}
 						/>
 					</th>
 					<th style="width: 50px; min-width: 40px;">No</th>
@@ -475,7 +506,7 @@
 										aria-label={`Pilih ${group.nama}`}
 										checked={selectedGroups.has(group.id)}
 										onchange={() => toggleSelection(group.id)}
-										disabled={isEditMode || !tableReady}
+										disabled={isEditMode || !tableReady || isSubmitting}
 									/>
 								</td>
 								<td class="align-top">{idx + 1}</td>
@@ -507,7 +538,7 @@
 										<button
 											type="button"
 											class="btn btn-sm btn-error btn-soft shadow-none"
-											onclick={() => (deleteConfirmId = group.id)}
+											onclick={() => deleteGroup(group.id)}
 											disabled={isEditMode || !tableReady}
 											title="Hapus mata evaluasi"
 										>
@@ -527,13 +558,16 @@
 		</table>
 	</div>
 
-	<!-- Delete Confirmation Modal -->
-	<DeleteConfirmModal
-		{deleteConfirmId}
-		{mataEvaluasi}
-		onConfirm={deleteGroup}
-		onCancel={() => {
-			deleteConfirmId = null;
-		}}
+	<!-- Delete Modal (bulk & single via modal) -->
+	<DeleteMataEvaluasiModal
+		open={deleteModalState !== null}
+		title={deleteModalTitle}
+		action="?/bulkDelete"
+		ids={deleteModalIds}
+		mode={deleteModalMode}
+		item={deleteModalItem}
+		disabled={false}
+		onClose={closeDeleteModal}
+		onSuccess={handleDeleteSuccess}
 	/>
 </div>
