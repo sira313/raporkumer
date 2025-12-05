@@ -7,7 +7,7 @@
 	type PageData = {
 		murid: { id: number; nama: string };
 		keasramaan: { id: number; nama: string };
-		tujuan: Array<{ id: number; deskripsi: string }>;
+		tujuan: Array<{ id: number; deskripsi: string; indikatorDeskripsi: string }>;
 		nilaiByTujuan: Record<number, EkstrakurikulerNilaiKategori>;
 		kategoriOptions: Array<{ value: EkstrakurikulerNilaiKategori; label: string }>;
 		backUrl: string;
@@ -92,7 +92,10 @@
 								<tr>
 									<td class="align-top">{index + 1}</td>
 									<td class="text-base-content align-top text-sm">
-										{formatTujuan(tujuan.deskripsi)}
+										<div>{formatTujuan(tujuan.deskripsi)}</div>
+										<div class="text-base-content/60 text-xs mt-1">
+											<em>{formatTujuan(tujuan.indikatorDeskripsi)}</em>
+										</div>
 									</td>
 									<td class="align-top">
 										<select

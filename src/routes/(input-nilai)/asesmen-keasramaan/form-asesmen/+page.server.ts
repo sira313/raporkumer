@@ -77,7 +77,7 @@ export async function load({ parent, url, depends }) {
 		columns: { id: true, deskripsi: true },
 		with: {
 			indikator: {
-				columns: { keasramaanId: true }
+				columns: { keasramaanId: true, deskripsi: true }
 			}
 		}
 	});
@@ -86,7 +86,8 @@ export async function load({ parent, url, depends }) {
 		.filter((t) => t.indikator.keasramaanId === keasramaan.id)
 		.map((t) => ({
 			id: t.id,
-			deskripsi: t.deskripsi
+			deskripsi: t.deskripsi,
+			indikatorDeskripsi: t.indikator.deskripsi
 		}))
 		.sort((a, b) => a.id - b.id);
 
