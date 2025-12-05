@@ -2,10 +2,16 @@ import db from '$lib/server/db';
 import { tableAsesmenKeasramaan, tableKeasramaan, tableMurid } from '$lib/server/db/schema';
 import {
 	ekstrakurikulerNilaiLabelByValue,
-	buildEkstrakurikulerDeskripsi,
+	buildKeasramaanDeskripsi,
 	type EkstrakurikulerNilaiKategori,
 	isEkstrakurikulerNilaiKategori
 } from '$lib/ekstrakurikuler';
+import {
+	kategoriToRubrikValue,
+	hitungNilaiIndikator,
+	getIndikatorCategory,
+	formatScore
+} from '$lib/components/asesmen-keasramaan/utils';
 import { redirect, error } from '@sveltejs/kit';
 import { asc, eq } from 'drizzle-orm';
 
@@ -58,7 +64,7 @@ export async function load({ parent, url, depends }) {
 		columns: { id: true, nama: true },
 		with: {
 			indikator: {
-				columns: { id: true },
+				columns: { id: true, deskripsi: true },
 				with: {
 					tujuan: {
 						columns: { id: true }
@@ -158,7 +164,7 @@ export async function load({ parent, url, depends }) {
 		columns: { id: true, deskripsi: true },
 		with: {
 			indikator: {
-				columns: { keasramaanId: true }
+				columns: { id: true, keasramaanId: true, deskripsi: true }
 			}
 		}
 	});
@@ -171,6 +177,12 @@ export async function load({ parent, url, depends }) {
 			deskripsi: t.deskripsi
 		}));
 
+	// Get indikators with their deskripsi for displaying in deskripsi section
+	const indikators = selectedKeasramaan.indikator.map((ind) => ({
+		id: ind.id,
+		nama: ind.deskripsi
+	}));
+
 	const nilaiRecords = await db.query.tableAsesmenKeasramaan.findMany({
 		columns: {
 			muridId: true,
@@ -179,7 +191,17 @@ export async function load({ parent, url, depends }) {
 			dinilaiPada: true,
 			updatedAt: true
 		},
-		where: eq(tableAsesmenKeasramaan.keasramaanId, selectedKeasramaan.id)
+		where: eq(tableAsesmenKeasramaan.keasramaanId, selectedKeasramaan.id),
+		with: {
+			tujuan: {
+				columns: {},
+				with: {
+					indikator: {
+						columns: { id: true }
+					}
+				}
+			}
+		}
 	});
 
 	const nilaiByMurid = mapNilaiRecords(nilaiRecords);
@@ -199,12 +221,39 @@ export async function load({ parent, url, depends }) {
 			};
 		});
 
-		const filledEntries: Array<{ kategori: EkstrakurikulerNilaiKategori; tujuan: string }> = [];
-		for (const item of nilai) {
-			if (!item.kategori) continue;
-			filledEntries.push({ kategori: item.kategori, tujuan: item.tujuan });
-		}
-		const deskripsi = buildEkstrakurikulerDeskripsi(filledEntries);
+		// Hitung nilai per indikator
+		const nilaiPerIndikator = indikators.map((ind) => {
+			// Get all tujuan yang belongs to this indikator
+			const tujuanForThisIndicator = tujuanRecords
+				.filter(
+					(t) => t.indikator.id === ind.id && t.indikator.keasramaanId === selectedKeasramaanId
+				)
+				.map((t) => t.id);
+
+			// Get nilai for each tujuan
+			const nilaiArray = tujuanForThisIndicator.map((tpId) => {
+				const nilaiItem = nilai.find((n) => n.tujuanId === tpId);
+				if (!nilaiItem?.kategori) return null;
+				return kategoriToRubrikValue(nilaiItem.kategori);
+			});
+
+			const nilaiIndikator = hitungNilaiIndikator(nilaiArray);
+			const category = getIndikatorCategory(nilaiIndikator);
+
+			return {
+				indikatorNama: ind.nama,
+				nilaiIndikator,
+				category: category
+					? {
+							huruf: category.huruf,
+							label: category.label
+						}
+					: null
+			};
+		});
+
+		const deskripsi = buildKeasramaanDeskripsi(nilaiPerIndikator, murid.nama);
+
 		let lastUpdated: string | null = null;
 		for (const item of nilai) {
 			if (!item.timestamp) continue;
