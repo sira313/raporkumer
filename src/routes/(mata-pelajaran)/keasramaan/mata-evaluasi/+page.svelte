@@ -387,17 +387,17 @@
 					{#each mataEvaluasi as group, idx (group.id)}
 						{#if isEditMode && editingGroupId === group.id && editingGroupData}
 							<!-- Edit Mode Row -->
-						<MataEvaluasiEditRow
-							group={editingGroupData}
-							rowIndex={idx}
-							{isSubmitting}
-							onUpdateNama={(value: string) => {
-								if (editingGroupData) {
-									editingGroupData.nama = value;
-								}
-							}}
-							onUpdateIndicator={updateIndicatorField}
-							onRemoveIndicator={removeIndicatorField}
+							<MataEvaluasiEditRow
+								group={editingGroupData}
+								rowIndex={idx}
+								{isSubmitting}
+								onUpdateNama={(value: string) => {
+									if (editingGroupData) {
+										editingGroupData.nama = value;
+									}
+								}}
+								onUpdateIndicator={updateIndicatorField}
+								onRemoveIndicator={removeIndicatorField}
 								onSave={async () => {
 									const data = editingGroupData!;
 									const formData = new FormData();
