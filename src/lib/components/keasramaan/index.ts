@@ -4,6 +4,9 @@ export { default as MataEvaluasiCreateRow } from './MataEvaluasiCreateRow.svelte
 export { default as MataEvaluasiDisplay } from './MataEvaluasiDisplay.svelte';
 export { default as MataEvaluasiIndicators } from './MataEvaluasiIndicators.svelte';
 export { default as MataEvaluasiTable } from './MataEvaluasiTable.svelte';
+export { default as MataEvaluasiToolbar } from './MataEvaluasiToolbar.svelte';
+export { default as MataEvaluasiEditRow } from './MataEvaluasiEditRow.svelte';
+export { default as MataEvaluasiDeleteModal } from './MataEvaluasiDeleteModal.svelte';
 
 // Komponen untuk Tujuan Pembelajaran Keasramaan
 export { default as TujuanPembelajaranToolbar } from './TujuanPembelajaranToolbar.svelte';

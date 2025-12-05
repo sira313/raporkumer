@@ -3,7 +3,9 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import MataEvaluasiCreateRow from '$lib/components/keasramaan/MataEvaluasiCreateRow.svelte';
-	import DeleteMataEvaluasiModal from '$lib/components/keasramaan/delete-modal.svelte';
+	import MataEvaluasiToolbar from '$lib/components/keasramaan/MataEvaluasiToolbar.svelte';
+	import MataEvaluasiEditRow from '$lib/components/keasramaan/MataEvaluasiEditRow.svelte';
+	import MataEvaluasiDeleteModal from '$lib/components/keasramaan/MataEvaluasiDeleteModal.svelte';
 
 	let { data }: { data: Record<string, unknown> } = $props();
 
@@ -300,34 +302,24 @@
 	</div>
 
 	<!-- Action Buttons Row -->
-	<div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-		<button
-			type="button"
-			class="btn btn-soft shadow-none"
-			onclick={() => history.back()}
-			title="Kembali ke halaman sebelumnya"
-		>
-			<Icon name="left" />
-			Kembali
-		</button>
-
-		<button
-			type="button"
-			class="btn btn-soft shadow-none sm:ml-auto sm:max-w-40"
-			onclick={handlePrimaryActionClick}
-			disabled={isPrimaryButtonDisabled || isSubmitting}
-			class:btn-error={hasSelection}
-			class:btn-secondary={isInteractionLocked}
-			aria-busy={hasSelection && isSubmitting}
-		>
-			{#if hasSelection && isSubmitting}
-				<span class="loading loading-spinner"></span>
-			{:else}
-				<Icon name={hasSelection ? 'del' : isInteractionLocked ? 'close' : 'plus'} />
-			{/if}
-			{hasSelection ? 'Hapus Dipilih' : isInteractionLocked ? 'Batalkan' : 'Tambah Matev'}
-		</button>
-
+	<MataEvaluasiToolbar
+		{isCreateMode}
+		{isEditMode}
+		{hasSelection}
+		canManage={true}
+		{isSubmitting}
+		isTableReady={tableReady}
+		onBack={() => history.back()}
+		onToggleCreate={() => {
+			if (isCreateMode || isEditMode) {
+				if (isCreateMode) closeCreate();
+				if (isEditMode) closeEdit();
+			} else {
+				openCreate();
+			}
+		}}
+		onBulkDelete={deleteBulk}
+	>
 		{#if isCreateMode}
 			<button
 				type="button"
@@ -340,7 +332,7 @@
 				Simpan
 			</button>
 		{/if}
-	</div>
+	</MataEvaluasiToolbar>
 
 	{#if !tableReady}
 		<div class="alert border-error/60 bg-error/10 text-error-content mt-4 border border-dashed">
@@ -395,107 +387,53 @@
 					{#each mataEvaluasi as group, idx (group.id)}
 						{#if isEditMode && editingGroupId === group.id && editingGroupData}
 							<!-- Edit Mode Row -->
-							<tr>
-								<td class="align-top"><input type="checkbox" class="checkbox" disabled /></td>
-								<td class="text-primary animate-pulse align-top font-semibold">{idx + 1}</td>
-								<td class="align-top">
-									<textarea
-										class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 h-24 w-full"
-										value={editingGroupData.nama}
-										oninput={(e) => {
-											if (editingGroupData) {
-												editingGroupData.nama = e.currentTarget.value;
-											}
-										}}
-										placeholder="Tuliskan mata evaluasi"
-										disabled={isSubmitting}
-										required
-									></textarea>
-								</td>
-								<td class="align-top">
-									<div class="flex flex-col gap-2">
-										{#each editingGroupData.indikator as indicator, indicatorIdx (indicatorIdx)}
-											<div class="flex flex-col gap-2 sm:flex-row">
-												<textarea
-													class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 w-full dark:border-none"
-													value={indicator.deskripsi}
-													oninput={(e) => updateIndicatorField(indicatorIdx, e.currentTarget.value)}
-													placeholder="Tuliskan indikator"
-													disabled={isSubmitting}
-													required={indicatorIdx === 0}
-												></textarea>
-												{#if editingGroupData.indikator.length > 1 && indicator.deskripsi.trim().length > 0}
-													<button
-														type="button"
-														class="btn btn-sm btn-soft btn-error shadow-none"
-														onclick={() => removeIndicatorField(indicatorIdx)}
-														disabled={isSubmitting}
-														title="Hapus indikator"
-													>
-														<Icon name="del" />
-													</button>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								</td>
-								<td class="align-top">
-									<div class="flex gap-1">
-										<button
-											type="button"
-											class="btn btn-sm btn-soft shadow-none"
-											onclick={closeEdit}
-											disabled={isSubmitting}
-											title="Batalkan"
-										>
-											<Icon name="close" />
-										</button>
-										<button
-											type="button"
-											class="btn btn-sm btn-primary shadow-none"
-											onclick={async () => {
-												const data = editingGroupData!;
-												const formData = new FormData();
-												formData.append('mataEvaluasiId', String(editingGroupId));
-												formData.append('mataEvaluasiNama', data.nama);
-												data.indikator.forEach((ind, idx) => {
-													if (ind.deskripsi.trim().length > 0) {
-														formData.append(`indikator.${idx}.id`, String(ind.id ?? ''));
-														formData.append(`indikator.${idx}.deskripsi`, ind.deskripsi);
-													}
-												});
+						<MataEvaluasiEditRow
+							group={editingGroupData}
+							rowIndex={idx}
+							{isSubmitting}
+							onUpdateNama={(value: string) => {
+								if (editingGroupData) {
+									editingGroupData.nama = value;
+								}
+							}}
+							onUpdateIndicator={updateIndicatorField}
+							onRemoveIndicator={removeIndicatorField}
+								onSave={async () => {
+									const data = editingGroupData!;
+									const formData = new FormData();
+									formData.append('mataEvaluasiId', String(editingGroupId));
+									formData.append('mataEvaluasiNama', data.nama);
+									data.indikator.forEach((ind, idx) => {
+										if (ind.deskripsi.trim().length > 0) {
+											formData.append(`indikator.${idx}.id`, String(ind.id ?? ''));
+											formData.append(`indikator.${idx}.deskripsi`, ind.deskripsi);
+										}
+									});
 
-												try {
-													isSubmitting = true;
-													const response = await fetch('?/save', {
-														method: 'POST',
-														body: formData
-													});
+									try {
+										isSubmitting = true;
+										const response = await fetch('?/save', {
+											method: 'POST',
+											body: formData
+										});
 
-													const result = await response.json();
-													if (!response.ok) {
-														toast(result.fail || 'Gagal menyimpan', 'error');
-													} else {
-														toast(result.message || 'Berhasil disimpan', 'success');
-														closeEdit();
-														await invalidate('app:keasramaan');
-													}
-												} catch (error) {
-													toast('Terjadi kesalahan', 'error');
-													console.error(error);
-												} finally {
-													isSubmitting = false;
-												}
-											}}
-											disabled={isSubmitting}
-											aria-busy={isSubmitting}
-											title="Simpan"
-										>
-											<Icon name="save" />
-										</button>
-									</div>
-								</td>
-							</tr>
+										const result = await response.json();
+										if (!response.ok) {
+											toast(result.fail || 'Gagal menyimpan', 'error');
+										} else {
+											toast(result.message || 'Berhasil disimpan', 'success');
+											closeEdit();
+											await invalidate('app:keasramaan');
+										}
+									} catch (error) {
+										toast('Terjadi kesalahan', 'error');
+										console.error(error);
+									} finally {
+										isSubmitting = false;
+									}
+								}}
+								onCancel={closeEdit}
+							/>
 						{:else}
 							<!-- Display Mode Row -->
 							<tr class="hover:bg-base-200/50 dark:hover:bg-base-700/50">
@@ -559,7 +497,7 @@
 	</div>
 
 	<!-- Delete Modal (bulk & single via modal) -->
-	<DeleteMataEvaluasiModal
+	<MataEvaluasiDeleteModal
 		open={deleteModalState !== null}
 		title={deleteModalTitle}
 		action="?/bulkDelete"
