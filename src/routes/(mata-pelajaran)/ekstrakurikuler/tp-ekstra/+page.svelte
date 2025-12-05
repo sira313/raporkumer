@@ -269,7 +269,7 @@
 											<input name="ekstrakurikulerId" value={data.ekstrakurikuler.id} hidden />
 											<input name="id" value={item.id} hidden />
 											<textarea
-												class="textarea dark:bg-base-200 w-full dark:border-none"
+												class="textarea dark:bg-base-300 w-full dark:border-none"
 												placeholder="Tulis tujuan pembelajaran ekstrakurikuler"
 												name="deskripsi"
 												bind:value={deskripsiInput}

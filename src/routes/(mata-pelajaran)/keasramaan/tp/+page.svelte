@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { invalidate } from '$app/navigation';
-	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import TujuanPembelajaranToolbar from '$lib/components/keasramaan/TujuanPembelajaranToolbar.svelte';
+	import TujuanPembelajaranCreateRow from '$lib/components/keasramaan/TujuanPembelajaranCreateRow.svelte';
+	import TujuanPembelajaranEditRow from '$lib/components/keasramaan/TujuanPembelajaranEditRow.svelte';
+	import TujuanPembelajaranDeleteModal from '$lib/components/keasramaan/TujuanPembelajaranDeleteModal.svelte';
 
 	let {
 		data
@@ -24,13 +27,11 @@
 	} = $props();
 
 	let selectedIds = $state<number[]>([]);
-	let selectAllCheckbox: HTMLInputElement | null = null;
-	let formState = $state<{ mode: 'create' } | { mode: 'edit'; item: (typeof data.tujuan)[0] } | null>(
-		null
-	);
+	let selectAllCheckbox = $state<HTMLInputElement | null>(null);
+	let formState = $state<
+		{ mode: 'create' } | { mode: 'edit'; item: (typeof data.tujuan)[0] } | null
+	>(null);
 	let deskripsiInput = $state('');
-	let createFormSubmitting = $state(false);
-	let editFormSubmitting = $state(false);
 	let deleteDialogState = $state<
 		| { source: 'bulk'; ids: number[] }
 		| { source: 'single'; ids: number[]; item: (typeof data.tujuan)[0] }
@@ -39,11 +40,11 @@
 
 	const totalData = $derived.by(() => data.tujuan.length);
 	const anySelected = $derived.by(() => selectedIds.length > 0);
-	const allSelected = $derived.by(() => totalData > 0 && selectedIds.length === totalData);
 	const canManage = $derived.by(() => data.tujuanTableReady);
 	const formOpen = $derived.by(() => formState !== null);
 	const isCreateMode = $derived.by(() => formState?.mode === 'create');
 	const isEditMode = $derived.by(() => formState?.mode === 'edit');
+	const editingItemId = $derived.by(() => (formState?.mode === 'edit' ? formState.item.id : null));
 	const isDeleteModalOpen = $derived.by(() => deleteDialogState !== null);
 	const deleteModalIds = $derived.by(() => deleteDialogState?.ids ?? []);
 	const deleteModalItem = $derived.by(() =>
@@ -90,26 +91,26 @@
 		selectedIds = checked ? data.tujuan.map((item) => item.id) : [];
 	}
 
-	function openCreateForm() {
-		if (!canManage || formOpen) return;
-		deskripsiInput = '';
-		createFormSubmitting = false;
-		formState = { mode: 'create' };
+	function toggleCreateForm() {
+		if (!canManage) return;
+		if (isCreateMode) {
+			formState = null;
+			deskripsiInput = '';
+		} else if (!isEditMode) {
+			deskripsiInput = '';
+			formState = { mode: 'create' };
+		}
 	}
 
 	function openEditForm(item: (typeof data.tujuan)[0]) {
-		if (!canManage || (formState && formState.mode === 'create')) return;
+		if (!canManage || isEditMode) return;
 		deskripsiInput = item.deskripsi;
-		editFormSubmitting = false;
 		formState = { mode: 'edit', item };
 	}
 
 	function closeForm() {
-		if (formState === null && !deskripsiInput) return;
 		formState = null;
 		deskripsiInput = '';
-		createFormSubmitting = false;
-		editFormSubmitting = false;
 	}
 
 	function openBulkDelete() {
@@ -123,8 +124,25 @@
 	}
 
 	function closeDeleteModal() {
-		if (!deleteDialogState) return;
 		deleteDialogState = null;
+		selectedIds = selectedIds.filter((id) => !deleteModalIds.includes(id));
+	}
+
+	function handleCreateSuccess() {
+		formState = null;
+		deskripsiInput = '';
+		invalidate('app:keasramaan:tp');
+	}
+
+	function handleEditSuccess() {
+		formState = null;
+		deskripsiInput = '';
+		invalidate('app:keasramaan:tp');
+	}
+
+	function handleDeleteSuccess() {
+		closeDeleteModal();
+		invalidate('app:keasramaan:tp');
 	}
 </script>
 
@@ -141,33 +159,14 @@
 		{data.indikator.deskripsi}
 	</h2>
 
-	<div class="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-		<button class="btn btn-soft shadow-none" type="button" onclick={() => history.back()}>
-			<Icon name="left" />
-			Kembali
-		</button>
-		{#if anySelected}
-			<button
-				class="btn btn-error btn-soft shadow-none sm:ml-auto sm:max-w-40"
-				type="button"
-				onclick={openBulkDelete}
-				disabled={!anySelected || !canManage}
-			>
-				<Icon name="del" />
-				Hapus TP
-			</button>
-		{:else}
-			<button
-				class={`btn btn-soft shadow-none sm:max-w-40 ${isCreateMode ? 'btn-error' : ''}`}
-				type="button"
-				onclick={isCreateMode ? closeForm : openCreateForm}
-				disabled={!canManage || isEditMode}
-			>
-				<Icon name={isCreateMode ? 'close' : 'plus'} />
-				{isCreateMode ? 'Batal' : 'Tambah TP'}
-			</button>
-		{/if}
-	</div>
+	<TujuanPembelajaranToolbar
+		{isCreateMode}
+		{isEditMode}
+		{anySelected}
+		{canManage}
+		onToggleCreateForm={toggleCreateForm}
+		onOpenBulkDelete={openBulkDelete}
+	/>
 
 	{#if !data.tujuanTableReady}
 		<div class="alert border-error/60 bg-error/10 text-error-content mb-4 border border-dashed">
@@ -189,7 +188,7 @@
 							class="checkbox"
 							bind:this={selectAllCheckbox}
 							disabled={!data.tujuan.length || !canManage}
-							checked={allSelected}
+							checked={data.tujuan.length > 0 && selectedIds.length === data.tujuan.length}
 							onchange={(event) => handleSelectAll(event.currentTarget.checked)}
 						/>
 					</th>
@@ -199,131 +198,26 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#if formState?.mode === 'create'}
-					{@const createFormId = 'tp-keasramaan-create'}
-					<tr class="bg-base-200/40">
-						<td class="align-top">
-							<input type="checkbox" class="checkbox" disabled />
-						</td>
-						<td class="align-top">1</td>
-						<td class="align-top">
-							<FormEnhance
-								id={createFormId}
-								action="?/create"
-								onsuccess={({ form }) => {
-									form.reset();
-									deskripsiInput = '';
-									formState = null;
-									createFormSubmitting = false;
-									invalidate('app:keasramaan:tp');
-								}}
-								submitStateChange={(value) => (createFormSubmitting = value)}
-							>
-								{#snippet children({ submitting, invalid })}
-									<input name="indikatorId" value={data.indikator.id} hidden />
-									<textarea
-										class="textarea bg-base-200 dark:bg-base-300 w-full dark:border-none"
-										placeholder="Tulis tujuan pembelajaran keasramaan"
-										name="deskripsi"
-										bind:value={deskripsiInput}
-										required
-										disabled={!canManage}
-										aria-invalid={invalid}
-										aria-busy={submitting}
-									></textarea>
-								{/snippet}
-							</FormEnhance>
-						</td>
-						<td class="align-top">
-							<div class="flex gap-2">
-								<button
-									class="btn btn-sm btn-primary shadow-none"
-									type="submit"
-									form={createFormId}
-									disabled={createFormSubmitting || !deskripsiInput.trim()}
-									title="Simpan tujuan"
-								>
-									{#if createFormSubmitting}
-										<div class="loading loading-spinner loading-xs"></div>
-									{:else}
-										<Icon name="save" />
-									{/if}
-								</button>
-							</div>
-						</td>
-					</tr>
+				{#if isCreateMode}
+					<TujuanPembelajaranCreateRow
+						indikatorId={data.indikator.id}
+						{canManage}
+						onSuccess={handleCreateSuccess}
+					/>
 				{/if}
 
 				{#if data.tujuan.length}
 					{#each data.tujuan as item, index (item.id)}
 						{@const rowNumber = index + 1 + (isCreateMode ? 1 : 0)}
-						{#if formState?.mode === 'edit' && formState.item.id === item.id}
-							{@const editFormId = `tp-keasramaan-edit-${item.id}`}
-							<tr class="bg-base-200/40">
-								<td class="align-top">
-									<input
-										type="checkbox"
-										class="checkbox"
-										disabled
-										checked={selectedIds.includes(item.id)}
-									/>
-								</td>
-								<td class="align-top">{rowNumber}</td>
-								<td class="align-top">
-									<FormEnhance
-										id={editFormId}
-										action="?/update"
-										onsuccess={({ form }) => {
-											form.reset();
-											deskripsiInput = '';
-											formState = null;
-											editFormSubmitting = false;
-											invalidate('app:keasramaan:tp');
-										}}
-										submitStateChange={(value) => (editFormSubmitting = value)}
-									>
-										{#snippet children({ submitting, invalid })}
-											<input name="indikatorId" value={data.indikator.id} hidden />
-											<input name="id" value={item.id} hidden />
-											<textarea
-												class="textarea dark:bg-base-200 w-full dark:border-none"
-												placeholder="Tulis tujuan pembelajaran keasramaan"
-												name="deskripsi"
-												bind:value={deskripsiInput}
-												required
-												disabled={!canManage}
-												aria-invalid={invalid}
-												aria-busy={submitting}
-											></textarea>
-										{/snippet}
-									</FormEnhance>
-								</td>
-								<td class="align-top">
-									<div class="flex gap-2">
-										<button
-											class="btn btn-sm btn-soft shadow-none"
-											type="button"
-											title="Batal"
-											onclick={closeForm}
-										>
-											<Icon name="close" />
-										</button>
-										<button
-											class="btn btn-sm btn-primary shadow-none"
-											type="submit"
-											form={editFormId}
-											disabled={editFormSubmitting || !deskripsiInput.trim()}
-											title="Simpan perubahan"
-										>
-											{#if editFormSubmitting}
-												<div class="loading loading-spinner loading-xs"></div>
-											{:else}
-												<Icon name="save" />
-											{/if}
-										</button>
-									</div>
-								</td>
-							</tr>
+						{#if isEditMode && editingItemId === item.id}
+							<TujuanPembelajaranEditRow
+								{item}
+								indikatorId={data.indikator.id}
+								{deskripsiInput}
+								{canManage}
+								onSuccess={handleEditSuccess}
+								onCancel={closeForm}
+							/>
 						{:else}
 							<tr>
 								<td class="align-top">
@@ -376,73 +270,18 @@
 	</div>
 </div>
 
-{#if isDeleteModalOpen}
-	<div
-		class="modal modal-open"
-		tabindex="-1"
-		role="dialog"
-		aria-modal="true"
-		onkeydown={(event) => {
-			if (event.key === 'Escape') closeDeleteModal();
-		}}
-	>
-		<dialog class="modal-box relative z-10 max-w-md" open aria-modal="true">
-			<Icon name="warning" class="text-error" />
-			<h3 class="mt-2 text-lg font-bold">{deleteModalTitle}</h3>
-			{#if deleteDialogState?.source === 'single' && deleteModalItem}
-				<p class="mt-2 text-sm">
-					Yakin ingin menghapus tujuan
-					<span class="font-semibold">"{deleteModalItem.deskripsi.slice(0, 80)}"</span>?
-				</p>
-			{:else}
-				<p class="mt-2 text-sm">
-					Yakin ingin menghapus {deleteModalIds.length} tujuan pembelajaran terpilih?
-				</p>
-			{/if}
-
-			<FormEnhance
-				action="?/delete"
-				onsuccess={() => {
-					const ids = deleteDialogState?.ids ?? [];
-					if (ids.length) {
-						selectedIds = selectedIds.filter((selectedId) => !ids.includes(selectedId));
-					}
-					closeDeleteModal();
-					invalidate('app:keasramaan:tp');
-				}}
-			>
-				{#snippet children({ submitting })}
-					{#each deleteModalIds as id (id)}
-						<input name="ids" value={id} hidden />
-					{/each}
-
-					<div class="modal-action mt-6 flex gap-2">
-						<button class="btn btn-soft shadow-none" type="button" onclick={closeDeleteModal}>
-							<Icon name="close" />
-							Batal
-						</button>
-						<button class="btn btn-error shadow-none" disabled={submitting || deleteModalDisabled}>
-							{#if submitting}
-								<div class="loading loading-spinner"></div>
-							{:else}
-								<Icon name="del" />
-							{/if}
-							Hapus
-						</button>
-					</div>
-				{/snippet}
-			</FormEnhance>
-		</dialog>
-		<form method="dialog" class="modal-backdrop">
-			<button
-				type="submit"
-				onclick={(event) => {
-					event.preventDefault();
-					closeDeleteModal();
-				}}
-			>
-				tutup
-			</button>
-		</form>
-	</div>
-{/if}
+<TujuanPembelajaranDeleteModal
+	{deleteModalTitle}
+	{deleteModalItem}
+	{deleteModalIds}
+	{deleteModalDisabled}
+	{isDeleteModalOpen}
+	onClose={() => {
+		const ids = deleteModalIds;
+		if (ids.length) {
+			selectedIds = selectedIds.filter((selectedId) => !ids.includes(selectedId));
+		}
+		closeDeleteModal();
+		handleDeleteSuccess();
+	}}
+/>
