@@ -2,7 +2,8 @@ import db from '$lib/server/db';
 import {
 	tableKeasramaan,
 	tableKeasramaanIndikator,
-	tableKeasramaanTujuan
+	tableKeasramaanTujuan,
+	tableKelas
 } from '$lib/server/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import ExcelJS from 'exceljs';
@@ -34,6 +35,13 @@ export async function POST({ cookies, locals }) {
 			});
 		}
 
+		// Fetch kelas data
+		const kelasData = await db.query.tableKelas.findFirst({
+			where: eq(tableKelas.id, kelasId)
+		});
+
+		const kelasNama = kelasData?.nama || 'Tidak diketahui';
+
 		// Fetch keasramaan data with indikator and tujuan
 		const keasramaanData = await db.query.tableKeasramaan.findMany({
 			where: eq(tableKeasramaan.kelasId, kelasId),
@@ -62,15 +70,35 @@ export async function POST({ cookies, locals }) {
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const worksheet = workbook.addWorksheet('Mata Evaluasi Keasramaan') as any;
 
+		// Add title row (row 1)
+		const titleCell = worksheet.getCell('B1');
+		titleCell.value = 'MATA EVALUASI KEASRAMAAN';
+		titleCell.font = { bold: true, size: 14 };
+		titleCell.alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
+		worksheet.mergeCells('B1:C1');
+		worksheet.getRow(1).height = 25;
+
+		// Add class name row (row 2)
+		const classNameCell = worksheet.getCell('B2');
+		classNameCell.value = kelasNama;
+		classNameCell.font = { bold: true, size: 12 };
+		classNameCell.alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
+		worksheet.mergeCells('B2:C2');
+		worksheet.getRow(2).height = 20;
+
+		// Add empty row (row 3) for spacing
+		worksheet.getRow(3).height = 10;
+
 		// Set column widths
 		worksheet.columns = [
-			{ header: 'Matev', key: 'matev', width: 25 },
-			{ header: 'Indikator', key: 'indikator', width: 40 },
-			{ header: 'Tujuan Pembelajaran', key: 'tujuan', width: 50 }
+			{ key: 'matev', width: 25 },
+			{ key: 'indikator', width: 40 },
+			{ key: 'tujuan', width: 50 }
 		];
 
-		// Style header row
-		const headerRow = worksheet.getRow(1);
+		// Add header row manually at row 4
+		const headerRow = worksheet.getRow(4);
+		headerRow.values = ['Matev', 'Indikator', 'Tujuan Pembelajaran'];
 		headerRow.font = { bold: true };
 		headerRow.alignment = { horizontal: 'center', vertical: 'center', wrapText: true };
 		headerRow.height = 25;
@@ -92,7 +120,7 @@ export async function POST({ cookies, locals }) {
 		// Build export data: flatten matev -> indikator -> tujuan (vertikal format)
 		const rows: Array<{ matev?: string; indikator?: string; tujuan: string }> = [];
 		const merges: Array<{ col: number; startRow: number; endRow: number }> = [];
-		let currentRowNum = 2; // Start from row 2 (after header)
+		let currentRowNum = 5; // Start from row 5 (after header, now at row 4)
 
 		for (const matev of keasramaanData) {
 			const indikators = matev.indikator ?? [];
@@ -168,7 +196,7 @@ export async function POST({ cookies, locals }) {
 		}
 
 		// Style data rows with borders and alignment
-		for (let rowNum = 2; rowNum <= rows.length + 1; rowNum++) {
+		for (let rowNum = 5; rowNum <= rows.length + 4; rowNum++) {
 			const row = worksheet.getRow(rowNum);
 			row.height = 20;
 
@@ -184,14 +212,18 @@ export async function POST({ cookies, locals }) {
 					cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
 				}
 			}
-		} // Generate buffer
+		}
+		// Generate buffer
 		const buffer = await workbook.xlsx.writeBuffer();
+
+		// Create filename with class name
+		const filename = `Mata Evaluasi Keasramaan - ${kelasNama}.xlsx`;
 
 		// Return file
 		return new Response(Buffer.from(buffer as ArrayBuffer), {
 			headers: {
 				'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-				'Content-Disposition': 'attachment; filename="Mata-Evaluasi-Keasramaan.xlsx"'
+				'Content-Disposition': `attachment; filename="${filename}"`
 			}
 		});
 	} catch (error) {

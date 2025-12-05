@@ -51,7 +51,18 @@
 			const url = window.URL.createObjectURL(blob);
 			const a = document.createElement('a');
 			a.href = url;
-			a.download = 'Mata-Evaluasi-Keasramaan.xlsx';
+
+			// Extract filename from Content-Disposition header
+			const contentDisposition = response.headers.get('Content-Disposition');
+			let filename = 'Mata-Evaluasi-Keasramaan.xlsx';
+			if (contentDisposition) {
+				const filenameMatch = contentDisposition.match(/filename="([^"]+)"/);
+				if (filenameMatch && filenameMatch[1]) {
+					filename = filenameMatch[1];
+				}
+			}
+
+			a.download = filename;
 			document.body.appendChild(a);
 			a.click();
 			window.URL.revokeObjectURL(url);
