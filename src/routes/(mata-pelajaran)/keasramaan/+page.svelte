@@ -32,6 +32,35 @@
 
 	// eslint-disable-next-line svelte/no-navigation-without-resolve
 	const navigateToMatEval = () => goto('/keasramaan/mata-evaluasi');
+
+	const handleExport = async () => {
+		try {
+			const response = await fetch('/api/keasramaan/export', {
+				method: 'POST'
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				const message = errorData?.fail || 'Gagal mengekspor data';
+				alert(message);
+				return;
+			}
+
+			// Create blob and download
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'Mata-Evaluasi-Keasramaan.xlsx';
+			document.body.appendChild(a);
+			a.click();
+			window.URL.revokeObjectURL(url);
+			document.body.removeChild(a);
+		} catch (error) {
+			console.error('Export error:', error);
+			alert('Terjadi kesalahan saat mengekspor data');
+		}
+	};
 </script>
 
 <div class="alert alert-info alert-soft mb-4 flex items-center gap-2 text-sm">
@@ -89,7 +118,12 @@
 						</button>
 					</li>
 					<li>
-						<button type="button" class="w-full text-left" aria-disabled="false">
+						<button
+							type="button"
+							class="w-full text-left"
+							aria-disabled="false"
+							onclick={handleExport}
+						>
 							<Icon name="export" />
 							Ekspor Matev
 						</button>
