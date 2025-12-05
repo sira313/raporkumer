@@ -93,7 +93,7 @@
 									<td class="align-top">{index + 1}</td>
 									<td class="text-base-content align-top text-sm">
 										<div>{formatTujuan(tujuan.deskripsi)}</div>
-										<div class="text-base-content/60 text-xs mt-1">
+										<div class="text-base-content/60 mt-1 text-xs">
 											<em>{formatTujuan(tujuan.indikatorDeskripsi)}</em>
 										</div>
 									</td>
