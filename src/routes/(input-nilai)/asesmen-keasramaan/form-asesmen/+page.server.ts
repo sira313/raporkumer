@@ -1,5 +1,10 @@
 import db from '$lib/server/db';
-import { tableAsesmenKeasramaan, tableKeasramaan, tableMurid } from '$lib/server/db/schema';
+import {
+	tableAsesmenKeasramaan,
+	tableKeasramaan,
+	tableKeasramaanIndikator,
+	tableMurid
+} from '$lib/server/db/schema';
 import {
 	ekstrakurikulerNilaiLabelByValue,
 	ekstrakurikulerNilaiOptions,
@@ -77,7 +82,7 @@ export async function load({ parent, url, depends }) {
 		columns: { id: true, deskripsi: true },
 		with: {
 			indikator: {
-				columns: { keasramaanId: true, deskripsi: true }
+				columns: { keasramaanId: true, deskripsi: true, id: true }
 			}
 		}
 	});
@@ -87,7 +92,22 @@ export async function load({ parent, url, depends }) {
 		.map((t) => ({
 			id: t.id,
 			deskripsi: t.deskripsi,
+			indikatorId: t.indikator.id,
+			indikatorNama: t.indikator.deskripsi,
 			indikatorDeskripsi: t.indikator.deskripsi
+		}))
+		.sort((a, b) => a.id - b.id);
+
+	// Get all unique indikators for this keasramaan
+	const indikatorRecords = await db.query.tableKeasramaanIndikator.findMany({
+		columns: { id: true, deskripsi: true },
+		where: eq(tableKeasramaanIndikator.keasramaanId, keasramaan.id)
+	});
+
+	const indikators = indikatorRecords
+		.map((ind) => ({
+			id: ind.id,
+			nama: ind.deskripsi
 		}))
 		.sort((a, b) => a.id - b.id);
 
@@ -113,6 +133,7 @@ export async function load({ parent, url, depends }) {
 		murid: { id: murid.id, nama: murid.nama },
 		keasramaan: { id: keasramaan.id, nama: keasramaan.nama },
 		tujuan,
+		indikators,
 		nilaiByTujuan,
 		kategoriOptions: ekstrakurikulerNilaiOptions,
 		kategoriLabelByValue: ekstrakurikulerNilaiLabelByValue,
