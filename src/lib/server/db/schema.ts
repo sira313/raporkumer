@@ -765,9 +765,26 @@ export const tableKeasramaanRelations = relations(tableKeasramaan, ({ one, many 
 	indikator: many(tableKeasramaanIndikator)
 }));
 
-export const tableKeasramaanIndikatorRelations = relations(tableKeasramaanIndikator, ({ one }) => ({
+export const tableKeasramaanIndikatorRelations = relations(tableKeasramaanIndikator, ({ one, many }) => ({
 	keasramaan: one(tableKeasramaan, {
 		fields: [tableKeasramaanIndikator.keasramaanId],
 		references: [tableKeasramaan.id]
+	}),
+	tujuan: many(tableKeasramaanTujuan)
+}));
+
+export const tableKeasramaanTujuan = sqliteTable('keasramaan_tujuan', {
+	id: int().primaryKey({ autoIncrement: true }),
+	indikatorId: int()
+		.references(() => tableKeasramaanIndikator.id, { onDelete: 'cascade' })
+		.notNull(),
+	deskripsi: text().notNull(),
+	...audit
+});
+
+export const tableKeasramaanTujuanRelations = relations(tableKeasramaanTujuan, ({ one }) => ({
+	indikator: one(tableKeasramaanIndikator, {
+		fields: [tableKeasramaanTujuan.indikatorId],
+		references: [tableKeasramaanIndikator.id]
 	})
 }));

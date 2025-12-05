@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
+	import { goto } from '$app/navigation';
 
 	interface MataEvaluasi {
 		id: number;
@@ -16,6 +17,10 @@
 	}
 
 	let { mataEvaluasi, tableReady }: Props = $props();
+
+	function navigateToTP(indikatorId: number) {
+		goto(`/keasramaan/tp?indikatorId=${indikatorId}`);
+	}
 </script>
 
 {#if mataEvaluasi.length > 0}
@@ -45,7 +50,8 @@
 												<button
 													type="button"
 													class="btn btn-sm btn-soft shadow-none"
-													title="Edit indikator"
+													title="Edit tujuan pembelajaran indikator"
+													onclick={() => navigateToTP(indicator.id)}
 												>
 													<Icon name="book" />
 													Edit TP
