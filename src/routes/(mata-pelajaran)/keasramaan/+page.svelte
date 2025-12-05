@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import Icon from '$lib/components/icon.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
+	import ImportMatevDialog from '$lib/components/keasramaan/import-matev-dialog.svelte';
 	import MataEvaluasiDisplay from '$lib/components/keasramaan/MataEvaluasiDisplay.svelte';
 
 	interface MataEvaluasi {
@@ -71,15 +73,25 @@
 					class="border-base-300 dropdown-content menu bg-base-100 z-50 mt-2 w-48 rounded-md border p-2 shadow-lg"
 				>
 					<li>
-						<button type="button" class="w-full text-left" aria-disabled="false">
+						<button
+							type="button"
+							class="w-full text-left"
+							aria-disabled="false"
+							onclick={() =>
+								showModal({
+									title: 'Impor Matev',
+									body: ImportMatevDialog,
+									dismissible: true
+								})}
+						>
 							<Icon name="import" />
-							Impor matev
+							Impor Matev
 						</button>
 					</li>
 					<li>
 						<button type="button" class="w-full text-left" aria-disabled="false">
 							<Icon name="export" />
-							Ekspor matev
+							Ekspor Matev
 						</button>
 					</li>
 				</ul>
