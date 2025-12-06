@@ -181,11 +181,7 @@
 			disabled={!hasKeasramaan}
 			onChange={(value) => void nav.selectKeasramaan(value)}
 		/>
-		<SearchForm
-			value={searchTerm}
-			onInput={handleSearchInput}
-			onSubmit={submitSearch}
-		/>
+		<SearchForm value={searchTerm} onInput={handleSearchInput} onSubmit={submitSearch} />
 	</div>
 
 	{#if !hasKeasramaan}
@@ -206,8 +202,8 @@
 			onNilaiClick={handleNilaiClick}
 		/>
 		<PaginationControls
-			currentPage={currentPage}
-			totalPages={totalPages}
+			{currentPage}
+			{totalPages}
 			onPageClick={(pageNumber) => void nav.gotoPage(pageNumber)}
 		/>
 	{/if}

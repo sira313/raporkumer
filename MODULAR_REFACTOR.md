@@ -55,6 +55,7 @@ Halaman `+page.svelte` telah direfaktor menjadi struktur modular yang lebih tero
 ## Refactored Page (`+page.svelte`)
 
 Halaman sekarang jauh lebih clean dengan:
+
 - Hanya 215 baris (vs ~450 sebelumnya)
 - Logika dipindahkan ke utility files
 - UI components modular dan reusable

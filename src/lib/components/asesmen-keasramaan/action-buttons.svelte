@@ -9,7 +9,13 @@
 		onImport?: (event: Event) => void;
 	};
 
-	let { isDownloading = false, isImporting = false, disabled = false, onDownload, onImport }: Props = $props();
+	let {
+		isDownloading = false,
+		isImporting = false,
+		disabled = false,
+		onDownload,
+		onImport
+	}: Props = $props();
 
 	let fileInput: HTMLInputElement | undefined;
 
