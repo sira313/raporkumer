@@ -125,6 +125,7 @@ interface RaporPrintData {
 		mataPelajaran: string;
 		nilaiAkhir: string;
 		deskripsi: string;
+		jenis?: 'wajib' | 'pilihan' | 'mulok' | 'kejuruan';
 	}>;
 	kokurikuler: string;
 	hasKokurikuler: boolean;
