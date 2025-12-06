@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import { jenjangPendidikanSederajat } from '$lib/statics';
+	import { jenjangPendidikanSederajat, nauganOptions } from '$lib/statics';
 
 	let { data } = $props();
 	const isNew = data.isNew as boolean;
@@ -263,6 +263,26 @@
 						name="email"
 					/>
 				</div>
+			</div>
+
+			<!-- Kementrian -->
+			<div class="fieldset">
+				<legend class="fieldset-legend">Pilih Naungan</legend>
+				<select
+					class="select bg-base-200 dark:bg-base-300 validator w-full border dark:border-none"
+					name="naungan"
+					required
+				>
+					{#each nauganOptions as option (option.key)}
+						<option
+							value={option.key}
+							selected={initialSekolah?.naungan === option.key ||
+								(!initialSekolah && option.key === 'kemendikbud')}
+						>
+							{option.label}
+						</option>
+					{/each}
+				</select>
 			</div>
 
 			<!-- Upload logo sekolah dan dinas pendidikan -->

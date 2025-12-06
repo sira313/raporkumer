@@ -21,6 +21,28 @@ export const jenjangPendidikanSederajat: Record<
 	pkbm: [{ key: 'pkbm', label: 'Pusat Kegiatan Belajar Masyarakat (PKBM)' }]
 };
 
+export const nauganOptions = [
+	{ key: 'kemendikbud', label: 'Kementerian Pendidikan Dasar dan Menengah' },
+	{ key: 'kemsos', label: 'Kementerian Sosial Republik Indonesia' },
+	{ key: 'kemenag', label: 'Kementerian Agama Republik Indonesia' }
+] as const;
+
+export type NauganKey = (typeof nauganOptions)[number]['key'];
+
+export const nauganLabelByKey = nauganOptions.reduce<Record<NauganKey, string>>(
+	(acc, option) => {
+		acc[option.key] = option.label;
+		return acc;
+	},
+	{} as Record<NauganKey, string>
+);
+
+export const nauganHeaderByKey: Record<NauganKey, [string, string]> = {
+	kemendikbud: ['KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH', 'REPUBLIK INDONESIA'],
+	kemsos: ['KEMENTERIAN SOSIAL', 'REPUBLIK INDONESIA'],
+	kemenag: ['KEMENTERIAN AGAMA', 'REPUBLIK INDONESIA']
+};
+
 export const jenisKelamin: Record<Murid['jenisKelamin'], string> = {
 	L: 'Laki-laki',
 	P: 'Perempuan'

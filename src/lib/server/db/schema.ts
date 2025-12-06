@@ -90,6 +90,10 @@ export const tableSekolah = sqliteTable('sekolah', {
 		.references(() => tablePegawai.id)
 		.notNull(),
 	lokasiTandaTangan: text(),
+	// Naungan (organisasi pengelola sekolah)
+	naungan: text({ enum: ['kemendikbud', 'kemsos', 'kemenag'] })
+		.default('kemendikbud')
+		.notNull(),
 	// Default weight distribution for sumatif: lingkup 60%, STS 20%, SAS 20%
 	sumatifBobotLingkup: int().default(60).notNull(),
 	sumatifBobotSts: int().default(20).notNull(),
