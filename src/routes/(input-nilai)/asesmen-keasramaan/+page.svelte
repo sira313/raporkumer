@@ -202,6 +202,17 @@
 		</div>
 	</div>
 
+	<div class="mb-4 flex flex-col justify-between sm:flex-row">
+		<button class="btn btn-soft shadow-none">
+			<Icon name="download" />
+			Download template
+		</button>
+		<button class="btn btn-soft shadow-none">
+			<Icon name="import" />
+			Import nilai
+		</button>
+	</div>
+
 	<div class="flex flex-col items-center gap-2 sm:flex-row">
 		<label class="w-full md:max-w-80">
 			<span class="sr-only">Pilih Matev Keasramaan</span>
