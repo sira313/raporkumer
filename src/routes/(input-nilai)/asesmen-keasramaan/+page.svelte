@@ -202,7 +202,7 @@
 		</div>
 	</div>
 
-	<div class="mb-4 flex flex-col justify-between sm:flex-row">
+	<div class="mb-4 flex flex-col justify-between gap-2 sm:flex-row">
 		<button class="btn btn-soft shadow-none">
 			<Icon name="download" />
 			Download template
