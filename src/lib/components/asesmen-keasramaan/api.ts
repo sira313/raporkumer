@@ -56,7 +56,7 @@ export async function importNilai(
 	kelasId: string | number
 ): Promise<{ success: boolean; message?: string }> {
 	if (!file.name.endsWith('.xlsx')) {
-		return { success: false };
+		return { success: false, message: 'Hanya file .xlsx yang didukung' };
 	}
 
 	try {
@@ -65,7 +65,7 @@ export async function importNilai(
 		formData.append('kelasId', String(kelasId));
 		formData.append('file', file);
 
-		const response = await fetch('?/importNilai', {
+		const response = await fetch('/api/asesmen-keasramaan/import', {
 			method: 'POST',
 			body: formData
 		});
@@ -73,12 +73,12 @@ export async function importNilai(
 		const result = await response.json();
 
 		if (!response.ok) {
-			return { success: false, message: result.message };
+			return { success: false, message: result.message ?? 'Gagal mengimport file' };
 		}
 
 		return { success: true, message: result.message };
 	} catch (err) {
 		console.error(err);
-		return { success: false };
+		return { success: false, message: 'Terjadi kesalahan saat import' };
 	}
 }

@@ -1,15 +1,17 @@
 <script lang="ts">
 	/* eslint-disable svelte/no-navigation-without-resolve -- file-level: intentional prebuilt hrefs and small navigation helpers */
-	import { goto } from '$app/navigation';
+	import { goto, invalidate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onDestroy } from 'svelte';
 	import { toast } from '$lib/components/toast.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
 	import KeasramaanSelector from '$lib/components/asesmen-keasramaan/keasramaan-selector.svelte';
 	import SearchForm from '$lib/components/asesmen-keasramaan/search-form.svelte';
 	import ActionButtons from '$lib/components/asesmen-keasramaan/action-buttons.svelte';
 	import MuridTable from '$lib/components/asesmen-keasramaan/murid-table.svelte';
 	import PaginationControls from '$lib/components/asesmen-keasramaan/pagination-controls.svelte';
 	import EmptyStates from '$lib/components/asesmen-keasramaan/empty-states.svelte';
+	import ImportModalBody from '$lib/components/asesmen-keasramaan/import-modal-body.svelte';
 	import { capitalizeSentence, buildNilaiLink } from '$lib/components/asesmen-keasramaan/utils';
 	import { createNavigationActions } from '$lib/components/asesmen-keasramaan/navigation';
 	import { downloadTemplate, importNilai } from '$lib/components/asesmen-keasramaan/api';
@@ -32,7 +34,6 @@
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	let isDownloadingTemplate = $state(false);
 	let isImportingFile = $state(false);
-	let fileInput: HTMLInputElement | undefined;
 
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
 	const kelasAktifLabel = $derived.by(() => {
@@ -81,41 +82,62 @@
 		}
 	}
 
-	async function handleFileImport(event: Event) {
-		const input = event.target as HTMLInputElement;
-		if (!input.files || !input.files[0]) return;
-
-		const file = input.files[0];
-
-		if (!file.name.endsWith('.xlsx')) {
-			toast('Hanya file Excel (.xlsx) yang didukung', 'error');
+	function openImportModal() {
+		if (!selectedKeasramaanValue || !selectedKeasraamHasTujuan || !kelasAktif?.id) {
+			toast('Pilih Matev dan pastikan memiliki tujuan pembelajaran terlebih dahulu', 'error');
 			return;
 		}
 
-		if (!selectedKeasramaanValue || !kelasAktif?.id) {
-			toast('Pilih Matev terlebih dahulu', 'error');
-			return;
-		}
+		let uploader: () => File | null = () => null;
 
-		isImportingFile = true;
+		showModal({
+			title: 'Import Nilai dari Excel',
+			body: ImportModalBody,
+			bodyProps: {
+				setUploader: (fn: () => File | null) => (uploader = fn)
+			},
+			onPositive: {
+				label: 'Import',
+				icon: 'import',
+				action: async ({ close }: { close: () => void }) => {
+					const file = uploader();
+					if (!file) {
+						toast('Pilih file terlebih dahulu.', 'error');
+						return;
+					}
 
-		try {
-			const result = await importNilai(file, selectedKeasramaanValue, kelasAktif.id);
-			if (result.success) {
-				toast(result.message || 'Nilai berhasil diimport', 'success');
-				await goto('?');
-			} else {
-				toast(result.message || 'Gagal import nilai', 'error');
-			}
-		} catch (err) {
-			console.error(err);
-			toast('Terjadi kesalahan saat import', 'error');
-		} finally {
-			isImportingFile = false;
-			if (fileInput) {
-				fileInput.value = '';
-			}
-		}
+					isImportingFile = true;
+
+					try {
+						const result = await importNilai(file, selectedKeasramaanValue, kelasAktif?.id ?? 0);
+
+						if (result.success) {
+							toast(result.message || 'Nilai berhasil diimport', 'success');
+							close();
+							await invalidate('app:asesmen-keasramaan');
+							// Tetap di halaman yang sama dengan keasramaan yang dipilih
+							await goto(`?keasramaan_id=${selectedKeasramaanValue}`);
+						} else {
+							toast(result.message || 'Gagal import nilai', 'error');
+						}
+					} catch (err) {
+						console.error(err);
+						toast(
+							'Terjadi kesalahan saat import: ' + String((err as Error)?.message ?? err),
+							'error'
+						);
+					} finally {
+						isImportingFile = false;
+					}
+				}
+			},
+			onNegative: { label: 'Batal', icon: 'close' },
+			dismissible: true
+		});
+	}
+
+	async function handleFileImport() {
+		openImportModal();
 	}
 
 	function handleSearchInput(event: Event) {
