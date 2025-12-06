@@ -38,7 +38,12 @@ export async function load({ depends, parent }) {
 		}
 	}
 
+	const meta: PageMeta = {
+		title: 'Mata Evaluasi Keasramaan'
+	};
+
 	return {
+		meta,
 		kelasId,
 		tableReady,
 		mataPelajaran: keasramaanRaw

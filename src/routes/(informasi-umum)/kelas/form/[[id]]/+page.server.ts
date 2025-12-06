@@ -180,7 +180,7 @@ export async function load({ params, locals }) {
 	return { meta, tingkatOptions, kelas, academicLock, formInit };
 }
 
-	export const actions = {
+export const actions = {
 	async save({ request, params, locals }) {
 		if (!locals.sekolah?.id) error(400, `Sekolah aktif tidak ditemukan`);
 

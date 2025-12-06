@@ -88,6 +88,7 @@
 						placeholder="Contoh: Damian Wayne, Bat"
 						name="waliKelas.nama"
 					/>
+					<span>Khusus sekolah dengan program keasramaan. </span>
 				</div>
 
 				<!-- NIP Wali Kelas -->
