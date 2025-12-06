@@ -380,7 +380,7 @@
 						{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
 					</p>
 					<p>Wali Kelas</p>
-					<div class="mt-16 font-semibold tracking-wide">
+					<div class="mt-16 font-semibold tracking-wide underline">
 						{formatValue(waliKelas?.nama)}
 					</div>
 					<div class="mt-1">{formatValue(waliKelas?.nip)}</div>
@@ -388,7 +388,7 @@
 			</div>
 			<div class="text-center">
 				<p>Kepala Sekolah</p>
-				<div class="mt-16 font-semibold tracking-wide">
+				<div class="mt-16 font-semibold tracking-wide underline">
 					{formatValue(kepalaSekolah?.nama)}
 				</div>
 				<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
