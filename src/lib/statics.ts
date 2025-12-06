@@ -49,9 +49,10 @@ export const jenisKelamin: Record<Murid['jenisKelamin'], string> = {
 };
 
 export const jenisMapel: Record<MataPelajaran['jenis'], string> = {
-	wajib: 'Mata Pelajaran wajib',
-	pilihan: 'Mata Pelajaran pilihan',
-	mulok: 'Muatan Lokal'
+	wajib: 'Mata Pelajaran Wajib',
+	pilihan: 'Mata Pelajaran Pilihan',
+	mulok: 'Muatan Lokal',
+	kejuruan: 'Kejuruan'
 };
 
 export const agamaMapelOptions = [

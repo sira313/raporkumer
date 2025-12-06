@@ -74,7 +74,13 @@ export const appMenuItems: MenuItem[] = [
 			{
 				title: 'Keasramaan',
 				path: '/asesmen-keasramaan'
-			},
+			}
+		]
+	},
+	{
+		title: 'Administrasi',
+		icon: 'briefcase',
+		subMenu: [
 			{
 				title: 'Absen',
 				path: '/absen'
@@ -82,13 +88,12 @@ export const appMenuItems: MenuItem[] = [
 			{
 				title: 'Catatan Wali Kelas',
 				path: '/catatan-wali-kelas'
+			},
+			{
+				title: 'Rekap Nilai',
+				path: '/nilai-akhir'
 			}
 		]
-	},
-	{
-		title: 'Rekap Nilai',
-		icon: 'table',
-		path: '/nilai-akhir'
 	},
 	{
 		title: 'Cetak Dokumen',

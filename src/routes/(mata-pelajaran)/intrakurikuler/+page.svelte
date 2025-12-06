@@ -33,7 +33,8 @@
 		() =>
 			data.mapel.daftarWajib.length +
 			data.mapel.daftarPilihan.length +
-			data.mapel.daftarMulok.length
+			data.mapel.daftarMulok.length +
+			data.mapel.daftarKejuruan.length
 	);
 
 	function formatKkm(kkm: number | null | undefined) {
@@ -186,6 +187,10 @@
 			<div class="stat-value text-2xl">{data.mapel.daftarMulok.length}</div>
 		</div>
 		<div class="stat place-items-start">
+			<div class="stat-title">Kejuruan</div>
+			<div class="stat-value text-2xl">{data.mapel.daftarKejuruan.length}</div>
+		</div>
+		<div class="stat place-items-start">
 			<div class="stat-title">Total Mapel</div>
 			<div class="stat-value text-2xl">{totalMapel}</div>
 		</div>
@@ -210,7 +215,7 @@
 		</div>
 	{/if}
 
-	{#each [{ key: 'wajib', title: 'Mata Pelajaran Wajib', items: data.mapel.daftarWajib }, { key: 'pilihan', title: 'Mata Pelajaran Pilihan', items: data.mapel.daftarPilihan }, { key: 'mulok', title: 'Muatan Lokal', items: data.mapel.daftarMulok }] as section (section.key)}
+	{#each [{ key: 'wajib', title: 'Mata Pelajaran Wajib', items: data.mapel.daftarWajib }, { key: 'pilihan', title: 'Mata Pelajaran Pilihan', items: data.mapel.daftarPilihan }, { key: 'mulok', title: 'Muatan Lokal', items: data.mapel.daftarMulok }, { key: 'kejuruan', title: 'Kejuruan', items: data.mapel.daftarKejuruan }] as section (section.key)}
 		<fieldset class="fieldset mt-8">
 			<legend class="fieldset-legend">{section.title}</legend>
 			<div

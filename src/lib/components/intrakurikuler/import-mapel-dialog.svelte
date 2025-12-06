@@ -120,8 +120,8 @@
 				/>
 				<label class="label" for={fileInputId}>
 					<span class="label-text-alt text-base-content/60 text-xs text-wrap"
-						>Maksimal 2MB. Pastikan kolom Nama, Kode (opsional), Jenis (wajib/pilihan/mulok), dan
-						KKM tersedia.</span
+						>Maksimal 2MB. Pastikan kolom Nama, Kode (opsional), Jenis
+						(wajib/pilihan/mulok/kejuruan), dan KKM tersedia.</span
 					>
 					{#if fileName}
 						<span class="label-text-alt text-base-content/60 text-xs"
