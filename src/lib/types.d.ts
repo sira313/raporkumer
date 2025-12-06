@@ -18,6 +18,7 @@ interface CoverPrintData {
 		jenjang: 'sd' | 'smp' | 'sma' | 'slb' | 'pkbm';
 		jenjangVariant?: string | null;
 		npsn: string;
+		naungan?: 'kemendikbud' | 'kemsos' | 'kemenag' | null;
 		alamat: {
 			jalan: string;
 			desa: string;
