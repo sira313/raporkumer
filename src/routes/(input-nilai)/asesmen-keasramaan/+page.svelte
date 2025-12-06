@@ -5,6 +5,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import DeskripsiCell from '$lib/components/nilai-ekstrakurikuler/deskripsi-cell.svelte';
 	import { searchQueryMarker } from '$lib/utils';
+	import { toast } from '$lib/components/toast.svelte';
 	import type { EkstrakurikulerNilaiKategori } from '$lib/ekstrakurikuler';
 	import { onDestroy } from 'svelte';
 
@@ -71,6 +72,10 @@
 	);
 	let searchTerm = $state(data.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
+	let isDownloadingTemplate = $state(false);
+	let isImportingFile = $state(false);
+	let fileInput: HTMLInputElement | undefined;
+
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
 	const kelasAktifLabel = $derived.by(() => {
 		if (!kelasAktif) return null;
@@ -90,6 +95,107 @@
 		selectedKeasramaanValue = onlyId;
 		handleKeasramaanChange(onlyId);
 	});
+
+	async function downloadTemplate() {
+		if (!selectedKeasramaanValue || !selectedKeasraamHasTujuan || !kelasAktif?.id) {
+			toast('Pilih Matev dan pastikan memiliki tujuan pembelajaran terlebih dahulu', 'error');
+			return;
+		}
+
+		isDownloadingTemplate = true;
+
+		try {
+			const formData = new FormData();
+			formData.append('keasramaanId', selectedKeasramaanValue);
+			formData.append('kelasId', String(kelasAktif.id));
+
+			const response = await fetch('/api/asesmen-keasramaan/download-template', {
+				method: 'POST',
+				body: formData
+			});
+
+			if (!response.ok) {
+				toast('Gagal mengunduh template', 'error');
+				return;
+			}
+
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+
+			// Extract filename from Content-Disposition header if available
+			const contentDisposition = response.headers.get('content-disposition');
+			let filename = `template-asesmen-keasramaan-${new Date().getTime()}.xlsx`;
+			if (contentDisposition) {
+				const match = contentDisposition.match(/filename="?([^";\n]+)"?/i);
+				if (match && match[1]) {
+					filename = match[1];
+				}
+			}
+
+			a.download = filename;
+			document.body.appendChild(a);
+			a.click();
+			window.URL.revokeObjectURL(url);
+			document.body.removeChild(a);
+
+			toast('Template berhasil diunduh', 'success');
+		} catch (err) {
+			console.error(err);
+			toast('Terjadi kesalahan saat mengunduh template', 'error');
+		} finally {
+			isDownloadingTemplate = false;
+		}
+	}
+
+	async function handleFileImport(event: Event) {
+		const input = event.target as HTMLInputElement;
+		if (!input.files || !input.files[0]) return;
+
+		const file = input.files[0];
+		if (!file.name.endsWith('.xlsx')) {
+			toast('Hanya file Excel (.xlsx) yang didukung', 'error');
+			return;
+		}
+
+		if (!selectedKeasramaanValue || !kelasAktif?.id) {
+			toast('Pilih Matev terlebih dahulu', 'error');
+			return;
+		}
+
+		isImportingFile = true;
+
+		try {
+			const formData = new FormData();
+			formData.append('keasramaanId', selectedKeasramaanValue);
+			formData.append('kelasId', String(kelasAktif.id));
+			formData.append('file', file);
+
+			const response = await fetch('?/importNilai', {
+				method: 'POST',
+				body: formData
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				toast(result.message || 'Gagal import nilai', 'error');
+				return;
+			}
+
+			toast(result.message || 'Nilai berhasil diimport', 'success');
+			await goto('?');
+		} catch (err) {
+			console.error(err);
+			toast('Terjadi kesalahan saat import', 'error');
+		} finally {
+			isImportingFile = false;
+			if (fileInput) {
+				fileInput.value = '';
+			}
+		}
+	}
 
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 
@@ -203,14 +309,41 @@
 	</div>
 
 	<div class="mb-4 flex flex-col justify-between gap-2 sm:flex-row">
-		<button class="btn btn-soft shadow-none">
-			<Icon name="download" />
+		<button
+			type="button"
+			class="btn btn-soft shadow-none"
+			onclick={downloadTemplate}
+			disabled={isDownloadingTemplate || !selectedKeasraamHasTujuan}
+		>
+			{#if isDownloadingTemplate}
+				<span class="loading loading-spinner loading-sm"></span>
+			{:else}
+				<Icon name="download" />
+			{/if}
 			Download template
 		</button>
-		<button class="btn btn-soft shadow-none">
-			<Icon name="import" />
-			Import nilai
-		</button>
+		<div class="relative">
+			<input
+				type="file"
+				accept=".xlsx"
+				bind:this={fileInput}
+				onchange={handleFileImport}
+				style="display: none;"
+			/>
+			<button
+				type="button"
+				class="btn btn-soft shadow-none"
+				onclick={() => fileInput?.click()}
+				disabled={isImportingFile || !selectedKeasraamHasTujuan}
+			>
+				{#if isImportingFile}
+					<span class="loading loading-spinner loading-sm"></span>
+				{:else}
+					<Icon name="import" />
+				{/if}
+				Import nilai
+			</button>
+		</div>
 	</div>
 
 	<div class="flex flex-col items-center gap-2 sm:flex-row">

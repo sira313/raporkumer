@@ -87,7 +87,7 @@
 	});
 </script>
 
-<div class="toast toast-top toast-center toast-center z-50">
+<div class="toast toast-top toast-center z-50">
 	{#each toasts as t (t.id)}
 		{@const config = typesMaps[t.type || 'info']}
 		<div

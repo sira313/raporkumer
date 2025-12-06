@@ -174,6 +174,11 @@ export async function downloadTemplateXLSX(options: {
 	classCell.alignment = { horizontal: 'center', vertical: 'middle' };
 	sheetStyled.getRow(2).height = 20;
 
+	// Style merged A3:A4 (Nama Murid) - center vertically and horizontally
+	const namaCell = sheetStyled.getRow(3).getCell(1);
+	namaCell.font = { bold: true };
+	namaCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
 	// Column widths
 	const cols = [{ width: 30 }];
 	for (let c = 1; c < totalCols; c++) cols.push({ width: 12 });
