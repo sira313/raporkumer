@@ -170,6 +170,7 @@ export const tableKelas = sqliteTable(
 		nama: text().notNull(),
 		fase: text(),
 		waliKelasId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
+		waliAsramaId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
 		...audit
 	},
 	(table) => [unique().on(table.sekolahId, table.semesterId, table.nama)]
@@ -272,6 +273,10 @@ export const tableKelasRelations = relations(tableKelas, ({ one, many }) => ({
 		references: [tableSemester.id]
 	}),
 	waliKelas: one(tablePegawai, { fields: [tableKelas.waliKelasId], references: [tablePegawai.id] }),
+	waliAsrama: one(tablePegawai, {
+		fields: [tableKelas.waliAsramaId],
+		references: [tablePegawai.id]
+	}),
 	// many-to-many: kelas bisa diakses oleh multiple guru
 	authUsers: many(tableAuthUserKelas)
 }));
