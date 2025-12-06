@@ -114,3 +114,26 @@ export function formatScore(value: number | null): string {
 	if (value == null) return '–';
 	return value.toFixed(2);
 }
+
+/**
+ * Capitalize sentence first letter
+ */
+export function capitalizeSentence(value: string | null | undefined): string {
+	if (!value) return '';
+	const trimmed = value.trimStart();
+	if (!trimmed) return '';
+	return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
+/**
+ * Build navigation link untuk murid asesmen
+ */
+export function buildNilaiLink(
+	muridId: number,
+	keasramaanId: number | string,
+	currentPathname: string,
+	currentSearch: string
+): string {
+	const redirectTarget = encodeURIComponent(`${currentPathname}${currentSearch}`);
+	return `/asesmen-keasramaan/form-asesmen?murid_id=${muridId}&keasramaan_id=${keasramaanId}&redirect=${redirectTarget}`;
+}
