@@ -38,6 +38,7 @@
 	const kepalaSekolah = $derived.by(() => rapor?.kepalaSekolah ?? null);
 	const ttd = $derived.by(() => rapor?.ttd ?? null);
 	const hasKokurikuler = $derived.by(() => Boolean(rapor?.hasKokurikuler));
+	const jenjangVariant = $derived.by(() => sekolah?.jenjangVariant ?? null);
 
 	const logoUrl = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri.png');
 	const backgroundStyle = $derived.by(() => {
@@ -63,7 +64,7 @@
 	});
 
 	const tableRows = $derived.by<TableRow[]>(() => {
-		return createTableRows(intrakurikulerRows, activeTailBlocks);
+		return createTableRows(intrakurikulerRows, activeTailBlocks, jenjangVariant);
 	});
 
 	// Support multiple <tr> elements for a single logical row (rowspan-style groups).

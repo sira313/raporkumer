@@ -1,6 +1,7 @@
 <script lang="ts">
 	/* eslint-disable svelte/no-navigation-without-resolve -- small goto call used for form navigation */
 	import { goto, invalidate } from '$app/navigation';
+	import { page } from '$app/state';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { agamaMapelNames, agamaParentName, jenisMapel } from '$lib/statics';
@@ -56,6 +57,33 @@
 	if (mode === 'edit' && isAgamaGroup) {
 		localKode = 'PAPB';
 	}
+
+	// Dapatkan jenjang varian dari sekolah (misalnya 'SMK')
+	const jenjangVariant = $derived.by(() => {
+		const sekolah = page.data.sekolah as { jenjangVariant?: string | null } | null | undefined;
+		return sekolah?.jenjangVariant ?? null;
+	});
+
+	// Fungsi untuk mendapatkan label jenis mapel yang dinamis berdasarkan jenjang
+	function getJenisMapelLabel(jenis: string): string {
+		if (jenis === 'wajib' && jenjangVariant?.toUpperCase() === 'SMK') {
+			return 'Mata Pelajaran Umum';
+		}
+		return jenisMapel[jenis as MataPelajaran['jenis']] ?? jenis;
+	}
+
+	// Derive displayable jenis mapel options
+	const displayJenisMapel = $derived.by(() => {
+		const result: Record<string, string> = {};
+		for (const [key, label] of Object.entries(jenisMapel)) {
+			// Sembunyikan opsi "kejuruan" jika bukan SMK
+			if (key === 'kejuruan' && jenjangVariant?.toUpperCase() !== 'SMK') {
+				continue;
+			}
+			result[key] = getJenisMapelLabel(key);
+		}
+		return result;
+	});
 
 	function onNamaInput(e: Event) {
 		const v = ((e.target as HTMLInputElement)?.value ?? '').trim();
@@ -153,7 +181,7 @@
 				disabled={disableJenis}
 			>
 				<option disabled selected>Pilih Jenis Mata Pelajaran</option>
-				{#each Object.entries(jenisMapel) as [value, label] (value)}
+				{#each Object.entries(displayJenisMapel) as [value, label] (value)}
 					<option {value}>{label}</option>
 				{/each}
 			</select>

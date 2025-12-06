@@ -29,12 +29,29 @@
 		// default to true for backwards compatibility
 		return u?.canManageMapel ?? true;
 	});
+
+	// Dapatkan jenjang varian dari sekolah (misalnya 'SMK')
+	const jenjangVariant = $derived.by(() => {
+		const sekolah = page.data.sekolah as { jenjangVariant?: string | null } | null | undefined;
+		return sekolah?.jenjangVariant ?? null;
+	});
+
+	// Fungsi khusus untuk jenjang SMK: ubah label "Wajib" menjadi "Umum"
+	function getWajibLabel(): string {
+		return jenjangVariant?.toUpperCase() === 'SMK' ? 'Umum' : 'Wajib';
+	}
+
+	// Fungsi untuk mengecek apakah section kejuruan harus ditampilkan (hanya untuk SMK)
+	function shouldShowKejuruan(): boolean {
+		return jenjangVariant?.toUpperCase() === 'SMK';
+	}
+
 	const totalMapel = $derived.by(
 		() =>
 			data.mapel.daftarWajib.length +
 			data.mapel.daftarPilihan.length +
 			data.mapel.daftarMulok.length +
-			data.mapel.daftarKejuruan.length
+			(shouldShowKejuruan() ? data.mapel.daftarKejuruan.length : 0)
 	);
 
 	function formatKkm(kkm: number | null | undefined) {
@@ -175,7 +192,7 @@
 		class="stats stats-horizontal border-base-200 bg-base-100 dark:bg-base-200 text-base-content mt-4 w-full border shadow-md dark:shadow-none"
 	>
 		<div class="stat place-items-start">
-			<div class="stat-title">Mapel Wajib</div>
+			<div class="stat-title">Mapel {getWajibLabel()}</div>
 			<div class="stat-value text-2xl">{data.mapel.daftarWajib.length}</div>
 		</div>
 		<div class="stat place-items-start">
@@ -186,10 +203,12 @@
 			<div class="stat-title">Muatan Lokal</div>
 			<div class="stat-value text-2xl">{data.mapel.daftarMulok.length}</div>
 		</div>
-		<div class="stat place-items-start">
-			<div class="stat-title">Kejuruan</div>
-			<div class="stat-value text-2xl">{data.mapel.daftarKejuruan.length}</div>
-		</div>
+		{#if shouldShowKejuruan()}
+			<div class="stat place-items-start">
+				<div class="stat-title">Kejuruan</div>
+				<div class="stat-value text-2xl">{data.mapel.daftarKejuruan.length}</div>
+			</div>
+		{/if}
 		<div class="stat place-items-start">
 			<div class="stat-title">Total Mapel</div>
 			<div class="stat-value text-2xl">{totalMapel}</div>
@@ -215,7 +234,7 @@
 		</div>
 	{/if}
 
-	{#each [{ key: 'wajib', title: 'Mata Pelajaran Wajib', items: data.mapel.daftarWajib }, { key: 'pilihan', title: 'Mata Pelajaran Pilihan', items: data.mapel.daftarPilihan }, { key: 'mulok', title: 'Muatan Lokal', items: data.mapel.daftarMulok }, { key: 'kejuruan', title: 'Kejuruan', items: data.mapel.daftarKejuruan }] as section (section.key)}
+	{#each [{ key: 'wajib', title: `Mata Pelajaran ${getWajibLabel()}`, items: data.mapel.daftarWajib }, { key: 'pilihan', title: 'Mata Pelajaran Pilihan', items: data.mapel.daftarPilihan }, { key: 'mulok', title: 'Muatan Lokal', items: data.mapel.daftarMulok }, ...(shouldShowKejuruan() ? [{ key: 'kejuruan', title: 'Mata Pelajaran Kejuruan', items: data.mapel.daftarKejuruan }] : [])] as section (section.key)}
 		<fieldset class="fieldset mt-8">
 			<legend class="fieldset-legend">{section.title}</legend>
 			<div

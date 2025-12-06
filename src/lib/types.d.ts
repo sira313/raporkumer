@@ -98,6 +98,7 @@ interface RaporPrintData {
 		nama: string;
 		alamat: string;
 		logoUrl?: string | null;
+		jenjangVariant?: string | null;
 	};
 	murid: {
 		nama: string;

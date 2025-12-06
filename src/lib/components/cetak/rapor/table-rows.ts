@@ -59,7 +59,8 @@ export function createIntrakRows(entries: IntrakurikulerEntry[]): IntrakRow[] {
 
 export function createTableRows(
 	intrakRows: IntrakRow[],
-	tailKeys: readonly TailBlockKey[]
+	tailKeys: readonly TailBlockKey[],
+	jenjangVariant?: string | null
 ): TableRow[] {
 	const result: TableRow[] = [];
 	let order = 0;
@@ -69,9 +70,12 @@ export function createTableRows(
 	} else {
 		const jenisOrder = ['wajib', 'pilihan', 'kejuruan', 'mulok'];
 		const jenisToLabel: Record<string, string> = {
-			wajib: 'Mata Pelajaran Wajib',
-			pilihan: 'Mata Pelajaran Pilihan',
-			kejuruan: 'Kejuruan',
+			wajib:
+				jenjangVariant?.toUpperCase() === 'SMK'
+					? 'Kelompok Mata Pelajaran Umum'
+					: 'Kelompok Mata Pelajaran Wajib',
+			pilihan: 'Kelompok Mata Pelajaran Pilihan',
+			kejuruan: 'Kelompok Mata Pelajaran Kejuruan',
 			mulok: 'Muatan Lokal'
 		};
 
@@ -93,10 +97,17 @@ export function createTableRows(
 			jenisToLetter[uniqueJenisInOrder[i]] = letters[i];
 		}
 
+		// Re-order intrakRows based on sorted jenis order
+		const sortedIntrakRows = [...intrakRows].sort((rowA, rowB) => {
+			const jenisA = rowA.entry.jenis || 'wajib';
+			const jenisB = rowB.entry.jenis || 'wajib';
+			return jenisOrder.indexOf(jenisA) - jenisOrder.indexOf(jenisB);
+		});
+
 		let lastJenis: string | null = null;
 		let groupItemCounter = 0;
 
-		for (const row of intrakRows) {
+		for (const row of sortedIntrakRows) {
 			const currentJenis = row.entry.jenis || 'wajib';
 
 			// Add group header if jenis changed

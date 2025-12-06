@@ -665,7 +665,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		sekolah: {
 			nama: sekolah.nama,
 			alamat: composeAlamat(sekolah),
-			logoUrl: buildLogoUrl(sekolah)
+			logoUrl: buildLogoUrl(sekolah),
+			jenjangVariant: sekolah.jenjangVariant ?? null
 		},
 		murid: {
 			nama: murid.nama,
