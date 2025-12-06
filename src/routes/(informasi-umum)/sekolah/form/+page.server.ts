@@ -50,21 +50,31 @@ export const actions = {
 
 		// TODO: input validation
 
+		// Prepare update data - exclude logo fields if not provided
+		const updateData: Partial<typeof formSekolah> = { ...formSekolah };
+
 		const logo = formData.get('logo') as File;
 		if (logo?.size) {
-			formSekolah.logo = new Uint8Array(await logo.arrayBuffer());
-			formSekolah.logoType = logo.type;
+			updateData.logo = new Uint8Array(await logo.arrayBuffer());
+			updateData.logoType = logo.type;
 		} else {
-			formSekolah.logo = null;
+			// Jika tidak ada file baru di-upload, jangan ubah nilai logo yang ada
+			delete updateData.logo;
+			delete updateData.logoType;
 		}
 
 		const logoDinas = formData.get('logoDinas') as File;
 		if (logoDinas?.size) {
-			formSekolah.logoDinas = new Uint8Array(await logoDinas.arrayBuffer());
-			formSekolah.logoDinasType = logoDinas.type;
+			updateData.logoDinas = new Uint8Array(await logoDinas.arrayBuffer());
+			updateData.logoDinasType = logoDinas.type;
 		} else {
-			formSekolah.logoDinas = null;
+			// Jika tidak ada file baru di-upload, jangan ubah nilai logoDinas yang ada
+			delete updateData.logoDinas;
+			delete updateData.logoDinasType;
 		}
+
+		// Use updateData for further processing
+		const formSekolahFinal = updateData as typeof formSekolah;
 
 		await db.transaction(async (db) => {
 			if (formSekolah.id) {
@@ -86,7 +96,7 @@ export const actions = {
 				await db
 					.update(tableSekolah)
 					.set({
-						...formSekolah,
+						...formSekolahFinal,
 						alamatId: sekolah.alamatId,
 						kepalaSekolahId: sekolah.kepalaSekolahId,
 						updatedAt: new Date().toISOString()
@@ -111,7 +121,7 @@ export const actions = {
 
 				const [newSekolah] = await db
 					.insert(tableSekolah)
-					.values(formSekolah)
+					.values(formSekolahFinal)
 					.returning({ id: tableSekolah.id });
 				formSekolah.id = newSekolah?.id;
 			}
