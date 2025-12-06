@@ -61,7 +61,6 @@ export async function load({ depends, url, parent }) {
 							assignedMapels.map((m) => m.mataPelajaranId)
 						)
 					});
-					console.log('[intrakurikuler] Linda assignedMapelRecords:', assignedMapelRecords);
 
 					// Build a set of allowed mapel names (normalize for comparison)
 					const allowedNames = new Set(
@@ -80,29 +79,17 @@ export async function load({ depends, url, parent }) {
 							break;
 						}
 					}
-					console.log('[intrakurikuler] hasAgamaVariant:', hasAgamaVariant);
 
 					// If has agama variant, also add the parent agama mapel name
 					if (hasAgamaVariant) {
 						allowedNames.add(AGAMA_PARENT_NAME.toLowerCase());
-						console.log('[intrakurikuler] Added parent agama to allowedNames');
 					}
-
-					console.log('[intrakurikuler] allowedNames:', Array.from(allowedNames));
-					console.log(
-						'[intrakurikuler] mapel before filter:',
-						mapel.map((m) => ({ id: m.id, nama: m.nama }))
-					);
 
 					// Filter current kelas' mapel by name match
 					mapel = mapel.filter((m) => {
 						const mNorm = (m.nama || '').trim().toLowerCase();
 						return allowedNames.has(mNorm);
 					});
-					console.log(
-						'[intrakurikuler] mapel after filter:',
-						mapel.map((m) => ({ id: m.id, nama: m.nama }))
-					);
 				} else {
 					// Fallback: check legacy single mataPelajaranId
 					const assignedId = (user as unknown as { mataPelajaranId?: number }).mataPelajaranId;
@@ -331,13 +318,6 @@ export const actions = {
 			});
 		}
 
-		// Debug: print detected headers to server log to troubleshoot kode not being read
-		try {
-			console.debug('[import_mapel] detected headers:', normalizedHeaderCols);
-		} catch {
-			/* ignore logging errors */
-		}
-
 		const dataRows = rawRows.slice(headerIndex + 1).filter(Boolean);
 		if (!dataRows.length) return fail(400, { fail: 'Tidak ada data pada file.' });
 
@@ -441,12 +421,6 @@ export const actions = {
 							meta.kode ??
 							((mapelName || '').toLowerCase().startsWith('pendidikan agama') ? 'PAPB' : null)
 					};
-					// debug: show what will be inserted (help verify kode presence)
-					try {
-						console.debug('[import_mapel] insertValues for', mapelName, insertValues);
-					} catch (err) {
-						console.warn('[import_mapel] debug log failed', err);
-					}
 					const insertRes = await tx
 						.insert(tableMataPelajaran)
 						.values(insertValues)
@@ -463,12 +437,6 @@ export const actions = {
 					if (typeof meta.kkm === 'number') updates.kkm = meta.kkm;
 					if (meta.kode && meta.kode !== undefined) updates.kode = meta.kode;
 					if (Object.keys(updates).length > 0) {
-						// debug: show updates for existing mapel id
-						try {
-							console.debug('[import_mapel] updating mapel id', mapelId, 'updates:', updates);
-						} catch (err) {
-							console.warn('[import_mapel] debug log failed', err);
-						}
 						await tx
 							.update(tableMataPelajaran)
 							.set(updates)

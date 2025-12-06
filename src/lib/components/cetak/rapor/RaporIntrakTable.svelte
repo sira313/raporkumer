@@ -168,14 +168,14 @@
 </script>
 
 <section class={resolvedSectionClass} bind:this={sectionRef} use:applySplit>
-	<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
+	<table class="w-full border-collapse" data-intrak-table="true">
 		{#if shouldRenderHeader}
-			<thead class="bg-base-300 opacity-80">
+			<thead>
 				<tr>
-					<th class="border-base-300 border px-3 py-2 text-left">No.</th>
-					<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
-					<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
-					<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
+					<th class="border px-3 py-2 text-left">No.</th>
+					<th class="border px-3 py-2 text-left">Muatan Pelajaran</th>
+					<th class="border px-3 py-2 text-center">Nilai Akhir</th>
+					<th class="border px-3 py-2 text-left">Capaian Kompetensi</th>
 				</tr>
 			</thead>
 		{/if}
@@ -188,15 +188,15 @@
 							use:applyRow={row.order}
 							class={rows[ridx + 1]?.index !== row.index ? 'intrak-groupend' : ''}
 						>
-							<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
-							<td class="border-base-300 border px-3 py-2 align-top">
+							<td class="border px-3 py-2 align-top">{row.nomor}</td>
+							<td class="border px-3 py-2 align-top">
 								<span class="font-semibold">{row.entry.mataPelajaran}</span>
 							</td>
-							<td class="border-base-300 border px-3 py-2 text-center align-top font-semibold">
+							<td class="border px-3 py-2 text-center align-top font-semibold">
 								{formatValue(row.entry.nilaiAkhir)}
 							</td>
 							<td
-								class={'border-base-300 border px-3 align-top ' +
+								class={'border px-3 align-top ' +
 									(rapor?.tpMode === 'compact'
 										? 'py-2'
 										: rapor?.tpMode === 'full-desc'
@@ -239,15 +239,15 @@
 								class={'intrak-multistart' +
 									(rows[ridx + 1]?.index !== row.index ? ' intrak-groupend' : '')}
 							>
-								<td class="border-base-300 border px-3 py-2 align-top">{row.nomor}</td>
-								<td class="border-base-300 border px-3 py-2 align-top">
+								<td class="border px-3 py-2 align-top">{row.nomor}</td>
+								<td class="border px-3 py-2 align-top">
 									<span class="font-semibold">{row.entry.mataPelajaran}</span>
 								</td>
-								<td class="border-base-300 border px-3 py-2 text-center align-top font-semibold">
+								<td class="border px-3 py-2 text-center align-top font-semibold">
 									{formatValue(row.entry.nilaiAkhir)}
 								</td>
 								<td
-									class={'border-base-300 border px-3 align-top ' +
+									class={'border px-3 align-top ' +
 										(rapor?.tpMode === 'compact'
 											? 'py-2'
 											: rapor?.tpMode === 'full-desc'
@@ -291,13 +291,11 @@
 										? ' intrak-multilast intrak-groupend'
 										: '')}
 							>
-								<td class="border-base-300 border px-3 align-top">&nbsp;</td>
-								<td class="border-base-300 border px-3 align-top">&nbsp;</td>
-								<td class="border-base-300 border px-3 text-center align-top font-semibold"
-									>&nbsp;</td
-								>
+								<td class="border px-3 align-top">&nbsp;</td>
+								<td class="border px-3 align-top">&nbsp;</td>
+								<td class="border px-3 text-center align-top font-semibold">&nbsp;</td>
 								<td
-									class={'border-base-300 border px-3 align-top ' +
+									class={'border px-3 align-top ' +
 										(rapor?.tpMode === 'compact'
 											? 'py-2'
 											: rapor?.tpMode === 'full-desc'
@@ -336,7 +334,7 @@
 					{/if}
 				{:else if row.kind === 'empty'}
 					<tr use:applyRow={row.order}>
-						<td class="border-base-300 border px-3 py-2 text-center" colspan="4">
+						<td class="border px-3 py-2 text-center" colspan="4">
 							Belum ada data intrakurikuler.
 						</td>
 					</tr>
@@ -387,10 +385,16 @@
 		border-bottom-style: none !important;
 	}
 
-	/* Draw horizontal border at the end of a subject group */
+	/* Draw horizontal border at the end of a subject group using default border color */
 	:global(table[data-intrak-table] tr.intrak-groupend td) {
 		border-bottom-width: 1px !important;
 		border-bottom-style: solid !important;
-		border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+		border-bottom-color: currentColor !important;
+	}
+
+	@media print {
+		:global(table[data-intrak-table] tr.intrak-groupend td) {
+			border-bottom-color: #000 !important;
+		}
 	}
 </style>

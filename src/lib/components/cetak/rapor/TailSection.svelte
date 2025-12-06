@@ -209,15 +209,15 @@
 {#if tailKey === 'kokurikuler'}
 	{#if hasKokurikuler}
 		<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
-			<table class="border-base-300 w-full border">
-				<thead class="bg-base-300 opacity-80">
+			<table class="w-full border">
+				<thead>
 					<tr>
-						<th class="border-base-300 border px-3 py-2 text-left">Kokurikuler</th>
+						<th class="border px-3 py-2 text-left">Kokurikuler</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr>
-						<td class="border-base-300 border px-3 py-3">
+						<td class="border px-3 py-3">
 							<div class="flex flex-col gap-2 whitespace-pre-line">
 								{#each kokurikulerSentences as sentence, idx (idx)}
 									<span>{sentence}</span>
@@ -231,32 +231,29 @@
 	{/if}
 {:else if tailKey === 'ekstrakurikuler'}
 	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
-		<table class="border-base-300 w-full border">
-			<thead class="bg-base-300 opacity-80">
+		<table class="w-full border">
+			<thead>
 				<tr>
-					<th class="border-base-300 border px-3 py-2 text-left" style="width: 40px;">No.</th>
-					<th class="border-base-300 border px-3 py-2 text-left">Ekstrakurikuler</th>
-					<th class="border-base-300 border px-3 py-2 text-left">Keterangan</th>
+					<th class="border px-3 py-2 text-left" style="width: 40px;">No.</th>
+					<th class="border px-3 py-2 text-left">Ekstrakurikuler</th>
+					<th class="border px-3 py-2 text-left">Keterangan</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#if (rapor?.ekstrakurikuler?.length ?? 0) === 0}
 					<tr>
-						<td class="border-base-300 border px-3 py-2 text-center" colspan="3">
+						<td class="border px-3 py-2 text-center" colspan="3">
 							Belum ada data ekstrakurikuler.
 						</td>
 					</tr>
 				{:else}
 					{#each rapor?.ekstrakurikuler ?? [] as ekskul, index (index)}
 						<tr>
-							<td class="border-base-300 border px-3 py-2 align-top">{index + 1}</td>
-							<td class="border-base-300 border px-3 py-2 align-top">
+							<td class="border px-3 py-2 align-top">{index + 1}</td>
+							<td class="border px-3 py-2 align-top">
 								{formatValue(ekskul.nama)}
 							</td>
-							<td
-								class={'border-base-300 border px-3 py-2 align-top ' +
-									paragraphPaddingClass(ekskul.deskripsi)}
-							>
+							<td class={'border px-3 py-2 align-top ' + paragraphPaddingClass(ekskul.deskripsi)}>
 								<div class="flex flex-col gap-2">
 									{#each descriptionBlocks(formatValue(ekskul.deskripsi)) as block, bidx (bidx)}
 										{#if block.kind === 'text'}
@@ -281,42 +278,42 @@
 	</section>
 {:else if tailKey === 'ketidakhadiran'}
 	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
-		<table class="border-base-300 w-full border">
-			<thead class="bg-base-300 opacity-80">
+		<table class="w-full border">
+			<thead>
 				<tr>
-					<th class="border-base-300 border px-3 py-2 text-left" colspan="2">Ketidakhadiran</th>
+					<th class="border px-3 py-2 text-left" colspan="2">Ketidakhadiran</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td class="border-base-300 border px-3 py-2">Sakit</td>
-					<td class="border-base-300 border px-3 py-2 text-center">
+					<td class="border px-3 py-2">Sakit</td>
+					<td class="border px-3 py-2 text-center">
 						{formatHari(rapor?.ketidakhadiran?.sakit)}
 					</td>
 				</tr>
 				<tr>
-					<td class="border-base-300 border px-3 py-2">Izin</td>
-					<td class="border-base-300 border px-3 py-2 text-center">
+					<td class="border px-3 py-2">Izin</td>
+					<td class="border px-3 py-2 text-center">
 						{formatHari(rapor?.ketidakhadiran?.izin)}
 					</td>
 				</tr>
 				<tr>
-					<td class="border-base-300 border px-3 py-2">Tanpa Keterangan</td>
-					<td class="border-base-300 border px-3 py-2 text-center">
+					<td class="border px-3 py-2">Tanpa Keterangan</td>
+					<td class="border px-3 py-2 text-center">
 						{formatHari(rapor?.ketidakhadiran?.tanpaKeterangan)}
 					</td>
 				</tr>
 			</tbody>
 		</table>
-		<table class="border-base-300 w-full border">
-			<thead class="bg-base-300 opacity-80">
+		<table class="w-full border">
+			<thead>
 				<tr>
-					<th class="border-base-300 border px-3 py-2 text-left">Catatan Wali Kelas</th>
+					<th class="border px-3 py-2 text-left">Catatan Wali Kelas</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td class="border-base-300 min-h-20 border px-3 py-3 align-top whitespace-pre-line">
+					<td class="min-h-20 border px-3 py-3 align-top whitespace-pre-line">
 						{formatValue(rapor?.catatanWali)}
 					</td>
 				</tr>
@@ -325,17 +322,15 @@
 	</section>
 {:else if tailKey === 'tanggapan'}
 	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
-		<table class="border-base-300 w-full border">
-			<thead class="bg-base-300 opacity-80">
+		<table class="w-full border">
+			<thead>
 				<tr>
-					<th class="border-base-300 border px-3 py-2 text-left">
-						Tanggapan Orang Tua/Wali Murid
-					</th>
+					<th class="border px-3 py-2 text-left"> Tanggapan Orang Tua/Wali Murid </th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td class="border-base-300 border px-3 py-4 align-top">
+					<td class="border px-3 py-4 align-top">
 						<div class="min-h-[70px] whitespace-pre-line">
 							{rapor?.tanggapanOrangTua?.trim() || ''}
 						</div>
@@ -344,23 +339,23 @@
 			</tbody>
 		</table>
 		{#if decisionLabels}
-			<table class="border-base-300 w-full border">
-				<thead class="bg-base-300 opacity-80">
+			<table class="w-full border">
+				<thead>
 					<tr>
-						<th class="border-base-300 border px-3 py-2 text-left">Keputusan</th>
+						<th class="border px-3 py-2 text-left">Keputusan</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr>
-						<td class="border-base-300 border px-3 py-4">
+						<td class="border px-3 py-4">
 							<div class="flex flex-col gap-3">
 								<div class="flex items-center justify-between gap-4">
 									<span>{decisionLabels.positive}</span>
-									<span class="border-base-300 h-5 w-5 border" aria-hidden="true"></span>
+									<span class="h-5 w-5 border" aria-hidden="true"></span>
 								</div>
 								<div class="flex items-center justify-between gap-4">
 									<span>{decisionLabels.negative}</span>
-									<span class="border-base-300 h-5 w-5 border" aria-hidden="true"></span>
+									<span class="h-5 w-5 border" aria-hidden="true"></span>
 								</div>
 							</div>
 						</td>
@@ -376,7 +371,7 @@
 				<div class="flex flex-col items-center text-center">
 					<p>Orang Tua/Wali Murid</p>
 					<div
-						class="border-base-300 mt-20 h-px w-full max-w-[220px] border-b border-dashed"
+						class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
 						aria-hidden="true"
 					></div>
 				</div>

@@ -299,13 +299,13 @@
 						bind:this={continuationPrototypeContent}
 					>
 						<section bind:this={continuationPrototypeTableSection} use:triggerSplitOnMount>
-							<table class="border-base-300 w-full border-collapse" data-intrak-table="true">
-								<thead class="bg-base-300 opacity-80">
+							<table class="w-full border-collapse" data-intrak-table="true">
+								<thead>
 									<tr>
-										<th class="border-base-300 border px-3 py-2 text-left">No.</th>
-										<th class="border-base-300 border px-3 py-2 text-left">Muatan Pelajaran</th>
-										<th class="border-base-300 border px-3 py-2 text-center">Nilai Akhir</th>
-										<th class="border-base-300 border px-3 py-2 text-left">Capaian Kompetensi</th>
+										<th class="border px-3 py-2 text-left">No.</th>
+										<th class="border px-3 py-2 text-left">Muatan Pelajaran</th>
+										<th class="border px-3 py-2 text-center">Nilai Akhir</th>
+										<th class="border px-3 py-2 text-left">Capaian Kompetensi</th>
 									</tr>
 								</thead>
 							</table>
