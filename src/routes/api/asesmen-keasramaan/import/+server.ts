@@ -52,6 +52,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			return json({ success: false, message: 'File Excel tidak valid' }, { status: 400 });
 		}
 
+		// Validate file name matches selected keasramaan (Row 1)
+		const fileKeasramaanName = worksheet.getCell(1, 1).value?.toString().trim();
+		if (fileKeasramaanName && fileKeasramaanName !== keasramaan.nama) {
+			return json(
+				{
+					success: false,
+					message: `File tidak sesuai! File berisi "${fileKeasramaanName}" tetapi Anda memilih "${keasramaan.nama}". Pastikan file yang diupload sudah benar.`
+				},
+				{ status: 400 }
+			);
+		}
+
 		// Parse headers - Row 4 contains TP numbers (TP 1, TP 2, TP 3, etc.)
 		const headerRow = worksheet.getRow(4);
 		const headers: string[] = [];
@@ -67,6 +79,24 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		// Build mapping dari header ke tujuanId
 		// Headers are TP 1, TP 2, etc. starting from column 3 (C)
 		// We need to match these with tujuan by order
+		const expectedTpCount = Array.from(keasramaan.indikator).reduce(
+			(sum, ind) => sum + ind.tujuan.length,
+			0
+		);
+
+		// Check if number of data columns matches expected TP count
+		// Headers start at column 3, so we count from C onwards
+		const dataColumnsCount = headers.length - 2; // Skip No and Nama columns (A, B)
+		if (dataColumnsCount !== expectedTpCount) {
+			return json(
+				{
+					success: false,
+					message: `Struktur file tidak sesuai! File memiliki ${dataColumnsCount} kolom TP tetapi "${keasramaan.nama}" memiliki ${expectedTpCount} TP. Pastikan download template terbaru.`
+				},
+				{ status: 400 }
+			);
+		}
+
 		const headerToTujuanMap = new Map<number, number>();
 		let tpCount = 0;
 		for (const indikator of keasramaan.indikator) {
