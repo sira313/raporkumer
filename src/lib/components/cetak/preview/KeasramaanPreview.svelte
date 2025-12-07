@@ -384,11 +384,11 @@
 										<td class="border border-black px-2 py-1 print:border-black"
 											>{formatValue(row.indikator)}</td
 										>
-											<td class="border border-black px-2 py-1 text-center print:border-black"
-												>{row.predikat ? predikatToHuruf(row.predikat) : '—'}</td
-											>
-											<td class="border border-black px-2 py-1 print:border-black"
-												>{formatValue(row.deskripsi)}</td
+										<td class="border border-black px-2 py-1 text-center print:border-black"
+											>{row.predikat ? predikatToHuruf(row.predikat) : '—'}</td
+										>
+										<td class="border border-black px-2 py-1 print:border-black"
+											>{formatValue(row.deskripsi)}</td
 										>
 									</tr>
 								{/if}

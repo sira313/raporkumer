@@ -252,19 +252,19 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 		const indikatorList = keasramaan.indikator
 			.map((ind) => {
 				const asesmen = asesmenForKeasramaan[ind.id];
-				
+
 				// Calculate indicator predikat from average of TP values
 				let predikat: PredikatKey = 'cukup';
 				let deskripsi = '';
-				
+
 				if (asesmen && asesmen.nilaiTP.length > 0) {
 					// Calculate average nilai indikator from TP values
 					const nilaiIndikator = hitungNilaiIndikator(asesmen.nilaiTP as (number | null)[]);
-					
+
 					if (nilaiIndikator !== null) {
 						// Convert average to huruf (A, B, C, D)
 						const huruf = nilaiAngkaToHuruf(nilaiIndikator);
-						
+
 						// Map huruf back to predikat key
 						const hurfToPredikat: Record<string, PredikatKey> = {
 							A: 'sangat-baik',
@@ -274,11 +274,11 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 						};
 						predikat = hurfToPredikat[huruf || 'C'] || 'cukup';
 					}
-					
+
 					// Use first TP description as the row description
 					deskripsi = asesmen.tpDescriptions[0] || '';
 				}
-				
+
 				return {
 					indikator: ind,
 					predikat,
