@@ -82,6 +82,85 @@ function fallbackTempat(sekolah: NonNullable<App.Locals['sekolah']>): string {
 	return alamat.kabupaten || alamat.kecamatan || alamat.desa || '';
 }
 
+function joinList(items: string[]): string {
+	if (!items.length) return '';
+	if (items.length === 1) return items[0];
+	if (items.length === 2) return `${items[0]} dan ${items[1]}`;
+	return items.slice(0, -1).join(', ') + ', dan ' + items.at(-1);
+}
+
+/**
+ * Build descriptive text for an indicator based on all its TP (tujuan pembelajaran)
+ * Separates "tercapai" (sangat-baik, baik, cukup) into one paragraph
+ * and "belum tercapai" (perlu-bimbingan) into a separate line
+ *
+ * Example output:
+ * Ananda Arkle Yoel menunjukkan penguasaan yang sangat baik dalam mengembangkan sikap inklusif dan terbuka dalam berinteraksi dengan sesama penghuni asrama, menunjukkan penguasaan yang baik dalam menerapkan komunikasi yang efektif, santun, dan suportif dengan anggota kelompok atau teman se-asrama.
+ *
+ * Masih perlu bimbingan dalam hal lain.
+ */
+function lowercaseFirstChar(text: string): string {
+	if (!text) return text;
+	return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+function buildIndicatorDeskripsi(
+	muridNama: string,
+	tpsByPredikat: Record<PredikatKey, string[]>
+): string {
+	const achievedOrder: PredikatKey[] = ['sangat-baik', 'baik', 'cukup'];
+	const achievedSentences: string[] = [];
+
+	// Build "tercapai" paragraph
+	for (const key of achievedOrder) {
+		const tpList = tpsByPredikat[key] || [];
+		if (!tpList.length) continue;
+
+		// Clean descriptions (remove trailing punctuation) and lowercase first char
+		const cleanDescs = tpList.map((d) => 
+			lowercaseFirstChar(d.replace(/[.!?]+$/gu, '').trim())
+		);
+		const joined = joinList(cleanDescs);
+
+		let phrase = '';
+		if (key === 'sangat-baik') {
+			phrase = `menunjukkan penguasaan yang sangat baik dalam ${joined}`;
+		} else if (key === 'baik') {
+			phrase = `menunjukkan penguasaan yang baik dalam ${joined}`;
+		} else if (key === 'cukup') {
+			phrase = `cukup mampu ${joined}`;
+		}
+
+		if (achievedSentences.length === 0) {
+			// First sentence: add student name
+			achievedSentences.push(`Ananda ${muridNama} ${phrase}`);
+		} else {
+			// Subsequent phrases: join with comma and lowercase
+			achievedSentences.push(`, ${phrase}`);
+		}
+	}
+
+	const achievedParagraph = achievedSentences.length > 0 ? achievedSentences.join('') + '.' : '';
+
+	// Build "belum tercapai" paragraph
+	const needList = tpsByPredikat['perlu-bimbingan'] || [];
+	let notAchievedParagraph = '';
+	if (needList.length) {
+		const cleanDescs = needList.map((d) => 
+			lowercaseFirstChar(d.replace(/[.!?]+$/gu, '').trim())
+		);
+		const joined = joinList(cleanDescs);
+		notAchievedParagraph = `Ananda ${muridNama} masih perlu bimbingan dalam ${joined}.`;
+	}
+
+	// Return both paragraphs separated by newline, or just the achieved one if no belum tercapai
+	if (achievedParagraph && notAchievedParagraph) {
+		return `${achievedParagraph}\n\n${notAchievedParagraph}`;
+	}
+	if (achievedParagraph) return achievedParagraph;
+	if (notAchievedParagraph) return notAchievedParagraph;
+	return '';
+}
 function buildLogoUrl(sekolah: NonNullable<App.Locals['sekolah']>): string | null {
 	if (!sekolah.id) return null;
 	const updatedAt = sekolah.updatedAt ? Date.parse(sekolah.updatedAt) : NaN;
@@ -275,8 +354,34 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 						predikat = hurfToPredikat[huruf || 'C'] || 'cukup';
 					}
 
-					// Use first TP description as the row description
-					deskripsi = asesmen.tpDescriptions[0] || '';
+					// Build comprehensive deskripsi by grouping all TP by their predikat
+					// First, calculate predikat for each TP
+					const tpsByPredikat: Record<PredikatKey, string[]> = {
+						'sangat-baik': [],
+						baik: [],
+						cukup: [],
+						'perlu-bimbingan': []
+					};
+
+					for (let i = 0; i < asesmen.nilaiTP.length; i++) {
+						const tpNilai = asesmen.nilaiTP[i];
+						const tpDesc = asesmen.tpDescriptions[i];
+						if (tpNilai === null || !tpDesc) continue;
+
+						// Convert TP nilai to predikat
+						const tpHuruf = nilaiAngkaToHuruf(tpNilai as number);
+						const tpHurfToPredikat: Record<string, PredikatKey> = {
+							A: 'sangat-baik',
+							B: 'baik',
+							C: 'cukup',
+							D: 'perlu-bimbingan'
+						};
+						const tpPredikat = tpHurfToPredikat[tpHuruf || 'C'] || 'cukup';
+						tpsByPredikat[tpPredikat].push(tpDesc);
+					}
+
+					// Build descriptive text using helper function
+					deskripsi = buildIndicatorDeskripsi(murid.nama, tpsByPredikat);
 				}
 
 				return {

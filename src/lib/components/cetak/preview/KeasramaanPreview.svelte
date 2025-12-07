@@ -205,8 +205,8 @@
 
 	function formatValue(value: string | null | undefined) {
 		if (!value) return '—';
-		const trimmed = value.trim();
-		return trimmed.length ? trimmed : '—';
+		// Don't trim to preserve newlines in deskripsi
+		return value.length ? value : '—';
 	}
 
 	function formatUpper(value: string | null | undefined) {
@@ -220,7 +220,7 @@
 </script>
 
 <div
-	class="bg-base-300 dark:bg-base-200 card preview w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
+	class="bg-base-300 dark:bg-base-200 card preview w-full rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
 >
 	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
 		<PrintCardPage
@@ -278,7 +278,7 @@
 									<td class="border border-black px-2 py-1 text-center print:border-black"
 										>{row.predikat ? predikatToHuruf(row.predikat) : '—'}</td
 									>
-									<td class="border border-black px-2 py-1 print:border-black"
+									<td class="border border-black px-2 py-1 whitespace-pre-wrap print:border-black"
 										>{formatValue(row.deskripsi)}</td
 									>
 								</tr>
@@ -288,7 +288,7 @@
 				</table>
 			</section>
 
-			<!-- Kehadiran Section -->
+			<!-- Kehadiran Section on Last Page -->
 			{#if kehadiran}
 				<section class="mt-6">
 					<h3 class="mb-2 font-semibold">Ketidakhadiran</h3>
@@ -387,7 +387,7 @@
 										<td class="border border-black px-2 py-1 text-center print:border-black"
 											>{row.predikat ? predikatToHuruf(row.predikat) : '—'}</td
 										>
-										<td class="border border-black px-2 py-1 print:border-black"
+										<td class="border border-black px-2 py-1 whitespace-pre-wrap print:border-black"
 											>{formatValue(row.deskripsi)}</td
 										>
 									</tr>
@@ -433,7 +433,7 @@
 										<td class="border border-black px-2 py-1 text-center print:border-black"
 											>{row.predikat ? predikatToHuruf(row.predikat) : '—'}</td
 										>
-										<td class="border border-black px-2 py-1 print:border-black"
+										<td class="border border-black px-2 py-1 whitespace-pre-wrap print:border-black"
 											>{formatValue(row.deskripsi)}</td
 										>
 									</tr>
