@@ -8,6 +8,11 @@ import {
 	tableKeasramaanTujuan,
 	tableMurid
 } from '$lib/server/db/schema';
+import {
+	kategoriToRubrikValue,
+	hitungNilaiIndikator,
+	nilaiAngkaToHuruf
+} from '$lib/components/asesmen-keasramaan/utils';
 
 const LOCALE_ID = 'id-ID';
 
@@ -197,8 +202,12 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 		}
 	});
 
-	// Build a map of (keasramaanId -> indikatorId -> predikat & tujuan)
-	type AsesmenByIndicator = Record<number, { predikat: PredikatKey; tujuanDeskripsi: string }>;
+	// Build a map of assessments grouped by (keasramaanId -> indikatorId -> array of TP values and descriptions)
+	type IndicatorAssessment = {
+		nilaiTP: (number | null)[]; // Array of rubrik values (1-4) from each TP
+		tpDescriptions: string[]; // Array of TP descriptions
+	};
+	type AsesmenByIndicator = Record<number, IndicatorAssessment>;
 	type AsesmenByKeasramaan = Record<number, AsesmenByIndicator>;
 	const asesmenMap: AsesmenByKeasramaan = {};
 
@@ -207,75 +216,23 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 		const keasramaanId = item.keasramaan.id;
 		const indikatorId = item.tujuan.indikatorId;
 		const kategori = item.kategori as PredikatKey;
+		const rubrikValue = kategoriToRubrikValue(kategori);
 
 		if (!asesmenMap[keasramaanId]) {
 			asesmenMap[keasramaanId] = {};
 		}
-
-		// Store highest/latest assessment
-		asesmenMap[keasramaanId][indikatorId] = {
-			predikat: kategori,
-			tujuanDeskripsi: item.tujuan.deskripsi
-		};
-	}
-
-	// Build rows: group by keasramaan, then list indikators with their assessments
-	const keasramaanRows: KeasramaanRow[] = [];
-	let rowNumber = 1;
-
-	for (const keasramaan of keasramaanList) {
-		// Add category header row
-		keasramaanRows.push({
-			no: 0,
-			indikator: keasramaan.nama,
-			predikat: 'cukup', // placeholder
-			deskripsi: '',
-			kategoriHeader: keasramaan.nama
-		});
-
-		const asesmenForKeasramaan = asesmenMap[keasramaan.id] ?? {};
-
-		// Add indikator rows
-		for (const indikator of keasramaan.indikator) {
-			const asesmen = asesmenForKeasramaan[indikator.id];
-
-			if (asesmen) {
-				keasramaanRows.push({
-					no: rowNumber++,
-					indikator: indikator.deskripsi,
-					predikat: asesmen.predikat,
-					deskripsi: asesmen.tujuanDeskripsi
-				});
-			} else {
-				// No assessment yet - show empty row
-				keasramaanRows.push({
-					no: rowNumber++,
-					indikator: indikator.deskripsi,
-					predikat: 'cukup', // default
-					deskripsi: ''
-				});
-			}
+		if (!asesmenMap[keasramaanId][indikatorId]) {
+			asesmenMap[keasramaanId][indikatorId] = {
+				nilaiTP: [],
+				tpDescriptions: []
+			};
 		}
+
+		asesmenMap[keasramaanId][indikatorId].nilaiTP.push(rubrikValue);
+		asesmenMap[keasramaanId][indikatorId].tpDescriptions.push(item.tujuan.deskripsi);
 	}
 
-	// Group rows by description for display (highest scores first, then lowest)
-	const groupedByDeskripsi = new Map<string, Array<{ indikator: string; predikat: PredikatKey }>>();
-
-	for (const row of keasramaanRows) {
-		if (row.kategoriHeader) continue; // Skip header rows
-		if (!row.deskripsi) continue;
-
-		const key = row.deskripsi;
-		if (!groupedByDeskripsi.has(key)) {
-			groupedByDeskripsi.set(key, []);
-		}
-		groupedByDeskripsi.get(key)!.push({
-			indikator: row.indikator,
-			predikat: row.predikat
-		});
-	}
-
-	// Rebuild rows with grouping logic: order by predikat (highest to lowest)
+	// Build final rows: group by keasramaan, then list indikators with calculated predikat
 	const finalRows: KeasramaanRow[] = [];
 	let finalRowNumber = 1;
 
@@ -291,14 +248,41 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 
 		const asesmenForKeasramaan = asesmenMap[keasramaan.id] ?? {};
 
-		// Collect indikators for this keasramaan, sorted by predikat (highest first)
+		// Collect indikators for this keasramaan with calculated predikat
 		const indikatorList = keasramaan.indikator
 			.map((ind) => {
 				const asesmen = asesmenForKeasramaan[ind.id];
+				
+				// Calculate indicator predikat from average of TP values
+				let predikat: PredikatKey = 'cukup';
+				let deskripsi = '';
+				
+				if (asesmen && asesmen.nilaiTP.length > 0) {
+					// Calculate average nilai indikator from TP values
+					const nilaiIndikator = hitungNilaiIndikator(asesmen.nilaiTP as (number | null)[]);
+					
+					if (nilaiIndikator !== null) {
+						// Convert average to huruf (A, B, C, D)
+						const huruf = nilaiAngkaToHuruf(nilaiIndikator);
+						
+						// Map huruf back to predikat key
+						const hurfToPredikat: Record<string, PredikatKey> = {
+							A: 'sangat-baik',
+							B: 'baik',
+							C: 'cukup',
+							D: 'perlu-bimbingan'
+						};
+						predikat = hurfToPredikat[huruf || 'C'] || 'cukup';
+					}
+					
+					// Use first TP description as the row description
+					deskripsi = asesmen.tpDescriptions[0] || '';
+				}
+				
 				return {
 					indikator: ind,
-					predikat: asesmen?.predikat ?? ('cukup' as PredikatKey),
-					deskripsi: asesmen?.tujuanDeskripsi ?? ''
+					predikat,
+					deskripsi
 				};
 			})
 			.sort((a, b) => {

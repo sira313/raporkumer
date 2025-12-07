@@ -42,6 +42,17 @@
 	const kehadiran = $derived.by(() => keasramaan?.kehadiran ?? null);
 	const keasramaanRows = $derived.by(() => keasramaan?.keasramaanRows ?? []);
 
+	// Helper untuk convert predikat ke huruf (A, B, C, D)
+	function predikatToHuruf(predikat: KeasramaanRow['predikat']): string {
+		const mapping: Record<KeasramaanRow['predikat'], string> = {
+			'sangat-baik': 'A',
+			baik: 'B',
+			cukup: 'C',
+			'perlu-bimbingan': 'D'
+		};
+		return mapping[predikat] || '—';
+	}
+
 	const logoUrl = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri.png');
 	const backgroundStyle = $derived.by(() => {
 		if (!showBgLogo) return '';
@@ -265,7 +276,7 @@
 										>{formatValue(row.indikator)}</td
 									>
 									<td class="border border-black px-2 py-1 text-center print:border-black"
-										>{row.predikat ? row.predikat.charAt(0).toUpperCase() : '—'}</td
+										>{row.predikat ? predikatToHuruf(row.predikat) : '—'}</td
 									>
 									<td class="border border-black px-2 py-1 print:border-black"
 										>{formatValue(row.deskripsi)}</td
@@ -373,11 +384,11 @@
 										<td class="border border-black px-2 py-1 print:border-black"
 											>{formatValue(row.indikator)}</td
 										>
-										<td class="border border-black px-2 py-1 text-center print:border-black"
-											>{row.predikat ? row.predikat.charAt(0).toUpperCase() : '—'}</td
-										>
-										<td class="border border-black px-2 py-1 print:border-black"
-											>{formatValue(row.deskripsi)}</td
+											<td class="border border-black px-2 py-1 text-center print:border-black"
+												>{row.predikat ? predikatToHuruf(row.predikat) : '—'}</td
+											>
+											<td class="border border-black px-2 py-1 print:border-black"
+												>{formatValue(row.deskripsi)}</td
 										>
 									</tr>
 								{/if}
@@ -420,7 +431,7 @@
 											>{formatValue(row.indikator)}</td
 										>
 										<td class="border border-black px-2 py-1 text-center print:border-black"
-											>{row.predikat ? row.predikat.charAt(0).toUpperCase() : '—'}</td
+											>{row.predikat ? predikatToHuruf(row.predikat) : '—'}</td
 										>
 										<td class="border border-black px-2 py-1 print:border-black"
 											>{formatValue(row.deskripsi)}</td
