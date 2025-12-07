@@ -117,9 +117,7 @@ function buildIndicatorDeskripsi(
 		if (!tpList.length) continue;
 
 		// Clean descriptions (remove trailing punctuation) and lowercase first char
-		const cleanDescs = tpList.map((d) => 
-			lowercaseFirstChar(d.replace(/[.!?]+$/gu, '').trim())
-		);
+		const cleanDescs = tpList.map((d) => lowercaseFirstChar(d.replace(/[.!?]+$/gu, '').trim()));
 		const joined = joinList(cleanDescs);
 
 		let phrase = '';
@@ -146,9 +144,7 @@ function buildIndicatorDeskripsi(
 	const needList = tpsByPredikat['perlu-bimbingan'] || [];
 	let notAchievedParagraph = '';
 	if (needList.length) {
-		const cleanDescs = needList.map((d) => 
-			lowercaseFirstChar(d.replace(/[.!?]+$/gu, '').trim())
-		);
+		const cleanDescs = needList.map((d) => lowercaseFirstChar(d.replace(/[.!?]+$/gu, '').trim()));
 		const joined = joinList(cleanDescs);
 		notAchievedParagraph = `Ananda ${muridNama} masih perlu bimbingan dalam ${joined}.`;
 	}
@@ -313,19 +309,26 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 
 	// Build final rows: group by keasramaan, then list indikators with calculated predikat
 	const finalRows: KeasramaanRow[] = [];
-	let finalRowNumber = 1;
 
-	for (const keasramaan of keasramaanList) {
+	for (let keasramaanIndex = 0; keasramaanIndex < keasramaanList.length; keasramaanIndex++) {
+		const keasramaan = keasramaanList[keasramaanIndex];
+		// Generate category letter (A, B, C, ...)
+		const categoryLetter = String.fromCharCode(65 + keasramaanIndex);
+		const categoryHeaderText = `${categoryLetter}. ${keasramaan.nama}`;
+
 		// Add category header
 		finalRows.push({
 			no: 0,
 			indikator: keasramaan.nama,
 			predikat: 'cukup',
 			deskripsi: '',
-			kategoriHeader: keasramaan.nama
+			kategoriHeader: categoryHeaderText
 		});
 
 		const asesmenForKeasramaan = asesmenMap[keasramaan.id] ?? {};
+
+		// Reset row number for each category
+		let categoryRowNumber = 1;
 
 		// Collect indikators for this keasramaan with calculated predikat
 		const indikatorList = keasramaan.indikator
@@ -398,7 +401,7 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 
 		for (const item of indikatorList) {
 			finalRows.push({
-				no: finalRowNumber++,
+				no: categoryRowNumber++,
 				indikator: item.indikator.deskripsi,
 				predikat: item.predikat,
 				deskripsi: item.deskripsi
