@@ -12,7 +12,7 @@
 
 	let { data } = $props();
 
-	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam';
+	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan';
 	type MuridData = {
 		id: number;
 		nama: string;
@@ -25,31 +25,41 @@
 		biodataData?: NonNullable<App.PageData['biodataData']> | null;
 		raporData?: NonNullable<App.PageData['raporData']> | null;
 		piagamData?: NonNullable<App.PageData['piagamData']> | null;
+		keasramaanData?: NonNullable<App.PageData['keasramaanData']> | null;
 	};
 
 	const documentOptions: Array<{ value: DocumentType; label: string }> = [
 		{ value: 'cover', label: 'Cover' },
 		{ value: 'biodata', label: 'Biodata' },
 		{ value: 'rapor', label: 'Rapor' },
-		{ value: 'piagam', label: 'Piagam' }
+		{ value: 'piagam', label: 'Piagam' },
+		{ value: 'keasramaan', label: 'Rapor Keasramaan' }
 	];
 
 	const documentPaths: Record<DocumentType, string> = {
 		cover: '/cetak/cover',
 		biodata: '/cetak/biodata',
 		rapor: '/cetak/rapor',
-		piagam: '/cetak/piagam'
+		piagam: '/cetak/piagam',
+		keasramaan: '/cetak/keasramaan'
 	};
 
 	const printFailureMessages: Record<DocumentType, string> = {
 		cover: 'Elemen cover belum siap untuk dicetak. Coba muat ulang halaman.',
 		biodata: 'Elemen biodata belum siap untuk dicetak. Coba muat ulang halaman.',
 		rapor: 'Elemen rapor belum siap untuk dicetak. Coba muat ulang halaman.',
-		piagam: 'Elemen piagam belum siap untuk dicetak. Coba muat ulang halaman.'
+		piagam: 'Elemen piagam belum siap untuk dicetak. Coba muat ulang halaman.',
+		keasramaan: 'Elemen rapor keasramaan belum siap untuk dicetak. Coba muat ulang halaman.'
 	};
 
 	function isPreviewableDocument(value: DocumentType | ''): value is DocumentType {
-		return value === 'cover' || value === 'biodata' || value === 'rapor' || value === 'piagam';
+		return (
+			value === 'cover' ||
+			value === 'biodata' ||
+			value === 'rapor' ||
+			value === 'piagam' ||
+			value === 'keasramaan'
+		);
 	}
 
 	let selectedDocument = $state<DocumentType | ''>('');

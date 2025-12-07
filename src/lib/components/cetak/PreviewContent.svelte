@@ -5,8 +5,9 @@
 	import RaporPreview from '$lib/components/cetak/preview/RaporPreview.svelte';
 	import PiagamPreview from '$lib/components/cetak/preview/PiagamPreview.svelte';
 	import PiagamPreview2 from '$lib/components/cetak/preview/PiagamPreview2.svelte';
+	import KeasramaanPreview from '$lib/components/cetak/preview/KeasramaanPreview.svelte';
 
-	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam';
+	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan';
 
 	type MuridData = {
 		id: number;
@@ -21,6 +22,7 @@
 		biodataData?: NonNullable<App.PageData['biodataData']> | null;
 		raporData?: NonNullable<App.PageData['raporData']> | null;
 		piagamData?: NonNullable<App.PageData['piagamData']> | null;
+		keasramaanData?: NonNullable<App.PageData['keasramaanData']> | null;
 	};
 
 	let {
@@ -55,7 +57,8 @@
 		cover: CoverPreview,
 		biodata: BiodataPreview,
 		rapor: RaporPreview,
-		piagam: PiagamPreview
+		piagam: PiagamPreview,
+		keasramaan: KeasramaanPreview
 	};
 
 	function getPiagamPreviewComponent() {

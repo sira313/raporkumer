@@ -198,6 +198,47 @@ interface PiagamPrintData {
 	};
 }
 
+interface KeasramaanPrintData {
+	sekolah: {
+		nama: string;
+		alamat: string;
+		logoUrl?: string | null;
+		jenjangVariant?: string | null;
+	};
+	murid: {
+		nama: string;
+		nis: string;
+		nisn: string;
+	};
+	rombel: {
+		nama: string;
+		fase: string;
+	};
+	periode: {
+		tahunAjaran: string;
+		semester: string;
+	};
+	waliAsrama: { nama: string } | null;
+	waliKelas: { nama: string } | null;
+	kepalaSekolah: { nama: string } | null;
+	ttd: {
+		tempat: string;
+		tanggal: string;
+	};
+	kehadiran: {
+		sakit: number;
+		izin: number;
+		alfa: number;
+	} | null;
+	keasramaanRows: Array<{
+		no: number;
+		indikator: string;
+		predikat: 'perlu-bimbingan' | 'cukup' | 'baik' | 'sangat-baik';
+		deskripsi: string;
+		kategoriHeader?: string;
+	}>;
+}
+
 type MaybePromise<T> = T | Promise<T>;
 
 type FormSubmitEvent = SubmitEvent & { currentTarget: EventTarget & HTMLFormElement };
