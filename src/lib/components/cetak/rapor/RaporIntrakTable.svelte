@@ -183,9 +183,8 @@
 			{#each rows as row, ridx (row.kind === 'intrak' ? `intrak-${row.index}-${row.order}` : row.kind === 'intrak-group-header' ? `header-${row.groupLetter}-${row.order}` : row.kind === 'tail' ? `tail-${row.tailKey}-${row.order}` : `empty-${row.order}`)}
 				{#if row.kind === 'intrak-group-header'}
 					<tr use:applyRow={row.order} class="intrak-group-header">
-						<td class="border px-3 py-2 align-top">{row.groupLetter}</td>
-						<td class="border px-3 py-2 align-top" colspan="3">
-							<span class="font-semibold">{row.groupLabel}</span>
+						<td class="border px-3 py-2 align-top" colspan="4">
+							<span class="font-semibold">{row.groupLetter}. {row.groupLabel}</span>
 						</td>
 					</tr>
 				{:else if row.kind === 'intrak'}
