@@ -9,6 +9,7 @@
 		predikat: 'perlu-bimbingan' | 'cukup' | 'baik' | 'sangat-baik';
 		deskripsi: string;
 		kategoriHeader?: string;
+		order?: number; // For table pagination tracking
 	};
 
 	let {
@@ -63,7 +64,7 @@
 		<tbody>
 			{#each rows as row, idx (idx)}
 				{#if row.kategoriHeader}
-					<tr use:applyRow={idx}>
+					<tr use:applyRow={row.order ?? idx}>
 						<td
 							colspan="4"
 							class="border border-black bg-gray-50 px-2 py-1 font-semibold print:border-black print:bg-gray-50"
@@ -72,7 +73,7 @@
 						</td>
 					</tr>
 				{:else}
-					<tr use:applyRow={idx}>
+					<tr use:applyRow={row.order ?? idx}>
 						<td class="border border-black px-2 py-1 text-center print:border-black">{row.no}</td>
 						<td class="border border-black px-2 py-1 print:border-black"
 							>{formatValue(row.indikator)}</td

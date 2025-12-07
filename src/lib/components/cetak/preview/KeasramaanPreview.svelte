@@ -12,6 +12,7 @@
 		predikat: 'perlu-bimbingan' | 'cukup' | 'baik' | 'sangat-baik';
 		deskripsi: string;
 		kategoriHeader?: string;
+		order?: number; // Added for table pagination tracking
 	};
 
 	type ComponentData = {
@@ -110,9 +111,6 @@
 	});
 
 	let splitQueued = false;
-	let lastComputedCapacities: { first: number; continuation: number } | null = null;
-	let splitRetryCount = 0;
-	const MAX_SPLIT_RETRIES = 5;
 
 	function computeTableCapacity(content: HTMLElement, tableSection: HTMLElement) {
 		const contentRect = content.getBoundingClientRect();
@@ -133,8 +131,9 @@
 			return;
 		}
 
-		const rows = keasramaanRows;
+		const rows: KeasramaanRow[] = keasramaanRows;
 		if (rows.length === 0) {
+			tablePages = [];
 			return;
 		}
 
@@ -144,19 +143,12 @@
 			continuationPrototypeTableSection
 		);
 
-		// If capacities are 0 or very small, layout hasn't happened yet
-		if (firstCapacity === 0 && continuationCapacity === 0) {
-			if (splitRetryCount < MAX_SPLIT_RETRIES) {
-				splitRetryCount++;
-				await new Promise((resolve) => setTimeout(resolve, 50));
-				queueSplit();
-				return;
-			}
-			// Give up after max retries, use default capacity
-		}
+		// Map rows dengan order untuk tracking DOM
+		const rowsWithOrder = rows.map((row, index) => ({ ...row, order: index }));
 
-		const rowHeights = rows.map((row: KeasramaanRow, rowIndex: number) => {
-			const set = tableRowElements.get(rowIndex);
+		// Hitung heights dari DOM elements
+		const rowHeights = rowsWithOrder.map((row) => {
+			const set = tableRowElements.get(row.order);
 			if (!set || set.size === 0) return 0;
 			let total = 0;
 			for (const el of set) {
@@ -165,34 +157,23 @@
 			return total;
 		});
 
-		// Count how many rows have non-zero height
-		const nonZeroHeights = rowHeights.filter((h) => h > 0).length;
-
-		// If very few rows have measurable height, might not be rendered yet
-		if (nonZeroHeights === 0 && rows.length > 0) {
-			if (splitRetryCount < MAX_SPLIT_RETRIES) {
-				splitRetryCount++;
-				await new Promise((resolve) => setTimeout(resolve, 50));
-				queueSplit();
-				return;
-			}
-			// Give up after max retries
+		// Jika ada row height yang belum terukur, coba lagi
+		if (rowHeights.some((height) => height === 0)) {
+			queueSplit();
+			return;
 		}
-
-		splitRetryCount = 0; // Reset retry count on successful split
 
 		const tolerance = 0.5;
 
 		const paginatedRows = paginateRowsByHeight({
-			rows: rows.map((row: KeasramaanRow, index: number) => ({ ...row, order: index }) as any),
+			rows: rowsWithOrder,
 			rowHeights,
 			firstPageCapacity: firstCapacity,
 			continuationPageCapacity: continuationCapacity,
 			tolerance
 		});
 
-		tablePages = paginatedRows.map((pageRows: any) => ({ rows: pageRows }));
-		lastComputedCapacities = { first: firstCapacity, continuation: continuationCapacity };
+		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
 	}
 
 	function queueSplit() {
@@ -206,33 +187,21 @@
 		queueSplit();
 		return {
 			destroy() {
-				// Don't queue on destroy to avoid excessive recalculation
-				// queueSplit();
+				queueSplit();
 			}
 		};
 	}
 
 	$effect(() => {
 		void keasramaanRows;
-		// Only queue split if we have rows
-		if (keasramaanRows.length > 0) {
-			queueSplit();
-		}
+		queueSplit();
 	});
 
 	onMount(() => {
-		// Initial split after a short delay to ensure DOM is ready
-		const initialTimer = setTimeout(() => {
-			queueSplit();
-		}, 100);
-
+		queueSplit();
 		const handleResize = () => queueSplit();
 		window.addEventListener('resize', handleResize);
-
-		return () => {
-			clearTimeout(initialTimer);
-			window.removeEventListener('resize', handleResize);
-		};
+		return () => window.removeEventListener('resize', handleResize);
 	});
 
 	function formatValue(value: string | null | undefined) {
