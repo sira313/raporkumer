@@ -433,13 +433,13 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 			semester: kelasData.semester?.nama ?? ''
 		},
 		waliAsrama: kelasData.waliAsrama
-			? { nama: kelasData.waliAsrama.nama, nip: kelasData.waliAsrama.nip }
+			? { nama: kelasData.waliAsrama.nama, nip: kelasData.waliAsrama.nip ?? '' }
 			: null,
 		waliKelas: kelasData.waliKelas
-			? { nama: kelasData.waliKelas.nama, nip: kelasData.waliKelas.nip }
+			? { nama: kelasData.waliKelas.nama, nip: kelasData.waliKelas.nip ?? '' }
 			: null,
 		kepalaSekolah: sekolah.kepalaSekolah
-			? { nama: sekolah.kepalaSekolah.nama, nip: sekolah.kepalaSekolah.nip }
+			? { nama: sekolah.kepalaSekolah.nama, nip: sekolah.kepalaSekolah.nip ?? '' }
 			: null,
 		ttd: {
 			tempat: ttdTempat,

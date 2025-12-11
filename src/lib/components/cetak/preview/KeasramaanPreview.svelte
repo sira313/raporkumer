@@ -205,9 +205,8 @@
 	});
 
 	function formatValue(value: string | null | undefined) {
-		if (!value) return '—';
-		// Don't trim to preserve newlines in deskripsi
-		return value.length ? value : '—';
+		if (value === null || value === undefined || value === '') return '—';
+		return value;
 	}
 
 	function formatUpper(value: string | null | undefined) {
@@ -325,10 +324,8 @@
 						<div class="mt-7 mb-2 font-semibold">Wali Asrama</div>
 						<div class="mb-12 h-12"></div>
 						<div class="print:border-black">
-							{#if waliAsrama}
-								<div class="font-semibold">{waliAsrama.nama}</div>
-								<div class="mt-1 text-xs">{waliAsrama.nip}</div>
-							{/if}
+							<div class="font-semibold">{formatValue(waliAsrama?.nama)}</div>
+							<div class="mt-1 text-xs">{formatValue(waliAsrama?.nip)}</div>
 						</div>
 					</div>
 					<div class="text-center">
@@ -340,10 +337,8 @@
 						<div class="mb-2 font-semibold">Wali Kelas</div>
 						<div class="mb-12 h-12"></div>
 						<div class="print:border-black">
-							{#if waliKelas}
-								<div class="font-semibold">{waliKelas.nama}</div>
-								<div class="mt-1 text-xs">{waliKelas.nip}</div>
-							{/if}
+							<div class="font-semibold">{formatValue(waliKelas?.nama)}</div>
+							<div class="mt-1 text-xs">{formatValue(waliKelas?.nip)}</div>
 						</div>
 					</div>
 					<div class="text-center">
@@ -357,10 +352,8 @@
 						<div class="mb-2 font-semibold">Kepala Sekolah</div>
 						<div class="mb-12 h-12"></div>
 						<div class="print:border-black">
-							{#if kepalaSekolah}
-								<div class="font-semibold">{kepalaSekolah.nama}</div>
-								<div class="mt-1 text-xs">{kepalaSekolah.nip}</div>
-							{/if}
+							<div class="font-semibold">{formatValue(kepalaSekolah?.nama)}</div>
+							<div class="mt-1 text-xs">{formatValue(kepalaSekolah?.nip)}</div>
 						</div>
 					</div>
 				</section>
