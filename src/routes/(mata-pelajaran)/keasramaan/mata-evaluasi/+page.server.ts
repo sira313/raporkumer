@@ -1,5 +1,9 @@
 import db from '$lib/server/db';
-import { tableKeasramaan, tableKeasramaanIndikator } from '$lib/server/db/schema';
+import {
+	tableKeasramaan,
+	tableKeasramaanIndikator,
+	tableAsesmenKeasramaan
+} from '$lib/server/db/schema';
 import { fail, redirect } from '@sveltejs/kit';
 import { asc, eq, inArray } from 'drizzle-orm';
 
@@ -111,7 +115,14 @@ export const actions = {
 		}
 
 		try {
-			await db.delete(tableKeasramaan).where(eq(tableKeasramaan.id, id));
+			await db.transaction(async (tx) => {
+				// Delete asesmen keasramaan yang referensi ke mata evaluasi ini
+				await tx.delete(tableAsesmenKeasramaan).where(eq(tableAsesmenKeasramaan.keasramaanId, id));
+
+				// Delete tujuan dan indikator akan otomatis terhapus via cascade
+				// Delete mata evaluasi
+				await tx.delete(tableKeasramaan).where(eq(tableKeasramaan.id, id));
+			});
 			return { message: 'Mata evaluasi berhasil dihapus' };
 		} catch (error) {
 			if (isTableMissingError(error)) {
@@ -312,12 +323,22 @@ export const actions = {
 		const formData = await request.formData();
 		const ids: number[] = [];
 
+		// Handle both formats: ids[0], ids[1] or just multiple 'ids' keys
 		for (const [key, value] of formData.entries()) {
-			const match = key.match(/^ids\.(\d+)$/);
-			if (match) {
+			if (key === 'ids') {
+				// Direct format: formData.append('ids', id)
 				const id = Number(value);
 				if (Number.isInteger(id) && id > 0) {
 					ids.push(id);
+				}
+			} else {
+				// Indexed format: ids.0, ids.1 (for backward compatibility)
+				const match = key.match(/^ids\.(\d+)$/);
+				if (match) {
+					const id = Number(value);
+					if (Number.isInteger(id) && id > 0) {
+						ids.push(id);
+					}
 				}
 			}
 		}
@@ -327,7 +348,16 @@ export const actions = {
 		}
 
 		try {
-			await db.delete(tableKeasramaan).where(inArray(tableKeasramaan.id, ids));
+			await db.transaction(async (tx) => {
+				// Delete asesmen keasramaan yang referensi ke mata evaluasi yang akan dihapus
+				await tx
+					.delete(tableAsesmenKeasramaan)
+					.where(inArray(tableAsesmenKeasramaan.keasramaanId, ids));
+
+				// Delete tujuan dan indikator akan otomatis terhapus via cascade
+				// Delete mata evaluasi
+				await tx.delete(tableKeasramaan).where(inArray(tableKeasramaan.id, ids));
+			});
 			return { message: `${ids.length} mata evaluasi berhasil dihapus` };
 		} catch (error) {
 			if (isTableMissingError(error)) {
