@@ -14,6 +14,7 @@
 		kategoriHeader?: string;
 		order?: number; // Added for table pagination tracking
 	};
+	type KeasramaanRowWithOrder = KeasramaanRow & { order: number };
 
 	type ComponentData = {
 		keasramaanData?: KeasramaanPrintData | null;
@@ -55,6 +56,10 @@
 	let firstTableSection = $state<HTMLElement | null>(null);
 	let continuationPrototypeContent = $state<HTMLDivElement | null>(null);
 	let continuationPrototypeTableSection = $state<HTMLElement | null>(null);
+
+	// Minimum height needed for a category header + at least one indicator row
+	// Adjust this value based on your actual row heights (estimated ~50px for header + 40px for row)
+	const MIN_HEIGHT_FOR_CATEGORY = 90;
 
 	// Support multiple <tr> elements for a single logical row (rowspan-style groups).
 	// IMPORTANT: Each instance of KeasramaanPreview gets its own tableRowElements Map
@@ -200,7 +205,7 @@
 
 		const tolerance = 0.5;
 
-		const paginatedRows = paginateRowsByHeight({
+		let paginatedRows = paginateRowsByHeight({
 			rows: rowsWithOrder,
 			rowHeights,
 			firstPageCapacity: firstCapacity,
@@ -208,7 +213,50 @@
 			tolerance
 		});
 
+		// Apply category header pagination logic:
+		// Ensure category headers are not left alone at the bottom of a page
+		// by moving them to the next page if they don't have indicators following
+		paginatedRows = fixCategoryHeaderPlacement(paginatedRows);
+
 		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
+	}
+
+	function fixCategoryHeaderPlacement(pages: KeasramaanRowWithOrder[][]): KeasramaanRowWithOrder[][] {
+		const result: KeasramaanRowWithOrder[][] = [];
+		let i = 0;
+
+		while (i < pages.length) {
+			const currentPage = [...pages[i]];
+
+			// Check if last row is a category header
+			if (
+				currentPage.length > 0 &&
+				currentPage[currentPage.length - 1].kategoriHeader
+			) {
+				const lastRow = currentPage.pop()!;
+
+				// If current page still has content, push it
+				if (currentPage.length > 0) {
+					result.push(currentPage);
+				}
+
+				// If there's a next page, prepend header to it
+				if (i + 1 < pages.length) {
+					const nextPage = pages[i + 1];
+					pages[i + 1] = [lastRow, ...nextPage];
+				} else {
+					// This is the last page, create a new page with just the header
+					result.push([lastRow]);
+				}
+			} else {
+				// No header at end, just push the page
+				result.push(currentPage);
+			}
+
+			i++;
+		}
+
+		return result;
 	}
 
 	function queueSplit() {
