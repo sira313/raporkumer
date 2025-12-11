@@ -203,7 +203,7 @@ export type KeasramaanPrintData = {
 		sakit: number;
 		izin: number;
 		alfa: number;
-	} | null;
+	};
 	keasramaanRows: KeasramaanRow[];
 };
 
@@ -445,13 +445,11 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 			tempat: ttdTempat,
 			tanggal: ttdTanggal
 		},
-		kehadiran: murid.kehadiran
-			? {
-					sakit: murid.kehadiran.sakit ?? 0,
-					izin: murid.kehadiran.izin ?? 0,
-					alfa: murid.kehadiran.alfa ?? 0
-				}
-			: null,
+		kehadiran: {
+			sakit: murid.kehadiran?.sakit ?? 0,
+			izin: murid.kehadiran?.izin ?? 0,
+			alfa: murid.kehadiran?.alfa ?? 0
+		},
 		keasramaanRows: finalRows
 	};
 

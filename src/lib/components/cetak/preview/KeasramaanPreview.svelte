@@ -317,45 +317,43 @@
 				{/if}
 
 				<!-- Kehadiran Section on Last Page -->
-				{#if kehadiran}
-					<section class="mt-6">
-						<table class="w-full border">
-							<thead>
-								<tr>
-									<th class="border px-3 py-2 text-left font-bold" colspan="3">KETIDAKHADIRAN</th>
-								</tr>
-								<tr>
-									<th class="w-12 border px-3 py-2 text-center font-semibold">No</th>
-									<th class="border px-3 py-2 text-left font-semibold">Alasan Ketidakhadiran</th>
-									<th class="w-16 border px-3 py-2 text-center font-semibold">Jumlah</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr>
-									<td class="border px-3 py-2 text-center">1</td>
-									<td class="border px-3 py-2">Sakit</td>
-									<td class="border px-3 py-2 text-center">
-										{kehadiran.sakit}
-									</td>
-								</tr>
-								<tr>
-									<td class="border px-3 py-2 text-center">2</td>
-									<td class="border px-3 py-2">Izin</td>
-									<td class="border px-3 py-2 text-center">
-										{kehadiran.izin}
-									</td>
-								</tr>
-								<tr>
-									<td class="border px-3 py-2 text-center">3</td>
-									<td class="border px-3 py-2">Tanpa Keterangan</td>
-									<td class="border px-3 py-2 text-center">
-										{kehadiran.alfa}
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</section>
-				{/if}
+				<section class="mt-6">
+					<table class="w-full border">
+						<thead>
+							<tr>
+								<th class="border px-3 py-2 text-left font-bold" colspan="3">KETIDAKHADIRAN</th>
+							</tr>
+							<tr>
+								<th class="w-12 border px-3 py-2 text-center font-semibold">No</th>
+								<th class="border px-3 py-2 text-left font-semibold">Alasan Ketidakhadiran</th>
+								<th class="w-16 border px-3 py-2 text-center font-semibold">Jumlah</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="border px-3 py-2 text-center">1</td>
+								<td class="border px-3 py-2">Sakit</td>
+								<td class="border px-3 py-2 text-center">
+									{kehadiran.sakit}
+								</td>
+							</tr>
+							<tr>
+								<td class="border px-3 py-2 text-center">2</td>
+								<td class="border px-3 py-2">Izin</td>
+								<td class="border px-3 py-2 text-center">
+									{kehadiran.izin}
+								</td>
+							</tr>
+							<tr>
+								<td class="border px-3 py-2 text-center">3</td>
+								<td class="border px-3 py-2">Tanpa Keterangan</td>
+								<td class="border px-3 py-2 text-center">
+									{kehadiran.alfa}
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</section>
 
 				<!-- Signatures Section on Last Page -->
 				<section class="mt-8 grid grid-cols-2 gap-4 text-xs print:text-xs">
