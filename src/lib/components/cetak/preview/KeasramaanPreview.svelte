@@ -221,11 +221,6 @@
 			tolerance
 		});
 
-		// Apply category header pagination logic:
-		// Ensure category headers are not left alone at the bottom of a page
-		// by moving them to the next page if they don't have indicators following
-		paginatedRows = fixCategoryHeaderPlacement(paginatedRows);
-
 		// If we have multiple pages, re-fit the last page with the constrained lastPageCapacity
 		if (paginatedRows.length > 1) {
 			paginatedRows = refitLastPageWithCapacity(
@@ -236,6 +231,11 @@
 				tolerance
 			);
 		}
+
+		// Apply category header pagination logic AFTER re-fitting:
+		// Ensure category headers are not left alone at the bottom of a page
+		// by moving them to the next page if they don't have indicators following
+		paginatedRows = fixCategoryHeaderPlacement(paginatedRows);
 
 		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
 	}
@@ -361,37 +361,68 @@
 	function fixCategoryHeaderPlacement(
 		pages: KeasramaanRowWithOrder[][]
 	): KeasramaanRowWithOrder[][] {
-		const result: KeasramaanRowWithOrder[][] = [];
-		let i = 0;
+		let result = pages.map((page) => [...page]); // Deep copy
 
-		while (i < pages.length) {
-			const currentPage = [...pages[i]];
+		console.log(
+			'[fixCategoryHeaderPlacement] Input pages:',
+			result.length,
+			result.map((p) => ({
+				length: p.length,
+				lastIsHeader: p[p.length - 1]?.kategoriHeader ? p[p.length - 1].kategoriHeader : 'NO'
+			}))
+		);
 
-			// Check if last row is a category header
-			if (currentPage.length > 0 && currentPage[currentPage.length - 1].kategoriHeader) {
-				const lastRow = currentPage.pop()!;
+		let changed = true;
+		let iteration = 0;
+		while (changed) {
+			iteration++;
+			changed = false;
+			const newResult: KeasramaanRowWithOrder[][] = [];
 
-				// If current page still has content, push it
-				if (currentPage.length > 0) {
-					result.push(currentPage);
-				}
+			for (let i = 0; i < result.length; i++) {
+				const page = result[i];
 
-				// If there's a next page, prepend header to it
-				if (i + 1 < pages.length) {
-					const nextPage = pages[i + 1];
-					pages[i + 1] = [lastRow, ...nextPage];
+				// Check if last row is a category header
+				if (page.length > 0 && page[page.length - 1].kategoriHeader) {
+					const lastRow = page[page.length - 1];
+					console.log(
+						`[fixCategoryHeaderPlacement] Iteration ${iteration}, Page ${i}: Found orphaned header "${lastRow.kategoriHeader}"`
+					);
+
+					// Remove header from current page
+					const pageWithoutHeader = page.slice(0, -1);
+
+					// Push page if it still has content
+					if (pageWithoutHeader.length > 0) {
+						newResult.push(pageWithoutHeader);
+					}
+
+					// Move header to next page
+					if (i + 1 < result.length) {
+						const nextPage = result[i + 1];
+						result[i + 1] = [lastRow, ...nextPage];
+					} else {
+						// Create new page with just the header
+						newResult.push([lastRow]);
+					}
+
+					changed = true;
 				} else {
-					// This is the last page, create a new page with just the header
-					result.push([lastRow]);
+					newResult.push(page);
 				}
-			} else {
-				// No header at end, just push the page
-				result.push(currentPage);
 			}
 
-			i++;
+			result = newResult;
 		}
 
+		console.log(
+			'[fixCategoryHeaderPlacement] Output pages:',
+			result.length,
+			result.map((p) => ({
+				length: p.length,
+				lastIsHeader: p[p.length - 1]?.kategoriHeader ? p[p.length - 1].kategoriHeader : 'NO'
+			}))
+		);
 		return result;
 	}
 
