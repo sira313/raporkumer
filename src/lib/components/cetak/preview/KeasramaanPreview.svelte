@@ -221,7 +221,9 @@
 		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
 	}
 
-	function fixCategoryHeaderPlacement(pages: KeasramaanRowWithOrder[][]): KeasramaanRowWithOrder[][] {
+	function fixCategoryHeaderPlacement(
+		pages: KeasramaanRowWithOrder[][]
+	): KeasramaanRowWithOrder[][] {
 		const result: KeasramaanRowWithOrder[][] = [];
 		let i = 0;
 
@@ -229,10 +231,7 @@
 			const currentPage = [...pages[i]];
 
 			// Check if last row is a category header
-			if (
-				currentPage.length > 0 &&
-				currentPage[currentPage.length - 1].kategoriHeader
-			) {
+			if (currentPage.length > 0 && currentPage[currentPage.length - 1].kategoriHeader) {
 				const lastRow = currentPage.pop()!;
 
 				// If current page still has content, push it
