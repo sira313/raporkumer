@@ -56,6 +56,8 @@
 	let firstTableSection = $state<HTMLElement | null>(null);
 	let continuationPrototypeContent = $state<HTMLDivElement | null>(null);
 	let continuationPrototypeTableSection = $state<HTMLElement | null>(null);
+	let lastPagePrototypeContent = $state<HTMLDivElement | null>(null);
+	let lastPagePrototypeTableSection = $state<HTMLElement | null>(null);
 
 	// Minimum height needed for a category header + at least one indicator row
 	// Adjust this value based on your actual row heights (estimated ~50px for header + 40px for row)
@@ -166,7 +168,9 @@
 			!firstCardContent ||
 			!firstTableSection ||
 			!continuationPrototypeContent ||
-			!continuationPrototypeTableSection
+			!continuationPrototypeTableSection ||
+			!lastPagePrototypeContent ||
+			!lastPagePrototypeTableSection
 		) {
 			return;
 		}
@@ -181,6 +185,10 @@
 		const continuationCapacity = computeTableCapacity(
 			continuationPrototypeContent,
 			continuationPrototypeTableSection
+		);
+		const lastPageCapacity = computeTableCapacity(
+			lastPagePrototypeContent,
+			lastPagePrototypeTableSection
 		);
 
 		// Map rows dengan order untuk tracking DOM
@@ -218,7 +226,136 @@
 		// by moving them to the next page if they don't have indicators following
 		paginatedRows = fixCategoryHeaderPlacement(paginatedRows);
 
+		// If we have multiple pages, re-fit the last page with the constrained lastPageCapacity
+		if (paginatedRows.length > 1) {
+			paginatedRows = refitLastPageWithCapacity(
+				paginatedRows,
+				rowsWithOrder,
+				rowHeights,
+				lastPageCapacity,
+				tolerance
+			);
+		}
+
 		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
+	}
+
+	function refitLastPageWithCapacity(
+		pages: KeasramaanRowWithOrder[][],
+		allRowsWithOrder: KeasramaanRowWithOrder[],
+		rowHeights: number[],
+		lastPageCapacity: number,
+		tolerance: number
+	): KeasramaanRowWithOrder[][] {
+		if (pages.length === 0) return pages;
+
+		// Flatten the last 2 pages to re-paginate with proper capacity
+		const lastPageIndex = pages.length - 1;
+		const secondLastPageIndex = lastPageIndex - 1;
+
+		// Get all rows from last 2 pages (or just last page if only 1 exists)
+		const rowsToRepaginate: KeasramaanRowWithOrder[] = [];
+		if (secondLastPageIndex >= 0) {
+			rowsToRepaginate.push(...pages[secondLastPageIndex]);
+			rowsToRepaginate.push(...pages[lastPageIndex]);
+		} else {
+			rowsToRepaginate.push(...pages[lastPageIndex]);
+		}
+
+		// Re-paginate using continuation capacity for second-to-last, and lastPageCapacity for last
+		const result = pages.slice(0, Math.max(0, secondLastPageIndex));
+
+		let cursor = 0;
+		const totalToRepaginate = rowsToRepaginate.length;
+
+		// Fill the second-to-last page with continuation capacity
+		if (secondLastPageIndex >= 0) {
+			const continuationCapacity = computeTableCapacity(
+				continuationPrototypeContent!,
+				continuationPrototypeTableSection!
+			);
+			const secondLastPageRows: KeasramaanRowWithOrder[] = [];
+			let used = 0;
+			while (cursor < totalToRepaginate) {
+				const row = rowsToRepaginate[cursor];
+				const originalIndex = allRowsWithOrder.findIndex((r) => r.order === row.order);
+				const rowHeight = rowHeights[originalIndex] ?? 0;
+
+				if (secondLastPageRows.length > 0 && used + rowHeight > continuationCapacity + tolerance) {
+					break;
+				}
+				if (secondLastPageRows.length === 0 && rowHeight > continuationCapacity + tolerance) {
+					secondLastPageRows.push(row);
+					cursor += 1;
+					break;
+				}
+				secondLastPageRows.push(row);
+				used += rowHeight;
+				cursor += 1;
+			}
+			if (secondLastPageRows.length > 0) {
+				result.push(secondLastPageRows);
+			}
+		}
+
+		// Fill the last page with lastPageCapacity
+		const lastPageRows: KeasramaanRowWithOrder[] = [];
+		let used = 0;
+		while (cursor < totalToRepaginate) {
+			const row = rowsToRepaginate[cursor];
+			const originalIndex = allRowsWithOrder.findIndex((r) => r.order === row.order);
+			const rowHeight = rowHeights[originalIndex] ?? 0;
+
+			if (lastPageRows.length > 0 && used + rowHeight > lastPageCapacity + tolerance) {
+				break;
+			}
+			if (lastPageRows.length === 0 && rowHeight > lastPageCapacity + tolerance) {
+				lastPageRows.push(row);
+				cursor += 1;
+				break;
+			}
+			lastPageRows.push(row);
+			used += rowHeight;
+			cursor += 1;
+		}
+		if (lastPageRows.length > 0) {
+			result.push(lastPageRows);
+		}
+
+		// Handle remaining rows by adding them as new pages with continuation capacity
+		while (cursor < totalToRepaginate) {
+			const continuationCapacity = computeTableCapacity(
+				continuationPrototypeContent!,
+				continuationPrototypeTableSection!
+			);
+			const intermediatePageRows: KeasramaanRowWithOrder[] = [];
+			let used = 0;
+			while (cursor < totalToRepaginate) {
+				const row = rowsToRepaginate[cursor];
+				const originalIndex = allRowsWithOrder.findIndex((r) => r.order === row.order);
+				const rowHeight = rowHeights[originalIndex] ?? 0;
+
+				if (
+					intermediatePageRows.length > 0 &&
+					used + rowHeight > continuationCapacity + tolerance
+				) {
+					break;
+				}
+				if (intermediatePageRows.length === 0 && rowHeight > continuationCapacity + tolerance) {
+					intermediatePageRows.push(row);
+					cursor += 1;
+					break;
+				}
+				intermediatePageRows.push(row);
+				used += rowHeight;
+				cursor += 1;
+			}
+			if (intermediatePageRows.length > 0) {
+				result.push(intermediatePageRows);
+			}
+		}
+
+		return result;
 	}
 
 	function fixCategoryHeaderPlacement(
@@ -364,7 +501,7 @@
 				{/if}
 
 				<!-- Kehadiran Section on Last Page -->
-				<section class="mt-6">
+				<section class="mt-6 break-inside-avoid print:break-inside-avoid">
 					<table class="w-full border">
 						<thead>
 							<tr>
@@ -403,10 +540,12 @@
 				</section>
 
 				<!-- Signatures Section on Last Page -->
-				<section class="mt-8 grid grid-cols-2 gap-4 text-xs print:text-xs">
+				<section
+					class="mt-8 grid break-inside-avoid grid-cols-2 gap-4 text-xs print:break-inside-avoid print:text-xs"
+				>
 					<div class="text-center">
 						<div class="mt-7 mb-2 font-semibold">Wali Asrama</div>
-						<div class="mb-12 h-12"></div>
+						<div class="mb-8 h-8"></div>
 						<div class="print:border-black">
 							<div class="font-semibold">{formatValue(waliAsrama?.nama)}</div>
 							<div class="mt-1 text-xs">{formatValue(waliAsrama?.nip)}</div>
@@ -419,7 +558,7 @@
 							</div>
 						{/if}
 						<div class="mb-2 font-semibold">Wali Kelas</div>
-						<div class="mb-12 h-12"></div>
+						<div class="mb-8 h-8"></div>
 						<div class="print:border-black">
 							<div class="font-semibold">{formatValue(waliKelas?.nama)}</div>
 							<div class="mt-1 text-xs">{formatValue(waliKelas?.nip)}</div>
@@ -427,14 +566,14 @@
 					</div>
 					<div class="text-center">
 						<div class="mb-2 font-semibold">Orang Tua / Wali</div>
-						<div class="mb-12 h-12"></div>
+						<div class="mb-8 h-8"></div>
 						<div class="print:border-black">
 							<div class="font-semibold">_________________</div>
 						</div>
 					</div>
 					<div class="text-center">
 						<div class="mb-2 font-semibold">Kepala Sekolah</div>
-						<div class="mb-12 h-12"></div>
+						<div class="mb-8 h-8"></div>
 						<div class="print:border-black">
 							<div class="font-semibold">{formatValue(kepalaSekolah?.nama)}</div>
 							<div class="mt-1 text-xs">{formatValue(kepalaSekolah?.nip)}</div>
@@ -481,5 +620,125 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Prototype for last page calculation including attendance & signatures -->
+		<div
+			class="pointer-events-none"
+			style="position: fixed; top: -10000px; left: -10000px; width: 210mm; pointer-events: none; opacity: 0;"
+			aria-hidden="true"
+		>
+			<div class="card bg-base-100">
+				<div
+					class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
+				>
+					<div
+						class="flex min-h-0 flex-1 flex-col text-[12px]"
+						bind:this={lastPagePrototypeContent}
+					>
+						<section bind:this={lastPagePrototypeTableSection}>
+							<table class="table-compact table w-full">
+								<thead>
+									<tr class="bg-gray-100">
+										<th class="border border-black px-2 py-1">No</th>
+										<th class="border border-black px-2 py-1">Indikator</th>
+										<th class="border border-black px-2 py-1">Predikat</th>
+										<th class="border border-black px-2 py-1">Deskripsi</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="border border-black px-2 py-1">—</td>
+										<td class="border border-black px-2 py-1">—</td>
+										<td class="border border-black px-2 py-1">—</td>
+										<td class="border border-black px-2 py-1">—</td>
+									</tr>
+								</tbody>
+							</table>
+						</section>
+						<!-- Simulate kehadiran section -->
+						<section class="mt-6">
+							<table class="w-full border">
+								<thead>
+									<tr>
+										<th class="border px-3 py-2 text-left font-bold" colspan="3">KETIDAKHADIRAN</th>
+									</tr>
+									<tr>
+										<th class="w-12 border px-3 py-2 text-center font-semibold">No</th>
+										<th class="border px-3 py-2 text-left font-semibold">Alasan Ketidakhadiran</th>
+										<th class="w-16 border px-3 py-2 text-center font-semibold">Jumlah</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="border px-3 py-2 text-center">1</td>
+										<td class="border px-3 py-2">Sakit</td>
+										<td class="border px-3 py-2 text-center">0</td>
+									</tr>
+									<tr>
+										<td class="border px-3 py-2 text-center">2</td>
+										<td class="border px-3 py-2">Izin</td>
+										<td class="border px-3 py-2 text-center">0</td>
+									</tr>
+									<tr>
+										<td class="border px-3 py-2 text-center">3</td>
+										<td class="border px-3 py-2">Tanpa Keterangan</td>
+										<td class="border px-3 py-2 text-center">0</td>
+									</tr>
+								</tbody>
+							</table>
+						</section>
+						<!-- Simulate signatures section -->
+						<section class="mt-8 grid grid-cols-2 gap-4 text-xs">
+							<div class="text-center">
+								<div class="mt-7 mb-2 font-semibold">Wali Asrama</div>
+								<div class="mb-8 h-8"></div>
+								<div>
+									<div class="font-semibold">Name</div>
+									<div class="mt-1 text-xs">NIP</div>
+								</div>
+							</div>
+							<div class="text-center">
+								<div class="mb-2 text-xs">
+									<div>Tempat, Tanggal</div>
+								</div>
+								<div class="mb-2 font-semibold">Wali Kelas</div>
+								<div class="mb-8 h-8"></div>
+								<div>
+									<div class="font-semibold">Name</div>
+									<div class="mt-1 text-xs">NIP</div>
+								</div>
+							</div>
+							<div class="text-center">
+								<div class="mb-2 font-semibold">Orang Tua / Wali</div>
+								<div class="mb-8 h-8"></div>
+								<div>
+									<div class="font-semibold">_________________</div>
+								</div>
+							</div>
+							<div class="text-center">
+								<div class="mb-2 font-semibold">Kepala Sekolah</div>
+								<div class="mb-8 h-8"></div>
+								<div>
+									<div class="font-semibold">Name</div>
+									<div class="mt-1 text-xs">NIP</div>
+								</div>
+							</div>
+						</section>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 </div>
+
+<style>
+	:global(.break-inside-avoid) {
+		page-break-inside: avoid;
+		break-inside: avoid;
+	}
+
+	:global(.print\:break-inside-avoid) {
+		page-break-inside: avoid;
+		break-inside: avoid;
+	}
+</style>
