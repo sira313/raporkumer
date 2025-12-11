@@ -192,9 +192,9 @@ export type KeasramaanPrintData = {
 		tahunAjaran: string;
 		semester: string;
 	};
-	waliAsrama: { nama: string } | null;
-	waliKelas: { nama: string } | null;
-	kepalaSekolah: { nama: string } | null;
+	waliAsrama: { nama: string; nip: string } | null;
+	waliKelas: { nama: string; nip: string } | null;
+	kepalaSekolah: { nama: string; nip: string } | null;
 	ttd: {
 		tempat: string;
 		tanggal: string;
@@ -432,9 +432,9 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 			tahunAjaran: kelasData.tahunAjaran?.nama ?? '',
 			semester: kelasData.semester?.nama ?? ''
 		},
-		waliAsrama: kelasData.waliAsrama ? { nama: kelasData.waliAsrama.nama } : null,
-		waliKelas: kelasData.waliKelas ? { nama: kelasData.waliKelas.nama } : null,
-		kepalaSekolah: sekolah.kepalaSekolah ? { nama: sekolah.kepalaSekolah.nama } : null,
+		waliAsrama: kelasData.waliAsrama ? { nama: kelasData.waliAsrama.nama, nip: kelasData.waliAsrama.nip } : null,
+		waliKelas: kelasData.waliKelas ? { nama: kelasData.waliKelas.nama, nip: kelasData.waliKelas.nip } : null,
+		kepalaSekolah: sekolah.kepalaSekolah ? { nama: sekolah.kepalaSekolah.nama, nip: sekolah.kepalaSekolah.nip } : null,
 		ttd: {
 			tempat: ttdTempat,
 			tanggal: ttdTanggal

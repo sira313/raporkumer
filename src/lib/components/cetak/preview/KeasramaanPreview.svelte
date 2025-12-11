@@ -320,39 +320,50 @@
 				{/if}
 
 				<!-- Signatures Section on Last Page -->
-				<section class="mt-8 grid grid-cols-4 gap-4 text-xs print:text-xs">
-					<div class="text-center">
-						<div class="mb-12 h-12"></div>
-						<div class="border-t border-black pt-1 print:border-black">Wali Asrama</div>
+				<section class="mt-8 grid grid-cols-2 gap-4 text-xs print:text-xs">
+				<div class="text-center">
+					<div class="mt-7 mb-2 font-semibold">Wali Asrama</div>
+					<div class="mb-12 h-12"></div>
+					<div class="print:border-black">
 						{#if waliAsrama}
-							<div class="pt-1 font-semibold">{waliAsrama.nama}</div>
+							<div class="font-semibold">{waliAsrama.nama}</div>
+							<div class="text-xs mt-1">{waliAsrama.nip}</div>
 						{/if}
 					</div>
+				</div>
 					<div class="text-center">
-						<div class="mb-12 h-12"></div>
-						<div class="border-t border-black pt-1 print:border-black">Wali Kelas</div>
-						{#if waliKelas}
-							<div class="pt-1 font-semibold">{waliKelas.nama}</div>
+						{#if ttd}
+							<div class="mb-2 text-xs print:text-xs">
+								<div>{ttd.tempat}, {ttd.tanggal}</div>
+							</div>
 						{/if}
+						<div class="mb-2 font-semibold">Wali Kelas</div>
+						<div class="mb-12 h-12"></div>
+						<div class="print:border-black">
+							{#if waliKelas}
+								<div class="font-semibold">{waliKelas.nama}</div>
+								<div class="text-xs mt-1">{waliKelas.nip}</div>
+							{/if}
+						</div>
 					</div>
 					<div class="text-center">
+						<div class="mb-2 font-semibold">Orang Tua / Wali</div>
 						<div class="mb-12 h-12"></div>
-						<div class="border-t border-black pt-1 print:border-black">Orang Tua / Wali</div>
+						<div class="print:border-black">
+							<div class="font-semibold">_________________</div>
+						</div>
 					</div>
 					<div class="text-center">
+						<div class="mb-2 font-semibold">Kepala Sekolah</div>
 						<div class="mb-12 h-12"></div>
-						<div class="border-t border-black pt-1 print:border-black">Kepala Sekolah</div>
+					<div class="print:border-black">
 						{#if kepalaSekolah}
-							<div class="pt-1 font-semibold">{kepalaSekolah.nama}</div>
+							<div class="font-semibold">{kepalaSekolah.nama}</div>
+							<div class="text-xs mt-1">{kepalaSekolah.nip}</div>
 						{/if}
+					</div>
 					</div>
 				</section>
-
-				{#if ttd}
-					<section class="mt-4 text-right text-xs print:text-xs">
-						<div>{ttd.tempat}, {ttd.tanggal}</div>
-					</section>
-				{/if}
 			</PrintCardPage>
 		{/if}
 
