@@ -425,8 +425,8 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 			nisn: murid.nisn
 		},
 		rombel: {
-			nama: murid.kelas?.nama ?? '',
-			fase: murid.kelas?.fase ?? ''
+			nama: kelasData.nama ?? '',
+			fase: kelasData.fase ?? ''
 		},
 		periode: {
 			tahunAjaran: kelasData.tahunAjaran?.nama ?? '',
