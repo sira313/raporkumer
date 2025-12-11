@@ -57,6 +57,8 @@
 	let continuationPrototypeTableSection = $state<HTMLElement | null>(null);
 
 	// Support multiple <tr> elements for a single logical row (rowspan-style groups).
+	// IMPORTANT: Each instance of KeasramaanPreview gets its own tableRowElements Map
+	// to prevent state pollution in bulk mode where multiple murid are rendered.
 	const tableRowElements = new Map<number, Set<HTMLTableRowElement>>();
 	function tableRow(node: HTMLTableRowElement, order: number) {
 		let set = tableRowElements.get(order);
@@ -90,6 +92,7 @@
 	};
 
 	let tablePages = $state<TablePage[]>([]);
+	let lastMuridId = $state<number | null>(null);
 
 	const firstPageRows = $derived.by(() => {
 		if (tablePages.length > 0) return tablePages[0]?.rows ?? [];
@@ -110,7 +113,39 @@
 		return [] as TablePage['rows'];
 	});
 
+	// Determine if we should display attendance & signature on a separate last page
+	// This should be true when:
+	// 1. tablePages is still empty (split not yet complete, show in first page)
+	// 2. tablePages has content and there are intermediate pages (show in last page)
+	const shouldRenderLastPageWithAttendance = $derived.by(() => {
+		// If tablePages is empty, we'll show attendance in the single/first page
+		if (tablePages.length === 0) return true;
+		// If there are multiple pages, show on last page
+		if (tablePages.length > 1) return true;
+		// If only 1 page of table, also show (it means all rows fit in first page)
+		return true;
+	});
+
 	let splitQueued = false;
+
+	/**
+	 * Reset internal state when murid data changes.
+	 * This ensures that in bulk mode (multiple murid rendered),
+	 * each murid instance has a clean state.
+	 */
+	$effect(() => {
+		const currentMuridId = murid?.id ?? null;
+
+		// If this is a new murid (different from last render), reset state
+		if (currentMuridId !== lastMuridId) {
+			lastMuridId = currentMuridId;
+			tableRowElements.clear();
+			tablePages = [];
+			splitQueued = false;
+			firstCardContent = null;
+			firstTableSection = null;
+		}
+	});
 
 	function computeTableCapacity(content: HTMLElement, tableSection: HTMLElement) {
 		const contentRect = content.getBoundingClientRect();
@@ -267,15 +302,19 @@
 				/>
 			</PrintCardPage>
 		{/each}
-		{#if finalPageRows.length > 0}
+		<!-- Always show last page with attendance & signature -->
+		{#if shouldRenderLastPageWithAttendance}
 			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
-				<KeasramaanTable
-					rows={finalPageRows}
-					tableRowAction={tableRow}
-					sectionClass="mt-4"
-					splitTrigger={triggerSplitOnMount}
-					{formatValue}
-				/>
+				<!-- Show final table rows if they exist (multi-page scenario) -->
+				{#if finalPageRows.length > 0}
+					<KeasramaanTable
+						rows={finalPageRows}
+						tableRowAction={tableRow}
+						sectionClass="mt-4"
+						splitTrigger={triggerSplitOnMount}
+						{formatValue}
+					/>
+				{/if}
 
 				<!-- Kehadiran Section on Last Page -->
 				{#if kehadiran}
