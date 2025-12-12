@@ -54,7 +54,7 @@
 <section class={resolvedSectionClass} bind:this={sectionRef} use:applySplit>
 	<table class="table-compact table w-full text-xs print:text-xs">
 		<thead>
-			<tr class="bg-gray-100 text-black print:bg-gray-100 print:text-black">
+			<tr class="text-black print:text-black">
 				<th class="border border-black px-2 py-1 print:border-black">No</th>
 				<th class="border border-black px-2 py-1 print:border-black">Indikator</th>
 				<th class="border border-black px-2 py-1 print:border-black">Predikat</th>
@@ -65,10 +65,7 @@
 			{#each rows as row, idx (idx)}
 				{#if row.kategoriHeader}
 					<tr use:applyRow={row.order ?? idx}>
-						<td
-							colspan="4"
-							class="border border-black bg-gray-50 px-2 py-1 font-semibold print:border-black print:bg-gray-50"
-						>
+						<td colspan="4" class="border border-black px-2 py-1 font-semibold print:border-black">
 							{row.kategoriHeader}
 						</td>
 					</tr>
