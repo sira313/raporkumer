@@ -71,11 +71,9 @@ export function createTableRows(
 		const jenisOrder = ['wajib', 'pilihan', 'kejuruan', 'mulok'];
 		const jenisToLabel: Record<string, string> = {
 			wajib:
-				jenjangVariant?.toUpperCase() === 'SMK'
-					? 'Kelompok Mata Pelajaran Umum'
-					: 'Kelompok Mata Pelajaran Wajib',
-			pilihan: 'Kelompok Mata Pelajaran Pilihan',
-			kejuruan: 'Kelompok Mata Pelajaran Kejuruan',
+				jenjangVariant?.toUpperCase() === 'SMK' ? 'Mata Pelajaran Umum' : 'Mata Pelajaran Wajib',
+			pilihan: 'Mata Pelajaran Pilihan',
+			kejuruan: 'Mata Pelajaran Kejuruan',
 			mulok: 'Muatan Lokal'
 		};
 

@@ -31,6 +31,11 @@
 
 	const hasKokurikuler = $derived.by(() => Boolean(rapor?.hasKokurikuler));
 
+	const kepalaSekolahTitle = $derived.by(() => {
+		const status = kepalaSekolah?.statusKepalaSekolah;
+		return status === 'plt' ? 'Plt. Kepala Sekolah' : 'Kepala Sekolah';
+	});
+
 	function applyMeasurement(node: HTMLElement) {
 		if (!measure) return;
 		return measure(node, tailKey);
@@ -387,7 +392,7 @@
 				</div>
 			</div>
 			<div class="text-center">
-				<p>Kepala Sekolah</p>
+				<p>{kepalaSekolahTitle}</p>
 				<div class="mt-16 font-semibold tracking-wide underline">
 					{formatValue(kepalaSekolah?.nama)}
 				</div>

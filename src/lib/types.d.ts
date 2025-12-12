@@ -121,6 +121,7 @@ interface RaporPrintData {
 	kepalaSekolah: {
 		nama: string;
 		nip?: string | null;
+		statusKepalaSekolah?: string | null;
 	};
 	nilaiIntrakurikuler: Array<{
 		kelompok?: string | null;

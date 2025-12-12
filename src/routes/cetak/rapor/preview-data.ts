@@ -687,7 +687,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		},
 		kepalaSekolah: {
 			nama: sekolah.kepalaSekolah?.nama ?? '',
-			nip: sekolah.kepalaSekolah?.nip ?? null
+			nip: sekolah.kepalaSekolah?.nip ?? null,
+			statusKepalaSekolah: sekolah.statusKepalaSekolah ?? 'definitif'
 		},
 		nilaiIntrakurikuler,
 		kokurikuler,
