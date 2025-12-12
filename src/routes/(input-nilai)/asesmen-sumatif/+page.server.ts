@@ -113,14 +113,6 @@ export async function load({ parent, url, depends }) {
 		| undefined;
 	const assignedMapelIds = new Set<number>();
 
-	console.log(
-		`[asesmen-sumatif] load: user type=${maybeUser?.type}, id=${maybeUser?.id}, mataPelajaranId=${maybeUser?.mataPelajaranId}`
-	);
-	console.log(
-		`[asesmen-sumatif] load: kelasAktif.id=${kelasAktif.id}, initial mapelRecords count=${mapelRecords.length}`,
-		mapelRecords.map((m) => ({ id: m.id, nama: m.nama }))
-	);
-
 	if (maybeUser && maybeUser.type === 'user' && maybeUser.id) {
 		try {
 			// Try to fetch from join table (multi-mapel)
@@ -128,11 +120,6 @@ export async function load({ parent, url, depends }) {
 				columns: { mataPelajaranId: true },
 				where: eq(tableAuthUserMataPelajaran.authUserId, maybeUser.id)
 			});
-
-			console.log(
-				`[asesmen-sumatif] load: multiMapels from join table count=${multiMapels.length}`,
-				multiMapels
-			);
 
 			if (multiMapels.length > 0) {
 				// User has multi-mapel assignments
@@ -144,11 +131,6 @@ export async function load({ parent, url, depends }) {
 						multiMapels.map((m) => m.mataPelajaranId)
 					)
 				});
-
-				console.log(
-					`[asesmen-sumatif] load: assignedMapelRecords count=${assignedMapelRecords.length}`,
-					assignedMapelRecords
-				);
 
 				// Build a set of allowed mapel names (normalize for comparison)
 				const allowedNames = new Set(assignedMapelRecords.map((m) => normalizeText(m.nama)));
@@ -171,23 +153,12 @@ export async function load({ parent, url, depends }) {
 					allowedNames.add(normalizeText(AGAMA_BASE_SUBJECT));
 				}
 
-				console.log(`[asesmen-sumatif] load: allowedNames=`, Array.from(allowedNames));
-				console.log(`[asesmen-sumatif] load: hasAgamaVariant=${hasAgamaVariant}`);
-
 				// Filter current kelas' mapel by name match
-				const beforeFilter = mapelRecords.length;
 				mapelRecords = mapelRecords.filter((r) => {
 					const rNorm = normalizeText(r.nama);
 					const allowed = allowedNames.has(rNorm);
-					console.log(
-						`[asesmen-sumatif] filter: r.nama="${r.nama}" (norm="${rNorm}") allowed=${allowed}`
-					);
 					return allowed;
 				});
-
-				console.log(
-					`[asesmen-sumatif] load: after filter ${beforeFilter} → ${mapelRecords.length}`
-				);
 			} else if (maybeUser.mataPelajaranId) {
 				// Fallback: check legacy single mataPelajaranId
 				const assignedId = Number(maybeUser.mataPelajaranId);
@@ -216,8 +187,8 @@ export async function load({ parent, url, depends }) {
 					mapelRecords = mapelRecords.filter((r) => r.id === assignedId);
 				}
 			}
-		} catch (err) {
-			console.warn('[asesmen-sumatif] Failed to fetch assigned mapel from join table', err);
+		} catch {
+			// Silently handle error
 		}
 	}
 
@@ -257,11 +228,8 @@ export async function load({ parent, url, depends }) {
 					const foundById = mapelRecords.find((r) => r.id === Number(maybeUser.mataPelajaranId));
 					if (foundById) assignedLocalMapelId = foundById.id;
 				}
-			} catch (err) {
-				console.warn(
-					'[asesmen-sumatif] Failed to resolve assigned mapel for access restriction',
-					err
-				);
+			} catch {
+				// Silently handle error
 			}
 		}
 	}
@@ -326,8 +294,8 @@ export async function load({ parent, url, depends }) {
 						allowedAgamaVariants.add('Khonghucu');
 				}
 			}
-		} catch (err) {
-			console.warn('[asesmen-sumatif] Failed to resolve assigned agama variants', err);
+		} catch {
+			// Silently handle error
 		}
 	}
 
@@ -543,9 +511,6 @@ export async function load({ parent, url, depends }) {
 
 				// Allow access only if murid's agama is in user's assigned agama variants
 				const allowed = muridAgamaDisplay && allowedAgamaVariants.has(muridAgamaDisplay);
-				console.log(
-					`[asesmen-sumatif] canAccess check: murid.id=${murid.id}, murid.agama="${murid.agama}", muridAgamaDisplay="${muridAgamaDisplay}", allowed=${allowed}, allowedVariants=[${Array.from(allowedAgamaVariants).join(', ')}]`
-				);
 				return allowed ?? false;
 			}
 

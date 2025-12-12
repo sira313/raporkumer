@@ -130,11 +130,6 @@ export async function load({ depends, params, parent }) {
 	let assignedGlobalName: string | null = null;
 	let userHasMultiAgama = false;
 	try {
-		console.log('[tp-rl] user:', {
-			id: user?.id,
-			type: user?.type,
-			mataPelajaranId: user?.mataPelajaranId
-		});
 		if (user && user.type === 'user') {
 			// Check if user has multi-mapel in join table FIRST, regardless of legacy mataPelajaranId
 			if (user.id) {
@@ -143,12 +138,9 @@ export async function load({ depends, params, parent }) {
 					where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
 				});
 
-				console.log('[tp-rl] userAssignedMapels count:', userAssignedMapels.length);
-
 				if (userAssignedMapels.length > 1) {
 					// User has multi-mapel - clear legacy mataPelajaranId if set (one-time fix for existing users)
 					if (user.mataPelajaranId) {
-						console.log('[tp-rl] Clearing mataPelajaranId for multi-mapel user');
 						await db
 							.update(tableAuthUser)
 							.set({ mataPelajaranId: null })
@@ -160,7 +152,6 @@ export async function load({ depends, params, parent }) {
 
 			// First priority: check legacy mataPelajaranId field
 			if (user.mataPelajaranId) {
-				console.log('[tp-rl] User has legacy mataPelajaranId:', user.mataPelajaranId);
 				const assigned = await db.query.tableMataPelajaran.findFirst({
 					columns: { id: true, nama: true },
 					where: eq(tableMataPelajaran.id, Number(user.mataPelajaranId))
@@ -175,13 +166,10 @@ export async function load({ depends, params, parent }) {
 			}
 			// Second priority: for multi-mapel users, check join table for any agama assignment
 			else if (user.id) {
-				console.log('[tp-rl] Checking join table for user:', user.id);
 				const userAssignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({
 					columns: { mataPelajaranId: true },
 					where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
 				});
-
-				console.log('[tp-rl] userAssignedMapels count:', userAssignedMapels.length);
 
 				if (userAssignedMapels.length > 0) {
 					const assignedRecords = await db.query.tableMataPelajaran.findMany({
@@ -192,20 +180,11 @@ export async function load({ depends, params, parent }) {
 						)
 					});
 
-					console.log('[tp-rl] assignedRecords:', assignedRecords);
-
 					// Count how many agama variants this user has assigned
 					const agamaVariantsCount = assignedRecords.filter((r) =>
 						targetNames.includes(r.nama)
 					).length;
-					console.log(
-						'[tp-rl] agamaVariantsCount:',
-						agamaVariantsCount,
-						'targetNames:',
-						targetNames
-					);
 					userHasMultiAgama = agamaVariantsCount > 1;
-					console.log('[tp-rl] userHasMultiAgama set to:', userHasMultiAgama);
 
 					// Find first agama variant in user's assignments
 					for (const record of assignedRecords) {
@@ -222,18 +201,11 @@ export async function load({ depends, params, parent }) {
 							break;
 						}
 					}
-				} else {
-					console.log('[tp-rl] User has no assigned mapel in join table');
 				}
-			} else {
-				console.log('[tp-rl] User has no ID');
 			}
-		} else {
-			console.log('[tp-rl] User is not type "user" or user is null');
 		}
-	} catch (err) {
+	} catch {
 		// non-fatal
-		console.warn('[tp-rl] failed to resolve assigned local mapel', err);
 	}
 
 	// Server-side enforcement: if the logged-in user is a 'user' assigned to a
@@ -312,18 +284,6 @@ export async function load({ depends, params, parent }) {
 				return Boolean(name && agamaMapelNames.includes(name));
 			})()
 	);
-
-	console.log('[tp-rl] Final return:', {
-		mapelId: params.id,
-		userType: user?.type,
-		userMataPelajaranId: user?.mataPelajaranId,
-		userHasMultiAgama,
-		assignedGlobalId,
-		assignedGlobalName,
-		assignedLocalMapelId,
-		agamaSelectDisabledValue,
-		agamaOptionsCount: agamaOptions.length
-	});
 
 	return {
 		tujuanPembelajaran,
@@ -558,8 +518,7 @@ export const actions = {
 		try {
 			const buffer = await file.arrayBuffer();
 			rawRows = await readBufferToAoA(buffer as ArrayBuffer);
-		} catch (error) {
-			console.error('Gagal membaca file Excel', error);
+		} catch {
 			return fail(400, { fail: 'Gagal membaca file Excel. Pastikan format sesuai.' });
 		}
 

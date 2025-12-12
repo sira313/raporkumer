@@ -71,7 +71,6 @@
 	const isAgamaSelectLocked = $derived.by(() => {
 		// If on parent agama page, never lock (allow switching between assigned variants)
 		if (isAgamaParentMapel) {
-			console.log('[tp-rl] isAgamaParentMapel=true, returning false (unlocked)');
 			return false;
 		}
 
@@ -80,16 +79,13 @@
 			.agamaSelectDisabled;
 		const userHasMultiAgama = (data as unknown as { userHasMultiAgama?: boolean })
 			.userHasMultiAgama;
-		console.log('[tp-rl] serverDisabled:', serverDisabled, 'userHasMultiAgama:', userHasMultiAgama);
 
 		// For multi-mapel users, never lock the select (let them switch variants)
 		if (userHasMultiAgama) {
-			console.log('[tp-rl] userHasMultiAgama=true, returning false (unlocked for multi-mapel)');
 			return false;
 		}
 
 		if (serverDisabled) {
-			console.log('[tp-rl] server returned agamaSelectDisabled=true, returning true (locked)');
 			return Boolean(serverDisabled);
 		}
 
@@ -103,22 +99,11 @@
 			: Number.isFinite(Number(fallbackAssigned))
 				? Number(fallbackAssigned)
 				: null;
-		console.log(
-			'[tp-rl] assignedLocal:',
-			assignedLocal,
-			'fallbackAssigned:',
-			fallbackAssigned,
-			'checkId:',
-			checkId
-		);
-		console.log('[tp-rl] data.mapel?.id:', data.mapel?.id);
 		if (!checkId) {
-			console.log('[tp-rl] no checkId, returning false (unlocked)');
 			return false;
 		}
 		// Only lock if the specific variant matches assigned agama
 		const shouldLock = data.mapel?.id === checkId;
-		console.log('[tp-rl] shouldLock:', shouldLock);
 		return shouldLock;
 	});
 
@@ -815,8 +800,7 @@
 			await invalidate('app:mapel_tp-rl');
 
 			toast(resultData?.message || 'Bobot berhasil disimpan.', 'success');
-		} catch (error) {
-			console.error('Error saving bobot:', error);
+		} catch (_error) {
 			toast('Terjadi kesalahan saat menyimpan bobot.', 'error');
 			// Restore editing mode on error
 			isEditingBobot = true;

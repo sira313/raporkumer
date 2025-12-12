@@ -598,9 +598,7 @@ export async function load({ parent, url, depends }) {
 
 				// Allow access only if murid's agama is in user's assigned agama variants
 				const allowed = muridAgamaDisplay && allowedAgamaVariants.has(muridAgamaDisplay);
-				console.log(
-					`[asesmen-formatif] canAccess check: murid.id=${murid.id}, murid.agama="${murid.agama}", muridAgamaDisplay="${muridAgamaDisplay}", allowed=${allowed}, allowedVariants=[${Array.from(allowedAgamaVariants).join(', ')}]`
-				);
+
 				return allowed ?? false;
 			}
 

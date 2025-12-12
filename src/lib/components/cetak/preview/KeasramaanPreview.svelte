@@ -213,18 +213,6 @@
 			return total + 1;
 		});
 
-		// Log row heights for debugging
-		console.log(
-			'[splitTableRows] Row heights:',
-			rowsWithOrder.map((row, idx) => ({
-				idx,
-				order: row.order,
-				isHeader: Boolean(row.kategoriHeader),
-				height: rowHeights[idx],
-				label: row.kategoriHeader || `${row.indikator?.substring(0, 30)}...`
-			}))
-		);
-
 		// Jika ada row height yang belum terukur, coba lagi
 		if (rowHeights.some((height) => height === 0)) {
 			queueSplit();
@@ -241,30 +229,6 @@
 			tolerance
 		});
 
-		console.log(
-			'[splitTableRows] Capacities - first:',
-			firstCapacity,
-			'continuation:',
-			continuationCapacity,
-			'last:',
-			lastPageCapacity,
-			'tolerance:',
-			tolerance
-		);
-
-		console.log(
-			'[splitTableRows] Initial pagination result:',
-			paginatedRows.map((page, idx) => ({
-				pageNum: idx + 1,
-				rowCount: page.length,
-				totalHeight: page.reduce((sum, row) => {
-					const rowIdx = rowsWithOrder.findIndex((r) => r.order === row.order);
-					return sum + (rowHeights[rowIdx] ?? 0);
-				}, 0),
-				rows: page.map((r) => r.kategoriHeader || r.indikator?.substring(0, 20))
-			}))
-		);
-
 		// If we have multiple pages, re-fit the last page with the constrained lastPageCapacity
 		if (paginatedRows.length > 1) {
 			paginatedRows = refitLastPageWithCapacity(
@@ -273,18 +237,6 @@
 				rowHeights,
 				lastPageCapacity,
 				tolerance
-			);
-
-			console.log(
-				'[splitTableRows] After refitLastPage:',
-				paginatedRows.map((page, idx) => ({
-					pageNum: idx + 1,
-					rowCount: page.length,
-					totalHeight: page.reduce((sum, row) => {
-						const rowIdx = rowsWithOrder.findIndex((r) => r.order === row.order);
-						return sum + (rowHeights[rowIdx] ?? 0);
-					}, 0)
-				}))
 			);
 		}
 
@@ -515,15 +467,6 @@
 	): KeasramaanRowWithOrder[][] {
 		let result = pages.map((page) => [...page]); // Deep copy
 
-		console.log(
-			'[fixCategoryHeaderPlacement] Input pages:',
-			result.length,
-			result.map((p) => ({
-				length: p.length,
-				lastIsHeader: p[p.length - 1]?.kategoriHeader ? p[p.length - 1].kategoriHeader : 'NO'
-			}))
-		);
-
 		let changed = true;
 		let iteration = 0;
 		while (changed && iteration < 10) {
@@ -541,11 +484,6 @@
 					const nextPageIndex = i + 1;
 
 					// Jika ini adalah header di akhir page, move ke page berikutnya
-					console.log(
-						`[fixCategoryHeaderPlacement] Iteration ${iteration}, Page ${i}: ` +
-							`Found orphaned header "${lastRow.kategoriHeader}"`
-					);
-
 					// Remove header from current page
 					const pageWithoutHeader = page.slice(0, -1);
 
@@ -572,14 +510,6 @@
 			result = newResult;
 		}
 
-		console.log(
-			'[fixCategoryHeaderPlacement] Output pages:',
-			result.length,
-			result.map((p) => ({
-				length: p.length,
-				lastIsHeader: p[p.length - 1]?.kategoriHeader ? p[p.length - 1].kategoriHeader : 'NO'
-			}))
-		);
 		return result;
 	}
 

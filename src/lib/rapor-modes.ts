@@ -116,7 +116,6 @@ function buildCombinedTercapaiLine(muridNama: string, descriptors: CapaianDescri
 		}
 	}
 
-	console.log('buildCombinedTercapaiLine - sentences:', sentences);
 	return sentences.join(', dan ') + '.';
 }
 
