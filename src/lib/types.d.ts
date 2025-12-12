@@ -43,6 +43,7 @@ interface BiodataPrintData {
 	sekolah: {
 		nama: string;
 		logoUrl?: string | null;
+		statusKepalaSekolah?: string | null;
 	};
 	murid: {
 		id?: number;

@@ -163,7 +163,8 @@ export async function getBiodataPreviewPayload({ locals, url }: BiodataContext) 
 	const biodataData: BiodataPrintData = {
 		sekolah: {
 			nama: sekolah.nama,
-			logoUrl: buildLogoUrl(sekolah)
+			logoUrl: buildLogoUrl(sekolah),
+			statusKepalaSekolah: sekolah.statusKepalaSekolah ?? 'definitif'
 		},
 		murid: {
 			id: murid.id,
