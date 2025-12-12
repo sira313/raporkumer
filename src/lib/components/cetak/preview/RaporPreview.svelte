@@ -508,6 +508,8 @@
 			bind:contentRef={firstCardContent}
 			splitTrigger={triggerSplitOnMount}
 			{backgroundStyle}
+			{murid}
+			{rombel}
 		>
 			<header class="pb-4 text-center">
 				<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
@@ -532,7 +534,13 @@
 		</PrintCardPage>
 
 		{#each intermediatePageRows as pageRows, pageIndex (pageIndex)}
-			<PrintCardPage breakAfter splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+			<PrintCardPage
+				breakAfter
+				splitTrigger={triggerSplitOnMount}
+				{backgroundStyle}
+				{murid}
+				{rombel}
+			>
 				<RaporIntrakTable
 					rows={pageRows}
 					tableRowAction={tableRow}
@@ -553,6 +561,8 @@
 				breakAfter={shouldRenderFooterOnSeparatePage}
 				splitTrigger={triggerSplitOnMount}
 				{backgroundStyle}
+				{murid}
+				{rombel}
 			>
 				<RaporIntrakTable
 					rows={finalPageRows}
@@ -600,7 +610,7 @@
 		{:else}
 			<!-- If no finalPageRows, all content fits in first page -->
 			<!-- So render footer on same first page -->
-			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle} {murid} {rombel}>
 				<!-- Footer/Signatures Section on first page if it's the only page -->
 				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
 					<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
@@ -635,7 +645,7 @@
 
 		<!-- Render footer on separate page if it doesn't fit on last table page -->
 		{#if shouldRenderFooterOnSeparatePage && finalPageRows.length > 0}
-			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle} {murid} {rombel}>
 				<!-- Footer/Signatures Section on dedicated page -->
 				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
 					<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">

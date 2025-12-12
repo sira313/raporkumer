@@ -1,11 +1,14 @@
 <script lang="ts">
 	import type { ActionReturn } from 'svelte/action';
+	import FooterPage from '$lib/components/cetak/preview/FooterPage.svelte';
 
 	type SplitTrigger = (node: Element) => ActionReturn | void;
 
 	let {
 		breakAfter = false,
 		contentRef = $bindable<HTMLElement | null>(),
+		murid = null,
+		rombel = null,
 		splitTrigger,
 		cardClass = '',
 		contentClass = '',
@@ -16,6 +19,8 @@
 	} = $props<{
 		breakAfter?: boolean;
 		contentRef?: HTMLElement | null;
+		murid?: any;
+		rombel?: any;
 		splitTrigger?: SplitTrigger;
 		cardClass?: string;
 		contentClass?: string;
@@ -71,5 +76,8 @@
 		<div class={bodyClasses} bind:this={contentRef} use:applySplit>
 			{@render children?.()}
 		</div>
+
+		<!-- Per-page footer placed outside of the measured contentRef so it doesn't affect pagination -->
+		<FooterPage {murid} {rombel} />
 	</div>
 </div>
