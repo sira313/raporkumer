@@ -154,6 +154,13 @@
 		Boolean(previewDocument && selectedDocument && selectedDocument === previewDocument)
 	);
 
+	// Reset preview state when document selection changes
+	$effect(() => {
+		if (selectedDocument) {
+			resetCetak();
+		}
+	});
+
 	$effect(() => {
 		if (isPiagamSelected) {
 			const rankingOptions = piagamRankingOptions;
@@ -258,6 +265,12 @@
 	}
 
 	async function handlePreview() {
+		// Clear bulk mode when previewing single murid
+		isBulkMode = false;
+		bulkPreviewData = [];
+		bulkPrintableNodes = [];
+		waitingForPrintable = false;
+
 		const documentType = selectedDocument;
 		if (!documentType) {
 			toast('Pilih dokumen yang ingin di-preview terlebih dahulu.', 'warning');
@@ -344,6 +357,11 @@
 	}
 
 	async function handleBulkPreview() {
+		// Clear single murid preview state when doing bulk preview
+		previewData = null;
+		previewMurid = null;
+		previewPrintable = null;
+
 		const documentType = selectedDocument;
 		if (!documentType) {
 			toast('Pilih dokumen yang ingin di-preview terlebih dahulu.', 'warning');
