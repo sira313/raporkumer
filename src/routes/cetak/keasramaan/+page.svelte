@@ -372,7 +372,7 @@
 	<title>{headingTitle}</title>
 </svelte:head>
 
-<div class="page-container">
+<div class="page-container bg-base-100 min-h-screen">
 	<PreviewHeader
 		{headingTitle}
 		kelasAktifLabel={null}
@@ -450,6 +450,5 @@
 	}
 
 	.page-container {
-		@apply bg-base-100 min-h-screen;
 	}
 </style>
