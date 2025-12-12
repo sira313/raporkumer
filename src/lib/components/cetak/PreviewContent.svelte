@@ -35,6 +35,8 @@
 		selectedDocumentEntry = null,
 		selectedTemplate = '1',
 		bgRefreshKey = 0,
+		bulkLoadProgress = null,
+		waitingForPrintable = false,
 		onPrintableReady,
 		onBulkPrintableReady,
 		showBgLogo = false
@@ -48,6 +50,8 @@
 		selectedDocumentEntry: { value: DocumentType; label: string } | null;
 		selectedTemplate: '1' | '2';
 		bgRefreshKey: number;
+		bulkLoadProgress?: { current: number; total: number } | null;
+		waitingForPrintable?: boolean;
 		onPrintableReady: (node: HTMLDivElement | null) => void;
 		onBulkPrintableReady: (index: number, node: HTMLDivElement | null) => void;
 		showBgLogo?: boolean;
@@ -69,22 +73,36 @@
 {#if previewLoading}
 	<div class="text-base-content/70 mt-6 flex items-center gap-3 text-sm">
 		<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-		<span>Menyiapkan preview dokumen…</span>
+		{#if isBulkMode && bulkLoadProgress}
+			<span>Memuat preview murid {bulkLoadProgress.current}/{bulkLoadProgress.total}…</span>
+		{:else}
+			<span>Menyiapkan preview dokumen…</span>
+		{/if}
 	</div>
 {:else if previewError}
 	<div class="alert alert-error mt-6 flex items-center gap-2 text-sm">
 		<Icon name="error" />
 		<span>{previewError}</span>
 	</div>
-{:else if previewDocument && isBulkMode && bulkPreviewData.length > 0}
+{:else if isBulkMode && bulkPreviewData.length > 0}
 	<div class="mt-6">
-		<div class="alert alert-info mb-4 flex items-center gap-2 text-sm print:hidden">
-			<Icon name="alert" />
-			<span>
-				Menampilkan {bulkPreviewData.length} dokumen {selectedDocumentEntry?.label.toLowerCase() ??
-					'dokumen'} untuk semua murid. Scroll ke bawah untuk melihat semua dokumen.
-			</span>
-		</div>
+		{#if waitingForPrintable}
+			<div class="alert alert-warning mb-4 flex items-center gap-2 text-sm print:hidden">
+				<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+				<span
+					>Memproses {bulkPreviewData.length} dokumen untuk ditampilkan… Ini mungkin memakan waktu beberapa
+					detik untuk dokumen yang kompleks.</span
+				>
+			</div>
+		{:else}
+			<div class="alert alert-info mb-4 flex items-center gap-2 text-sm print:hidden">
+				<Icon name="alert" />
+				<span>
+					Menampilkan {bulkPreviewData.length} dokumen {selectedDocumentEntry?.label.toLowerCase() ??
+						'dokumen'} untuk semua murid. Scroll ke bawah untuk melihat semua dokumen.
+				</span>
+			</div>
+		{/if}
 		<div class="flex flex-col gap-6">
 			{#each bulkPreviewData as item, index (item.murid.id)}
 				<div class="border-base-300 border-b last:border-b-0">

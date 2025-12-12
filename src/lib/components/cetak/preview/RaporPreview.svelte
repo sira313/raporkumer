@@ -136,6 +136,7 @@
 	});
 
 	let splitQueued = false;
+	let splitAnimationFrameId: number | null = null;
 
 	function computeTableCapacity(content: HTMLElement, tableSection: HTMLElement) {
 		const contentRect = content.getBoundingClientRect();
@@ -146,6 +147,10 @@
 
 	async function splitTableRows() {
 		splitQueued = false;
+		if (splitAnimationFrameId !== null) {
+			cancelAnimationFrame(splitAnimationFrameId);
+			splitAnimationFrameId = null;
+		}
 		await tick();
 		if (
 			!firstCardContent ||
@@ -443,7 +448,12 @@
 	function queueSplit() {
 		if (splitQueued) return;
 		splitQueued = true;
-		queueMicrotask(splitTableRows);
+		if (splitAnimationFrameId !== null) {
+			cancelAnimationFrame(splitAnimationFrameId);
+		}
+		splitAnimationFrameId = requestAnimationFrame(() => {
+			queueMicrotask(splitTableRows);
+		});
 	}
 
 	function triggerSplitOnMount(node: Element) {
