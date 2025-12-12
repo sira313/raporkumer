@@ -12,7 +12,6 @@ import {
 import {
 	jenisMapel,
 	agamaMapelNames,
-	agamaMapelOptions,
 	agamaParentName,
 	type DimensiProfilLulusanKey
 } from '$lib/statics';
@@ -280,13 +279,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		}
 	] as const;
 
-	const muridAgamaSubjectName = (() => {
-		const normalizedAgama = murid.agama ? normalizeSubjectName(murid.agama) : '';
-		const matchedOption =
-			agamaMapelOptions.find((option) => normalizeSubjectName(option.label) === normalizedAgama) ??
-			agamaMapelOptions.find((option) => normalizeSubjectName(option.key) === normalizedAgama);
-		return matchedOption?.name ?? agamaParentName;
-	})();
+	// Resolve murid's agama subject name using the same mapping as filter
+	const muridAgamaSubjectName = resolveAgamaVariantName(murid.agama) ?? agamaParentName;
 
 	const agamaParentNameNormalized = normalizeSubjectName(agamaParentName);
 
