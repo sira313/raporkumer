@@ -171,11 +171,13 @@
 		);
 
 		// Measure footer height from a temporary rendered element
+		// Use the actual font size from the page (text-[12px]) for accuracy
 		const tempFooter = document.createElement('section');
-		tempFooter.className = 'mt-8 flex flex-col gap-6';
+		tempFooter.className = 'mt-8 flex flex-col gap-6 text-[12px]';
 		tempFooter.style.position = 'fixed';
 		tempFooter.style.left = '-10000px';
 		tempFooter.style.visibility = 'hidden';
+		// Don't add padding - measure the actual footer content height only
 		tempFooter.innerHTML = `
 			<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
 				<div class="flex flex-col items-center text-center">
@@ -196,7 +198,8 @@
 			</div>
 		`;
 		document.body.appendChild(tempFooter);
-		footerHeight = tempFooter.getBoundingClientRect().height;
+		const measured = tempFooter.getBoundingClientRect().height;
+		footerHeight = measured > 0 ? measured : 160; // Fallback to ~160px if measurement fails
 		document.body.removeChild(tempFooter);
 
 		const rowHeights = rows.map((row) => {
@@ -242,6 +245,9 @@
 
 		// Determine if footer fits on the last page
 		// Calculate remaining space on last page
+		const safetyMargin = 8; // Extra margin for rendering variance only
+		const footerGapMargin = 10; // Space for mt-8 before footer
+
 		if (paginatedRows.length > 0) {
 			const lastPageRowsHeights = paginatedRows[paginatedRows.length - 1].map((row) => {
 				const originalIndex = rows.findIndex((r) => r.order === row.order);
@@ -249,10 +255,19 @@
 			});
 			const lastPageUsedHeight = lastPageRowsHeights.reduce((sum, h) => sum + h, 0);
 			const remainingSpace = lastPageCapacity - lastPageUsedHeight;
-			const safetyMargin = 10; // Extra margin for padding/gaps
-			footerFitsOnLastPage = remainingSpace >= footerHeight + safetyMargin;
+			const footerHeightWithGap = footerHeight + safetyMargin + footerGapMargin;
+			footerFitsOnLastPage = remainingSpace >= footerHeightWithGap;
 		} else {
-			footerFitsOnLastPage = lastPageCapacity >= footerHeight + 10;
+			// Single page case: check if footer fits after all content on first page
+			const firstPageRowsHeights =
+				paginatedRows[0]?.map((row) => {
+					const originalIndex = rows.findIndex((r) => r.order === row.order);
+					return rowHeights[originalIndex] ?? 0;
+				}) ?? [];
+			const firstPageUsedHeight = firstPageRowsHeights.reduce((sum, h) => sum + h, 0);
+			const remainingSpace = firstCapacity - firstPageUsedHeight;
+			const footerHeightWithGap = footerHeight + safetyMargin + footerGapMargin;
+			footerFitsOnLastPage = remainingSpace >= footerHeightWithGap;
 		}
 	}
 
@@ -572,8 +587,9 @@
 					</section>
 				{/if}
 			</PrintCardPage>
-		{:else if tablePages.length === 1}
-			<!-- If only 1 page of content, footer goes on same page -->
+		{:else}
+			<!-- If no finalPageRows, all content fits in first page -->
+			<!-- So render footer on same first page -->
 			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
 				<!-- Footer/Signatures Section on first page if it's the only page -->
 				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
