@@ -37,6 +37,10 @@
 	const waliNamaDisplay = $derived.by(() => formatValue(waliKelas?.nama) || '—');
 	const kepalaNip = $derived.by(() => formatValue(kepalaSekolah?.nip));
 	const waliNip = $derived.by(() => formatValue(waliKelas?.nip));
+	const kepalaSekolahTitle = $derived.by(() => {
+		const prefix = kepalaSekolah?.statusKepalaSekolah === 'plt' ? 'Plt. ' : '';
+		return `${prefix}Kepala ${sekolahNamaDisplay}`;
+	});
 
 	function formatValue(value: string | null | undefined): string {
 		if (!value) return '';
@@ -270,7 +274,7 @@
 				<footer class="mt-6 grid grid-cols-2 gap-6 text-sm">
 					<div class="flex flex-col items-center gap-1.5 text-center">
 						<p class="font-semibold uppercase">Mengetahui</p>
-						<p class="text-base font-semibold">Kepala {sekolahNamaDisplay}</p>
+						<p class="text-base font-semibold">{kepalaSekolahTitle}</p>
 						<div class="h-16 w-full"></div>
 						<p class="text-sm font-semibold">{kepalaNamaDisplay}</p>
 						<p class="text-xs">{kepalaNip || '—'}</p>

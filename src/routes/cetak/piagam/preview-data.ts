@@ -206,7 +206,8 @@ export async function getPiagamPreviewPayload({ locals, url }: { locals: App.Loc
 			tanggal: formatTanggal(murid.semester?.tanggalBagiRaport) || formatTanggal(new Date()),
 			kepalaSekolah: {
 				nama: sekolah.kepalaSekolah?.nama ?? '',
-				nip: sekolah.kepalaSekolah?.nip ?? ''
+				nip: sekolah.kepalaSekolah?.nip ?? '',
+				statusKepalaSekolah: sekolah.statusKepalaSekolah ?? 'definitif'
 			},
 			waliKelas: {
 				nama: murid.kelas?.waliKelas?.nama ?? '',

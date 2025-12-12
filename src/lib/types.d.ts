@@ -192,6 +192,7 @@ interface PiagamPrintData {
 		kepalaSekolah: {
 			nama: string;
 			nip?: string | null;
+			statusKepalaSekolah?: string | null;
 		};
 		waliKelas: {
 			nama: string;
