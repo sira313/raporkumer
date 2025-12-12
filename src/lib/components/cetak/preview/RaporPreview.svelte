@@ -250,8 +250,8 @@
 
 		// Determine if footer fits on the last page
 		// Calculate remaining space on last page
-		const safetyMargin = 8; // Extra margin for rendering variance only
-		const footerGapMargin = 10; // Space for mt-8 before footer
+		const safetyMargin = 2; // Extra margin for rendering variance only (reduced)
+		const footerGapMargin = 6; // Space for mt-8 before footer (reduced)
 
 		if (paginatedRows.length > 0) {
 			const lastPageRowsHeights = paginatedRows[paginatedRows.length - 1].map((row) => {
@@ -261,7 +261,13 @@
 			const lastPageUsedHeight = lastPageRowsHeights.reduce((sum, h) => sum + h, 0);
 			const remainingSpace = lastPageCapacity - lastPageUsedHeight;
 			const footerHeightWithGap = footerHeight + safetyMargin + footerGapMargin;
-			footerFitsOnLastPage = remainingSpace >= footerHeightWithGap;
+			// Allow a small extra slack when there are no intrakurikuler entries
+			if ((rapor?.nilaiIntrakurikuler?.length ?? 0) === 0) {
+				// Provide permissive allowance to keep signatures on same page when reasonable
+				footerFitsOnLastPage = remainingSpace + 40 >= footerHeightWithGap;
+			} else {
+				footerFitsOnLastPage = remainingSpace >= footerHeightWithGap;
+			}
 		} else {
 			// Single page case: check if footer fits after all content on first page
 			const firstPageRowsHeights =
@@ -272,7 +278,11 @@
 			const firstPageUsedHeight = firstPageRowsHeights.reduce((sum, h) => sum + h, 0);
 			const remainingSpace = firstCapacity - firstPageUsedHeight;
 			const footerHeightWithGap = footerHeight + safetyMargin + footerGapMargin;
-			footerFitsOnLastPage = remainingSpace >= footerHeightWithGap;
+			if ((rapor?.nilaiIntrakurikuler?.length ?? 0) === 0) {
+				footerFitsOnLastPage = remainingSpace + 40 >= footerHeightWithGap;
+			} else {
+				footerFitsOnLastPage = remainingSpace >= footerHeightWithGap;
+			}
 		}
 	}
 
@@ -528,6 +538,37 @@
 				sectionClass="mt-8"
 				splitTrigger={triggerSplitOnMount}
 			/>
+			{#if tablePages.length <= 1}
+				<!-- Footer/Signatures Section when only a single table page exists -->
+				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
+					<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
+						<div class="flex flex-col items-center text-center">
+							<p>Orang Tua/Wali Murid</p>
+							<div
+								class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
+								aria-hidden="true"
+							></div>
+						</div>
+						<div class="text-center">
+							<p>{kepalaSekolahTitle}</p>
+							<div class="mt-16 font-semibold tracking-wide underline">
+								{formatValue(kepalaSekolah?.nama)}
+							</div>
+							<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
+						</div>
+						<div class="relative flex flex-col items-center text-center">
+							<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+								{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
+							</p>
+							<p>Wali Kelas</p>
+							<div class="mt-16 font-semibold tracking-wide underline">
+								{formatValue(waliKelas?.nama)}
+							</div>
+							<div class="mt-1">{formatValue(waliKelas?.nip)}</div>
+						</div>
+					</div>
+				</section>
+			{/if}
 		</PrintCardPage>
 
 		{#each intermediatePageRows as pageRows, pageIndex (pageIndex)}
@@ -605,46 +646,6 @@
 						</div>
 					</section>
 				{/if}
-			</PrintCardPage>
-		{:else}
-			<!-- If no finalPageRows, all content fits in first page -->
-			<!-- So render footer on same first page -->
-			<PrintCardPage
-				splitTrigger={triggerSplitOnMount}
-				{backgroundStyle}
-				{murid}
-				{rombel}
-				pageNumber={1}
-			>
-				<!-- Footer/Signatures Section on first page if it's the only page -->
-				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
-					<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
-						<div class="flex flex-col items-center text-center">
-							<p>Orang Tua/Wali Murid</p>
-							<div
-								class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
-								aria-hidden="true"
-							></div>
-						</div>
-						<div class="text-center">
-							<p>{kepalaSekolahTitle}</p>
-							<div class="mt-16 font-semibold tracking-wide underline">
-								{formatValue(kepalaSekolah?.nama)}
-							</div>
-							<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
-						</div>
-						<div class="relative flex flex-col items-center text-center">
-							<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-								{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
-							</p>
-							<p>Wali Kelas</p>
-							<div class="mt-16 font-semibold tracking-wide underline">
-								{formatValue(waliKelas?.nama)}
-							</div>
-							<div class="mt-1">{formatValue(waliKelas?.nip)}</div>
-						</div>
-					</div>
-				</section>
 			</PrintCardPage>
 		{/if}
 

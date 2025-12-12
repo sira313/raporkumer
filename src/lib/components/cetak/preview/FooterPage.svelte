@@ -12,15 +12,13 @@
 
 <div class="footer-page" aria-hidden="true">
 	<div class="text-base-content flex items-center justify-between text-[12px]">
-		<div class="text-left">
+		<div class="footer-meta text-left">
 			{#if rombel || murid}
-				<span
-					>{rombel?.nama ?? ''}
-					{rombel?.nama ? '|' : ''}
-					{murid?.nama ?? ''}
-					{murid?.nama ? '|' : ''}
-					{murid?.nis ?? ''}</span
-				>
+				<span>
+					{rombel?.nama ?? ''}{rombel?.nama ? ' | ' : ''}{murid?.nama ?? ''}{murid?.nama
+						? ' | '
+						: ''}{murid?.nis ?? ''}
+				</span>
 			{/if}
 		</div>
 
@@ -55,9 +53,14 @@
 				position: fixed;
 				left: 20mm;
 				right: 20mm;
+				bottom: 10mm;
+				padding-left: 0;
+				padding-right: 0;
 			}
-			.page-number::after {
-				content: 'Halaman: ' counter(page);
+
+			/* Show the prop-based page number in print (use value passed from parent) */
+			.page-number-screen {
+				display: inline;
 			}
 		}
 	</style>
