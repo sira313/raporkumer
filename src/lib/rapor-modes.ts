@@ -86,6 +86,40 @@ function buildDeskripsiLine(muridNama: string, descriptor: CapaianDescriptor): s
 	return `Ananda ${nama} ${narrative} dalam ${descriptor.deskripsi}`;
 }
 
+// Build a combined line for multiple achieved descriptors (tercapai)
+function buildCombinedTercapaiLine(muridNama: string, descriptors: CapaianDescriptor[]): string {
+	const nama = muridNama.trim().length > 0 ? muridNama.trim() : muridNama;
+
+	if (descriptors.length === 0) return '';
+	if (descriptors.length === 1) return buildDeskripsiLine(muridNama, descriptors[0]);
+
+	// Build sentence for each descriptor
+	const sentences: string[] = [];
+
+	for (let i = 0; i < descriptors.length; i++) {
+		const d = descriptors[i];
+		const cleanDesc = d.deskripsi.replace(/[.!?]+$/gu, '').trim();
+		const narrative = d.predikat.narrative;
+
+		let sentence = '';
+		if (d.predikat.key === 'cukup') {
+			sentence = `cukup mampu ${cleanDesc}`;
+		} else {
+			sentence = `${narrative} dalam ${cleanDesc}`;
+		}
+
+		// For first sentence, prepend nama
+		if (i === 0) {
+			sentences.push(`Ananda ${nama} ${sentence}`);
+		} else {
+			sentences.push(sentence);
+		}
+	}
+
+	console.log('buildCombinedTercapaiLine - sentences:', sentences);
+	return sentences.join(', dan ') + '.';
+}
+
 // Join list of items with Indonesian grammar
 function joinList(items: string[]): string {
 	if (!items.length) return '';
@@ -100,25 +134,63 @@ function capitalizeFirst(s: string) {
 	return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// Compact mode: Show highest and lowest descriptors only
+// Compact mode: Show exactly 2 TP with new logic
+// - tercapai (achieved): cukup, baik, sangat baik - digabung jadi 1 baris
+// - belum tercapai (not achieved): perlu bimbingan
 export function buildCompactMode(muridNama: string, descriptors: CapaianDescriptor[]): string {
 	if (!descriptors.length) {
 		return 'Belum ada penilaian sumatif.';
 	}
 
-	const sorted = descriptors.slice().sort(compareDescriptorAscending);
-	const lowest = sorted[0];
-	const highest = sorted.at(-1) ?? lowest;
+	// Separate tercapai from belum tercapai
+	const tercapai: CapaianDescriptor[] = [];
+	const belumTercapai: CapaianDescriptor[] = [];
 
-	// If only 1 tujuan or highest === lowest, show 1 sentence
-	if (sorted.length === 1 || highest.tujuanPembelajaranId === lowest.tujuanPembelajaranId) {
-		return buildDeskripsiLine(muridNama, highest);
+	for (const d of descriptors) {
+		if (d.predikat.key === 'perlu-bimbingan') {
+			belumTercapai.push(d);
+		} else {
+			tercapai.push(d);
+		}
 	}
 
-	const highestLine = buildDeskripsiLine(muridNama, highest);
-	const lowestLine = buildDeskripsiLine(muridNama, lowest);
+	// Sort tercapai by nilai (highest first), then by ID for consistency
+	tercapai.sort((a, b) => {
+		const nilaiDiff = b.nilai - a.nilai; // descending
+		if (nilaiDiff !== 0) return nilaiDiff;
+		return a.tujuanPembelajaranId - b.tujuanPembelajaranId;
+	});
 
-	return `${highestLine}\n${lowestLine}`;
+	// Sort belumTercapai by nilai (lowest first) for consistency
+	belumTercapai.sort((a, b) => {
+		const nilaiDiff = a.nilai - b.nilai; // ascending
+		if (nilaiDiff !== 0) return nilaiDiff;
+		return a.tujuanPembelajaranId - b.tujuanPembelajaranId;
+	});
+
+	// Build result based on availability
+	const lines: string[] = [];
+
+	// If all tercapai: combine up to 2 TP into 1 baris
+	if (belumTercapai.length === 0) {
+		if (tercapai.length === 1) {
+			return buildDeskripsiLine(muridNama, tercapai[0]);
+		}
+		// Take max 2 highest (sorted descending by nilai) and combine them
+		const toDisplay = tercapai.slice(0, 2);
+		return buildCombinedTercapaiLine(muridNama, toDisplay);
+	}
+
+	// If there are belumTercapai: 1st line tercapai (highest), 2nd line belumTercapai (lowest)
+	if (tercapai.length > 0) {
+		lines.push(buildDeskripsiLine(muridNama, tercapai[0]));
+	}
+
+	if (belumTercapai.length > 0) {
+		lines.push(buildDeskripsiLine(muridNama, belumTercapai[0]));
+	}
+
+	return lines.join('\n');
 }
 
 // Full-desc mode: Paragraph-style with sentences grouped as tercapai/tidak tercapai
