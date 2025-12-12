@@ -35,11 +35,11 @@ Source:"{#StagePath}\\*"; DestDir:"{app}"; Flags: ignoreversion recursesubdirs c
 Source:"files\\start-rapkumer.mjs"; DestDir:"{app}"; Flags: ignoreversion
 
 [Run]
-Filename:"node"; Parameters:"""{app}\\scripts\\migrate-installed-db.mjs"""; WorkingDir:"{app}"; StatusMsg:"Menjalankan migrasi database (drizzle-kit) pada mesin ini..."; Flags: runhidden waituntilterminated
+Filename:"node"; Parameters:"""{app}\scripts\migrate-installed-db.mjs"""; WorkingDir:"{app}"; StatusMsg:"Menjalankan migrasi database (drizzle-kit) pada mesin ini..."; Flags: runhidden waituntilterminated
 
 [Icons]
-Name:"{autoprograms}\\Rapkumer\\Rapkumer"; Filename:"{sys}\\cmd.exe"; Parameters:"/c node ""{app}\\start-rapkumer.mjs"""; WorkingDir:"{app}"; IconFilename:"{app}\\rapkumer.ico"
-Name:"{autodesktop}\\Rapkumer"; Filename:"{sys}\\cmd.exe"; Parameters:"/c node ""{app}\\start-rapkumer.mjs"""; WorkingDir:"{app}"; IconFilename:"{app}\\rapkumer.ico"
+Name:"{autoprograms}\Rapkumer\Rapkumer"; Filename:"{sys}\cmd.exe"; Parameters:"/c ""node ""{app}\start-rapkumer.mjs"""; WorkingDir:"{app}"; IconFilename:"{app}\rapkumer.ico"
+Name:"{autodesktop}\Rapkumer"; Filename:"{sys}\cmd.exe"; Parameters:"/c ""node ""{app}\start-rapkumer.mjs"""; WorkingDir:"{app}"; IconFilename:"{app}\rapkumer.ico"
 
 [Code]
 procedure CurStepChanged(CurStep: TSetupStep);
