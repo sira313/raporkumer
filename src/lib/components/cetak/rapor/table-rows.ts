@@ -161,7 +161,9 @@ export function createTableRows(
 		}
 	}
 
+	// Add all tail blocks EXCEPT footer, which will be rendered separately on last page
 	for (const tailKey of tailKeys) {
+		if (tailKey === 'footer') continue;
 		result.push({
 			kind: 'tail',
 			order: order++,
