@@ -583,7 +583,7 @@
 	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
 		{#if keasramaanRows.length === 0}
 			<!-- No data state: only show message -->
-			<PrintCardPage {backgroundStyle}>
+			<PrintCardPage {backgroundStyle} {murid} {rombel} pageNumber={1}>
 				<div
 					class="flex items-center justify-center rounded-md border-2 border-dashed border-gray-400 bg-gray-50 px-6 py-16 text-center"
 				>
@@ -597,6 +597,9 @@
 				bind:contentRef={firstCardContent}
 				splitTrigger={triggerSplitOnMount}
 				{backgroundStyle}
+				{murid}
+				{rombel}
+				pageNumber={1}
 			>
 				<header class="pb-4 text-center">
 					<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Kegiatan Keasramaan</h1>
@@ -626,7 +629,14 @@
 			</PrintCardPage>
 
 			{#each intermediatePageRows as pageRows, pageIndex (pageIndex)}
-				<PrintCardPage breakAfter splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+				<PrintCardPage
+					breakAfter
+					splitTrigger={triggerSplitOnMount}
+					{backgroundStyle}
+					{murid}
+					{rombel}
+					pageNumber={2 + pageIndex}
+				>
 					<KeasramaanTable
 						rows={pageRows}
 						tableRowAction={tableRow}
@@ -639,7 +649,13 @@
 			<!-- Show footer (attendance & signature) either on same page or separate page -->
 			{#if finalPageRows.length > 0}
 				<!-- Multi-page: Show on same page if it fits -->
-				<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+				<PrintCardPage
+					splitTrigger={triggerSplitOnMount}
+					{backgroundStyle}
+					{murid}
+					{rombel}
+					pageNumber={2 + intermediatePageRows.length}
+				>
 					<KeasramaanTable
 						rows={finalPageRows}
 						tableRowAction={tableRow}
@@ -733,7 +749,13 @@
 				</PrintCardPage>
 			{:else}
 				<!-- Single page: always render footer on same page -->
-				<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+				<PrintCardPage
+					splitTrigger={triggerSplitOnMount}
+					{backgroundStyle}
+					{murid}
+					{rombel}
+					pageNumber={1}
+				>
 					<!-- Kehadiran Section -->
 					<section class="mt-6 break-inside-avoid print:break-inside-avoid">
 						<table class="w-full border">
@@ -818,7 +840,13 @@
 
 			<!-- Separate page for footer if it doesn't fit on last page -->
 			{#if shouldRenderFooterOnSeparatePage && finalPageRows.length > 0}
-				<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+				<PrintCardPage
+					splitTrigger={triggerSplitOnMount}
+					{backgroundStyle}
+					{murid}
+					{rombel}
+					pageNumber={3 + intermediatePageRows.length}
+				>
 					<!-- Kehadiran Section -->
 					<section class="mt-6 break-inside-avoid print:break-inside-avoid">
 						<table class="w-full border">
