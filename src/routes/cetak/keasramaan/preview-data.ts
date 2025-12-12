@@ -34,17 +34,6 @@ const PREDIKAT_MAP: PredikatMap = {
 	'perlu-bimbingan': { label: 'Perlu Bimbingan', order: 0 }
 };
 
-function requireInteger(paramName: string, value: string | null): number {
-	if (!value) {
-		throw error(400, `Parameter ${paramName} wajib diisi.`);
-	}
-	const parsed = Number(value);
-	if (!Number.isInteger(parsed)) {
-		throw error(400, `Parameter ${paramName} tidak valid.`);
-	}
-	return parsed;
-}
-
 function optionalInteger(paramName: string, value: string | null): number | null {
 	if (!value) return null;
 	const parsed = Number(value);
@@ -214,8 +203,13 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 		throw error(404, 'Sekolah tidak ditemukan.');
 	}
 
-	const muridId = requireInteger('murid_id', url.searchParams.get('murid_id'));
+	const muridId = optionalInteger('murid_id', url.searchParams.get('murid_id'));
 	const kelasId = optionalInteger('kelas_id', url.searchParams.get('kelas_id'));
+
+	// If no murid_id provided, return null (used in bulk preview mode)
+	if (!muridId) {
+		return null;
+	}
 
 	const murid = await db.query.tableMurid.findFirst({
 		where: and(
