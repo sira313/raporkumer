@@ -105,6 +105,8 @@
 
 	let tablePages = $state<TablePage[]>([]);
 	let lastMuridId = $state<number | null>(null);
+	let footerHeight = $state<number>(0);
+	let footerFitsOnLastPage = $state<boolean>(false);
 
 	const firstPageRows = $derived.by(() => {
 		if (tablePages.length > 0) return tablePages[0]?.rows ?? [];
@@ -125,17 +127,11 @@
 		return [] as TablePage['rows'];
 	});
 
-	// Determine if we should display attendance & signature on a separate last page
-	// This should be true when:
-	// 1. tablePages is still empty (split not yet complete, show in first page)
-	// 2. tablePages has content and there are intermediate pages (show in last page)
-	const shouldRenderLastPageWithAttendance = $derived.by(() => {
-		// If tablePages is empty, we'll show attendance in the single/first page
-		if (tablePages.length === 0) return true;
-		// If there are multiple pages, show on last page
-		if (tablePages.length > 1) return true;
-		// If only 1 page of table, also show (it means all rows fit in first page)
-		return true;
+	// Determine if footer should be on separate page
+	// If footer fits in remaining space on last page, put it there
+	// Otherwise, put it on a new page
+	const shouldRenderFooterOnSeparatePage = $derived.by(() => {
+		return !footerFitsOnLastPage;
 	});
 
 	let splitQueued = false;
@@ -295,6 +291,100 @@
 		paginatedRows = fixCategoryHeaderPlacement(paginatedRows, rowHeights, rowsWithOrder);
 
 		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
+
+		// Measure footer height from a temporary rendered element
+		const tempFooter = document.createElement('section');
+		tempFooter.className = 'mt-6 flex flex-col gap-6 text-xs print:text-xs';
+		tempFooter.style.position = 'fixed';
+		tempFooter.style.left = '-10000px';
+		tempFooter.style.visibility = 'hidden';
+		tempFooter.innerHTML = `
+			<table class="w-full border">
+				<thead>
+					<tr>
+						<th class="border px-3 py-2 text-left font-bold" colspan="3">KETIDAKHADIRAN</th>
+					</tr>
+					<tr>
+						<th class="w-12 border px-3 py-2 text-center font-semibold">No</th>
+						<th class="border px-3 py-2 text-left font-semibold">Alasan Ketidakhadiran</th>
+						<th class="w-16 border px-3 py-2 text-center font-semibold">Jumlah</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="border px-3 py-2 text-center">1</td>
+						<td class="border px-3 py-2">Sakit</td>
+						<td class="border px-3 py-2 text-center">0</td>
+					</tr>
+					<tr>
+						<td class="border px-3 py-2 text-center">2</td>
+						<td class="border px-3 py-2">Izin</td>
+						<td class="border px-3 py-2 text-center">0</td>
+					</tr>
+					<tr>
+						<td class="border px-3 py-2 text-center">3</td>
+						<td class="border px-3 py-2">Tanpa Keterangan</td>
+						<td class="border px-3 py-2 text-center">0</td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="flex flex-col gap-6">
+				<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+					<div class="flex flex-col items-center text-center text-xs print:text-xs">
+						<p>Wali Asrama</p>
+						<div class="mt-16 font-semibold tracking-wide underline">Nama</div>
+						<div class="mt-1 text-xs">NIP</div>
+					</div>
+					<div class="relative flex flex-col items-center text-center text-xs print:text-xs">
+						<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">Tempat, Tanggal</p>
+						<p>Wali Asuh</p>
+						<div class="mt-16 font-semibold tracking-wide underline">Nama</div>
+						<div class="mt-1 text-xs">NIP</div>
+					</div>
+				</div>
+				<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+					<div class="flex flex-col items-center text-center text-xs print:text-xs">
+						<p>Orang Tua/Wali Murid</p>
+						<div class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"></div>
+					</div>
+					<div class="flex flex-col items-center text-center text-xs print:text-xs">
+						<p>Kepala Sekolah</p>
+						<div class="mt-16 font-semibold tracking-wide underline">Nama</div>
+						<div class="mt-1 text-xs">NIP</div>
+					</div>
+				</div>
+			</div>
+		`;
+		document.body.appendChild(tempFooter);
+		const measured = tempFooter.getBoundingClientRect().height;
+		footerHeight = measured > 0 ? measured : 200; // Fallback if measurement fails
+		document.body.removeChild(tempFooter);
+
+		// Determine if footer fits on the last page
+		const safetyMargin = 8;
+		const footerGapMargin = 10;
+
+		if (paginatedRows.length > 0) {
+			const lastPageRowsHeights = paginatedRows[paginatedRows.length - 1].map((row) => {
+				const originalIndex = rowsWithOrder.findIndex((r) => r.order === row.order);
+				return rowHeights[originalIndex] ?? 0;
+			});
+			const lastPageUsedHeight = lastPageRowsHeights.reduce((sum, h) => sum + h, 0);
+			const remainingSpace = lastPageCapacity - lastPageUsedHeight;
+			const footerHeightWithGap = footerHeight + safetyMargin + footerGapMargin;
+			footerFitsOnLastPage = remainingSpace >= footerHeightWithGap;
+		} else {
+			// Single page case
+			const firstPageRowsHeights =
+				paginatedRows[0]?.map((row) => {
+					const originalIndex = rowsWithOrder.findIndex((r) => r.order === row.order);
+					return rowHeights[originalIndex] ?? 0;
+				}) ?? [];
+			const firstPageUsedHeight = firstPageRowsHeights.reduce((sum, h) => sum + h, 0);
+			const remainingSpace = firstCapacity - firstPageUsedHeight;
+			const footerHeightWithGap = footerHeight + safetyMargin + footerGapMargin;
+			footerFitsOnLastPage = remainingSpace >= footerHeightWithGap;
+		}
 	}
 
 	function refitLastPageWithCapacity(
@@ -581,21 +671,105 @@
 				/>
 			</PrintCardPage>
 		{/each}
-		<!-- Always show last page with attendance & signature -->
-		{#if shouldRenderLastPageWithAttendance}
+		<!-- Show footer (attendance & signature) either on same page or separate page -->
+		{#if finalPageRows.length > 0}
+			<!-- Multi-page: Show on same page if it fits -->
 			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
-				<!-- Show final table rows if they exist (multi-page scenario) -->
-				{#if finalPageRows.length > 0}
-					<KeasramaanTable
-						rows={finalPageRows}
-						tableRowAction={tableRow}
-						sectionClass="mt-4"
-						splitTrigger={triggerSplitOnMount}
-						{formatValue}
-					/>
-				{/if}
+				<KeasramaanTable
+					rows={finalPageRows}
+					tableRowAction={tableRow}
+					sectionClass="mt-4"
+					splitTrigger={triggerSplitOnMount}
+					{formatValue}
+				/>
 
-				<!-- Kehadiran Section on Last Page -->
+				{#if !shouldRenderFooterOnSeparatePage}
+					<!-- Footer fits on last page -->
+					<!-- Kehadiran Section -->
+					<section class="mt-6 break-inside-avoid print:break-inside-avoid">
+						<table class="w-full border">
+							<thead>
+								<tr>
+									<th class="border px-3 py-2 text-left font-bold" colspan="3">KETIDAKHADIRAN</th>
+								</tr>
+								<tr>
+									<th class="w-12 border px-3 py-2 text-center font-semibold">No</th>
+									<th class="border px-3 py-2 text-left font-semibold">Alasan Ketidakhadiran</th>
+									<th class="w-16 border px-3 py-2 text-center font-semibold">Jumlah</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td class="border px-3 py-2 text-center">1</td>
+									<td class="border px-3 py-2">Sakit</td>
+									<td class="border px-3 py-2 text-center">
+										{kehadiran.sakit}
+									</td>
+								</tr>
+								<tr>
+									<td class="border px-3 py-2 text-center">2</td>
+									<td class="border px-3 py-2">Izin</td>
+									<td class="border px-3 py-2 text-center">
+										{kehadiran.izin}
+									</td>
+								</tr>
+								<tr>
+									<td class="border px-3 py-2 text-center">3</td>
+									<td class="border px-3 py-2">Tanpa Keterangan</td>
+									<td class="border px-3 py-2 text-center">
+										{kehadiran.alfa}
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</section>
+
+					<!-- Signatures Section -->
+					<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
+						<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+							<div class="flex flex-col items-center text-center text-xs print:text-xs">
+								<p>Wali Asrama</p>
+								<div class="mt-16 font-semibold tracking-wide underline">
+									{formatValue(waliAsrama?.nama)}
+								</div>
+								<div class="mt-1 text-xs">{formatValue(waliAsrama?.nip)}</div>
+							</div>
+							<div class="relative flex flex-col items-center text-center text-xs print:text-xs">
+								{#if ttd}
+									<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+										{ttd.tempat}, {ttd.tanggal}
+									</p>
+								{/if}
+								<p>Wali Asuh</p>
+								<div class="mt-16 font-semibold tracking-wide underline">
+									{formatValue(waliAsuh?.nama)}
+								</div>
+								<div class="mt-1 text-xs">{formatValue(waliAsuh?.nip)}</div>
+							</div>
+						</div>
+						<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+							<div class="flex flex-col items-center text-center text-xs print:text-xs">
+								<p>Orang Tua/Wali Murid</p>
+								<div
+									class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
+									aria-hidden="true"
+								></div>
+							</div>
+							<div class="flex flex-col items-center text-center text-xs print:text-xs">
+								<p>{kepalaSekolahTitle}</p>
+								<div class="mt-16 font-semibold tracking-wide underline">
+									{formatValue(kepalaSekolah?.nama)}
+								</div>
+								<div class="mt-1 text-xs">{formatValue(kepalaSekolah?.nip)}</div>
+							</div>
+						</div>
+					</section>
+				{/if}
+			</PrintCardPage>
+		{:else}
+			<!-- Single page: always render footer on same page -->
+			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+				<!-- Kehadiran Section -->
 				<section class="mt-6 break-inside-avoid print:break-inside-avoid">
 					<table class="w-full border">
 						<thead>
@@ -634,7 +808,92 @@
 					</table>
 				</section>
 
-				<!-- Signatures Section on Last Page -->
+				<!-- Signatures Section -->
+				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
+					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+						<div class="flex flex-col items-center text-center text-xs print:text-xs">
+							<p>Wali Asrama</p>
+							<div class="mt-16 font-semibold tracking-wide underline">
+								{formatValue(waliAsrama?.nama)}
+							</div>
+							<div class="mt-1 text-xs">{formatValue(waliAsrama?.nip)}</div>
+						</div>
+						<div class="relative flex flex-col items-center text-center text-xs print:text-xs">
+							{#if ttd}
+								<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+									{ttd.tempat}, {ttd.tanggal}
+								</p>
+							{/if}
+							<p>Wali Asuh</p>
+							<div class="mt-16 font-semibold tracking-wide underline">
+								{formatValue(waliAsuh?.nama)}
+							</div>
+							<div class="mt-1 text-xs">{formatValue(waliAsuh?.nip)}</div>
+						</div>
+					</div>
+					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+						<div class="flex flex-col items-center text-center text-xs print:text-xs">
+							<p>Orang Tua/Wali Murid</p>
+							<div
+								class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
+								aria-hidden="true"
+							></div>
+						</div>
+						<div class="flex flex-col items-center text-center text-xs print:text-xs">
+							<p>{kepalaSekolahTitle}</p>
+							<div class="mt-16 font-semibold tracking-wide underline">
+								{formatValue(kepalaSekolah?.nama)}
+							</div>
+							<div class="mt-1 text-xs">{formatValue(kepalaSekolah?.nip)}</div>
+						</div>
+					</div>
+				</section>
+			</PrintCardPage>
+		{/if}
+
+		<!-- Separate page for footer if it doesn't fit on last page -->
+		{#if shouldRenderFooterOnSeparatePage && finalPageRows.length > 0}
+			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+				<!-- Kehadiran Section -->
+				<section class="mt-6 break-inside-avoid print:break-inside-avoid">
+					<table class="w-full border">
+						<thead>
+							<tr>
+								<th class="border px-3 py-2 text-left font-bold" colspan="3">KETIDAKHADIRAN</th>
+							</tr>
+							<tr>
+								<th class="w-12 border px-3 py-2 text-center font-semibold">No</th>
+								<th class="border px-3 py-2 text-left font-semibold">Alasan Ketidakhadiran</th>
+								<th class="w-16 border px-3 py-2 text-center font-semibold">Jumlah</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td class="border px-3 py-2 text-center">1</td>
+								<td class="border px-3 py-2">Sakit</td>
+								<td class="border px-3 py-2 text-center">
+									{kehadiran.sakit}
+								</td>
+							</tr>
+							<tr>
+								<td class="border px-3 py-2 text-center">2</td>
+								<td class="border px-3 py-2">Izin</td>
+								<td class="border px-3 py-2 text-center">
+									{kehadiran.izin}
+								</td>
+							</tr>
+							<tr>
+								<td class="border px-3 py-2 text-center">3</td>
+								<td class="border px-3 py-2">Tanpa Keterangan</td>
+								<td class="border px-3 py-2 text-center">
+									{kehadiran.alfa}
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</section>
+
+				<!-- Signatures Section -->
 				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
 					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
 						<div class="flex flex-col items-center text-center text-xs print:text-xs">
