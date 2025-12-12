@@ -81,7 +81,8 @@
 						<td class="border border-black px-2 py-1 text-center print:border-black"
 							>{row.predikat ? predikatToHuruf(row.predikat) : '—'}</td
 						>
-						<td class="border border-black px-2 py-1 whitespace-pre-wrap print:border-black"
+						<td
+							class="break-word border border-black px-2 py-1 whitespace-pre-wrap print:border-black"
 							>{formatValue(row.deskripsi)}</td
 						>
 					</tr>

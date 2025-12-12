@@ -60,7 +60,7 @@
 	let lastPagePrototypeTableSection = $state<HTMLElement | null>(null);
 
 	// Minimum height needed for a category header + at least one indicator row
-	// Adjust this value based on your actual row heights (estimated ~50px for header + 40px for row)
+	// This ensures category headers are not left alone at page bottom
 	const MIN_HEIGHT_FOR_CATEGORY = 90;
 
 	// Support multiple <tr> elements for a single logical row (rowspan-style groups).
@@ -158,7 +158,9 @@
 		const contentRect = content.getBoundingClientRect();
 		const tableRect = tableSection.getBoundingClientRect();
 		const headerHeight = tableSection.querySelector('thead')?.getBoundingClientRect().height ?? 0;
-		return Math.max(0, contentRect.bottom - tableRect.top - headerHeight);
+		// Apply safety margin: reduce capacity by 10px to account for rendering variance & wrapping
+		const safetyMargin = 10;
+		return Math.max(0, contentRect.bottom - tableRect.top - headerHeight - safetyMargin);
 	}
 
 	async function splitTableRows() {
@@ -195,6 +197,7 @@
 		const rowsWithOrder = rows.map((row, index) => ({ ...row, order: index }));
 
 		// Hitung heights dari DOM elements
+		// Add small buffer (1px) to each row to account for border/padding variance
 		const rowHeights = rowsWithOrder.map((row) => {
 			const set = tableRowElements.get(row.order);
 			if (!set || set.size === 0) return 0;
@@ -202,8 +205,21 @@
 			for (const el of set) {
 				total += el.getBoundingClientRect().height;
 			}
-			return total;
+			// Add 1px buffer per row to account for rendering variance
+			return total + 1;
 		});
+
+		// Log row heights for debugging
+		console.log(
+			'[splitTableRows] Row heights:',
+			rowsWithOrder.map((row, idx) => ({
+				idx,
+				order: row.order,
+				isHeader: Boolean(row.kategoriHeader),
+				height: rowHeights[idx],
+				label: row.kategoriHeader || `${row.indikator?.substring(0, 30)}...`
+			}))
+		);
 
 		// Jika ada row height yang belum terukur, coba lagi
 		if (rowHeights.some((height) => height === 0)) {
@@ -211,7 +227,7 @@
 			return;
 		}
 
-		const tolerance = 0.5;
+		const tolerance = 2; // Increased from 0.5 to 2 for better safety margin
 
 		let paginatedRows = paginateRowsByHeight({
 			rows: rowsWithOrder,
@@ -220,6 +236,30 @@
 			continuationPageCapacity: continuationCapacity,
 			tolerance
 		});
+
+		console.log(
+			'[splitTableRows] Capacities - first:',
+			firstCapacity,
+			'continuation:',
+			continuationCapacity,
+			'last:',
+			lastPageCapacity,
+			'tolerance:',
+			tolerance
+		);
+
+		console.log(
+			'[splitTableRows] Initial pagination result:',
+			paginatedRows.map((page, idx) => ({
+				pageNum: idx + 1,
+				rowCount: page.length,
+				totalHeight: page.reduce((sum, row) => {
+					const rowIdx = rowsWithOrder.findIndex((r) => r.order === row.order);
+					return sum + (rowHeights[rowIdx] ?? 0);
+				}, 0),
+				rows: page.map((r) => r.kategoriHeader || r.indikator?.substring(0, 20))
+			}))
+		);
 
 		// If we have multiple pages, re-fit the last page with the constrained lastPageCapacity
 		if (paginatedRows.length > 1) {
@@ -230,12 +270,24 @@
 				lastPageCapacity,
 				tolerance
 			);
+
+			console.log(
+				'[splitTableRows] After refitLastPage:',
+				paginatedRows.map((page, idx) => ({
+					pageNum: idx + 1,
+					rowCount: page.length,
+					totalHeight: page.reduce((sum, row) => {
+						const rowIdx = rowsWithOrder.findIndex((r) => r.order === row.order);
+						return sum + (rowHeights[rowIdx] ?? 0);
+					}, 0)
+				}))
+			);
 		}
 
 		// Apply category header pagination logic AFTER re-fitting:
 		// Ensure category headers are not left alone at the bottom of a page
 		// by moving them to the next page if they don't have indicators following
-		paginatedRows = fixCategoryHeaderPlacement(paginatedRows);
+		paginatedRows = fixCategoryHeaderPlacement(paginatedRows, rowHeights, rowsWithOrder);
 
 		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
 	}
@@ -359,7 +411,9 @@
 	}
 
 	function fixCategoryHeaderPlacement(
-		pages: KeasramaanRowWithOrder[][]
+		pages: KeasramaanRowWithOrder[][],
+		rowHeights: number[],
+		allRowsWithOrder: KeasramaanRowWithOrder[]
 	): KeasramaanRowWithOrder[][] {
 		let result = pages.map((page) => [...page]); // Deep copy
 
@@ -374,7 +428,8 @@
 
 		let changed = true;
 		let iteration = 0;
-		while (changed) {
+		while (changed && iteration < 10) {
+			// Add max iteration to prevent infinite loop
 			iteration++;
 			changed = false;
 			const newResult: KeasramaanRowWithOrder[][] = [];
@@ -385,8 +440,12 @@
 				// Check if last row is a category header
 				if (page.length > 0 && page[page.length - 1].kategoriHeader) {
 					const lastRow = page[page.length - 1];
+					const nextPageIndex = i + 1;
+
+					// Jika ini adalah header di akhir page, move ke page berikutnya
 					console.log(
-						`[fixCategoryHeaderPlacement] Iteration ${iteration}, Page ${i}: Found orphaned header "${lastRow.kategoriHeader}"`
+						`[fixCategoryHeaderPlacement] Iteration ${iteration}, Page ${i}: ` +
+							`Found orphaned header "${lastRow.kategoriHeader}"`
 					);
 
 					// Remove header from current page
@@ -402,7 +461,7 @@
 						const nextPage = result[i + 1];
 						result[i + 1] = [lastRow, ...nextPage];
 					} else {
-						// Create new page with just the header
+						// Create new page with just the header (will collect more rows)
 						newResult.push([lastRow]);
 					}
 
@@ -638,6 +697,12 @@
 									</tr>
 								</thead>
 								<tbody>
+									<!-- Test dengan kategori header + indicator row -->
+									<tr>
+										<td colspan="4" class="border border-black bg-gray-50 px-2 py-1 font-semibold"
+											>Kategori Header</td
+										>
+									</tr>
 									<tr>
 										<td class="border border-black px-2 py-1">—</td>
 										<td class="border border-black px-2 py-1">—</td>
@@ -677,6 +742,12 @@
 									</tr>
 								</thead>
 								<tbody>
+									<!-- Test dengan kategori header + indicator row -->
+									<tr>
+										<td colspan="4" class="border border-black bg-gray-50 px-2 py-1 font-semibold"
+											>Kategori Header</td
+										>
+									</tr>
 									<tr>
 										<td class="border border-black px-2 py-1">—</td>
 										<td class="border border-black px-2 py-1">—</td>
