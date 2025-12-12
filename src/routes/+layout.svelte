@@ -125,7 +125,7 @@
 				>
 					<div class="m-4 flex flex-row xl:gap-4">
 						<div class="w-full max-w-7xl min-w-0 flex-1">
-						<ScrollToTop />
+							<ScrollToTop />
 							{@render children()}
 						</div>
 						<div class="sticky top-4 self-start">
