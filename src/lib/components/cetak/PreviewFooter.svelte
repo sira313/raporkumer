@@ -30,8 +30,8 @@
 		selectedTemplate: '1' | '2';
 		onBgRefresh: () => void;
 		isRaporSelected: boolean;
-		tpMode: 'compact' | 'full' | 'full-desc';
-		onToggleFullTP: (value: 'compact' | 'full' | 'full-desc') => void;
+		tpMode: 'compact' | 'full-desc';
+		onToggleFullTP: (value: 'compact' | 'full-desc') => void;
 		onSetKriteria: (cukup: number, baik: number) => void;
 		kritCukup: number;
 		kritBaik: number;

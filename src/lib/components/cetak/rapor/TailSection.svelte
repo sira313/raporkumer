@@ -184,20 +184,6 @@
 		return blocks.length > 0 ? blocks : [{ kind: 'text', text: formatted }];
 	}
 
-	function formatTujuanForFull(s: string): string {
-		if (!s) return s;
-		const trimmed = s.trim();
-		if (!trimmed) return trimmed;
-		let i = 0;
-		while (i < trimmed.length && !/[A-Za-zÀ-ÖØ-öø-ÿ]/u.test(trimmed[i])) i++;
-		if (i >= trimmed.length) return trimmed + '.';
-		const before = trimmed.slice(0, i);
-		const first = trimmed[i].toUpperCase();
-		const rest = trimmed.slice(i + 1);
-		const withCap = before + first + rest;
-		return withCap.replace(/[.!?]+$/u, '').trim() + '.';
-	}
-
 	function paragraphPaddingClass(text: string | null | undefined): string {
 		// Apply predikat-based padding for all TP modes for ekstrakurikuler
 		const t = (text ?? '').toLowerCase();
@@ -272,7 +258,7 @@
 											<ul class="list-disc pl-4">
 												{#each block.items as it (it)}
 													<li class="leading-tight">
-														{rapor?.tpMode === 'full' ? formatTujuanForFull(it) : it}
+														{it}
 													</li>
 												{/each}
 											</ul>

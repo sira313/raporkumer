@@ -1,5 +1,5 @@
 // TP Mode Builders - Robust & Testable
-// Handles 'compact', 'full', 'full-desc' modes for capaian kompetensi
+// Handles 'compact' and 'full-desc' modes for capaian kompetensi
 
 const LOCALE_ID = 'id-ID';
 
@@ -121,59 +121,6 @@ export function buildCompactMode(muridNama: string, descriptors: CapaianDescript
 	return `${highestLine}\n${lowestLine}`;
 }
 
-// Full mode: Group tujuan by predikat and list each with bullet points
-export function buildFullMode(muridNama: string, descriptors: CapaianDescriptor[]): string {
-	if (!descriptors.length) {
-		return 'Belum ada penilaian sumatif.';
-	}
-
-	const sorted = descriptors.slice().sort(compareDescriptorAscending);
-
-	const groups: Record<PredikatKey, CapaianDescriptor[]> = {
-		'sangat-baik': [],
-		baik: [],
-		cukup: [],
-		'perlu-bimbingan': []
-	};
-
-	for (const d of sorted) {
-		groups[d.predikat.key].push(d);
-	}
-
-	const order: PredikatKey[] = ['sangat-baik', 'baik', 'cukup', 'perlu-bimbingan'];
-	const lines: string[] = [];
-
-	for (const key of order) {
-		const list = groups[key];
-		if (!list.length) continue;
-
-		let headingPhrase = '';
-		if (key === 'sangat-baik') headingPhrase = 'Menunjukkan penguasaan yang sangat baik dalam:';
-		else if (key === 'baik') headingPhrase = 'Menunjukkan penguasaan yang baik dalam:';
-		else if (key === 'cukup') headingPhrase = 'Cukup menguasai dalam:';
-		else headingPhrase = 'Masih perlu bimbingan dalam:';
-
-		lines.push(headingPhrase);
-
-		// Sort by nilai descending, then by id
-		list.sort((a, b) => {
-			if (a.nilai !== b.nilai) return b.nilai - a.nilai;
-			return a.tujuanPembelajaranId - b.tujuanPembelajaranId;
-		});
-
-		for (const item of list) {
-			lines.push(`- ${item.deskripsi}`);
-		}
-
-		lines.push('');
-	}
-
-	// Remove trailing blank
-	if (lines.length > 0 && lines.at(-1) === '') lines.pop();
-
-	return `Ananda ${muridNama}\n${lines.join('\n')}`;
-}
-
 // Full-desc mode: Paragraph-style with sentences grouped as tercapai/tidak tercapai
 export function buildFullDescMode(muridNama: string, descriptors: CapaianDescriptor[]): string {
 	if (!descriptors.length) {
@@ -240,7 +187,7 @@ export function buildCapaianKompetensi(
 	muridNama: string,
 	tujuanScores: TujuanScoreEntry[],
 	kkm: number | null | undefined,
-	mode: 'compact' | 'full' | 'full-desc' = 'compact',
+	mode: 'compact' | 'full-desc' = 'compact',
 	kritCukup?: number,
 	kritBaik?: number
 ): string {
@@ -256,8 +203,6 @@ export function buildCapaianKompetensi(
 
 	// Route to appropriate mode builder
 	switch (mode) {
-		case 'full':
-			return buildFullMode(muridNama, descriptors);
 		case 'full-desc':
 			return buildFullDescMode(muridNama, descriptors);
 		default:

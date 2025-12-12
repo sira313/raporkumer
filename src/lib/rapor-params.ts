@@ -10,22 +10,20 @@ export const DEFAULT_RAPOR_CRITERIA: RaporCriteria = {
 	kritBaik: 95
 };
 
-export type TPMode = 'compact' | 'full' | 'full-desc';
+export type TPMode = 'compact' | 'full-desc';
 
 export const TP_MODES = {
 	compact: 'compact' as const,
-	full: 'full' as const,
 	fullDesc: 'full-desc' as const
 };
 
 export function isValidTPMode(value: unknown): value is TPMode {
-	return value === 'compact' || value === 'full' || value === 'full-desc';
+	return value === 'compact' || value === 'full-desc';
 }
 
 export function parseTPMode(value: string | null): TPMode {
 	if (!value) return 'compact';
 	const normalized = String(value).toLowerCase();
-	if (normalized === '1' || normalized === 'true') return 'full';
 	if (normalized === 'desc' || normalized === 'full-desc') return 'full-desc';
 	return 'compact';
 }
@@ -96,12 +94,8 @@ export function createPreviewURLSearchParams(params: {
 		searchParams.set('kelas_id', String(params.kelasId));
 	}
 
-	if (params.tpMode) {
-		if (params.tpMode === 'full') {
-			searchParams.set('full_tp', '1');
-		} else if (params.tpMode === 'full-desc') {
-			searchParams.set('full_tp', 'desc');
-		}
+	if (params.tpMode === 'full-desc') {
+		searchParams.set('full_tp', 'desc');
 	}
 
 	const criteria = params.criteria ?? DEFAULT_RAPOR_CRITERIA;

@@ -148,8 +148,8 @@ interface RaporPrintData {
 		tanggal: string;
 	};
 
-	// Mode for tujuan pembelajaran display: compact | full | full-desc
-	tpMode?: 'compact' | 'full' | 'full-desc';
+	// Mode for tujuan pembelajaran display: compact | full-desc
+	tpMode?: 'compact' | 'full-desc';
 }
 
 interface PiagamPrintData {

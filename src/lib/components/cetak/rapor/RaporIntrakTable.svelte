@@ -87,13 +87,8 @@
 		return blocks.length > 0 ? blocks : [{ kind: 'text', text: formatted }];
 	}
 
-	function predikatClassFromParagraph(text: string | null | undefined, isTop = false): string {
-		// For Full TP mode, the caller determines which paragraph is the top/highest.
-		// If top, give `py-2`, otherwise `pb-2`.
-		const isFull = rapor?.tpMode === 'full';
-		if (isFull) return isTop ? 'py-2' : 'pb-2';
-
-		// For non-Full modes, fall back to heuristics based on wording.
+	function predikatClassFromParagraph(text: string | null | undefined): string {
+		// Fall back to heuristics based on wording.
 		if (!text) return '';
 		const t = text.toLowerCase();
 		if (/perlu bimbingan|masih perlu bimbingan/.test(t)) return 'pb-2';
@@ -149,22 +144,6 @@
 		}
 		return m;
 	});
-
-	function formatTujuanForFull(s: string): string {
-		if (!s) return s;
-		const trimmed = s.trim();
-		if (!trimmed) return trimmed;
-		// capitalize first alphabetical character
-		let i = 0;
-		while (i < trimmed.length && !/[A-Za-zÀ-ÖØ-öø-ÿ]/u.test(trimmed[i])) i++;
-		if (i >= trimmed.length) return trimmed + '.';
-		const before = trimmed.slice(0, i);
-		const first = trimmed[i].toUpperCase();
-		const rest = trimmed.slice(i + 1);
-		const withCap = before + first + rest;
-		// ensure ends with a single period
-		return withCap.replace(/[.!?]+$/u, '').trim() + '.';
-	}
 </script>
 
 <section class={resolvedSectionClass} bind:this={sectionRef} use:applySplit>
@@ -205,20 +184,7 @@
 								class={'border px-3 align-top ' +
 									(rapor?.tpMode === 'compact'
 										? 'py-2'
-										: rapor?.tpMode === 'full-desc'
-											? predikatClassFromParagraph(
-													row.entry.deskripsi,
-													row.subIndex === undefined ||
-														topSubIndexByEntry.get(row.index) === row.subIndex
-												)
-											: predikatClassFromParagraph(
-													row.entry.deskripsi,
-													row.subIndex === undefined ||
-														topSubIndexByEntry.get(row.index) === row.subIndex
-												) +
-												(rapor?.tpMode === 'full' && ridx === 0 && (rows[0]?.order ?? 0) !== 0
-													? ' pt-2'
-													: ''))}
+										: predikatClassFromParagraph(row.entry.deskripsi))}
 							>
 								<div class="flex flex-col gap-2">
 									{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
@@ -228,7 +194,7 @@
 											<ul class="list-disc pl-4">
 												{#each block.items as it (it)}
 													<li class="leading-tight">
-														{rapor?.tpMode === 'full' ? formatTujuanForFull(it) : it}
+														{it}
 													</li>
 												{/each}
 											</ul>
@@ -256,20 +222,7 @@
 									class={'border px-3 align-top ' +
 										(rapor?.tpMode === 'compact'
 											? 'py-2'
-											: rapor?.tpMode === 'full-desc'
-												? predikatClassFromParagraph(
-														row.entry.deskripsi,
-														row.subIndex === undefined ||
-															topSubIndexByEntry.get(row.index) === row.subIndex
-													)
-												: predikatClassFromParagraph(
-														row.entry.deskripsi,
-														row.subIndex === undefined ||
-															topSubIndexByEntry.get(row.index) === row.subIndex
-													) +
-													(rapor?.tpMode === 'full' && ridx === 0 && (rows[0]?.order ?? 0) !== 0
-														? ' pt-2'
-														: ''))}
+											: predikatClassFromParagraph(row.entry.deskripsi))}
 								>
 									<div class="flex flex-col gap-2">
 										{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
@@ -279,7 +232,7 @@
 												<ul class="list-disc pl-4">
 													{#each block.items as it (it)}
 														<li class="leading-tight">
-															{rapor?.tpMode === 'full' ? formatTujuanForFull(it) : it}
+															{it}
 														</li>
 													{/each}
 												</ul>
@@ -304,20 +257,7 @@
 									class={'border px-3 align-top ' +
 										(rapor?.tpMode === 'compact'
 											? 'py-2'
-											: rapor?.tpMode === 'full-desc'
-												? predikatClassFromParagraph(
-														row.entry.deskripsi,
-														row.subIndex === undefined ||
-															topSubIndexByEntry.get(row.index) === row.subIndex
-													)
-												: predikatClassFromParagraph(
-														row.entry.deskripsi,
-														row.subIndex === undefined ||
-															topSubIndexByEntry.get(row.index) === row.subIndex
-													) +
-													(rapor?.tpMode === 'full' && ridx === 0 && (rows[0]?.order ?? 0) !== 0
-														? ' pt-2'
-														: ''))}
+											: predikatClassFromParagraph(row.entry.deskripsi))}
 								>
 									<div class="flex flex-col gap-2">
 										{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
@@ -327,7 +267,7 @@
 												<ul class="list-disc pl-4">
 													{#each block.items as it (it)}
 														<li class="leading-tight">
-															{rapor?.tpMode === 'full' ? formatTujuanForFull(it) : it}
+															{it}
 														</li>
 													{/each}
 												</ul>

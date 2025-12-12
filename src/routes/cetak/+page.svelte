@@ -26,7 +26,6 @@
 	} from '$lib/bulk-preview-logic';
 	import {
 		createPreviewURLSearchParams,
-		type TPMode,
 		type RaporCriteria,
 		DEFAULT_RAPOR_CRITERIA
 	} from '$lib/rapor-params';
@@ -69,8 +68,8 @@
 	let previewError = $state<string | null>(null);
 	let showBgLogo = $state(false);
 
-	// show full TP listing: 'compact' | 'full' | 'full-desc'
-	let fullTP = $state<TPMode>('compact');
+	// show TP listing: 'compact' | 'full-desc'
+	let fullTP = $state<'compact' | 'full-desc'>('compact');
 
 	// Kriteria intrakurikuler (defaults per spec)
 
@@ -458,23 +457,16 @@
 
 		if (readyCount === expectedCount) {
 			// All nodes are ready, but for rapor we need to wait for pagination
-			// Rapor with "Full TP" is VERY computationally expensive due to complex pagination
-			// For each murid with Full TP, browser needs to compute page breaks for all rows
 			const isRapor = previewDocument === 'rapor';
-			const isFullTP = fullTP !== 'compact';
+			const isFullDesc = fullTP === 'full-desc';
 
 			// Delay calculation:
-			// - Rapor + Full TP: 5 seconds per 5 murids (1 sec per murid, minimum 3 sec)
 			// - Rapor + Full Desc: 3 seconds
 			// - Rapor + Compact: 1.5 seconds
 			// - Other docs: 300ms
 			let delay = 300;
 			if (isRapor) {
-				if (isFullTP) {
-					delay = Math.max(3000, bulkPreviewData.length * 500);
-				} else {
-					delay = 3000;
-				}
+				delay = isFullDesc ? 3000 : 1500;
 			}
 
 			const timeoutId = setTimeout(() => {
@@ -659,7 +651,7 @@
 				else handlePreview();
 			}
 		}}
-		onToggleFullTP={(value: 'compact' | 'full' | 'full-desc') => {
+		onToggleFullTP={(value: 'compact' | 'full-desc') => {
 			fullTP = value;
 			if (previewDocument === 'rapor') {
 				if (isBulkMode) handleBulkPreview();
