@@ -1,19 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
 
-	interface Props {
-		isCreateMode: boolean;
-		isEditMode: boolean;
-		hasSelection: boolean;
-		canManage: boolean;
-		isSubmitting: boolean;
-		isTableReady: boolean;
-		onBack: () => void;
-		onToggleCreate: () => void;
-		onBulkDelete: () => void;
-		children?: any;
-	}
-
 	const {
 		isCreateMode,
 		isEditMode,

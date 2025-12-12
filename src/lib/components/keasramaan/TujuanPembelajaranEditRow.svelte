@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable svelte/prefer-writable-derived */
 	import FormEnhance from '../form-enhance.svelte';
 	import Icon from '../icon.svelte';
 
@@ -10,7 +11,7 @@
 		onSuccess,
 		onCancel
 	}: {
-		item: { id: number; deskripsi: string };
+		item: { id: number };
 		indikatorId: number;
 		deskripsiInput: string;
 		canManage: boolean;

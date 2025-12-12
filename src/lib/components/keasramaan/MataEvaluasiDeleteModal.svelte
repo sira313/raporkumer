@@ -2,27 +2,6 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 
-	interface MataEvaluasi {
-		id: number;
-		nama: string;
-		indikator: Array<{
-			id: number;
-			deskripsi: string;
-		}>;
-	}
-
-	interface Props {
-		open: boolean;
-		title: string;
-		action?: string;
-		ids: number[];
-		mode: 'single' | 'bulk';
-		item?: MataEvaluasi | null;
-		disabled?: boolean;
-		onClose: () => void;
-		onSuccess: () => void;
-	}
-
 	const {
 		open,
 		title,
@@ -83,7 +62,7 @@
 					{#if item.indikator.length > 0}
 						<p class="text-base-content/70 mt-3 text-sm">Indikator:</p>
 						<div class="space-y-1">
-							{#each item.indikator as indicator}
+							{#each item.indikator as indicator (indicator.id)}
 								<div class="flex gap-2 text-sm">
 									<span class="shrink-0">•</span>
 									<span>{indicator.deskripsi}</span>

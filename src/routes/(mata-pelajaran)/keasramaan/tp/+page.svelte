@@ -41,7 +41,7 @@
 	const totalData = $derived.by(() => data.tujuan.length);
 	const anySelected = $derived.by(() => selectedIds.length > 0);
 	const canManage = $derived.by(() => data.tujuanTableReady);
-	const formOpen = $derived.by(() => formState !== null);
+	// formOpen removed (unused)
 	const isCreateMode = $derived.by(() => formState?.mode === 'create');
 	const isEditMode = $derived.by(() => formState?.mode === 'edit');
 	const editingItemId = $derived.by(() => (formState?.mode === 'edit' ? formState.item.id : null));

@@ -20,8 +20,8 @@
 	} = $props<{
 		breakAfter?: boolean;
 		contentRef?: HTMLElement | null;
-		murid?: any;
-		rombel?: any;
+		murid?: unknown;
+		rombel?: unknown;
 		pageNumber?: number | null;
 		splitTrigger?: SplitTrigger;
 		cardClass?: string;

@@ -75,7 +75,7 @@
 	// Derive displayable jenis mapel options
 	const displayJenisMapel = $derived.by(() => {
 		const result: Record<string, string> = {};
-		for (const [key, label] of Object.entries(jenisMapel)) {
+		for (const key of Object.keys(jenisMapel)) {
 			// Sembunyikan opsi "kejuruan" jika bukan SMK
 			if (key === 'kejuruan' && jenjangVariant?.toUpperCase() !== 'SMK') {
 				continue;

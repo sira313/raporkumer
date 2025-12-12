@@ -103,47 +103,7 @@
 		return '';
 	}
 
-	function paragraphScore(text: string | null | undefined): number {
-		if (!text) return 2;
-		const t = text.toLowerCase();
-		if (
-			/sangat\s*(baik|menguasai|unggul|istimewa)/.test(t) ||
-			/menunjukkan penguasaan yang sangat baik/.test(t)
-		)
-			return 4;
-		if (/menunjukkan penguasaan yang baik/.test(t) || /\bbaik\b/.test(t)) return 3;
-		if (/cukup/.test(t) || /cukup menguasai/.test(t)) return 2;
-		if (/perlu bimbingan|masih perlu bimbingan/.test(t)) return 1;
-		return 2;
-	}
-
-	const topSubIndexByEntry = $derived.by(() => {
-		const groups = new Map<number, Array<{ subIndex?: number; text: string }>>();
-		for (const r of rows) {
-			if (r.kind !== 'intrak') continue;
-			const list = groups.get(r.index) ?? [];
-			list.push({ subIndex: r.subIndex, text: r.entry.deskripsi ?? '' });
-			groups.set(r.index, list);
-		}
-		const m = new Map<number, number>();
-		for (const [idx, list] of groups.entries()) {
-			if (list.length <= 1) {
-				m.set(idx, 0);
-				continue;
-			}
-			let best = 0;
-			let bestScore = -Infinity;
-			for (let i = 0; i < list.length; i++) {
-				const sc = paragraphScore(list[i].text);
-				if (sc > bestScore) {
-					bestScore = sc;
-					best = i;
-				}
-			}
-			m.set(idx, best);
-		}
-		return m;
-	});
+	// topSubIndexByEntry removed — computed but unused
 </script>
 
 <section class={resolvedSectionClass} bind:this={sectionRef} use:applySplit>

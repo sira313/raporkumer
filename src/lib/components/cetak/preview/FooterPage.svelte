@@ -4,8 +4,8 @@
 		rombel = null,
 		pageNumber = null
 	} = $props<{
-		murid?: any;
-		rombel?: any;
+		murid?: unknown;
+		rombel?: unknown;
 		pageNumber?: number | null;
 	}>();
 </script>

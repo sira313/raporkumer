@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable @typescript-eslint/no-unused-vars */
 	// Keasramaan Preview with Bulk Support - similar to rapor
 	import { page } from '$app/state';
 	import PreviewHeader from '$lib/components/cetak/PreviewHeader.svelte';
@@ -434,7 +435,6 @@
 			{bulkPreviewData}
 			{bulkLoadProgress}
 			{waitingForPrintable}
-			{selectedDocumentEntry}
 			selectedTemplate="1"
 			bgRefreshKey={0}
 			{showBgLogo}

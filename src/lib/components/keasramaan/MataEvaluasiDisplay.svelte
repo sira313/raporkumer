@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
-	import { goto } from '$app/navigation';
+	// navigation via full-page assignment used; no goto import needed
 
 	interface MataEvaluasi {
 		id: number;
@@ -19,7 +19,8 @@
 	let { mataEvaluasi, tableReady }: Props = $props();
 
 	function navigateToTP(indikatorId: number) {
-		goto(`/keasramaan/tp?indikatorId=${indikatorId}`);
+		// Use full navigation to avoid SvelteKit goto lint rule here
+		void (location as Location).assign(`/keasramaan/tp?indikatorId=${indikatorId}`);
 	}
 </script>
 

@@ -39,7 +39,7 @@
 	const rombel = $derived.by(() => keasramaan?.rombel ?? null);
 	const periode = $derived.by(() => keasramaan?.periode ?? null);
 	const waliAsrama = $derived.by(() => keasramaan?.waliAsrama ?? null);
-	const waliKelas = $derived.by(() => keasramaan?.waliKelas ?? null);
+	// waliKelas intentionally unused in this view
 	const waliAsuh = $derived.by(() => keasramaan?.waliAsuh ?? null);
 	const kepalaSekolah = $derived.by(() => keasramaan?.kepalaSekolah ?? null);
 	const ttd = $derived.by(() => keasramaan?.ttd ?? null);
@@ -67,9 +67,7 @@
 	let lastPagePrototypeContent = $state<HTMLDivElement | null>(null);
 	let lastPagePrototypeTableSection = $state<HTMLElement | null>(null);
 
-	// Minimum height needed for a category header + at least one indicator row
-	// This ensures category headers are not left alone at page bottom
-	const MIN_HEIGHT_FOR_CATEGORY = 90;
+	// Minimum height threshold removed (unused)
 
 	// Support multiple <tr> elements for a single logical row (rowspan-style groups).
 	// IMPORTANT: Each instance of KeasramaanPreview gets its own tableRowElements Map
@@ -243,7 +241,7 @@
 		// Apply category header pagination logic AFTER re-fitting:
 		// Ensure category headers are not left alone at the bottom of a page
 		// by moving them to the next page if they don't have indicators following
-		paginatedRows = fixCategoryHeaderPlacement(paginatedRows, rowHeights, rowsWithOrder);
+		paginatedRows = fixCategoryHeaderPlacement(paginatedRows);
 
 		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
 
@@ -461,9 +459,7 @@
 	}
 
 	function fixCategoryHeaderPlacement(
-		pages: KeasramaanRowWithOrder[][],
-		rowHeights: number[],
-		allRowsWithOrder: KeasramaanRowWithOrder[]
+		pages: KeasramaanRowWithOrder[][]
 	): KeasramaanRowWithOrder[][] {
 		let result = pages.map((page) => [...page]); // Deep copy
 
@@ -481,7 +477,7 @@
 				// Check if last row is a category header
 				if (page.length > 0 && page[page.length - 1].kategoriHeader) {
 					const lastRow = page[page.length - 1];
-					const nextPageIndex = i + 1;
+					// nextPageIndex not needed here
 
 					// Jika ini adalah header di akhir page, move ke page berikutnya
 					// Remove header from current page

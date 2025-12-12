@@ -800,7 +800,7 @@
 			await invalidate('app:mapel_tp-rl');
 
 			toast(resultData?.message || 'Bobot berhasil disimpan.', 'success');
-		} catch (_error) {
+		} catch {
 			toast('Terjadi kesalahan saat menyimpan bobot.', 'error');
 			// Restore editing mode on error
 			isEditingBobot = true;

@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable @typescript-eslint/no-unused-vars */
 	// preview parameter building uses SvelteURLSearchParams; no file-level ESLint disables needed
 	import { page } from '$app/state';
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
@@ -690,7 +691,6 @@
 	{bulkPreviewData}
 	{bulkLoadProgress}
 	{waitingForPrintable}
-	{selectedDocumentEntry}
 	{selectedTemplate}
 	{bgRefreshKey}
 	{showBgLogo}

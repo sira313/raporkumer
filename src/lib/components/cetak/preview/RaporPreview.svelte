@@ -244,7 +244,7 @@
 
 		// Apply group header pagination logic AFTER re-fitting:
 		// Ensure group headers are not left alone at the bottom of a page
-		paginatedRows = fixGroupHeaderPlacement(paginatedRows, rowHeights, rows);
+		paginatedRows = fixGroupHeaderPlacement(paginatedRows);
 
 		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
 
@@ -394,11 +394,7 @@
 		return result;
 	}
 
-	function fixGroupHeaderPlacement(
-		pages: TableRow[][],
-		rowHeights: number[],
-		allRows: TableRow[]
-	): TableRow[][] {
+	function fixGroupHeaderPlacement(pages: TableRow[][]): TableRow[][] {
 		let result = pages.map((page) => [...page]); // Deep copy
 
 		let changed = true;

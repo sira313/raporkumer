@@ -45,14 +45,6 @@
 	const isEditMode = $derived(editingGroupId !== null);
 	const isCreateMode = $derived(isCreating);
 	const hasSelection = $derived(selectedGroups.size > 0 && !isEditMode && !isCreateMode);
-	const isInteractionLocked = $derived(isEditMode || isCreateMode);
-
-	const isPrimaryButtonDisabled = $derived.by(() => {
-		if (hasSelection) return false;
-		if (isInteractionLocked) return false; // Allow clicking to cancel
-		if (!tableReady) return true;
-		return false;
-	});
 
 	const deleteModalTitle = $derived.by(() => {
 		if (!deleteModalState) return 'Hapus Mata Evaluasi';
@@ -158,21 +150,7 @@
 		selectedGroups = new Set();
 	}
 
-	function handlePrimaryActionClick() {
-		if (hasSelection) {
-			deleteBulk();
-			return;
-		}
-		if (isCreateMode) {
-			closeCreate();
-			return;
-		}
-		if (isEditMode) {
-			closeEdit();
-			return;
-		}
-		openCreate();
-	}
+	// isPrimaryButtonDisabled and handlePrimaryActionClick removed (unused)
 
 	async function deleteBulk() {
 		if (selectedGroups.size === 0) return;

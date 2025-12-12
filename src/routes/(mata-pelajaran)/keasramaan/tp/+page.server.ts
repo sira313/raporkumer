@@ -34,9 +34,11 @@ export async function load({ depends, url, parent }) {
 		throw error(400, 'ID indikator tidak valid');
 	}
 
-	let indikator: (typeof tableKeasramaanIndikator.$inferSelect & {
-		keasramaan: typeof tableKeasramaan.$inferSelect;
-	}) | null = null;
+	let indikator:
+		| (typeof tableKeasramaanIndikator.$inferSelect & {
+				keasramaan: typeof tableKeasramaan.$inferSelect;
+		  })
+		| null = null;
 	let tujuan: (typeof tableKeasramaanTujuan.$inferSelect)[] = [];
 	let tujuanTableReady = true;
 
@@ -152,10 +154,7 @@ export const actions = {
 				.update(tableKeasramaanTujuan)
 				.set({ deskripsi, updatedAt: new Date().toISOString() })
 				.where(
-					and(
-						eq(tableKeasramaanTujuan.id, id),
-						eq(tableKeasramaanTujuan.indikatorId, indikatorId)
-					)
+					and(eq(tableKeasramaanTujuan.id, id), eq(tableKeasramaanTujuan.indikatorId, indikatorId))
 				)
 				.returning({ id: tableKeasramaanTujuan.id });
 
@@ -188,9 +187,7 @@ export const actions = {
 		}
 
 		try {
-			await db
-				.delete(tableKeasramaanTujuan)
-				.where(inArray(tableKeasramaanTujuan.id, ids));
+			await db.delete(tableKeasramaanTujuan).where(inArray(tableKeasramaanTujuan.id, ids));
 		} catch (err) {
 			if (isTableMissingError(err, 'keasramaan_tujuan')) {
 				return fail(500, { fail: TABLE_TUJUAN_MISSING_MESSAGE });

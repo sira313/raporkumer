@@ -53,26 +53,24 @@
 				}}
 				submitStateChange={(value) => (submitting = value)}
 			>
-				{#snippet children()}
-					{#each deleteModalIds as id (id)}
-						<input name="ids" value={id} hidden />
-					{/each}
+				{#each deleteModalIds as id (id)}
+					<input name="ids" value={id} hidden />
+				{/each}
 
-					<div class="modal-action mt-6 flex gap-2">
-						<button class="btn btn-soft shadow-none" type="button" onclick={onClose}>
-							<Icon name="close" />
-							Batal
-						</button>
-						<button class="btn btn-error shadow-none" disabled={submitting || deleteModalDisabled}>
-							{#if submitting}
-								<div class="loading loading-spinner"></div>
-							{:else}
-								<Icon name="del" />
-							{/if}
-							Hapus
-						</button>
-					</div>
-				{/snippet}
+				<div class="modal-action mt-6 flex gap-2">
+					<button class="btn btn-soft shadow-none" type="button" onclick={onClose}>
+						<Icon name="close" />
+						Batal
+					</button>
+					<button class="btn btn-error shadow-none" disabled={submitting || deleteModalDisabled}>
+						{#if submitting}
+							<div class="loading loading-spinner"></div>
+						{:else}
+							<Icon name="del" />
+						{/if}
+						Hapus
+					</button>
+				</div>
 			</FormEnhance>
 		</dialog>
 		<form

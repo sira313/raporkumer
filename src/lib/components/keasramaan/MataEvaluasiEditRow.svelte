@@ -1,20 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
 
-	interface Props {
-		group: {
-			nama: string;
-			indikator: Array<{ id?: number; deskripsi: string }>;
-		};
-		rowIndex: number;
-		isSubmitting: boolean;
-		onUpdateNama: (value: string) => void;
-		onUpdateIndicator: (index: number, value: string) => void;
-		onRemoveIndicator: (index: number) => void;
-		onSave: () => void;
-		onCancel: () => void;
-	}
-
 	const {
 		group,
 		rowIndex,

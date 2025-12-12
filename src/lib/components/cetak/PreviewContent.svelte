@@ -32,7 +32,6 @@
 		previewError = null,
 		isBulkMode = false,
 		bulkPreviewData = [],
-		selectedDocumentEntry = null,
 		selectedTemplate = '1',
 		bgRefreshKey = 0,
 		bulkLoadProgress = null,
@@ -47,7 +46,7 @@
 		previewError: string | null;
 		isBulkMode: boolean;
 		bulkPreviewData: Array<{ murid: MuridData; data: PreviewPayload }>;
-		selectedDocumentEntry: { value: DocumentType; label: string } | null;
+		// selectedDocumentEntry: { value: DocumentType; label: string } | null; // Removed unused prop
 		selectedTemplate: '1' | '2';
 		bgRefreshKey: number;
 		bulkLoadProgress?: { current: number; total: number } | null;
