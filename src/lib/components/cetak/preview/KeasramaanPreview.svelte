@@ -630,42 +630,41 @@
 				</section>
 
 				<!-- Signatures Section on Last Page -->
-				<section
-					class="mt-8 grid break-inside-avoid grid-cols-2 gap-4 text-xs print:break-inside-avoid print:text-xs"
-				>
-					<div class="text-center">
-						<div class="mt-7 mb-2 font-semibold">Wali Asrama</div>
-						<div class="mb-8 h-8"></div>
-						<div class="print:border-black">
-							<div class="font-semibold">{formatValue(waliAsrama?.nama)}</div>
+				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
+					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+						<div class="flex flex-col items-center text-center text-xs print:text-xs">
+							<p>Wali Asrama</p>
+							<div class="mt-16 font-semibold tracking-wide underline">
+								{formatValue(waliAsrama?.nama)}
+							</div>
 							<div class="mt-1 text-xs">{formatValue(waliAsrama?.nip)}</div>
 						</div>
-					</div>
-					<div class="text-center">
-						{#if ttd}
-							<div class="mb-2 text-xs print:text-xs">
-								<div>{ttd.tempat}, {ttd.tanggal}</div>
+						<div class="relative flex flex-col items-center text-center text-xs print:text-xs">
+							{#if ttd}
+								<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+									{ttd.tempat}, {ttd.tanggal}
+								</p>
+							{/if}
+							<p>Wali Kelas</p>
+							<div class="mt-16 font-semibold tracking-wide underline">
+								{formatValue(waliKelas?.nama)}
 							</div>
-						{/if}
-						<div class="mb-2 font-semibold">Wali Kelas</div>
-						<div class="mb-8 h-8"></div>
-						<div class="print:border-black">
-							<div class="font-semibold">{formatValue(waliKelas?.nama)}</div>
 							<div class="mt-1 text-xs">{formatValue(waliKelas?.nip)}</div>
 						</div>
 					</div>
-					<div class="text-center">
-						<div class="mb-2 font-semibold">Orang Tua / Wali</div>
-						<div class="mb-8 h-8"></div>
-						<div class="print:border-black">
-							<div class="font-semibold">_________________</div>
+					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+						<div class="flex flex-col items-center text-center text-xs print:text-xs">
+							<p>Orang Tua/Wali Murid</p>
+							<div
+								class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
+								aria-hidden="true"
+							></div>
 						</div>
-					</div>
-					<div class="text-center">
-						<div class="mb-2 font-semibold">Kepala Sekolah</div>
-						<div class="mb-8 h-8"></div>
-						<div class="print:border-black">
-							<div class="font-semibold">{formatValue(kepalaSekolah?.nama)}</div>
+						<div class="flex flex-col items-center text-center text-xs print:text-xs">
+							<p>Kepala Sekolah</p>
+							<div class="mt-16 font-semibold tracking-wide underline">
+								{formatValue(kepalaSekolah?.nama)}
+							</div>
 							<div class="mt-1 text-xs">{formatValue(kepalaSekolah?.nip)}</div>
 						</div>
 					</div>
@@ -790,38 +789,33 @@
 							</table>
 						</section>
 						<!-- Simulate signatures section -->
-						<section class="mt-8 grid grid-cols-2 gap-4 text-xs">
-							<div class="text-center">
-								<div class="mt-7 mb-2 font-semibold">Wali Asrama</div>
-								<div class="mb-8 h-8"></div>
-								<div>
-									<div class="font-semibold">Name</div>
+						<section class="mt-8 flex flex-col gap-6">
+							<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+								<div class="flex flex-col items-center text-center text-xs print:text-xs">
+									<p>Wali Asrama</p>
+									<div class="mt-16 font-semibold tracking-wide underline">Name</div>
+									<div class="mt-1 text-xs">NIP</div>
+								</div>
+								<div class="relative flex flex-col items-center text-center text-xs print:text-xs">
+									<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+										Tempat, Tanggal
+									</p>
+									<p>Wali Kelas</p>
+									<div class="mt-16 font-semibold tracking-wide underline">Name</div>
 									<div class="mt-1 text-xs">NIP</div>
 								</div>
 							</div>
-							<div class="text-center">
-								<div class="mb-2 text-xs">
-									<div>Tempat, Tanggal</div>
+							<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+								<div class="flex flex-col items-center text-center text-xs print:text-xs">
+									<p>Orang Tua/Wali Murid</p>
+									<div
+										class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
+										aria-hidden="true"
+									></div>
 								</div>
-								<div class="mb-2 font-semibold">Wali Kelas</div>
-								<div class="mb-8 h-8"></div>
-								<div>
-									<div class="font-semibold">Name</div>
-									<div class="mt-1 text-xs">NIP</div>
-								</div>
-							</div>
-							<div class="text-center">
-								<div class="mb-2 font-semibold">Orang Tua / Wali</div>
-								<div class="mb-8 h-8"></div>
-								<div>
-									<div class="font-semibold">_________________</div>
-								</div>
-							</div>
-							<div class="text-center">
-								<div class="mb-2 font-semibold">Kepala Sekolah</div>
-								<div class="mb-8 h-8"></div>
-								<div>
-									<div class="font-semibold">Name</div>
+								<div class="flex flex-col items-center text-center text-xs print:text-xs">
+									<p>Kepala Sekolah</p>
+									<div class="mt-16 font-semibold tracking-wide underline">Name</div>
 									<div class="mt-1 text-xs">NIP</div>
 								</div>
 							</div>
