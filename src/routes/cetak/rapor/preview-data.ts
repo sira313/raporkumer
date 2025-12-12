@@ -6,6 +6,7 @@ import {
 	tableAsesmenKokurikuler,
 	tableAsesmenSumatif,
 	tableAsesmenSumatifTujuan,
+	tableEkstrakurikuler,
 	tableMurid
 } from '$lib/server/db/schema';
 import {
@@ -404,47 +405,56 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	const kritCukup = kritCukupParam ? Number(kritCukupParam) : undefined;
 	const kritBaik = kritBaikParam ? Number(kritBaikParam) : undefined;
 
-	const [asesmenSumatif, asesmenEkstrakurikuler, asesmenKokurikuler, asesmenSumatifTujuan] =
-		await Promise.all([
-			db.query.tableAsesmenSumatif.findMany({
-				where: eq(tableAsesmenSumatif.muridId, murid.id),
-				with: {
-					mataPelajaran: true
-				},
-				orderBy: [asc(tableAsesmenSumatif.mataPelajaranId)]
-			}),
-			db.query.tableAsesmenEkstrakurikuler.findMany({
-				where: eq(tableAsesmenEkstrakurikuler.muridId, murid.id),
-				with: {
-					ekstrakurikuler: true,
-					tujuan: true
-				},
-				orderBy: [
-					asc(tableAsesmenEkstrakurikuler.ekstrakurikulerId),
-					asc(tableAsesmenEkstrakurikuler.tujuanId)
-				]
-			}),
-			db.query.tableAsesmenKokurikuler.findMany({
-				where: eq(tableAsesmenKokurikuler.muridId, murid.id),
-				with: {
-					kokurikuler: true
-				}
-			}),
-			db.query.tableAsesmenSumatifTujuan.findMany({
-				where: eq(tableAsesmenSumatifTujuan.muridId, murid.id),
-				with: {
-					tujuanPembelajaran: {
-						columns: {
-							deskripsi: true
-						}
+	const [
+		asesmenSumatif,
+		asesmenEkstrakurikuler,
+		asesmenKokurikuler,
+		asesmenSumatifTujuan,
+		allEkstrakurikuler
+	] = await Promise.all([
+		db.query.tableAsesmenSumatif.findMany({
+			where: eq(tableAsesmenSumatif.muridId, murid.id),
+			with: {
+				mataPelajaran: true
+			},
+			orderBy: [asc(tableAsesmenSumatif.mataPelajaranId)]
+		}),
+		db.query.tableAsesmenEkstrakurikuler.findMany({
+			where: eq(tableAsesmenEkstrakurikuler.muridId, murid.id),
+			with: {
+				ekstrakurikuler: true,
+				tujuan: true
+			},
+			orderBy: [
+				asc(tableAsesmenEkstrakurikuler.ekstrakurikulerId),
+				asc(tableAsesmenEkstrakurikuler.tujuanId)
+			]
+		}),
+		db.query.tableAsesmenKokurikuler.findMany({
+			where: eq(tableAsesmenKokurikuler.muridId, murid.id),
+			with: {
+				kokurikuler: true
+			}
+		}),
+		db.query.tableAsesmenSumatifTujuan.findMany({
+			where: eq(tableAsesmenSumatifTujuan.muridId, murid.id),
+			with: {
+				tujuanPembelajaran: {
+					columns: {
+						deskripsi: true
 					}
-				},
-				orderBy: [
-					asc(tableAsesmenSumatifTujuan.mataPelajaranId),
-					asc(tableAsesmenSumatifTujuan.tujuanPembelajaranId)
-				]
-			})
-		]);
+				}
+			},
+			orderBy: [
+				asc(tableAsesmenSumatifTujuan.mataPelajaranId),
+				asc(tableAsesmenSumatifTujuan.tujuanPembelajaranId)
+			]
+		}),
+		db.query.tableEkstrakurikuler.findMany({
+			where: eq(tableEkstrakurikuler.kelasId, murid.kelasId),
+			orderBy: [asc(tableEkstrakurikuler.nama)]
+		})
+	]);
 
 	const tujuanScoresByMapel = new Map<number, TujuanScoreEntry[]>();
 
@@ -600,10 +610,23 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		ekstrakurikulerGrouped.set(kegiatan.id, group);
 	}
 
+	// Tambahkan ekstrakurikuler yang belum dinilai dengan deskripsi "-"
+	for (const ekskul of allEkstrakurikuler) {
+		if (!ekstrakurikulerGrouped.has(ekskul.id)) {
+			ekstrakurikulerGrouped.set(ekskul.id, {
+				nama: ekskul.nama,
+				parts: [] // empty parts indicates "belum dinilai"
+			});
+		}
+	}
+
 	const ekstrakurikuler = Array.from(ekstrakurikulerGrouped.values())
 		.map((entry) => ({
 			nama: entry.nama,
-			deskripsi: buildEkstrakurikulerDeskripsi(entry.parts, murid.nama) ?? 'Belum ada catatan.'
+			deskripsi:
+				entry.parts.length > 0
+					? (buildEkstrakurikulerDeskripsi(entry.parts, murid.nama) ?? 'Belum ada catatan.')
+					: '-'
 		}))
 		.sort((a, b) => a.nama.localeCompare(b.nama, LOCALE_ID));
 

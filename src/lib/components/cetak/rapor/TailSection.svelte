@@ -171,6 +171,11 @@
 			currentList = null;
 
 			const withoutTrailingPeriod = line.replace(/\.+$/u, '');
+			// Don't add period for standalone "-" (belum dinilai)
+			if (withoutTrailingPeriod === '-') {
+				blocks.push({ kind: 'text', text: '-' });
+				continue;
+			}
 			const endsWithTerminal = /[!?:]$/.test(withoutTrailingPeriod);
 			const text = endsWithTerminal ? withoutTrailingPeriod : `${withoutTrailingPeriod}.`;
 			blocks.push({ kind: 'text', text });
