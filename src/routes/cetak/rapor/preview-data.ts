@@ -141,12 +141,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 
 	const fullTPParam = url.searchParams.get('full_tp');
 	const fullTPParamStr = String(fullTPParam ?? '').toLowerCase();
-	const tpMode: 'compact' | 'full' | 'full-desc' =
-		fullTPParamStr === '1' || fullTPParamStr === 'true'
-			? 'full'
-			: fullTPParamStr === 'desc' || fullTPParamStr === 'full-desc'
-				? 'full-desc'
-				: 'compact';
+	const tpMode: 'compact' | 'full-desc' =
+		fullTPParamStr === 'desc' || fullTPParamStr === 'full-desc' ? 'full-desc' : 'compact';
 
 	// read optional intrakurikuler criteria overrides from query params
 	const kritCukupParam = url.searchParams.get('krit_cukup');

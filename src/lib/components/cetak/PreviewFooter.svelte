@@ -209,12 +209,11 @@
 					class="select select-sm dark:bg-base-200 w-full sm:w-35 dark:border-none"
 					value={tpMode}
 					onchange={(e) => {
-						const val = (e.target as HTMLSelectElement).value as 'compact' | 'full' | 'full-desc';
+						const val = (e.target as HTMLSelectElement).value as 'compact' | 'full-desc';
 						onToggleFullTP(val);
 					}}
 				>
 					<option value="compact">Compact TP</option>
-					<option value="full">Full TP</option>
 					<option value="full-desc">Full desc</option>
 				</select>
 				{#if showBgLogo !== undefined}
