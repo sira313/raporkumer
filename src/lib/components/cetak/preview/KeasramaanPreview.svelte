@@ -581,30 +581,40 @@
 		</div>
 	{/if}
 	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
-		<PrintCardPage
-			breakAfter
-			bind:contentRef={firstCardContent}
-			splitTrigger={triggerSplitOnMount}
-			{backgroundStyle}
-		>
-			<header class="pb-4 text-center">
-				<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Kegiatan Keasramaan</h1>
-				<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
-			</header>
+		{#if keasramaanRows.length === 0}
+			<!-- No data state: only show message -->
+			<PrintCardPage {backgroundStyle}>
+				<div
+					class="flex items-center justify-center rounded-md border-2 border-dashed border-gray-400 bg-gray-50 px-6 py-16 text-center"
+				>
+					<p class="text-gray-600">Belum ada data kegiatan keasramaan yang dicatat.</p>
+				</div>
+			</PrintCardPage>
+		{:else}
+			<!-- Has data: show full report -->
+			<PrintCardPage
+				breakAfter
+				bind:contentRef={firstCardContent}
+				splitTrigger={triggerSplitOnMount}
+				{backgroundStyle}
+			>
+				<header class="pb-4 text-center">
+					<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Kegiatan Keasramaan</h1>
+					<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
+				</header>
 
-			<RaporIdentityTable
-				{murid}
-				{rombel}
-				{sekolah}
-				periode={periode
-					? { tahunPelajaran: periode.tahunAjaran, semester: periode.semester }
-					: { tahunPelajaran: '', semester: '' }}
-				{formatValue}
-				{formatUpper}
-			/>
+				<RaporIdentityTable
+					{murid}
+					{rombel}
+					{sekolah}
+					periode={periode
+						? { tahunPelajaran: periode.tahunAjaran, semester: periode.semester }
+						: { tahunPelajaran: '', semester: '' }}
+					{formatValue}
+					{formatUpper}
+				/>
 
-			<!-- Keasramaan Assessment Table -->
-			{#if keasramaanRows.length > 0}
+				<!-- Keasramaan Assessment Table -->
 				<KeasramaanTable
 					rows={firstPageRows}
 					tableRowAction={tableRow}
@@ -613,40 +623,117 @@
 					splitTrigger={triggerSplitOnMount}
 					{formatValue}
 				/>
-			{:else}
-				<section
-					class="mt-8 rounded-md border-2 border-dashed border-gray-400 bg-gray-50 px-6 py-8 text-center"
-				>
-					<p class="text-gray-600">Belum ada data kegiatan keasramaan yang dicatat.</p>
-				</section>
-			{/if}
-		</PrintCardPage>
-
-		{#each intermediatePageRows as pageRows, pageIndex (pageIndex)}
-			<PrintCardPage breakAfter splitTrigger={triggerSplitOnMount} {backgroundStyle}>
-				<KeasramaanTable
-					rows={pageRows}
-					tableRowAction={tableRow}
-					sectionClass="mt-4"
-					splitTrigger={triggerSplitOnMount}
-					{formatValue}
-				/>
 			</PrintCardPage>
-		{/each}
-		<!-- Show footer (attendance & signature) either on same page or separate page -->
-		{#if finalPageRows.length > 0}
-			<!-- Multi-page: Show on same page if it fits -->
-			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
-				<KeasramaanTable
-					rows={finalPageRows}
-					tableRowAction={tableRow}
-					sectionClass="mt-4"
-					splitTrigger={triggerSplitOnMount}
-					{formatValue}
-				/>
 
-				{#if !shouldRenderFooterOnSeparatePage}
-					<!-- Footer fits on last page -->
+			{#each intermediatePageRows as pageRows, pageIndex (pageIndex)}
+				<PrintCardPage breakAfter splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+					<KeasramaanTable
+						rows={pageRows}
+						tableRowAction={tableRow}
+						sectionClass="mt-4"
+						splitTrigger={triggerSplitOnMount}
+						{formatValue}
+					/>
+				</PrintCardPage>
+			{/each}
+			<!-- Show footer (attendance & signature) either on same page or separate page -->
+			{#if finalPageRows.length > 0}
+				<!-- Multi-page: Show on same page if it fits -->
+				<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+					<KeasramaanTable
+						rows={finalPageRows}
+						tableRowAction={tableRow}
+						sectionClass="mt-4"
+						splitTrigger={triggerSplitOnMount}
+						{formatValue}
+					/>
+
+					{#if !shouldRenderFooterOnSeparatePage}
+						<!-- Footer fits on last page -->
+						<!-- Kehadiran Section -->
+						<section class="mt-6 break-inside-avoid print:break-inside-avoid">
+							<table class="w-full border">
+								<thead>
+									<tr>
+										<th class="border px-3 py-2 text-left font-bold" colspan="3">KETIDAKHADIRAN</th>
+									</tr>
+									<tr>
+										<th class="w-12 border px-3 py-2 text-center font-semibold">No</th>
+										<th class="border px-3 py-2 text-left font-semibold">Alasan Ketidakhadiran</th>
+										<th class="w-16 border px-3 py-2 text-center font-semibold">Jumlah</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="border px-3 py-2 text-center">1</td>
+										<td class="border px-3 py-2">Sakit</td>
+										<td class="border px-3 py-2 text-center">
+											{kehadiran.sakit}
+										</td>
+									</tr>
+									<tr>
+										<td class="border px-3 py-2 text-center">2</td>
+										<td class="border px-3 py-2">Izin</td>
+										<td class="border px-3 py-2 text-center">
+											{kehadiran.izin}
+										</td>
+									</tr>
+									<tr>
+										<td class="border px-3 py-2 text-center">3</td>
+										<td class="border px-3 py-2">Tanpa Keterangan</td>
+										<td class="border px-3 py-2 text-center">
+											{kehadiran.alfa}
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</section>
+
+						<!-- Signatures Section -->
+						<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
+							<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+								<div class="flex flex-col items-center text-center text-xs print:text-xs">
+									<p>Wali Asrama</p>
+									<div class="mt-16 font-semibold tracking-wide underline">
+										{formatValue(waliAsrama?.nama)}
+									</div>
+									<div class="mt-1 text-xs">{formatValue(waliAsrama?.nip)}</div>
+								</div>
+								<div class="relative flex flex-col items-center text-center text-xs print:text-xs">
+									{#if ttd}
+										<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+											{ttd.tempat}, {ttd.tanggal}
+										</p>
+									{/if}
+									<p>Wali Asuh</p>
+									<div class="mt-16 font-semibold tracking-wide underline">
+										{formatValue(waliAsuh?.nama)}
+									</div>
+									<div class="mt-1 text-xs">{formatValue(waliAsuh?.nip)}</div>
+								</div>
+							</div>
+							<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+								<div class="flex flex-col items-center text-center text-xs print:text-xs">
+									<p>Orang Tua/Wali Murid</p>
+									<div
+										class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
+										aria-hidden="true"
+									></div>
+								</div>
+								<div class="flex flex-col items-center text-center text-xs print:text-xs">
+									<p>{kepalaSekolahTitle}</p>
+									<div class="mt-16 font-semibold tracking-wide underline">
+										{formatValue(kepalaSekolah?.nama)}
+									</div>
+									<div class="mt-1 text-xs">{formatValue(kepalaSekolah?.nip)}</div>
+								</div>
+							</div>
+						</section>
+					{/if}
+				</PrintCardPage>
+			{:else}
+				<!-- Single page: always render footer on same page -->
+				<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
 					<!-- Kehadiran Section -->
 					<section class="mt-6 break-inside-avoid print:break-inside-avoid">
 						<table class="w-full border">
@@ -726,178 +813,94 @@
 							</div>
 						</div>
 					</section>
-				{/if}
-			</PrintCardPage>
-		{:else}
-			<!-- Single page: always render footer on same page -->
-			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
-				<!-- Kehadiran Section -->
-				<section class="mt-6 break-inside-avoid print:break-inside-avoid">
-					<table class="w-full border">
-						<thead>
-							<tr>
-								<th class="border px-3 py-2 text-left font-bold" colspan="3">KETIDAKHADIRAN</th>
-							</tr>
-							<tr>
-								<th class="w-12 border px-3 py-2 text-center font-semibold">No</th>
-								<th class="border px-3 py-2 text-left font-semibold">Alasan Ketidakhadiran</th>
-								<th class="w-16 border px-3 py-2 text-center font-semibold">Jumlah</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="border px-3 py-2 text-center">1</td>
-								<td class="border px-3 py-2">Sakit</td>
-								<td class="border px-3 py-2 text-center">
-									{kehadiran.sakit}
-								</td>
-							</tr>
-							<tr>
-								<td class="border px-3 py-2 text-center">2</td>
-								<td class="border px-3 py-2">Izin</td>
-								<td class="border px-3 py-2 text-center">
-									{kehadiran.izin}
-								</td>
-							</tr>
-							<tr>
-								<td class="border px-3 py-2 text-center">3</td>
-								<td class="border px-3 py-2">Tanpa Keterangan</td>
-								<td class="border px-3 py-2 text-center">
-									{kehadiran.alfa}
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</section>
+				</PrintCardPage>
+			{/if}
 
-				<!-- Signatures Section -->
-				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
-					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
-						<div class="flex flex-col items-center text-center text-xs print:text-xs">
-							<p>Wali Asrama</p>
-							<div class="mt-16 font-semibold tracking-wide underline">
-								{formatValue(waliAsrama?.nama)}
+			<!-- Separate page for footer if it doesn't fit on last page -->
+			{#if shouldRenderFooterOnSeparatePage && finalPageRows.length > 0}
+				<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
+					<!-- Kehadiran Section -->
+					<section class="mt-6 break-inside-avoid print:break-inside-avoid">
+						<table class="w-full border">
+							<thead>
+								<tr>
+									<th class="border px-3 py-2 text-left font-bold" colspan="3">KETIDAKHADIRAN</th>
+								</tr>
+								<tr>
+									<th class="w-12 border px-3 py-2 text-center font-semibold">No</th>
+									<th class="border px-3 py-2 text-left font-semibold">Alasan Ketidakhadiran</th>
+									<th class="w-16 border px-3 py-2 text-center font-semibold">Jumlah</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td class="border px-3 py-2 text-center">1</td>
+									<td class="border px-3 py-2">Sakit</td>
+									<td class="border px-3 py-2 text-center">
+										{kehadiran.sakit}
+									</td>
+								</tr>
+								<tr>
+									<td class="border px-3 py-2 text-center">2</td>
+									<td class="border px-3 py-2">Izin</td>
+									<td class="border px-3 py-2 text-center">
+										{kehadiran.izin}
+									</td>
+								</tr>
+								<tr>
+									<td class="border px-3 py-2 text-center">3</td>
+									<td class="border px-3 py-2">Tanpa Keterangan</td>
+									<td class="border px-3 py-2 text-center">
+										{kehadiran.alfa}
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</section>
+
+					<!-- Signatures Section -->
+					<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
+						<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+							<div class="flex flex-col items-center text-center text-xs print:text-xs">
+								<p>Wali Asrama</p>
+								<div class="mt-16 font-semibold tracking-wide underline">
+									{formatValue(waliAsrama?.nama)}
+								</div>
+								<div class="mt-1 text-xs">{formatValue(waliAsrama?.nip)}</div>
 							</div>
-							<div class="mt-1 text-xs">{formatValue(waliAsrama?.nip)}</div>
-						</div>
-						<div class="relative flex flex-col items-center text-center text-xs print:text-xs">
-							{#if ttd}
-								<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-									{ttd.tempat}, {ttd.tanggal}
-								</p>
-							{/if}
-							<p>Wali Asuh</p>
-							<div class="mt-16 font-semibold tracking-wide underline">
-								{formatValue(waliAsuh?.nama)}
+							<div class="relative flex flex-col items-center text-center text-xs print:text-xs">
+								{#if ttd}
+									<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+										{ttd.tempat}, {ttd.tanggal}
+									</p>
+								{/if}
+								<p>Wali Asuh</p>
+								<div class="mt-16 font-semibold tracking-wide underline">
+									{formatValue(waliAsuh?.nama)}
+								</div>
+								<div class="mt-1 text-xs">{formatValue(waliAsuh?.nip)}</div>
 							</div>
-							<div class="mt-1 text-xs">{formatValue(waliAsuh?.nip)}</div>
 						</div>
-					</div>
-					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
-						<div class="flex flex-col items-center text-center text-xs print:text-xs">
-							<p>Orang Tua/Wali Murid</p>
-							<div
-								class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
-								aria-hidden="true"
-							></div>
-						</div>
-						<div class="flex flex-col items-center text-center text-xs print:text-xs">
-							<p>{kepalaSekolahTitle}</p>
-							<div class="mt-16 font-semibold tracking-wide underline">
-								{formatValue(kepalaSekolah?.nama)}
+						<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+							<div class="flex flex-col items-center text-center text-xs print:text-xs">
+								<p>Orang Tua/Wali Murid</p>
+								<div
+									class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
+									aria-hidden="true"
+								></div>
 							</div>
-							<div class="mt-1 text-xs">{formatValue(kepalaSekolah?.nip)}</div>
+							<div class="flex flex-col items-center text-center text-xs print:text-xs">
+								<p>{kepalaSekolahTitle}</p>
+								<div class="mt-16 font-semibold tracking-wide underline">
+									{formatValue(kepalaSekolah?.nama)}
+								</div>
+								<div class="mt-1 text-xs">{formatValue(kepalaSekolah?.nip)}</div>
+							</div>
 						</div>
-					</div>
-				</section>
-			</PrintCardPage>
+					</section>
+				</PrintCardPage>
+			{/if}
 		{/if}
-
-		<!-- Separate page for footer if it doesn't fit on last page -->
-		{#if shouldRenderFooterOnSeparatePage && finalPageRows.length > 0}
-			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
-				<!-- Kehadiran Section -->
-				<section class="mt-6 break-inside-avoid print:break-inside-avoid">
-					<table class="w-full border">
-						<thead>
-							<tr>
-								<th class="border px-3 py-2 text-left font-bold" colspan="3">KETIDAKHADIRAN</th>
-							</tr>
-							<tr>
-								<th class="w-12 border px-3 py-2 text-center font-semibold">No</th>
-								<th class="border px-3 py-2 text-left font-semibold">Alasan Ketidakhadiran</th>
-								<th class="w-16 border px-3 py-2 text-center font-semibold">Jumlah</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr>
-								<td class="border px-3 py-2 text-center">1</td>
-								<td class="border px-3 py-2">Sakit</td>
-								<td class="border px-3 py-2 text-center">
-									{kehadiran.sakit}
-								</td>
-							</tr>
-							<tr>
-								<td class="border px-3 py-2 text-center">2</td>
-								<td class="border px-3 py-2">Izin</td>
-								<td class="border px-3 py-2 text-center">
-									{kehadiran.izin}
-								</td>
-							</tr>
-							<tr>
-								<td class="border px-3 py-2 text-center">3</td>
-								<td class="border px-3 py-2">Tanpa Keterangan</td>
-								<td class="border px-3 py-2 text-center">
-									{kehadiran.alfa}
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</section>
-
-				<!-- Signatures Section -->
-				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
-					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
-						<div class="flex flex-col items-center text-center text-xs print:text-xs">
-							<p>Wali Asrama</p>
-							<div class="mt-16 font-semibold tracking-wide underline">
-								{formatValue(waliAsrama?.nama)}
-							</div>
-							<div class="mt-1 text-xs">{formatValue(waliAsrama?.nip)}</div>
-						</div>
-						<div class="relative flex flex-col items-center text-center text-xs print:text-xs">
-							{#if ttd}
-								<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-									{ttd.tempat}, {ttd.tanggal}
-								</p>
-							{/if}
-							<p>Wali Asuh</p>
-							<div class="mt-16 font-semibold tracking-wide underline">
-								{formatValue(waliAsuh?.nama)}
-							</div>
-							<div class="mt-1 text-xs">{formatValue(waliAsuh?.nip)}</div>
-						</div>
-					</div>
-					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
-						<div class="flex flex-col items-center text-center text-xs print:text-xs">
-							<p>Orang Tua/Wali Murid</p>
-							<div
-								class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
-								aria-hidden="true"
-							></div>
-						</div>
-						<div class="flex flex-col items-center text-center text-xs print:text-xs">
-							<p>{kepalaSekolahTitle}</p>
-							<div class="mt-16 font-semibold tracking-wide underline">
-								{formatValue(kepalaSekolah?.nama)}
-							</div>
-							<div class="mt-1 text-xs">{formatValue(kepalaSekolah?.nip)}</div>
-						</div>
-					</div>
-				</section>
-			</PrintCardPage>
-		{/if}
-
 		<div
 			class="pointer-events-none"
 			style="position: fixed; top: -10000px; left: -10000px; width: 210mm; pointer-events: none; opacity: 0;"
