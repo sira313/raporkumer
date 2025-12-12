@@ -32,6 +32,32 @@ import { buildCapaianKompetensi, type TujuanScoreEntry } from '$lib/rapor-modes'
 
 const LOCALE_ID = 'id-ID';
 
+const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
+
+const AGAMA_VARIANT_MAP: Record<string, string> = {
+	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
+	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
+	protestan: 'Pendidikan Agama Kristen dan Budi Pekerti',
+	katolik: 'Pendidikan Agama Katolik dan Budi Pekerti',
+	katholik: 'Pendidikan Agama Katolik dan Budi Pekerti',
+	hindu: 'Pendidikan Agama Hindu dan Budi Pekerti',
+	budha: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
+	'khong hu cu': 'Pendidikan Agama Khonghucu dan Budi Pekerti',
+	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
+};
+
+function normalizeText(value: string | null | undefined) {
+	return value?.trim().toLowerCase() ?? '';
+}
+
+function resolveAgamaVariantName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return AGAMA_VARIANT_MAP[normalized] ?? null;
+}
+
 export type RaporContext = {
 	locals: App.Locals;
 	url: URL;
@@ -227,6 +253,14 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 
 	const normalizeSubjectName = (value: string) => value.trim().toLocaleLowerCase(LOCALE_ID);
 
+	// Resolve the expected agama subject name based on murid's agama
+	const muridExpectedAgamaMapel = resolveAgamaVariantName(murid.agama) ?? AGAMA_BASE_SUBJECT;
+	const muridExpectedAgamaMapelNormalized = normalizeText(muridExpectedAgamaMapel);
+
+	function isAgamaSubject(name: string): boolean {
+		return normalizeText(name).startsWith('pendidikan agama');
+	}
+
 	const wajibSubjectPriority = [
 		{
 			core: 'pendidikan agama dan budi pekerti',
@@ -278,7 +312,20 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	};
 
 	const nilaiIntrakurikuler = asesmenSumatif
-		.filter((item) => item.mataPelajaran)
+		.filter((item) => {
+			// Filter basic requirement
+			if (!item.mataPelajaran) return false;
+
+			// Filter agama subject to only show the one matching murid's agama
+			const mapel = item.mataPelajaran;
+			if (isAgamaSubject(mapel.nama)) {
+				// Only include agama subject that matches murid's expected agama mapel
+				return normalizeText(mapel.nama) === muridExpectedAgamaMapelNormalized;
+			}
+
+			// Include non-agama subjects
+			return true;
+		})
 		.map((item) => {
 			const mapel = item.mataPelajaran!;
 			const priority = mapel.jenis === 'wajib' ? getWajibPriorityInfo(mapel.nama) : null;
