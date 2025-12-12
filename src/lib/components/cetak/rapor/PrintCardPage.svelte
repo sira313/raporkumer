@@ -9,6 +9,7 @@
 		contentRef = $bindable<HTMLElement | null>(),
 		murid = null,
 		rombel = null,
+		pageNumber = null,
 		splitTrigger,
 		cardClass = '',
 		contentClass = '',
@@ -21,6 +22,7 @@
 		contentRef?: HTMLElement | null;
 		murid?: any;
 		rombel?: any;
+		pageNumber?: number | null;
 		splitTrigger?: SplitTrigger;
 		cardClass?: string;
 		contentClass?: string;
@@ -78,6 +80,6 @@
 		</div>
 
 		<!-- Per-page footer placed outside of the measured contentRef so it doesn't affect pagination -->
-		<FooterPage {murid} {rombel} />
+		<FooterPage {murid} {rombel} {pageNumber} />
 	</div>
 </div>

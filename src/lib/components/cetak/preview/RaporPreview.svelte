@@ -510,6 +510,7 @@
 			{backgroundStyle}
 			{murid}
 			{rombel}
+			pageNumber={1}
 		>
 			<header class="pb-4 text-center">
 				<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
@@ -540,6 +541,7 @@
 				{backgroundStyle}
 				{murid}
 				{rombel}
+				pageNumber={2 + pageIndex}
 			>
 				<RaporIntrakTable
 					rows={pageRows}
@@ -563,6 +565,7 @@
 				{backgroundStyle}
 				{murid}
 				{rombel}
+				pageNumber={2 + intermediatePageRows.length}
 			>
 				<RaporIntrakTable
 					rows={finalPageRows}
@@ -610,7 +613,13 @@
 		{:else}
 			<!-- If no finalPageRows, all content fits in first page -->
 			<!-- So render footer on same first page -->
-			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle} {murid} {rombel}>
+			<PrintCardPage
+				splitTrigger={triggerSplitOnMount}
+				{backgroundStyle}
+				{murid}
+				{rombel}
+				pageNumber={1}
+			>
 				<!-- Footer/Signatures Section on first page if it's the only page -->
 				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
 					<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
@@ -645,7 +654,13 @@
 
 		<!-- Render footer on separate page if it doesn't fit on last table page -->
 		{#if shouldRenderFooterOnSeparatePage && finalPageRows.length > 0}
-			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle} {murid} {rombel}>
+			<PrintCardPage
+				splitTrigger={triggerSplitOnMount}
+				{backgroundStyle}
+				{murid}
+				{rombel}
+				pageNumber={3 + intermediatePageRows.length}
+			>
 				<!-- Footer/Signatures Section on dedicated page -->
 				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
 					<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">

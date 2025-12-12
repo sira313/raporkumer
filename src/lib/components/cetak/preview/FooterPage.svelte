@@ -1,5 +1,13 @@
 <script lang="ts">
-	let { murid = null, rombel = null } = $props<{ murid?: any; rombel?: any }>();
+	let {
+		murid = null,
+		rombel = null,
+		pageNumber = null
+	} = $props<{
+		murid?: any;
+		rombel?: any;
+		pageNumber?: number | null;
+	}>();
 </script>
 
 <div class="footer-page" aria-hidden="true">
@@ -16,7 +24,11 @@
 			{/if}
 		</div>
 
-		<div class="page-number text-right"></div>
+		<div class="page-number text-right">
+			{#if pageNumber !== null}
+				<span class="page-number-screen">Halaman: {pageNumber}</span>
+			{/if}
+		</div>
 	</div>
 
 	<style>
