@@ -45,6 +45,9 @@
 	const ttd = $derived.by(() => keasramaan?.ttd ?? null);
 	const kehadiran = $derived.by(() => keasramaan?.kehadiran ?? null);
 	const keasramaanRows = $derived.by(() => keasramaan?.keasramaanRows ?? []);
+	const hasCompleteData = $derived.by(() => {
+		return !!(murid?.nama && rombel?.nama && sekolah?.nama);
+	});
 	const kepalaSekolahTitle = $derived.by(() => {
 		const status = kepalaSekolah?.statusKepalaSekolah;
 		return status === 'plt' ? 'Plt. Kepala Sekolah' : 'Kepala Sekolah';
@@ -626,6 +629,27 @@
 <div
 	class="bg-base-300 dark:bg-base-200 card preview w-full rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
 >
+	{#if !hasCompleteData}
+		<div class="alert alert-warning m-4 print:hidden">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-6 w-6 shrink-0 stroke-current"
+				fill="none"
+				viewBox="0 0 24 24"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M12 9v2m0 4v2m0 4v2M7.08 6.06A9 9 0 1 0 20.94 19M7.08 6.06l11.86 11.86"
+				></path>
+			</svg>
+			<span
+				>Data murid, kelas, atau sekolah belum lengkap. Silahkan isi data terlebih dahulu sebelum
+				cetak.</span
+			>
+		</div>
+	{/if}
 	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
 		<PrintCardPage
 			breakAfter
@@ -650,14 +674,22 @@
 			/>
 
 			<!-- Keasramaan Assessment Table -->
-			<KeasramaanTable
-				rows={firstPageRows}
-				tableRowAction={tableRow}
-				bind:sectionRef={firstTableSection}
-				sectionClass="mt-8"
-				splitTrigger={triggerSplitOnMount}
-				{formatValue}
-			/>
+			{#if keasramaanRows.length > 0}
+				<KeasramaanTable
+					rows={firstPageRows}
+					tableRowAction={tableRow}
+					bind:sectionRef={firstTableSection}
+					sectionClass="mt-8"
+					splitTrigger={triggerSplitOnMount}
+					{formatValue}
+				/>
+			{:else}
+				<section
+					class="mt-8 rounded-md border-2 border-dashed border-gray-400 bg-gray-50 px-6 py-8 text-center"
+				>
+					<p class="text-gray-600">Belum ada data kegiatan keasramaan yang dicatat.</p>
+				</section>
+			{/if}
 		</PrintCardPage>
 
 		{#each intermediatePageRows as pageRows, pageIndex (pageIndex)}
