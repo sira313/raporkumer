@@ -439,7 +439,11 @@ export async function getKeasramaanPreviewPayload({ locals, url }: KeasramaanCon
 			? { nama: kelasData.waliKelas.nama, nip: kelasData.waliKelas.nip ?? '' }
 			: null,
 		kepalaSekolah: sekolah.kepalaSekolah
-			? { nama: sekolah.kepalaSekolah.nama, nip: sekolah.kepalaSekolah.nip ?? '' }
+			? ({
+					nama: sekolah.kepalaSekolah.nama,
+					nip: sekolah.kepalaSekolah.nip ?? '',
+					statusKepalaSekolah: sekolah.statusKepalaSekolah ?? 'definitif'
+				} as KeasramaanPrintData['kepalaSekolah'])
 			: null,
 		ttd: {
 			tempat: ttdTempat,

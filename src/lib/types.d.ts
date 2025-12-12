@@ -221,9 +221,9 @@ interface KeasramaanPrintData {
 		tahunAjaran: string;
 		semester: string;
 	};
-	waliAsrama: { nama: string } | null;
-	waliKelas: { nama: string } | null;
-	kepalaSekolah: { nama: string } | null;
+	waliAsrama: { nama: string; nip?: string | null } | null;
+	waliKelas: { nama: string; nip?: string | null } | null;
+	kepalaSekolah: { nama: string; nip?: string | null; statusKepalaSekolah?: string | null } | null;
 	ttd: {
 		tempat: string;
 		tanggal: string;

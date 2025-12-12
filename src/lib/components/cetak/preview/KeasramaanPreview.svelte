@@ -44,6 +44,10 @@
 	const ttd = $derived.by(() => keasramaan?.ttd ?? null);
 	const kehadiran = $derived.by(() => keasramaan?.kehadiran ?? null);
 	const keasramaanRows = $derived.by(() => keasramaan?.keasramaanRows ?? []);
+	const kepalaSekolahTitle = $derived.by(() => {
+		const status = kepalaSekolah?.statusKepalaSekolah;
+		return status === 'plt' ? 'Plt. Kepala Sekolah' : 'Kepala Sekolah';
+	});
 
 	const logoUrl = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri.png');
 	const backgroundStyle = $derived.by(() => {
@@ -661,7 +665,7 @@
 							></div>
 						</div>
 						<div class="flex flex-col items-center text-center text-xs print:text-xs">
-							<p>Kepala Sekolah</p>
+							<p>{kepalaSekolahTitle}</p>
 							<div class="mt-16 font-semibold tracking-wide underline">
 								{formatValue(kepalaSekolah?.nama)}
 							</div>
@@ -814,7 +818,7 @@
 									></div>
 								</div>
 								<div class="flex flex-col items-center text-center text-xs print:text-xs">
-									<p>Kepala Sekolah</p>
+									<p>{kepalaSekolahTitle}</p>
 									<div class="mt-16 font-semibold tracking-wide underline">Name</div>
 									<div class="mt-1 text-xs">NIP</div>
 								</div>
