@@ -363,13 +363,20 @@
 {:else if tailKey === 'footer'}
 	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 		<div class="flex flex-col gap-6">
-			<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+			<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
 				<div class="flex flex-col items-center text-center">
 					<p>Orang Tua/Wali Murid</p>
 					<div
 						class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
 						aria-hidden="true"
 					></div>
+				</div>
+				<div class="text-center">
+					<p>{kepalaSekolahTitle}</p>
+					<div class="mt-16 font-semibold tracking-wide underline">
+						{formatValue(kepalaSekolah?.nama)}
+					</div>
+					<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
 				</div>
 				<div class="relative flex flex-col items-center text-center">
 					<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
@@ -381,13 +388,6 @@
 					</div>
 					<div class="mt-1">{formatValue(waliKelas?.nip)}</div>
 				</div>
-			</div>
-			<div class="text-center">
-				<p>{kepalaSekolahTitle}</p>
-				<div class="mt-16 font-semibold tracking-wide underline">
-					{formatValue(kepalaSekolah?.nama)}
-				</div>
-				<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
 			</div>
 		</div>
 	</section>

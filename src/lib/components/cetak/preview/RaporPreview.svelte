@@ -184,10 +184,15 @@
 		tempFooter.style.visibility = 'hidden';
 		// Don't add padding - measure the actual footer content height only
 		tempFooter.innerHTML = `
-			<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+			<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
 				<div class="flex flex-col items-center text-center">
 					<p>Orang Tua/Wali Murid</p>
 					<div class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"></div>
+				</div>
+				<div class="text-center">
+					<p>Kepala Sekolah</p>
+					<div class="mt-16 font-semibold tracking-wide underline">Nama</div>
+					<div class="mt-1">NIP</div>
 				</div>
 				<div class="relative flex flex-col items-center text-center">
 					<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">Tempat, Tanggal</p>
@@ -195,11 +200,6 @@
 					<div class="mt-16 font-semibold tracking-wide underline">Nama</div>
 					<div class="mt-1">NIP</div>
 				</div>
-			</div>
-			<div class="text-center">
-				<p>Kepala Sekolah</p>
-				<div class="mt-16 font-semibold tracking-wide underline">Nama</div>
-				<div class="mt-1">NIP</div>
 			</div>
 		`;
 		document.body.appendChild(tempFooter);
@@ -568,13 +568,20 @@
 				<!-- Include footer on same page if it fits -->
 				{#if footerFitsOnLastPage}
 					<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
-						<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+						<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
 							<div class="flex flex-col items-center text-center">
 								<p>Orang Tua/Wali Murid</p>
 								<div
 									class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
 									aria-hidden="true"
 								></div>
+							</div>
+							<div class="text-center">
+								<p>{kepalaSekolahTitle}</p>
+								<div class="mt-16 font-semibold tracking-wide underline">
+									{formatValue(kepalaSekolah?.nama)}
+								</div>
+								<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
 							</div>
 							<div class="relative flex flex-col items-center text-center">
 								<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
@@ -587,13 +594,6 @@
 								<div class="mt-1">{formatValue(waliKelas?.nip)}</div>
 							</div>
 						</div>
-						<div class="text-center">
-							<p>{kepalaSekolahTitle}</p>
-							<div class="mt-16 font-semibold tracking-wide underline">
-								{formatValue(kepalaSekolah?.nama)}
-							</div>
-							<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
-						</div>
 					</section>
 				{/if}
 			</PrintCardPage>
@@ -603,13 +603,20 @@
 			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
 				<!-- Footer/Signatures Section on first page if it's the only page -->
 				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
-					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+					<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
 						<div class="flex flex-col items-center text-center">
 							<p>Orang Tua/Wali Murid</p>
 							<div
 								class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
 								aria-hidden="true"
 							></div>
+						</div>
+						<div class="text-center">
+							<p>{kepalaSekolahTitle}</p>
+							<div class="mt-16 font-semibold tracking-wide underline">
+								{formatValue(kepalaSekolah?.nama)}
+							</div>
+							<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
 						</div>
 						<div class="relative flex flex-col items-center text-center">
 							<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
@@ -621,13 +628,6 @@
 							</div>
 							<div class="mt-1">{formatValue(waliKelas?.nip)}</div>
 						</div>
-					</div>
-					<div class="text-center">
-						<p>{kepalaSekolahTitle}</p>
-						<div class="mt-16 font-semibold tracking-wide underline">
-							{formatValue(kepalaSekolah?.nama)}
-						</div>
-						<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
 					</div>
 				</section>
 			</PrintCardPage>
@@ -638,13 +638,20 @@
 			<PrintCardPage splitTrigger={triggerSplitOnMount} {backgroundStyle}>
 				<!-- Footer/Signatures Section on dedicated page -->
 				<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
-					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
+					<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
 						<div class="flex flex-col items-center text-center">
 							<p>Orang Tua/Wali Murid</p>
 							<div
 								class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
 								aria-hidden="true"
 							></div>
+						</div>
+						<div class="text-center">
+							<p>{kepalaSekolahTitle}</p>
+							<div class="mt-16 font-semibold tracking-wide underline">
+								{formatValue(kepalaSekolah?.nama)}
+							</div>
+							<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
 						</div>
 						<div class="relative flex flex-col items-center text-center">
 							<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
@@ -656,13 +663,6 @@
 							</div>
 							<div class="mt-1">{formatValue(waliKelas?.nip)}</div>
 						</div>
-					</div>
-					<div class="text-center">
-						<p>{kepalaSekolahTitle}</p>
-						<div class="mt-16 font-semibold tracking-wide underline">
-							{formatValue(kepalaSekolah?.nama)}
-						</div>
-						<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
 					</div>
 				</section>
 			</PrintCardPage>
