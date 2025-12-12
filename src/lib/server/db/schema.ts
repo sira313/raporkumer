@@ -101,6 +101,10 @@ export const tableSekolah = sqliteTable('sekolah', {
 	// Rapor: kriteria intrakurikuler (batas atas untuk kategori Cukup / Baik)
 	raporKriteriaCukup: int().default(85).notNull(),
 	raporKriteriaBaik: int().default(95).notNull(),
+	// Status kepala sekolah: definitif atau PLT (Pelaksana Tugas)
+	statusKepalaSekolah: text({ enum: ['definitif', 'plt'] })
+		.default('definitif')
+		.notNull(),
 	...audit
 });
 
@@ -171,6 +175,7 @@ export const tableKelas = sqliteTable(
 		fase: text(),
 		waliKelasId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
 		waliAsramaId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
+		waliAsuhId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
 		...audit
 	},
 	(table) => [unique().on(table.sekolahId, table.semesterId, table.nama)]
@@ -275,6 +280,10 @@ export const tableKelasRelations = relations(tableKelas, ({ one, many }) => ({
 	waliKelas: one(tablePegawai, { fields: [tableKelas.waliKelasId], references: [tablePegawai.id] }),
 	waliAsrama: one(tablePegawai, {
 		fields: [tableKelas.waliAsramaId],
+		references: [tablePegawai.id]
+	}),
+	waliAsuh: one(tablePegawai, {
+		fields: [tableKelas.waliAsuhId],
 		references: [tablePegawai.id]
 	}),
 	// many-to-many: kelas bisa diakses oleh multiple guru

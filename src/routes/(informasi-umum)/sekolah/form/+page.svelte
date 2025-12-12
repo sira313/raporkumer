@@ -263,26 +263,46 @@
 						name="email"
 					/>
 				</div>
-			</div>
 
-			<!-- Kementrian -->
-			<div class="fieldset">
-				<legend class="fieldset-legend">Pilih Naungan</legend>
-				<select
-					class="select bg-base-200 dark:bg-base-300 validator w-full border dark:border-none"
-					name="naungan"
-					required
-				>
-					{#each nauganOptions as option (option.key)}
+				<!-- Kementrian -->
+				<div class="fieldset">
+					<legend class="fieldset-legend">Pilih Naungan</legend>
+					<select
+						class="select bg-base-200 dark:bg-base-300 validator w-full border dark:border-none"
+						name="naungan"
+						required
+					>
+						{#each nauganOptions as option (option.key)}
+							<option
+								value={option.key}
+								selected={initialSekolah?.naungan === option.key ||
+									(!initialSekolah && option.key === 'kemendikbud')}
+							>
+								{option.label}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Status definitif plt -->
+				<div class="fieldset">
+					<legend class="fieldset-legend">Status Kepala Sekolah</legend>
+					<select
+						class="select bg-base-200 dark:bg-base-300 validator w-full border dark:border-none"
+						name="statusKepalaSekolah"
+						required
+					>
 						<option
-							value={option.key}
-							selected={initialSekolah?.naungan === option.key ||
-								(!initialSekolah && option.key === 'kemendikbud')}
+							value="definitif"
+							selected={initialSekolah?.statusKepalaSekolah === 'definitif'}
 						>
-							{option.label}
+							Definitif
 						</option>
-					{/each}
-				</select>
+						<option value="plt" selected={initialSekolah?.statusKepalaSekolah === 'plt'}>
+							PLT (Pelaksana Tugas)
+						</option>
+					</select>
+				</div>
 			</div>
 
 			<!-- Upload logo sekolah dan dinas pendidikan -->
