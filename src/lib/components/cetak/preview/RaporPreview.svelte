@@ -52,6 +52,8 @@
 	let firstTableSection = $state<HTMLElement | null>(null);
 	let continuationPrototypeContent = $state<HTMLDivElement | null>(null);
 	let continuationPrototypeTableSection = $state<HTMLElement | null>(null);
+	let lastPagePrototypeContent = $state<HTMLDivElement | null>(null);
+	let lastPagePrototypeTableSection = $state<HTMLElement | null>(null);
 
 	const intrakurikulerRows = $derived.by(() => {
 		const items = rapor?.nilaiIntrakurikuler ?? [];
@@ -134,7 +136,9 @@
 			!firstCardContent ||
 			!firstTableSection ||
 			!continuationPrototypeContent ||
-			!continuationPrototypeTableSection
+			!continuationPrototypeTableSection ||
+			!lastPagePrototypeContent ||
+			!lastPagePrototypeTableSection
 		) {
 			return;
 		}
@@ -144,6 +148,10 @@
 		const continuationCapacity = computeTableCapacity(
 			continuationPrototypeContent,
 			continuationPrototypeTableSection
+		);
+		const lastPageCapacity = computeTableCapacity(
+			lastPagePrototypeContent,
+			lastPagePrototypeTableSection
 		);
 
 		const rowHeights = rows.map((row) => {
@@ -162,7 +170,7 @@
 
 		const tolerance = 0.5;
 
-		const paginatedRows = paginateRowsByHeight({
+		let paginatedRows = paginateRowsByHeight({
 			rows,
 			rowHeights,
 			firstPageCapacity: firstCapacity,
@@ -170,7 +178,191 @@
 			tolerance
 		});
 
+		// If we have multiple pages, re-fit the last page with the constrained lastPageCapacity
+		if (paginatedRows.length > 1) {
+			paginatedRows = refitLastPageWithCapacity(
+				paginatedRows,
+				rows,
+				rowHeights,
+				lastPageCapacity,
+				tolerance
+			);
+		}
+
+		// Apply group header pagination logic AFTER re-fitting:
+		// Ensure group headers are not left alone at the bottom of a page
+		paginatedRows = fixGroupHeaderPlacement(paginatedRows, rowHeights, rows);
+
 		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
+	}
+
+	function refitLastPageWithCapacity(
+		pages: TableRow[][],
+		allRows: TableRow[],
+		rowHeights: number[],
+		lastPageCapacity: number,
+		tolerance: number
+	): TableRow[][] {
+		if (pages.length === 0) return pages;
+
+		// Flatten the last 2 pages to re-paginate with proper capacity
+		const lastPageIndex = pages.length - 1;
+		const secondLastPageIndex = lastPageIndex - 1;
+
+		// Get all rows from last 2 pages (or just last page if only 1 exists)
+		const rowsToRepaginate: TableRow[] = [];
+		if (secondLastPageIndex >= 0) {
+			rowsToRepaginate.push(...pages[secondLastPageIndex]);
+			rowsToRepaginate.push(...pages[lastPageIndex]);
+		} else {
+			rowsToRepaginate.push(...pages[lastPageIndex]);
+		}
+
+		// Re-paginate using continuation capacity for second-to-last, and lastPageCapacity for last
+		const result = pages.slice(0, Math.max(0, secondLastPageIndex));
+
+		let cursor = 0;
+		const totalToRepaginate = rowsToRepaginate.length;
+
+		// Fill the second-to-last page with continuation capacity
+		if (secondLastPageIndex >= 0) {
+			const continuationCapacity = computeTableCapacity(
+				continuationPrototypeContent!,
+				continuationPrototypeTableSection!
+			);
+			const secondLastPageRows: TableRow[] = [];
+			let used = 0;
+			while (cursor < totalToRepaginate) {
+				const row = rowsToRepaginate[cursor];
+				const originalIndex = allRows.findIndex((r) => r.order === row.order);
+				const rowHeight = rowHeights[originalIndex] ?? 0;
+
+				if (secondLastPageRows.length > 0 && used + rowHeight > continuationCapacity + tolerance) {
+					break;
+				}
+				if (secondLastPageRows.length === 0 && rowHeight > continuationCapacity + tolerance) {
+					secondLastPageRows.push(row);
+					cursor += 1;
+					break;
+				}
+				secondLastPageRows.push(row);
+				used += rowHeight;
+				cursor += 1;
+			}
+			if (secondLastPageRows.length > 0) {
+				result.push(secondLastPageRows);
+			}
+		}
+
+		// Fill the last page with lastPageCapacity
+		const lastPageRows: TableRow[] = [];
+		let used = 0;
+		while (cursor < totalToRepaginate) {
+			const row = rowsToRepaginate[cursor];
+			const originalIndex = allRows.findIndex((r) => r.order === row.order);
+			const rowHeight = rowHeights[originalIndex] ?? 0;
+
+			if (lastPageRows.length > 0 && used + rowHeight > lastPageCapacity + tolerance) {
+				break;
+			}
+			if (lastPageRows.length === 0 && rowHeight > lastPageCapacity + tolerance) {
+				lastPageRows.push(row);
+				cursor += 1;
+				break;
+			}
+			lastPageRows.push(row);
+			used += rowHeight;
+			cursor += 1;
+		}
+		if (lastPageRows.length > 0) {
+			result.push(lastPageRows);
+		}
+
+		// Handle remaining rows by adding them as new pages with continuation capacity
+		while (cursor < totalToRepaginate) {
+			const continuationCapacity = computeTableCapacity(
+				continuationPrototypeContent!,
+				continuationPrototypeTableSection!
+			);
+			const intermediatePageRows: TableRow[] = [];
+			let used = 0;
+			while (cursor < totalToRepaginate) {
+				const row = rowsToRepaginate[cursor];
+				const originalIndex = allRows.findIndex((r) => r.order === row.order);
+				const rowHeight = rowHeights[originalIndex] ?? 0;
+
+				if (
+					intermediatePageRows.length > 0 &&
+					used + rowHeight > continuationCapacity + tolerance
+				) {
+					break;
+				}
+				if (intermediatePageRows.length === 0 && rowHeight > continuationCapacity + tolerance) {
+					intermediatePageRows.push(row);
+					cursor += 1;
+					break;
+				}
+				intermediatePageRows.push(row);
+				used += rowHeight;
+				cursor += 1;
+			}
+			if (intermediatePageRows.length > 0) {
+				result.push(intermediatePageRows);
+			}
+		}
+
+		return result;
+	}
+
+	function fixGroupHeaderPlacement(
+		pages: TableRow[][],
+		rowHeights: number[],
+		allRows: TableRow[]
+	): TableRow[][] {
+		let result = pages.map((page) => [...page]); // Deep copy
+
+		let changed = true;
+		let iteration = 0;
+		while (changed && iteration < 10) {
+			// Add max iteration to prevent infinite loop
+			iteration++;
+			changed = false;
+			const newResult: TableRow[][] = [];
+
+			for (let i = 0; i < result.length; i++) {
+				const page = result[i];
+
+				// Check if last row is a group header
+				if (page.length > 0 && page[page.length - 1].kind === 'intrak-group-header') {
+					const lastRow = page[page.length - 1];
+
+					// Remove header from current page
+					const pageWithoutHeader = page.slice(0, -1);
+
+					// Push page if it still has content
+					if (pageWithoutHeader.length > 0) {
+						newResult.push(pageWithoutHeader);
+					}
+
+					// Move header to next page
+					if (i + 1 < result.length) {
+						const nextPage = result[i + 1];
+						result[i + 1] = [lastRow, ...nextPage];
+					} else {
+						// Create new page with just the header (will collect more rows)
+						newResult.push([lastRow]);
+					}
+
+					changed = true;
+				} else {
+					newResult.push(page);
+				}
+			}
+
+			result = newResult;
+		}
+
+		return result;
 	}
 
 	function queueSplit() {
@@ -300,6 +492,36 @@
 						bind:this={continuationPrototypeContent}
 					>
 						<section bind:this={continuationPrototypeTableSection} use:triggerSplitOnMount>
+							<table class="w-full border-collapse" data-intrak-table="true">
+								<thead>
+									<tr>
+										<th class="border px-3 py-2 text-left">No.</th>
+										<th class="border px-3 py-2 text-left">Muatan Pelajaran</th>
+										<th class="border px-3 py-2 text-center">Nilai Akhir</th>
+										<th class="border px-3 py-2 text-left">Capaian Kompetensi</th>
+									</tr>
+								</thead>
+							</table>
+						</section>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div
+			class="pointer-events-none"
+			style="position: fixed; top: -10000px; left: -10000px; width: 210mm; pointer-events: none; opacity: 0;"
+			aria-hidden="true"
+		>
+			<div class="card bg-base-100">
+				<div
+					class="bg-base-100 text-base-content mx-auto flex max-h-[297mm] min-h-[297mm] max-w-[210mm] min-w-[210mm] flex-col p-[20mm]"
+				>
+					<div
+						class="flex min-h-0 flex-1 flex-col text-[12px]"
+						bind:this={lastPagePrototypeContent}
+					>
+						<section bind:this={lastPagePrototypeTableSection} use:triggerSplitOnMount>
 							<table class="w-full border-collapse" data-intrak-table="true">
 								<thead>
 									<tr>
