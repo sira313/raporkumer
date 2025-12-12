@@ -30,53 +30,56 @@ export async function loadBulkPreviews<T>(
 ): Promise<BulkLoadResult<T>[]> {
 	const { signal, concurrency = 3, onProgress } = options;
 	const results: BulkLoadResult<T>[] = [];
-	const queue = [...requests];
-	let activeCount = 0;
 	let completedCount = 0;
 
-	const processNext = async (): Promise<void> => {
-		while (queue.length > 0 && activeCount < concurrency) {
+	// Create a semaphore-like queue manager
+	const inProgress = new Set<Promise<void>>();
+
+	const processRequest = async (request: BulkLoadRequest): Promise<void> => {
+		try {
 			if (signal?.aborted) {
 				throw new Error('Bulk preview loading was cancelled');
 			}
 
-			const request = queue.shift();
-			if (!request) break;
-
-			activeCount++;
-
-			try {
-				const data = await fetchFn(request.muridId);
-				results.push({
-					muridId: request.muridId,
-					muridNama: request.muridNama,
-					success: true,
-					data
-				});
-			} catch (err) {
-				const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-				results.push({
-					muridId: request.muridId,
-					muridNama: request.muridNama,
-					success: false,
-					error: errorMsg
-				});
-			} finally {
-				activeCount--;
-				completedCount++;
-				onProgress?.(completedCount, requests.length);
-				void processNext();
-			}
+			const data = await fetchFn(request.muridId);
+			results.push({
+				muridId: request.muridId,
+				muridNama: request.muridNama,
+				success: true,
+				data
+			});
+		} catch (err) {
+			const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+			results.push({
+				muridId: request.muridId,
+				muridNama: request.muridNama,
+				success: false,
+				error: errorMsg
+			});
+		} finally {
+			completedCount++;
+			onProgress?.(completedCount, requests.length);
 		}
 	};
 
-	// Start initial batch
-	const promises: Promise<void>[] = [];
-	for (let i = 0; i < Math.min(concurrency, requests.length); i++) {
-		promises.push(processNext());
+	// Process requests with controlled concurrency
+	for (const request of requests) {
+		if (signal?.aborted) {
+			break;
+		}
+
+		// Wait if we have max concurrent requests in progress
+		while (inProgress.size >= concurrency) {
+			await Promise.race(inProgress);
+		}
+
+		const promise = processRequest(request);
+		inProgress.add(promise);
+		promise.finally(() => inProgress.delete(promise));
 	}
 
-	await Promise.all(promises);
+	// Wait for all remaining requests to complete
+	await Promise.all(inProgress);
 	return results;
 }
 
