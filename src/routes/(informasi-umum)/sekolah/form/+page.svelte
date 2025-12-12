@@ -15,6 +15,27 @@
 		keyof typeof jenjangPendidikanSederajat
 	>;
 
+	// Group jenjang for UI (put SLB/PKBM/SRT under 'Sekolah Satu Atap')
+	const groupedJenjang = (() => {
+		const map = new Map<
+			string,
+			Array<{
+				jenjKey: keyof typeof jenjangPendidikanSederajat;
+				variant: { key: string; label: string };
+			}>
+		>();
+		const ssaKeys = new Set(['slb', 'pkbm', 'srt']);
+		for (const k of jenjangKeys) {
+			const label = jenjangPendidikanSederajat[k][0].label;
+			const groupLabel = ssaKeys.has(String(k)) ? 'Sekolah Satu Atap' : label;
+			if (!map.has(groupLabel)) map.set(groupLabel, []);
+			for (const v of jenjangPendidikanSederajat[k]) {
+				map.get(groupLabel)?.push({ jenjKey: k, variant: v });
+			}
+		}
+		return Array.from(map.entries()).map(([label, items]) => ({ label, items }));
+	})();
+
 	// When editing, the form enhancer populates the select by jenjangPendidikan (base key).
 	// Because options reuse the same value for multiple variants, the browser will select
 	// the first matching option for that value (usually the base label). To show the
@@ -91,19 +112,17 @@
 							}}
 						>
 							<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
-							{#each jenjangKeys as jenjKey (jenjKey)}
-								<optgroup label={jenjangPendidikanSederajat[jenjKey][0].label}>
-									{#each jenjangPendidikanSederajat[jenjKey] as variant (variant.key)}
-										<!-- nilai option tetap jenjang utama (sd/smp/sma) supaya sesuai model `jenjangPendidikan` -->
+							{#each groupedJenjang as group (group.label)}
+								<optgroup label={group.label}>
+									{#each group.items as item (item.variant.key)}
 										<option
-											value={jenjKey}
-											data-variant={variant.key}
+											value={item.jenjKey}
+											data-variant={item.variant.key}
 											selected={initialSekolah
-												? // if editing: select the option that matches stored variant key
-													initialSekolah.jenjangVariant === variant.key
+												? initialSekolah.jenjangVariant === item.variant.key
 												: undefined}
 										>
-											{variant.label}
+											{item.variant.label}
 										</option>
 									{/each}
 								</optgroup>

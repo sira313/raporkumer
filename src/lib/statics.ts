@@ -1,24 +1,28 @@
 // Varian / jenjang sederajat — daftar institusi yang setara untuk setiap jenjang
 export const jenjangPendidikanSederajat: Record<
-	'sd' | 'smp' | 'sma' | 'slb' | 'pkbm',
+	'sd' | 'smp' | 'sma' | 'slb' | 'pkbm' | 'srt',
 	{ key: string; label: string }[]
 > = {
 	sd: [
 		{ key: 'sd', label: 'Sekolah Dasar (SD)' },
-		{ key: 'mi', label: 'Madrasah Ibtidaiyah (MI)' }
+		{ key: 'mi', label: 'Madrasah Ibtidaiyah (MI)' },
+		{ key: 'srd', label: 'Sekolah Rakyat Dasar (SRD)' }
 	],
 	smp: [
 		{ key: 'smp', label: 'Sekolah Menengah Pertama (SMP)' },
-		{ key: 'mts', label: 'Madrasah Tsanawiyah (MTs)' }
+		{ key: 'mts', label: 'Madrasah Tsanawiyah (MTs)' },
+		{ key: 'srmp', label: 'Sekolah Rakyat Menengah Pertama (SRMP)' }
 	],
 	sma: [
 		{ key: 'sma', label: 'Sekolah Menengah Atas (SMA)' },
 		{ key: 'smk', label: 'Sekolah Menengah Kejuruan (SMK)' },
 		{ key: 'ma', label: 'Madrasah Aliyah (MA)' },
-		{ key: 'mak', label: 'Madrasah Aliyah Kejuruan (MAK)' }
+		{ key: 'mak', label: 'Madrasah Aliyah Kejuruan (MAK)' },
+		{ key: 'srma', label: 'Sekolah Rakyat Menengah Atas (SRMA)' }
 	],
 	slb: [{ key: 'slb', label: 'Sekolah Luar Biasa (SLB)' }],
-	pkbm: [{ key: 'pkbm', label: 'Pusat Kegiatan Belajar Masyarakat (PKBM)' }]
+	pkbm: [{ key: 'pkbm', label: 'Pusat Kegiatan Belajar Masyarakat (PKBM)' }],
+	srt: [{ key: 'srt', label: 'Sekolah Rakyat Terintegrasi (SRT)' }]
 };
 
 export const nauganOptions = [

@@ -109,6 +109,8 @@ export const actions = {
 						.values(formSekolah.alamat)
 						.returning({ id: tableAlamat.id });
 					formSekolah.alamatId = alamat?.id;
+					// also attach to the final insert payload so inserted sekolah gets the foreign key
+					formSekolahFinal.alamatId = alamat?.id;
 				}
 
 				if (formSekolah.kepalaSekolah) {
@@ -117,6 +119,7 @@ export const actions = {
 						.values(formSekolah.kepalaSekolah)
 						.returning({ id: tablePegawai.id });
 					formSekolah.kepalaSekolahId = pegawai?.id;
+					formSekolahFinal.kepalaSekolahId = pegawai?.id;
 				}
 
 				const [newSekolah] = await db

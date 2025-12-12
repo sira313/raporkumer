@@ -13,8 +13,11 @@ import { and, eq } from 'drizzle-orm';
 
 type TingkatOption = { fase: string; label: string };
 
-// Include 'slb' explicitly so SLB schools get the correct phase options
-const tingkatOptionsByJenjang: Record<'sd' | 'smp' | 'sma' | 'slb' | 'pkbm', TingkatOption[]> = {
+// Include 'slb' and 'srt' explicitly so those schools get the correct phase options
+const tingkatOptionsByJenjang: Record<
+	'sd' | 'smp' | 'sma' | 'slb' | 'pkbm' | 'srt',
+	TingkatOption[]
+> = {
 	sd: [
 		{ fase: 'Fase A', label: 'Fase A' },
 		{ fase: 'Fase B', label: 'Fase B' },
@@ -30,6 +33,14 @@ const tingkatOptionsByJenjang: Record<'sd' | 'smp' | 'sma' | 'slb' | 'pkbm', Tin
 		{ fase: 'Fase F', label: 'Fase F' }
 	],
 	pkbm: [
+		{ fase: 'Fase A', label: 'Fase A' },
+		{ fase: 'Fase B', label: 'Fase B' },
+		{ fase: 'Fase C', label: 'Fase C' },
+		{ fase: 'Fase D', label: 'Fase D' },
+		{ fase: 'Fase E', label: 'Fase E' },
+		{ fase: 'Fase F', label: 'Fase F' }
+	],
+	srt: [
 		{ fase: 'Fase A', label: 'Fase A' },
 		{ fase: 'Fase B', label: 'Fase B' },
 		{ fase: 'Fase C', label: 'Fase C' },

@@ -76,6 +76,41 @@ async function main() {
 			// Sekolah rapor kriteria columns
 			{ table: 'sekolah', column: 'rapor_kriteria_cukup', type: 'INTEGER DEFAULT 85' },
 			{ table: 'sekolah', column: 'rapor_kriteria_baik', type: 'INTEGER DEFAULT 95' },
+			// Also accept camelCase variants created by older migrations
+			{ table: 'sekolah', column: 'raporKriteriaCukup', type: 'INTEGER DEFAULT 85' },
+			{ table: 'sekolah', column: 'raporKriteriaBaik', type: 'INTEGER DEFAULT 95' },
+
+			// Columns added by other migrations
+			{ table: 'sekolah', column: 'lokasi_tanda_tangan', type: 'TEXT' },
+			{ table: 'sekolah', column: 'lokasiTandaTangan', type: 'TEXT' },
+			{ table: 'sekolah', column: 'logo_dinas', type: 'BLOB' },
+			{ table: 'sekolah', column: 'logo_dinas_type', type: 'TEXT' },
+
+			// STS columns on asesmen_sumatif (0015)
+			{ table: 'asesmen_sumatif', column: 'stsTes', type: 'REAL' },
+			{ table: 'asesmen_sumatif', column: 'stsNonTes', type: 'REAL' },
+			{ table: 'asesmen_sumatif', column: 'sts', type: 'REAL' },
+
+			// mata_pelajaran.kode (0018)
+			{ table: 'mata_pelajaran', column: 'kode', type: 'TEXT' },
+
+			// kelas waliAsrama / waliAsuh added in later migrations (0024 / 0026)
+			{ table: 'kelas', column: 'waliAsramaId', type: 'INTEGER' },
+			{ table: 'kelas', column: 'wali_asrama_id', type: 'INTEGER' },
+			{ table: 'kelas', column: 'waliAsuhId', type: 'INTEGER' },
+			{ table: 'kelas', column: 'wali_asuh_id', type: 'INTEGER' },
+
+			// status kepala sekolah (0027) - accept both variants
+			{
+				table: 'sekolah',
+				column: 'statusKepalaSekolah',
+				type: "TEXT NOT NULL DEFAULT 'definitif'"
+			},
+			{
+				table: 'sekolah',
+				column: 'status_kepala_sekolah',
+				type: "TEXT NOT NULL DEFAULT 'definitif'"
+			},
 			{ table: 'tasks', column: 'sekolah_id', type: 'INTEGER' },
 			{ table: 'tasks', column: 'kelas_id', type: 'INTEGER' },
 			{ table: 'kelas', column: 'sekolah_id', type: 'INTEGER' },
@@ -98,6 +133,9 @@ async function main() {
 			{ table: 'asesmen_sumatif_tujuan', column: 'mata_pelajaran_id', type: 'INTEGER' },
 			{ table: 'asesmen_formatif', column: 'mata_pelajaran_id', type: 'INTEGER' },
 			// Columns referenced by newer migrations that older DBs may not have
+			// Naungan (organisasi pengelola sekolah)
+			{ table: 'sekolah', column: 'naungan', type: "TEXT NOT NULL DEFAULT 'kemendikbud'" },
+			{ table: 'sekolah', column: 'naungan', type: 'TEXT' },
 			{ table: 'auth_user', column: 'sekolah_id', type: 'INTEGER' },
 			{ table: 'feature_unlock', column: 'sekolah_id', type: 'INTEGER' },
 			{ table: 'tahun_ajaran', column: 'sekolah_id', type: 'INTEGER' }

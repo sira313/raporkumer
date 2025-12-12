@@ -15,7 +15,7 @@ interface PageMeta {
 interface CoverPrintData {
 	sekolah: {
 		nama: string;
-		jenjang: 'sd' | 'smp' | 'sma' | 'slb' | 'pkbm';
+		jenjang: 'sd' | 'smp' | 'sma' | 'slb' | 'pkbm' | 'srt';
 		jenjangVariant?: string | null;
 		npsn: string;
 		naungan?: 'kemendikbud' | 'kemsos' | 'kemenag' | null;
@@ -155,7 +155,7 @@ interface RaporPrintData {
 interface PiagamPrintData {
 	sekolah: {
 		nama: string;
-		jenjang: 'sd' | 'smp' | 'sma' | 'slb' | 'pkbm';
+		jenjang: 'sd' | 'smp' | 'sma' | 'slb' | 'pkbm' | 'srt';
 		npsn: string;
 		alamat: {
 			jalan: string;
