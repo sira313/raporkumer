@@ -71,13 +71,24 @@
 </script>
 
 {#if previewLoading}
-	<div class="text-base-content/70 mt-6 flex items-center gap-3 text-sm">
-		<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-		{#if isBulkMode && bulkLoadProgress}
-			<span>Memuat preview murid {bulkLoadProgress.current}/{bulkLoadProgress.total}…</span>
-		{:else}
-			<span>Menyiapkan preview dokumen…</span>
-		{/if}
+	<div class="mt-6 mb-6 space-y-2 print:hidden">
+		<div class="flex items-center gap-2 text-sm">
+			<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+			<span class="text-base-content/70">
+				{#if isBulkMode && bulkLoadProgress}
+					Memuat murid {bulkLoadProgress.current}/{bulkLoadProgress.total}
+				{:else}
+					Menyiapkan preview…
+				{/if}
+			</span>
+		</div>
+		<progress
+			class="progress progress-primary h-1 w-full"
+			value={isBulkMode && bulkLoadProgress
+				? Math.round((bulkLoadProgress.current / bulkLoadProgress.total) * 100)
+				: 30}
+			max="100"
+		></progress>
 	</div>
 {:else if previewError}
 	<div class="alert alert-error mt-6 flex items-center gap-2 text-sm">
@@ -85,25 +96,17 @@
 		<span>{previewError}</span>
 	</div>
 {:else if isBulkMode && bulkPreviewData.length > 0}
+	{#if waitingForPrintable}
+		<div class="mt-6 mb-6 space-y-2 print:hidden">
+			<div class="flex items-center gap-2 text-sm">
+				<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+				<span class="text-base-content/70">Memproses {bulkPreviewData.length} dokumen…</span>
+			</div>
+			<progress class="progress progress-primary h-1 w-full" value="60" max="100"></progress>
+		</div>
+	{/if}
 	<div class="mt-6">
-		{#if waitingForPrintable}
-			<div class="alert alert-warning mb-4 flex items-center gap-2 text-sm print:hidden">
-				<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-				<span
-					>Memproses {bulkPreviewData.length} dokumen untuk ditampilkan… Ini mungkin memakan waktu beberapa
-					detik untuk dokumen yang kompleks.</span
-				>
-			</div>
-		{:else}
-			<div class="alert alert-info mb-4 flex items-center gap-2 text-sm print:hidden">
-				<Icon name="alert" />
-				<span>
-					Menampilkan {bulkPreviewData.length} dokumen {selectedDocumentEntry?.label.toLowerCase() ??
-						'dokumen'} untuk semua murid. Scroll ke bawah untuk melihat semua dokumen.
-				</span>
-			</div>
-		{/if}
-		<div class="flex flex-col gap-6">
+		<div class="flex flex-col gap-6" style="content-visibility: auto; contain: layout style;">
 			{#each bulkPreviewData as item, index (item.murid.id)}
 				<div class="border-base-300 border-b last:border-b-0">
 					<div class="text-base-content/70 mb-3 text-sm font-semibold">
@@ -170,3 +173,6 @@
 		</div>
 	{/if}
 {/if}
+
+<style lang="postcss">
+</style>

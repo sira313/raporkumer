@@ -247,6 +247,7 @@
 		previewError = null;
 
 		try {
+			let lastProgressUpdate = 0;
 			const result = await loadBulkPreviews_robust({
 				documentType,
 				muridList,
@@ -255,7 +256,12 @@
 				criteria: { kritCukup: 85, kritBaik: 95 },
 				signal: controller.signal,
 				onProgress: (current, total) => {
-					bulkLoadProgress = { current, total };
+					// Debounce progress updates to avoid excessive re-renders
+					const now = Date.now();
+					if (now - lastProgressUpdate > 100) {
+						bulkLoadProgress = { current, total };
+						lastProgressUpdate = now;
+					}
 				}
 			});
 
@@ -296,8 +302,6 @@
 			previewLoading = false;
 			previewAbortController = null;
 		}
-
-		await tick();
 	}
 
 	function handlePrintableReady(node: HTMLDivElement | null) {
@@ -325,11 +329,11 @@
 			const isRapor = previewDocument === 'rapor';
 
 			// Delay calculation:
-			// - Rapor: 1.5 seconds
-			// - Other docs: 300ms
-			let delay = 300;
+			// - Rapor: 600ms (reduced from 1.5s)
+			// - Other docs: 200ms (reduced from 300ms)
+			let delay = 200;
 			if (isRapor) {
-				delay = 1500;
+				delay = 600;
 			}
 
 			const timeoutId = setTimeout(() => {
