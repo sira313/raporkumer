@@ -223,6 +223,7 @@ interface KeasramaanPrintData {
 	};
 	waliAsrama: { nama: string; nip?: string | null } | null;
 	waliKelas: { nama: string; nip?: string | null } | null;
+	waliAsuh: { nama: string; nip?: string | null } | null;
 	kepalaSekolah: { nama: string; nip?: string | null; statusKepalaSekolah?: string | null } | null;
 	ttd: {
 		tempat: string;

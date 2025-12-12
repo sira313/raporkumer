@@ -40,6 +40,7 @@
 	const periode = $derived.by(() => keasramaan?.periode ?? null);
 	const waliAsrama = $derived.by(() => keasramaan?.waliAsrama ?? null);
 	const waliKelas = $derived.by(() => keasramaan?.waliKelas ?? null);
+	const waliAsuh = $derived.by(() => keasramaan?.waliAsuh ?? null);
 	const kepalaSekolah = $derived.by(() => keasramaan?.kepalaSekolah ?? null);
 	const ttd = $derived.by(() => keasramaan?.ttd ?? null);
 	const kehadiran = $derived.by(() => keasramaan?.kehadiran ?? null);
@@ -649,11 +650,11 @@
 									{ttd.tempat}, {ttd.tanggal}
 								</p>
 							{/if}
-							<p>Wali Kelas</p>
+							<p>Wali Asuh</p>
 							<div class="mt-16 font-semibold tracking-wide underline">
-								{formatValue(waliKelas?.nama)}
+								{formatValue(waliAsuh?.nama)}
 							</div>
-							<div class="mt-1 text-xs">{formatValue(waliKelas?.nip)}</div>
+							<div class="mt-1 text-xs">{formatValue(waliAsuh?.nip)}</div>
 						</div>
 					</div>
 					<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
@@ -804,7 +805,7 @@
 									<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
 										Tempat, Tanggal
 									</p>
-									<p>Wali Kelas</p>
+									<p>Wali Asuh</p>
 									<div class="mt-16 font-semibold tracking-wide underline">Name</div>
 									<div class="mt-1 text-xs">NIP</div>
 								</div>
