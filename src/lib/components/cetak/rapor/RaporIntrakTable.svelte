@@ -119,8 +119,44 @@
 			</thead>
 		{/if}
 		<tbody>
-			{#each rows as row, ridx (row.kind === 'intrak' ? `intrak-${row.index}-${row.order}` : row.kind === 'intrak-group-header' ? `header-${row.groupLetter}-${row.order}` : row.kind === 'tail' ? `tail-${row.tailKey}-${row.order}` : `empty-${row.order}`)}
-				{#if row.kind === 'intrak-group-header'}
+			{#each rows as row, ridx (row.kind === 'intrak' ? `intrak-${row.index}-${row.order}` : row.kind === 'intrak-group-header' ? `header-${row.groupLetter}-${row.order}` : row.kind === 'ekstrakurikuler-header' ? `ekskul-header-${row.order}` : row.kind === 'ekstrakurikuler' ? `ekskul-${row.index}-${row.order}` : row.kind === 'ekstrakurikuler-empty' ? `ekskul-empty-${row.order}` : row.kind === 'tail' ? `tail-${row.tailKey}-${row.order}` : `empty-${row.order}`)}
+				{#if row.kind === 'ekstrakurikuler-header'}
+					<tr use:applyRow={row.order} class="ekstrakurikuler-header">
+						<th class="border px-3 py-2 text-left" style="width: 40px;">No.</th>
+						<th class="border px-3 py-2 text-left">Ekstrakurikuler</th>
+						<th class="border px-3 py-2 text-left" colspan="2">Keterangan</th>
+					</tr>
+				{:else if row.kind === 'ekstrakurikuler'}
+					<tr use:applyRow={row.order} class="ekstrakurikuler-row">
+						<td class="border px-3 py-2 align-top">{row.nomor}</td>
+						<td class="border px-3 py-2 align-top">
+							{formatValue(row.entry.nama)}
+						</td>
+						<td class="border px-3 py-2 align-top" colspan="2">
+							<div class="flex flex-col gap-2">
+								{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
+									{#if block.kind === 'text'}
+										<span class="whitespace-pre-line">{block.text}</span>
+									{:else}
+										<ul class="list-disc pl-4">
+											{#each block.items as it (it)}
+												<li class="leading-tight">
+													{it}
+												</li>
+											{/each}
+										</ul>
+									{/if}
+								{/each}
+							</div>
+						</td>
+					</tr>
+				{:else if row.kind === 'ekstrakurikuler-empty'}
+					<tr use:applyRow={row.order} class="ekstrakurikuler-empty">
+						<td class="border px-3 py-2 text-center" colspan="4">
+							Belum ada data ekstrakurikuler.
+						</td>
+					</tr>
+				{:else if row.kind === 'intrak-group-header'}
 					<tr use:applyRow={row.order} class="intrak-group-header">
 						<td class="border px-3 py-2 align-top" colspan="4">
 							<span class="font-semibold">{row.groupLetter}. {row.groupLabel}</span>
@@ -242,6 +278,42 @@
 					<tr use:applyRow={row.order}>
 						<td class="border px-3 py-2 text-center" colspan="4">
 							Belum ada data intrakurikuler.
+						</td>
+					</tr>
+				{:else if row.kind === 'ekstrakurikuler-header'}
+					<tr use:applyRow={row.order} class="ekstrakurikuler-header">
+						<th class="border px-3 py-2 text-left" style="width: 40px;">No.</th>
+						<th class="border px-3 py-2 text-left" colspan="2">Ekstrakurikuler</th>
+						<th class="border px-3 py-2 text-left">Keterangan</th>
+					</tr>
+				{:else if row.kind === 'ekstrakurikuler'}
+					<tr use:applyRow={row.order} class="ekstrakurikuler-row">
+						<td class="border px-3 py-2 align-top">{row.nomor}</td>
+						<td class="border px-3 py-2 align-top" colspan="2">
+							{formatValue(row.entry.nama)}
+						</td>
+						<td class="border px-3 py-2 align-top">
+							<div class="flex flex-col gap-2">
+								{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
+									{#if block.kind === 'text'}
+										<span class="whitespace-pre-line">{block.text}</span>
+									{:else}
+										<ul class="list-disc pl-4">
+											{#each block.items as it (it)}
+												<li class="leading-tight">
+													{it}
+												</li>
+											{/each}
+										</ul>
+									{/if}
+								{/each}
+							</div>
+						</td>
+					</tr>
+				{:else if row.kind === 'ekstrakurikuler-empty'}
+					<tr use:applyRow={row.order}>
+						<td class="border px-3 py-2 text-center" colspan="4">
+							Belum ada data ekstrakurikuler.
 						</td>
 					</tr>
 				{:else}

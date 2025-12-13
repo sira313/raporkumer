@@ -117,7 +117,12 @@
 	});
 
 	const tableRows = $derived.by<TableRow[]>(() => {
-		return createTableRows(intrakurikulerRows, activeTailBlocks, jenjangVariant);
+		return createTableRows(
+			intrakurikulerRows,
+			activeTailBlocks,
+			jenjangVariant,
+			rapor?.ekstrakurikuler
+		);
 	});
 
 	// Support multiple <tr> elements for a single logical row (rowspan-style groups).

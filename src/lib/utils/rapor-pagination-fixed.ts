@@ -35,7 +35,7 @@ const HEIGHTS = {
 
 	// Row heights - based on actual rendering
 	intrakRowBase: 45, // Base row structure (nomor, mapel, nilai columns)
-	intrakRowPerChar: 0.25, // Height increase per character in deskripsi (~4 chars = 1px)
+	intrakRowPerChar: 0.23, // Height increase per character in deskripsi (~4 chars = 1px)
 	intrakRowMinDeskripsi: 40, // Minimum deskripsi area height
 	groupHeader: 40, // Intrak group header (e.g., "Kelompok A")
 
@@ -83,6 +83,25 @@ export interface PaginationResult {
 function estimateRowHeight(row: TableRow, raporData?: RaporDataForPagination): number {
 	if (row.kind === 'intrak-group-header') {
 		return HEIGHTS.groupHeader;
+	}
+
+	if (row.kind === 'ekstrakurikuler-header') {
+		// Header row for ekstrakurikuler table
+		return 45;
+	}
+
+	if (row.kind === 'ekstrakurikuler') {
+		// Individual ekstrakurikuler row - estimate based on deskripsi length
+		const deskripsi = row.entry?.deskripsi ?? '';
+		const deskripsiLength = deskripsi.length;
+		// Assume ~80 chars per line, base height 35px + additional lines
+		const estimatedLines = Math.max(1, Math.ceil(deskripsiLength / 80));
+		return 35 + (estimatedLines - 1) * 18; // 35px base + 18px per extra line
+	}
+
+	if (row.kind === 'ekstrakurikuler-empty') {
+		// Empty state row
+		return 40;
 	}
 
 	if (row.kind === 'intrak') {
@@ -183,11 +202,14 @@ export function paginateRaporWithFixedHeights(
 		} else {
 			// Row doesn't fit - start new page
 
-			// Special case: don't leave group header alone at bottom of page
+			// Special case: don't leave group header or ekstrakurikuler header alone at bottom of page
 			if (currentPageRows.length > 0) {
 				const lastRowOnPage = currentPageRows[currentPageRows.length - 1];
-				if (lastRowOnPage.kind === 'intrak-group-header') {
-					// Remove group header from current page
+				if (
+					lastRowOnPage.kind === 'intrak-group-header' ||
+					lastRowOnPage.kind === 'ekstrakurikuler-header'
+				) {
+					// Remove header from current page
 					currentPageRows.pop();
 					currentPageHeight -= estimateRowHeight(lastRowOnPage, raporData);
 
@@ -197,7 +219,7 @@ export function paginateRaporWithFixedHeights(
 						pageIndex++;
 					}
 
-					// Start new page with the group header
+					// Start new page with the header
 					currentPageRows = [lastRowOnPage, row];
 					currentPageHeight = estimateRowHeight(lastRowOnPage, raporData) + rowHeight;
 					continue;
@@ -217,6 +239,20 @@ export function paginateRaporWithFixedHeights(
 	// Push last page if it has content
 	if (currentPageRows.length > 0) {
 		pages.push({ rows: currentPageRows, hasFooter: false });
+	}
+
+	// Post-process: add repeated ekstrakurikuler header to pages that start with ekstrakurikuler row
+	// but don't have the header (because of page break)
+	for (let pageIdx = 1; pageIdx < pages.length; pageIdx++) {
+		const page = pages[pageIdx];
+		if (page.rows.length > 0 && page.rows[0].kind === 'ekstrakurikuler') {
+			// This page starts with ekstrakurikuler row but no header - add header at the top
+			const headerRow: TableRow = {
+				kind: 'ekstrakurikuler-header',
+				order: page.rows[0].order - 0.5 // Use fractional order to insert before
+			};
+			page.rows.unshift(headerRow);
+		}
 	}
 
 	// Determine footer placement

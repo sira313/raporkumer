@@ -229,52 +229,8 @@
 		</section>
 	{/if}
 {:else if tailKey === 'ekstrakurikuler'}
-	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
-		<table class="w-full border">
-			<thead>
-				<tr>
-					<th class="border px-3 py-2 text-left" style="width: 40px;">No.</th>
-					<th class="border px-3 py-2 text-left">Ekstrakurikuler</th>
-					<th class="border px-3 py-2 text-left">Keterangan</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#if (rapor?.ekstrakurikuler?.length ?? 0) === 0}
-					<tr>
-						<td class="border px-3 py-2 text-center" colspan="3">
-							Belum ada data ekstrakurikuler.
-						</td>
-					</tr>
-				{:else}
-					{#each rapor?.ekstrakurikuler ?? [] as ekskul, index (index)}
-						<tr>
-							<td class="border px-3 py-2 align-top">{index + 1}</td>
-							<td class="border px-3 py-2 align-top">
-								{formatValue(ekskul.nama)}
-							</td>
-							<td class={'border px-3 py-2 align-top ' + paragraphPaddingClass(ekskul.deskripsi)}>
-								<div class="flex flex-col gap-2">
-									{#each descriptionBlocks(formatValue(ekskul.deskripsi)) as block, bidx (bidx)}
-										{#if block.kind === 'text'}
-											<span class="whitespace-pre-line">{block.text}</span>
-										{:else}
-											<ul class="list-disc pl-4">
-												{#each block.items as it (it)}
-													<li class="leading-tight">
-														{it}
-													</li>
-												{/each}
-											</ul>
-										{/if}
-									{/each}
-								</div>
-							</td>
-						</tr>
-					{/each}
-				{/if}
-			</tbody>
-		</table>
-	</section>
+	<!-- Ekstrakurikuler is now rendered as individual rows for efficient pagination -->
+	<!-- This block should not be reached as ekstrakurikuler is handled separately -->
 {:else if tailKey === 'ketidakhadiran'}
 	<section class={resolvedSectionClass} data-tail-key={tailKey} use:applyMeasurement>
 		<table class="w-full border">

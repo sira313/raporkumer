@@ -46,12 +46,36 @@ export type TailTableRow = {
 	tailKey: TailBlockKey;
 };
 
+export type EkstrakurikulerHeaderRow = {
+	kind: 'ekstrakurikuler-header';
+	order: number;
+};
+
+export type EkstrakurikulerRow = {
+	kind: 'ekstrakurikuler';
+	order: number;
+	index: number;
+	nomor: number;
+	entry: {
+		nama: string;
+		deskripsi: string;
+	};
+};
+
+export type EkstrakurikulerEmptyRow = {
+	kind: 'ekstrakurikuler-empty';
+	order: number;
+};
+
 export type TableRow =
 	| IntrakTableRow
 	| IntrakSubTableRow
 	| EmptyTableRow
 	| IntrakGroupHeaderRow
-	| TailTableRow;
+	| TailTableRow
+	| EkstrakurikulerHeaderRow
+	| EkstrakurikulerRow
+	| EkstrakurikulerEmptyRow;
 
 export function createIntrakRows(entries: IntrakurikulerEntry[]): IntrakRow[] {
 	return entries.map((entry, index) => ({ index, nomor: index + 1, entry }));
@@ -60,7 +84,8 @@ export function createIntrakRows(entries: IntrakurikulerEntry[]): IntrakRow[] {
 export function createTableRows(
 	intrakRows: IntrakRow[],
 	tailKeys: readonly TailBlockKey[],
-	jenjangVariant?: string | null
+	jenjangVariant?: string | null,
+	ekstrakurikuler?: Array<{ nama: string; deskripsi: string }> | null
 ): TableRow[] {
 	const result: TableRow[] = [];
 	let order = 0;
@@ -161,14 +186,52 @@ export function createTableRows(
 		}
 	}
 
-	// Add all tail blocks EXCEPT footer, which will be rendered separately on last page
+	// Add all tail blocks in order, inserting ekstrakurikuler rows at the right position
 	for (const tailKey of tailKeys) {
-		if (tailKey === 'footer') continue;
-		result.push({
-			kind: 'tail',
-			order: order++,
-			tailKey
-		});
+		if (tailKey === 'footer') continue; // Footer rendered separately
+
+		if (tailKey === 'ekstrakurikuler') {
+			// Insert ekstrakurikuler as individual rows here for efficient pagination
+			if (ekstrakurikuler && ekstrakurikuler.length > 0) {
+				// Add ekstrakurikuler header
+				result.push({
+					kind: 'ekstrakurikuler-header',
+					order: order++
+				});
+
+				// Add each ekstrakurikuler as a separate row
+				for (let i = 0; i < ekstrakurikuler.length; i++) {
+					const ekskul = ekstrakurikuler[i];
+					result.push({
+						kind: 'ekstrakurikuler',
+						order: order++,
+						index: i,
+						nomor: i + 1,
+						entry: {
+							nama: ekskul.nama || '',
+							deskripsi: ekskul.deskripsi || ''
+						}
+					});
+				}
+			} else {
+				// Add empty state for ekstrakurikuler
+				result.push({
+					kind: 'ekstrakurikuler-header',
+					order: order++
+				});
+				result.push({
+					kind: 'ekstrakurikuler-empty',
+					order: order++
+				});
+			}
+		} else {
+			// Regular tail block (kokurikuler, ketidakhadiran, tanggapan)
+			result.push({
+				kind: 'tail',
+				order: order++,
+				tailKey
+			});
+		}
 	}
 
 	return result;

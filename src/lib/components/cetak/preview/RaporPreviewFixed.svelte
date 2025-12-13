@@ -74,7 +74,12 @@
 	});
 
 	const tableRows = $derived.by<TableRow[]>(() => {
-		return createTableRows(intrakurikulerRows, activeTailBlocks, jenjangVariant);
+		return createTableRows(
+			intrakurikulerRows,
+			activeTailBlocks,
+			jenjangVariant,
+			rapor?.ekstrakurikuler
+		);
 	});
 
 	// Pre-calculate pagination with fixed heights
