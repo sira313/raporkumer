@@ -20,18 +20,25 @@
 	let {
 		data = {},
 		onPrintableReady = () => {},
-		showBgLogo = false
+		showBgLogo = false,
+		muridProp = null
 	} = $props<{
 		data?: ComponentData;
 		onPrintableReady?: (node: HTMLDivElement | null) => void;
 		showBgLogo?: boolean;
+		muridProp?: { id?: number | null } | null;
 	}>();
 
 	let printable: HTMLDivElement | null = null;
 
 	const rapor = $derived.by(() => data?.raporData ?? null);
 	const sekolah = $derived.by(() => rapor?.sekolah ?? null);
-	const murid = $derived.by(() => rapor?.murid ?? null);
+	const derivedMurid = $derived.by(() => rapor?.murid ?? null);
+	const murid = $derived.by(() => {
+		// prefer externally provided murid id (from bulk list) when available
+		if (muridProp) return { ...derivedMurid, id: muridProp.id };
+		return derivedMurid;
+	});
 	const rombel = $derived.by(() => rapor?.rombel ?? null);
 	const periode = $derived.by(() => rapor?.periode ?? null);
 	const waliKelas = $derived.by(() => rapor?.waliKelas ?? null);
@@ -110,6 +117,7 @@
 	let tablePages = $state<TablePage[]>([]);
 	let footerHeight = $state<number>(0);
 	let footerFitsOnLastPage = $state<boolean>(false);
+	let lastMuridId = $state<number | null>(null);
 
 	const firstPageRows = $derived.by(() => {
 		if (tablePages.length > 0) return tablePages[0]?.rows ?? [];
@@ -137,12 +145,16 @@
 
 	let splitQueued = false;
 	let splitAnimationFrameId: number | null = null;
+	let splitRetryCount = 0;
+	const MAX_SPLIT_RETRIES = 8;
 
 	function computeTableCapacity(content: HTMLElement, tableSection: HTMLElement) {
 		const contentRect = content.getBoundingClientRect();
 		const tableRect = tableSection.getBoundingClientRect();
 		const headerHeight = tableSection.querySelector('thead')?.getBoundingClientRect().height ?? 0;
-		return Math.max(0, contentRect.bottom - tableRect.top - headerHeight);
+		// Apply a small safety margin to avoid off-by-a-few-pixels causing overflow
+		const safetyMargin = 8; // pixels
+		return Math.max(0, contentRect.bottom - tableRect.top - headerHeight - safetyMargin);
 	}
 
 	async function splitTableRows() {
@@ -152,6 +164,25 @@
 			splitAnimationFrameId = null;
 		}
 		await tick();
+		// If some refs are not yet bound via Svelte, attempt to locate them in DOM
+		if (printable) {
+			try {
+				if (!firstCardContent) {
+					const firstCard = printable.querySelector('.card');
+					const found = firstCard?.querySelector('[data-content-ref]') as HTMLDivElement | null;
+					if (found) {
+						firstCardContent = found;
+					}
+				}
+				if (!firstTableSection && firstCardContent) {
+					const foundSection = firstCardContent.querySelector('section') as HTMLElement | null;
+					if (foundSection) firstTableSection = foundSection;
+				}
+			} catch (e) {
+				// ignore DOM query errors
+			}
+		}
+
 		if (
 			!firstCardContent ||
 			!firstTableSection ||
@@ -160,20 +191,47 @@
 			!lastPagePrototypeContent ||
 			!lastPagePrototypeTableSection
 		) {
-			return;
+			// Log which refs are missing to help debugging in bulk mode
+			console.debug('RaporPreview[debug] missing refs', {
+				muridId: murid?.id ?? null,
+				muridName: murid?.nama ?? null,
+				firstCardContent: Boolean(firstCardContent),
+				firstTableSection: Boolean(firstTableSection),
+				continuationPrototypeContent: Boolean(continuationPrototypeContent),
+				continuationPrototypeTableSection: Boolean(continuationPrototypeTableSection),
+				lastPagePrototypeContent: Boolean(lastPagePrototypeContent),
+				lastPagePrototypeTableSection: Boolean(lastPagePrototypeTableSection)
+			});
+			// Retry later when some refs are not yet bound (common in bulk rendering)
+			if (splitRetryCount < MAX_SPLIT_RETRIES) {
+				splitRetryCount += 1;
+				setTimeout(queueSplit, 80 * splitRetryCount);
+				return;
+			}
+			// Exhausted retries — fall back to best-effort and continue
+			console.warn(
+				'RaporPreview[debug] refs still missing after retries, continuing with best-effort measurement',
+				{
+					muridId: murid?.id ?? null,
+					muridName: murid?.nama ?? null
+				}
+			);
 		}
 
 		const rows: TableRow[] = tableRows;
-		const firstCapacity = computeTableCapacity(firstCardContent, firstTableSection);
-		const continuationCapacity = computeTableCapacity(
-			continuationPrototypeContent,
-			continuationPrototypeTableSection
-		);
+		const firstCapacity =
+			firstCardContent && firstTableSection
+				? computeTableCapacity(firstCardContent, firstTableSection)
+				: 0;
+		const continuationCapacity =
+			continuationPrototypeContent && continuationPrototypeTableSection
+				? computeTableCapacity(continuationPrototypeContent, continuationPrototypeTableSection)
+				: 0;
 		// For lastPageCapacity, just measure table section
-		const lastPageCapacity = computeTableCapacity(
-			lastPagePrototypeContent,
-			lastPagePrototypeTableSection
-		);
+		const lastPageCapacity =
+			lastPagePrototypeContent && lastPagePrototypeTableSection
+				? computeTableCapacity(lastPagePrototypeContent, lastPagePrototypeTableSection)
+				: 0;
 
 		// Measure footer height from a temporary rendered element
 		// Use the actual font size from the page (text-[12px]) for accuracy
@@ -214,14 +272,43 @@
 			for (const el of set) {
 				total += el.getBoundingClientRect().height;
 			}
-			return total;
+			// Add 1px buffer per-row to account for border/padding variance
+			return total + 1;
 		});
 		if (rowHeights.some((height) => height === 0)) {
-			queueSplit();
-			return;
+			if (splitRetryCount < MAX_SPLIT_RETRIES) {
+				splitRetryCount += 1;
+				console.debug('RaporPreview[debug] unmeasured rows, retrying after delay', {
+					muridId: murid?.id ?? null,
+					muridName: murid?.nama ?? null,
+					attempt: splitRetryCount,
+					rowHeights
+				});
+				setTimeout(queueSplit, 80 * splitRetryCount);
+				return;
+			}
+			// Exhausted retries — estimate missing heights conservatively
+			console.warn('RaporPreview[debug] unmeasured rows after retries, using estimated heights', {
+				muridId: murid?.id ?? null,
+				muridName: murid?.nama ?? null,
+				rowHeights
+			});
+			const measured = rowHeights.filter((h) => h > 0);
+			const avg = measured.length ? measured.reduce((s, v) => s + v, 0) / measured.length : 80;
+			for (let i = 0; i < rowHeights.length; i++) {
+				if (rowHeights[i] === 0) rowHeights[i] = Math.max(avg, 60);
+			}
 		}
+		// reset retry counter on success path
+		splitRetryCount = 0;
 
-		const tolerance = 0.5;
+		// Increased tolerance to allow small rendering differences between instances
+		const tolerance = 2;
+
+		// Reserve footer area when computing how many rows fit on the last page.
+		// This prevents table content from extending into the footer/signature area.
+		const reservedFooterSafety = 8; // px
+		const reservedFooterGap = 10; // px
 
 		let paginatedRows = paginateRowsByHeight({
 			rows,
@@ -231,13 +318,31 @@
 			tolerance
 		});
 
+		console.debug('RaporPreview[debug] pagination initial', {
+			muridId: murid?.id ?? null,
+			muridName: murid?.nama ?? null,
+			firstCapacity,
+			continuationCapacity,
+			lastPageCapacity,
+			rowHeightsSummary: {
+				count: rowHeights.length,
+				sum: rowHeights.reduce((s, h) => s + h, 0)
+			}
+		});
+
 		// If we have multiple pages, re-fit the last page with the constrained lastPageCapacity
 		if (paginatedRows.length > 1) {
+			// Subtract reserved footer area from last page capacity before re-fitting
+			const effectiveLastPageCapacity = Math.max(
+				0,
+				lastPageCapacity - (footerHeight + reservedFooterSafety + reservedFooterGap)
+			);
 			paginatedRows = refitLastPageWithCapacity(
 				paginatedRows,
 				rows,
 				rowHeights,
-				lastPageCapacity,
+				continuationCapacity,
+				effectiveLastPageCapacity,
 				tolerance
 			);
 		}
@@ -246,12 +351,165 @@
 		// Ensure group headers are not left alone at the bottom of a page
 		paginatedRows = fixGroupHeaderPlacement(paginatedRows);
 
+		// If footer won't fit on last page, make sure trailing tail blocks
+		// (kokurikuler, ekstrakurikuler, ketidakhadiran, tanggapan) are
+		// moved off the last page first so they don't overlap the footer.
+		if (paginatedRows.length > 0) {
+			const lastIdx = paginatedRows.length - 1;
+			let lastRows = paginatedRows[lastIdx];
+			const lastPageRowsHeights = lastRows.map((row) => {
+				const originalIndex = rows.findIndex((r) => r.order === row.order);
+				return rowHeights[originalIndex] ?? 0;
+			});
+			let lastPageUsed = lastPageRowsHeights.reduce((s, h) => s + h, 0);
+			let remaining = lastPageCapacity - lastPageUsed;
+			const footerNeeded = footerHeight + 8 + 10; // safety + gap
+
+			if (remaining < footerNeeded) {
+				// Collect trailing tail rows that can be moved
+				const movable: TableRow[] = [];
+				for (let i = lastRows.length - 1; i >= 0; i--) {
+					const r = lastRows[i];
+					if (r.kind === 'tail') {
+						const originalIndex = rows.findIndex((row) => row.order === r.order);
+						const h = rowHeights[originalIndex] ?? 0;
+						// remove from lastRows and add to front of movable
+						lastRows.splice(i, 1);
+						movable.unshift(r);
+						remaining += h;
+						if (remaining >= footerNeeded) break;
+					} else {
+						// stop if we hit an intrak row (don't move intrak rows)
+						break;
+					}
+				}
+
+				if (movable.length > 0) {
+					// Replace last page rows
+					paginatedRows[lastIdx] = lastRows;
+					// Paginate the moved tail rows into continuation pages
+					const movedRowHeights = movable.map((r) => {
+						const originalIndex = rows.findIndex((row) => row.order === r.order);
+						return rowHeights[originalIndex] ?? 0;
+					});
+					const newPages = paginateRowsByHeight({
+						rows: movable,
+						rowHeights: movedRowHeights,
+						firstPageCapacity: continuationCapacity,
+						continuationPageCapacity: continuationCapacity,
+						tolerance
+					});
+					// Append new pages after lastIdx
+					paginatedRows.splice(lastIdx + 1, 0, ...newPages);
+				}
+			}
+		}
+
+		// Ensure any tail rows that don't fit on their page are moved to the next page.
+		function shiftOverflowingTailRows(pages: TableRow[][]) {
+			let changed = false;
+			const maxIter = 10;
+			let iter = 0;
+			while (iter++ < maxIter) {
+				changed = false;
+				for (let pi = 0; pi < pages.length; pi++) {
+					const page = pages[pi];
+					const capacityBase = pi === 0 ? firstCapacity : continuationCapacity;
+					// If this is the last page, subtract footer reservation
+					let capacity = capacityBase;
+					if (pi === pages.length - 1) {
+						capacity = Math.max(0, lastPageCapacity - (footerHeight + 8 + 10));
+					}
+
+					let used = 0;
+					for (let ri = 0; ri < page.length; ri++) {
+						const row = page[ri];
+						const originalIndex = rows.findIndex((r) => r.order === row.order);
+						const rh = rowHeights[originalIndex] ?? 0;
+						if (used + rh > capacity + tolerance) {
+							// If the overflowing row is an intrak row, we should not move it.
+							if (row.kind !== 'tail') {
+								// cannot move intrak row; leave as-is and let pagination keep it (may overflow)
+								break;
+							}
+							// Move this and following rows to the next page
+							const moving = page.splice(ri);
+							if (pages[pi + 1]) {
+								pages[pi + 1] = [...moving, ...pages[pi + 1]];
+							} else {
+								pages.push(moving);
+							}
+							changed = true;
+							break; // restart scanning pages
+						}
+						used += rh;
+					}
+					if (changed) break;
+				}
+				if (!changed) break;
+			}
+			return pages;
+		}
+
+		paginatedRows = shiftOverflowingTailRows(paginatedRows);
+
+		// Additional pass: if a tail block (e.g. 'tanggapan') finishes too close
+		// to the bottom of the page (touching the paper boundary) move it to
+		// the next page. This prevents visual touching/overlap with footer.
+		(function avoidTailTouchingBottom() {
+			// Make this more permissive for the parent/guardian response block.
+			// The tanggapan section is visually sensitive to the page bottom so
+			// use a larger threshold and specifically target that tailKey.
+			const threshold = 28; // px distance from page bottom considered "touching"
+			const maxIter = 5;
+			for (let iter = 0; iter < maxIter; iter++) {
+				let moved = false;
+				for (let pi = 0; pi < paginatedRows.length; pi++) {
+					const page = paginatedRows[pi];
+					const capacityBase = pi === 0 ? firstCapacity : continuationCapacity;
+					let capacity = capacityBase;
+					if (pi === paginatedRows.length - 1) {
+						capacity = Math.max(0, lastPageCapacity - (footerHeight + 8 + 10));
+					}
+
+					let used = 0;
+					for (let ri = 0; ri < page.length; ri++) {
+						const row = page[ri];
+						const originalIndex = rows.findIndex((r) => r.order === row.order);
+						const rh = rowHeights[originalIndex] ?? 0;
+						used += rh;
+						if (row.kind === 'tail') {
+							const tailKey = (row as any)?.tailKey as string | undefined;
+							const remaining = capacity - used;
+							// Aggressively move tanggapan when it gets close to bottom, or
+							// fall back to standard overflow behavior.
+							if (
+								(tailKey === 'tanggapan' && remaining < threshold) ||
+								used > capacity + tolerance
+							) {
+								const moving = page.splice(ri);
+								if (paginatedRows[pi + 1]) {
+									paginatedRows[pi + 1] = [...moving, ...paginatedRows[pi + 1]];
+								} else {
+									paginatedRows.push(moving);
+								}
+								moved = true;
+								break;
+							}
+						}
+					}
+					if (moved) break; // re-evaluate from first page after change
+				}
+				if (!moved) break;
+			}
+		})();
+
 		tablePages = paginatedRows.map((pageRows) => ({ rows: pageRows }));
 
 		// Determine if footer fits on the last page
 		// Calculate remaining space on last page
-		const safetyMargin = 2; // Extra margin for rendering variance only (reduced)
-		const footerGapMargin = 6; // Space for mt-8 before footer (reduced)
+		const safetyMargin = 8; // Extra margin for rendering variance
+		const footerGapMargin = 10; // Space for mt-8 before footer
 
 		if (paginatedRows.length > 0) {
 			const lastPageRowsHeights = paginatedRows[paginatedRows.length - 1].map((row) => {
@@ -284,12 +542,20 @@
 				footerFitsOnLastPage = remainingSpace >= footerHeightWithGap;
 			}
 		}
+
+		console.debug('RaporPreview[debug] footer fit', {
+			muridId: murid?.id ?? null,
+			footerHeight,
+			footerFitsOnLastPage,
+			lastPageCapacity
+		});
 	}
 
 	function refitLastPageWithCapacity(
 		pages: TableRow[][],
 		allRows: TableRow[],
 		rowHeights: number[],
+		continuationCapacity: number,
 		lastPageCapacity: number,
 		tolerance: number
 	): TableRow[][] {
@@ -316,10 +582,7 @@
 
 		// Fill the second-to-last page with continuation capacity
 		if (secondLastPageIndex >= 0) {
-			const continuationCapacity = computeTableCapacity(
-				continuationPrototypeContent!,
-				continuationPrototypeTableSection!
-			);
+			// use measured continuationCapacity passed from caller
 			const secondLastPageRows: TableRow[] = [];
 			let used = 0;
 			while (cursor < totalToRepaginate) {
@@ -370,10 +633,6 @@
 
 		// Handle remaining rows by adding them as new pages with continuation capacity
 		while (cursor < totalToRepaginate) {
-			const continuationCapacity = computeTableCapacity(
-				continuationPrototypeContent!,
-				continuationPrototypeTableSection!
-			);
 			const intermediatePageRows: TableRow[] = [];
 			let used = 0;
 			while (cursor < totalToRepaginate) {
@@ -474,6 +733,18 @@
 
 	$effect(() => {
 		void tableRows;
+		// Reset instance state when murid changes to avoid cross-instance pollution
+		const currentMuridId = murid?.id ?? null;
+		if (currentMuridId !== lastMuridId) {
+			lastMuridId = currentMuridId;
+			// Clear measured DOM references and pagination state
+			tableRowElements.clear();
+			tablePages = [];
+			splitQueued = false;
+			firstCardContent = null;
+			firstTableSection = null;
+			splitRetryCount = 0;
+		}
 		queueSplit();
 	});
 

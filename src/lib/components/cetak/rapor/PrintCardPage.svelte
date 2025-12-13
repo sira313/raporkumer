@@ -75,7 +75,7 @@
 				class="print:opacity-100"
 			></div>
 		{/if}
-		<div class={bodyClasses} bind:this={contentRef} use:applySplit>
+		<div class={bodyClasses} bind:this={contentRef} use:applySplit data-content-ref>
 			{@render children?.()}
 		</div>
 

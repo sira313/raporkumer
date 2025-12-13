@@ -105,7 +105,12 @@
 		</div>
 	{/if}
 	<div class="mt-6">
-		<div class="flex flex-col gap-6" style="content-visibility: auto; contain: layout style;">
+		<div
+			class="flex flex-col gap-6"
+			style={isBulkMode
+				? 'content-visibility: visible;'
+				: 'content-visibility: auto; contain: layout style;'}
+		>
 			{#each bulkPreviewData as item, index (item.murid.id)}
 				<div class="border-base-300 border-b last:border-b-0">
 					<div class="text-base-content/70 mb-3 text-sm font-semibold">
@@ -120,6 +125,7 @@
 						{@const PreviewComponent = getPiagamPreviewComponent()}
 						<PreviewComponent
 							data={item.data}
+							muridProp={item.murid}
 							onPrintableReady={(node) => onBulkPrintableReady(index, node)}
 							{bgRefreshKey}
 							template={selectedTemplate}
@@ -128,6 +134,7 @@
 						{#key showBgLogo}
 							<BiodataPreview
 								data={item.data}
+								muridProp={item.murid}
 								onPrintableReady={(node) => onBulkPrintableReady(index, node)}
 								{showBgLogo}
 							/>
@@ -137,6 +144,7 @@
 						{#key showBgLogo}
 							<PreviewComponent
 								data={item.data}
+								muridProp={item.murid}
 								onPrintableReady={(node) => onBulkPrintableReady(index, node)}
 								{showBgLogo}
 							/>

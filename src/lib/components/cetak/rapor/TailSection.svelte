@@ -116,7 +116,10 @@
 	});
 
 	const resolvedSectionClass = $derived.by(() =>
-		[sectionClass, className].filter(Boolean).join(' ')
+		// Ensure tail sections are kept together during print by default
+		[sectionClass, className, 'break-inside-avoid', 'print:break-inside-avoid']
+			.filter(Boolean)
+			.join(' ')
 	);
 
 	const kokurikulerNarrative = $derived.by(() => {

@@ -13,11 +13,13 @@
 	let {
 		data = {},
 		onPrintableReady = () => {},
-		showBgLogo = false
+		showBgLogo = false,
+		muridProp = null
 	} = $props<{
 		data?: ComponentData;
 		onPrintableReady?: (node: HTMLDivElement | null) => void;
 		showBgLogo?: boolean;
+		muridProp?: { id?: number | null } | null;
 	}>();
 
 	const biodata = $derived.by(() => data?.biodataData ?? null);

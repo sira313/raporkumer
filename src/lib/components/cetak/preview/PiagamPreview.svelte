@@ -11,12 +11,14 @@
 		data = {},
 		onPrintableReady = () => {},
 		bgRefreshKey = 0,
-		template = '1'
+		template = '1',
+		muridProp = null
 	} = $props<{
 		data?: ComponentData;
 		onPrintableReady?: (node: HTMLDivElement | null) => void;
 		bgRefreshKey?: number;
 		template?: '1' | '2';
+		muridProp?: { id?: number | null } | null;
 	}>();
 
 	let printable: HTMLDivElement | null = null;

@@ -303,4 +303,14 @@
 			border-bottom-color: #000 !important;
 		}
 	}
+
+	/* Prevent tail rows (which contain kokurikuler/ekskul/ketidakhadiran/tanggapan)
+	   from being split across pages when printing. The TailSection is rendered
+	   inside a single <tr> with data-tail-row=\"true\". Use page-break-inside
+	   and break-inside rules to instruct browsers not to split these rows. */
+	:global(tr[data-tail-row]) {
+		page-break-inside: avoid;
+		break-inside: avoid;
+		-webkit-column-break-inside: avoid;
+	}
 </style>
