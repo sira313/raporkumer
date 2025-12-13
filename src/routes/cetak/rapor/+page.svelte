@@ -1,7 +1,7 @@
 <script lang="ts">
-	import RaporPreview from '$lib/components/cetak/preview/RaporPreview.svelte';
+	import RaporPreviewFixed from '$lib/components/cetak/preview/RaporPreviewFixed.svelte';
 
 	let { data } = $props();
 </script>
 
-<RaporPreview {data} />
+<RaporPreviewFixed {data} />
