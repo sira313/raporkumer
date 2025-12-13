@@ -110,7 +110,7 @@
 				<ul class="text-base-content/90 list-inside list-disc space-y-2">
 					<li>
 						<a
-							href="https://kurikulum.kemdikbud.go.id/file/1755668120_manage_file.pdf"
+							href="https://kurikulum.kemendikdasmen.go.id/file/1755668120_manage_file.pdf"
 							target="_blank"
 							class="link link-primary">Panduan Belajar dan Asesmen revisi 2025</a
 						>

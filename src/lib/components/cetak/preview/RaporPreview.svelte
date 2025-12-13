@@ -11,6 +11,43 @@
 	} from '$lib/components/cetak/rapor/table-rows';
 	import { paginateRowsByHeight } from '$lib/utils/table-pagination';
 
+	// Global queue manager to prevent too many concurrent measurements in bulk mode
+	// This helps avoid overwhelming the browser's layout engine
+	class MeasurementQueue {
+		private queue: Array<() => Promise<void>> = [];
+		private activeCount = 0;
+		private maxConcurrent = 3; // Maximum concurrent measurements
+
+		async enqueue(fn: () => Promise<void>): Promise<void> {
+			return new Promise((resolve) => {
+				this.queue.push(async () => {
+					await fn();
+					resolve();
+				});
+				this.process();
+			});
+		}
+
+		private async process() {
+			if (this.activeCount >= this.maxConcurrent || this.queue.length === 0) {
+				return;
+			}
+
+			const fn = this.queue.shift();
+			if (!fn) return;
+
+			this.activeCount++;
+			try {
+				await fn();
+			} finally {
+				this.activeCount--;
+				this.process();
+			}
+		}
+	}
+
+	const measurementQueue = new MeasurementQueue();
+
 	type RaporData = NonNullable<App.PageData['raporData']>;
 	type ComponentData = {
 		raporData?: RaporData | null;
@@ -29,6 +66,8 @@
 		muridProp?: { id?: number | null } | null;
 	}>();
 
+	// Generate unique instance ID for debugging and isolation
+	const instanceId = Math.random().toString(36).substring(2, 9);
 	let printable: HTMLDivElement | null = null;
 
 	const rapor = $derived.by(() => data?.raporData ?? null);
@@ -82,7 +121,9 @@
 	});
 
 	// Support multiple <tr> elements for a single logical row (rowspan-style groups).
-	const tableRowElements = new Map<number, Set<HTMLTableRowElement>>();
+	// CRITICAL FIX: Make this instance-scoped (not module-scoped) to avoid collision in bulk mode
+	let tableRowElements = $state<Map<number, Set<HTMLTableRowElement>>>(new Map());
+
 	function tableRow(node: HTMLTableRowElement, order: number) {
 		let set = tableRowElements.get(order);
 		if (!set) {
@@ -147,6 +188,8 @@
 	let splitAnimationFrameId: number | null = null;
 	let splitRetryCount = 0;
 	const MAX_SPLIT_RETRIES = 8;
+	let lastSplitTimestamp = 0;
+	const SPLIT_DEBOUNCE_MS = 50; // Debounce split calls to reduce calculation spam
 
 	function computeTableCapacity(content: HTMLElement, tableSection: HTMLElement) {
 		const contentRect = content.getBoundingClientRect();
@@ -163,11 +206,22 @@
 			cancelAnimationFrame(splitAnimationFrameId);
 			splitAnimationFrameId = null;
 		}
+
+		// Use measurement queue to throttle concurrent DOM measurements in bulk mode
+		await measurementQueue.enqueue(async () => {
+			await performSplit();
+		});
+	}
+
+	async function performSplit() {
 		await tick();
+
 		// If some refs are not yet bound via Svelte, attempt to locate them in DOM
+		// IMPROVEMENT: Scope DOM queries to this specific instance using instanceId or printable container
 		if (printable) {
 			try {
 				if (!firstCardContent) {
+					// Query within this instance's printable container to avoid cross-instance pollution
 					const firstCard = printable.querySelector('.card');
 					const found = firstCard?.querySelector('[data-content-ref]') as HTMLDivElement | null;
 					if (found) {
@@ -192,9 +246,10 @@
 			!lastPagePrototypeTableSection
 		) {
 			// Log which refs are missing to help debugging in bulk mode
-			console.debug('RaporPreview[debug] missing refs', {
+			console.debug(`RaporPreview[${instanceId}] missing refs`, {
 				muridId: murid?.id ?? null,
 				muridName: murid?.nama ?? null,
+				retryCount: splitRetryCount,
 				firstCardContent: Boolean(firstCardContent),
 				firstTableSection: Boolean(firstTableSection),
 				continuationPrototypeContent: Boolean(continuationPrototypeContent),
@@ -205,12 +260,14 @@
 			// Retry later when some refs are not yet bound (common in bulk rendering)
 			if (splitRetryCount < MAX_SPLIT_RETRIES) {
 				splitRetryCount += 1;
-				setTimeout(queueSplit, 80 * splitRetryCount);
+				// Use exponential backoff: 100ms, 150ms, 225ms, 337ms, 506ms, 759ms, 1138ms, 1707ms
+				const delay = Math.min(100 * Math.pow(1.5, splitRetryCount - 1), 2000);
+				setTimeout(queueSplit, delay);
 				return;
 			}
 			// Exhausted retries — fall back to best-effort and continue
 			console.warn(
-				'RaporPreview[debug] refs still missing after retries, continuing with best-effort measurement',
+				`RaporPreview[${instanceId}] refs still missing after retries, continuing with best-effort measurement`,
 				{
 					muridId: murid?.id ?? null,
 					muridName: murid?.nama ?? null
@@ -275,30 +332,40 @@
 			// Add 1px buffer per-row to account for border/padding variance
 			return total + 1;
 		});
-		if (rowHeights.some((height) => height === 0)) {
+
+		// Check for unmeasured rows and retry if needed
+		const unmeasuredCount = rowHeights.filter((h) => h === 0).length;
+		if (unmeasuredCount > 0) {
 			if (splitRetryCount < MAX_SPLIT_RETRIES) {
 				splitRetryCount += 1;
-				console.debug('RaporPreview[debug] unmeasured rows, retrying after delay', {
-					muridId: murid?.id ?? null,
-					muridName: murid?.nama ?? null,
-					attempt: splitRetryCount,
-					rowHeights
-				});
-				setTimeout(queueSplit, 80 * splitRetryCount);
+				const delay = Math.min(100 * Math.pow(1.5, splitRetryCount - 1), 2000);
+				console.debug(
+					`RaporPreview[${instanceId}] unmeasured rows (${unmeasuredCount}/${rowHeights.length}), retry #${splitRetryCount} after ${delay}ms`,
+					{
+						muridId: murid?.id ?? null,
+						muridName: murid?.nama ?? null
+					}
+				);
+				setTimeout(queueSplit, delay);
 				return;
 			}
 			// Exhausted retries — estimate missing heights conservatively
-			console.warn('RaporPreview[debug] unmeasured rows after retries, using estimated heights', {
-				muridId: murid?.id ?? null,
-				muridName: murid?.nama ?? null,
-				rowHeights
-			});
+			console.warn(
+				`RaporPreview[${instanceId}] unmeasured rows after retries, using estimated heights`,
+				{
+					muridId: murid?.id ?? null,
+					muridName: murid?.nama ?? null,
+					unmeasuredCount,
+					totalRows: rowHeights.length
+				}
+			);
 			const measured = rowHeights.filter((h) => h > 0);
 			const avg = measured.length ? measured.reduce((s, v) => s + v, 0) / measured.length : 80;
 			for (let i = 0; i < rowHeights.length; i++) {
 				if (rowHeights[i] === 0) rowHeights[i] = Math.max(avg, 60);
 			}
 		}
+
 		// reset retry counter on success path
 		splitRetryCount = 0;
 
@@ -318,7 +385,7 @@
 			tolerance
 		});
 
-		console.debug('RaporPreview[debug] pagination initial', {
+		console.debug(`RaporPreview[${instanceId}] pagination initial`, {
 			muridId: murid?.id ?? null,
 			muridName: murid?.nama ?? null,
 			firstCapacity,
@@ -543,11 +610,12 @@
 			}
 		}
 
-		console.debug('RaporPreview[debug] footer fit', {
+		console.debug(`RaporPreview[${instanceId}] footer fit`, {
 			muridId: murid?.id ?? null,
 			footerHeight,
 			footerFitsOnLastPage,
-			lastPageCapacity
+			lastPageCapacity,
+			pagesCount: tablePages.length
 		});
 	}
 
@@ -712,6 +780,21 @@
 
 	function queueSplit() {
 		if (splitQueued) return;
+
+		// Debounce split calls to reduce calculation spam in bulk mode
+		const now = Date.now();
+		if (now - lastSplitTimestamp < SPLIT_DEBOUNCE_MS) {
+			// Too soon, reschedule
+			if (splitAnimationFrameId !== null) {
+				cancelAnimationFrame(splitAnimationFrameId);
+			}
+			splitAnimationFrameId = requestAnimationFrame(() => {
+				setTimeout(queueSplit, SPLIT_DEBOUNCE_MS);
+			});
+			return;
+		}
+
+		lastSplitTimestamp = now;
 		splitQueued = true;
 		if (splitAnimationFrameId !== null) {
 			cancelAnimationFrame(splitAnimationFrameId);
@@ -736,6 +819,10 @@
 		// Reset instance state when murid changes to avoid cross-instance pollution
 		const currentMuridId = murid?.id ?? null;
 		if (currentMuridId !== lastMuridId) {
+			console.debug(`RaporPreview[${instanceId}] murid changed, resetting state`, {
+				oldMuridId: lastMuridId,
+				newMuridId: currentMuridId
+			});
 			lastMuridId = currentMuridId;
 			// Clear measured DOM references and pagination state
 			tableRowElements.clear();
@@ -744,15 +831,31 @@
 			firstCardContent = null;
 			firstTableSection = null;
 			splitRetryCount = 0;
+			lastSplitTimestamp = 0;
 		}
 		queueSplit();
 	});
 
 	onMount(() => {
-		queueSplit();
+		console.debug(`RaporPreview[${instanceId}] mounted`, {
+			muridId: murid?.id ?? null,
+			muridName: murid?.nama ?? null
+		});
+
+		// Initial split with slight delay to ensure DOM is fully rendered
+		// In bulk mode, this helps stagger the computation
+		const initialDelay = Math.random() * 30; // 0-30ms random jitter
+		setTimeout(queueSplit, initialDelay);
+
 		const handleResize = () => queueSplit();
 		window.addEventListener('resize', handleResize);
-		return () => window.removeEventListener('resize', handleResize);
+		return () => {
+			window.removeEventListener('resize', handleResize);
+			if (splitAnimationFrameId !== null) {
+				cancelAnimationFrame(splitAnimationFrameId);
+			}
+			console.debug(`RaporPreview[${instanceId}] unmounted`);
+		};
 	});
 
 	function formatValue(value: string | null | undefined) {

@@ -2,7 +2,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import BiodataPreview from '$lib/components/cetak/preview/BiodataPreview.svelte';
 	import CoverPreview from '$lib/components/cetak/preview/CoverPreview.svelte';
-	import RaporPreview from '$lib/components/cetak/preview/RaporPreview.svelte';
+	import RaporPreviewFixed from '$lib/components/cetak/preview/RaporPreviewFixed.svelte';
 	import PiagamPreview from '$lib/components/cetak/preview/PiagamPreview.svelte';
 	import PiagamPreview2 from '$lib/components/cetak/preview/PiagamPreview2.svelte';
 	import KeasramaanPreview from '$lib/components/cetak/preview/KeasramaanPreview.svelte';
@@ -59,7 +59,7 @@
 	const previewComponents: Record<DocumentType, typeof CoverPreview> = {
 		cover: CoverPreview,
 		biodata: BiodataPreview,
-		rapor: RaporPreview,
+		rapor: RaporPreviewFixed,
 		piagam: PiagamPreview,
 		keasramaan: KeasramaanPreview
 	};
