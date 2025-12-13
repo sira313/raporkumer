@@ -157,9 +157,7 @@
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler-empty'}
 					<tr use:applyRow={row.order} class="ekstrakurikuler-empty">
-						<td class="border px-3 py-2 text-center" colspan="4">
-							Belum ada data ekstrakurikuler.
-						</td>
+						<td class="border px-3 py-2 text-center" colspan="4"> Tidak ada ekstrakurikuler </td>
 					</tr>
 				{:else if row.kind === 'intrak-group-header'}
 					<tr use:applyRow={row.order} class="intrak-group-header">
@@ -322,9 +320,7 @@
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler-empty'}
 					<tr use:applyRow={row.order}>
-						<td class="border px-3 py-2 text-center" colspan="4">
-							Belum ada data ekstrakurikuler.
-						</td>
+						<td class="border px-3 py-2 text-center" colspan="4"> Tidak ada ekstrakurikuler </td>
 					</tr>
 				{:else}
 					<tr use:applyRow={row.order} data-tail-row="true">
