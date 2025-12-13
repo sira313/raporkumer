@@ -47,6 +47,11 @@
 
 	const shouldRenderHeader = $derived.by(() => hasIntrakRows(rows));
 
+	const hasKokurikuler = $derived.by(() => Boolean(rapor?.hasKokurikuler));
+
+	// Spacing untuk ekstrakurikuler header: h-2 jika ada kokurikuler, h-4 jika tidak ada
+	const ekstraSpacerClass = $derived.by(() => (hasKokurikuler ? 'h-2' : 'h-4'));
+
 	type DescriptionBlock = { kind: 'text'; text: string } | { kind: 'list'; items: string[] };
 
 	function descriptionBlocks(value: string | null | undefined): DescriptionBlock[] {
@@ -123,7 +128,7 @@
 				{#if row.kind === 'ekstrakurikuler-header'}
 					<tr use:applyRow={row.order} class="ekstrakurikuler-header-spacer">
 						<td class="border-none p-0" colspan="4">
-							<div class="h-4"></div>
+							<div class={ekstraSpacerClass}></div>
 						</td>
 					</tr>
 					<tr class="ekstrakurikuler-header">
@@ -286,7 +291,7 @@
 				{:else if row.kind === 'ekstrakurikuler-header'}
 					<tr use:applyRow={row.order} class="ekstrakurikuler-header-spacer">
 						<td class="border-none p-0" colspan="4">
-							<div class="h-4"></div>
+							<div class={ekstraSpacerClass}></div>
 						</td>
 					</tr>
 					<tr class="ekstrakurikuler-header">
