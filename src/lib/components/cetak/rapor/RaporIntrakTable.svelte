@@ -123,7 +123,7 @@
 				{#if row.kind === 'ekstrakurikuler-header'}
 					<tr use:applyRow={row.order} class="ekstrakurikuler-header-spacer">
 						<td class="border-none p-0" colspan="4">
-							<div class="h-2"></div>
+							<div class="h-4"></div>
 						</td>
 					</tr>
 					<tr class="ekstrakurikuler-header">
@@ -286,7 +286,7 @@
 				{:else if row.kind === 'ekstrakurikuler-header'}
 					<tr use:applyRow={row.order} class="ekstrakurikuler-header-spacer">
 						<td class="border-none p-0" colspan="4">
-							<div class="h-2"></div>
+							<div class="h-4"></div>
 						</td>
 					</tr>
 					<tr class="ekstrakurikuler-header">
