@@ -121,7 +121,12 @@
 		<tbody>
 			{#each rows as row, ridx (row.kind === 'intrak' ? `intrak-${row.index}-${row.order}` : row.kind === 'intrak-group-header' ? `header-${row.groupLetter}-${row.order}` : row.kind === 'ekstrakurikuler-header' ? `ekskul-header-${row.order}` : row.kind === 'ekstrakurikuler' ? `ekskul-${row.index}-${row.order}` : row.kind === 'ekstrakurikuler-empty' ? `ekskul-empty-${row.order}` : row.kind === 'tail' ? `tail-${row.tailKey}-${row.order}` : `empty-${row.order}`)}
 				{#if row.kind === 'ekstrakurikuler-header'}
-					<tr use:applyRow={row.order} class="ekstrakurikuler-header">
+					<tr use:applyRow={row.order} class="ekstrakurikuler-header-spacer">
+						<td class="border-none p-0" colspan="4">
+							<div class="h-2"></div>
+						</td>
+					</tr>
+					<tr class="ekstrakurikuler-header">
 						<th class="border px-3 py-2 text-left" style="width: 40px;">No.</th>
 						<th class="border px-3 py-2 text-left">Ekstrakurikuler</th>
 						<th class="border px-3 py-2 text-left" colspan="2">Keterangan</th>
@@ -281,7 +286,12 @@
 						</td>
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler-header'}
-					<tr use:applyRow={row.order} class="ekstrakurikuler-header">
+					<tr use:applyRow={row.order} class="ekstrakurikuler-header-spacer">
+						<td class="border-none p-0" colspan="4">
+							<div class="h-2"></div>
+						</td>
+					</tr>
+					<tr class="ekstrakurikuler-header">
 						<th class="border px-3 py-2 text-left" style="width: 40px;">No.</th>
 						<th class="border px-3 py-2 text-left" colspan="2">Ekstrakurikuler</th>
 						<th class="border px-3 py-2 text-left">Keterangan</th>
@@ -319,7 +329,11 @@
 				{:else}
 					<tr use:applyRow={row.order} data-tail-row="true">
 						<td class="border-none p-0 align-top" colspan="4">
-							<div class="my-2 flex flex-col gap-4">
+							<div
+								class={row.tailKey === 'ketidakhadiran'
+									? 'mt-4 mb-2 flex flex-col gap-4'
+									: 'my-2 flex flex-col gap-4'}
+							>
 								<TailSection
 									tailKey={row.tailKey}
 									{rapor}
