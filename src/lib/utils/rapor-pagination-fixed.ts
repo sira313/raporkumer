@@ -103,7 +103,7 @@ function estimateRowHeight(row: TableRow, raporData?: RaporDataForPagination): n
 		type TailRow = Extract<TableRow, { kind: 'tail' }>;
 		const tailRow = row as TailRow;
 		const key = tailRow.tailKey;
-		
+
 		switch (key) {
 			case 'kokurikuler': {
 				// Height = header + content rows
@@ -124,7 +124,7 @@ function estimateRowHeight(row: TableRow, raporData?: RaporDataForPagination): n
 					return 45 + 40;
 				}
 				// header (45px) + each item row (~35px)
-				return 45 + (itemCount * 35);
+				return 45 + itemCount * 35;
 			}
 			case 'ketidakhadiran':
 				return HEIGHTS.ketidakhadiranBlock;
