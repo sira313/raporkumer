@@ -22,8 +22,8 @@ export const HEIGHTS = {
 	identityTable: 200,
 	tableHeader: 45,
 	pageFooter: 45,
-	footer: 350, // Kehadiran + signatures (lebih besar dari rapor)
-	footerGap: 30
+	footer: 280, // Kehadiran + signatures (disesuaikan lebih realistis)
+	footerGap: 20
 };
 
 export type KeasramaanRow = {
@@ -149,8 +149,8 @@ export function measureRows(
 const OVERFLOW_TOLERANCE_PAGE1 = 130; // px (halaman 1 - fleksibel untuk text wrapping dinamis)
 const OVERFLOW_TOLERANCE_OTHER = 80; // px (halaman lain - moderat)
 
-// Minimum sisa ruang untuk footer
-const MIN_REMAINING_SPACE_FOOTER = 100; // px
+// Minimum sisa ruang untuk footer (buffer kecil saja)
+const MIN_REMAINING_SPACE_FOOTER = 30; // px
 
 /**
  * Detect boundary violations and paginate accordingly
