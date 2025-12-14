@@ -181,7 +181,31 @@ const authGuard: Handle = async ({ event, resolve }) => {
 							throw redirect(303, `/forbidden?required=kelas_id`);
 						}
 					}
+				} else if (u.type === 'wali_asuh' && Number.isInteger(Number(u.kelasId))) {
+					// Same logic for wali_asuh
+					const allowed = Number(u.kelasId);
+					if (kelasIdNumber !== allowed) {
+						const hasAccessOther = Array.isArray(u.permissions)
+							? u.permissions.includes('kelas_pindah')
+							: false;
+						if (!hasAccessOther) {
+							throw redirect(303, `/forbidden?required=kelas_id`);
+						}
+					}
 				}
+			}
+		}
+	}
+
+	// Additional guard: wali_asuh can only access keasramaan and asesmen-keasramaan pages
+	if (event.locals.user) {
+		const u = event.locals.user as { type?: string };
+		if (u.type === 'wali_asuh') {
+			const pathname = event.url.pathname;
+			const allowedPaths = ['/keasramaan', '/asesmen-keasramaan', '/logout'];
+			const isAllowed = allowedPaths.some((path) => pathname.startsWith(path)) || pathname === '/';
+			if (!isAllowed) {
+				throw redirect(303, '/forbidden?reason=wali_asuh_restricted');
 			}
 		}
 	}

@@ -249,8 +249,148 @@ export async function load({ url }) {
 				}
 			}
 		}
+
+		// ========== WALI ASUH AUTO-DETECTION ==========
+		// Same logic as wali_kelas but for wali_asuh
+		// STEP 1: Consolidate duplicate wali_asuh accounts
+		const allWaliAsuhAccounts = await db.query.tableAuthUser.findMany({
+			where: eq(tableAuthUser.type, 'wali_asuh'),
+			columns: { id: true, pegawaiId: true, createdAt: true, username: true }
+		});
+		console.log('[pengguna:consolidate] Found wali_asuh accounts:', allWaliAsuhAccounts.length);
+
+		// Group by pegawaiId
+		const asuhAccountsByPegawai = new Map<number, AuthUserArray>();
+		for (const acc of allWaliAsuhAccounts) {
+			if (!acc.pegawaiId) continue;
+			const arr = asuhAccountsByPegawai.get(acc.pegawaiId) ?? [];
+			arr.push(acc);
+			asuhAccountsByPegawai.set(acc.pegawaiId, arr);
+		}
+
+		// For each pegawaiId with multiple accounts, keep oldest and delete rest
+		for (const [pegawaiId, accounts] of asuhAccountsByPegawai.entries()) {
+			if (accounts.length > 1) {
+				console.log(
+					`[pengguna:consolidate] Found ${accounts.length} wali_asuh accounts for pegawaiId=${pegawaiId}`
+				);
+				const sorted = accounts.sort((a, b) => {
+					const aTime = new Date(a.createdAt || 0).getTime();
+					const bTime = new Date(b.createdAt || 0).getTime();
+					return aTime - bTime;
+				});
+
+				const toDelete = sorted.slice(1);
+				for (const dup of toDelete) {
+					console.log(
+						`[pengguna:consolidate] Deleting wali_asuh auth_user ID=${dup.id}, username="${dup.username}"`
+					);
+					await db.delete(tableAuthUser).where(eq(tableAuthUser.id, dup.id));
+					console.warn(
+						`[pengguna:consolidate] ✓ Deleted duplicate wali_asuh account: ID=${dup.id}, username="${dup.username}", pegawaiId=${pegawaiId}`
+					);
+				}
+			}
+		}
+
+		// STEP 2: Process current kelas with wali_asuh and ensure accounts exist
+		const kelasWithWaliAsuh = await db.query.tableKelas.findMany({
+			where: sql`${tableKelas.waliAsuhId} IS NOT NULL`,
+			columns: { id: true, waliAsuhId: true }
+		});
+
+		// Group kelas by waliAsuhId to detect multi-kelas scenarios
+		const kelasGroupedByWaliAsuh = new Map<number, typeof kelasWithWaliAsuh>();
+		for (const k of kelasWithWaliAsuh) {
+			if (!k.waliAsuhId) continue;
+			const arr = kelasGroupedByWaliAsuh.get(k.waliAsuhId) ?? [];
+			arr.push(k);
+			kelasGroupedByWaliAsuh.set(k.waliAsuhId, arr);
+		}
+
+		// Process each wali_asuh
+		for (const [waliAsuhPegawaiId, kelasArr] of kelasGroupedByWaliAsuh) {
+			if (!waliAsuhPegawaiId || kelasArr.length === 0) continue;
+
+			const exists = await db.query.tableAuthUser.findFirst({
+				where: and(
+					eq(tableAuthUser.pegawaiId, waliAsuhPegawaiId),
+					eq(tableAuthUser.type, 'wali_asuh')
+				),
+				columns: { id: true, permissions: true }
+			});
+
+			if (!exists) {
+				// Need to create new account for this wali_asuh
+				const firstKelas = kelasArr[0];
+
+				// Fetch pegawai name
+				const peg = await db.query.tablePegawai.findFirst({
+					where: eq(tablePegawai.id, waliAsuhPegawaiId),
+					columns: { nama: true }
+				});
+				const nama = (peg?.nama || '').trim();
+				if (!nama) continue;
+
+				const username = nama;
+				const usernameNormalized = username.toLowerCase();
+				const password = randomBytes(6).toString('base64url');
+				const { hash, salt } = hashPassword(password);
+				const timestamp = new Date().toISOString();
+
+				// Wali asuh permissions: only keasramaan access
+				const permissions: UserPermission[] = [];
+				if (kelasArr.length > 1) {
+					permissions.push('kelas_pindah' as UserPermission);
+				}
+
+				await db.insert(tableAuthUser).values({
+					username,
+					usernameNormalized,
+					passwordHash: hash,
+					passwordSalt: salt,
+					passwordUpdatedAt: timestamp,
+					permissions,
+					type: 'wali_asuh',
+					pegawaiId: waliAsuhPegawaiId,
+					kelasId: firstKelas.id,
+					createdAt: timestamp,
+					updatedAt: timestamp
+				});
+
+				const kelasLog = kelasArr.map((k) => k.id).join(', ');
+				console.info(
+					`[pengguna] Created user for wali_asuh ${nama} (kelas: ${kelasLog})${kelasArr.length > 1 ? ' [multi-kelas]' : ''}`
+				);
+			} else if (kelasArr.length > 1) {
+				// Account exists, wali has >1 kelas: ensure 'kelas_pindah' permission
+				const currentPerms = Array.isArray(exists.permissions) ? exists.permissions : [];
+				if (!currentPerms.includes('kelas_pindah')) {
+					const updatedPerms: UserPermission[] = [
+						...(currentPerms as UserPermission[]),
+						'kelas_pindah' as UserPermission
+					];
+					await db
+						.update(tableAuthUser)
+						.set({
+							permissions: updatedPerms,
+							updatedAt: new Date().toISOString()
+						})
+						.where(eq(tableAuthUser.id, exists.id));
+
+					const peg = await db.query.tablePegawai.findFirst({
+						where: eq(tablePegawai.id, waliAsuhPegawaiId),
+						columns: { nama: true }
+					});
+					const kelasLog = kelasArr.map((k) => k.id).join(', ');
+					console.info(
+						`[pengguna] Updated wali_asuh ${peg?.nama ?? 'unknown'} with kelas_pindah permission (kelas: ${kelasLog})`
+					);
+				}
+			}
+		}
 	} catch (err) {
-		console.warn('[pengguna] Failed to ensure wali_kelas users:', err);
+		console.warn('[pengguna] Failed to ensure wali_kelas/wali_asuh users:', err);
 	}
 
 	// TODO: implement pagination
@@ -302,13 +442,25 @@ export async function load({ url }) {
 			}
 		}
 
-		// Second pass: for wali_kelas users, fetch ALL kelas they manage
+		// Second pass: for wali_kelas and wali_asuh users, fetch ALL kelas they manage
 		for (const [, userRow] of map.entries()) {
 			if (userRow.type === 'wali_kelas' && userRow.pegawaiId) {
 				// Query ALL kelas where waliKelasId = pegawaiId
 				const allKelas = await db.query.tableKelas.findMany({
 					columns: { id: true, nama: true },
 					where: eq(tableKelas.waliKelasId, userRow.pegawaiId)
+				});
+
+				// Aggregate kelas names
+				if (allKelas.length > 0) {
+					const kelasNames = allKelas.map((k) => k.nama).join(', ');
+					userRow.kelasName = kelasNames;
+				}
+			} else if (userRow.type === 'wali_asuh' && userRow.pegawaiId) {
+				// Query ALL kelas where waliAsuhId = pegawaiId
+				const allKelas = await db.query.tableKelas.findMany({
+					columns: { id: true, nama: true },
+					where: eq(tableKelas.waliAsuhId, userRow.pegawaiId)
 				});
 
 				// Aggregate kelas names
@@ -667,14 +819,15 @@ export const actions = {
 				.leftJoin(tableKelas, eq(tableAuthUser.kelasId, tableKelas.id))
 				.where(inArray(tableAuthUser.id, ids));
 
-			const blocked = candidates.filter((c) => c.type === 'wali_kelas');
+			const blocked = candidates.filter((c) => c.type === 'wali_kelas' || c.type === 'wali_asuh');
 			if (blocked.length) {
 				// construct warning messages for blocked users
 				const messages = blocked.map((b) => {
 					const name = b.pegawaiName || b.username || 'Pengguna';
 					const kelas = b.kelasName || '';
+					const role = b.type === 'wali_asuh' ? 'Wali Asuh' : 'Wali Kelas';
 					return (
-						`${name} adalah Wali Kelas ${kelas || ''}`.trim() +
+						`${name} adalah ${role} ${kelas || ''}`.trim() +
 						`, tidak dapat dihapus. Untuk menggantinya silahkan buka menu Data Kelas`
 					);
 				});

@@ -16,6 +16,7 @@
 	<select class="select select-sm w-full" bind:value={newValues[id].type}>
 		<option value="admin">Admin</option>
 		<option value="wali_kelas">Wali Kelas</option>
+		<option value="wali_asuh">Wali Asuh</option>
 		<option value="user">User</option>
 	</select>
 </td>

@@ -18,8 +18,8 @@ export const tableAuthUser = sqliteTable(
 		passwordSalt: text().notNull(),
 		passwordUpdatedAt: text(),
 		permissions: text({ mode: 'json' }).notNull().default('[]').$type<UserPermission[]>(),
-		// tipe user: admin (penuh), wali_kelas (terbatas ke kelas_id), atau user (default/other)
-		type: text({ enum: ['admin', 'wali_kelas', 'user'] })
+		// tipe user: admin (penuh), wali_kelas (terbatas ke kelas_id), wali_asuh (terbatas ke keasramaan), atau user (default/other)
+		type: text({ enum: ['admin', 'wali_kelas', 'wali_asuh', 'user'] })
 			.notNull()
 			.default('admin'),
 		// optional: directly associate a user to a sekolah so login can pick it reliably
