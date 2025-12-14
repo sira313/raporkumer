@@ -403,6 +403,26 @@ export async function load({ parent, url, depends }) {
 
 	const requestedValue = url.searchParams.get('mapel_id');
 	let selectedMapelValue = requestedValue ?? null;
+
+	// If requestedValue is a numeric ID that matches an agama or PKS variant,
+	// convert it to the special value ('agama' or 'pks')
+	if (selectedMapelValue) {
+		const requestedId = Number(selectedMapelValue);
+		if (Number.isInteger(requestedId) && requestedId > 0) {
+			const requestedRecord = mapelRecords.find((r) => r.id === requestedId);
+			if (requestedRecord) {
+				// Check if it's an agama variant
+				if (isAgamaSubject(requestedRecord.nama)) {
+					// Use special 'agama' value for all agama variants
+					selectedMapelValue = AGAMA_MAPEL_VALUE;
+				} else if (isPksSubject(requestedRecord.nama)) {
+					// Use special 'pks' value for all PKS variants
+					selectedMapelValue = PKS_MAPEL_VALUE;
+				}
+			}
+		}
+	}
+
 	if (!selectedMapelValue && assignedLocalMapelId) {
 		selectedMapelValue = String(assignedLocalMapelId);
 	}

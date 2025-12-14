@@ -57,7 +57,6 @@
 						min="0"
 						max="100"
 						step="0.01"
-						required={namePrefix !== 'sts'}
 						inputmode="decimal"
 						title="Rentang 0-100 dengan maksimal 2 angka desimal"
 						spellcheck="false"
@@ -78,7 +77,6 @@
 						min="0"
 						max="100"
 						step="0.01"
-						required={namePrefix !== 'sts'}
 						inputmode="decimal"
 						title="Rentang 0-100 dengan maksimal 2 angka desimal"
 						spellcheck="false"
