@@ -223,7 +223,7 @@
 </script>
 
 <div
-	class="bg-base-300 dark:bg-base-200 card preview w-full rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
+	class="bg-base-300 dark:bg-base-200 card preview w-full overflow-x-auto rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
 >
 	{#if !detectionComplete}
 		<!-- Measurement Phase: render all rows in single container for measurement -->
