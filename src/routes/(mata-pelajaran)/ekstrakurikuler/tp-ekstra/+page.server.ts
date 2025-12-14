@@ -2,6 +2,7 @@ import db from '$lib/server/db';
 import { tableEkstrakurikuler, tableEkstrakurikulerTujuan } from '$lib/server/db/schema';
 import { fail, redirect, error } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
+import { authority } from '../../../pengguna/utils.server';
 
 const TABLE_EKSTRA_MISSING_MESSAGE =
 	'Tabel ekstrakurikuler belum tersedia. Jalankan "pnpm db:push" untuk menerapkan migrasi terbaru.';
@@ -17,6 +18,8 @@ function isTableMissingError(error: unknown, tableName: string) {
 }
 
 export async function load({ depends, url, parent }) {
+	authority('rapor_manage');
+
 	depends('app:ekstrakurikuler:tp');
 	const { kelasAktif } = await parent();
 	const ekstrakurikulerIdParam = url.searchParams.get('ekstrakurikulerId');
@@ -82,6 +85,8 @@ export async function load({ depends, url, parent }) {
 
 export const actions = {
 	create: async ({ request }) => {
+		authority('rapor_manage');
+
 		const formData = await request.formData();
 		const ekstrakurikulerIdRaw = formData.get('ekstrakurikulerId');
 		const deskripsi = formData.get('deskripsi')?.toString().trim() ?? '';
@@ -115,6 +120,8 @@ export const actions = {
 	},
 
 	update: async ({ request }) => {
+		authority('rapor_manage');
+
 		const formData = await request.formData();
 		const idRaw = formData.get('id');
 		const ekstrakurikulerIdRaw = formData.get('ekstrakurikulerId');
@@ -166,6 +173,8 @@ export const actions = {
 	},
 
 	delete: async ({ request }) => {
+		authority('rapor_manage');
+
 		const formData = await request.formData();
 		const rawIds = formData.getAll('ids');
 		const ids = Array.from(

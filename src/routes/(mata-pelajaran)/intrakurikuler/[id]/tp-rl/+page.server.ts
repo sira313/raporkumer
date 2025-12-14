@@ -13,6 +13,7 @@ import { fail } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { readBufferToAoA } from '$lib/utils/excel.js';
 import { redirect } from '@sveltejs/kit';
+import { authority } from '../../../../pengguna/utils.server';
 
 const MAX_IMPORT_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -33,6 +34,8 @@ function isXlsxMime(type: string | null | undefined) {
 }
 
 export async function load({ depends, params, parent }) {
+	authority('rapor_manage');
+
 	depends('app:mapel_tp-rl');
 	// pull mapel and user from parent so we can adapt behaviour for assigned agama teachers
 	const { mapel, user } = await parent();
@@ -307,6 +310,8 @@ export async function load({ depends, params, parent }) {
 
 export const actions = {
 	async save({ params, request }) {
+		authority('rapor_manage');
+
 		const formData = await request.formData();
 		const payload = unflattenFormData<{
 			mode?: string;
@@ -416,6 +421,8 @@ export const actions = {
 	},
 
 	async delete({ request }) {
+		authority('rapor_manage');
+
 		const formData = await request.formData();
 		const idsRaw = formData.getAll('ids');
 		const ids = idsRaw.map((value) => Number(value)).filter((value) => Number.isFinite(value));
@@ -429,6 +436,8 @@ export const actions = {
 	},
 
 	async savebobot({ params, request }: { params: Record<string, string>; request: Request }) {
+		authority('rapor_manage');
+
 		const mataPelajaranId = Number(params.id);
 		if (!Number.isFinite(mataPelajaranId)) {
 			return fail(400, { fail: 'Mata pelajaran tidak valid.' });
@@ -500,6 +509,8 @@ export const actions = {
 	},
 
 	async import({ params, request }) {
+		authority('rapor_manage');
+
 		const mataPelajaranId = Number(params.id);
 		if (!Number.isFinite(mataPelajaranId)) {
 			return fail(400, { fail: 'Mata pelajaran tidak valid.' });

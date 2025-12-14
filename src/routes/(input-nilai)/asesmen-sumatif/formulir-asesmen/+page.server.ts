@@ -11,6 +11,7 @@ import {
 import { unflattenFormData } from '$lib/utils';
 import { fail, error, redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
+import { authority } from '../../../pengguna/utils.server';
 
 const CHEAT_FEATURE_KEY = 'cheat-asesmen-sumatif';
 
@@ -148,6 +149,8 @@ function deriveLingkupBobot(
 }
 
 export async function load({ url, locals, depends }) {
+	authority('rapor_manage');
+
 	depends('app:asesmen-sumatif/formulir');
 	const muridIdParam = url.searchParams.get('murid_id');
 	const mapelIdParam = url.searchParams.get('mapel_id');
@@ -307,6 +310,8 @@ export async function load({ url, locals, depends }) {
 
 export const actions = {
 	save: async ({ request, locals }) => {
+		authority('rapor_manage');
+
 		const formPayload = unflattenFormData<{
 			muridId?: string;
 			mapelId?: string;
