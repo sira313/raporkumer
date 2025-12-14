@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import PrintCardPage from '$lib/components/cetak/rapor/PrintCardPage.svelte';
 	import RaporIdentityTable from '$lib/components/cetak/rapor/RaporIdentityTable.svelte';
 	import RaporIntrakTable from '$lib/components/cetak/rapor/RaporIntrakTable.svelte';
@@ -10,10 +10,12 @@
 		type TableRow
 	} from '$lib/components/cetak/rapor/table-rows';
 	import {
-		paginateRaporWithFixedHeights,
-		debugPagination,
-		type PaginationResult
-	} from '$lib/utils/rapor-pagination-fixed';
+		measureRows,
+		detectBoundaryViolations,
+		debugBoundaryDetection,
+		waitForRender,
+		type BoundaryDetectionResult
+	} from '$lib/utils/rapor-boundary-detection';
 
 	type RaporData = NonNullable<App.PageData['raporData']>;
 	type ComponentData = {
@@ -34,7 +36,10 @@
 	}>();
 
 	const instanceId = Math.random().toString(36).substring(2, 9);
-	let printable: HTMLDivElement | null = null;
+	let printable: HTMLDivElement | null = $state(null);
+	let measurementContainer: HTMLElement | null = $state(null);
+	let isDetecting = $state(false);
+	let detectionComplete = $state(false);
 
 	const rapor = $derived.by(() => data?.raporData ?? null);
 	const sekolah = $derived.by(() => rapor?.sekolah ?? null);
@@ -82,24 +87,101 @@
 		);
 	});
 
-	// Pre-calculate pagination with fixed heights
-	// This runs ONCE per data change, no reactive re-calculation
-	const paginationResult = $derived.by<PaginationResult>(() => {
-		const result = paginateRaporWithFixedHeights(tableRows, rapor);
-
-		// Debug log
-		if (murid?.nama) {
-			debugPagination(result, murid.nama, rapor);
-		}
-
-		return result;
+	// Boundary detection result
+	let boundaryResult = $state<BoundaryDetectionResult>({
+		pages: [],
+		totalPages: 0,
+		measurements: []
 	});
 
-	const pages = $derived.by(() => paginationResult.pages);
-	const totalPages = $derived.by(() => paginationResult.totalPages);
+	const pages = $derived.by(() => boundaryResult.pages);
+	const totalPages = $derived.by(() => boundaryResult.totalPages);
 
-	// No tableRowElements, no DOM measurement, no retry logic
-	// Just simple, predictable pagination based on fixed heights
+	/**
+	 * Perform boundary detection after initial render
+	 */
+	async function performBoundaryDetection() {
+		if (!measurementContainer || isDetecting || tableRows.length === 0) {
+			return;
+		}
+
+		isDetecting = true;
+		detectionComplete = false;
+
+		try {
+			// Wait for DOM to fully render all rows
+			await waitForRender(150);
+
+			// Measure all row positions
+			const measurements = measureRows(measurementContainer, tableRows);
+
+			console.debug(
+				`[${instanceId}] Measured ${measurements.length} rows from ${tableRows.length} total rows`
+			);
+
+			// Measure actual available space on page 1
+			if (measurementContainer && measurements.length > 0) {
+				const containerRect = measurementContainer.getBoundingClientRect();
+				const firstRow = measurements[0];
+				const actualOffsetToFirstRow = firstRow.top - containerRect.top;
+				console.debug(
+					`[${instanceId}] Actual offset to first row: ${Math.round(actualOffsetToFirstRow)}px (expected: 360px)`
+				);
+			}
+
+			// Log ALL measurements for debugging
+			if (measurements.length > 0) {
+				const totalHeight = measurements.reduce((sum, m) => sum + m.height, 0);
+				console.table(
+					measurements.map((m) => ({
+						order: m.order,
+						kind: m.row.kind,
+						height: Math.round(m.height)
+					}))
+				);
+				console.debug(
+					`[${instanceId}] Total height: ${Math.round(totalHeight)}px | Page 1 capacity: 611px | Page 2+ capacity: 881px`
+				);
+			}
+
+			if (measurements.length === 0) {
+				console.warn(`[${instanceId}] No measurements found, retrying...`);
+				await waitForRender(150);
+				const retryMeasurements = measureRows(measurementContainer, tableRows);
+				if (retryMeasurements.length === 0) {
+					console.error(`[${instanceId}] Failed to measure rows after retry`);
+					isDetecting = false;
+					return;
+				}
+				boundaryResult = detectBoundaryViolations(retryMeasurements, true);
+			} else {
+				// Detect boundaries and split pages
+				boundaryResult = detectBoundaryViolations(measurements, true);
+			}
+
+			// Debug log
+			if (murid?.nama) {
+				debugBoundaryDetection(boundaryResult, murid.nama);
+			}
+
+			detectionComplete = true;
+		} catch (error) {
+			console.error(`[${instanceId}] Boundary detection error:`, error);
+		} finally {
+			isDetecting = false;
+		}
+	}
+
+	// Trigger detection when tableRows change
+	$effect(() => {
+		if (tableRows.length > 0 && measurementContainer) {
+			detectionComplete = false;
+			// Reset to show measurement phase
+			boundaryResult = { pages: [], totalPages: 0, measurements: [] };
+			// Trigger detection after render
+			tick().then(() => performBoundaryDetection());
+		}
+	});
 
 	function formatValue(value: string | null | undefined) {
 		if (!value) return '—';
@@ -117,15 +199,21 @@
 		return `${value} hari`;
 	}
 
-	$effect(() => {
+	// Callback to get ref after detection complete
+	function handlePrintableRef(node: HTMLDivElement) {
+		printable = node;
 		onPrintableReady?.(printable);
-	});
+		return {
+			destroy() {
+				printable = null;
+			}
+		};
+	}
 
 	onMount(() => {
 		console.debug(`RaporPreview[${instanceId}] mounted (fixed-height mode)`, {
 			muridId: murid?.id ?? null,
-			muridName: murid?.nama ?? null,
-			totalPages
+			muridName: murid?.nama ?? null
 		});
 
 		return () => {
@@ -137,28 +225,26 @@
 <div
 	class="bg-base-300 dark:bg-base-200 card preview w-full rounded-md border border-black/20 shadow-md print:border-none print:bg-transparent print:p-0"
 >
-	<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" bind:this={printable}>
-		{#each pages as page, pageIndex (pageIndex)}
-			{@const isFirstPage = pageIndex === 0}
-			{@const isLastPage = pageIndex === pages.length - 1}
-			{@const pageNumber = pageIndex + 1}
-			{@const breakAfter = !isLastPage || (isLastPage && !page.hasFooter)}
+	{#if !detectionComplete}
+		<!-- Measurement Phase: render all rows in single container for measurement -->
+		<div
+			class="pointer-events-none mx-auto opacity-0"
+			style="position: absolute; left: -9999px; top: 0; width: 210mm;"
+		>
+			<div
+				class="bg-base-100 text-base-content mx-auto flex flex-col text-[12px]"
+				style="width: 210mm; padding: 20mm; box-sizing: border-box;"
+			>
+				<header class="pb-4 text-center">
+					<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
+					<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
+				</header>
 
-			<PrintCardPage {breakAfter} {backgroundStyle} {murid} {rombel} {pageNumber}>
-				{#if isFirstPage}
-					<!-- First page: Header + Identity + Table -->
-					<header class="pb-4 text-center">
-						<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
-						<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
-					</header>
+				<RaporIdentityTable {murid} {rombel} {sekolah} {periode} {formatValue} {formatUpper} />
 
-					<RaporIdentityTable {murid} {rombel} {sekolah} {periode} {formatValue} {formatUpper} />
-				{/if}
-
-				{#if page.rows.length > 0}
-					<!-- Table content -->
+				<div class="mt-8" bind:this={measurementContainer}>
 					<RaporIntrakTable
-						rows={page.rows}
+						rows={tableRows}
 						tableRowAction={() => {}}
 						{rapor}
 						{formatValue}
@@ -166,44 +252,88 @@
 						{waliKelas}
 						{kepalaSekolah}
 						{ttd}
-						sectionClass={isFirstPage ? 'mt-8' : ''}
 					/>
-				{/if}
+				</div>
+			</div>
+		</div>
 
-				{#if page.hasFooter}
-					<!-- Footer/Signatures Section -->
-					<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
-						<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
-							<div class="flex flex-col items-center text-center">
-								<p>Orang Tua/Wali Murid</p>
-								<div
-									class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
-									aria-hidden="true"
-								></div>
-							</div>
-							<div class="text-center">
-								<p>{kepalaSekolahTitle}</p>
-								<div class="mt-16 font-semibold tracking-wide underline">
-									{formatValue(kepalaSekolah?.nama)}
+		<!-- Loading indicator -->
+		<div class="mx-auto flex w-fit items-center justify-center" style="min-height: 297mm;">
+			<div class="flex flex-col items-center gap-2">
+				<span class="loading loading-spinner loading-md"></span>
+				<span class="text-base-content/70 text-sm">Mengukur layout...</span>
+			</div>
+		</div>
+	{:else}
+		<!-- Render Phase: display paginated result -->
+		<div class="mx-auto flex w-fit flex-col gap-6 print:gap-0" use:handlePrintableRef>
+			{#each pages as page, pageIndex (pageIndex)}
+				{@const isFirstPage = pageIndex === 0}
+				{@const isLastPage = pageIndex === pages.length - 1}
+				{@const pageNumber = pageIndex + 1}
+				{@const breakAfter = !isLastPage || (isLastPage && !page.hasFooter)}
+
+				<PrintCardPage {breakAfter} {backgroundStyle} {murid} {rombel} {pageNumber}>
+					{#if isFirstPage}
+						<!-- First page: Header + Identity + Table -->
+						<header class="pb-4 text-center">
+							<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Hasil Belajar</h1>
+							<h2 class="font-semibold tracking-wide uppercase">(Rapor)</h2>
+						</header>
+
+						<RaporIdentityTable {murid} {rombel} {sekolah} {periode} {formatValue} {formatUpper} />
+					{/if}
+
+					{#if page.rows.length > 0}
+						<!-- Table content -->
+						<RaporIntrakTable
+							rows={page.rows}
+							tableRowAction={() => {}}
+							{rapor}
+							{formatValue}
+							{formatHari}
+							{waliKelas}
+							{kepalaSekolah}
+							{ttd}
+							sectionClass={isFirstPage ? 'mt-8' : ''}
+						/>
+					{/if}
+
+					{#if page.hasFooter}
+						<!-- Footer/Signatures Section -->
+						<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
+							<div class="grid gap-4 md:grid-cols-3 print:grid-cols-3">
+								<div class="flex flex-col items-center text-center">
+									<p>Orang Tua/Wali Murid</p>
+									<div
+										class="mt-20 h-px w-full max-w-[220px] border-b border-dashed"
+										aria-hidden="true"
+									></div>
 								</div>
-								<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
-							</div>
-							<div class="relative flex flex-col items-center text-center">
-								<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
-									{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
-								</p>
-								<p>Wali Kelas</p>
-								<div class="mt-16 font-semibold tracking-wide underline">
-									{formatValue(waliKelas?.nama)}
+								<div class="text-center">
+									<p>{kepalaSekolahTitle}</p>
+									<div class="mt-16 font-semibold tracking-wide underline">
+										{formatValue(kepalaSekolah?.nama)}
+									</div>
+									<div class="mt-1">{formatValue(kepalaSekolah?.nip)}</div>
 								</div>
-								<div class="mt-1">{formatValue(waliKelas?.nip)}</div>
+								<div class="relative flex flex-col items-center text-center">
+									<p class="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap">
+										{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}
+									</p>
+									<p>Wali Kelas</p>
+									<div class="mt-16 font-semibold tracking-wide underline">
+										{formatValue(waliKelas?.nama)}
+									</div>
+									<div class="mt-1">{formatValue(waliKelas?.nip)}</div>
+								</div>
 							</div>
-						</div>
-					</section>
-				{/if}
-			</PrintCardPage>
-		{/each}
-	</div>
+						</section>
+					{/if}
+				</PrintCardPage>
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style lang="postcss">

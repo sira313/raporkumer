@@ -124,20 +124,24 @@
 			</thead>
 		{/if}
 		<tbody>
-			{#each rows as row, ridx (row.kind === 'intrak' ? `intrak-${row.index}-${row.order}` : row.kind === 'intrak-group-header' ? `header-${row.groupLetter}-${row.order}` : row.kind === 'ekstrakurikuler-header' ? `ekskul-header-${row.order}` : row.kind === 'ekstrakurikuler' ? `ekskul-${row.index}-${row.order}` : row.kind === 'ekstrakurikuler-empty' ? `ekskul-empty-${row.order}` : row.kind === 'tail' ? `tail-${row.tailKey}-${row.order}` : `empty-${row.order}`)}
+			{#each rows as row, ridx (`${ridx}-${row.kind === 'intrak' ? `intrak-${row.index}-${row.order}` : row.kind === 'intrak-group-header' ? `header-${row.groupLetter}-${row.order}` : row.kind === 'ekstrakurikuler-header' ? `ekskul-header-${row.order}` : row.kind === 'ekstrakurikuler' ? `ekskul-${row.index}-${row.order}` : row.kind === 'ekstrakurikuler-empty' ? `ekskul-empty-${row.order}` : row.kind === 'tail' ? `tail-${row.tailKey}-${row.order}` : `empty-${row.order}`}`)}
 				{#if row.kind === 'ekstrakurikuler-header'}
-					<tr use:applyRow={row.order} class="ekstrakurikuler-header-spacer">
+					<tr
+						use:applyRow={row.order}
+						data-row-order={row.order}
+						class="ekstrakurikuler-header-spacer"
+					>
 						<td class="border-none p-0" colspan="4">
 							<div class={ekstraSpacerClass}></div>
 						</td>
 					</tr>
-					<tr class="ekstrakurikuler-header">
+					<tr class="ekstrakurikuler-header" data-row-order="{row.order}-header">
 						<th class="border px-3 py-2 text-left" style="width: 40px;">No.</th>
 						<th class="border px-3 py-2 text-left">Ekstrakurikuler</th>
 						<th class="border px-3 py-2 text-left" colspan="2">Keterangan</th>
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler'}
-					<tr use:applyRow={row.order} class="ekstrakurikuler-row">
+					<tr use:applyRow={row.order} data-row-order={row.order} class="ekstrakurikuler-row">
 						<td class="border px-3 py-2 align-top">{row.nomor}</td>
 						<td class="border px-3 py-2 align-top">
 							{formatValue(row.entry.nama)}
@@ -161,11 +165,11 @@
 						</td>
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler-empty'}
-					<tr use:applyRow={row.order} class="ekstrakurikuler-empty">
+					<tr use:applyRow={row.order} data-row-order={row.order} class="ekstrakurikuler-empty">
 						<td class="border px-3 py-2 text-center" colspan="4"> Tidak ada ekstrakurikuler </td>
 					</tr>
 				{:else if row.kind === 'intrak-group-header'}
-					<tr use:applyRow={row.order} class="intrak-group-header">
+					<tr use:applyRow={row.order} data-row-order={row.order} class="intrak-group-header">
 						<td class="border px-3 py-2 align-top" colspan="4">
 							<span class="font-semibold">{row.groupLetter}. {row.groupLabel}</span>
 						</td>
@@ -175,6 +179,7 @@
 						<!-- single-row intrak entry -->
 						<tr
 							use:applyRow={row.order}
+							data-row-order={row.order}
 							class={rows[ridx + 1]?.index !== row.index ? 'intrak-groupend' : ''}
 						>
 							<td class="border px-3 py-2 align-top">{row.nomorInGroup}</td>
@@ -212,6 +217,7 @@
 						{#if row.subIndex === 0}
 							<tr
 								use:applyRow={row.order}
+								data-row-order={row.order}
 								class={'intrak-multistart' +
 									(rows[ridx + 1]?.index !== row.index ? ' intrak-groupend' : '')}
 							>
@@ -249,6 +255,7 @@
 							<!-- determine if this is the last subrow for the entry -->
 							<tr
 								use:applyRow={row.order}
+								data-row-order={row.order}
 								class={'intrak-subrow' +
 									(row.subIndex === row.subCount - 1 || rows[ridx + 1]?.index !== row.index
 										? ' intrak-multilast intrak-groupend'
@@ -283,24 +290,28 @@
 						{/if}
 					{/if}
 				{:else if row.kind === 'empty'}
-					<tr use:applyRow={row.order}>
+					<tr use:applyRow={row.order} data-row-order={row.order}>
 						<td class="border px-3 py-2 text-center" colspan="4">
 							Belum ada data intrakurikuler.
 						</td>
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler-header'}
-					<tr use:applyRow={row.order} class="ekstrakurikuler-header-spacer">
+					<tr
+						use:applyRow={row.order}
+						data-row-order={row.order}
+						class="ekstrakurikuler-header-spacer"
+					>
 						<td class="border-none p-0" colspan="4">
 							<div class={ekstraSpacerClass}></div>
 						</td>
 					</tr>
-					<tr class="ekstrakurikuler-header">
+					<tr class="ekstrakurikuler-header" data-row-order="{row.order}-header">
 						<th class="border px-3 py-2 text-left" style="width: 40px;">No.</th>
 						<th class="border px-3 py-2 text-left" colspan="2">Ekstrakurikuler</th>
 						<th class="border px-3 py-2 text-left">Keterangan</th>
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler'}
-					<tr use:applyRow={row.order} class="ekstrakurikuler-row">
+					<tr use:applyRow={row.order} data-row-order={row.order} class="ekstrakurikuler-row">
 						<td class="border px-3 py-2 align-top">{row.nomor}</td>
 						<td class="border px-3 py-2 align-top" colspan="2">
 							{formatValue(row.entry.nama)}
@@ -324,11 +335,11 @@
 						</td>
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler-empty'}
-					<tr use:applyRow={row.order}>
+					<tr use:applyRow={row.order} data-row-order={row.order}>
 						<td class="border px-3 py-2 text-center" colspan="4"> Tidak ada ekstrakurikuler </td>
 					</tr>
 				{:else}
-					<tr use:applyRow={row.order} data-tail-row="true">
+					<tr use:applyRow={row.order} data-row-order={row.order} data-tail-row="true">
 						<td class="border-none p-0 align-top" colspan="4">
 							<div
 								class={row.tailKey === 'ketidakhadiran'
