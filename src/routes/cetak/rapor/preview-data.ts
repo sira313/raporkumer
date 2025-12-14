@@ -48,6 +48,40 @@ const AGAMA_VARIANT_MAP: Record<string, string> = {
 	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
 };
 
+const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
+
+// Map dari agama ke nama PKS yang disimpan di database (tanpa "Agama")
+const PKS_VARIANT_DB_MAP: Record<string, string> = {
+	islam: 'Pendalaman Kitab Suci Islam',
+	kristen: 'Pendalaman Kitab Suci Kristen',
+	protestan: 'Pendalaman Kitab Suci Kristen',
+	katolik: 'Pendalaman Kitab Suci Katolik',
+	katholik: 'Pendalaman Kitab Suci Katolik',
+	hindu: 'Pendalaman Kitab Suci Hindu',
+	budha: 'Pendalaman Kitab Suci Buddha',
+	buddha: 'Pendalaman Kitab Suci Buddha',
+	buddhist: 'Pendalaman Kitab Suci Buddha',
+	khonghucu: 'Pendalaman Kitab Suci Khonghucu',
+	'khong hu cu': 'Pendalaman Kitab Suci Khonghucu',
+	konghucu: 'Pendalaman Kitab Suci Khonghucu'
+};
+
+// Map dari agama ke nama PKS untuk ditampilkan di rapor (dengan "Agama")
+const PKS_VARIANT_DISPLAY_MAP: Record<string, string> = {
+	islam: 'Pendalaman Kitab Suci Agama Islam',
+	kristen: 'Pendalaman Kitab Suci Agama Kristen',
+	protestan: 'Pendalaman Kitab Suci Agama Kristen',
+	katolik: 'Pendalaman Kitab Suci Agama Katolik',
+	katholik: 'Pendalaman Kitab Suci Agama Katolik',
+	hindu: 'Pendalaman Kitab Suci Agama Hindu',
+	budha: 'Pendalaman Kitab Suci Agama Buddha',
+	buddha: 'Pendalaman Kitab Suci Agama Buddha',
+	buddhist: 'Pendalaman Kitab Suci Agama Buddha',
+	khonghucu: 'Pendalaman Kitab Suci Agama Khonghucu',
+	'khong hu cu': 'Pendalaman Kitab Suci Agama Khonghucu',
+	konghucu: 'Pendalaman Kitab Suci Agama Khonghucu'
+};
+
 function normalizeText(value: string | null | undefined) {
 	return value?.trim().toLowerCase() ?? '';
 }
@@ -55,6 +89,18 @@ function normalizeText(value: string | null | undefined) {
 function resolveAgamaVariantName(agama: string | null | undefined) {
 	const normalized = normalizeText(agama);
 	return AGAMA_VARIANT_MAP[normalized] ?? null;
+}
+
+// Resolve PKS variant name as stored in database (without "Agama")
+function resolvePksVariantDbName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return PKS_VARIANT_DB_MAP[normalized] ?? null;
+}
+
+// Resolve PKS variant name for display in rapor (with "Agama")
+function resolvePksVariantDisplayName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return PKS_VARIANT_DISPLAY_MAP[normalized] ?? null;
 }
 
 export type RaporContext = {
@@ -256,8 +302,20 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	const muridExpectedAgamaMapel = resolveAgamaVariantName(murid.agama) ?? AGAMA_BASE_SUBJECT;
 	const muridExpectedAgamaMapelNormalized = normalizeText(muridExpectedAgamaMapel);
 
+	// Resolve the expected PKS subject name based on murid's agama
+	// For filtering: use DB name (without "Agama")
+	const muridExpectedPksDbMapel = resolvePksVariantDbName(murid.agama) ?? PKS_BASE_SUBJECT;
+	const muridExpectedPksDbMapelNormalized = normalizeText(muridExpectedPksDbMapel);
+	// For display: use display name (with "Agama")
+	const muridExpectedPksDisplayMapel =
+		resolvePksVariantDisplayName(murid.agama) ?? PKS_BASE_SUBJECT;
+
 	function isAgamaSubject(name: string): boolean {
 		return normalizeText(name).startsWith('pendidikan agama');
+	}
+
+	function isPksSubject(name: string): boolean {
+		return normalizeText(name).startsWith('pendalaman kitab suci');
 	}
 
 	const wajibSubjectPriority = [
@@ -281,6 +339,7 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 
 	// Resolve murid's agama subject name using the same mapping as filter
 	const muridAgamaSubjectName = resolveAgamaVariantName(murid.agama) ?? agamaParentName;
+	const muridPksSubjectDisplayName = muridExpectedPksDisplayMapel;
 
 	const agamaParentNameNormalized = normalizeSubjectName(agamaParentName);
 
@@ -310,14 +369,21 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			// Filter basic requirement
 			if (!item.mataPelajaran) return false;
 
-			// Filter agama subject to only show the one matching murid's agama
 			const mapel = item.mataPelajaran;
+
+			// Filter agama subject to only show the one matching murid's agama
 			if (isAgamaSubject(mapel.nama)) {
 				// Only include agama subject that matches murid's expected agama mapel
 				return normalizeText(mapel.nama) === muridExpectedAgamaMapelNormalized;
 			}
 
-			// Include non-agama subjects
+			// Filter PKS subject to only show the one matching murid's agama
+			if (isPksSubject(mapel.nama)) {
+				// Only include PKS subject that matches murid's expected PKS mapel (from DB, without "Agama")
+				return normalizeText(mapel.nama) === muridExpectedPksDbMapelNormalized;
+			}
+
+			// Include non-agama and non-PKS subjects
 			return true;
 		})
 		.map((item) => {
@@ -326,10 +392,21 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			const normalizedName = normalizeSubjectName(mapel.nama);
 			const isAgamaCore = priority?.core === 'pendidikan agama dan budi pekerti';
 			const tujuanScores = tujuanScoresByMapel.get(mapel.id) ?? [];
-			const displayName =
-				isAgamaCore && normalizedName === agamaParentNameNormalized
-					? muridAgamaSubjectName
-					: mapel.nama;
+
+			// Determine display name
+			let displayName = mapel.nama;
+
+			// Handle PAPB: if parent, show variant name; if variant, show as is
+			if (isAgamaCore && normalizedName === agamaParentNameNormalized) {
+				displayName = muridAgamaSubjectName;
+			}
+
+			// Handle PKS: transform all PKS subjects to include "Agama" in display name
+			if (isPksSubject(mapel.nama)) {
+				// Always show with "Agama" for both parent and variants
+				displayName = muridPksSubjectDisplayName;
+			}
+
 			return {
 				mapel,
 				priority,

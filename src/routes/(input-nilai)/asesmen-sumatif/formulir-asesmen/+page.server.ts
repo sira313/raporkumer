@@ -27,6 +27,7 @@ function normalizeText(value: string | null | undefined) {
 }
 
 const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
+const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
 const AGAMA_VARIANT_MAP: Record<string, string> = {
 	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
 	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
@@ -41,9 +42,27 @@ const AGAMA_VARIANT_MAP: Record<string, string> = {
 	'khong hu cu': 'Pendidikan Agama Khonghucu dan Budi Pekerti',
 	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
 };
+const PKS_VARIANT_MAP: Record<string, string> = {
+	islam: 'Pendalaman Kitab Suci Islam',
+	kristen: 'Pendalaman Kitab Suci Kristen',
+	protestan: 'Pendalaman Kitab Suci Kristen',
+	katolik: 'Pendalaman Kitab Suci Katolik',
+	kathholik: 'Pendalaman Kitab Suci Katolik',
+	hindu: 'Pendalaman Kitab Suci Hindu',
+	budha: 'Pendalaman Kitab Suci Buddha',
+	buddha: 'Pendalaman Kitab Suci Buddha',
+	buddhist: 'Pendalaman Kitab Suci Buddha',
+	khonghucu: 'Pendalaman Kitab Suci Khonghucu',
+	'khong hu cu': 'Pendalaman Kitab Suci Khonghucu',
+	konghucu: 'Pendalaman Kitab Suci Khonghucu'
+};
 function resolveAgamaVariantName(agama: string | null | undefined) {
 	const normalized = normalizeText(agama);
 	return AGAMA_VARIANT_MAP[normalized] ?? null;
+}
+function resolvePksVariantName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return PKS_VARIANT_MAP[normalized] ?? null;
 }
 
 function normalizeScore(value: number | null | undefined) {
@@ -163,11 +182,16 @@ export async function load({ url, locals, depends }) {
 		throw error(404, 'Mata pelajaran tidak ditemukan untuk murid ini.');
 	}
 
-	// If the requested mapel is the agama parent, try to resolve the student's
-	// agama-specific variant in the same kelas and redirect to it so the
+	// If the requested mapel is the agama or PKS parent, try to resolve the student's
+	// religion-specific variant in the same kelas and redirect to it so the
 	// form is locked to the correct variant.
-	if (normalizeText(mapel.nama) === normalizeText(AGAMA_BASE_SUBJECT)) {
-		const variantName = resolveAgamaVariantName(murid.agama);
+	const isAgamaParent = normalizeText(mapel.nama) === normalizeText(AGAMA_BASE_SUBJECT);
+	const isPksParent = normalizeText(mapel.nama) === normalizeText(PKS_BASE_SUBJECT);
+
+	if (isAgamaParent || isPksParent) {
+		const variantName = isAgamaParent
+			? resolveAgamaVariantName(murid.agama)
+			: resolvePksVariantName(murid.agama);
 		if (variantName) {
 			// fetch kelas mapels and try to find the variant
 			const kelasMapels = await db.query.tableMataPelajaran.findMany({

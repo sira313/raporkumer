@@ -10,7 +10,9 @@ import { redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
 const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
+const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
 const AGAMA_MAPEL_VALUE = 'agama';
+const PKS_MAPEL_VALUE = 'pks';
 
 const AGAMA_VARIANT_MAP: Record<string, string> = {
 	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
@@ -27,6 +29,21 @@ const AGAMA_VARIANT_MAP: Record<string, string> = {
 	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
 };
 
+const PKS_VARIANT_MAP: Record<string, string> = {
+	islam: 'Pendalaman Kitab Suci Islam',
+	kristen: 'Pendalaman Kitab Suci Kristen',
+	protestan: 'Pendalaman Kitab Suci Kristen',
+	katolik: 'Pendalaman Kitab Suci Katolik',
+	kathholik: 'Pendalaman Kitab Suci Katolik',
+	hindu: 'Pendalaman Kitab Suci Hindu',
+	budha: 'Pendalaman Kitab Suci Buddha',
+	buddha: 'Pendalaman Kitab Suci Buddha',
+	buddhist: 'Pendalaman Kitab Suci Buddha',
+	khonghucu: 'Pendalaman Kitab Suci Khonghucu',
+	'khong hu cu': 'Pendalaman Kitab Suci Khonghucu',
+	konghucu: 'Pendalaman Kitab Suci Khonghucu'
+};
+
 function normalizeText(value: string | null | undefined) {
 	return value?.trim().toLowerCase() ?? '';
 }
@@ -35,9 +52,18 @@ function isAgamaSubject(name: string) {
 	return normalizeText(name).startsWith('pendidikan agama');
 }
 
+function isPksSubject(name: string) {
+	return normalizeText(name).startsWith('pendalaman kitab suci');
+}
+
 function resolveAgamaVariantName(agama: string | null | undefined) {
 	const normalized = normalizeText(agama);
 	return AGAMA_VARIANT_MAP[normalized] ?? null;
+}
+
+function resolvePksVariantName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return PKS_VARIANT_MAP[normalized] ?? null;
 }
 
 function formatScore(value: number | null | undefined) {
@@ -148,9 +174,27 @@ export async function load({ parent, url, depends }) {
 					}
 				}
 
+				// Check for PKS variants
+				const pksVariantValues = new Set(
+					Object.values(PKS_VARIANT_MAP).map((v) => normalizeText(v))
+				);
+				let hasPksVariant = false;
+				for (const record of assignedMapelRecords) {
+					const norm = normalizeText(record.nama);
+					if (pksVariantValues.has(norm)) {
+						hasPksVariant = true;
+						break;
+					}
+				}
+
 				// If has agama variant, also add the parent agama mapel name
 				if (hasAgamaVariant) {
 					allowedNames.add(normalizeText(AGAMA_BASE_SUBJECT));
+				}
+
+				// If has PKS variant, also add the parent PKS mapel name
+				if (hasPksVariant) {
+					allowedNames.add(normalizeText(PKS_BASE_SUBJECT));
 				}
 
 				// Filter current kelas' mapel by name match
@@ -174,11 +218,20 @@ export async function load({ parent, url, depends }) {
 					const agamaVariantValues = new Set(
 						Object.values(AGAMA_VARIANT_MAP).map((v) => normalizeText(v))
 					);
+					const pksVariantValues = new Set(
+						Object.values(PKS_VARIANT_MAP).map((v) => normalizeText(v))
+					);
 					if (agamaVariantValues.has(norm)) {
 						// Allow all agama variants
 						mapelRecords = mapelRecords.filter((r) => {
 							const rNorm = normalizeText(r.nama);
 							return rNorm === normalizeText(AGAMA_BASE_SUBJECT) || agamaVariantValues.has(rNorm);
+						});
+					} else if (pksVariantValues.has(norm)) {
+						// Allow all PKS variants
+						mapelRecords = mapelRecords.filter((r) => {
+							const rNorm = normalizeText(r.nama);
+							return rNorm === normalizeText(PKS_BASE_SUBJECT) || pksVariantValues.has(rNorm);
 						});
 					} else {
 						mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
@@ -209,7 +262,8 @@ export async function load({ parent, url, depends }) {
 				assignedLocalMapelId = found.id;
 				const norm = normalizeText(found.nama);
 				assignedIsAgamaVariant =
-					norm.startsWith('pendidikan agama') && norm !== normalizeText(AGAMA_BASE_SUBJECT);
+					(norm.startsWith('pendidikan agama') && norm !== normalizeText(AGAMA_BASE_SUBJECT)) ||
+					(norm.startsWith('pendalaman kitab suci') && norm !== normalizeText(PKS_BASE_SUBJECT));
 			}
 		} else if (maybeUser.mataPelajaranId) {
 			// Fallback to legacy single mapel
@@ -221,7 +275,8 @@ export async function load({ parent, url, depends }) {
 				if (assigned && assigned.nama) {
 					const norm = normalizeText(assigned.nama);
 					assignedIsAgamaVariant =
-						norm.startsWith('pendidikan agama') && norm !== normalizeText(AGAMA_BASE_SUBJECT);
+						(norm.startsWith('pendidikan agama') && norm !== normalizeText(AGAMA_BASE_SUBJECT)) ||
+						(norm.startsWith('pendalaman kitab suci') && norm !== normalizeText(PKS_BASE_SUBJECT));
 					const found = mapelRecords.find((r) => normalizeText(r.nama) === norm);
 					if (found) assignedLocalMapelId = found.id;
 				} else {
@@ -303,7 +358,9 @@ export async function load({ parent, url, depends }) {
 		allowedAgamaVariants.size > 0 ? Array.from(allowedAgamaVariants)[0] : null;
 
 	let agamaBaseMapel: (typeof mapelRecords)[number] | null = null;
+	let pksBaseMapel: (typeof mapelRecords)[number] | null = null;
 	const agamaVariantRecords: typeof mapelRecords = [];
+	const pksVariantRecords: typeof mapelRecords = [];
 	const regularOptions: MapelOption[] = [];
 
 	for (const record of mapelRecords) {
@@ -312,6 +369,12 @@ export async function load({ parent, url, depends }) {
 				agamaBaseMapel = record;
 			} else {
 				agamaVariantRecords.push(record);
+			}
+		} else if (isPksSubject(record.nama)) {
+			if (normalizeText(record.nama) === normalizeText(PKS_BASE_SUBJECT)) {
+				pksBaseMapel = record;
+			} else {
+				pksVariantRecords.push(record);
 			}
 		} else {
 			regularOptions.push({ value: String(record.id), nama: record.nama });
@@ -329,6 +392,14 @@ export async function load({ parent, url, depends }) {
 			mapelOptions.unshift({ value: AGAMA_MAPEL_VALUE, nama: AGAMA_BASE_SUBJECT });
 		}
 	}
+	if (pksBaseMapel || pksVariantRecords.length) {
+		const exists = mapelOptions.some(
+			(option) => normalizeText(option.nama) === normalizeText(PKS_BASE_SUBJECT)
+		);
+		if (!exists) {
+			mapelOptions.unshift({ value: PKS_MAPEL_VALUE, nama: PKS_BASE_SUBJECT });
+		}
+	}
 
 	const requestedValue = url.searchParams.get('mapel_id');
 	let selectedMapelValue = requestedValue ?? null;
@@ -343,8 +414,9 @@ export async function load({ parent, url, depends }) {
 	}
 
 	const isAgamaSelected = selectedMapelValue === AGAMA_MAPEL_VALUE;
+	const isPksSelected = selectedMapelValue === PKS_MAPEL_VALUE;
 	const selectedMapelRecord =
-		!isAgamaSelected && selectedMapelValue
+		!isAgamaSelected && !isPksSelected && selectedMapelValue
 			? (mapelRecords.find((record) => String(record.id) === selectedMapelValue) ?? null)
 			: null;
 
@@ -352,9 +424,13 @@ export async function load({ parent, url, depends }) {
 		? agamaBaseMapel
 			? { id: agamaBaseMapel.id, nama: agamaBaseMapel.nama }
 			: { id: null, nama: AGAMA_BASE_SUBJECT }
-		: selectedMapelRecord
-			? { id: selectedMapelRecord.id, nama: selectedMapelRecord.nama }
-			: null;
+		: isPksSelected
+			? pksBaseMapel
+				? { id: pksBaseMapel.id, nama: pksBaseMapel.nama }
+				: { id: null, nama: PKS_BASE_SUBJECT }
+			: selectedMapelRecord
+				? { id: selectedMapelRecord.id, nama: selectedMapelRecord.nama }
+				: null;
 
 	const muridFilter = and(
 		eq(tableMurid.kelasId, kelasAktif.id),
@@ -425,11 +501,17 @@ export async function load({ parent, url, depends }) {
 		...agamaVariantRecords.map((record) => record.id),
 		...(agamaBaseMapel ? [agamaBaseMapel.id] : [])
 	];
+	const pksMapelIds = [
+		...pksVariantRecords.map((record) => record.id),
+		...(pksBaseMapel ? [pksBaseMapel.id] : [])
+	];
 	const relevantMapelIds = isAgamaSelected
 		? Array.from(new Set(agamaMapelIds))
-		: selectedMapelRecord
-			? [selectedMapelRecord.id]
-			: [];
+		: isPksSelected
+			? Array.from(new Set(pksMapelIds))
+			: selectedMapelRecord
+				? [selectedMapelRecord.id]
+				: [];
 
 	const muridIds = muridRecords.map((murid) => murid.id);
 
@@ -462,19 +544,27 @@ export async function load({ parent, url, depends }) {
 	}
 
 	const pickMapelIdForMurid = (muridAgama: string | null | undefined): number | null => {
-		if (!isAgamaSelected) {
-			return selectedMapelRecord?.id ?? null;
-		}
-		const variantName = resolveAgamaVariantName(muridAgama);
-		if (variantName) {
-			const variantRecord = mapelByName.get(normalizeText(variantName));
-			if (variantRecord) {
-				return variantRecord.id;
+		if (isAgamaSelected) {
+			const variantName = resolveAgamaVariantName(muridAgama);
+			if (variantName) {
+				const variantRecord = mapelByName.get(normalizeText(variantName));
+				if (variantRecord) {
+					return variantRecord.id;
+				}
 			}
+			return agamaBaseMapel?.id ?? null;
 		}
-		if (agamaBaseMapel) {
-			return agamaBaseMapel.id;
+		if (isPksSelected) {
+			const variantName = resolvePksVariantName(muridAgama);
+			if (variantName) {
+				const variantRecord = mapelByName.get(normalizeText(variantName));
+				if (variantRecord) {
+					return variantRecord.id;
+				}
+			}
+			return pksBaseMapel?.id ?? null;
 		}
+		return selectedMapelRecord?.id ?? null;
 		return agamaVariantRecords[0]?.id ?? null;
 	};
 
