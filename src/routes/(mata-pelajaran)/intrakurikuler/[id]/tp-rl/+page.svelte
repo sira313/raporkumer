@@ -46,15 +46,26 @@
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 	let { data } = $props();
 	const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
+	const PKS_PARENT_NAME = 'Pendalaman Kitab Suci';
 	const isAgamaParentMapel = $derived(data.mapel.nama === AGAMA_PARENT_NAME);
+	const isPksParentMapel = $derived(data.mapel.nama === PKS_PARENT_NAME);
+	// Check if mapel is PAPB-related (parent or any variant)
+	const isAgamaRelated = $derived(
+		data.mapel.nama === AGAMA_PARENT_NAME || data.mapel.nama?.startsWith('Pendidikan Agama ')
+	);
+	// Check if mapel is PKS-related (parent or any variant)
+	const isPksRelated = $derived(
+		data.mapel.nama === PKS_PARENT_NAME || data.mapel.nama?.startsWith('Pendalaman Kitab Suci ')
+	);
+	const isReligionBasedMapel = $derived(isAgamaRelated || isPksRelated);
 	const agamaOptions = $derived(data.agamaOptions ?? []);
-	const showAgamaSelect = $derived(agamaOptions.length > 0);
-	const requiresAgamaSelection = $derived(isAgamaParentMapel && showAgamaSelect);
+	const showAgamaSelect = $derived(agamaOptions.length > 0 && isReligionBasedMapel);
+	const requiresAgamaSelection = $derived(isReligionBasedMapel && showAgamaSelect);
 	let selectedAgamaId = $state(data.agamaSelection ?? '');
 	let lastAgamaSelection = $state(data.agamaSelection ?? '');
 	const agamaSelectId = 'agama-select';
 	const activeAgamaOption = $derived.by(() => {
-		if (!isAgamaParentMapel) {
+		if (!isReligionBasedMapel) {
 			return agamaOptions.find((option) => option.id === data.mapel.id);
 		}
 		const selectionId = Number.parseInt(selectedAgamaId, 10);
@@ -63,14 +74,14 @@
 			: undefined;
 	});
 
-	// lock/disable agama select when the logged-in user is a 'user' assigned to an agama-variant
+	// lock/disable agama select when the logged-in user is a 'user' assigned to an agama-variant or pks-variant
 	// Prefer server-provided `agamaSelectDisabled` so server can enforce the disabled
 	// state after class changes; fall back to resolving from assigned ids.
 	// IMPORTANT: Only lock if viewing a specific variant (not the parent page), to allow
 	// multi-mapel users to switch between their assigned variants from the parent page.
 	const isAgamaSelectLocked = $derived.by(() => {
-		// If on parent agama page, never lock (allow switching between assigned variants)
-		if (isAgamaParentMapel) {
+		// If on parent agama/pks page, never lock (allow switching between assigned variants)
+		if (isReligionBasedMapel) {
 			return false;
 		}
 
@@ -132,7 +143,7 @@
 	});
 	const hasActiveAgamaSelection = $derived(Boolean(activeAgamaOption));
 	const mapelDisplayName = $derived.by(() => {
-		if (!isAgamaParentMapel) {
+		if (!isReligionBasedMapel) {
 			return data.mapel.nama;
 		}
 		return activeAgamaOption?.name ?? data.mapel.nama;
@@ -241,13 +252,13 @@
 	});
 
 	$effect(() => {
-		// When kelas aktif changes and we're viewing the parent agama mapel,
+		// When kelas aktif changes and we're viewing the parent religion-based mapel,
 		// attempt to resolve the assigned local mapel for the logged-in user
 		// in the newly selected kelas and navigate to its TP page so the
 		// tujuan pembelajaran shown correspond to the active kelas.
 		const kelasAktif = page.data?.kelasAktif ?? null;
 		if (!kelasAktif) return;
-		if (!isAgamaParentMapel) return;
+		if (!isReligionBasedMapel) return;
 		const u = page.data?.user;
 		if (!u || u.type !== 'user' || !u.mataPelajaranId) return;
 		(async () => {

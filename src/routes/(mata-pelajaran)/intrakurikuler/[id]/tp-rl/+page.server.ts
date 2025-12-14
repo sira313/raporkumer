@@ -1,12 +1,13 @@
 import db from '$lib/server/db/index.js';
 import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama.js';
+import { ensurePksMapelForClasses } from '$lib/server/mapel-pks.js';
 import {
 	tableMataPelajaran,
 	tableTujuanPembelajaran,
 	tableAuthUserMataPelajaran,
 	tableAuthUser
 } from '$lib/server/db/schema.js';
-import { agamaMapelNames, agamaMapelOptions } from '$lib/statics';
+import { agamaMapelNames, agamaMapelOptions, pksMapelNames, pksMapelOptions } from '$lib/statics';
 import { unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
@@ -37,6 +38,7 @@ export async function load({ depends, params, parent }) {
 	const { mapel, user } = await parent();
 
 	await ensureAgamaMapelForClasses([mapel.kelasId]);
+	await ensurePksMapelForClasses([mapel.kelasId]);
 
 	let tujuanPembelajaran = [];
 
@@ -47,8 +49,12 @@ export async function load({ depends, params, parent }) {
 		isActive: boolean;
 	}> = [];
 
-	const targetNames: string[] = [...agamaMapelNames];
-	// prepare container for agama variant mapel in this kelas
+	// Determine which religion-based subject group we're working with
+	const isPksMapel = (pksMapelNames as readonly string[]).includes(mapel.nama);
+	const targetNames: string[] = isPksMapel ? [...pksMapelNames] : [...agamaMapelNames];
+	const targetOptions = isPksMapel ? pksMapelOptions : agamaMapelOptions;
+
+	// prepare container for religion-based variant mapel in this kelas
 	let kelasAgamaMapel: Array<{ id: number; nama: string }> = [];
 
 	// Collect user's assigned agama variant names early (for filtering agamaOptions)
@@ -95,7 +101,7 @@ export async function load({ depends, params, parent }) {
 
 		const mapelByName = new Map(kelasAgamaMapel.map((item) => [item.nama, item]));
 
-		agamaOptions = agamaMapelOptions
+		agamaOptions = targetOptions
 			.filter((option) => option.key !== 'umum')
 			.map((option) => {
 				const variant = mapelByName.get(option.name);

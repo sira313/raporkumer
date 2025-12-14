@@ -6,7 +6,7 @@ import {
 	tableKelas,
 	tableAuthUserMataPelajaran
 } from '$lib/server/db/schema';
-import { agamaVariantNames } from '$lib/statics';
+import { agamaVariantNames, pksVariantNames } from '$lib/statics';
 import { eq, inArray } from 'drizzle-orm';
 
 type MataPelajaranBase = Omit<MataPelajaran, 'tujuanPembelajaran'>;
@@ -14,6 +14,7 @@ type MataPelajaranWithTp = MataPelajaranBase & { tpCount: number; editTpMapelId?
 type MataPelajaranList = MataPelajaranWithTp[];
 
 const AGAMA_VARIANT_NAME_SET = new Set<string>(agamaVariantNames);
+const PKS_VARIANT_NAME_SET = new Set<string>(pksVariantNames);
 const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
 
 export async function load({ depends, url, parent }) {
@@ -210,7 +211,9 @@ export async function load({ depends, url, parent }) {
 			: item.id
 	}));
 
-	const mapelTampil = mapelWithIndicator.filter((item) => !AGAMA_VARIANT_NAME_SET.has(item.nama));
+	const mapelTampil = mapelWithIndicator.filter(
+		(item) => !AGAMA_VARIANT_NAME_SET.has(item.nama) && !PKS_VARIANT_NAME_SET.has(item.nama)
+	);
 
 	const { daftarWajib, daftarPilihan, daftarMulok, daftarKejuruan } = mapelTampil.reduce(
 		(acc, item) => {
@@ -599,5 +602,21 @@ export const actions = {
 				'Content-Disposition': `attachment; filename="${filename}"`
 			}
 		});
+	},
+
+	async tambah_pks({ cookies, locals }) {
+		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID) || null;
+		const kelasId = kelasIdCookie ? Number(kelasIdCookie) : null;
+		if (!kelasId || !Number.isFinite(kelasId)) {
+			return fail(400, { fail: 'Pilih kelas aktif terlebih dahulu.' });
+		}
+
+		const sekolahId = locals.sekolah?.id;
+		if (!sekolahId) return fail(400, { fail: 'Pilih sekolah aktif terlebih dahulu.' });
+
+		const { addPksParentToClasses } = await import('$lib/server/mapel-pks.js');
+		await addPksParentToClasses([kelasId]);
+
+		return { success: 'Mata pelajaran PKS berhasil ditambahkan ke kelas.' };
 	}
 };

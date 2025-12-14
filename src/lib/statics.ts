@@ -94,6 +94,39 @@ export const agamaMapelKeyByName = agamaMapelOptions.reduce<Record<string, Agama
 	{}
 );
 
+// PKS (Pendalaman Kitab Suci) options - follows same pattern as agama mapel
+export const pksMapelOptions = [
+	{ key: 'umum', label: 'Umum', name: 'Pendalaman Kitab Suci' },
+	{ key: 'islam', label: 'Islam', name: 'Pendalaman Kitab Suci Islam' },
+	{ key: 'kristen', label: 'Kristen', name: 'Pendalaman Kitab Suci Kristen' },
+	{ key: 'katolik', label: 'Katolik', name: 'Pendalaman Kitab Suci Katolik' },
+	{ key: 'buddha', label: 'Buddha', name: 'Pendalaman Kitab Suci Buddha' },
+	{ key: 'hindu', label: 'Hindu', name: 'Pendalaman Kitab Suci Hindu' },
+	{ key: 'konghuchu', label: 'Konghuchu', name: 'Pendalaman Kitab Suci Konghuchu' }
+] as const;
+
+export type PksMapelKey = (typeof pksMapelOptions)[number]['key'];
+
+export const pksParentOption = pksMapelOptions[0];
+export const pksVariantOptions = pksMapelOptions.filter((option) => option.key !== 'umum');
+export const pksParentName = pksParentOption.name;
+export const pksVariantNames = pksVariantOptions.map((option) => option.name);
+
+export const pksMapelNames = pksMapelOptions.map((option) => option.name);
+
+export const pksMapelLabelByName = pksMapelOptions.reduce<Record<string, string>>((acc, option) => {
+	acc[option.name] = option.label;
+	return acc;
+}, {});
+
+export const pksMapelKeyByName = pksMapelOptions.reduce<Record<string, PksMapelKey>>(
+	(acc, option) => {
+		acc[option.name] = option.key;
+		return acc;
+	},
+	{}
+);
+
 export const profilPelajarPancasilaDimensions = [
 	{
 		key: 'ketakwaan',

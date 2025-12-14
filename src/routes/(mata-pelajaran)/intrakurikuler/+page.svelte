@@ -1,11 +1,20 @@
 <script lang="ts">
 	/* eslint-disable svelte/no-navigation-without-resolve -- many navigation links built from data */
 	import { page } from '$app/state';
+	import { invalidate } from '$app/navigation';
+	import { enhance } from '$app/forms';
 	import Icon from '$lib/components/icon.svelte';
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import ImportMapelDialog from '$lib/components/intrakurikuler/import-mapel-dialog.svelte';
 	import { toast } from '$lib/components/toast.svelte';
-	import { agamaMapelLabelByName, agamaMapelNames, agamaParentName } from '$lib/statics';
+	import {
+		agamaMapelLabelByName,
+		agamaMapelNames,
+		agamaParentName,
+		pksMapelLabelByName,
+		pksMapelNames,
+		pksParentName
+	} from '$lib/statics';
 	import { modalRoute } from '$lib/utils';
 	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
 
@@ -14,6 +23,7 @@
 
 	const emptyStateMessage = 'Belum ada data mata pelajaran';
 	const agamaMapelNameSet = new Set<string>(agamaMapelNames);
+	const pksMapelNameSet = new Set<string>(pksMapelNames);
 
 	const kelasAktifLabel = $derived.by(() => {
 		const kelas = page.data.kelasAktif ?? null;
@@ -61,15 +71,30 @@
 	function handleDeleteClick(event: MouseEvent, mapel: Pick<MataPelajaran, 'nama'>) {
 		if (event.defaultPrevented) return;
 		if (event.shiftKey || event.metaKey || event.ctrlKey || event.button === 1) return;
-		if (!agamaMapelNameSet.has(mapel.nama)) return;
 
-		const label = agamaMapelLabelByName[mapel.nama];
-		const message =
-			mapel.nama === agamaParentName
-				? `Menghapus "<b>${mapel.nama}</b>" akan menghapus seluruh varian Pendidikan Agama dan Budi Pekerti pada kelas ini.`
-				: `Menghapus "<b>${mapel.nama}</b>" akan menghapus varian Pendidikan Agama <b>${label}</b> beserta seluruh penilaian terkait.`;
+		const isAgama = agamaMapelNameSet.has(mapel.nama);
+		const isPks = pksMapelNameSet.has(mapel.nama);
 
-		toast({ message, type: 'warning', persist: true });
+		if (!isAgama && !isPks) return;
+
+		let message = '';
+		if (isAgama) {
+			const label = agamaMapelLabelByName[mapel.nama];
+			message =
+				mapel.nama === agamaParentName
+					? `Menghapus "<b>${mapel.nama}</b>" akan menghapus seluruh varian Pendidikan Agama dan Budi Pekerti pada kelas ini.`
+					: `Menghapus "<b>${mapel.nama}</b>" akan menghapus varian Pendidikan Agama <b>${label}</b> beserta seluruh penilaian terkait.`;
+		} else if (isPks) {
+			const label = pksMapelLabelByName[mapel.nama];
+			message =
+				mapel.nama === pksParentName
+					? `Menghapus "<b>${mapel.nama}</b>" akan menghapus seluruh varian Pendalaman Kitab Suci pada kelas ini.`
+					: `Menghapus "<b>${mapel.nama}</b>" akan menghapus varian PKS <b>${label}</b> beserta seluruh penilaian terkait.`;
+		}
+
+		if (message) {
+			toast({ message, type: 'warning', persist: true });
+		}
 	}
 </script>
 
@@ -182,6 +207,42 @@
 							<Icon name="export" />
 							Ekspor Mapel
 						</button>
+					</li>
+					<li>
+						<form
+							method="POST"
+							action="?/tambah_pks"
+							class="w-full"
+							use:enhance={() => {
+								toast({ message: 'Menambahkan mata pelajaran PKS...', type: 'info' });
+								return async ({ result }) => {
+									if (result.type === 'success') {
+										await invalidate('app:mapel');
+										const data = result.data as { success?: string } | undefined;
+										toast({
+											message: data?.success || 'Mata pelajaran PKS berhasil ditambahkan.',
+											type: 'success'
+										});
+									} else if (result.type === 'failure') {
+										const data = result.data as { fail?: string } | undefined;
+										toast({
+											message: data?.fail || 'Gagal menambahkan mata pelajaran PKS.',
+											type: 'error'
+										});
+									}
+								};
+							}}
+						>
+							<button
+								type="submit"
+								class={`flex w-full items-center gap-2 ${!canManageMapel || !hasKelasAktif ? 'pointer-events-none opacity-50' : ''}`}
+								disabled={!canManageMapel || !hasKelasAktif}
+								aria-disabled={!canManageMapel || !hasKelasAktif}
+							>
+								<Icon name="plus" />
+								<span>Tambah PKS</span>
+							</button>
+						</form>
 					</li>
 				</ul>
 			</div>
