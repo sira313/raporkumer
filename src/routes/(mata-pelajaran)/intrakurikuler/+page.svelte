@@ -332,34 +332,65 @@
 											}`}
 											role="status"
 										></span>
-										<a
-											class="btn btn-sm btn-soft shadow-none"
-											href={`/intrakurikuler/${mapel.editTpMapelId ?? mapel.id}/tp-rl`}
-										>
-											<Icon name="edit" />
-											Edit TP
-										</a>
+										{#if canManageMapel}
+											<a
+												class="btn btn-sm btn-soft shadow-none"
+												href={`/intrakurikuler/${mapel.editTpMapelId ?? mapel.id}/tp-rl`}
+											>
+												<Icon name="edit" />
+												Edit TP
+											</a>
+										{:else}
+											<button
+												type="button"
+												class="btn btn-sm btn-disabled shadow-none"
+												disabled
+												title="Anda tidak memiliki izin untuk mengedit"
+											>
+												<Icon name="edit" />
+												Edit TP
+											</button>
+										{/if}
 									</div>
 								</td>
 								<td>
 									<div class="flex flex-row">
-										<a
-											class="btn btn-sm btn-soft rounded-r-none shadow-none"
-											href={`/intrakurikuler/${mapel.id}/edit`}
-											title="Edit data mata pelajaran"
-											use:modalRoute={'edit-mapel'}
-										>
-											<Icon name="edit" />
-										</a>
-										<a
-											class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
-											href={`/intrakurikuler/${mapel.id}/delete`}
-											title="Hapus mata pelajaran"
-											use:modalRoute={'delete-mapel'}
-											onclick={(event) => handleDeleteClick(event, mapel)}
-										>
-											<Icon name="del" />
-										</a>
+										{#if canManageMapel}
+											<a
+												class="btn btn-sm btn-soft rounded-r-none shadow-none"
+												href={`/intrakurikuler/${mapel.id}/edit`}
+												title="Edit data mata pelajaran"
+												use:modalRoute={'edit-mapel'}
+											>
+												<Icon name="edit" />
+											</a>
+											<a
+												class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
+												href={`/intrakurikuler/${mapel.id}/delete`}
+												title="Hapus mata pelajaran"
+												use:modalRoute={'delete-mapel'}
+												onclick={(event) => handleDeleteClick(event, mapel)}
+											>
+												<Icon name="del" />
+											</a>
+										{:else}
+											<button
+												type="button"
+												class="btn btn-sm btn-disabled rounded-r-none shadow-none"
+												disabled
+												title="Anda tidak memiliki izin untuk mengedit"
+											>
+												<Icon name="edit" />
+											</button>
+											<button
+												type="button"
+												class="btn btn-sm btn-disabled rounded-l-none shadow-none"
+												disabled
+												title="Anda tidak memiliki izin untuk menghapus"
+											>
+												<Icon name="del" />
+											</button>
+										{/if}
 									</div>
 								</td>
 							</tr>

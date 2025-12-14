@@ -61,6 +61,11 @@
 		if (!kelasAktif) return null;
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
 	});
+	// Restrict editing for wali_asuh
+	const canEdit = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null | undefined;
+		return u?.type !== 'wali_asuh';
+	});
 	const currentPage = $derived.by(() => data.page?.currentPage ?? 1);
 	const totalPages = $derived.by(() => Math.max(1, data.page?.totalPages ?? 1));
 	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
@@ -215,11 +220,13 @@
 			<span class="sr-only">Pilih kokurikuler</span>
 			<select
 				class="select bg-base-200 w-full truncate dark:border-none"
-				title={selectedKokurikulerLabel ?? 'Pilih kokurikuler'}
+				title={!canEdit
+					? 'Anda tidak memiliki izin untuk mengubah'
+					: (selectedKokurikulerLabel ?? 'Pilih kokurikuler')}
 				bind:value={selectedKokurikulerValue}
 				onchange={(event) =>
 					handleKokurikulerChange((event.currentTarget as HTMLSelectElement).value)}
-				disabled={!hasKokurikuler}
+				disabled={!hasKokurikuler || !canEdit}
 			>
 				{#if !hasKokurikuler}
 					<option value="">Belum ada kokurikuler</option>
@@ -305,6 +312,8 @@
 									type="button"
 									class="btn btn-sm btn-soft shadow-none"
 									onclick={() => openModalFor(murid)}
+									disabled={!canEdit}
+									title={!canEdit ? 'Anda tidak memiliki izin untuk menilai' : ''}
 								>
 									<Icon name="edit" />
 									Nilai

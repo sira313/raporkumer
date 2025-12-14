@@ -64,6 +64,12 @@
 		return kelas.fase ? `${kelas.nama} - ${kelas.fase}` : kelas.nama;
 	});
 
+	// Restrict editing for wali_asuh
+	const canEdit = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null | undefined;
+		return u?.type !== 'wali_asuh';
+	});
+
 	$effect(() => {
 		selectedMapelValue = data.selectedMapelValue ?? '';
 		searchTerm = data.search ?? '';
@@ -282,7 +288,7 @@
 							<td class="align-top">{murid.no}</td>
 							<td class="align-top">{@html searchQueryMarker(data.search, murid.nama)}</td>
 							<td class="align-top">
-								{#if murid.nilaiHref}
+								{#if murid.nilaiHref && canEdit}
 									<a class="btn btn-sm btn-soft shadow-none" href={murid.nilaiHref}>
 										<Icon name="edit" />
 										Nilai
@@ -292,9 +298,11 @@
 										type="button"
 										class="btn btn-sm btn-disabled"
 										disabled
-										title={data.allowedAgamaForUser
-											? `Hanya untuk murid beragama ${data.allowedAgamaForUser}`
-											: 'Pilih mata pelajaran'}
+										title={!canEdit
+											? 'Anda tidak memiliki izin untuk menilai'
+											: data.allowedAgamaForUser
+												? `Hanya untuk murid beragama ${data.allowedAgamaForUser}`
+												: 'Pilih mata pelajaran'}
 									>
 										<Icon name="edit" />
 										Nilai

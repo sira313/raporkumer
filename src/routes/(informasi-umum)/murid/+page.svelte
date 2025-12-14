@@ -20,6 +20,12 @@
 	};
 
 	let { data } = $props();
+
+	// Restrict editing for wali_asuh
+	const canEdit = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null | undefined;
+		return u?.type !== 'wali_asuh';
+	});
 	let searchTerm = $state(data.page.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	const currentPage = $derived.by(() => data.page.currentPage ?? 1);
@@ -46,7 +52,7 @@
 	let selectAllCheckbox: HTMLInputElement | null = null;
 	let formSubmitting = $state(false);
 	let isBulkPhotoUploadOpen = $state(false);
-	let dropdownToggle: HTMLDivElement | null = $state(null);
+	let dropdownToggle: HTMLButtonElement | null = $state(null);
 
 	function handleSubmittingChange(value: boolean) {
 		formSubmitting = value;
@@ -290,43 +296,64 @@
 				<button
 					class="btn btn-soft btn-error mt-4 shadow-none sm:mt-0"
 					type="button"
-					disabled={!hasSelection || formSubmitting}
+					disabled={!hasSelection || formSubmitting || !canEdit}
 					onclick={openBulkDeleteModal}
-					title={hasSelection ? 'Hapus murid terpilih' : 'Pilih murid terlebih dahulu'}
+					title={!canEdit
+						? 'Anda tidak memiliki izin untuk menghapus'
+						: hasSelection
+							? 'Hapus murid terpilih'
+							: 'Pilih murid terlebih dahulu'}
 				>
 					<Icon name="del" />
 					Hapus
 				</button>
 			{:else}
 				<div class="flex flex-row">
-					<a
-						class="btn btn-soft mt-4 flex items-center rounded-r-none shadow-none sm:mt-0"
-						href="/murid/form"
-						use:modalRoute={'add-murid'}
-					>
-						<Icon name="plus" />
-						Tambah Murid
-					</a>
+					{#if canEdit}
+						<a
+							class="btn btn-soft mt-4 flex items-center rounded-r-none shadow-none sm:mt-0"
+							href="/murid/form"
+							use:modalRoute={'add-murid'}
+						>
+							<Icon name="plus" />
+							Tambah Murid
+						</a>
+					{:else}
+						<button
+							type="button"
+							class="btn btn-disabled mt-4 flex items-center rounded-r-none shadow-none sm:mt-0"
+							disabled
+							title="Anda tidak memiliki izin untuk menambah murid"
+						>
+							<Icon name="plus" />
+							Tambah Murid
+						</button>
+					{/if}
 					<div class="dropdown dropdown-end">
-						<div
+						<button
 							bind:this={dropdownToggle}
+							type="button"
 							tabindex="0"
-							role="button"
 							class="btn btn-soft rounded-l-none shadow-none"
+							class:btn-disabled={!canEdit}
+							disabled={!canEdit}
+							title={!canEdit ? 'Anda tidak memiliki izin' : ''}
 						>
 							<Icon name="down" />
-						</div>
-						<ul
-							tabindex="-1"
-							class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-1 mt-2 w-50 border p-2 shadow-lg"
-						>
-							<li><a href="/murid/photos">Lihat Semua Foto</a></li>
-							<li>
-								<button type="button" onclick={openBulkPhotoUploadModal} class="text-left">
-									Upload Semua Foto
-								</button>
-							</li>
-						</ul>
+						</button>
+						{#if canEdit}
+							<ul
+								tabindex="-1"
+								class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-1 mt-2 w-50 border p-2 shadow-lg"
+							>
+								<li><a href="/murid/photos">Lihat Semua Foto</a></li>
+								<li>
+									<button type="button" onclick={openBulkPhotoUploadModal} class="text-left">
+										Upload Semua Foto
+									</button>
+								</li>
+							</ul>
+						{/if}
 					</div>
 				</div>
 			{/if}
@@ -419,14 +446,25 @@
 											<Icon name="eye" />
 										</a>
 
-										<a
-											class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
-											href="/murid/{murid.id}/delete"
-											use:modalRoute={'delete-murid'}
-											title="Hapus data murid"
-										>
-											<Icon name="del" />
-										</a>
+										{#if canEdit}
+											<a
+												class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
+												href="/murid/{murid.id}/delete"
+												use:modalRoute={'delete-murid'}
+												title="Hapus data murid"
+											>
+												<Icon name="del" />
+											</a>
+										{:else}
+											<button
+												type="button"
+												class="btn btn-sm btn-disabled rounded-l-none shadow-none"
+												disabled
+												title="Anda tidak memiliki izin untuk menghapus"
+											>
+												<Icon name="del" />
+											</button>
+										{/if}
 									</div>
 								</td>
 							</tr>

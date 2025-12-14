@@ -197,19 +197,6 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		}
 	}
 
-	// Additional guard: wali_asuh can only access keasramaan and asesmen-keasramaan pages
-	if (event.locals.user) {
-		const u = event.locals.user as { type?: string };
-		if (u.type === 'wali_asuh') {
-			const pathname = event.url.pathname;
-			const allowedPaths = ['/keasramaan', '/asesmen-keasramaan', '/logout'];
-			const isAllowed = allowedPaths.some((path) => pathname.startsWith(path)) || pathname === '/';
-			if (!isAllowed) {
-				throw redirect(303, '/forbidden?reason=wali_asuh_restricted');
-			}
-		}
-	}
-
 	const routeId = event.route.id;
 	const isPublicRoute = !routeId || PUBLIC_ROUTE_IDS.has(routeId);
 	const isLoginPath = event.url.pathname === '/login';

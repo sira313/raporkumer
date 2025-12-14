@@ -76,6 +76,11 @@
 		if (!kelasAktif) return null;
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
 	});
+	// Restrict editing for wali_asuh
+	const canEdit = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null | undefined;
+		return u?.type !== 'wali_asuh';
+	});
 
 	$effect(() => {
 		selectedEkstrakValue = data.selectedEkstrakurikulerId
@@ -209,10 +214,10 @@
 			<span class="sr-only">Pilih ekstrakurikuler</span>
 			<select
 				class="select bg-base-200 w-full truncate dark:border-none"
-				title="Pilih ekstrakurikuler"
+				title={!canEdit ? 'Anda tidak memiliki izin untuk mengubah' : 'Pilih ekstrakurikuler'}
 				bind:value={selectedEkstrakValue}
 				onchange={(event) => handleEkstrakChange((event.currentTarget as HTMLSelectElement).value)}
-				disabled={!hasEkstrakurikuler}
+				disabled={!hasEkstrakurikuler || !canEdit}
 			>
 				{#if !hasEkstrakurikuler}
 					<option value="">Belum ada ekstrakurikuler</option>
@@ -306,8 +311,9 @@
 								<a
 									class="btn btn-sm btn-soft shadow-none"
 									href={buildNilaiLink(murid.id)}
-									class:btn-disabled={!selectedEkstrakHasTujuan}
-									aria-disabled={!selectedEkstrakHasTujuan}
+									class:btn-disabled={!selectedEkstrakHasTujuan || !canEdit}
+									aria-disabled={!selectedEkstrakHasTujuan || !canEdit}
+									title={!canEdit ? 'Anda tidak memiliki izin untuk menilai' : ''}
 								>
 									<Icon name="edit" />
 									Nilai

@@ -216,9 +216,10 @@ export async function load({ url, locals, cookies }) {
 	// disable UI for restricted 'user' accounts.
 	let userForClient = user;
 	if (user) {
-		// default permission: users with type 'user' should not be allowed
+		// default permission: users with type 'user' or 'wali_asuh' should not be allowed
 		// to manage mata pelajaran. Other account types retain access.
-		const canManageMapel = (user as { type?: string }).type !== 'user';
+		const userType = (user as { type?: string }).type;
+		const canManageMapel = userType !== 'user' && userType !== 'wali_asuh';
 
 		if (user.pegawaiId) {
 			const pegawaiRecord = await db.query.tablePegawai.findFirst({
