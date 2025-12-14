@@ -107,9 +107,9 @@ export async function load({ depends, params, parent }) {
 				const variant = mapelByName.get(option.name);
 				if (!variant) return null;
 
-				// For multi-mapel users, only include agama options they have assigned
+				// For users with assigned agama/PKS variants, only include agama options they have assigned
 				if (
-					userAssignedAgamaNames.size > 1 &&
+					userAssignedAgamaNames.size > 0 &&
 					!userAssignedAgamaNames.has((option.name || '').trim().toLowerCase())
 				) {
 					return null;
