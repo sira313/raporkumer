@@ -117,14 +117,14 @@
 					</li>
 					<li>
 						<a
-							href="https://kurikulum.kemdikbud.go.id/file/1753779343_manage_file.pdf"
+							href="https://kurikulum.kemendikdasmen.go.id/file/1753779343_manage_file.pdf"
 							target="_blank"
 							class="link link-primary">Panduan Kokurikuler tahun 2025</a
 						>
 					</li>
 					<li>
 						<a
-							href="https://kurikulum.kemdikbud.go.id/file/1753929861_manage_file.pdf"
+							href="https://drive.google.com/file/d/1XigY7sH6SkA0RCyn_8X85NGJoR4HmyC0/view"
 							target="_blank"
 							class="link link-primary">Capaian Pembelajaran</a
 						>
