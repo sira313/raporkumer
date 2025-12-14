@@ -75,10 +75,15 @@ export const actions = {
 		}
 
 		if (isPksGroup) {
-			// enforce PKS code for PKS group and update KKM and kode across all variants
+			// enforce PKS code for PKS group and update KKM, jenis, and kode across all variants
+			const jenisRaw = formMapel.jenis?.toString().toLowerCase() ?? existing.jenis;
+			if (!isValidJenis(jenisRaw)) {
+				return fail(400, { fail: 'Jenis mata pelajaran tidak valid.' });
+			}
+
 			await db
 				.update(tableMataPelajaran)
-				.set({ kkm, kode: 'PKS', updatedAt: now })
+				.set({ kkm, jenis: jenisRaw, kode: 'PKS', updatedAt: now })
 				.where(
 					and(
 						eq(tableMataPelajaran.kelasId, existing.kelasId),
@@ -86,7 +91,7 @@ export const actions = {
 					)
 				);
 
-			return { message: `KKM Pendalaman Kitab Suci diperbarui` };
+			return { message: `KKM dan jenis Pendalaman Kitab Suci diperbarui` };
 		}
 
 		const nama = formMapel.nama?.toString().trim();
