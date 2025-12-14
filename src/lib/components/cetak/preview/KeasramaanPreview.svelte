@@ -282,9 +282,9 @@
 					{@const isFirstPage = pageIndex === 0}
 					{@const isLastPage = pageIndex === pages.length - 1}
 					{@const pageNumber = pageIndex + 1}
-					{@const breakAfter = !isLastPage || (isLastPage && !page.hasFooter)}
+					{@const breakAfter = !isLastPage}
 
-					<PrintCardPage {breakAfter} {backgroundStyle} {murid} {rombel} {pageNumber}>
+					<PrintCardPage {backgroundStyle} {murid} {rombel} {pageNumber} {breakAfter}>
 						{#if isFirstPage}
 							<!-- First page: Header + Identity + Table -->
 							<header class="pb-4 text-center">
@@ -316,8 +316,7 @@
 							/>
 						{/if}
 
-						{#if page.hasFooter}
-							<!-- Footer: Kehadiran & Signatures Section -->
+						{#if page.hasKehadiran}
 							<!-- Kehadiran Section -->
 							<section class="mt-6 break-inside-avoid print:break-inside-avoid">
 								<table class="w-full border">
@@ -359,7 +358,9 @@
 									</tbody>
 								</table>
 							</section>
+						{/if}
 
+						{#if page.hasSignature}
 							<!-- Signatures Section -->
 							<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
 								<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">

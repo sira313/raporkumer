@@ -22,8 +22,10 @@ export const HEIGHTS = {
 	identityTable: 200,
 	tableHeader: 45,
 	pageFooter: 45,
-	footer: 280, // Kehadiran + signatures (disesuaikan lebih realistis)
-	footerGap: 20
+	kehadiran: 130, // Tabel ketidakhadiran
+	kehadiranGap: 20, // mt-6
+	signature: 180, // Blok tandatangan (4 pihak dalam grid 2x2)
+	signatureGap: 30 // mt-8
 };
 
 export type KeasramaanRow = {
@@ -57,7 +59,8 @@ export interface MeasuredRow {
 export interface PaginatedPage {
 	pageIndex: number;
 	rows: KeasramaanRowWithOrder[];
-	hasFooter: boolean;
+	hasKehadiran: boolean;
+	hasSignature: boolean;
 	boundary: PageBoundary;
 }
 
@@ -173,6 +176,8 @@ export function detectBoundaryViolations(
 	let currentPageHeight = 0;
 	let boundary = calculatePageBoundary(currentPageIndex, hasHeader);
 
+	const kehadiranHeight = HEIGHTS.kehadiran + HEIGHTS.kehadiranGap + MIN_REMAINING_SPACE_FOOTER;
+	const signatureHeight = HEIGHTS.signature + HEIGHTS.signatureGap + MIN_REMAINING_SPACE_FOOTER;
 	const debugLogs: string[] = [];
 
 	for (let i = 0; i < measurements.length; i++) {
@@ -216,7 +221,8 @@ export function detectBoundaryViolations(
 					pages.push({
 						pageIndex: currentPageIndex,
 						rows: currentPageRows,
-						hasFooter: false,
+						hasKehadiran: false,
+						hasSignature: false,
 						boundary
 					});
 
@@ -239,7 +245,8 @@ export function detectBoundaryViolations(
 			pages.push({
 				pageIndex: currentPageIndex,
 				rows: currentPageRows,
-				hasFooter: false,
+				hasKehadiran: false,
+				hasSignature: false,
 				boundary
 			});
 
@@ -277,12 +284,13 @@ export function detectBoundaryViolations(
 		pages.push({
 			pageIndex: currentPageIndex,
 			rows: currentPageRows,
-			hasFooter: false,
+			hasKehadiran: false,
+			hasSignature: false,
 			boundary
 		});
 	}
 
-	// Tentukan penempatan footer
+	// Tentukan penempatan ketidakhadiran dan tandatangan secara terpisah
 	if (pages.length > 0) {
 		const lastPage = pages[pages.length - 1];
 
@@ -295,20 +303,54 @@ export function detectBoundaryViolations(
 			}
 		}
 
-		const footerSpace = HEIGHTS.footer + HEIGHTS.footerGap;
-		const remainingSpace = lastPage.boundary.availableHeight - lastPageHeight;
+		let remainingSpace = lastPage.boundary.availableHeight - lastPageHeight;
 
-		if (remainingSpace >= footerSpace + MIN_REMAINING_SPACE_FOOTER) {
-			// Footer muat di halaman terakhir
-			lastPage.hasFooter = true;
+		// Cek apakah ketidakhadiran muat di halaman terakhir
+		if (remainingSpace >= kehadiranHeight) {
+			lastPage.hasKehadiran = true;
+			remainingSpace -= HEIGHTS.kehadiran + HEIGHTS.kehadiranGap;
+
+			// Cek apakah tandatangan juga muat di halaman yang sama
+			if (remainingSpace >= signatureHeight) {
+				lastPage.hasSignature = true;
+			} else {
+				// Tandatangan perlu halaman baru
+				pages.push({
+					pageIndex: pages.length,
+					rows: [],
+					hasKehadiran: false,
+					hasSignature: true,
+					boundary: calculatePageBoundary(pages.length, false)
+				});
+			}
 		} else {
-			// Footer butuh halaman terpisah
+			// Ketidakhadiran dan tandatangan perlu halaman baru
 			pages.push({
 				pageIndex: pages.length,
 				rows: [],
-				hasFooter: true,
+				hasKehadiran: true,
+				hasSignature: false,
 				boundary: calculatePageBoundary(pages.length, false)
 			});
+
+			// Cek apakah tandatangan muat di halaman yang sama dengan ketidakhadiran
+			const kehadiranPageRemainingSpace =
+				calculatePageBoundary(pages.length - 1, false).availableHeight -
+				HEIGHTS.kehadiran -
+				HEIGHTS.kehadiranGap;
+
+			if (kehadiranPageRemainingSpace >= signatureHeight) {
+				pages[pages.length - 1].hasSignature = true;
+			} else {
+				// Tandatangan perlu halaman terpisah
+				pages.push({
+					pageIndex: pages.length,
+					rows: [],
+					hasKehadiran: false,
+					hasSignature: true,
+					boundary: calculatePageBoundary(pages.length, false)
+				});
+			}
 		}
 	}
 
@@ -357,7 +399,8 @@ export function debugBoundaryDetection(result: BoundaryDetectionResult, muridNam
 		return {
 			page: page.pageIndex + 1,
 			rows: page.rows.length,
-			footer: page.hasFooter,
+			kehadiran: page.hasKehadiran,
+			signature: page.hasSignature,
 			used,
 			capacity,
 			remaining,
