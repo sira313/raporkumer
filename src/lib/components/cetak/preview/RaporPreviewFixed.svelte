@@ -95,7 +95,8 @@
 	});
 
 	const pages = $derived.by(() => boundaryResult.pages);
-	const totalPages = $derived.by(() => boundaryResult.totalPages);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const _totalPages = $derived.by(() => boundaryResult.totalPages);
 
 	/**
 	 * Perform boundary detection after initial render

@@ -144,7 +144,8 @@
 
 	type DescriptionBlock = { kind: 'text'; text: string } | { kind: 'list'; items: string[] };
 
-	function descriptionBlocks(value: string | null | undefined): DescriptionBlock[] {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	function _descriptionBlocks(value: string | null | undefined): DescriptionBlock[] {
 		const formatted = formatValue(value);
 		if (formatted === '—') return [{ kind: 'text', text: formatted }];
 
@@ -187,7 +188,8 @@
 		return blocks.length > 0 ? blocks : [{ kind: 'text', text: formatted }];
 	}
 
-	function paragraphPaddingClass(text: string | null | undefined): string {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	function _paragraphPaddingClass(text: string | null | undefined): string {
 		// Apply predikat-based padding for all TP modes for ekstrakurikuler
 		const t = (text ?? '').toLowerCase();
 		if (!t) return 'py-2';

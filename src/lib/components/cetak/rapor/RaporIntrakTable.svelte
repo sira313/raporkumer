@@ -295,49 +295,6 @@
 							Belum ada data intrakurikuler.
 						</td>
 					</tr>
-				{:else if row.kind === 'ekstrakurikuler-header'}
-					<tr
-						use:applyRow={row.order}
-						data-row-order={row.order}
-						class="ekstrakurikuler-header-spacer"
-					>
-						<td class="border-none p-0" colspan="4">
-							<div class={ekstraSpacerClass}></div>
-						</td>
-					</tr>
-					<tr class="ekstrakurikuler-header" data-row-order="{row.order}-header">
-						<th class="border px-3 py-2 text-left" style="width: 40px;">No.</th>
-						<th class="border px-3 py-2 text-left" colspan="2">Ekstrakurikuler</th>
-						<th class="border px-3 py-2 text-left">Keterangan</th>
-					</tr>
-				{:else if row.kind === 'ekstrakurikuler'}
-					<tr use:applyRow={row.order} data-row-order={row.order} class="ekstrakurikuler-row">
-						<td class="border px-3 py-2 align-top">{row.nomor}</td>
-						<td class="border px-3 py-2 align-top" colspan="2">
-							{formatValue(row.entry.nama)}
-						</td>
-						<td class="border px-3 py-2 align-top">
-							<div class="flex flex-col gap-2">
-								{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
-									{#if block.kind === 'text'}
-										<span class="whitespace-pre-line">{block.text}</span>
-									{:else}
-										<ul class="list-disc pl-4">
-											{#each block.items as it (it)}
-												<li class="leading-tight">
-													{it}
-												</li>
-											{/each}
-										</ul>
-									{/if}
-								{/each}
-							</div>
-						</td>
-					</tr>
-				{:else if row.kind === 'ekstrakurikuler-empty'}
-					<tr use:applyRow={row.order} data-row-order={row.order}>
-						<td class="border px-3 py-2 text-center" colspan="4"> Tidak ada ekstrakurikuler </td>
-					</tr>
 				{:else if row.kind === 'tanggapan'}
 					<tr use:applyRow={row.order} data-row-order={row.order} data-tanggapan-row="true">
 						<td class="border-none p-0 align-top" colspan="4">

@@ -48,7 +48,8 @@
 	const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
 	const PKS_PARENT_NAME = 'Pendalaman Kitab Suci';
 	const isAgamaParentMapel = $derived(data.mapel.nama === AGAMA_PARENT_NAME);
-	const isPksParentMapel = $derived(data.mapel.nama === PKS_PARENT_NAME);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const _isPksParentMapel = $derived(data.mapel.nama === PKS_PARENT_NAME);
 	// Check if mapel is PAPB-related (parent or any variant)
 	const isAgamaRelated = $derived(
 		data.mapel.nama === AGAMA_PARENT_NAME || data.mapel.nama?.startsWith('Pendidikan Agama ')

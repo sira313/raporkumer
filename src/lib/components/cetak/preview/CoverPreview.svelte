@@ -12,7 +12,8 @@
 		data = {},
 		onPrintableReady = () => {},
 		showBgLogo = false,
-		muridProp = null
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		muridProp: _muridProp = null
 	} = $props<{
 		data?: ComponentData;
 		onPrintableReady?: (node: HTMLDivElement | null) => void;

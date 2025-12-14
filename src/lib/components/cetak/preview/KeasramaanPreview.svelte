@@ -68,7 +68,7 @@
 
 	const keasramaanRows = $derived.by<KeasramaanRowWithOrder[]>(() => {
 		const rows = keasramaan?.keasramaanRows ?? [];
-		return rows.map((row: any, index: number) => ({ ...row, order: index }));
+		return rows.map((row: KeasramaanRowWithOrder, index: number) => ({ ...row, order: index }));
 	});
 
 	// Boundary detection result
@@ -79,7 +79,8 @@
 	});
 
 	const pages = $derived.by(() => boundaryResult.pages);
-	const totalPages = $derived.by(() => boundaryResult.totalPages);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const _totalPages = $derived.by(() => boundaryResult.totalPages);
 
 	/**
 	 * Perform boundary detection after initial render
