@@ -388,7 +388,7 @@ export async function load({ parent, url, depends }) {
 
 	const requestedValue = url.searchParams.get('mapel_id');
 	let selectedMapelValue = requestedValue ?? null;
-	
+
 	// If requestedValue is a numeric ID that matches an agama or PKS variant,
 	// convert it to the special value ('agama' or 'pks')
 	if (selectedMapelValue) {
@@ -407,7 +407,7 @@ export async function load({ parent, url, depends }) {
 			}
 		}
 	}
-	
+
 	// If user is locked to a mapel and no explicit query param is provided, default to user's mapel
 	if (!selectedMapelValue && maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
 		// If the user's assigned mapel is an agama or PKS variant and we have the
