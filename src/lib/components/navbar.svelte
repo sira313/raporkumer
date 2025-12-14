@@ -58,6 +58,7 @@
 	});
 
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
+	import { resolveHelpFile } from '$lib/help-maps';
 
 	function buildKelasHref(kelasId: number) {
 		const params = new SvelteURLSearchParams(page.url.search);
@@ -101,51 +102,6 @@
 	function excerpt(text: string | null | undefined, limit = 16) {
 		if (!text) return text;
 		return text.length > limit ? text.slice(0, limit) + '…' : text;
-	}
-
-	type HelpMapEntry = { matcher: string | RegExp; file: string };
-
-	const helpMaps: HelpMapEntry[] = [
-		{ matcher: '/', file: 'umum' },
-		{ matcher: '/sekolah', file: 'sekolah' },
-		{ matcher: '/sekolah/form', file: 'sekolah-form' },
-		{ matcher: '/sekolah/tahun-ajaran', file: 'tahun-ajaran' },
-		{ matcher: '/rapor', file: 'rapor' },
-		{ matcher: '/murid', file: 'murid' },
-		{ matcher: '/intrakurikuler', file: 'intrakurikuler' },
-		{ matcher: /^\/intrakurikuler\/\d+\/tp-rl$/, file: 'tp-rl' },
-		{ matcher: '/kokurikuler', file: 'kokurikuler' },
-		{ matcher: '/asesmen-kokurikuler', file: 'asesmen-kokurikuler' },
-		{ matcher: '/ekstrakurikuler', file: 'ekstrakurikuler' },
-		{ matcher: '/ekstrakurikuler/tp-ekstra', file: 'tp-ekstra' },
-		{ matcher: '/kelas', file: 'data-kelas' },
-		{ matcher: '/kelas/form', file: 'data-kelas' },
-		{ matcher: '/asesmen-formatif', file: 'asesmen-formatif' },
-		{ matcher: '/asesmen-formatif/formulir-asesmen', file: 'form-formatif' },
-		{ matcher: '/asesmen-sumatif', file: 'asesmen-sumatif' },
-		{ matcher: '/asesmen-sumatif/formulir-asesmen', file: 'form-sumatif' },
-		{ matcher: '/nilai-akhir', file: 'nilai-akhir' },
-		{ matcher: '/nilai-akhir/daftar-nilai', file: 'daftar-nilai' },
-		{ matcher: '/absen', file: 'absen' },
-		{ matcher: '/nilai-ekstrakurikuler/form-asesmen', file: 'form-ekstra' },
-		{ matcher: '/nilai-ekstrakurikuler', file: 'nilai-ekstra' },
-		{ matcher: '/catatan-wali-kelas', file: 'catatan-wali' },
-		{ matcher: '/pengaturan', file: 'pengaturan' },
-		{ matcher: '/pengguna', file: 'pengguna' },
-		{ matcher: '/cetak', file: 'cetak' }
-	];
-
-	function resolveHelpFile(pathname: string): string | null {
-		for (const entry of helpMaps) {
-			if (typeof entry.matcher === 'string') {
-				if (pathname === entry.matcher) return entry.file;
-				continue;
-			}
-			if (entry.matcher.test(pathname)) {
-				return entry.file;
-			}
-		}
-		return null;
 	}
 
 	async function getHelpPage(fileName: string) {
