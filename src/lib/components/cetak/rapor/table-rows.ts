@@ -234,7 +234,7 @@ export function createTableRows(
 				});
 			}
 		} else {
-			// Regular tail block (kokurikuler, ketidakhadiran) 
+			// Regular tail block (kokurikuler, ketidakhadiran)
 			// Tanggapan dipisah jadi kind tersendiri
 			if (tailKey === 'tanggapan') {
 				result.push({
