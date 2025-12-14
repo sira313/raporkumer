@@ -37,6 +37,24 @@ const AGAMA_VARIANT_MAP: Record<string, string> = {
 	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
 };
 
+const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
+const PKS_MAPEL_VALUE = 'pks';
+
+const PKS_VARIANT_MAP: Record<string, string> = {
+	islam: 'Pendalaman Kitab Suci Islam',
+	kristen: 'Pendalaman Kitab Suci Kristen',
+	protestan: 'Pendalaman Kitab Suci Kristen',
+	katolik: 'Pendalaman Kitab Suci Katolik',
+	katholik: 'Pendalaman Kitab Suci Katolik',
+	hindu: 'Pendalaman Kitab Suci Hindu',
+	budha: 'Pendalaman Kitab Suci Buddha',
+	buddha: 'Pendalaman Kitab Suci Buddha',
+	buddhist: 'Pendalaman Kitab Suci Buddha',
+	khonghucu: 'Pendalaman Kitab Suci Khonghucu',
+	'khong hu cu': 'Pendalaman Kitab Suci Khonghucu',
+	konghucu: 'Pendalaman Kitab Suci Khonghucu'
+};
+
 function normalizeText(value: string | null | undefined) {
 	return value?.trim().toLowerCase() ?? '';
 }
@@ -45,9 +63,18 @@ function isAgamaSubject(name: string) {
 	return normalizeText(name).startsWith('pendidikan agama');
 }
 
+function isPksSubject(name: string) {
+	return normalizeText(name).startsWith('pendalaman kitab suci');
+}
+
 function resolveAgamaVariantName(agama: string | null | undefined) {
 	const normalized = normalizeText(agama);
 	return AGAMA_VARIANT_MAP[normalized] ?? null;
+}
+
+function resolvePksVariantName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return PKS_VARIANT_MAP[normalized] ?? null;
 }
 
 type ProgressCategory = 'sangat-baik' | 'baik' | 'perlu-pendalaman' | 'perlu-bimbingan';
@@ -271,6 +298,8 @@ export async function load({ parent, url, depends }) {
 
 	let agamaBaseMapel: (typeof mapelRecords)[number] | null = null;
 	const agamaVariantRecords: typeof mapelRecords = [];
+	let pksBaseMapel: (typeof mapelRecords)[number] | null = null;
+	const pksVariantRecords: typeof mapelRecords = [];
 	const regularOptions: Array<{ value: string; nama: string }> = [];
 
 	for (const record of mapelRecords) {
@@ -279,6 +308,12 @@ export async function load({ parent, url, depends }) {
 				agamaBaseMapel = record;
 			} else {
 				agamaVariantRecords.push(record);
+			}
+		} else if (isPksSubject(record.nama)) {
+			if (normalizeText(record.nama) === normalizeText(PKS_BASE_SUBJECT)) {
+				pksBaseMapel = record;
+			} else {
+				pksVariantRecords.push(record);
 			}
 		} else {
 			regularOptions.push({ value: String(record.id), nama: record.nama });
@@ -296,9 +331,17 @@ export async function load({ parent, url, depends }) {
 			mapelOptions.unshift({ value: AGAMA_MAPEL_VALUE, nama: AGAMA_BASE_SUBJECT });
 		}
 	}
+	if (pksBaseMapel || pksVariantRecords.length) {
+		const exists = mapelOptions.some(
+			(option) => normalizeText(option.nama) === normalizeText(PKS_BASE_SUBJECT)
+		);
+		if (!exists) {
+			mapelOptions.unshift({ value: PKS_MAPEL_VALUE, nama: PKS_BASE_SUBJECT });
+		}
+	}
 
-	// Build mapelByName to include agama variants even if they're not in mapelRecords
-	// This ensures pickMapelIdForMurid can find the correct mapel ID for students with agama assignment
+	// Build mapelByName to include agama and PKS variants even if they're not in mapelRecords
+	// This ensures pickMapelIdForMurid can find the correct mapel ID for students with agama/PKS assignment
 	const mapelByName = new Map(mapelRecords.map((record) => [normalizeText(record.nama), record]));
 
 	// Add agama variants to mapelByName if not already present
@@ -314,6 +357,22 @@ export async function load({ parent, url, depends }) {
 		const key = normalizeText(agamaBaseMapel.nama);
 		if (!mapelByName.has(key)) {
 			mapelByName.set(key, agamaBaseMapel);
+		}
+	}
+
+	// Add PKS variants to mapelByName if not already present
+	for (const record of pksVariantRecords) {
+		const key = normalizeText(record.nama);
+		if (!mapelByName.has(key)) {
+			mapelByName.set(key, record);
+		}
+	}
+
+	// Add PKS base subject to mapelByName if present
+	if (pksBaseMapel) {
+		const key = normalizeText(pksBaseMapel.nama);
+		if (!mapelByName.has(key)) {
+			mapelByName.set(key, pksBaseMapel);
 		}
 	}
 
@@ -366,15 +425,20 @@ export async function load({ parent, url, depends }) {
 	}
 
 	const isAgamaSelected = selectedMapelValue === AGAMA_MAPEL_VALUE;
+	const isPksSelected = selectedMapelValue === PKS_MAPEL_VALUE;
 	const selectedMapelRecord =
-		!isAgamaSelected && selectedMapelValue
+		!isAgamaSelected && !isPksSelected && selectedMapelValue
 			? (mapelRecords.find((record) => String(record.id) === selectedMapelValue) ?? null)
 			: null;
 	const selectedMapel = isAgamaSelected
 		? agamaBaseMapel
 			? { id: agamaBaseMapel.id, nama: agamaBaseMapel.nama }
 			: { id: null, nama: AGAMA_BASE_SUBJECT }
-		: selectedMapelRecord;
+		: isPksSelected
+			? pksBaseMapel
+				? { id: pksBaseMapel.id, nama: pksBaseMapel.nama }
+				: { id: null, nama: PKS_BASE_SUBJECT }
+			: selectedMapelRecord;
 
 	const muridRecords = await db.query.tableMurid.findMany({
 		columns: { id: true, nama: true, agama: true },
@@ -440,11 +504,17 @@ export async function load({ parent, url, depends }) {
 		...agamaVariantRecords.map((record) => record.id),
 		...(agamaBaseMapel ? [agamaBaseMapel.id] : [])
 	];
+	const pksMapelIds = [
+		...pksVariantRecords.map((record) => record.id),
+		...(pksBaseMapel ? [pksBaseMapel.id] : [])
+	];
 	const relevantMapelIds = isAgamaSelected
 		? Array.from(new Set(agamaMapelIds))
-		: selectedMapelRecord
-			? [selectedMapelRecord.id]
-			: [];
+		: isPksSelected
+			? Array.from(new Set(pksMapelIds))
+			: selectedMapelRecord
+				? [selectedMapelRecord.id]
+				: [];
 
 	const tujuanRecords = relevantMapelIds.length
 		? await db.query.tableTujuanPembelajaran.findMany({
@@ -512,20 +582,33 @@ export async function load({ parent, url, depends }) {
 	}
 
 	const pickMapelIdForMurid = (muridAgama: string | null | undefined): number | null => {
-		if (!isAgamaSelected) {
-			return selectedMapelRecord?.id ?? null;
-		}
-		const variantName = resolveAgamaVariantName(muridAgama);
-		if (variantName) {
-			const variantRecord = mapelByName.get(normalizeText(variantName));
-			if (variantRecord) {
-				return variantRecord.id;
+		if (isAgamaSelected) {
+			const variantName = resolveAgamaVariantName(muridAgama);
+			if (variantName) {
+				const variantRecord = mapelByName.get(normalizeText(variantName));
+				if (variantRecord) {
+					return variantRecord.id;
+				}
 			}
+			if (agamaBaseMapel) {
+				return agamaBaseMapel.id;
+			}
+			return agamaVariantRecords[0]?.id ?? null;
 		}
-		if (agamaBaseMapel) {
-			return agamaBaseMapel.id;
+		if (isPksSelected) {
+			const variantName = resolvePksVariantName(muridAgama);
+			if (variantName) {
+				const variantRecord = mapelByName.get(normalizeText(variantName));
+				if (variantRecord) {
+					return variantRecord.id;
+				}
+			}
+			if (pksBaseMapel) {
+				return pksBaseMapel.id;
+			}
+			return pksVariantRecords[0]?.id ?? null;
 		}
-		return agamaVariantRecords[0]?.id ?? null;
+		return selectedMapelRecord?.id ?? null;
 	};
 
 	const daftarMurid = paginatedMuridRecords.map((murid, index) => {
@@ -602,7 +685,35 @@ export async function load({ parent, url, depends }) {
 				return allowed ?? false;
 			}
 
-			// For non-agama mapel, check standard assignment
+			// If PKS is selected and user has assigned agama variants, restrict by agama (PKS follows same logic)
+			if (isPksSelected && allowedAgamaVariants.size > 0) {
+				const muridVariant = resolvePksVariantName(murid.agama);
+				const muridAgamaDisplay = muridVariant
+					? (() => {
+							const nm = normalizeText(muridVariant);
+							if (nm.includes('katolik')) return 'Katolik';
+							else if (nm.includes('kristen') || nm.includes('protestan')) return 'Kristen';
+							else if (nm.includes('islam')) return 'Islam';
+							else if (nm.includes('hindu')) return 'Hindu';
+							else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
+								return 'Buddha';
+							else if (
+								nm.includes('khonghucu') ||
+								nm.includes('konghucu') ||
+								nm.includes('khong hu cu')
+							)
+								return 'Khonghucu';
+							return null;
+						})()
+					: null;
+
+				// Allow access only if murid's agama is in user's assigned PKS variants
+				const allowed = muridAgamaDisplay && allowedAgamaVariants.has(muridAgamaDisplay);
+
+				return allowed ?? false;
+			}
+
+			// For non-agama and non-PKS mapel, check standard assignment
 			if (!assignedIsAgamaVariant) return true;
 			if (!assignedLocalMapelId) return false;
 			return targetMapelId === assignedLocalMapelId;
@@ -624,7 +735,7 @@ export async function load({ parent, url, depends }) {
 	});
 
 	const tujuanGroups =
-		!isAgamaSelected && selectedMapelRecord
+		!isAgamaSelected && !isPksSelected && selectedMapelRecord
 			? Array.from(
 					(groupedTujuanByMapel.get(selectedMapelRecord.id) ?? new Map()).entries(),
 					([lingkupMateri, tujuan]) => ({
@@ -635,7 +746,7 @@ export async function load({ parent, url, depends }) {
 			: [];
 
 	const jumlahTujuan =
-		!isAgamaSelected && selectedMapelRecord
+		!isAgamaSelected && !isPksSelected && selectedMapelRecord
 			? (tujuanByMapel.get(selectedMapelRecord.id)?.length ?? 0)
 			: 0;
 
