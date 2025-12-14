@@ -1,6 +1,5 @@
 import db from '$lib/server/db';
 import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama';
-import { ensurePksMapelForClasses } from '$lib/server/mapel-pks';
 import {
 	tableMataPelajaran,
 	tableTujuanPembelajaran,
@@ -25,7 +24,8 @@ export async function load({ depends, url, parent }) {
 	const daftarKelasEntries = daftarKelas as Array<{ id: number }> | undefined;
 	const kelasIdsForEnsure = daftarKelasEntries?.map((kelas) => kelas.id) ?? [];
 	await ensureAgamaMapelForClasses(kelasIdsForEnsure);
-	await ensurePksMapelForClasses(kelasIdsForEnsure);
+	// PKS tidak lagi otomatis ditambahkan, pengguna harus menambahkannya secara manual via tombol "Tambah PKS"
+	// await ensurePksMapelForClasses(kelasIdsForEnsure);
 	const fromQuery = url.searchParams.get('kelas_id');
 	const kelasCandidate = fromQuery ? Number(fromQuery) : (kelasAktif?.id ?? null);
 	const kelasId =
@@ -688,8 +688,12 @@ export const actions = {
 		if (!sekolahId) return fail(400, { fail: 'Pilih sekolah aktif terlebih dahulu.' });
 
 		const { addPksParentToClasses } = await import('$lib/server/mapel-pks.js');
-		await addPksParentToClasses([kelasId]);
+		const wasAdded = await addPksParentToClasses([kelasId]);
 
-		return { success: 'Mata pelajaran PKS berhasil ditambahkan ke kelas.' };
+		if (wasAdded) {
+			return { success: 'Mata pelajaran PKS berhasil ditambahkan ke kelas.' };
+		} else {
+			return { success: 'Mapel PKS sudah ada' };
+		}
 	}
 };
