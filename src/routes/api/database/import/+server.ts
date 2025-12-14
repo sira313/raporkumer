@@ -6,6 +6,7 @@ import { reloadDbClient } from '$lib/server/db';
 import { execFile } from 'node:child_process';
 import { cookieNames } from '$lib/utils';
 import { resolveSession } from '$lib/server/auth';
+import { createClient } from '@libsql/client';
 
 const DEFAULT_DB_URL = 'file:./data/database.sqlite3';
 
@@ -16,6 +17,18 @@ function resolveDatabasePath(url: string) {
 	}
 
 	throw error(500, 'Database URL tidak didukung untuk import');
+}
+
+async function checkpointWAL(dbUrl: string) {
+	try {
+		const client = createClient({ url: dbUrl });
+		// Force checkpoint to flush all WAL changes to main database file before backup
+		await client.execute({ sql: 'PRAGMA wal_checkpoint(FULL)' });
+		if (typeof client.close === 'function') await client.close();
+	} catch (err) {
+		console.warn('[import] WAL checkpoint warning:', err);
+		// Continue with backup even if checkpoint fails
+	}
 }
 
 export async function POST({ request, cookies }) {
@@ -62,6 +75,9 @@ export async function POST({ request, cookies }) {
 
 	const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 	const backupPath = join(dbDir, `database-backup-before-import-${timestamp}.sqlite3`);
+
+	// Checkpoint WAL before backup to ensure all changes are in main database file
+	await checkpointWAL(dbUrl);
 
 	try {
 		await copyFile(dbPath, backupPath);
