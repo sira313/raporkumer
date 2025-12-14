@@ -79,6 +79,27 @@ async function ensureTableExists(client, tableName, createSQL) {
 	}
 }
 
+async function ensureIndexExists(client, indexName, createIndexSQL) {
+	try {
+		const res = await client.execute({
+			sql: `SELECT name FROM sqlite_master WHERE type='index' AND name='${indexName}'`
+		});
+		if (res.rows && res.rows.length > 0) {
+			console.info(`[ensure-columns] Index ${indexName} already exists`);
+			return { created: false };
+		}
+
+		console.info(`[ensure-columns] Creating index ${indexName}`);
+		await client.execute({ sql: createIndexSQL });
+		console.info(`[ensure-columns] Created index ${indexName}`);
+		return { created: true };
+	} catch (err) {
+		const msg = err && (err.message || err.toString());
+		console.error(`[ensure-columns] Failed to create index ${indexName}:`, msg || err);
+		return { created: false, error: msg };
+	}
+}
+
 async function main() {
 	console.info('[ensure-columns] Target DB:', dbUrl);
 	const client = createClient({ url: dbUrl });
@@ -175,6 +196,134 @@ async function main() {
 		await client.execute({
 			sql: `CREATE INDEX IF NOT EXISTS "asesmen_keasramaan_keasramaan_idx" ON "asesmen_keasramaan" ("keasramaan_id")`
 		});
+
+		// ===== PERFORMANCE OPTIMIZATION INDEXES =====
+		// These indexes significantly improve query performance, especially on /pengguna page
+		// which performs heavy consolidation queries on every load
+		console.info('[ensure-columns] Creating performance optimization indexes...');
+
+		// auth_user table indexes - heavily queried for user management
+		await ensureIndexExists(
+			client,
+			'idx_auth_user_pegawai_id',
+			'CREATE INDEX IF NOT EXISTS "idx_auth_user_pegawai_id" ON "auth_user" ("pegawai_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_auth_user_type',
+			'CREATE INDEX IF NOT EXISTS "idx_auth_user_type" ON "auth_user" ("type")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_auth_user_kelas_id',
+			'CREATE INDEX IF NOT EXISTS "idx_auth_user_kelas_id" ON "auth_user" ("kelas_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_auth_user_mata_pelajaran_id',
+			'CREATE INDEX IF NOT EXISTS "idx_auth_user_mata_pelajaran_id" ON "auth_user" ("mata_pelajaran_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_auth_user_sekolah_id',
+			'CREATE INDEX IF NOT EXISTS "idx_auth_user_sekolah_id" ON "auth_user" ("sekolah_id")'
+		);
+
+		// kelas table indexes - frequently joined with wali_kelas queries
+		await ensureIndexExists(
+			client,
+			'idx_kelas_wali_kelas_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_wali_kelas_id" ON "kelas" ("wali_kelas_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_kelas_wali_asrama_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_wali_asrama_id" ON "kelas" ("wali_asrama_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_kelas_wali_asuh_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_wali_asuh_id" ON "kelas" ("wali_asuh_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_kelas_sekolah_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_sekolah_id" ON "kelas" ("sekolah_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_kelas_tahun_ajaran_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_tahun_ajaran_id" ON "kelas" ("tahun_ajaran_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_kelas_semester_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_semester_id" ON "kelas" ("semester_id")'
+		);
+
+		// murid table indexes
+		await ensureIndexExists(
+			client,
+			'idx_murid_kelas_id',
+			'CREATE INDEX IF NOT EXISTS "idx_murid_kelas_id" ON "murid" ("kelas_id")'
+		);
+
+		// mata_pelajaran table indexes
+		await ensureIndexExists(
+			client,
+			'idx_mata_pelajaran_kelas_id',
+			'CREATE INDEX IF NOT EXISTS "idx_mata_pelajaran_kelas_id" ON "mata_pelajaran" ("kelas_id")'
+		);
+
+		// tujuan_pembelajaran table indexes
+		await ensureIndexExists(
+			client,
+			'idx_tujuan_pembelajaran_mata_pelajaran_id',
+			'CREATE INDEX IF NOT EXISTS "idx_tujuan_pembelajaran_mata_pelajaran_id" ON "tujuan_pembelajaran" ("mata_pelajaran_id")'
+		);
+
+		// asesmen tables indexes
+		await ensureIndexExists(
+			client,
+			'idx_asesmen_formatif_murid_id',
+			'CREATE INDEX IF NOT EXISTS "idx_asesmen_formatif_murid_id" ON "asesmen_formatif" ("murid_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_asesmen_formatif_mata_pelajaran_id',
+			'CREATE INDEX IF NOT EXISTS "idx_asesmen_formatif_mata_pelajaran_id" ON "asesmen_formatif" ("mata_pelajaran_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_asesmen_sumatif_murid_id',
+			'CREATE INDEX IF NOT EXISTS "idx_asesmen_sumatif_murid_id" ON "asesmen_sumatif" ("murid_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_asesmen_sumatif_mata_pelajaran_id',
+			'CREATE INDEX IF NOT EXISTS "idx_asesmen_sumatif_mata_pelajaran_id" ON "asesmen_sumatif" ("mata_pelajaran_id")'
+		);
+
+		// tahun_ajaran table indexes
+		await ensureIndexExists(
+			client,
+			'idx_tahun_ajaran_sekolah_id',
+			'CREATE INDEX IF NOT EXISTS "idx_tahun_ajaran_sekolah_id" ON "tahun_ajaran" ("sekolah_id")'
+		);
+
+		// tasks table indexes
+		await ensureIndexExists(
+			client,
+			'idx_tasks_sekolah_id',
+			'CREATE INDEX IF NOT EXISTS "idx_tasks_sekolah_id" ON "tasks" ("sekolah_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_tasks_kelas_id',
+			'CREATE INDEX IF NOT EXISTS "idx_tasks_kelas_id" ON "tasks" ("kelas_id")'
+		);
+
+		console.info('[ensure-columns] Performance optimization indexes created successfully');
 
 		// Columns referenced by migrations that may be missing in older installed DBs.
 		// If missing, add them so subsequent migration UPDATE statements do not fail.
