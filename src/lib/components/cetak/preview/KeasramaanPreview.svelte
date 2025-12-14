@@ -85,12 +85,21 @@
 	 * Perform boundary detection after initial render
 	 */
 	async function performBoundaryDetection() {
-		if (!measurementContainer || isDetecting || keasramaanRows.length === 0) {
+		if (!measurementContainer || isDetecting) {
 			return;
 		}
 
 		isDetecting = true;
 		detectionComplete = false;
+
+		// Jika tidak ada data, langsung selesaikan detection dengan hasil kosong
+		if (keasramaanRows.length === 0) {
+			boundaryResult = { pages: [], totalPages: 0, measurements: [] };
+			detectionComplete = true;
+			isDetecting = false;
+			console.debug(`[Keasramaan-${instanceId}] No data, skipping detection`);
+			return;
+		}
 
 		try {
 			// Wait for DOM to fully render all rows
@@ -158,7 +167,7 @@
 
 	// Trigger detection when keasramaanRows change
 	$effect(() => {
-		if (keasramaanRows.length > 0 && measurementContainer) {
+		if (measurementContainer) {
 			detectionComplete = false;
 			// Reset to show measurement phase
 			boundaryResult = { pages: [], totalPages: 0, measurements: [] };
