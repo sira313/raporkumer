@@ -52,7 +52,10 @@
 	const disableNama = !kelasAktif || (mode === 'edit' && (isAgamaGroup || isPksGroup));
 	const disableJenis = !kelasAktif || (mode === 'edit' && isAgamaGroup);
 	const formAction = mode === 'edit' ? '?/update' : '?/add';
-	const invalidateTargets = mode === 'edit' ? ['app:mapel', 'app:mapel_tp-rl'] : ['app:mapel'];
+	const invalidateTargets =
+		mode === 'edit'
+			? ['app:mapel', 'app:mapel_tp-rl', 'app:asesmen-formatif']
+			: ['app:mapel', 'app:asesmen-formatif'];
 	const formInit =
 		mode === 'edit' && mapel
 			? {

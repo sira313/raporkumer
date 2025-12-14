@@ -99,7 +99,7 @@
 		showToast={true}
 		onsuccess={async ({ form }) => {
 			// revalidate the same dependency token used in the page load (depends('app:mapel'))
-			await invalidate('app:mapel');
+			await Promise.all([invalidate('app:mapel'), invalidate('app:asesmen-formatif')]);
 			onSuccess?.();
 			resetForm(form);
 			hideModal();

@@ -217,7 +217,10 @@
 								toast({ message: 'Menambahkan mata pelajaran PKS...', type: 'info' });
 								return async ({ result }) => {
 									if (result.type === 'success') {
-										await invalidate('app:mapel');
+										await Promise.all([
+											invalidate('app:mapel'),
+											invalidate('app:asesmen-formatif')
+										]);
 										const data = result.data as { success?: string } | undefined;
 										toast({
 											message: data?.success || 'Mata pelajaran PKS berhasil ditambahkan.',

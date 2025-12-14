@@ -13,7 +13,7 @@
 
 	let { data } = $props();
 	let confirmDelete = $state(false);
-	const invalidateTargets = ['app:mapel', 'app:mapel_tp-rl'];
+	const invalidateTargets = ['app:mapel', 'app:mapel_tp-rl', 'app:asesmen-formatif'];
 	const AGAMA_MAPEL_NAME_SET = new Set<string>(agamaMapelNames);
 	const isAgamaMapel = AGAMA_MAPEL_NAME_SET.has(data.mapel.nama);
 	const agamaLabel = agamaMapelLabelByName[data.mapel.nama] ?? '';

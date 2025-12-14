@@ -333,7 +333,9 @@ export async function load({ parent, url, depends }) {
 	regularOptions.sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
 
 	const mapelOptions = [...regularOptions];
-	if (agamaBaseMapel || agamaVariantRecords.length) {
+	// Only show "Pendidikan Agama dan Budi Pekerti" if we have the base mapel OR variant records
+	// that actually exist in the kelas (not deleted)
+	if (agamaBaseMapel || agamaVariantRecords.length > 0) {
 		const exists = mapelOptions.some(
 			(option) => normalizeText(option.nama) === normalizeText(AGAMA_BASE_SUBJECT)
 		);
@@ -341,7 +343,9 @@ export async function load({ parent, url, depends }) {
 			mapelOptions.unshift({ value: AGAMA_MAPEL_VALUE, nama: AGAMA_BASE_SUBJECT });
 		}
 	}
-	if (pksBaseMapel || pksVariantRecords.length) {
+	// Only show "Pendalaman Kitab Suci" if we have the base mapel OR variant records
+	// that actually exist in the kelas (not deleted)
+	if (pksBaseMapel || pksVariantRecords.length > 0) {
 		const exists = mapelOptions.some(
 			(option) => normalizeText(option.nama) === normalizeText(PKS_BASE_SUBJECT)
 		);
@@ -436,8 +440,13 @@ export async function load({ parent, url, depends }) {
 			selectedMapelValue = String(maybeUser.mataPelajaranId);
 		}
 	}
+	// If selected mapel value is not in the options list, redirect to reset the selection
 	if (selectedMapelValue && !mapelOptions.some((option) => option.value === selectedMapelValue)) {
-		selectedMapelValue = null;
+		// Remove invalid mapel_id from query params and redirect
+		const params = new URLSearchParams(url.searchParams);
+		params.delete('mapel_id');
+		params.delete('page'); // Also reset pagination
+		throw redirect(303, `${url.pathname}${params.size ? `?${params}` : ''}`);
 	}
 	if (!selectedMapelValue && mapelOptions.length) {
 		selectedMapelValue = mapelOptions[0].value;
