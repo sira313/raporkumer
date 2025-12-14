@@ -93,23 +93,69 @@ const CONTINUATION_PAGE_AVAILABLE =
 // = 881px
 ```
 
-## 🔍 Boundary Trigger
+## 🔍 Boundary Trigger dengan Overflow Tolerance
+
+### Konsep Tolerance
+
+Sistem menggunakan **overflow tolerance** untuk mengakomodasi perbedaan antara calculated height dan actual rendered height. Ini membuat sistem lebih robust terhadap variasi konten dinamis.
 
 ```typescript
-for (const measurement of measurements) {
-	const { row, bottom } = measurement;
+// Tolerance constants
+const INTRAK_OVERFLOW_TOLERANCE_PAGE1 = 150; // px (halaman 1)
+const INTRAK_OVERFLOW_TOLERANCE_OTHER = 100; // px (halaman 2+)
+const MIN_REMAINING_SPACE = 100; // px (untuk tail blocks)
 
-	// TRIGGER: bottom row melebihi availableHeight?
-	if (bottom > boundary.availableHeight) {
+for (const measurement of measurements) {
+	const { row, height } = measurement;
+
+	// Hitung total jika row ditambahkan
+	const totalWithRow = currentPageHeight + height;
+	const overflow = totalWithRow - boundary.availableHeight;
+
+	// Cek exceed dengan tolerance
+	let wouldExceed = false;
+
+	if (row.kind === 'intrak' || row.kind === 'intrak-group-header') {
+		// Intrakurikuler: gunakan tolerance (150px untuk page 1, 100px lainnya)
+		const tolerance = pageIndex === 0 ? 150 : 100;
+		wouldExceed = overflow > tolerance;
+	} else if (row.kind === 'tail') {
+		// Tail blocks: butuh min 100px remaining space
+		wouldExceed = currentPageHeight + height + 100 > boundary.availableHeight;
+	} else {
+		// Others: exact check
+		wouldExceed = overflow > 0;
+	}
+
+	if (wouldExceed) {
 		// SPLIT ke halaman baru
 		pages.push({ rows: currentPageRows });
 		currentPageRows = [row];
+		currentPageHeight = height; // reset
 	} else {
 		// TAMBAHKAN ke halaman saat ini
 		currentPageRows.push(row);
+		currentPageHeight += height;
 	}
 }
 ```
+
+### Rationale Tolerance
+
+**Mengapa perlu tolerance?**
+
+1. **HEIGHTS constants** (header, identity table, dll) adalah estimasi static yang tidak selalu match dengan actual rendered height
+2. **Konten dinamis** dalam tabel (panjang teks berbeda per murid) membuat measurement tidak 100% presisi
+3. **CSS rendering quirks** seperti line-height, padding collapse, border spacing bisa menambah beberapa pixel
+4. **Better UX**: Lebih baik sedikit overflow (masih visible) daripada split terlalu dini (ruang kosong besar)
+
+**Tolerance values:**
+
+- **Page 1: 150px** (~1 row intrakurikuler) - paling toleran karena HEIGHTS offset calculation
+- **Page 2+: 100px** (~0.7 row) - cukup toleran untuk continuation pages
+- **Tail blocks: MIN_REMAINING_SPACE 100px** - strict untuk mencegah tail "mepet" lalu row berikutnya overflow
+
+````
 
 ## 🛡️ Orphan Prevention
 
@@ -127,7 +173,7 @@ if (lastRow.kind === 'intrak-group-header' || lastRow.kind === 'ekstrakurikuler-
 	// Mulai halaman baru dengan: header + row berikutnya
 	currentPageRows = [header, nextRow];
 }
-```
+````
 
 ## 🎨 Two-Phase Rendering
 
@@ -208,12 +254,19 @@ Lihat console untuk info pagination:
 }
 ```
 
+### Status Codes
+
+- **✅ OK**: Remaining space ≥ 0
+- **⚠️ TIGHT**: Overflow dalam tolerance (-150px untuk page 1, -100px lainnya)
+- **❌ OVERFLOW**: Overflow melebihi tolerance
+
 ## ⚠️ Trade-offs
 
 ### Kelebihan ✅
 
-- Akurasi tinggi (ukuran aktual)
-- Tidak ada ruang kosong berlebih
+- Akurasi tinggi (ukuran aktual dari DOM)
+- Tidak ada ruang kosong berlebih (optimal space utilization)
+- Tolerance mechanism untuk konten dinamis (robust)
 - Tidak ada overflow
 - Adaptif dengan perubahan style
 - Tidak perlu manual calibration
@@ -239,6 +292,23 @@ Sudah dioptimasi dengan:
 - Offscreen rendering untuk measurement
 - Efficient DOM queries dengan `data-row-order`
 
+## � Fine-tuning Tolerance (Jika Diperlukan)
+
+Jika ada masalah split terlalu dini atau overflow pada murid tertentu:
+
+```typescript
+// Adjust di rapor-boundary-detection.ts
+const INTRAK_OVERFLOW_TOLERANCE_PAGE1 = 150; // Naikkan jika split terlalu dini
+const INTRAK_OVERFLOW_TOLERANCE_OTHER = 100; // Naikkan untuk page 2+
+const MIN_REMAINING_SPACE = 100; // Turunkan jika tail split terlalu dini
+```
+
+**Rekomendasi:**
+
+- Tolerance 150px/100px sudah cukup universal untuk mayoritas kasus
+- Test dengan berbagai murid (konten pendek, sedang, panjang)
+- Check console log `⚠️ TIGHT` atau `❌ OVERFLOW` untuk identifikasi masalah
+
 ## 📝 Cara Menggunakan
 
 Sistem ini sudah terintegrasi di `RaporPreviewFixed.svelte`. Tidak perlu konfigurasi tambahan:
@@ -249,11 +319,12 @@ Sistem ini sudah terintegrasi di `RaporPreviewFixed.svelte`. Tidak perlu konfigu
 
 Komponen akan:
 
-1. Render measurement phase (hidden)
-2. Measure semua rows
-3. Detect boundaries
-4. Re-render dengan pagination yang benar
-5. Callback `onPrintableReady` setelah selesai
+1. Render measurement phase (hidden, 150ms)
+2. Measure semua rows dengan `getBoundingClientRect()`
+3. Detect boundaries dengan tolerance
+4. Render display phase (paginated result)
+5. Re-render dengan pagination yang benar
+6. Callback `onPrintableReady` setelah selesai
 
 ---
 
