@@ -10,6 +10,7 @@ import {
 import { unflattenFormData } from '$lib/utils.js';
 import { error, fail } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
+import { authority } from '../../../../pengguna/utils.server';
 
 type TingkatOption = { fase: string; label: string };
 
@@ -111,6 +112,8 @@ function resolveEffectiveSemesterId(
 }
 
 export async function load({ params, locals }) {
+	authority('kelas_manage');
+
 	const meta: PageMeta = { title: 'Form Kelas' };
 	const jenjang = locals.sekolah?.jenjangPendidikan as
 		| keyof typeof tingkatOptionsByJenjang
@@ -201,6 +204,8 @@ export async function load({ params, locals }) {
 
 export const actions = {
 	async save({ request, params, locals }) {
+		authority('kelas_manage');
+
 		if (!locals.sekolah?.id) error(400, `Sekolah aktif tidak ditemukan`);
 
 		const formData = unflattenFormData<KelasFormInput>(await request.formData());

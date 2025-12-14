@@ -3,8 +3,10 @@ import { tableAlamat, tablePegawai, tableSekolah } from '$lib/server/db/schema.j
 import { cookieNames, unflattenFormData } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
+import { authority } from '../../../pengguna/utils.server';
 
 export async function load({ url, locals }) {
+	authority('sekolah_manage');
 	const isInit = url.searchParams.has('init');
 	const isNew = url.searchParams.get('mode') === 'new';
 	const sekolahIdParam = url.searchParams.get('sekolahId');
@@ -45,6 +47,8 @@ export async function load({ url, locals }) {
 
 export const actions = {
 	async save({ locals, cookies, request }) {
+		authority('sekolah_manage');
+
 		const formData = await request.formData();
 		const formSekolah = unflattenFormData<Sekolah>(formData);
 

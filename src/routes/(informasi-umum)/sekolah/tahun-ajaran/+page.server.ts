@@ -3,6 +3,7 @@ import { tableKelas, tableSekolah, tableSemester, tableTahunAjaran } from '$lib/
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
+import { authority } from '../../../pengguna/utils.server';
 
 const meta: PageMeta = {
 	title: 'Tahun Ajaran',
@@ -43,6 +44,8 @@ async function getTahunAjaran(sekolahId: number): Promise<TahunAjaranWithMeta[]>
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {
+	authority('sekolah_manage');
+
 	const sekolahList = await db.query.tableSekolah.findMany({
 		columns: { id: true, nama: true },
 		orderBy: [desc(tableSekolah.id)]
@@ -88,6 +91,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
 	create: async ({ request }) => {
+		authority('sekolah_manage');
+
 		const formData = await request.formData();
 		const nama = (formData.get('nama') as string | null)?.trim();
 		const sekolahId = Number(formData.get('sekolahId'));
@@ -139,6 +144,8 @@ export const actions: Actions = {
 		};
 	},
 	update: async ({ request }) => {
+		authority('sekolah_manage');
+
 		const formData = await request.formData();
 		const tahunAjaranId = Number(formData.get('id'));
 		const sekolahId = Number(formData.get('sekolahId'));
@@ -172,6 +179,8 @@ export const actions: Actions = {
 		};
 	},
 	delete: async ({ request }) => {
+		authority('sekolah_manage');
+
 		const formData = await request.formData();
 		const sekolahId = Number(formData.get('sekolahId'));
 		const idsRaw = formData.getAll('ids');
