@@ -52,6 +52,12 @@
 	let searchTerm = $state(data.page.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
+	// Restrict editing for wali_asuh
+	const canEdit = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null | undefined;
+		return u?.type !== 'wali_asuh';
+	});
+
 	// Modal / bobot sumatif state
 	let showBobotModal = $state(false);
 	let bobotLingkup = $state<number>(60);
@@ -512,7 +518,13 @@
 			{/if}
 		</div>
 		<div class="flex items-center gap-2">
-			<button type="button" class="btn btn-soft shadow-none" onclick={openBobotModal}>
+			<button
+				type="button"
+				class="btn btn-soft shadow-none"
+				onclick={openBobotModal}
+				disabled={!canEdit}
+				title={!canEdit ? 'Anda tidak memiliki izin untuk mengatur bobot' : ''}
+			>
 				<Icon name="gear" />
 				Atur Bobot
 			</button>
@@ -544,11 +556,21 @@
 			{/if}
 		</form>
 		<div class="flex flex-col gap-2 sm:flex-row">
-			<button class="btn btn-soft shadow-none" onclick={downloadTemplate}>
+			<button
+				class="btn btn-soft shadow-none"
+				onclick={downloadTemplate}
+				disabled={!canEdit}
+				title={!canEdit ? 'Anda tidak memiliki izin' : ''}
+			>
 				<Icon name="download" />
 				Download Template
 			</button>
-			<button class="btn btn-soft shadow-none" onclick={openImportModal}>
+			<button
+				class="btn btn-soft shadow-none"
+				onclick={openImportModal}
+				disabled={!canEdit}
+				title={!canEdit ? 'Anda tidak memiliki izin' : ''}
+			>
 				<Icon name="import" />
 				Import Nilai
 			</button>
@@ -639,7 +661,7 @@
 								{/if}
 							</td>
 							<td>
-								{#if murid.nilaiHref && murid.canNilai}
+								{#if murid.nilaiHref && murid.canNilai && canEdit}
 									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- intentional prebuilt href -->
 									<a class="btn btn-sm btn-soft shadow-none" href={murid.nilaiHref}>
 										<Icon name="edit" />
@@ -650,11 +672,13 @@
 										type="button"
 										class="btn btn-sm btn-disabled"
 										disabled
-										title={murid.canNilai
-											? 'Pilih mata pelajaran'
-											: data.allowedAgamaForUser
-												? `Hanya untuk murid beragama ${data.allowedAgamaForUser}`
-												: 'Anda tidak memiliki izin untuk menilai murid ini'}
+										title={!canEdit
+											? 'Anda tidak memiliki izin untuk menilai'
+											: murid.canNilai
+												? 'Pilih mata pelajaran'
+												: data.allowedAgamaForUser
+													? `Hanya untuk murid beragama ${data.allowedAgamaForUser}`
+													: 'Anda tidak memiliki izin untuk menilai murid ini'}
 									>
 										<Icon name="edit" />
 										Nilai

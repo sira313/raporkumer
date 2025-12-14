@@ -10,11 +10,15 @@ import {
 import { unflattenFormData } from '$lib/utils.js';
 import { error, fail } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
+import { authority } from '../../../../pengguna/utils.server';
 
 type TingkatOption = { fase: string; label: string };
 
-// Include 'slb' explicitly so SLB schools get the correct phase options
-const tingkatOptionsByJenjang: Record<'sd' | 'smp' | 'sma' | 'slb' | 'pkbm', TingkatOption[]> = {
+// Include 'slb' and 'srt' explicitly so those schools get the correct phase options
+const tingkatOptionsByJenjang: Record<
+	'sd' | 'smp' | 'sma' | 'slb' | 'pkbm' | 'srt',
+	TingkatOption[]
+> = {
 	sd: [
 		{ fase: 'Fase A', label: 'Fase A' },
 		{ fase: 'Fase B', label: 'Fase B' },
@@ -37,6 +41,14 @@ const tingkatOptionsByJenjang: Record<'sd' | 'smp' | 'sma' | 'slb' | 'pkbm', Tin
 		{ fase: 'Fase E', label: 'Fase E' },
 		{ fase: 'Fase F', label: 'Fase F' }
 	],
+	srt: [
+		{ fase: 'Fase A', label: 'Fase A' },
+		{ fase: 'Fase B', label: 'Fase B' },
+		{ fase: 'Fase C', label: 'Fase C' },
+		{ fase: 'Fase D', label: 'Fase D' },
+		{ fase: 'Fase E', label: 'Fase E' },
+		{ fase: 'Fase F', label: 'Fase F' }
+	],
 	smp: [{ fase: 'Fase D', label: 'Fase D' }],
 	sma: [
 		{ fase: 'Fase E', label: 'Fase E' },
@@ -48,6 +60,8 @@ type KelasFormInput = {
 	rombel?: string;
 	fase?: string;
 	waliKelas?: Partial<Pick<Pegawai, 'nama' | 'nip'>>;
+	waliAsrama?: Partial<Pick<Pegawai, 'nama' | 'nip'>>;
+	waliAsuh?: Partial<Pick<Pegawai, 'nama' | 'nip'>>;
 };
 
 type TahunAjaranOption = typeof tableTahunAjaran.$inferSelect & {
@@ -98,6 +112,8 @@ function resolveEffectiveSemesterId(
 }
 
 export async function load({ params, locals }) {
+	authority('kelas_manage');
+
 	const meta: PageMeta = { title: 'Form Kelas' };
 	const jenjang = locals.sekolah?.jenjangPendidikan as
 		| keyof typeof tingkatOptionsByJenjang
@@ -113,6 +129,8 @@ export async function load({ params, locals }) {
 	let kelas = null as
 		| (typeof tableKelas.$inferSelect & {
 				waliKelas: Pegawai | null;
+				waliAsrama: Pegawai | null;
+				waliAsuh: Pegawai | null;
 				semester?: typeof tableSemester.$inferSelect | null;
 				tahunAjaran?: typeof tableTahunAjaran.$inferSelect | null;
 		  })
@@ -121,7 +139,7 @@ export async function load({ params, locals }) {
 	if (params?.id) {
 		const kelasRow = await db.query.tableKelas.findFirst({
 			where: and(eq(tableKelas.id, +params.id), eq(tableKelas.sekolahId, sekolahId)),
-			with: { waliKelas: true, semester: true, tahunAjaran: true }
+			with: { waliKelas: true, waliAsrama: true, waliAsuh: true, semester: true, tahunAjaran: true }
 		});
 		if (!kelasRow) error(404, `Data kelas tidak ditemukan`);
 		kelas = kelasRow;
@@ -168,12 +186,26 @@ export async function load({ params, locals }) {
 			nip: kelas.waliKelas.nip
 		};
 	}
+	if (kelas?.waliAsrama) {
+		formInit.waliAsrama = {
+			nama: kelas.waliAsrama.nama,
+			nip: kelas.waliAsrama.nip
+		};
+	}
+	if (kelas?.waliAsuh) {
+		formInit.waliAsuh = {
+			nama: kelas.waliAsuh.nama,
+			nip: kelas.waliAsuh.nip
+		};
+	}
 
 	return { meta, tingkatOptions, kelas, academicLock, formInit };
 }
 
 export const actions = {
 	async save({ request, params, locals }) {
+		authority('kelas_manage');
+
 		if (!locals.sekolah?.id) error(400, `Sekolah aktif tidak ditemukan`);
 
 		const formData = unflattenFormData<KelasFormInput>(await request.formData());
@@ -181,6 +213,10 @@ export const actions = {
 		const fase = formData.fase?.trim() || null;
 		const waliNama = formData.waliKelas?.nama?.trim() || '';
 		const waliNip = formData.waliKelas?.nip?.trim() || '';
+		const waliAsramaNama = formData.waliAsrama?.nama?.trim() || '';
+		const waliAsramaNip = formData.waliAsrama?.nip?.trim() || '';
+		const waliAsuhNama = formData.waliAsuh?.nama?.trim() || '';
+		const waliAsuhNip = formData.waliAsuh?.nip?.trim() || '';
 
 		if (!rombel) {
 			return fail(400, { fail: `Nama rombel wajib diisi.` });
@@ -194,8 +230,24 @@ export const actions = {
 			});
 		}
 
+		// Validasi wali asrama: jika mengisi NIP asrama, harus mengisi nama asrama
+		if (!waliAsramaNama && waliAsramaNip) {
+			return fail(400, {
+				fail: `Jika mengisi NIP wali asrama, lengkapi juga nama wali asrama.`
+			});
+		}
+
+		// Validasi wali asuh: jika mengisi NIP asuh, harus mengisi nama asuh
+		if (!waliAsuhNama && waliAsuhNip) {
+			return fail(400, {
+				fail: `Jika mengisi NIP wali asuh, lengkapi juga nama wali asuh.`
+			});
+		}
+
 		// Consider there is a wali when a name is provided. NIP is optional.
 		const hasWali = Boolean(waliNama);
+		const hasWaliAsrama = Boolean(waliAsramaNama);
+		const hasWaliAsuh = Boolean(waliAsuhNama);
 
 		const timestamp = new Date().toISOString();
 		const sekolahId = locals.sekolah.id;
@@ -263,13 +315,17 @@ export const actions = {
 				const kelas = await tx.query.tableKelas.findFirst({
 					columns: {
 						id: true,
-						waliKelasId: true
+						waliKelasId: true,
+						waliAsramaId: true,
+						waliAsuhId: true
 					},
 					where: and(eq(tableKelas.id, +params.id), eq(tableKelas.sekolahId, sekolahId))
 				});
 				if (!kelas) error(404, `Data kelas tidak ditemukan`);
 
 				let waliKelasId = kelas.waliKelasId ?? null;
+				let waliAsramaId = kelas.waliAsramaId ?? null;
+				let waliAsuhId = kelas.waliAsuhId ?? null;
 
 				if (hasWali) {
 					if (waliKelasId) {
@@ -288,6 +344,40 @@ export const actions = {
 					waliKelasId = null;
 				}
 
+				if (hasWaliAsrama) {
+					if (waliAsramaId) {
+						await tx
+							.update(tablePegawai)
+							.set({ nama: waliAsramaNama, nip: waliAsramaNip, updatedAt: timestamp })
+							.where(eq(tablePegawai.id, waliAsramaId));
+					} else {
+						const [pegawai] = await tx
+							.insert(tablePegawai)
+							.values({ nama: waliAsramaNama, nip: waliAsramaNip, updatedAt: timestamp })
+							.returning({ id: tablePegawai.id });
+						waliAsramaId = pegawai?.id ?? null;
+					}
+				} else {
+					waliAsramaId = null;
+				}
+
+				if (hasWaliAsuh) {
+					if (waliAsuhId) {
+						await tx
+							.update(tablePegawai)
+							.set({ nama: waliAsuhNama, nip: waliAsuhNip, updatedAt: timestamp })
+							.where(eq(tablePegawai.id, waliAsuhId));
+					} else {
+						const [pegawai] = await tx
+							.insert(tablePegawai)
+							.values({ nama: waliAsuhNama, nip: waliAsuhNip, updatedAt: timestamp })
+							.returning({ id: tablePegawai.id });
+						waliAsuhId = pegawai?.id ?? null;
+					}
+				} else {
+					waliAsuhId = null;
+				}
+
 				await tx
 					.update(tableKelas)
 					.set({
@@ -295,6 +385,8 @@ export const actions = {
 						fase,
 						sekolahId,
 						waliKelasId,
+						waliAsramaId,
+						waliAsuhId,
 						tahunAjaranId,
 						semesterId,
 						updatedAt: timestamp
@@ -302,12 +394,31 @@ export const actions = {
 					.where(eq(tableKelas.id, kelas.id));
 			} else {
 				let waliKelasId: number | null = null;
+				let waliAsramaId: number | null = null;
+				let waliAsuhId: number | null = null;
+
 				if (hasWali) {
 					const [pegawai] = await tx
 						.insert(tablePegawai)
 						.values({ nama: waliNama, nip: waliNip, updatedAt: timestamp })
 						.returning({ id: tablePegawai.id });
 					waliKelasId = pegawai?.id ?? null;
+				}
+
+				if (hasWaliAsrama) {
+					const [pegawai] = await tx
+						.insert(tablePegawai)
+						.values({ nama: waliAsramaNama, nip: waliAsramaNip, updatedAt: timestamp })
+						.returning({ id: tablePegawai.id });
+					waliAsramaId = pegawai?.id ?? null;
+				}
+
+				if (hasWaliAsuh) {
+					const [pegawai] = await tx
+						.insert(tablePegawai)
+						.values({ nama: waliAsuhNama, nip: waliAsuhNip, updatedAt: timestamp })
+						.returning({ id: tablePegawai.id });
+					waliAsuhId = pegawai?.id ?? null;
 				}
 
 				await tx.insert(tableKelas).values({
@@ -317,6 +428,8 @@ export const actions = {
 					tahunAjaranId,
 					semesterId,
 					waliKelasId,
+					waliAsramaId,
+					waliAsuhId,
 					updatedAt: timestamp
 				});
 			}

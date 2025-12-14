@@ -5,7 +5,7 @@
 		type DeleteSekolahModalHandle
 	} from '$lib/components/sekolah/delete-sekolah-modal.svelte';
 	import type { SekolahCard } from '$lib/components/sekolah/types';
-	import { jenjangPendidikanSederajat } from '$lib/statics.js';
+	import { jenjangPendidikanSederajat, nauganLabelByKey } from '$lib/statics.js';
 
 	import { page } from '$app/state';
 
@@ -139,6 +139,13 @@
 									{:else}
 										{getJenjangLabel(sekolah.jenjangPendidikan)}
 									{/if}
+								</span>
+							</div>
+
+							<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-3">
+								<span class="text-base-content/70 font-semibold">Naungan</span>
+								<span class="text-base-content md:col-span-2">
+									{nauganLabelByKey[sekolah.naungan as keyof typeof nauganLabelByKey] ?? '-'}
 								</span>
 							</div>
 

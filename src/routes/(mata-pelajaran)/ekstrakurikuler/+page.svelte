@@ -47,6 +47,11 @@
 	const anySelected = $derived.by(() => selectedIds.length > 0);
 	const allSelected = $derived.by(() => totalData > 0 && selectedIds.length === totalData);
 	const canManage = $derived.by(() => data.tableReady && !!data.kelasId);
+	// Restrict editing for wali_asuh
+	const canEdit = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null | undefined;
+		return u?.type !== 'wali_asuh';
+	});
 	const addSaveDisabled = $derived.by(
 		() => addSubmitting || !addNamaInput.trim() || !data.kelasId || !data.tableReady
 	);
@@ -244,9 +249,10 @@
 			{#if anySelected}
 				<button
 					type="button"
-					class={`btn w-full shadow-none sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
-					disabled={bulkDeleteDisabled}
+					class={`btn w-full shadow-none sm:w-fit ${bulkDeleteDisabled || !canEdit ? '' : 'btn-soft btn-error'}`}
+					disabled={bulkDeleteDisabled || !canEdit}
 					onclick={openBulkDeleteModal}
+					title={!canEdit ? 'Anda tidak memiliki izin untuk menghapus' : ''}
 				>
 					<Icon name="del" />
 					Hapus
@@ -254,8 +260,9 @@
 			{:else}
 				<button
 					class="btn btn-soft rounded-r-none shadow-none"
-					disabled={!canManage}
+					disabled={!canManage || !canEdit}
 					onclick={toggleAddRow}
+					title={!canEdit ? 'Anda tidak memiliki izin untuk menambah' : ''}
 				>
 					<Icon name="plus" />
 					Tambah
@@ -264,12 +271,12 @@
 				<!-- dropdown untuk import dan export -->
 				<div class="dropdown dropdown-end">
 					<button
-						title="Export dan Import ekstrakurikuler"
+						title={!canEdit ? 'Anda tidak memiliki izin' : 'Export dan Import ekstrakurikuler'}
 						type="button"
 						tabindex="0"
-						class={`btn btn-soft rounded-l-none shadow-none ${!canManage ? 'opacity-50' : ''}`}
-						disabled={!canManage}
-						aria-disabled={!canManage}
+						class={`btn btn-soft rounded-l-none shadow-none ${!canManage || !canEdit ? 'opacity-50' : ''}`}
+						disabled={!canManage || !canEdit}
+						aria-disabled={!canManage || !canEdit}
 					>
 						<Icon name="down" />
 					</button>
@@ -517,10 +524,12 @@
 						<td>
 							<a
 								href={`ekstrakurikuler/tp-ekstra?ekstrakurikulerId=${item.id}`}
-								class={`btn btn-sm btn-soft shadow-none ${!canManage ? 'btn-disabled pointer-events-none opacity-60' : ''}`}
-								title="Atur tujuan ekstrakurikuler"
-								aria-disabled={!canManage}
-								tabindex={canManage ? undefined : -1}
+								class={`btn btn-sm btn-soft shadow-none ${!canManage || !canEdit ? 'btn-disabled pointer-events-none opacity-60' : ''}`}
+								title={!canEdit
+									? 'Anda tidak memiliki izin untuk mengedit'
+									: 'Atur tujuan ekstrakurikuler'}
+								aria-disabled={!canManage || !canEdit}
+								tabindex={canManage && canEdit ? undefined : -1}
 							>
 								<Icon name="book" />
 								Edit TP
@@ -553,9 +562,11 @@
 								<button
 									class="btn btn-sm btn-soft rounded-r-none shadow-none"
 									type="button"
-									title="Edit ekstrakurikuler"
+									title={!canEdit
+										? 'Anda tidak memiliki izin untuk mengedit'
+										: 'Edit ekstrakurikuler'}
 									aria-label="Edit ekstrakurikuler"
-									disabled={!canManage}
+									disabled={!canManage || !canEdit}
 									onclick={() => startEditRow(item)}
 								>
 									<Icon name="edit" />
@@ -563,9 +574,11 @@
 								<button
 									class="btn btn-sm btn-soft btn-error rounded-l-none shadow-none"
 									type="button"
-									title="Hapus ekstrakurikuler"
+									title={!canEdit
+										? 'Anda tidak memiliki izin untuk menghapus'
+										: 'Hapus ekstrakurikuler'}
 									aria-label="Hapus ekstrakurikuler"
-									disabled={!canManage}
+									disabled={!canManage || !canEdit}
 									onclick={() => openSingleDeleteModal(item)}
 								>
 									<Icon name="del" />

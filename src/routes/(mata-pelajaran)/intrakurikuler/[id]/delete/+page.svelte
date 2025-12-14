@@ -1,6 +1,7 @@
 <script lang="ts">
 	/* eslint-disable svelte/no-navigation-without-resolve -- delete page intentionally uses goto for redirect */
 	import { goto, invalidate } from '$app/navigation';
+	import { page } from '$app/state';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import {
@@ -12,10 +13,24 @@
 
 	let { data } = $props();
 	let confirmDelete = $state(false);
-	const invalidateTargets = ['app:mapel', 'app:mapel_tp-rl'];
+	const invalidateTargets = ['app:mapel', 'app:mapel_tp-rl', 'app:asesmen-formatif'];
 	const AGAMA_MAPEL_NAME_SET = new Set<string>(agamaMapelNames);
 	const isAgamaMapel = AGAMA_MAPEL_NAME_SET.has(data.mapel.nama);
 	const agamaLabel = agamaMapelLabelByName[data.mapel.nama] ?? '';
+
+	// Dapatkan jenjang varian dari sekolah (misalnya 'SMK')
+	const jenjangVariant = $derived.by(() => {
+		const sekolah = page.data.sekolah as { jenjangVariant?: string | null } | null | undefined;
+		return sekolah?.jenjangVariant ?? null;
+	});
+
+	// Fungsi untuk mendapatkan label jenis mapel yang dinamis berdasarkan jenjang
+	function getJenisMapelLabel(jenis: string): string {
+		if (jenis === 'wajib' && jenjangVariant?.toUpperCase() === 'SMK') {
+			return 'Mata Pelajaran Umum';
+		}
+		return jenisMapel[jenis as MataPelajaran['jenis']] ?? jenis;
+	}
 </script>
 
 <FormEnhance
@@ -33,7 +48,7 @@
 		<h3 class="mb-4 text-xl font-bold">Hapus data mata pelajaran:</h3>
 		<p>Nama: {data.mapel.nama}</p>
 		<p>KKM: {data.mapel.kkm}</p>
-		<p>Jenis: {jenisMapel[data.mapel.jenis]}</p>
+		<p>Jenis: {getJenisMapelLabel(data.mapel.jenis)}</p>
 
 		{#if isAgamaMapel}
 			<div class="alert alert-warning mt-4 items-start gap-3" role="alert">

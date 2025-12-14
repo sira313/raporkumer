@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
 
-	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam';
+	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan';
 
 	type MuridData = {
 		id: number;
@@ -51,7 +51,8 @@
 		{ value: 'cover', label: 'Cover' },
 		{ value: 'biodata', label: 'Biodata' },
 		{ value: 'rapor', label: 'Rapor' },
-		{ value: 'piagam', label: 'Piagam' }
+		{ value: 'piagam', label: 'Piagam' },
+		{ value: 'keasramaan', label: 'Rapor Keasramaan' }
 	];
 
 	const isPiagamSelected = $derived.by(() => selectedDocument === 'piagam');

@@ -7,7 +7,11 @@ const dataDir = path.join(__dirname, '../data');
 
 try {
 	const files = fs.readdirSync(dataDir);
-	const sqliteFiles = files.filter((file) => file.endsWith('.sqlite3'));
+	// Include SQLite database files and WAL (Write-Ahead Log) related files
+	const sqliteFiles = files.filter(
+		(file) =>
+			file.endsWith('.sqlite3') || file.endsWith('.sqlite3-shm') || file.endsWith('.sqlite3-wal')
+	);
 
 	if (sqliteFiles.length === 0) {
 		console.log('✓ No SQLite files to clean up');

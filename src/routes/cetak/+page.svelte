@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable @typescript-eslint/no-unused-vars */
 	// preview parameter building uses SvelteURLSearchParams; no file-level ESLint disables needed
 	import { page } from '$app/state';
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
@@ -9,48 +10,52 @@
 	import { printElement } from '$lib/utils';
 	import { toast } from '$lib/components/toast.svelte';
 	import { onDestroy, tick, onMount } from 'svelte';
+	import {
+		loadSinglePreview,
+		resetPreviewState,
+		isPreviewableDocument,
+		buildPreviewButtonTitle,
+		type DocumentType,
+		type MuridData,
+		type PreviewPayload
+	} from '$lib/single-preview-logic';
+	import {
+		loadBulkPreviews_robust,
+		buildBulkErrorMessage,
+		buildBulkSuccessMessage,
+		type BulkPreviewRequest
+	} from '$lib/bulk-preview-logic';
+	import {
+		createPreviewURLSearchParams,
+		type RaporCriteria,
+		DEFAULT_RAPOR_CRITERIA
+	} from '$lib/rapor-params';
 
 	let { data } = $props();
-
-	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam';
-	type MuridData = {
-		id: number;
-		nama: string;
-		nis?: string | null;
-		nisn?: string | null;
-	};
-	type PreviewPayload = {
-		meta?: { title?: string | null } | null;
-		coverData?: NonNullable<App.PageData['coverData']> | null;
-		biodataData?: NonNullable<App.PageData['biodataData']> | null;
-		raporData?: NonNullable<App.PageData['raporData']> | null;
-		piagamData?: NonNullable<App.PageData['piagamData']> | null;
-	};
 
 	const documentOptions: Array<{ value: DocumentType; label: string }> = [
 		{ value: 'cover', label: 'Cover' },
 		{ value: 'biodata', label: 'Biodata' },
 		{ value: 'rapor', label: 'Rapor' },
-		{ value: 'piagam', label: 'Piagam' }
+		{ value: 'piagam', label: 'Piagam' },
+		{ value: 'keasramaan', label: 'Rapor Keasramaan' }
 	];
 
 	const documentPaths: Record<DocumentType, string> = {
 		cover: '/cetak/cover',
 		biodata: '/cetak/biodata',
 		rapor: '/cetak/rapor',
-		piagam: '/cetak/piagam'
+		piagam: '/cetak/piagam',
+		keasramaan: '/cetak/keasramaan'
 	};
 
 	const printFailureMessages: Record<DocumentType, string> = {
 		cover: 'Elemen cover belum siap untuk dicetak. Coba muat ulang halaman.',
 		biodata: 'Elemen biodata belum siap untuk dicetak. Coba muat ulang halaman.',
 		rapor: 'Elemen rapor belum siap untuk dicetak. Coba muat ulang halaman.',
-		piagam: 'Elemen piagam belum siap untuk dicetak. Coba muat ulang halaman.'
+		piagam: 'Elemen piagam belum siap untuk dicetak. Coba muat ulang halaman.',
+		keasramaan: 'Elemen rapor keasramaan belum siap untuk dicetak. Coba muat ulang halaman.'
 	};
-
-	function isPreviewableDocument(value: DocumentType | ''): value is DocumentType {
-		return value === 'cover' || value === 'biodata' || value === 'rapor' || value === 'piagam';
-	}
 
 	let selectedDocument = $state<DocumentType | ''>('');
 	let selectedMuridId = $state('');
@@ -64,13 +69,13 @@
 	let previewError = $state<string | null>(null);
 	let showBgLogo = $state(false);
 
-	// show full TP listing: 'compact' | 'full' | 'full-desc'
-	let fullTP = $state<'compact' | 'full' | 'full-desc'>('compact');
+	// show TP listing: 'compact' | 'full-desc'
+	let fullTP = $state<'compact' | 'full-desc'>('compact');
 
 	// Kriteria intrakurikuler (defaults per spec)
 
-	let kritCukup = $state<number>(85);
-	let kritBaik = $state<number>(95);
+	let kritCukup = $state<number>(DEFAULT_RAPOR_CRITERIA.kritCukup);
+	let kritBaik = $state<number>(DEFAULT_RAPOR_CRITERIA.kritBaik);
 
 	// Load persisted criteria from localStorage (if available)
 	// Load persisted criteria from server (if available). Falls back to defaults.
@@ -94,6 +99,7 @@
 	let bulkPreviewData = $state<Array<{ murid: MuridData; data: PreviewPayload }>>([]);
 	let bulkPrintableNodes = $state<HTMLDivElement[]>([]);
 	let waitingForPrintable = $state(false);
+	let bulkLoadProgress = $state<{ current: number; total: number } | null>(null);
 
 	// increment this to bust background cache after upload
 	let bgRefreshKey = $state<number>(0);
@@ -148,6 +154,13 @@
 	const isPreviewMatchingSelection = $derived.by(() =>
 		Boolean(previewDocument && selectedDocument && selectedDocument === previewDocument)
 	);
+
+	// Reset preview state when document selection changes
+	$effect(() => {
+		if (selectedDocument) {
+			resetCetak();
+		}
+	});
 
 	$effect(() => {
 		if (isPiagamSelected) {
@@ -208,18 +221,12 @@
 		() => !selectedDocument || !hasSelectionOptions || !selectedMurid
 	);
 	const previewButtonTitle = $derived.by(() => {
-		if (!selectedDocument) return 'Pilih dokumen yang ingin di-preview terlebih dahulu';
-		if (!hasSelectionOptions) {
-			return selectedDocument === 'piagam'
-				? 'Tidak ada data peringkat yang tersedia untuk piagam di kelas ini'
-				: 'Tidak ada murid yang dapat di-preview untuk kelas ini';
-		}
-		if (!selectedMurid) {
-			return selectedDocument === 'piagam'
-				? 'Pilih peringkat piagam yang ingin di-preview terlebih dahulu'
-				: 'Pilih murid yang ingin di-preview terlebih dahulu';
-		}
-		return `Preview ${selectedDocumentEntry?.label ?? 'dokumen'} untuk ${selectedMurid.nama}`;
+		return buildPreviewButtonTitle(
+			selectedDocument,
+			hasSelectionOptions,
+			selectedMurid,
+			isPiagamSelected
+		);
 	});
 
 	const isPrintLoading = $derived.by(() => previewLoading || waitingForPrintable);
@@ -246,7 +253,7 @@
 	let previewAbortController: AbortController | null = null;
 	let keydownHandler: ((event: KeyboardEvent) => void) | null = null;
 
-	function resetPreviewState() {
+	function resetCetak() {
 		previewDocument = '';
 		previewMetaTitle = '';
 		previewData = null;
@@ -259,6 +266,12 @@
 	}
 
 	async function handlePreview() {
+		// Clear bulk mode when previewing single murid
+		isBulkMode = false;
+		bulkPreviewData = [];
+		bulkPrintableNodes = [];
+		waitingForPrintable = false;
+
 		const documentType = selectedDocument;
 		if (!documentType) {
 			toast('Pilih dokumen yang ingin di-preview terlebih dahulu.', 'warning');
@@ -285,17 +298,6 @@
 			return;
 		}
 
-		const path = documentPaths[documentType];
-		const params = new SvelteURLSearchParams({ murid_id: String(murid.id) });
-		if (data.kelasId) {
-			params.set('kelas_id', data.kelasId);
-		}
-		// include intrakurikuler criteria if present
-		params.set('krit_cukup', String(kritCukup));
-		params.set('krit_baik', String(kritBaik));
-		if (fullTP === 'full') params.set('full_tp', '1');
-		else if (fullTP === 'full-desc') params.set('full_tp', 'desc');
-
 		if (previewAbortController) {
 			previewAbortController.abort();
 		}
@@ -304,49 +306,37 @@
 
 		previewLoading = true;
 		previewError = null;
-		resetPreviewState();
 
-		let response: Response;
 		try {
-			response = await fetch(`${path}.json?${params.toString()}`, {
+			const result = await loadSinglePreview({
+				documentType,
+				murid,
+				kelasId: data.kelasId ? Number(data.kelasId) : undefined,
+				tpMode: fullTP,
+				criteria: { kritCukup, kritBaik },
 				signal: controller.signal
 			});
+
+			if (controller.signal.aborted) {
+				return;
+			}
+
+			previewDocument = documentType;
+			previewData = result.data;
+			previewMetaTitle = result.title;
+			previewMurid = murid;
 		} catch (err) {
 			if (controller.signal.aborted) {
 				return;
 			}
-			console.error(err);
+			console.error('Preview error:', err);
+			const errorMsg = err instanceof Error ? err.message : 'Gagal memuat preview dokumen';
+			previewError = errorMsg;
+			toast(errorMsg, 'error');
+		} finally {
 			previewLoading = false;
 			previewAbortController = null;
-			previewError = 'Gagal memuat preview dokumen. Periksa koneksi lalu coba lagi.';
-			toast('Gagal memuat preview dokumen. Periksa koneksi lalu coba lagi.', 'error');
-			return;
 		}
-
-		if (controller.signal.aborted) {
-			return;
-		}
-
-		if (!response.ok) {
-			previewLoading = false;
-			previewAbortController = null;
-			previewError = 'Server tidak dapat menyiapkan preview dokumen. Coba lagi nanti.';
-			toast('Server tidak dapat menyiapkan preview dokumen. Coba lagi nanti.', 'error');
-			return;
-		}
-
-		const payload = (await response.json()) as PreviewPayload;
-		previewDocument = documentType;
-		previewData = payload;
-		previewMetaTitle =
-			(payload.meta && typeof payload.meta === 'object' && 'title' in payload.meta
-				? ((payload.meta as { title?: string | null }).title ?? '')
-				: '') || `${selectedDocumentEntry?.label ?? 'Dokumen'} - ${murid.nama}`;
-		previewMurid = murid;
-		previewLoading = false;
-		previewAbortController = null;
-
-		await tick();
 	}
 
 	async function navigateMurid(direction: 'prev' | 'next') {
@@ -366,6 +356,11 @@
 	}
 
 	async function handleBulkPreview() {
+		// Clear single murid preview state when doing bulk preview
+		previewData = null;
+		previewMurid = null;
+		previewPrintable = null;
+
 		const documentType = selectedDocument;
 		if (!documentType) {
 			toast('Pilih dokumen yang ingin di-preview terlebih dahulu.', 'warning');
@@ -393,8 +388,6 @@
 			return;
 		}
 
-		const path = documentPaths[documentType];
-
 		if (previewAbortController) {
 			previewAbortController.abort();
 		}
@@ -403,63 +396,63 @@
 
 		previewLoading = true;
 		previewError = null;
-		resetPreviewState();
 
-		const allData: Array<{ murid: MuridData; data: PreviewPayload }> = [];
+		try {
+			let lastProgressUpdate = 0;
+			const result = await loadBulkPreviews_robust({
+				documentType,
+				muridList,
+				kelasId: data.kelasId ? Number(data.kelasId) : undefined,
+				tpMode: fullTP,
+				criteria: { kritCukup, kritBaik },
+				signal: controller.signal,
+				onProgress: (current, total) => {
+					// Debounce progress updates to avoid excessive re-renders
+					const now = Date.now();
+					if (now - lastProgressUpdate > 100) {
+						bulkLoadProgress = { current, total };
+						lastProgressUpdate = now;
+					}
+				}
+			});
 
-		for (let i = 0; i < muridList.length; i++) {
-			const murid = muridList[i];
-			const params = new SvelteURLSearchParams({ murid_id: String(murid.id) });
-			if (data.kelasId) {
-				params.set('kelas_id', data.kelasId);
+			if (controller.signal.aborted) {
+				return;
 			}
-			// include intrakurikuler criteria for bulk requests as well
-			params.set('krit_cukup', String(kritCukup));
-			params.set('krit_baik', String(kritBaik));
-			if (fullTP === 'full') params.set('full_tp', '1');
-			else if (fullTP === 'full-desc') params.set('full_tp', 'desc');
 
-			try {
-				const response = await fetch(`${path}.json?${params.toString()}`, {
-					signal: controller.signal
-				});
+			if (!result.isValid) {
+				const docLabel = selectedDocumentEntry?.label ?? 'dokumen';
+				const errorMsg = buildBulkErrorMessage(docLabel, result.failureCount, result.failedMurids);
+				previewError = errorMsg;
+				toast(errorMsg, 'warning');
 
-				if (controller.signal.aborted) {
+				// Still show successful ones if any
+				if (result.data.length === 0) {
+					previewAbortController = null;
+					previewLoading = false;
 					return;
 				}
-
-				if (!response.ok) {
-					console.error(`Gagal memuat data untuk ${murid.nama}`);
-					continue;
-				}
-
-				const payload = (await response.json()) as PreviewPayload;
-				allData.push({ murid, data: payload });
-			} catch (err) {
-				if (controller.signal.aborted) {
-					return;
-				}
-				console.error(`Error loading data for ${murid.nama}:`, err);
 			}
-		}
 
-		if (!allData.length) {
+			isBulkMode = true;
+			bulkPreviewData = result.data;
+			previewDocument = documentType;
+			previewMetaTitle = `${selectedDocumentEntry?.label ?? 'Dokumen'} - Semua Murid`;
+			bulkLoadProgress = null; // Clear progress indicator
+			waitingForPrintable = true;
+		} catch (err) {
+			if (controller.signal.aborted) {
+				return;
+			}
+			bulkLoadProgress = null;
+			console.error('Bulk preview error:', err);
+			const errorMsg = err instanceof Error ? err.message : 'Gagal memuat preview dokumen';
+			previewError = errorMsg;
+			toast(errorMsg, 'error');
+		} finally {
 			previewLoading = false;
 			previewAbortController = null;
-			previewError = 'Tidak ada data yang berhasil dimuat untuk murid manapun.';
-			toast('Tidak ada data yang berhasil dimuat untuk murid manapun.', 'error');
-			return;
 		}
-
-		isBulkMode = true;
-		bulkPreviewData = allData;
-		previewDocument = documentType;
-		previewMetaTitle = `${selectedDocumentEntry?.label ?? 'Dokumen'} - Semua Murid`;
-		previewLoading = false;
-		waitingForPrintable = true;
-		previewAbortController = null;
-
-		await tick();
 	}
 
 	function handlePrintableReady(node: HTMLDivElement | null) {
@@ -484,9 +477,17 @@
 
 		if (readyCount === expectedCount) {
 			// All nodes are ready, but for rapor we need to wait for pagination
-			// Rapor needs more time because it dynamically splits tables across pages
 			const isRapor = previewDocument === 'rapor';
-			const delay = isRapor ? 1500 : 300;
+			const isFullDesc = fullTP === 'full-desc';
+
+			// Delay calculation:
+			// - Rapor + Full Desc: 800ms (reduced from 3s)
+			// - Rapor + Compact: 600ms (reduced from 1.5s)
+			// - Other docs: 200ms (reduced from 300ms)
+			let delay = 200;
+			if (isRapor) {
+				delay = isFullDesc ? 800 : 600;
+			}
 
 			const timeoutId = setTimeout(() => {
 				const wrapper = document.createElement('div');
@@ -502,6 +503,26 @@
 
 			return () => clearTimeout(timeoutId);
 		}
+
+		// Safety timeout - if nodes aren't ready after 15 seconds, give up and use what we have
+		const timeoutId = setTimeout(() => {
+			if (readyCount > 0) {
+				const wrapper = document.createElement('div');
+				nodes.forEach((n) => {
+					if (n) {
+						const clone = n.cloneNode(true) as HTMLDivElement;
+						wrapper.appendChild(clone);
+					}
+				});
+				previewPrintable = wrapper;
+				waitingForPrintable = false;
+				console.warn(
+					`Bulk preview timeout: only ${readyCount}/${expectedCount} nodes ready, proceeding anyway`
+				);
+			}
+		}, 15000);
+
+		return () => clearTimeout(timeoutId);
 	});
 
 	// When bulk mode showBgLogo changes, reset bulk nodes to wait for re-render
@@ -612,6 +633,7 @@
 		{selectedTemplate}
 		isRaporSelected={selectedDocument === 'rapor'}
 		isBiodataSelected={selectedDocument === 'biodata'}
+		isKeasramaanSelected={selectedDocument === 'keasramaan'}
 		{kritCukup}
 		{kritBaik}
 		tpMode={fullTP}
@@ -649,7 +671,7 @@
 				else handlePreview();
 			}
 		}}
-		onToggleFullTP={(value: 'compact' | 'full' | 'full-desc') => {
+		onToggleFullTP={(value: 'compact' | 'full-desc') => {
 			fullTP = value;
 			if (previewDocument === 'rapor') {
 				if (isBulkMode) handleBulkPreview();
@@ -667,7 +689,8 @@
 	{previewError}
 	{isBulkMode}
 	{bulkPreviewData}
-	{selectedDocumentEntry}
+	{bulkLoadProgress}
+	{waitingForPrintable}
 	{selectedTemplate}
 	{bgRefreshKey}
 	{showBgLogo}

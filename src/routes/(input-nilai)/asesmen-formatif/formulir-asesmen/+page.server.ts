@@ -9,10 +9,13 @@ import { ensureAsesmenFormatifSchema } from '$lib/server/db/ensure-asesmen-forma
 import { unflattenFormData } from '$lib/utils';
 import { fail, error } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
+import { authority } from '../../../pengguna/utils.server';
 
 const DEFAULT_LINGKUP = 'Tanpa lingkup materi';
 
 export async function load({ url, locals, depends }) {
+	authority('rapor_manage');
+
 	depends('app:asesmen-formatif/formulir');
 	const muridIdParam = url.searchParams.get('murid_id');
 	const mapelIdParam = url.searchParams.get('mapel_id');
@@ -95,6 +98,8 @@ export async function load({ url, locals, depends }) {
 
 export const actions = {
 	save: async ({ request, locals }) => {
+		authority('rapor_manage');
+
 		const formPayload = unflattenFormData<{
 			muridId?: string;
 			mapelId?: string;

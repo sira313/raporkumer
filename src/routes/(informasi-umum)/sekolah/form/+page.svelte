@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import { jenjangPendidikanSederajat } from '$lib/statics';
+	import { jenjangPendidikanSederajat, nauganOptions } from '$lib/statics';
 
 	let { data } = $props();
 	const isNew = data.isNew as boolean;
@@ -14,6 +14,27 @@
 	const jenjangKeys = Object.keys(jenjangPendidikanSederajat) as Array<
 		keyof typeof jenjangPendidikanSederajat
 	>;
+
+	// Group jenjang for UI (put SLB/PKBM/SRT under 'Sekolah Satu Atap')
+	const groupedJenjang = (() => {
+		const map = new Map<
+			string,
+			Array<{
+				jenjKey: keyof typeof jenjangPendidikanSederajat;
+				variant: { key: string; label: string };
+			}>
+		>();
+		const ssaKeys = new Set(['slb', 'pkbm', 'srt']);
+		for (const k of jenjangKeys) {
+			const label = jenjangPendidikanSederajat[k][0].label;
+			const groupLabel = ssaKeys.has(String(k)) ? 'Sekolah Satu Atap' : label;
+			if (!map.has(groupLabel)) map.set(groupLabel, []);
+			for (const v of jenjangPendidikanSederajat[k]) {
+				map.get(groupLabel)?.push({ jenjKey: k, variant: v });
+			}
+		}
+		return Array.from(map.entries()).map(([label, items]) => ({ label, items }));
+	})();
 
 	// When editing, the form enhancer populates the select by jenjangPendidikan (base key).
 	// Because options reuse the same value for multiple variants, the browser will select
@@ -91,19 +112,17 @@
 							}}
 						>
 							<option value="" disabled selected>Pilih Jenjang Pendidikan</option>
-							{#each jenjangKeys as jenjKey (jenjKey)}
-								<optgroup label={jenjangPendidikanSederajat[jenjKey][0].label}>
-									{#each jenjangPendidikanSederajat[jenjKey] as variant (variant.key)}
-										<!-- nilai option tetap jenjang utama (sd/smp/sma) supaya sesuai model `jenjangPendidikan` -->
+							{#each groupedJenjang as group (group.label)}
+								<optgroup label={group.label}>
+									{#each group.items as item (item.variant.key)}
 										<option
-											value={jenjKey}
-											data-variant={variant.key}
+											value={item.jenjKey}
+											data-variant={item.variant.key}
 											selected={initialSekolah
-												? // if editing: select the option that matches stored variant key
-													initialSekolah.jenjangVariant === variant.key
+												? initialSekolah.jenjangVariant === item.variant.key
 												: undefined}
 										>
-											{variant.label}
+											{item.variant.label}
 										</option>
 									{/each}
 								</optgroup>
@@ -262,6 +281,46 @@
 						placeholder="Contoh: cs@sdn19periji.sch.id"
 						name="email"
 					/>
+				</div>
+
+				<!-- Kementrian -->
+				<div class="fieldset">
+					<legend class="fieldset-legend">Pilih Naungan</legend>
+					<select
+						class="select bg-base-200 dark:bg-base-300 validator w-full border dark:border-none"
+						name="naungan"
+						required
+					>
+						{#each nauganOptions as option (option.key)}
+							<option
+								value={option.key}
+								selected={initialSekolah?.naungan === option.key ||
+									(!initialSekolah && option.key === 'kemendikbud')}
+							>
+								{option.label}
+							</option>
+						{/each}
+					</select>
+				</div>
+
+				<!-- Status definitif plt -->
+				<div class="fieldset">
+					<legend class="fieldset-legend">Status Kepala Sekolah</legend>
+					<select
+						class="select bg-base-200 dark:bg-base-300 validator w-full border dark:border-none"
+						name="statusKepalaSekolah"
+						required
+					>
+						<option
+							value="definitif"
+							selected={initialSekolah?.statusKepalaSekolah === 'definitif'}
+						>
+							Definitif
+						</option>
+						<option value="plt" selected={initialSekolah?.statusKepalaSekolah === 'plt'}>
+							PLT (Pelaksana Tugas)
+						</option>
+					</select>
 				</div>
 			</div>
 

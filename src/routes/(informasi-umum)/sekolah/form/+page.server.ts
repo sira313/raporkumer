@@ -3,8 +3,10 @@ import { tableAlamat, tablePegawai, tableSekolah } from '$lib/server/db/schema.j
 import { cookieNames, unflattenFormData } from '$lib/utils';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
+import { authority } from '../../../pengguna/utils.server';
 
 export async function load({ url, locals }) {
+	authority('sekolah_manage');
 	const isInit = url.searchParams.has('init');
 	const isNew = url.searchParams.get('mode') === 'new';
 	const sekolahIdParam = url.searchParams.get('sekolahId');
@@ -45,26 +47,38 @@ export async function load({ url, locals }) {
 
 export const actions = {
 	async save({ locals, cookies, request }) {
+		authority('sekolah_manage');
+
 		const formData = await request.formData();
 		const formSekolah = unflattenFormData<Sekolah>(formData);
 
 		// TODO: input validation
 
+		// Prepare update data - exclude logo fields if not provided
+		const updateData: Partial<typeof formSekolah> = { ...formSekolah };
+
 		const logo = formData.get('logo') as File;
 		if (logo?.size) {
-			formSekolah.logo = new Uint8Array(await logo.arrayBuffer());
-			formSekolah.logoType = logo.type;
+			updateData.logo = new Uint8Array(await logo.arrayBuffer());
+			updateData.logoType = logo.type;
 		} else {
-			formSekolah.logo = null;
+			// Jika tidak ada file baru di-upload, jangan ubah nilai logo yang ada
+			delete updateData.logo;
+			delete updateData.logoType;
 		}
 
 		const logoDinas = formData.get('logoDinas') as File;
 		if (logoDinas?.size) {
-			formSekolah.logoDinas = new Uint8Array(await logoDinas.arrayBuffer());
-			formSekolah.logoDinasType = logoDinas.type;
+			updateData.logoDinas = new Uint8Array(await logoDinas.arrayBuffer());
+			updateData.logoDinasType = logoDinas.type;
 		} else {
-			formSekolah.logoDinas = null;
+			// Jika tidak ada file baru di-upload, jangan ubah nilai logoDinas yang ada
+			delete updateData.logoDinas;
+			delete updateData.logoDinasType;
 		}
+
+		// Use updateData for further processing
+		const formSekolahFinal = updateData as typeof formSekolah;
 
 		await db.transaction(async (db) => {
 			if (formSekolah.id) {
@@ -86,7 +100,7 @@ export const actions = {
 				await db
 					.update(tableSekolah)
 					.set({
-						...formSekolah,
+						...formSekolahFinal,
 						alamatId: sekolah.alamatId,
 						kepalaSekolahId: sekolah.kepalaSekolahId,
 						updatedAt: new Date().toISOString()
@@ -99,6 +113,8 @@ export const actions = {
 						.values(formSekolah.alamat)
 						.returning({ id: tableAlamat.id });
 					formSekolah.alamatId = alamat?.id;
+					// also attach to the final insert payload so inserted sekolah gets the foreign key
+					formSekolahFinal.alamatId = alamat?.id;
 				}
 
 				if (formSekolah.kepalaSekolah) {
@@ -107,11 +123,12 @@ export const actions = {
 						.values(formSekolah.kepalaSekolah)
 						.returning({ id: tablePegawai.id });
 					formSekolah.kepalaSekolahId = pegawai?.id;
+					formSekolahFinal.kepalaSekolahId = pegawai?.id;
 				}
 
 				const [newSekolah] = await db
 					.insert(tableSekolah)
-					.values(formSekolah)
+					.values(formSekolahFinal)
 					.returning({ id: tableSekolah.id });
 				formSekolah.id = newSekolah?.id;
 			}

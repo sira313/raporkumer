@@ -1,17 +1,19 @@
 import db from '$lib/server/db/index.js';
 import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama.js';
+import { ensurePksMapelForClasses } from '$lib/server/mapel-pks.js';
 import {
 	tableMataPelajaran,
 	tableTujuanPembelajaran,
 	tableAuthUserMataPelajaran,
 	tableAuthUser
 } from '$lib/server/db/schema.js';
-import { agamaMapelNames, agamaMapelOptions } from '$lib/statics';
+import { agamaMapelNames, agamaMapelOptions, pksMapelNames, pksMapelOptions } from '$lib/statics';
 import { unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { readBufferToAoA } from '$lib/utils/excel.js';
 import { redirect } from '@sveltejs/kit';
+import { authority } from '../../../../pengguna/utils.server';
 
 const MAX_IMPORT_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
@@ -32,11 +34,14 @@ function isXlsxMime(type: string | null | undefined) {
 }
 
 export async function load({ depends, params, parent }) {
+	authority('rapor_manage');
+
 	depends('app:mapel_tp-rl');
 	// pull mapel and user from parent so we can adapt behaviour for assigned agama teachers
 	const { mapel, user } = await parent();
 
 	await ensureAgamaMapelForClasses([mapel.kelasId]);
+	await ensurePksMapelForClasses([mapel.kelasId]);
 
 	let tujuanPembelajaran = [];
 
@@ -47,8 +52,12 @@ export async function load({ depends, params, parent }) {
 		isActive: boolean;
 	}> = [];
 
-	const targetNames: string[] = [...agamaMapelNames];
-	// prepare container for agama variant mapel in this kelas
+	// Determine which religion-based subject group we're working with
+	const isPksMapel = (pksMapelNames as readonly string[]).includes(mapel.nama);
+	const targetNames: string[] = isPksMapel ? [...pksMapelNames] : [...agamaMapelNames];
+	const targetOptions = isPksMapel ? pksMapelOptions : agamaMapelOptions;
+
+	// prepare container for religion-based variant mapel in this kelas
 	let kelasAgamaMapel: Array<{ id: number; nama: string }> = [];
 
 	// Collect user's assigned agama variant names early (for filtering agamaOptions)
@@ -95,15 +104,15 @@ export async function load({ depends, params, parent }) {
 
 		const mapelByName = new Map(kelasAgamaMapel.map((item) => [item.nama, item]));
 
-		agamaOptions = agamaMapelOptions
+		agamaOptions = targetOptions
 			.filter((option) => option.key !== 'umum')
 			.map((option) => {
 				const variant = mapelByName.get(option.name);
 				if (!variant) return null;
 
-				// For multi-mapel users, only include agama options they have assigned
+				// For users with assigned agama/PKS variants, only include agama options they have assigned
 				if (
-					userAssignedAgamaNames.size > 1 &&
+					userAssignedAgamaNames.size > 0 &&
 					!userAssignedAgamaNames.has((option.name || '').trim().toLowerCase())
 				) {
 					return null;
@@ -130,11 +139,6 @@ export async function load({ depends, params, parent }) {
 	let assignedGlobalName: string | null = null;
 	let userHasMultiAgama = false;
 	try {
-		console.log('[tp-rl] user:', {
-			id: user?.id,
-			type: user?.type,
-			mataPelajaranId: user?.mataPelajaranId
-		});
 		if (user && user.type === 'user') {
 			// Check if user has multi-mapel in join table FIRST, regardless of legacy mataPelajaranId
 			if (user.id) {
@@ -143,12 +147,9 @@ export async function load({ depends, params, parent }) {
 					where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
 				});
 
-				console.log('[tp-rl] userAssignedMapels count:', userAssignedMapels.length);
-
 				if (userAssignedMapels.length > 1) {
 					// User has multi-mapel - clear legacy mataPelajaranId if set (one-time fix for existing users)
 					if (user.mataPelajaranId) {
-						console.log('[tp-rl] Clearing mataPelajaranId for multi-mapel user');
 						await db
 							.update(tableAuthUser)
 							.set({ mataPelajaranId: null })
@@ -160,7 +161,6 @@ export async function load({ depends, params, parent }) {
 
 			// First priority: check legacy mataPelajaranId field
 			if (user.mataPelajaranId) {
-				console.log('[tp-rl] User has legacy mataPelajaranId:', user.mataPelajaranId);
 				const assigned = await db.query.tableMataPelajaran.findFirst({
 					columns: { id: true, nama: true },
 					where: eq(tableMataPelajaran.id, Number(user.mataPelajaranId))
@@ -175,13 +175,10 @@ export async function load({ depends, params, parent }) {
 			}
 			// Second priority: for multi-mapel users, check join table for any agama assignment
 			else if (user.id) {
-				console.log('[tp-rl] Checking join table for user:', user.id);
 				const userAssignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({
 					columns: { mataPelajaranId: true },
 					where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
 				});
-
-				console.log('[tp-rl] userAssignedMapels count:', userAssignedMapels.length);
 
 				if (userAssignedMapels.length > 0) {
 					const assignedRecords = await db.query.tableMataPelajaran.findMany({
@@ -192,20 +189,11 @@ export async function load({ depends, params, parent }) {
 						)
 					});
 
-					console.log('[tp-rl] assignedRecords:', assignedRecords);
-
 					// Count how many agama variants this user has assigned
 					const agamaVariantsCount = assignedRecords.filter((r) =>
 						targetNames.includes(r.nama)
 					).length;
-					console.log(
-						'[tp-rl] agamaVariantsCount:',
-						agamaVariantsCount,
-						'targetNames:',
-						targetNames
-					);
 					userHasMultiAgama = agamaVariantsCount > 1;
-					console.log('[tp-rl] userHasMultiAgama set to:', userHasMultiAgama);
 
 					// Find first agama variant in user's assignments
 					for (const record of assignedRecords) {
@@ -222,18 +210,11 @@ export async function load({ depends, params, parent }) {
 							break;
 						}
 					}
-				} else {
-					console.log('[tp-rl] User has no assigned mapel in join table');
 				}
-			} else {
-				console.log('[tp-rl] User has no ID');
 			}
-		} else {
-			console.log('[tp-rl] User is not type "user" or user is null');
 		}
-	} catch (err) {
+	} catch {
 		// non-fatal
-		console.warn('[tp-rl] failed to resolve assigned local mapel', err);
 	}
 
 	// Server-side enforcement: if the logged-in user is a 'user' assigned to a
@@ -313,18 +294,6 @@ export async function load({ depends, params, parent }) {
 			})()
 	);
 
-	console.log('[tp-rl] Final return:', {
-		mapelId: params.id,
-		userType: user?.type,
-		userMataPelajaranId: user?.mataPelajaranId,
-		userHasMultiAgama,
-		assignedGlobalId,
-		assignedGlobalName,
-		assignedLocalMapelId,
-		agamaSelectDisabledValue,
-		agamaOptionsCount: agamaOptions.length
-	});
-
 	return {
 		tujuanPembelajaran,
 		agamaOptions,
@@ -341,6 +310,8 @@ export async function load({ depends, params, parent }) {
 
 export const actions = {
 	async save({ params, request }) {
+		authority('rapor_manage');
+
 		const formData = await request.formData();
 		const payload = unflattenFormData<{
 			mode?: string;
@@ -450,6 +421,8 @@ export const actions = {
 	},
 
 	async delete({ request }) {
+		authority('rapor_manage');
+
 		const formData = await request.formData();
 		const idsRaw = formData.getAll('ids');
 		const ids = idsRaw.map((value) => Number(value)).filter((value) => Number.isFinite(value));
@@ -463,6 +436,8 @@ export const actions = {
 	},
 
 	async savebobot({ params, request }: { params: Record<string, string>; request: Request }) {
+		authority('rapor_manage');
+
 		const mataPelajaranId = Number(params.id);
 		if (!Number.isFinite(mataPelajaranId)) {
 			return fail(400, { fail: 'Mata pelajaran tidak valid.' });
@@ -534,6 +509,8 @@ export const actions = {
 	},
 
 	async import({ params, request }) {
+		authority('rapor_manage');
+
 		const mataPelajaranId = Number(params.id);
 		if (!Number.isFinite(mataPelajaranId)) {
 			return fail(400, { fail: 'Mata pelajaran tidak valid.' });
@@ -558,8 +535,7 @@ export const actions = {
 		try {
 			const buffer = await file.arrayBuffer();
 			rawRows = await readBufferToAoA(buffer as ArrayBuffer);
-		} catch (error) {
-			console.error('Gagal membaca file Excel', error);
+		} catch {
 			return fail(400, { fail: 'Gagal membaca file Excel. Pastikan format sesuai.' });
 		}
 

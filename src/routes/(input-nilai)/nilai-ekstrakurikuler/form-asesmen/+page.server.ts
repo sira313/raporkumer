@@ -15,6 +15,7 @@ import {
 import { unflattenFormData } from '$lib/utils';
 import { fail, redirect, error } from '@sveltejs/kit';
 import { asc, and, eq } from 'drizzle-orm';
+import { authority } from '../../../pengguna/utils.server';
 
 type NilaiMap = Record<number, EkstrakurikulerNilaiKategori>;
 
@@ -34,6 +35,8 @@ function sanitizeRedirect(value: string | null | undefined) {
 }
 
 export async function load({ parent, url, depends }) {
+	authority('rapor_manage');
+
 	depends('app:nilai-ekstrakurikuler:form');
 	const { kelasAktif } = await parent();
 	const meta: PageMeta = { title: 'Form Asesmen Ekstrakurikuler' };
@@ -117,6 +120,8 @@ export async function load({ parent, url, depends }) {
 
 export const actions = {
 	save: async ({ request }) => {
+		authority('rapor_manage');
+
 		const formData = await request.formData();
 		const muridIdRaw = formData.get('muridId');
 		const ekstrakurikulerIdRaw = formData.get('ekstrakurikulerId');

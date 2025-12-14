@@ -20,6 +20,7 @@
 		onToggleFullTP = () => {},
 		kelasId = null,
 		isBiodataSelected = false,
+		isKeasramaanSelected = false,
 		showBgLogo = false,
 		onToggleBgLogo = () => {}
 	}: {
@@ -29,13 +30,14 @@
 		selectedTemplate: '1' | '2';
 		onBgRefresh: () => void;
 		isRaporSelected: boolean;
-		tpMode: 'compact' | 'full' | 'full-desc';
-		onToggleFullTP: (value: 'compact' | 'full' | 'full-desc') => void;
+		tpMode: 'compact' | 'full-desc';
+		onToggleFullTP: (value: 'compact' | 'full-desc') => void;
 		onSetKriteria: (cukup: number, baik: number) => void;
 		kritCukup: number;
 		kritBaik: number;
 		kelasId: string | number | null;
 		isBiodataSelected?: boolean;
+		isKeasramaanSelected?: boolean;
 		showBgLogo?: boolean;
 		onToggleBgLogo?: (value: boolean) => void;
 	} = $props();
@@ -136,7 +138,7 @@
 			Umum › Murid.
 		</p>
 	{/if}
-	<div class="flex items-center gap-2 self-end sm:self-auto">
+	<div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
 		{#if isPiagamSelected}
 			<button
 				class="btn btn-sm btn-error btn-soft shadow-none"
@@ -161,10 +163,10 @@
 				onclick={handleDownloadBA}
 			>
 				<Icon name="download" />
-				Berita Acara
+				BA
 			</button>
 			<button
-				class="btn btn-sm btn-soft mr-1 shadow-none"
+				class="btn btn-sm btn-soft shadow-none"
 				type="button"
 				title="Atur Kriteria"
 				onclick={() => {
@@ -197,46 +199,67 @@
 					});
 				}}
 			>
-				Atur Kriteria
+				<Icon name="gear" />
+				Kriteria
 			</button>
-			<label class="sr-only" for="tp-mode-select">TP mode</label>
-			<select
-				id="tp-mode-select"
-				class="select select-sm dark:bg-base-200 w-35 dark:border-none"
-				value={tpMode}
-				onchange={(e) => {
-					const val = (e.target as HTMLSelectElement).value as 'compact' | 'full' | 'full-desc';
-					onToggleFullTP(val);
-				}}
-			>
-				<option value="compact">Compact TP</option>
-				<option value="full">Full TP</option>
-				<option value="full-desc">Full desc</option>
-			</select>
-			{#if showBgLogo !== undefined}
-				<label class="swap whitespace-nowrap shadow-none">
-					<input
-						type="checkbox"
-						checked={showBgLogo}
-						onchange={(e) => onToggleBgLogo((e.currentTarget as HTMLInputElement).checked)}
-					/>
-					<div
-						class="btn btn-soft swap-on btn-sm shadow-none"
-						title="Tambahkan watermark logo sekolah"
-					>
-						BG OFF
-					</div>
-					<div
-						class="btn btn-soft swap-off btn-sm shadow-none"
-						title="Hapus watermark logo sekolah"
-					>
-						BG ON
-					</div>
-				</label>
-			{/if}
+			<div class="flex flex-row gap-2">
+				<label class="sr-only" for="tp-mode-select">TP mode</label>
+				<select
+					id="tp-mode-select"
+					class="select select-sm dark:bg-base-200 w-full sm:w-35 dark:border-none"
+					value={tpMode}
+					onchange={(e) => {
+						const val = (e.target as HTMLSelectElement).value as 'compact' | 'full-desc';
+						onToggleFullTP(val);
+					}}
+				>
+					<option value="compact">Compact TP</option>
+					<option value="full-desc">Full desc</option>
+				</select>
+				{#if showBgLogo !== undefined}
+					<label class="swap whitespace-nowrap shadow-none">
+						<input
+							type="checkbox"
+							checked={showBgLogo}
+							onchange={(e) => onToggleBgLogo((e.currentTarget as HTMLInputElement).checked)}
+						/>
+						<div
+							class="btn btn-soft swap-on btn-sm shadow-none"
+							title="Tambahkan watermark logo sekolah"
+						>
+							BG OFF
+						</div>
+						<div
+							class="btn btn-soft swap-off btn-sm shadow-none"
+							title="Hapus watermark logo sekolah"
+						>
+							BG ON
+						</div>
+					</label>
+				{/if}
+			</div>
 		{/if}
 
 		{#if isBiodataSelected}
+			<label class="swap whitespace-nowrap shadow-none">
+				<input
+					type="checkbox"
+					checked={showBgLogo}
+					onchange={(e) => onToggleBgLogo((e.currentTarget as HTMLInputElement).checked)}
+				/>
+				<div
+					class="btn btn-soft swap-on btn-sm shadow-none"
+					title="Tambahkan watermark logo sekolah"
+				>
+					BG OFF
+				</div>
+				<div class="btn btn-soft swap-off btn-sm shadow-none" title="Hapus watermark logo sekolah">
+					BG ON
+				</div>
+			</label>
+		{/if}
+
+		{#if isKeasramaanSelected}
 			<label class="swap whitespace-nowrap shadow-none">
 				<input
 					type="checkbox"

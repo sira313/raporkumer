@@ -6,7 +6,7 @@ import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
 import { cookieNames } from '$lib/utils';
 import { error, redirect, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
-import { desc, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import {
 	readCombinedOriginsFromEnvAndFile,
 	normalizeOrigin as normalizeFileOrigin
@@ -181,6 +181,17 @@ const authGuard: Handle = async ({ event, resolve }) => {
 							throw redirect(303, `/forbidden?required=kelas_id`);
 						}
 					}
+				} else if (u.type === 'wali_asuh' && Number.isInteger(Number(u.kelasId))) {
+					// Same logic for wali_asuh
+					const allowed = Number(u.kelasId);
+					if (kelasIdNumber !== allowed) {
+						const hasAccessOther = Array.isArray(u.permissions)
+							? u.permissions.includes('kelas_pindah')
+							: false;
+						if (!hasAccessOther) {
+							throw redirect(303, `/forbidden?required=kelas_id`);
+						}
+					}
 				}
 			}
 		}
@@ -224,15 +235,13 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 	let sekolah = await db.query.tableSekolah.findFirst({
 		columns: { logo: false, logoDinas: false },
 		with: { alamat: true, kepalaSekolah: true },
-		orderBy: [desc(tableSekolah.id)],
 		where: sekolahId ? eq(tableSekolah.id, sekolahId) : undefined
 	});
 
 	if (!sekolah) {
 		sekolah = await db.query.tableSekolah.findFirst({
 			columns: { logo: false, logoDinas: false },
-			with: { alamat: true, kepalaSekolah: true },
-			orderBy: [desc(tableSekolah.id)]
+			with: { alamat: true, kepalaSekolah: true }
 		});
 		if (sekolah?.id) {
 			event.cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(sekolah.id), {

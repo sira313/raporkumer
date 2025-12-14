@@ -31,6 +31,12 @@
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
 	});
 
+	// Restrict editing for wali_asuh
+	const canEdit = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null | undefined;
+		return u?.type !== 'wali_asuh';
+	});
+
 	const editingSaveDisabled = $derived.by(
 		() =>
 			editingRowId === null || editingSubmitting || editingCatatan.trim() === editingOriginal.trim()
@@ -217,8 +223,10 @@
 			type="button"
 			class="btn btn-primary btn-soft gap-2 self-start shadow-none sm:self-center"
 			onclick={openBulkDialog}
-			disabled={!bulkTargetCount || editingRowId !== null}
-			title="Isi catatan yang sama untuk seluruh murid pada halaman ini"
+			disabled={!bulkTargetCount || editingRowId !== null || !canEdit}
+			title={!canEdit
+				? 'Anda tidak memiliki izin untuk mengedit'
+				: 'Isi catatan yang sama untuk seluruh murid pada halaman ini'}
 		>
 			<Icon name="copy" />
 			<span>Isi Sekaligus</span>
@@ -329,7 +337,8 @@
 										type="button"
 										class="btn btn-sm btn-soft shadow-none"
 										onclick={() => startEdit(item)}
-										disabled={editingRowId !== null}
+										disabled={editingRowId !== null || !canEdit}
+										title={!canEdit ? 'Anda tidak memiliki izin untuk mengedit' : ''}
 									>
 										<Icon name="edit" />
 										Edit

@@ -11,6 +11,7 @@ import {
 import { eq, and, asc } from 'drizzle-orm';
 
 const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
+const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
 const AGAMA_VARIANT_MAP: Record<string, string> = {
 	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
 	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
@@ -26,6 +27,21 @@ const AGAMA_VARIANT_MAP: Record<string, string> = {
 	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
 };
 
+const PKS_VARIANT_MAP: Record<string, string> = {
+	islam: 'Pendalaman Kitab Suci Islam',
+	kristen: 'Pendalaman Kitab Suci Kristen',
+	protestan: 'Pendalaman Kitab Suci Kristen',
+	katolik: 'Pendalaman Kitab Suci Katolik',
+	kathholik: 'Pendalaman Kitab Suci Katolik',
+	hindu: 'Pendalaman Kitab Suci Hindu',
+	budha: 'Pendalaman Kitab Suci Buddha',
+	buddha: 'Pendalaman Kitab Suci Buddha',
+	buddhist: 'Pendalaman Kitab Suci Buddha',
+	khonghucu: 'Pendalaman Kitab Suci Khonghucu',
+	'khong hu cu': 'Pendalaman Kitab Suci Khonghucu',
+	konghucu: 'Pendalaman Kitab Suci Khonghucu'
+};
+
 function normalizeText(value: string | null | undefined) {
 	return value?.trim().toLowerCase() ?? '';
 }
@@ -33,6 +49,11 @@ function normalizeText(value: string | null | undefined) {
 function resolveAgamaVariantName(agama: string | null | undefined) {
 	const normalized = normalizeText(agama);
 	return AGAMA_VARIANT_MAP[normalized] ?? null;
+}
+
+function resolvePksVariantName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return PKS_VARIANT_MAP[normalized] ?? null;
 }
 
 function parseNumericCell(value: unknown): number | null {
@@ -251,6 +272,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	// Find agama base and variants in kelas
 	const agamaBase =
 		kelasMapels.find((m) => normalizeText(m.nama) === normalizeText(AGAMA_BASE_SUBJECT)) ?? null;
+	const pksBase =
+		kelasMapels.find((m) => normalizeText(m.nama) === normalizeText(PKS_BASE_SUBJECT)) ?? null;
 
 	const results: { imported: number; skipped: number; errors: string[] } = {
 		imported: 0,
@@ -296,15 +319,26 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			if (Number.isInteger(maybeNumeric) && maybeNumeric > 0) {
 				targetMapelId = maybeNumeric;
 			} else {
-				// treat as agama-base selection: resolve by student's agama
-				const variantName = resolveAgamaVariantName(muridRecord.agama);
-				if (variantName) {
+				// treat as agama/pks-base selection: resolve by student's agama
+				const agamaVariantName = resolveAgamaVariantName(muridRecord.agama);
+				const pksVariantName = resolvePksVariantName(muridRecord.agama);
+
+				if (agamaVariantName) {
 					const variantRecord = kelasMapels.find(
-						(rec) => normalizeText(rec.nama) === normalizeText(variantName)
+						(rec) => normalizeText(rec.nama) === normalizeText(agamaVariantName)
 					);
 					if (variantRecord) targetMapelId = variantRecord.id;
 				}
 				if (!targetMapelId && agamaBase) targetMapelId = agamaBase.id;
+
+				if (!targetMapelId && pksVariantName) {
+					const variantRecord = kelasMapels.find(
+						(rec) => normalizeText(rec.nama) === normalizeText(pksVariantName)
+					);
+					if (variantRecord) targetMapelId = variantRecord.id;
+				}
+				if (!targetMapelId && pksBase) targetMapelId = pksBase.id;
+
 				if (!targetMapelId) targetMapelId = kelasMapels[0]?.id ?? null;
 			}
 

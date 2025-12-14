@@ -9,6 +9,7 @@ function formatScore(value: number | null | undefined) {
 }
 
 const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
+const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
 
 const AGAMA_VARIANT_MAP: Record<string, string> = {
 	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
@@ -25,6 +26,21 @@ const AGAMA_VARIANT_MAP: Record<string, string> = {
 	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
 };
 
+const PKS_VARIANT_MAP: Record<string, string> = {
+	islam: 'Pendalaman Kitab Suci Islam',
+	kristen: 'Pendalaman Kitab Suci Kristen',
+	protestan: 'Pendalaman Kitab Suci Kristen',
+	katolik: 'Pendalaman Kitab Suci Katolik',
+	katholik: 'Pendalaman Kitab Suci Katolik',
+	hindu: 'Pendalaman Kitab Suci Hindu',
+	budha: 'Pendalaman Kitab Suci Buddha',
+	buddha: 'Pendalaman Kitab Suci Buddha',
+	buddhist: 'Pendalaman Kitab Suci Buddha',
+	khonghucu: 'Pendalaman Kitab Suci Khonghucu',
+	'khong hu cu': 'Pendalaman Kitab Suci Khonghucu',
+	konghucu: 'Pendalaman Kitab Suci Khonghucu'
+};
+
 function normalizeText(value: string | null | undefined) {
 	return value?.trim().toLowerCase() ?? '';
 }
@@ -33,9 +49,18 @@ function isAgamaSubject(name: string) {
 	return normalizeText(name).startsWith('pendidikan agama');
 }
 
+function isPksSubject(name: string) {
+	return normalizeText(name).startsWith('pendalaman kitab suci');
+}
+
 function resolveAgamaVariantName(agama: string | null | undefined) {
 	const normalized = normalizeText(agama);
 	return AGAMA_VARIANT_MAP[normalized] ?? null;
+}
+
+function resolvePksVariantName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return PKS_VARIANT_MAP[normalized] ?? null;
 }
 
 type MapelRecord = {
@@ -45,16 +70,24 @@ type MapelRecord = {
 
 function pickAgamaMapel(records: MapelRecord[], muridAgama: string | null | undefined) {
 	const mapelByName = new Map(records.map((record) => [normalizeText(record.nama), record]));
-	let baseMapel: MapelRecord | null = null;
-	const variantMapel: MapelRecord[] = [];
+	let baseAgamaMapel: MapelRecord | null = null;
+	let basePksMapel: MapelRecord | null = null;
+	const agamaVariantMapel: MapelRecord[] = [];
+	const pksVariantMapel: MapelRecord[] = [];
 	const regularMapel: MapelRecord[] = [];
 
 	for (const record of records) {
 		if (isAgamaSubject(record.nama)) {
 			if (normalizeText(record.nama) === normalizeText(AGAMA_BASE_SUBJECT)) {
-				baseMapel = record;
+				baseAgamaMapel = record;
 			} else {
-				variantMapel.push(record);
+				agamaVariantMapel.push(record);
+			}
+		} else if (isPksSubject(record.nama)) {
+			if (normalizeText(record.nama) === normalizeText(PKS_BASE_SUBJECT)) {
+				basePksMapel = record;
+			} else {
+				pksVariantMapel.push(record);
 			}
 		} else {
 			regularMapel.push(record);
@@ -62,17 +95,29 @@ function pickAgamaMapel(records: MapelRecord[], muridAgama: string | null | unde
 	}
 
 	let chosenAgamaMapel: MapelRecord | null = null;
-	const variantName = resolveAgamaVariantName(muridAgama);
-	if (variantName) {
-		chosenAgamaMapel = mapelByName.get(normalizeText(variantName)) ?? null;
+	const agamaVariantName = resolveAgamaVariantName(muridAgama);
+	if (agamaVariantName) {
+		chosenAgamaMapel = mapelByName.get(normalizeText(agamaVariantName)) ?? null;
 	}
 	if (!chosenAgamaMapel) {
-		chosenAgamaMapel = baseMapel ?? variantMapel.at(0) ?? null;
+		chosenAgamaMapel = baseAgamaMapel ?? agamaVariantMapel.at(0) ?? null;
+	}
+
+	let chosenPksMapel: MapelRecord | null = null;
+	const pksVariantName = resolvePksVariantName(muridAgama);
+	if (pksVariantName) {
+		chosenPksMapel = mapelByName.get(normalizeText(pksVariantName)) ?? null;
+	}
+	if (!chosenPksMapel) {
+		chosenPksMapel = basePksMapel ?? pksVariantMapel.at(0) ?? null;
 	}
 
 	const result = [...regularMapel];
 	if (chosenAgamaMapel) {
 		result.push(chosenAgamaMapel);
+	}
+	if (chosenPksMapel) {
+		result.push(chosenPksMapel);
 	}
 
 	result.sort((a, b) => a.nama.localeCompare(b.nama, 'id'));

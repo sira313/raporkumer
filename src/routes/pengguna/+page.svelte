@@ -43,7 +43,10 @@
 	// open delete modal for given ids (reused by bulk and single-user delete)
 	function openDeleteModalForIds(ids: number[]) {
 		const selectedUsers = users.filter((u) => ids.indexOf(u.id as number) !== -1);
-		const hasWali = selectedUsers.some((u) => (u as { type?: string }).type === 'wali_kelas');
+		const hasWali = selectedUsers.some((u) => {
+			const type = (u as { type?: string }).type;
+			return type === 'wali_kelas' || type === 'wali_asuh';
+		});
 		let bodyContent = `Yakin ingin menghapus ${ids.length} pengguna yang dipilih?`;
 		let positive: ModalAction = {
 			label: 'Hapus',
@@ -123,9 +126,9 @@
 			}
 		};
 		if (hasWali) {
-			bodyContent = `<div class="alert alert-warning flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" class="h-5 w-5 shrink-0"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><div class="flex-1">Tidak dapat menghapus karena satu atau lebih pengguna terpilih berperan sebagai Wali Kelas. Untuk menggantinya, klik tombol <strong>Ganti Wali Kelas</strong></div>`;
+			bodyContent = `<div class="alert alert-warning flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="none" viewBox="0 0 24 24" class="h-5 w-5 shrink-0"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><div class="flex-1">Tidak dapat menghapus karena satu atau lebih pengguna terpilih berperan sebagai Wali Kelas atau Wali Asuh. Untuk menggantinya, klik tombol <strong>Atur Data Kelas</strong></div>`;
 			positive = {
-				label: 'Ganti Wali Kelas',
+				label: 'Atur Data Kelas',
 				icon: 'edit',
 				action: ({ close }: { close: () => void }) => {
 					close();

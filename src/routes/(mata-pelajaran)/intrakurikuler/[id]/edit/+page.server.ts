@@ -1,12 +1,13 @@
 import db from '$lib/server/db/index.js';
 import { tableMataPelajaran } from '$lib/server/db/schema.js';
-import { agamaMapelNames } from '$lib/statics';
+import { agamaMapelNames, pksMapelNames } from '$lib/statics';
 import { unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
 import { and, eq, inArray } from 'drizzle-orm';
 
 const AGAMA_MAPEL_NAME_SET = new Set<string>(agamaMapelNames);
-const JENIS_VALUES = ['wajib', 'pilihan', 'mulok'] as const;
+const PKS_MAPEL_NAME_SET = new Set<string>(pksMapelNames);
+const JENIS_VALUES = ['wajib', 'pilihan', 'mulok', 'kejuruan'] as const;
 function isValidJenis(value: string): value is (typeof JENIS_VALUES)[number] {
 	return (JENIS_VALUES as readonly string[]).includes(value);
 }
@@ -54,6 +55,7 @@ export const actions = {
 		}
 
 		const isAgamaGroup = AGAMA_MAPEL_NAME_SET.has(existing.nama);
+		const isPksGroup = PKS_MAPEL_NAME_SET.has(existing.nama);
 		const now = new Date().toISOString();
 		const kkm = Math.max(0, Math.round(kkmValue));
 
@@ -70,6 +72,26 @@ export const actions = {
 				);
 
 			return { message: `KKM Pendidikan Agama dan Budi Pekerti diperbarui` };
+		}
+
+		if (isPksGroup) {
+			// enforce PKS code for PKS group and update KKM, jenis, and kode across all variants
+			const jenisRaw = formMapel.jenis?.toString().toLowerCase() ?? existing.jenis;
+			if (!isValidJenis(jenisRaw)) {
+				return fail(400, { fail: 'Jenis mata pelajaran tidak valid.' });
+			}
+
+			await db
+				.update(tableMataPelajaran)
+				.set({ kkm, jenis: jenisRaw, kode: 'PKS', updatedAt: now })
+				.where(
+					and(
+						eq(tableMataPelajaran.kelasId, existing.kelasId),
+						inArray(tableMataPelajaran.nama, pksMapelNames)
+					)
+				);
+
+			return { message: `KKM dan jenis Pendalaman Kitab Suci diperbarui` };
 		}
 
 		const nama = formMapel.nama?.toString().trim();

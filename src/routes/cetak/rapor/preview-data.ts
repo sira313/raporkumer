@@ -6,12 +6,12 @@ import {
 	tableAsesmenKokurikuler,
 	tableAsesmenSumatif,
 	tableAsesmenSumatifTujuan,
+	tableEkstrakurikuler,
 	tableMurid
 } from '$lib/server/db/schema';
 import {
 	jenisMapel,
 	agamaMapelNames,
-	agamaMapelOptions,
 	agamaParentName,
 	type DimensiProfilLulusanKey
 } from '$lib/statics';
@@ -27,265 +27,86 @@ import {
 	isEkstrakurikulerNilaiKategori,
 	type EkstrakurikulerNilaiKategori
 } from '$lib/ekstrakurikuler';
+import { buildCapaianKompetensi, type TujuanScoreEntry } from '$lib/rapor-modes';
 
 const LOCALE_ID = 'id-ID';
+
+const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
+
+const AGAMA_VARIANT_MAP: Record<string, string> = {
+	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
+	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
+	protestan: 'Pendidikan Agama Kristen dan Budi Pekerti',
+	katolik: 'Pendidikan Agama Katolik dan Budi Pekerti',
+	katholik: 'Pendidikan Agama Katolik dan Budi Pekerti',
+	hindu: 'Pendidikan Agama Hindu dan Budi Pekerti',
+	budha: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
+	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
+	'khong hu cu': 'Pendidikan Agama Khonghucu dan Budi Pekerti',
+	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
+};
+
+const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
+
+// Map dari agama ke nama PKS yang disimpan di database (tanpa "Agama")
+const PKS_VARIANT_DB_MAP: Record<string, string> = {
+	islam: 'Pendalaman Kitab Suci Islam',
+	kristen: 'Pendalaman Kitab Suci Kristen',
+	protestan: 'Pendalaman Kitab Suci Kristen',
+	katolik: 'Pendalaman Kitab Suci Katolik',
+	katholik: 'Pendalaman Kitab Suci Katolik',
+	hindu: 'Pendalaman Kitab Suci Hindu',
+	budha: 'Pendalaman Kitab Suci Buddha',
+	buddha: 'Pendalaman Kitab Suci Buddha',
+	buddhist: 'Pendalaman Kitab Suci Buddha',
+	khonghucu: 'Pendalaman Kitab Suci Khonghucu',
+	'khong hu cu': 'Pendalaman Kitab Suci Khonghucu',
+	konghucu: 'Pendalaman Kitab Suci Khonghucu'
+};
+
+// Map dari agama ke nama PKS untuk ditampilkan di rapor (dengan "Agama")
+const PKS_VARIANT_DISPLAY_MAP: Record<string, string> = {
+	islam: 'Pendalaman Kitab Suci Agama Islam',
+	kristen: 'Pendalaman Kitab Suci Agama Kristen',
+	protestan: 'Pendalaman Kitab Suci Agama Kristen',
+	katolik: 'Pendalaman Kitab Suci Agama Katolik',
+	katholik: 'Pendalaman Kitab Suci Agama Katolik',
+	hindu: 'Pendalaman Kitab Suci Agama Hindu',
+	budha: 'Pendalaman Kitab Suci Agama Buddha',
+	buddha: 'Pendalaman Kitab Suci Agama Buddha',
+	buddhist: 'Pendalaman Kitab Suci Agama Buddha',
+	khonghucu: 'Pendalaman Kitab Suci Agama Khonghucu',
+	'khong hu cu': 'Pendalaman Kitab Suci Agama Khonghucu',
+	konghucu: 'Pendalaman Kitab Suci Agama Khonghucu'
+};
+
+function normalizeText(value: string | null | undefined) {
+	return value?.trim().toLowerCase() ?? '';
+}
+
+function resolveAgamaVariantName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return AGAMA_VARIANT_MAP[normalized] ?? null;
+}
+
+// Resolve PKS variant name as stored in database (without "Agama")
+function resolvePksVariantDbName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return PKS_VARIANT_DB_MAP[normalized] ?? null;
+}
+
+// Resolve PKS variant name for display in rapor (with "Agama")
+function resolvePksVariantDisplayName(agama: string | null | undefined) {
+	const normalized = normalizeText(agama);
+	return PKS_VARIANT_DISPLAY_MAP[normalized] ?? null;
+}
 
 export type RaporContext = {
 	locals: App.Locals;
 	url: URL;
 };
-
-type PredikatKey = 'perlu-bimbingan' | 'cukup' | 'baik' | 'sangat-baik';
-
-type TujuanScoreEntry = {
-	tujuanPembelajaranId: number;
-	deskripsi: string;
-	nilai: number;
-};
-
-type PredikatDetail = {
-	key: PredikatKey;
-	label: string;
-	narrative: string;
-};
-
-type CapaianDescriptor = TujuanScoreEntry & {
-	predikat: PredikatDetail;
-};
-
-const PREDIKAT_ORDER: Record<PredikatKey, number> = {
-	'perlu-bimbingan': 0,
-	cukup: 1,
-	baik: 2,
-	'sangat-baik': 3
-};
-
-function determinePredikat(
-	nilai: number,
-	kkm: number | null | undefined,
-	kritCukup?: number,
-	kritBaik?: number
-): PredikatDetail {
-	// Apply the requested mathematical rules:
-	// - Perlu bimbingan: nilai < KKM
-	// - Cukup: KKM ≤ nilai ≤ kritCukup (default 85)
-	// - Baik: (kritCukup + 1) ≤ nilai ≤ kritBaik (default 95)
-	// - Sangat baik: nilai ≥ (kritBaik + 1)
-
-	const numericKkm = typeof kkm === 'number' && Number.isFinite(kkm) ? Math.round(kkm) : 0;
-	const baseKkm = Math.max(0, numericKkm);
-	const cUpper =
-		typeof kritCukup === 'number' && Number.isFinite(kritCukup) ? Math.round(kritCukup) : 85;
-	const bUpper =
-		typeof kritBaik === 'number' && Number.isFinite(kritBaik) ? Math.round(kritBaik) : 95;
-
-	if (nilai < baseKkm) {
-		return { key: 'perlu-bimbingan', label: 'Perlu Bimbingan', narrative: 'masih perlu bimbingan' };
-	}
-
-	// nilai is >= baseKkm here
-	if (nilai <= cUpper) {
-		return { key: 'cukup', label: 'Cukup', narrative: 'menunjukkan penguasaan yang cukup' };
-	}
-
-	if (nilai <= bUpper) {
-		return { key: 'baik', label: 'Baik', narrative: 'menunjukkan penguasaan yang baik' };
-	}
-
-	return {
-		key: 'sangat-baik',
-		label: 'Sangat Baik',
-		narrative: 'menunjukkan penguasaan yang sangat baik'
-	};
-}
-
-function compareDescriptorAscending(a: CapaianDescriptor, b: CapaianDescriptor): number {
-	const predikatDiff = PREDIKAT_ORDER[a.predikat.key] - PREDIKAT_ORDER[b.predikat.key];
-	if (predikatDiff !== 0) return predikatDiff;
-	if (a.nilai !== b.nilai) return a.nilai - b.nilai;
-	if (a.tujuanPembelajaranId !== b.tujuanPembelajaranId) {
-		return a.tujuanPembelajaranId - b.tujuanPembelajaranId;
-	}
-	return a.deskripsi.localeCompare(b.deskripsi, LOCALE_ID);
-}
-
-function buildDeskripsiLine(muridNama: string, descriptor: CapaianDescriptor): string {
-	const nama = muridNama.trim().length > 0 ? muridNama.trim() : muridNama;
-	const narrative = descriptor.predikat.narrative;
-
-	// Format khusus untuk predikat "Cukup"
-	if (descriptor.predikat.key === 'cukup') {
-		return `Ananda ${nama} cukup mampu ${descriptor.deskripsi}`;
-	}
-
-	return `Ananda ${nama} ${narrative} dalam ${descriptor.deskripsi}`;
-}
-
-function joinList(items: string[]): string {
-	if (!items.length) return '';
-	if (items.length === 1) return items[0];
-	if (items.length === 2) return `${items[0]} dan ${items[1]}`;
-	return items.slice(0, -1).join(', ') + ', dan ' + items.at(-1);
-}
-
-function capitalizeFirst(s: string) {
-	if (!s) return s;
-	return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-function buildCapaianKompetensi(
-	muridNama: string,
-	tujuanScores: TujuanScoreEntry[],
-	kkm: number | null | undefined,
-	mode: 'compact' | 'full' | 'full-desc' = 'compact',
-	kritCukup?: number,
-	kritBaik?: number
-): string {
-	if (!tujuanScores.length) {
-		return 'Belum ada penilaian sumatif.';
-	}
-
-	const descriptors = tujuanScores.map<CapaianDescriptor>((entry) => ({
-		...entry,
-		predikat: determinePredikat(entry.nilai, kkm, kritCukup, kritBaik)
-	}));
-
-	const sorted = descriptors.slice().sort(compareDescriptorAscending);
-
-	// If not full, keep previous compact behavior: show highest and lowest descriptors
-	if (mode === 'compact') {
-		const lowest = sorted[0];
-		const highest = sorted.at(-1) ?? lowest;
-
-		// Jika hanya 1 tujuan atau highest === lowest, tampilkan 1 kalimat saja
-		if (sorted.length === 1 || highest.tujuanPembelajaranId === lowest.tujuanPembelajaranId) {
-			return buildDeskripsiLine(muridNama, highest);
-		}
-
-		const highestLine = buildDeskripsiLine(muridNama, highest);
-		const lowestLine = buildDeskripsiLine(muridNama, lowest);
-
-		return `${highestLine}\n${lowestLine}`;
-	}
-
-	// Full mode: group all tujuan by predikat from highest to lowest and list each
-	if (mode === 'full') {
-		const groups: Record<PredikatKey, CapaianDescriptor[]> = {
-			'sangat-baik': [],
-			baik: [],
-			cukup: [],
-			'perlu-bimbingan': []
-		};
-
-		for (const d of sorted) {
-			groups[d.predikat.key].push(d);
-		}
-
-		const order: PredikatKey[] = ['sangat-baik', 'baik', 'cukup', 'perlu-bimbingan'];
-		const lines: string[] = [];
-
-		for (const key of order) {
-			const list = groups[key];
-			if (!list.length) continue;
-
-			// Map to heading phrases similar to examples
-			let headingPhrase = '';
-			if (key === 'sangat-baik') headingPhrase = 'Menunjukkan penguasaan yang sangat baik dalam:';
-			else if (key === 'baik') headingPhrase = 'Menunjukkan penguasaan yang baik dalam:';
-			else if (key === 'cukup') headingPhrase = 'Cukup menguasai dalam:';
-			else headingPhrase = 'Masih perlu bimbingan dalam:';
-
-			lines.push(headingPhrase);
-
-			// Sort list by nilai descending then by id
-			list.sort((a, b) => {
-				if (a.nilai !== b.nilai) return b.nilai - a.nilai;
-				return a.tujuanPembelajaranId - b.tujuanPembelajaranId;
-			});
-
-			for (const item of list) {
-				lines.push(`- ${item.deskripsi}`);
-			}
-
-			// Blank line between groups
-			lines.push('');
-		}
-
-		// Remove trailing blank if present
-		if (lines.length > 0 && lines.at(-1) === '') lines.pop();
-
-		// Prepend student name line? The example shows name then grouped sections; follow that
-		return `Ananda ${muridNama}\n${lines.join('\n')}`;
-	}
-
-	// Full-desc mode: produce paragraph-style descriptive sentences grouped as
-	// - "tercapai": includes 'sangat-baik', 'baik', 'cukup'
-	// - "tidak tercapai": includes 'perlu-bimbingan'
-	// Example output:
-	//   Ananda Budi menunjukkan penguasaan yang sangat baik dalam tujuan a, tujuan b, dan tujuan c. Menunjukkan penguasaan yang baik dalam tujuan e, dan tujuan f. Cukup mampu tujuan g, tujuan h, dan tujuan i.
-	//
-	//   Ananda Budi masih perlu bimbingan dalam tujuan j, dan tujuan k.
-	if (mode === 'full-desc') {
-		const groups: Record<PredikatKey, CapaianDescriptor[]> = {
-			'sangat-baik': [],
-			baik: [],
-			cukup: [],
-			'perlu-bimbingan': []
-		};
-		for (const d of sorted) {
-			groups[d.predikat.key].push(d);
-		}
-
-		const achievedOrder: PredikatKey[] = ['sangat-baik', 'baik', 'cukup'];
-		const achievedSentences: string[] = [];
-
-		// Build the "tercapai" paragraph by concatenating sentences for sangat-baik, baik, cukup
-		for (let i = 0; i < achievedOrder.length; i++) {
-			const key = achievedOrder[i];
-			const list = groups[key];
-			if (!list.length) continue;
-
-			const descs = list.map((it) => it.deskripsi.replace(/[.!?]+$/gu, '').trim());
-			const joined = joinList(descs);
-
-			let phrase = '';
-			if (key === 'sangat-baik')
-				phrase = `menunjukkan penguasaan yang sangat baik dalam ${joined}.`;
-			else if (key === 'baik') phrase = `menunjukkan penguasaan yang baik dalam ${joined}.`;
-			else phrase = `cukup mampu ${joined}.`;
-
-			if (achievedSentences.length === 0) {
-				achievedSentences.push(`Ananda ${muridNama} ${phrase}`);
-			} else {
-				achievedSentences.push(capitalizeFirst(phrase));
-			}
-		}
-
-		const achievedParagraph = achievedSentences.length ? achievedSentences.join(' ') : '';
-
-		// Build the "tidak tercapai" paragraph for 'perlu-bimbingan' if any
-		const needList = groups['perlu-bimbingan'];
-		let notAchievedParagraph = '';
-		if (needList.length) {
-			const descs = needList.map((it) => it.deskripsi.replace(/[.!?]+$/gu, '').trim());
-			const joined = joinList(descs);
-			// use narrative 'masih perlu bimbingan' but make full sentence with name
-			notAchievedParagraph = `Ananda ${muridNama} ${'masih perlu bimbingan'} dalam ${joined}.`;
-		}
-
-		if (achievedParagraph && notAchievedParagraph) {
-			return `${achievedParagraph}\n\n${notAchievedParagraph}`;
-		}
-		if (achievedParagraph) return achievedParagraph;
-		if (notAchievedParagraph) return notAchievedParagraph;
-		return '';
-	}
-
-	// Fallback: return highest descriptor line
-	const fallback = sorted.at(-1) ?? sorted[0];
-	if (fallback) return buildDeskripsiLine(muridNama, fallback);
-	return '';
-}
 
 function requireInteger(paramName: string, value: string | null): number {
 	if (!value) {
@@ -390,13 +211,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	}
 
 	const fullTPParam = url.searchParams.get('full_tp');
-	const fullTPParamStr = String(fullTPParam ?? '').toLowerCase();
-	const tpMode: 'compact' | 'full' | 'full-desc' =
-		fullTPParamStr === '1' || fullTPParamStr === 'true'
-			? 'full'
-			: fullTPParamStr === 'desc' || fullTPParamStr === 'full-desc'
-				? 'full-desc'
-				: 'compact';
+	const tpMode: 'compact' | 'full-desc' =
+		fullTPParam === 'desc' || fullTPParam === 'full-desc' ? 'full-desc' : 'compact';
 
 	// read optional intrakurikuler criteria overrides from query params
 	const kritCukupParam = url.searchParams.get('krit_cukup');
@@ -404,47 +220,56 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	const kritCukup = kritCukupParam ? Number(kritCukupParam) : undefined;
 	const kritBaik = kritBaikParam ? Number(kritBaikParam) : undefined;
 
-	const [asesmenSumatif, asesmenEkstrakurikuler, asesmenKokurikuler, asesmenSumatifTujuan] =
-		await Promise.all([
-			db.query.tableAsesmenSumatif.findMany({
-				where: eq(tableAsesmenSumatif.muridId, murid.id),
-				with: {
-					mataPelajaran: true
-				},
-				orderBy: [asc(tableAsesmenSumatif.mataPelajaranId)]
-			}),
-			db.query.tableAsesmenEkstrakurikuler.findMany({
-				where: eq(tableAsesmenEkstrakurikuler.muridId, murid.id),
-				with: {
-					ekstrakurikuler: true,
-					tujuan: true
-				},
-				orderBy: [
-					asc(tableAsesmenEkstrakurikuler.ekstrakurikulerId),
-					asc(tableAsesmenEkstrakurikuler.tujuanId)
-				]
-			}),
-			db.query.tableAsesmenKokurikuler.findMany({
-				where: eq(tableAsesmenKokurikuler.muridId, murid.id),
-				with: {
-					kokurikuler: true
-				}
-			}),
-			db.query.tableAsesmenSumatifTujuan.findMany({
-				where: eq(tableAsesmenSumatifTujuan.muridId, murid.id),
-				with: {
-					tujuanPembelajaran: {
-						columns: {
-							deskripsi: true
-						}
+	const [
+		asesmenSumatif,
+		asesmenEkstrakurikuler,
+		asesmenKokurikuler,
+		asesmenSumatifTujuan,
+		allEkstrakurikuler
+	] = await Promise.all([
+		db.query.tableAsesmenSumatif.findMany({
+			where: eq(tableAsesmenSumatif.muridId, murid.id),
+			with: {
+				mataPelajaran: true
+			},
+			orderBy: [asc(tableAsesmenSumatif.mataPelajaranId)]
+		}),
+		db.query.tableAsesmenEkstrakurikuler.findMany({
+			where: eq(tableAsesmenEkstrakurikuler.muridId, murid.id),
+			with: {
+				ekstrakurikuler: true,
+				tujuan: true
+			},
+			orderBy: [
+				asc(tableAsesmenEkstrakurikuler.ekstrakurikulerId),
+				asc(tableAsesmenEkstrakurikuler.tujuanId)
+			]
+		}),
+		db.query.tableAsesmenKokurikuler.findMany({
+			where: eq(tableAsesmenKokurikuler.muridId, murid.id),
+			with: {
+				kokurikuler: true
+			}
+		}),
+		db.query.tableAsesmenSumatifTujuan.findMany({
+			where: eq(tableAsesmenSumatifTujuan.muridId, murid.id),
+			with: {
+				tujuanPembelajaran: {
+					columns: {
+						deskripsi: true
 					}
-				},
-				orderBy: [
-					asc(tableAsesmenSumatifTujuan.mataPelajaranId),
-					asc(tableAsesmenSumatifTujuan.tujuanPembelajaranId)
-				]
-			})
-		]);
+				}
+			},
+			orderBy: [
+				asc(tableAsesmenSumatifTujuan.mataPelajaranId),
+				asc(tableAsesmenSumatifTujuan.tujuanPembelajaranId)
+			]
+		}),
+		db.query.tableEkstrakurikuler.findMany({
+			where: eq(tableEkstrakurikuler.kelasId, murid.kelasId),
+			orderBy: [asc(tableEkstrakurikuler.nama)]
+		})
+	]);
 
 	const tujuanScoresByMapel = new Map<number, TujuanScoreEntry[]>();
 
@@ -473,6 +298,26 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 
 	const normalizeSubjectName = (value: string) => value.trim().toLocaleLowerCase(LOCALE_ID);
 
+	// Resolve the expected agama subject name based on murid's agama
+	const muridExpectedAgamaMapel = resolveAgamaVariantName(murid.agama) ?? AGAMA_BASE_SUBJECT;
+	const muridExpectedAgamaMapelNormalized = normalizeText(muridExpectedAgamaMapel);
+
+	// Resolve the expected PKS subject name based on murid's agama
+	// For filtering: use DB name (without "Agama")
+	const muridExpectedPksDbMapel = resolvePksVariantDbName(murid.agama) ?? PKS_BASE_SUBJECT;
+	const muridExpectedPksDbMapelNormalized = normalizeText(muridExpectedPksDbMapel);
+	// For display: use display name (with "Agama")
+	const muridExpectedPksDisplayMapel =
+		resolvePksVariantDisplayName(murid.agama) ?? PKS_BASE_SUBJECT;
+
+	function isAgamaSubject(name: string): boolean {
+		return normalizeText(name).startsWith('pendidikan agama');
+	}
+
+	function isPksSubject(name: string): boolean {
+		return normalizeText(name).startsWith('pendalaman kitab suci');
+	}
+
 	const wajibSubjectPriority = [
 		{
 			core: 'pendidikan agama dan budi pekerti',
@@ -492,13 +337,9 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		}
 	] as const;
 
-	const muridAgamaSubjectName = (() => {
-		const normalizedAgama = murid.agama ? normalizeSubjectName(murid.agama) : '';
-		const matchedOption =
-			agamaMapelOptions.find((option) => normalizeSubjectName(option.label) === normalizedAgama) ??
-			agamaMapelOptions.find((option) => normalizeSubjectName(option.key) === normalizedAgama);
-		return matchedOption?.name ?? agamaParentName;
-	})();
+	// Resolve murid's agama subject name using the same mapping as filter
+	const muridAgamaSubjectName = resolveAgamaVariantName(murid.agama) ?? agamaParentName;
+	const muridPksSubjectDisplayName = muridExpectedPksDisplayMapel;
 
 	const agamaParentNameNormalized = normalizeSubjectName(agamaParentName);
 
@@ -524,17 +365,48 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	};
 
 	const nilaiIntrakurikuler = asesmenSumatif
-		.filter((item) => item.mataPelajaran)
+		.filter((item) => {
+			// Filter basic requirement
+			if (!item.mataPelajaran) return false;
+
+			const mapel = item.mataPelajaran;
+
+			// Filter agama subject to only show the one matching murid's agama
+			if (isAgamaSubject(mapel.nama)) {
+				// Only include agama subject that matches murid's expected agama mapel
+				return normalizeText(mapel.nama) === muridExpectedAgamaMapelNormalized;
+			}
+
+			// Filter PKS subject to only show the one matching murid's agama
+			if (isPksSubject(mapel.nama)) {
+				// Only include PKS subject that matches murid's expected PKS mapel (from DB, without "Agama")
+				return normalizeText(mapel.nama) === muridExpectedPksDbMapelNormalized;
+			}
+
+			// Include non-agama and non-PKS subjects
+			return true;
+		})
 		.map((item) => {
 			const mapel = item.mataPelajaran!;
 			const priority = mapel.jenis === 'wajib' ? getWajibPriorityInfo(mapel.nama) : null;
 			const normalizedName = normalizeSubjectName(mapel.nama);
 			const isAgamaCore = priority?.core === 'pendidikan agama dan budi pekerti';
 			const tujuanScores = tujuanScoresByMapel.get(mapel.id) ?? [];
-			const displayName =
-				isAgamaCore && normalizedName === agamaParentNameNormalized
-					? muridAgamaSubjectName
-					: mapel.nama;
+
+			// Determine display name
+			let displayName = mapel.nama;
+
+			// Handle PAPB: if parent, show variant name; if variant, show as is
+			if (isAgamaCore && normalizedName === agamaParentNameNormalized) {
+				displayName = muridAgamaSubjectName;
+			}
+
+			// Handle PKS: transform all PKS subjects to include "Agama" in display name
+			if (isPksSubject(mapel.nama)) {
+				// Always show with "Agama" for both parent and variants
+				displayName = muridPksSubjectDisplayName;
+			}
+
 			return {
 				mapel,
 				priority,
@@ -574,7 +446,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			kelompok: entry.kelompok,
 			mataPelajaran: entry.displayName,
 			nilaiAkhir: entry.nilaiAkhir,
-			deskripsi: entry.deskripsi
+			deskripsi: entry.deskripsi,
+			jenis: entry.mapel.jenis as 'wajib' | 'pilihan' | 'mulok' | 'kejuruan'
 		}));
 
 	const ekstrakurikulerGrouped = new Map<
@@ -599,10 +472,23 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		ekstrakurikulerGrouped.set(kegiatan.id, group);
 	}
 
+	// Tambahkan ekstrakurikuler yang belum dinilai dengan deskripsi "-"
+	for (const ekskul of allEkstrakurikuler) {
+		if (!ekstrakurikulerGrouped.has(ekskul.id)) {
+			ekstrakurikulerGrouped.set(ekskul.id, {
+				nama: ekskul.nama,
+				parts: [] // empty parts indicates "belum dinilai"
+			});
+		}
+	}
+
 	const ekstrakurikuler = Array.from(ekstrakurikulerGrouped.values())
 		.map((entry) => ({
 			nama: entry.nama,
-			deskripsi: buildEkstrakurikulerDeskripsi(entry.parts, murid.nama) ?? 'Belum ada catatan.'
+			deskripsi:
+				entry.parts.length > 0
+					? (buildEkstrakurikulerDeskripsi(entry.parts, murid.nama) ?? 'Belum ada catatan.')
+					: '-'
 		}))
 		.sort((a, b) => a.nama.localeCompare(b.nama, LOCALE_ID));
 
@@ -664,7 +550,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		sekolah: {
 			nama: sekolah.nama,
 			alamat: composeAlamat(sekolah),
-			logoUrl: buildLogoUrl(sekolah)
+			logoUrl: buildLogoUrl(sekolah),
+			jenjangVariant: sekolah.jenjangVariant ?? null
 		},
 		murid: {
 			nama: murid.nama,
@@ -685,7 +572,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		},
 		kepalaSekolah: {
 			nama: sekolah.kepalaSekolah?.nama ?? '',
-			nip: sekolah.kepalaSekolah?.nip ?? null
+			nip: sekolah.kepalaSekolah?.nip ?? null,
+			statusKepalaSekolah: sekolah.statusKepalaSekolah ?? 'definitif'
 		},
 		nilaiIntrakurikuler,
 		kokurikuler,

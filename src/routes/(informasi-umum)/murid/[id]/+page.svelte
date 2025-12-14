@@ -8,8 +8,15 @@
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import MuridPhotoUploadModal from '$lib/components/murid-photo-upload-modal.svelte';
+	import { page } from '$app/state';
 
 	let { data } = $props();
+
+	// Restrict editing for wali_asuh
+	const canEdit = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null | undefined;
+		return u?.type !== 'wali_asuh';
+	});
 
 	let kelas = `${data.murid.kelas?.nama || '-'} Fase ${data.murid.kelas?.fase || '-'}`;
 	let deletingFoto = $state(false);
@@ -152,6 +159,8 @@
 								class="btn btn-soft rounded-l-md shadow-none"
 								type="button"
 								onclick={() => (isUploadModalOpen = true)}
+								disabled={!canEdit}
+								title={!canEdit ? 'Anda tidak memiliki izin untuk mengubah foto' : ''}
 								aria-label="Ubah Foto Murid"
 							>
 								<Icon name="edit" />
@@ -161,7 +170,8 @@
 								class="btn btn-soft btn-error rounded-r-md shadow-none"
 								type="button"
 								onclick={deleteFoto}
-								disabled={deletingFoto || !photoSrc}
+								disabled={deletingFoto || !photoSrc || !canEdit}
+								title={!canEdit ? 'Anda tidak memiliki izin untuk menghapus foto' : ''}
 								aria-label="Hapus Foto Murid"
 							>
 								<Icon name="del" />
@@ -230,14 +240,26 @@
 	</a>
 	<div class="flex-1"></div>
 
-	<a
-		class="btn btn-primary btn-soft shadow-none"
-		href="/murid/form/{data.murid.id}"
-		use:modalRoute={'edit-murid'}
-	>
-		<Icon name="edit" />
-		Edit
-	</a>
+	{#if canEdit}
+		<a
+			class="btn btn-primary btn-soft shadow-none"
+			href="/murid/form/{data.murid.id}"
+			use:modalRoute={'edit-murid'}
+		>
+			<Icon name="edit" />
+			Edit
+		</a>
+	{:else}
+		<button
+			type="button"
+			class="btn btn-disabled shadow-none"
+			disabled
+			title="Anda tidak memiliki izin untuk mengedit"
+		>
+			<Icon name="edit" />
+			Edit
+		</button>
+	{/if}
 </div>
 
 <!-- Upload Foto Modal -->

@@ -39,6 +39,12 @@
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
 	});
 
+	// Restrict editing for wali_asuh
+	const canEdit = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null | undefined;
+		return u?.type !== 'wali_asuh';
+	});
+
 	const currentPage = $derived.by(() => data.page?.currentPage ?? 1);
 	const totalPages = $derived.by(() => Math.max(1, data.page?.totalPages ?? 1));
 	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
@@ -368,7 +374,8 @@
 											type="button"
 											class="btn btn-soft btn-sm shadow-none"
 											onclick={() => startEdit(murid)}
-											disabled={!data.tableReady}
+											disabled={!data.tableReady || !canEdit}
+											title={!canEdit ? 'Anda tidak memiliki izin untuk mengedit' : ''}
 										>
 											<Icon name="edit" />
 											Edit

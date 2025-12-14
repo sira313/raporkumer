@@ -6,7 +6,7 @@ import {
 	tableKelas,
 	tableAuthUserMataPelajaran
 } from '$lib/server/db/schema';
-import { agamaVariantNames } from '$lib/statics';
+import { agamaVariantNames, pksVariantNames } from '$lib/statics';
 import { eq, inArray } from 'drizzle-orm';
 
 type MataPelajaranBase = Omit<MataPelajaran, 'tujuanPembelajaran'>;
@@ -14,13 +14,18 @@ type MataPelajaranWithTp = MataPelajaranBase & { tpCount: number; editTpMapelId?
 type MataPelajaranList = MataPelajaranWithTp[];
 
 const AGAMA_VARIANT_NAME_SET = new Set<string>(agamaVariantNames);
+const PKS_VARIANT_NAME_SET = new Set<string>(pksVariantNames);
 const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
+const PKS_PARENT_NAME = 'Pendalaman Kitab Suci';
 
 export async function load({ depends, url, parent }) {
 	depends('app:mapel');
 	const { kelasAktif, daftarKelas, user } = await parent();
 	const daftarKelasEntries = daftarKelas as Array<{ id: number }> | undefined;
-	await ensureAgamaMapelForClasses(daftarKelasEntries?.map((kelas) => kelas.id) ?? []);
+	const kelasIdsForEnsure = daftarKelasEntries?.map((kelas) => kelas.id) ?? [];
+	await ensureAgamaMapelForClasses(kelasIdsForEnsure);
+	// PKS tidak lagi otomatis ditambahkan, pengguna harus menambahkannya secara manual via tombol "Tambah PKS"
+	// await ensurePksMapelForClasses(kelasIdsForEnsure);
 	const fromQuery = url.searchParams.get('kelas_id');
 	const kelasCandidate = fromQuery ? Number(fromQuery) : (kelasAktif?.id ?? null);
 	const kelasId =
@@ -61,7 +66,6 @@ export async function load({ depends, url, parent }) {
 							assignedMapels.map((m) => m.mataPelajaranId)
 						)
 					});
-					console.log('[intrakurikuler] Linda assignedMapelRecords:', assignedMapelRecords);
 
 					// Build a set of allowed mapel names (normalize for comparison)
 					const allowedNames = new Set(
@@ -70,39 +74,34 @@ export async function load({ depends, url, parent }) {
 
 					// Check if any assigned mapel is an agama variant
 					let hasAgamaVariant = false;
+					let hasPksVariant = false;
 					for (const record of assignedMapelRecords) {
 						const norm = (record.nama || '').trim().toLowerCase();
-						if (
-							norm.startsWith('pendidikan agama') &&
-							!norm.includes(AGAMA_PARENT_NAME.toLowerCase())
-						) {
+						if (norm.startsWith('pendidikan agama') && norm !== AGAMA_PARENT_NAME.toLowerCase()) {
 							hasAgamaVariant = true;
-							break;
+						}
+						if (
+							norm.startsWith('pendalaman kitab suci') &&
+							norm !== PKS_PARENT_NAME.toLowerCase()
+						) {
+							hasPksVariant = true;
 						}
 					}
-					console.log('[intrakurikuler] hasAgamaVariant:', hasAgamaVariant);
 
 					// If has agama variant, also add the parent agama mapel name
 					if (hasAgamaVariant) {
 						allowedNames.add(AGAMA_PARENT_NAME.toLowerCase());
-						console.log('[intrakurikuler] Added parent agama to allowedNames');
 					}
-
-					console.log('[intrakurikuler] allowedNames:', Array.from(allowedNames));
-					console.log(
-						'[intrakurikuler] mapel before filter:',
-						mapel.map((m) => ({ id: m.id, nama: m.nama }))
-					);
+					// If has PKS variant, also add the parent PKS mapel name
+					if (hasPksVariant) {
+						allowedNames.add(PKS_PARENT_NAME.toLowerCase());
+					}
 
 					// Filter current kelas' mapel by name match
 					mapel = mapel.filter((m) => {
 						const mNorm = (m.nama || '').trim().toLowerCase();
 						return allowedNames.has(mNorm);
 					});
-					console.log(
-						'[intrakurikuler] mapel after filter:',
-						mapel.map((m) => ({ id: m.id, nama: m.nama }))
-					);
 				} else {
 					// Fallback: check legacy single mataPelajaranId
 					const assignedId = (user as unknown as { mataPelajaranId?: number }).mataPelajaranId;
@@ -119,12 +118,20 @@ export async function load({ depends, url, parent }) {
 								// allow showing the parent mapel as well so the teacher can access the parent
 								// intrakurikuler page which contains agama-select.
 								const assignedIsAgamaVariant =
-									norm.startsWith('pendidikan agama') &&
-									!norm.includes(AGAMA_PARENT_NAME.toLowerCase());
+									norm.startsWith('pendidikan agama') && norm !== AGAMA_PARENT_NAME.toLowerCase();
+								const assignedIsPksVariant =
+									norm.startsWith('pendalaman kitab suci') &&
+									norm !== PKS_PARENT_NAME.toLowerCase();
+
 								if (assignedIsAgamaVariant) {
 									mapel = mapel.filter((m) => {
 										const n = (m.nama || '').trim().toLowerCase();
 										return n === norm || n === AGAMA_PARENT_NAME.toLowerCase();
+									});
+								} else if (assignedIsPksVariant) {
+									mapel = mapel.filter((m) => {
+										const n = (m.nama || '').trim().toLowerCase();
+										return n === norm || n === PKS_PARENT_NAME.toLowerCase();
 									});
 								} else {
 									mapel = mapel.filter((m) => (m.nama || '').trim().toLowerCase() === norm);
@@ -214,31 +221,89 @@ export async function load({ depends, url, parent }) {
 		agamaParentToVariantMap.set(agamaParentInKelas.id, targetVariantId);
 	}
 
+	// Build a map of PKS parent ID to first variant ID for users with assigned PKS
+	const pksParentToVariantMap = new Map<number, number>();
+	const pksVariantInKelas = mapel.filter((item) => PKS_VARIANT_NAME_SET.has(item.nama));
+	const pksParentInKelas = mapel.find(
+		(item) => item.nama?.trim().toLowerCase() === PKS_PARENT_NAME.toLowerCase()
+	);
+	if (pksParentInKelas && pksVariantInKelas.length > 0) {
+		// Map parent ID to the user's assigned variant, or first variant if no specific assignment
+		let targetVariantId = pksVariantInKelas[0].id;
+
+		// Try to find user's assigned PKS variant
+		if (user && (user as unknown as { id?: number; type?: string }).type === 'user') {
+			const userId = (user as unknown as { id?: number }).id;
+			if (userId) {
+				try {
+					const assignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({
+						columns: { mataPelajaranId: true },
+						where: eq(tableAuthUserMataPelajaran.authUserId, userId)
+					});
+					if (assignedMapels.length > 0) {
+						const assignedRecords = await db.query.tableMataPelajaran.findMany({
+							columns: { id: true, nama: true },
+							where: inArray(
+								tableMataPelajaran.id,
+								assignedMapels.map((m) => m.mataPelajaranId)
+							)
+						});
+						// Find first assigned PKS variant in this kelas
+						for (const record of assignedRecords) {
+							const norm = (record.nama || '').trim().toLowerCase();
+							if (
+								norm.startsWith('pendalaman kitab suci') &&
+								!norm.includes(PKS_PARENT_NAME.toLowerCase())
+							) {
+								const foundInKelas = pksVariantInKelas.find((v) => v.id === record.id);
+								if (foundInKelas) {
+									targetVariantId = foundInKelas.id;
+									break;
+								}
+							}
+						}
+					}
+				} catch (err) {
+					console.warn('[intrakurikuler] Failed to resolve assigned PKS variant', err);
+				}
+			}
+		}
+
+		pksParentToVariantMap.set(pksParentInKelas.id, targetVariantId);
+	}
+
 	const mapelWithIndicator: MataPelajaranWithTp[] = mapel.map((item) => ({
 		...item,
 		tpCount: tpCountByMapelId.get(item.id) ?? 0,
 		// If this is an agama parent and user has assigned variant, use variant ID for Edit TP link
+		// Same logic applies for PKS parent
 		editTpMapelId: agamaParentToVariantMap.has(item.id)
 			? agamaParentToVariantMap.get(item.id)
-			: item.id
+			: pksParentToVariantMap.has(item.id)
+				? pksParentToVariantMap.get(item.id)
+				: item.id
 	}));
 
-	const mapelTampil = mapelWithIndicator.filter((item) => !AGAMA_VARIANT_NAME_SET.has(item.nama));
+	const mapelTampil = mapelWithIndicator.filter(
+		(item) => !AGAMA_VARIANT_NAME_SET.has(item.nama) && !PKS_VARIANT_NAME_SET.has(item.nama)
+	);
 
-	const { daftarWajib, daftarPilihan, daftarMulok } = mapelTampil.reduce(
+	const { daftarWajib, daftarPilihan, daftarMulok, daftarKejuruan } = mapelTampil.reduce(
 		(acc, item) => {
 			if (item.jenis === 'wajib') acc.daftarWajib.push(item);
 			else if (item.jenis === 'pilihan') acc.daftarPilihan.push(item);
 			else if (item.jenis === 'mulok') acc.daftarMulok.push(item);
+			else if (item.jenis === 'kejuruan') acc.daftarKejuruan.push(item);
 			return acc;
 		},
 		{
 			daftarWajib: <MataPelajaranList>[],
 			daftarPilihan: <MataPelajaranList>[],
-			daftarMulok: <MataPelajaranList>[]
+			daftarMulok: <MataPelajaranList>[],
+			daftarKejuruan: <MataPelajaranList>[]
 		}
 	);
-	return { kelasId, mapel: { daftarWajib, daftarPilihan, daftarMulok } };
+	return { kelasId, mapel: { daftarWajib, daftarPilihan, daftarMulok, daftarKejuruan } };
 }
 
 import { readBufferToAoA, writeAoaToBuffer } from '$lib/utils/excel.js';
@@ -327,13 +392,6 @@ export const actions = {
 			return fail(400, {
 				fail: 'Template tidak valid. Pastikan kolom Mata Pelajaran, Lingkup Materi, dan Tujuan Pembelajaran tersedia.'
 			});
-		}
-
-		// Debug: print detected headers to server log to troubleshoot kode not being read
-		try {
-			console.debug('[import_mapel] detected headers:', normalizedHeaderCols);
-		} catch {
-			/* ignore logging errors */
 		}
 
 		const dataRows = rawRows.slice(headerIndex + 1).filter(Boolean);
@@ -439,12 +497,6 @@ export const actions = {
 							meta.kode ??
 							((mapelName || '').toLowerCase().startsWith('pendidikan agama') ? 'PAPB' : null)
 					};
-					// debug: show what will be inserted (help verify kode presence)
-					try {
-						console.debug('[import_mapel] insertValues for', mapelName, insertValues);
-					} catch (err) {
-						console.warn('[import_mapel] debug log failed', err);
-					}
 					const insertRes = await tx
 						.insert(tableMataPelajaran)
 						.values(insertValues)
@@ -461,12 +513,6 @@ export const actions = {
 					if (typeof meta.kkm === 'number') updates.kkm = meta.kkm;
 					if (meta.kode && meta.kode !== undefined) updates.kode = meta.kode;
 					if (Object.keys(updates).length > 0) {
-						// debug: show updates for existing mapel id
-						try {
-							console.debug('[import_mapel] updating mapel id', mapelId, 'updates:', updates);
-						} catch (err) {
-							console.warn('[import_mapel] debug log failed', err);
-						}
 						await tx
 							.update(tableMataPelajaran)
 							.set(updates)
@@ -629,5 +675,25 @@ export const actions = {
 				'Content-Disposition': `attachment; filename="${filename}"`
 			}
 		});
+	},
+
+	async tambah_pks({ cookies, locals }) {
+		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID) || null;
+		const kelasId = kelasIdCookie ? Number(kelasIdCookie) : null;
+		if (!kelasId || !Number.isFinite(kelasId)) {
+			return fail(400, { fail: 'Pilih kelas aktif terlebih dahulu.' });
+		}
+
+		const sekolahId = locals.sekolah?.id;
+		if (!sekolahId) return fail(400, { fail: 'Pilih sekolah aktif terlebih dahulu.' });
+
+		const { addPksParentToClasses } = await import('$lib/server/mapel-pks.js');
+		const wasAdded = await addPksParentToClasses([kelasId]);
+
+		if (wasAdded) {
+			return { success: 'Mata pelajaran PKS berhasil ditambahkan ke kelas.' };
+		} else {
+			return { success: 'Mapel PKS sudah ada' };
+		}
 	}
 };

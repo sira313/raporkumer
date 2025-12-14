@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PrintCardPage from '$lib/components/cetak/rapor/PrintCardPage.svelte';
-	import { jenjangPendidikanSederajat } from '$lib/statics';
+	import { jenjangPendidikanSederajat, nauganHeaderByKey } from '$lib/statics';
 
 	type CoverData = NonNullable<App.PageData['coverData']>;
 	type ComponentData = {
@@ -11,11 +11,14 @@
 	let {
 		data = {},
 		onPrintableReady = () => {},
-		showBgLogo = false
+		showBgLogo = false,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		muridProp: _muridProp = null
 	} = $props<{
 		data?: ComponentData;
 		onPrintableReady?: (node: HTMLDivElement | null) => void;
 		showBgLogo?: boolean;
+		muridProp?: { id?: number | null } | null;
 	}>();
 
 	const coverData = $derived.by(() => data?.coverData ?? null);
@@ -72,7 +75,12 @@
 		{ label: 'Nama Murid', value: formatUpper(murid?.nama) },
 		{ label: 'NISN / NIS', value: formatStudentIds(murid?.nisn, murid?.nis) }
 	]);
-	const ministryLines = ['KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH', 'REPUBLIK INDONESIA'];
+	const ministryLines = $derived.by(() => {
+		const sekolahRecord = sekolah as Record<string, unknown> | null;
+		const nauganKey = (sekolahRecord?.['naungan'] ??
+			'kemendikbud') as keyof typeof nauganHeaderByKey;
+		return nauganHeaderByKey[nauganKey] ?? nauganHeaderByKey['kemendikbud'];
+	});
 	const biodataRows = $derived.by(() => {
 		if (!sekolah) return [];
 		return [

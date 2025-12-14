@@ -9,6 +9,7 @@
 	import Toast, { toast } from '$lib/components/toast.svelte';
 
 	import NavIndicator from '$lib/components/nav-indicator.svelte';
+	import ScrollToTop from '$lib/components/scroll-to-top.svelte';
 	import '../app.css';
 
 	let { data, children } = $props();
@@ -124,6 +125,7 @@
 				>
 					<div class="m-4 flex flex-row xl:gap-4">
 						<div class="w-full max-w-7xl min-w-0 flex-1">
+							<ScrollToTop />
 							{@render children()}
 						</div>
 						<div class="sticky top-4 self-start">

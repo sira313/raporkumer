@@ -1,11 +1,19 @@
 <script lang="ts">
 	/* eslint-disable svelte/no-navigation-without-resolve -- small goto call used for form navigation */
 	import { goto, invalidate } from '$app/navigation';
+	import { page } from '$app/state';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
-	import { agamaMapelNames, agamaParentName, jenisMapel } from '$lib/statics';
+	import {
+		agamaMapelNames,
+		agamaParentName,
+		pksMapelNames,
+		pksParentName,
+		jenisMapel
+	} from '$lib/statics';
 
 	const AGAMA_MAPEL_NAME_SET = new Set<string>(agamaMapelNames);
+	const PKS_MAPEL_NAME_SET = new Set<string>(pksMapelNames);
 
 	type KelasLite = {
 		id?: number;
@@ -39,10 +47,15 @@
 		: 'Belum ada kelas aktif';
 	const isAgamaGroup = !!mapel?.nama && AGAMA_MAPEL_NAME_SET.has(mapel.nama);
 	const isAgamaParent = !!mapel?.nama && mapel.nama === agamaParentName;
-	const disableNama = !kelasAktif || (mode === 'edit' && isAgamaGroup);
+	const isPksGroup = !!mapel?.nama && PKS_MAPEL_NAME_SET.has(mapel.nama);
+	const isPksParent = !!mapel?.nama && mapel.nama === pksParentName;
+	const disableNama = !kelasAktif || (mode === 'edit' && (isAgamaGroup || isPksGroup));
 	const disableJenis = !kelasAktif || (mode === 'edit' && isAgamaGroup);
 	const formAction = mode === 'edit' ? '?/update' : '?/add';
-	const invalidateTargets = mode === 'edit' ? ['app:mapel', 'app:mapel_tp-rl'] : ['app:mapel'];
+	const invalidateTargets =
+		mode === 'edit'
+			? ['app:mapel', 'app:mapel_tp-rl', 'app:asesmen-formatif']
+			: ['app:mapel', 'app:asesmen-formatif'];
 	const formInit =
 		mode === 'edit' && mapel
 			? {
@@ -56,13 +69,45 @@
 	if (mode === 'edit' && isAgamaGroup) {
 		localKode = 'PAPB';
 	}
+	if (mode === 'edit' && isPksGroup) {
+		localKode = 'PKS';
+	}
+
+	// Dapatkan jenjang varian dari sekolah (misalnya 'SMK')
+	const jenjangVariant = $derived.by(() => {
+		const sekolah = page.data.sekolah as { jenjangVariant?: string | null } | null | undefined;
+		return sekolah?.jenjangVariant ?? null;
+	});
+
+	// Fungsi untuk mendapatkan label jenis mapel yang dinamis berdasarkan jenjang
+	function getJenisMapelLabel(jenis: string): string {
+		if (jenis === 'wajib' && jenjangVariant?.toUpperCase() === 'SMK') {
+			return 'Mata Pelajaran Umum';
+		}
+		return jenisMapel[jenis as MataPelajaran['jenis']] ?? jenis;
+	}
+
+	// Derive displayable jenis mapel options
+	const displayJenisMapel = $derived.by(() => {
+		const result: Record<string, string> = {};
+		for (const key of Object.keys(jenisMapel)) {
+			// Sembunyikan opsi "kejuruan" jika bukan SMK
+			if (key === 'kejuruan' && jenjangVariant?.toUpperCase() !== 'SMK') {
+				continue;
+			}
+			result[key] = getJenisMapelLabel(key);
+		}
+		return result;
+	});
 
 	function onNamaInput(e: Event) {
 		const v = ((e.target as HTMLInputElement)?.value ?? '').trim();
 		if (AGAMA_MAPEL_NAME_SET.has(v)) {
 			localKode = 'PAPB';
+		} else if (PKS_MAPEL_NAME_SET.has(v)) {
+			localKode = 'PKS';
 		} else if (mode !== 'edit') {
-			if (localKode === 'PAPB') localKode = '';
+			if (localKode === 'PAPB' || localKode === 'PKS') localKode = '';
 		}
 	}
 	const heading = mode === 'edit' ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran';
@@ -140,7 +185,7 @@
 				placeholder="Contoh: PAPB"
 				name="kode"
 				bind:value={localKode}
-				disabled={isAgamaGroup ? true : !kelasAktif}
+				disabled={isAgamaGroup || isPksGroup ? true : !kelasAktif}
 			/>
 			<p class="label text-wrap">Singkatan/kode singkat untuk mata pelajaran (opsional).</p>
 		</fieldset>
@@ -153,7 +198,7 @@
 				disabled={disableJenis}
 			>
 				<option disabled selected>Pilih Jenis Mata Pelajaran</option>
-				{#each Object.entries(jenisMapel) as [value, label] (value)}
+				{#each Object.entries(displayJenisMapel) as [value, label] (value)}
 					<option {value}>{label}</option>
 				{/each}
 			</select>
@@ -162,6 +207,12 @@
 			<p class="text-base-content/70 mt-2 text-sm">
 				Perubahan KKM akan diterapkan ke semua varian mata pelajaran Pendidikan Agama dan Budi
 				Pekerti.
+			</p>
+		{/if}
+		{#if mode === 'edit' && isPksParent}
+			<p class="text-base-content/70 mt-2 text-sm">
+				Perubahan KKM dan jenis akan diterapkan ke semua varian mata pelajaran Pendalaman Kitab
+				Suci.
 			</p>
 		{/if}
 		<div class="mt-6 flex justify-between gap-2">

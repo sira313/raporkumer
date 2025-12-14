@@ -52,6 +52,11 @@
 	const anySelected = $derived.by(() => selectedIds.length > 0);
 	const allSelected = $derived.by(() => totalData > 0 && selectedIds.length === totalData);
 	const canManage = $derived.by(() => data.tableReady && !!data.kelasId);
+	// Restrict editing for wali_asuh
+	const canEdit = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null | undefined;
+		return u?.type !== 'wali_asuh';
+	});
 	const dimensionOptions = $derived.by(() => [...data.dimensiPilihan]);
 	const isModalOpen = $derived.by(() => modalState !== null);
 	const isEditMode = $derived.by(() => modalState?.mode === 'edit');
@@ -222,15 +227,21 @@
 			{#if anySelected}
 				<button
 					type="button"
-					class={`btn w-full shadow-none sm:w-fit ${bulkDeleteDisabled ? '' : 'btn-soft btn-error'}`}
-					disabled={bulkDeleteDisabled}
+					class={`btn w-full shadow-none sm:w-fit ${bulkDeleteDisabled || !canEdit ? '' : 'btn-soft btn-error'}`}
+					disabled={bulkDeleteDisabled || !canEdit}
 					onclick={openBulkDeleteModal}
+					title={!canEdit ? 'Anda tidak memiliki izin untuk menghapus' : ''}
 				>
 					<Icon name="del" />
 					Hapus
 				</button>
 			{:else}
-				<button class="btn btn-soft shadow-none" disabled={!canManage} onclick={openAddModal}>
+				<button
+					class="btn btn-soft shadow-none"
+					disabled={!canManage || !canEdit}
+					onclick={openAddModal}
+					title={!canEdit ? 'Anda tidak memiliki izin untuk menambah' : ''}
+				>
 					<Icon name="plus" />
 					Tambah
 				</button>
@@ -306,9 +317,9 @@
 							<button
 								class="btn btn-sm btn-soft rounded-r-none shadow-none"
 								type="button"
-								title="Edit kokurikuler"
+								title={!canEdit ? 'Anda tidak memiliki izin untuk mengedit' : 'Edit kokurikuler'}
 								aria-label="Edit kokurikuler"
-								disabled={!canManage}
+								disabled={!canManage || !canEdit}
 								onclick={() => openEditModal(item)}
 							>
 								<Icon name="edit" />
@@ -316,9 +327,9 @@
 							<button
 								class="btn btn-sm btn-soft btn-error rounded-l-none shadow-none"
 								type="button"
-								title="Hapus kokurikuler"
+								title={!canEdit ? 'Anda tidak memiliki izin untuk menghapus' : 'Hapus kokurikuler'}
 								aria-label="Hapus kokurikuler"
-								disabled={!canManage}
+								disabled={!canManage || !canEdit}
 								onclick={() => openSingleDeleteModal(item)}
 							>
 								<Icon name="del" />

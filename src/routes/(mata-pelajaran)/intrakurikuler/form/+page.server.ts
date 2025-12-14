@@ -51,7 +51,7 @@ export const actions = {
 			return fail(400, { fail: 'Harap lengkapi data mata pelajaran.' });
 		}
 
-		if (!['wajib', 'pilihan', 'mulok'].includes(jenis)) {
+		if (!['wajib', 'pilihan', 'mulok', 'kejuruan'].includes(jenis)) {
 			return fail(400, { fail: 'Jenis mata pelajaran tidak valid.' });
 		}
 

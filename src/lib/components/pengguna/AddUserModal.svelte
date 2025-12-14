@@ -37,6 +37,8 @@
 			const name = (m.nama ?? '').toString().trim().toLowerCase();
 			// exclude the exact combined parent subject
 			if (name === 'pendidikan agama dan budi pekerti') return false;
+			// exclude the exact combined parent subject for Pendalaman Kitab Suci
+			if (name === 'pendalaman kitab suci') return false;
 			return true;
 		});
 	});

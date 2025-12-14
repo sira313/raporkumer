@@ -1,11 +1,20 @@
 <script lang="ts">
 	/* eslint-disable svelte/no-navigation-without-resolve -- many navigation links built from data */
 	import { page } from '$app/state';
+	import { invalidate } from '$app/navigation';
+	import { enhance } from '$app/forms';
 	import Icon from '$lib/components/icon.svelte';
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import ImportMapelDialog from '$lib/components/intrakurikuler/import-mapel-dialog.svelte';
 	import { toast } from '$lib/components/toast.svelte';
-	import { agamaMapelLabelByName, agamaMapelNames, agamaParentName } from '$lib/statics';
+	import {
+		agamaMapelLabelByName,
+		agamaMapelNames,
+		agamaParentName,
+		pksMapelLabelByName,
+		pksMapelNames,
+		pksParentName
+	} from '$lib/statics';
 	import { modalRoute } from '$lib/utils';
 	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
 
@@ -14,6 +23,7 @@
 
 	const emptyStateMessage = 'Belum ada data mata pelajaran';
 	const agamaMapelNameSet = new Set<string>(agamaMapelNames);
+	const pksMapelNameSet = new Set<string>(pksMapelNames);
 
 	const kelasAktifLabel = $derived.by(() => {
 		const kelas = page.data.kelasAktif ?? null;
@@ -29,11 +39,29 @@
 		// default to true for backwards compatibility
 		return u?.canManageMapel ?? true;
 	});
+
+	// Dapatkan jenjang varian dari sekolah (misalnya 'SMK')
+	const jenjangVariant = $derived.by(() => {
+		const sekolah = page.data.sekolah as { jenjangVariant?: string | null } | null | undefined;
+		return sekolah?.jenjangVariant ?? null;
+	});
+
+	// Fungsi khusus untuk jenjang SMK: ubah label "Wajib" menjadi "Umum"
+	function getWajibLabel(): string {
+		return jenjangVariant?.toUpperCase() === 'SMK' ? 'Umum' : 'Wajib';
+	}
+
+	// Fungsi untuk mengecek apakah section kejuruan harus ditampilkan (hanya untuk SMK)
+	function shouldShowKejuruan(): boolean {
+		return jenjangVariant?.toUpperCase() === 'SMK';
+	}
+
 	const totalMapel = $derived.by(
 		() =>
 			data.mapel.daftarWajib.length +
 			data.mapel.daftarPilihan.length +
-			data.mapel.daftarMulok.length
+			data.mapel.daftarMulok.length +
+			(shouldShowKejuruan() ? data.mapel.daftarKejuruan.length : 0)
 	);
 
 	function formatKkm(kkm: number | null | undefined) {
@@ -43,15 +71,30 @@
 	function handleDeleteClick(event: MouseEvent, mapel: Pick<MataPelajaran, 'nama'>) {
 		if (event.defaultPrevented) return;
 		if (event.shiftKey || event.metaKey || event.ctrlKey || event.button === 1) return;
-		if (!agamaMapelNameSet.has(mapel.nama)) return;
 
-		const label = agamaMapelLabelByName[mapel.nama];
-		const message =
-			mapel.nama === agamaParentName
-				? `Menghapus "<b>${mapel.nama}</b>" akan menghapus seluruh varian Pendidikan Agama dan Budi Pekerti pada kelas ini.`
-				: `Menghapus "<b>${mapel.nama}</b>" akan menghapus varian Pendidikan Agama <b>${label}</b> beserta seluruh penilaian terkait.`;
+		const isAgama = agamaMapelNameSet.has(mapel.nama);
+		const isPks = pksMapelNameSet.has(mapel.nama);
 
-		toast({ message, type: 'warning', persist: true });
+		if (!isAgama && !isPks) return;
+
+		let message = '';
+		if (isAgama) {
+			const label = agamaMapelLabelByName[mapel.nama];
+			message =
+				mapel.nama === agamaParentName
+					? `Menghapus "<b>${mapel.nama}</b>" akan menghapus seluruh varian Pendidikan Agama dan Budi Pekerti pada kelas ini.`
+					: `Menghapus "<b>${mapel.nama}</b>" akan menghapus varian Pendidikan Agama <b>${label}</b> beserta seluruh penilaian terkait.`;
+		} else if (isPks) {
+			const label = pksMapelLabelByName[mapel.nama];
+			message =
+				mapel.nama === pksParentName
+					? `Menghapus "<b>${mapel.nama}</b>" akan menghapus seluruh varian Pendalaman Kitab Suci pada kelas ini.`
+					: `Menghapus "<b>${mapel.nama}</b>" akan menghapus varian PKS <b>${label}</b> beserta seluruh penilaian terkait.`;
+		}
+
+		if (message) {
+			toast({ message, type: 'warning', persist: true });
+		}
 	}
 </script>
 
@@ -165,6 +208,45 @@
 							Ekspor Mapel
 						</button>
 					</li>
+					<li>
+						<form
+							method="POST"
+							action="?/tambah_pks"
+							class="w-full"
+							use:enhance={() => {
+								toast({ message: 'Menambahkan mata pelajaran PKS...', type: 'info' });
+								return async ({ result }) => {
+									if (result.type === 'success') {
+										await Promise.all([
+											invalidate('app:mapel'),
+											invalidate('app:asesmen-formatif')
+										]);
+										const data = result.data as { success?: string } | undefined;
+										toast({
+											message: data?.success || 'Mata pelajaran PKS berhasil ditambahkan.',
+											type: 'success'
+										});
+									} else if (result.type === 'failure') {
+										const data = result.data as { fail?: string } | undefined;
+										toast({
+											message: data?.fail || 'Gagal menambahkan mata pelajaran PKS.',
+											type: 'error'
+										});
+									}
+								};
+							}}
+						>
+							<button
+								type="submit"
+								class={`flex w-full items-center gap-2 ${!canManageMapel || !hasKelasAktif ? 'pointer-events-none opacity-50' : ''}`}
+								disabled={!canManageMapel || !hasKelasAktif}
+								aria-disabled={!canManageMapel || !hasKelasAktif}
+							>
+								<Icon name="plus" />
+								<span>Tambah PKS</span>
+							</button>
+						</form>
+					</li>
 				</ul>
 			</div>
 		</div>
@@ -174,7 +256,7 @@
 		class="stats stats-horizontal border-base-200 bg-base-100 dark:bg-base-200 text-base-content mt-4 w-full border shadow-md dark:shadow-none"
 	>
 		<div class="stat place-items-start">
-			<div class="stat-title">Mapel Wajib</div>
+			<div class="stat-title">Mapel {getWajibLabel()}</div>
 			<div class="stat-value text-2xl">{data.mapel.daftarWajib.length}</div>
 		</div>
 		<div class="stat place-items-start">
@@ -185,6 +267,12 @@
 			<div class="stat-title">Muatan Lokal</div>
 			<div class="stat-value text-2xl">{data.mapel.daftarMulok.length}</div>
 		</div>
+		{#if shouldShowKejuruan()}
+			<div class="stat place-items-start">
+				<div class="stat-title">Kejuruan</div>
+				<div class="stat-value text-2xl">{data.mapel.daftarKejuruan.length}</div>
+			</div>
+		{/if}
 		<div class="stat place-items-start">
 			<div class="stat-title">Total Mapel</div>
 			<div class="stat-value text-2xl">{totalMapel}</div>
@@ -210,7 +298,7 @@
 		</div>
 	{/if}
 
-	{#each [{ key: 'wajib', title: 'Mata Pelajaran Wajib', items: data.mapel.daftarWajib }, { key: 'pilihan', title: 'Mata Pelajaran Pilihan', items: data.mapel.daftarPilihan }, { key: 'mulok', title: 'Muatan Lokal', items: data.mapel.daftarMulok }] as section (section.key)}
+	{#each [{ key: 'wajib', title: `Mata Pelajaran ${getWajibLabel()}`, items: data.mapel.daftarWajib }, { key: 'pilihan', title: 'Mata Pelajaran Pilihan', items: data.mapel.daftarPilihan }, { key: 'mulok', title: 'Muatan Lokal', items: data.mapel.daftarMulok }, ...(shouldShowKejuruan() ? [{ key: 'kejuruan', title: 'Mata Pelajaran Kejuruan', items: data.mapel.daftarKejuruan }] : [])] as section (section.key)}
 		<fieldset class="fieldset mt-8">
 			<legend class="fieldset-legend">{section.title}</legend>
 			<div
@@ -247,34 +335,65 @@
 											}`}
 											role="status"
 										></span>
-										<a
-											class="btn btn-sm btn-soft shadow-none"
-											href={`/intrakurikuler/${mapel.editTpMapelId ?? mapel.id}/tp-rl`}
-										>
-											<Icon name="edit" />
-											Edit TP
-										</a>
+										{#if canManageMapel}
+											<a
+												class="btn btn-sm btn-soft shadow-none"
+												href={`/intrakurikuler/${mapel.editTpMapelId ?? mapel.id}/tp-rl`}
+											>
+												<Icon name="edit" />
+												Edit TP
+											</a>
+										{:else}
+											<button
+												type="button"
+												class="btn btn-sm btn-disabled shadow-none"
+												disabled
+												title="Anda tidak memiliki izin untuk mengedit"
+											>
+												<Icon name="edit" />
+												Edit TP
+											</button>
+										{/if}
 									</div>
 								</td>
 								<td>
 									<div class="flex flex-row">
-										<a
-											class="btn btn-sm btn-soft rounded-r-none shadow-none"
-											href={`/intrakurikuler/${mapel.id}/edit`}
-											title="Edit data mata pelajaran"
-											use:modalRoute={'edit-mapel'}
-										>
-											<Icon name="edit" />
-										</a>
-										<a
-											class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
-											href={`/intrakurikuler/${mapel.id}/delete`}
-											title="Hapus mata pelajaran"
-											use:modalRoute={'delete-mapel'}
-											onclick={(event) => handleDeleteClick(event, mapel)}
-										>
-											<Icon name="del" />
-										</a>
+										{#if canManageMapel}
+											<a
+												class="btn btn-sm btn-soft rounded-r-none shadow-none"
+												href={`/intrakurikuler/${mapel.id}/edit`}
+												title="Edit data mata pelajaran"
+												use:modalRoute={'edit-mapel'}
+											>
+												<Icon name="edit" />
+											</a>
+											<a
+												class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
+												href={`/intrakurikuler/${mapel.id}/delete`}
+												title="Hapus mata pelajaran"
+												use:modalRoute={'delete-mapel'}
+												onclick={(event) => handleDeleteClick(event, mapel)}
+											>
+												<Icon name="del" />
+											</a>
+										{:else}
+											<button
+												type="button"
+												class="btn btn-sm btn-disabled rounded-r-none shadow-none"
+												disabled
+												title="Anda tidak memiliki izin untuk mengedit"
+											>
+												<Icon name="edit" />
+											</button>
+											<button
+												type="button"
+												class="btn btn-sm btn-disabled rounded-l-none shadow-none"
+												disabled
+												title="Anda tidak memiliki izin untuk menghapus"
+											>
+												<Icon name="del" />
+											</button>
+										{/if}
 									</div>
 								</td>
 							</tr>

@@ -37,6 +37,10 @@ export const appMenuItems: MenuItem[] = [
 			{
 				title: 'Ekstrakurikuler',
 				path: '/ekstrakurikuler'
+			},
+			{
+				title: 'Keasramaan',
+				path: '/keasramaan'
 			}
 		]
 	},
@@ -68,19 +72,28 @@ export const appMenuItems: MenuItem[] = [
 				path: '/nilai-ekstrakurikuler'
 			},
 			{
+				title: 'Keasramaan',
+				path: '/asesmen-keasramaan'
+			}
+		]
+	},
+	{
+		title: 'Administrasi',
+		icon: 'briefcase',
+		subMenu: [
+			{
 				title: 'Absen',
 				path: '/absen'
 			},
 			{
 				title: 'Catatan Wali Kelas',
 				path: '/catatan-wali-kelas'
+			},
+			{
+				title: 'Rekap Nilai',
+				path: '/nilai-akhir'
 			}
 		]
-	},
-	{
-		title: 'Rekap Nilai',
-		icon: 'table',
-		path: '/nilai-akhir'
 	},
 	{
 		title: 'Cetak Dokumen',

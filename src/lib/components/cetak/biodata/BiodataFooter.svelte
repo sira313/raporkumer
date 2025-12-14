@@ -4,14 +4,20 @@
 	const props = $props<{
 		ttd: BiodataPrintData['ttd'] | null;
 		murid?: BiodataPrintData['murid'] | null;
+		sekolah?: { statusKepalaSekolah?: string | null } | null;
 		class?: string;
 	}>();
 
-	let { ttd, murid = null, class: className = '' } = props;
+	let { ttd, murid = null, sekolah = null, class: className = '' } = props;
 
 	const footerClass = $derived.by(() =>
 		['flex justify-end gap-8 text-sm', className].filter(Boolean).join(' ')
 	);
+
+	const kepalaSekolahTitle = $derived.by(() => {
+		const status = sekolah?.statusKepalaSekolah;
+		return status === 'plt' ? 'Plt. Kepala Sekolah' : 'Kepala Sekolah';
+	});
 
 	const photoSrc = $derived.by(() => {
 		const m = murid;
@@ -40,7 +46,7 @@
 	</div>
 	<div class="text-left leading-relaxed">
 		<p>{formatValue(ttd?.tempat)}, {formatValue(ttd?.tanggal)}</p>
-		<p>Kepala Sekolah</p>
+		<p>{kepalaSekolahTitle}</p>
 		<div class="mt-12 font-semibold tracking-wide">
 			{formatValue(ttd?.kepalaSekolah)}
 		</div>

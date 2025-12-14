@@ -18,8 +18,8 @@ export const tableAuthUser = sqliteTable(
 		passwordSalt: text().notNull(),
 		passwordUpdatedAt: text(),
 		permissions: text({ mode: 'json' }).notNull().default('[]').$type<UserPermission[]>(),
-		// tipe user: admin (penuh), wali_kelas (terbatas ke kelas_id), atau user (default/other)
-		type: text({ enum: ['admin', 'wali_kelas', 'user'] })
+		// tipe user: admin (penuh), wali_kelas (terbatas ke kelas_id), wali_asuh (terbatas ke keasramaan), atau user (default/other)
+		type: text({ enum: ['admin', 'wali_kelas', 'wali_asuh', 'user'] })
 			.notNull()
 			.default('admin'),
 		// optional: directly associate a user to a sekolah so login can pick it reliably
@@ -71,8 +71,8 @@ export const tablePegawai = sqliteTable('pegawai', {
 
 export const tableSekolah = sqliteTable('sekolah', {
 	id: int().primaryKey({ autoIncrement: true }),
-	// include 'slb' as a supported jenjang pendidikan
-	jenjangPendidikan: text({ enum: ['sd', 'smp', 'sma', 'slb', 'pkbm'] }).notNull(),
+	// include 'slb' and 'srt' as supported jenjang pendidikan
+	jenjangPendidikan: text({ enum: ['sd', 'smp', 'sma', 'slb', 'pkbm', 'srt'] }).notNull(),
 	// optional variant (e.g. mi, mts, smk, ma, mak, slb-dasar) stored as text
 	jenjangVariant: text(),
 	nama: text().notNull(),
@@ -90,6 +90,10 @@ export const tableSekolah = sqliteTable('sekolah', {
 		.references(() => tablePegawai.id)
 		.notNull(),
 	lokasiTandaTangan: text(),
+	// Naungan (organisasi pengelola sekolah)
+	naungan: text({ enum: ['kemendikbud', 'kemsos', 'kemenag'] })
+		.default('kemendikbud')
+		.notNull(),
 	// Default weight distribution for sumatif: lingkup 60%, STS 20%, SAS 20%
 	sumatifBobotLingkup: int().default(60).notNull(),
 	sumatifBobotSts: int().default(20).notNull(),
@@ -97,6 +101,10 @@ export const tableSekolah = sqliteTable('sekolah', {
 	// Rapor: kriteria intrakurikuler (batas atas untuk kategori Cukup / Baik)
 	raporKriteriaCukup: int().default(85).notNull(),
 	raporKriteriaBaik: int().default(95).notNull(),
+	// Status kepala sekolah: definitif atau PLT (Pelaksana Tugas)
+	statusKepalaSekolah: text({ enum: ['definitif', 'plt'] })
+		.default('definitif')
+		.notNull(),
 	...audit
 });
 
@@ -166,6 +174,8 @@ export const tableKelas = sqliteTable(
 		nama: text().notNull(),
 		fase: text(),
 		waliKelasId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
+		waliAsramaId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
+		waliAsuhId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
 		...audit
 	},
 	(table) => [unique().on(table.sekolahId, table.semesterId, table.nama)]
@@ -268,6 +278,14 @@ export const tableKelasRelations = relations(tableKelas, ({ one, many }) => ({
 		references: [tableSemester.id]
 	}),
 	waliKelas: one(tablePegawai, { fields: [tableKelas.waliKelasId], references: [tablePegawai.id] }),
+	waliAsrama: one(tablePegawai, {
+		fields: [tableKelas.waliAsramaId],
+		references: [tablePegawai.id]
+	}),
+	waliAsuh: one(tablePegawai, {
+		fields: [tableKelas.waliAsuhId],
+		references: [tablePegawai.id]
+	}),
 	// many-to-many: kelas bisa diakses oleh multiple guru
 	authUsers: many(tableAuthUserKelas)
 }));
@@ -426,7 +444,7 @@ export const tableMataPelajaran = sqliteTable('mata_pelajaran', {
 	// optional short code for subjects (e.g. PAPB for Pendidikan Agama dan Budi Pekerti)
 	kode: text(),
 	kkm: int().notNull().default(0),
-	jenis: text({ enum: ['wajib', 'pilihan', 'mulok'] }).notNull(),
+	jenis: text({ enum: ['wajib', 'pilihan', 'mulok', 'kejuruan'] }).notNull(),
 	...audit
 });
 
@@ -732,5 +750,104 @@ export const tableAsesmenKokurikulerRelations = relations(tableAsesmenKokurikule
 	kokurikuler: one(tableKokurikuler, {
 		fields: [tableAsesmenKokurikuler.kokurikulerId],
 		references: [tableKokurikuler.id]
+	})
+}));
+
+export const tableKeasramaan = sqliteTable(
+	'keasramaan',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		nama: text().notNull(),
+		kelasId: int()
+			.references(() => tableKelas.id)
+			.notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.kelasId, table.nama)]
+);
+
+export const tableKeasramaanIndikator = sqliteTable('keasramaan_indikator', {
+	id: int().primaryKey({ autoIncrement: true }),
+	keasramaanId: int()
+		.references(() => tableKeasramaan.id, { onDelete: 'cascade' })
+		.notNull(),
+	deskripsi: text().notNull(),
+	...audit
+});
+
+export const tableKeasramaanRelations = relations(tableKeasramaan, ({ one, many }) => ({
+	kelas: one(tableKelas, {
+		fields: [tableKeasramaan.kelasId],
+		references: [tableKelas.id]
+	}),
+	indikator: many(tableKeasramaanIndikator),
+	asesmen: many(tableAsesmenKeasramaan)
+}));
+
+export const tableKeasramaanIndikatorRelations = relations(
+	tableKeasramaanIndikator,
+	({ one, many }) => ({
+		keasramaan: one(tableKeasramaan, {
+			fields: [tableKeasramaanIndikator.keasramaanId],
+			references: [tableKeasramaan.id]
+		}),
+		tujuan: many(tableKeasramaanTujuan)
+	})
+);
+
+export const tableKeasramaanTujuan = sqliteTable('keasramaan_tujuan', {
+	id: int().primaryKey({ autoIncrement: true }),
+	indikatorId: int()
+		.references(() => tableKeasramaanIndikator.id, { onDelete: 'cascade' })
+		.notNull(),
+	deskripsi: text().notNull(),
+	...audit
+});
+
+export const tableKeasramaanTujuanRelations = relations(tableKeasramaanTujuan, ({ one, many }) => ({
+	indikator: one(tableKeasramaanIndikator, {
+		fields: [tableKeasramaanTujuan.indikatorId],
+		references: [tableKeasramaanIndikator.id]
+	}),
+	asesmen: many(tableAsesmenKeasramaan)
+}));
+
+export const tableAsesmenKeasramaan = sqliteTable(
+	'asesmen_keasramaan',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		muridId: int()
+			.references(() => tableMurid.id, { onDelete: 'cascade' })
+			.notNull(),
+		keasramaanId: int()
+			.references(() => tableKeasramaan.id, { onDelete: 'cascade' })
+			.notNull(),
+		tujuanId: int()
+			.references(() => tableKeasramaanTujuan.id, { onDelete: 'cascade' })
+			.notNull(),
+		kategori: text({ enum: ['sangat-baik', 'baik', 'cukup', 'perlu-bimbingan'] }).notNull(),
+		dinilaiPada: text(),
+		...audit
+	},
+	(table) => [
+		unique().on(table.muridId, table.keasramaanId, table.tujuanId),
+		index('asesmen_keasramaan_murid_idx').on(table.muridId),
+		index('asesmen_keasramaan_keasramaan_idx').on(table.keasramaanId),
+		index('asesmen_keasramaan_tujuan_idx').on(table.tujuanId)
+	]
+);
+
+export const tableAsesmenKeasramaanRelations = relations(tableAsesmenKeasramaan, ({ one }) => ({
+	murid: one(tableMurid, {
+		fields: [tableAsesmenKeasramaan.muridId],
+		references: [tableMurid.id]
+	}),
+	keasramaan: one(tableKeasramaan, {
+		fields: [tableAsesmenKeasramaan.keasramaanId],
+		references: [tableKeasramaan.id]
+	}),
+	tujuan: one(tableKeasramaanTujuan, {
+		fields: [tableAsesmenKeasramaan.tujuanId],
+		references: [tableKeasramaanTujuan.id]
 	})
 }));

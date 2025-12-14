@@ -1,24 +1,50 @@
 // Varian / jenjang sederajat — daftar institusi yang setara untuk setiap jenjang
 export const jenjangPendidikanSederajat: Record<
-	'sd' | 'smp' | 'sma' | 'slb' | 'pkbm',
+	'sd' | 'smp' | 'sma' | 'slb' | 'pkbm' | 'srt',
 	{ key: string; label: string }[]
 > = {
 	sd: [
 		{ key: 'sd', label: 'Sekolah Dasar (SD)' },
-		{ key: 'mi', label: 'Madrasah Ibtidaiyah (MI)' }
+		{ key: 'mi', label: 'Madrasah Ibtidaiyah (MI)' },
+		{ key: 'srd', label: 'Sekolah Rakyat Dasar (SRD)' }
 	],
 	smp: [
 		{ key: 'smp', label: 'Sekolah Menengah Pertama (SMP)' },
-		{ key: 'mts', label: 'Madrasah Tsanawiyah (MTs)' }
+		{ key: 'mts', label: 'Madrasah Tsanawiyah (MTs)' },
+		{ key: 'srmp', label: 'Sekolah Rakyat Menengah Pertama (SRMP)' }
 	],
 	sma: [
 		{ key: 'sma', label: 'Sekolah Menengah Atas (SMA)' },
 		{ key: 'smk', label: 'Sekolah Menengah Kejuruan (SMK)' },
 		{ key: 'ma', label: 'Madrasah Aliyah (MA)' },
-		{ key: 'mak', label: 'Madrasah Aliyah Kejuruan (MAK)' }
+		{ key: 'mak', label: 'Madrasah Aliyah Kejuruan (MAK)' },
+		{ key: 'srma', label: 'Sekolah Rakyat Menengah Atas (SRMA)' }
 	],
 	slb: [{ key: 'slb', label: 'Sekolah Luar Biasa (SLB)' }],
-	pkbm: [{ key: 'pkbm', label: 'Pusat Kegiatan Belajar Masyarakat (PKBM)' }]
+	pkbm: [{ key: 'pkbm', label: 'Pusat Kegiatan Belajar Masyarakat (PKBM)' }],
+	srt: [{ key: 'srt', label: 'Sekolah Rakyat Terintegrasi (SRT)' }]
+};
+
+export const nauganOptions = [
+	{ key: 'kemendikbud', label: 'Kementerian Pendidikan Dasar dan Menengah' },
+	{ key: 'kemsos', label: 'Kementerian Sosial Republik Indonesia' },
+	{ key: 'kemenag', label: 'Kementerian Agama Republik Indonesia' }
+] as const;
+
+export type NauganKey = (typeof nauganOptions)[number]['key'];
+
+export const nauganLabelByKey = nauganOptions.reduce<Record<NauganKey, string>>(
+	(acc, option) => {
+		acc[option.key] = option.label;
+		return acc;
+	},
+	{} as Record<NauganKey, string>
+);
+
+export const nauganHeaderByKey: Record<NauganKey, [string, string]> = {
+	kemendikbud: ['KEMENTERIAN PENDIDIKAN DASAR DAN MENENGAH', 'REPUBLIK INDONESIA'],
+	kemsos: ['KEMENTERIAN SOSIAL', 'REPUBLIK INDONESIA'],
+	kemenag: ['KEMENTERIAN AGAMA', 'REPUBLIK INDONESIA']
 };
 
 export const jenisKelamin: Record<Murid['jenisKelamin'], string> = {
@@ -27,9 +53,10 @@ export const jenisKelamin: Record<Murid['jenisKelamin'], string> = {
 };
 
 export const jenisMapel: Record<MataPelajaran['jenis'], string> = {
-	wajib: 'Mata Pelajaran wajib',
-	pilihan: 'Mata Pelajaran pilihan',
-	mulok: 'Muatan Lokal'
+	wajib: 'Mata Pelajaran Wajib',
+	pilihan: 'Mata Pelajaran Pilihan',
+	mulok: 'Muatan Lokal',
+	kejuruan: 'Kejuruan'
 };
 
 export const agamaMapelOptions = [
@@ -60,6 +87,39 @@ export const agamaMapelLabelByName = agamaMapelOptions.reduce<Record<string, str
 );
 
 export const agamaMapelKeyByName = agamaMapelOptions.reduce<Record<string, AgamaMapelKey>>(
+	(acc, option) => {
+		acc[option.name] = option.key;
+		return acc;
+	},
+	{}
+);
+
+// PKS (Pendalaman Kitab Suci) options - follows same pattern as agama mapel
+export const pksMapelOptions = [
+	{ key: 'umum', label: 'Umum', name: 'Pendalaman Kitab Suci' },
+	{ key: 'islam', label: 'Islam', name: 'Pendalaman Kitab Suci Islam' },
+	{ key: 'kristen', label: 'Kristen', name: 'Pendalaman Kitab Suci Kristen' },
+	{ key: 'katolik', label: 'Katolik', name: 'Pendalaman Kitab Suci Katolik' },
+	{ key: 'buddha', label: 'Buddha', name: 'Pendalaman Kitab Suci Buddha' },
+	{ key: 'hindu', label: 'Hindu', name: 'Pendalaman Kitab Suci Hindu' },
+	{ key: 'konghuchu', label: 'Konghuchu', name: 'Pendalaman Kitab Suci Konghuchu' }
+] as const;
+
+export type PksMapelKey = (typeof pksMapelOptions)[number]['key'];
+
+export const pksParentOption = pksMapelOptions[0];
+export const pksVariantOptions = pksMapelOptions.filter((option) => option.key !== 'umum');
+export const pksParentName = pksParentOption.name;
+export const pksVariantNames = pksVariantOptions.map((option) => option.name);
+
+export const pksMapelNames = pksMapelOptions.map((option) => option.name);
+
+export const pksMapelLabelByName = pksMapelOptions.reduce<Record<string, string>>((acc, option) => {
+	acc[option.name] = option.label;
+	return acc;
+}, {});
+
+export const pksMapelKeyByName = pksMapelOptions.reduce<Record<string, PksMapelKey>>(
 	(acc, option) => {
 		acc[option.name] = option.key;
 		return acc;

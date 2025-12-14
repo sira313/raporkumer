@@ -119,6 +119,43 @@ function capitalizeLocale(value: string, locale = LOCALE_ID) {
 	return lower.charAt(0).toLocaleUpperCase(locale) + lower.slice(1);
 }
 
+export function buildKeasramaanDeskripsi(
+	indikatorValues: Array<{
+		indikatorNama: string;
+		nilaiIndikator: number | null;
+		category: { huruf: string; label: string } | null;
+	}>,
+	studentName?: string | null
+): string | null {
+	if (!indikatorValues || indikatorValues.length === 0) return null;
+
+	const filledIndikators = indikatorValues.filter((ind) => ind.nilaiIndikator != null);
+	if (filledIndikators.length === 0) return null;
+
+	const introName = (() => {
+		const trimmed = studentName?.trim();
+		return trimmed && trimmed.length > 0 ? `Ananda ${trimmed}` : 'Ananda';
+	})();
+
+	// Build fragments for each indikator with its predikat
+	const fragments: string[] = [];
+
+	for (const ind of filledIndikators) {
+		if (!ind.category) continue;
+		const huruf = ind.category.huruf;
+		const indikatorText =
+			ind.indikatorNama.charAt(0).toLocaleLowerCase(LOCALE_ID) + ind.indikatorNama.slice(1);
+		const fragment = `mendapatkan predikat ${huruf} dalam ${indikatorText}`;
+		fragments.push(fragment);
+	}
+
+	if (!fragments.length) return null;
+
+	// Join fragments with comma and "dan"
+	const joinedFragments = joinWithCommaAnd(fragments);
+	return `${introName} ${joinedFragments}.`;
+}
+
 function joinWithCommaAnd(values: string[]): string {
 	if (values.length === 1) return values[0];
 	if (values.length === 2) {

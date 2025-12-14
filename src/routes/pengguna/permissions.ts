@@ -50,6 +50,7 @@ export function isAuthorizedUser(
 ) {
 	if (!user) return false;
 	// Admins are authorized for everything by policy
+	// wali_kelas and wali_asuh are NOT admins and must check permissions
 	if ('type' in user && user.type === 'admin') return true;
 	const userPermissions = user.permissions || [];
 	return allowedPermissions.some((r) => userPermissions.includes(r));

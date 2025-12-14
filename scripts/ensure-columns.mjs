@@ -58,6 +58,48 @@ async function addColumnIfMissing(client, table, column, type) {
 	}
 }
 
+async function ensureTableExists(client, tableName, createSQL) {
+	try {
+		const res = await client.execute({
+			sql: `SELECT name FROM sqlite_master WHERE type='table' AND name='${tableName}'`
+		});
+		if (res.rows && res.rows.length > 0) {
+			console.info(`[ensure-columns] Table ${tableName} already exists`);
+			return { created: false };
+		}
+
+		console.info(`[ensure-columns] Creating table ${tableName}`);
+		await client.execute({ sql: createSQL });
+		console.info(`[ensure-columns] Created table ${tableName}`);
+		return { created: true };
+	} catch (err) {
+		const msg = err && (err.message || err.toString());
+		console.error(`[ensure-columns] Failed to create table ${tableName}:`, msg || err);
+		return { created: false, error: msg };
+	}
+}
+
+async function ensureIndexExists(client, indexName, createIndexSQL) {
+	try {
+		const res = await client.execute({
+			sql: `SELECT name FROM sqlite_master WHERE type='index' AND name='${indexName}'`
+		});
+		if (res.rows && res.rows.length > 0) {
+			console.info(`[ensure-columns] Index ${indexName} already exists`);
+			return { created: false };
+		}
+
+		console.info(`[ensure-columns] Creating index ${indexName}`);
+		await client.execute({ sql: createIndexSQL });
+		console.info(`[ensure-columns] Created index ${indexName}`);
+		return { created: true };
+	} catch (err) {
+		const msg = err && (err.message || err.toString());
+		console.error(`[ensure-columns] Failed to create index ${indexName}:`, msg || err);
+		return { created: false, error: msg };
+	}
+}
+
 async function main() {
 	console.info('[ensure-columns] Target DB:', dbUrl);
 	const client = createClient({ url: dbUrl });
@@ -65,6 +107,224 @@ async function main() {
 	const skipped = [];
 
 	try {
+		// Ensure keasramaan tables exist (from migration 0021)
+		await ensureTableExists(
+			client,
+			'keasramaan',
+			`
+			CREATE TABLE IF NOT EXISTS "keasramaan" (
+				"id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+				"nama" text NOT NULL,
+				"kelas_id" integer NOT NULL,
+				"created_at" text NOT NULL,
+				"updated_at" text,
+				CONSTRAINT "keasramaan_kelas_id_kelas_id_fk" FOREIGN KEY ("kelas_id") REFERENCES "kelas" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+			)
+		`
+		);
+
+		await client.execute({
+			sql: `CREATE UNIQUE INDEX IF NOT EXISTS "keasramaan_kelas_id_nama_unique" ON "keasramaan" ("kelas_id", "nama")`
+		});
+
+		await ensureTableExists(
+			client,
+			'keasramaan_indikator',
+			`
+			CREATE TABLE IF NOT EXISTS "keasramaan_indikator" (
+				"id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+				"keasramaan_id" integer NOT NULL,
+				"deskripsi" text NOT NULL,
+				"created_at" text NOT NULL,
+				"updated_at" text,
+				CONSTRAINT "keasramaan_indikator_keasramaan_id_keasramaan_id_fk" FOREIGN KEY ("keasramaan_id") REFERENCES "keasramaan" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+			)
+		`
+		);
+
+		await client.execute({
+			sql: `CREATE INDEX IF NOT EXISTS "keasramaan_indikator_keasramaan_idx" ON "keasramaan_indikator" ("keasramaan_id")`
+		});
+
+		await ensureTableExists(
+			client,
+			'keasramaan_tujuan',
+			`
+			CREATE TABLE IF NOT EXISTS "keasramaan_tujuan" (
+				"id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+				"indikator_id" integer NOT NULL,
+				"deskripsi" text NOT NULL,
+				"created_at" text NOT NULL,
+				"updated_at" text,
+				CONSTRAINT "keasramaan_tujuan_indikator_id_keasramaan_indikator_id_fk" FOREIGN KEY ("indikator_id") REFERENCES "keasramaan_indikator" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+			)
+		`
+		);
+
+		await client.execute({
+			sql: `CREATE INDEX IF NOT EXISTS "keasramaan_tujuan_indikator_idx" ON "keasramaan_tujuan" ("indikator_id")`
+		});
+
+		await ensureTableExists(
+			client,
+			'asesmen_keasramaan',
+			`
+			CREATE TABLE IF NOT EXISTS "asesmen_keasramaan" (
+				"id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+				"murid_id" integer NOT NULL,
+				"keasramaan_id" integer NOT NULL,
+				"tujuan_id" integer NOT NULL,
+				"kategori" text NOT NULL,
+				"dinilai_pada" text,
+				"created_at" text NOT NULL,
+				"updated_at" text,
+				CONSTRAINT "asesmen_keasramaan_murid_id_murid_id_fk" FOREIGN KEY ("murid_id") REFERENCES "murid" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+				CONSTRAINT "asesmen_keasramaan_keasramaan_id_keasramaan_id_fk" FOREIGN KEY ("keasramaan_id") REFERENCES "keasramaan" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+				CONSTRAINT "asesmen_keasramaan_tujuan_id_keasramaan_tujuan_id_fk" FOREIGN KEY ("tujuan_id") REFERENCES "keasramaan_tujuan" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+			)
+		`
+		);
+
+		await client.execute({
+			sql: `CREATE UNIQUE INDEX IF NOT EXISTS "asesmen_keasramaan_murid_keasramaan_tujuan_unique" ON "asesmen_keasramaan" ("murid_id", "keasramaan_id", "tujuan_id")`
+		});
+
+		await client.execute({
+			sql: `CREATE INDEX IF NOT EXISTS "asesmen_keasramaan_murid_idx" ON "asesmen_keasramaan" ("murid_id")`
+		});
+
+		await client.execute({
+			sql: `CREATE INDEX IF NOT EXISTS "asesmen_keasramaan_keasramaan_idx" ON "asesmen_keasramaan" ("keasramaan_id")`
+		});
+
+		// ===== PERFORMANCE OPTIMIZATION INDEXES =====
+		// These indexes significantly improve query performance, especially on /pengguna page
+		// which performs heavy consolidation queries on every load
+		console.info('[ensure-columns] Creating performance optimization indexes...');
+
+		// auth_user table indexes - heavily queried for user management
+		await ensureIndexExists(
+			client,
+			'idx_auth_user_pegawai_id',
+			'CREATE INDEX IF NOT EXISTS "idx_auth_user_pegawai_id" ON "auth_user" ("pegawai_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_auth_user_type',
+			'CREATE INDEX IF NOT EXISTS "idx_auth_user_type" ON "auth_user" ("type")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_auth_user_kelas_id',
+			'CREATE INDEX IF NOT EXISTS "idx_auth_user_kelas_id" ON "auth_user" ("kelas_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_auth_user_mata_pelajaran_id',
+			'CREATE INDEX IF NOT EXISTS "idx_auth_user_mata_pelajaran_id" ON "auth_user" ("mata_pelajaran_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_auth_user_sekolah_id',
+			'CREATE INDEX IF NOT EXISTS "idx_auth_user_sekolah_id" ON "auth_user" ("sekolah_id")'
+		);
+
+		// kelas table indexes - frequently joined with wali_kelas queries
+		await ensureIndexExists(
+			client,
+			'idx_kelas_wali_kelas_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_wali_kelas_id" ON "kelas" ("wali_kelas_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_kelas_wali_asrama_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_wali_asrama_id" ON "kelas" ("wali_asrama_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_kelas_wali_asuh_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_wali_asuh_id" ON "kelas" ("wali_asuh_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_kelas_sekolah_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_sekolah_id" ON "kelas" ("sekolah_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_kelas_tahun_ajaran_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_tahun_ajaran_id" ON "kelas" ("tahun_ajaran_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_kelas_semester_id',
+			'CREATE INDEX IF NOT EXISTS "idx_kelas_semester_id" ON "kelas" ("semester_id")'
+		);
+
+		// murid table indexes
+		await ensureIndexExists(
+			client,
+			'idx_murid_kelas_id',
+			'CREATE INDEX IF NOT EXISTS "idx_murid_kelas_id" ON "murid" ("kelas_id")'
+		);
+
+		// mata_pelajaran table indexes
+		await ensureIndexExists(
+			client,
+			'idx_mata_pelajaran_kelas_id',
+			'CREATE INDEX IF NOT EXISTS "idx_mata_pelajaran_kelas_id" ON "mata_pelajaran" ("kelas_id")'
+		);
+
+		// tujuan_pembelajaran table indexes
+		await ensureIndexExists(
+			client,
+			'idx_tujuan_pembelajaran_mata_pelajaran_id',
+			'CREATE INDEX IF NOT EXISTS "idx_tujuan_pembelajaran_mata_pelajaran_id" ON "tujuan_pembelajaran" ("mata_pelajaran_id")'
+		);
+
+		// asesmen tables indexes
+		await ensureIndexExists(
+			client,
+			'idx_asesmen_formatif_murid_id',
+			'CREATE INDEX IF NOT EXISTS "idx_asesmen_formatif_murid_id" ON "asesmen_formatif" ("murid_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_asesmen_formatif_mata_pelajaran_id',
+			'CREATE INDEX IF NOT EXISTS "idx_asesmen_formatif_mata_pelajaran_id" ON "asesmen_formatif" ("mata_pelajaran_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_asesmen_sumatif_murid_id',
+			'CREATE INDEX IF NOT EXISTS "idx_asesmen_sumatif_murid_id" ON "asesmen_sumatif" ("murid_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_asesmen_sumatif_mata_pelajaran_id',
+			'CREATE INDEX IF NOT EXISTS "idx_asesmen_sumatif_mata_pelajaran_id" ON "asesmen_sumatif" ("mata_pelajaran_id")'
+		);
+
+		// tahun_ajaran table indexes
+		await ensureIndexExists(
+			client,
+			'idx_tahun_ajaran_sekolah_id',
+			'CREATE INDEX IF NOT EXISTS "idx_tahun_ajaran_sekolah_id" ON "tahun_ajaran" ("sekolah_id")'
+		);
+
+		// tasks table indexes
+		await ensureIndexExists(
+			client,
+			'idx_tasks_sekolah_id',
+			'CREATE INDEX IF NOT EXISTS "idx_tasks_sekolah_id" ON "tasks" ("sekolah_id")'
+		);
+		await ensureIndexExists(
+			client,
+			'idx_tasks_kelas_id',
+			'CREATE INDEX IF NOT EXISTS "idx_tasks_kelas_id" ON "tasks" ("kelas_id")'
+		);
+
+		console.info('[ensure-columns] Performance optimization indexes created successfully');
+
 		// Columns referenced by migrations that may be missing in older installed DBs.
 		// If missing, add them so subsequent migration UPDATE statements do not fail.
 		const checks = [
@@ -76,6 +336,41 @@ async function main() {
 			// Sekolah rapor kriteria columns
 			{ table: 'sekolah', column: 'rapor_kriteria_cukup', type: 'INTEGER DEFAULT 85' },
 			{ table: 'sekolah', column: 'rapor_kriteria_baik', type: 'INTEGER DEFAULT 95' },
+			// Also accept camelCase variants created by older migrations
+			{ table: 'sekolah', column: 'raporKriteriaCukup', type: 'INTEGER DEFAULT 85' },
+			{ table: 'sekolah', column: 'raporKriteriaBaik', type: 'INTEGER DEFAULT 95' },
+
+			// Columns added by other migrations
+			{ table: 'sekolah', column: 'lokasi_tanda_tangan', type: 'TEXT' },
+			{ table: 'sekolah', column: 'lokasiTandaTangan', type: 'TEXT' },
+			{ table: 'sekolah', column: 'logo_dinas', type: 'BLOB' },
+			{ table: 'sekolah', column: 'logo_dinas_type', type: 'TEXT' },
+
+			// STS columns on asesmen_sumatif (0015)
+			{ table: 'asesmen_sumatif', column: 'stsTes', type: 'REAL' },
+			{ table: 'asesmen_sumatif', column: 'stsNonTes', type: 'REAL' },
+			{ table: 'asesmen_sumatif', column: 'sts', type: 'REAL' },
+
+			// mata_pelajaran.kode (0018)
+			{ table: 'mata_pelajaran', column: 'kode', type: 'TEXT' },
+
+			// kelas waliAsrama / waliAsuh added in later migrations (0024 / 0026)
+			{ table: 'kelas', column: 'waliAsramaId', type: 'INTEGER' },
+			{ table: 'kelas', column: 'wali_asrama_id', type: 'INTEGER' },
+			{ table: 'kelas', column: 'waliAsuhId', type: 'INTEGER' },
+			{ table: 'kelas', column: 'wali_asuh_id', type: 'INTEGER' },
+
+			// status kepala sekolah (0027) - accept both variants
+			{
+				table: 'sekolah',
+				column: 'statusKepalaSekolah',
+				type: "TEXT NOT NULL DEFAULT 'definitif'"
+			},
+			{
+				table: 'sekolah',
+				column: 'status_kepala_sekolah',
+				type: "TEXT NOT NULL DEFAULT 'definitif'"
+			},
 			{ table: 'tasks', column: 'sekolah_id', type: 'INTEGER' },
 			{ table: 'tasks', column: 'kelas_id', type: 'INTEGER' },
 			{ table: 'kelas', column: 'sekolah_id', type: 'INTEGER' },
@@ -98,6 +393,9 @@ async function main() {
 			{ table: 'asesmen_sumatif_tujuan', column: 'mata_pelajaran_id', type: 'INTEGER' },
 			{ table: 'asesmen_formatif', column: 'mata_pelajaran_id', type: 'INTEGER' },
 			// Columns referenced by newer migrations that older DBs may not have
+			// Naungan (organisasi pengelola sekolah)
+			{ table: 'sekolah', column: 'naungan', type: "TEXT NOT NULL DEFAULT 'kemendikbud'" },
+			{ table: 'sekolah', column: 'naungan', type: 'TEXT' },
 			{ table: 'auth_user', column: 'sekolah_id', type: 'INTEGER' },
 			{ table: 'feature_unlock', column: 'sekolah_id', type: 'INTEGER' },
 			{ table: 'tahun_ajaran', column: 'sekolah_id', type: 'INTEGER' }

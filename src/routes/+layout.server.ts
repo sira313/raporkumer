@@ -37,6 +37,17 @@ export async function load({ url, locals, cookies }) {
 				),
 				orderBy: asc(tableKelas.nama)
 			});
+		} else if (userWithType?.type === 'wali_asuh' && userWithType.pegawaiId) {
+			// Wali asuh: get ALL kelas where waliAsuhId = pegawaiId (across all semesters)
+			daftarKelas = await db.query.tableKelas.findMany({
+				columns: { id: true, nama: true, fase: true },
+				with: { waliKelas: { columns: { id: true, nama: true } } },
+				where: and(
+					eq(tableKelas.sekolahId, sekolah.id),
+					eq(tableKelas.waliAsuhId, userWithType.pegawaiId)
+				),
+				orderBy: asc(tableKelas.nama)
+			});
 		} else if (userWithType?.type === 'user' && userWithType.id) {
 			// User type (guru): get kelas from tableAuthUserKelas join table
 			// First query join table to get allowed kelas IDs
@@ -139,10 +150,13 @@ export async function load({ url, locals, cookies }) {
 		}
 	}
 
-	// 2) If no explicit param, and the user is a wali_kelas, prefer their assigned kelas
+	// 2) If no explicit param, and the user is a wali_kelas or wali_asuh, prefer their assigned kelas
 	if (!kelasAktif && user) {
 		const userWithType = user as { type?: string; kelasId?: number };
-		if (userWithType.type === 'wali_kelas' && userWithType.kelasId) {
+		if (
+			(userWithType.type === 'wali_kelas' || userWithType.type === 'wali_asuh') &&
+			userWithType.kelasId
+		) {
 			const waliKelasId = Number(userWithType.kelasId);
 			if (Number.isInteger(waliKelasId)) {
 				// prefer kelas from daftarKelas (same semester), otherwise attempt to load the kelas by id
@@ -168,10 +182,13 @@ export async function load({ url, locals, cookies }) {
 		}
 	}
 
-	// If no explicit candidate, and the user is a wali_kelas, prefer their assigned kelas
+	// If no explicit candidate, and the user is a wali_kelas or wali_asuh, prefer their assigned kelas
 	if (!kelasAktif && user) {
 		const userWithType = user as { type?: string; kelasId?: number };
-		if (userWithType.type === 'wali_kelas' && userWithType.kelasId) {
+		if (
+			(userWithType.type === 'wali_kelas' || userWithType.type === 'wali_asuh') &&
+			userWithType.kelasId
+		) {
 			const waliKelasId = Number(userWithType.kelasId);
 			if (Number.isInteger(waliKelasId)) {
 				kelasAktif = daftarKelas.find((kelas) => kelas.id === waliKelasId) ?? null;
@@ -199,9 +216,10 @@ export async function load({ url, locals, cookies }) {
 	// disable UI for restricted 'user' accounts.
 	let userForClient = user;
 	if (user) {
-		// default permission: users with type 'user' should not be allowed
+		// default permission: users with type 'user' or 'wali_asuh' should not be allowed
 		// to manage mata pelajaran. Other account types retain access.
-		const canManageMapel = (user as { type?: string }).type !== 'user';
+		const userType = (user as { type?: string }).type;
+		const canManageMapel = userType !== 'user' && userType !== 'wali_asuh';
 
 		if (user.pegawaiId) {
 			const pegawaiRecord = await db.query.tablePegawai.findFirst({

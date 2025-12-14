@@ -88,6 +88,7 @@
 						placeholder="Contoh: Damian Wayne, Bat"
 						name="waliKelas.nama"
 					/>
+					<span>Khusus sekolah dengan program keasramaan.</span>
 				</div>
 
 				<!-- NIP Wali Kelas -->
@@ -100,6 +101,60 @@
 						name="waliKelas.nip"
 					/>
 					<span> Biarkan kosong jika wali kelas tidak memiliki NIP. </span>
+				</div>
+
+				<!-- Wali Asrama -->
+				<div class="fieldset">
+					<legend class="fieldset-legend"
+						>Wali Asrama <span class="text-xs text-gray-500">(Opsional)</span></legend
+					>
+					<input
+						type="text"
+						class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						placeholder="Contoh: Ahmad Rahman"
+						name="waliAsrama.nama"
+					/>
+				</div>
+
+				<!-- NIP Wali Asrama -->
+				<div class="fieldset">
+					<legend class="fieldset-legend"
+						>NIP Wali Asrama <span class="text-xs text-gray-500">(Opsional)</span></legend
+					>
+					<input
+						type="text"
+						class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						placeholder="Contoh: NIP 19940505 201803 1 008"
+						name="waliAsrama.nip"
+					/>
+					<span> Biarkan kosong jika tidak ada wali asrama atau tidak memiliki NIP. </span>
+				</div>
+
+				<!-- Wali Asuh -->
+				<div class="fieldset">
+					<legend class="fieldset-legend"
+						>Wali Asuh <span class="text-xs text-gray-500">(Opsional)</span></legend
+					>
+					<input
+						type="text"
+						class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						placeholder="Contoh: Budi Santoso"
+						name="waliAsuh.nama"
+					/>
+				</div>
+
+				<!-- NIP Wali Asuh -->
+				<div class="fieldset">
+					<legend class="fieldset-legend"
+						>NIP Wali Asuh <span class="text-xs text-gray-500">(Opsional)</span></legend
+					>
+					<input
+						type="text"
+						class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						placeholder="Contoh: NIP 19940505 201803 1 008"
+						name="waliAsuh.nip"
+					/>
+					<span> Biarkan kosong jika tidak ada wali asuh atau tidak memiliki NIP. </span>
 				</div>
 			</div>
 			<div class="mt-6 flex justify-between gap-2">
