@@ -63,14 +63,15 @@
 		</thead>
 		<tbody>
 			{#each rows as row, idx (idx)}
+				{@const rowOrder = row.order ?? idx}
 				{#if row.kategoriHeader}
-					<tr use:applyRow={row.order ?? idx}>
+					<tr use:applyRow={rowOrder} data-row-order={rowOrder}>
 						<td colspan="4" class="border border-black px-2 py-1 font-semibold print:border-black">
 							{row.kategoriHeader}
 						</td>
 					</tr>
 				{:else}
-					<tr use:applyRow={row.order ?? idx}>
+					<tr use:applyRow={rowOrder} data-row-order={rowOrder}>
 						<td class="border border-black px-2 py-1 text-center print:border-black">{row.no}</td>
 						<td class="border border-black px-2 py-1 print:border-black"
 							>{formatValue(row.indikator)}</td
