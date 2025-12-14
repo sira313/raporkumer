@@ -124,7 +124,7 @@
 			</thead>
 		{/if}
 		<tbody>
-			{#each rows as row, ridx (`${ridx}-${row.kind === 'intrak' ? `intrak-${row.index}-${row.order}` : row.kind === 'intrak-group-header' ? `header-${row.groupLetter}-${row.order}` : row.kind === 'ekstrakurikuler-header' ? `ekskul-header-${row.order}` : row.kind === 'ekstrakurikuler' ? `ekskul-${row.index}-${row.order}` : row.kind === 'ekstrakurikuler-empty' ? `ekskul-empty-${row.order}` : row.kind === 'tail' ? `tail-${row.tailKey}-${row.order}` : `empty-${row.order}`}`)}
+			{#each rows as row, ridx (`${ridx}-${row.kind === 'intrak' ? `intrak-${row.index}-${row.order}` : row.kind === 'intrak-group-header' ? `header-${row.groupLetter}-${row.order}` : row.kind === 'ekstrakurikuler-header' ? `ekskul-header-${row.order}` : row.kind === 'ekstrakurikuler' ? `ekskul-${row.index}-${row.order}` : row.kind === 'ekstrakurikuler-empty' ? `ekskul-empty-${row.order}` : row.kind === 'tail' ? `tail-${row.tailKey}-${row.order}` : row.kind === 'tanggapan' ? `tanggapan-${row.order}` : `empty-${row.order}`}`)}
 				{#if row.kind === 'ekstrakurikuler-header'}
 					<tr
 						use:applyRow={row.order}
@@ -337,6 +337,22 @@
 				{:else if row.kind === 'ekstrakurikuler-empty'}
 					<tr use:applyRow={row.order} data-row-order={row.order}>
 						<td class="border px-3 py-2 text-center" colspan="4"> Tidak ada ekstrakurikuler </td>
+					</tr>
+				{:else if row.kind === 'tanggapan'}
+					<tr use:applyRow={row.order} data-row-order={row.order} data-tanggapan-row="true">
+						<td class="border-none p-0 align-top" colspan="4">
+							<div class="my-2 flex flex-col gap-4">
+								<TailSection
+									tailKey={row.tailKey}
+									{rapor}
+									{formatValue}
+									{formatHari}
+									{waliKelas}
+									{kepalaSekolah}
+									{ttd}
+								/>
+							</div>
+						</td>
 					</tr>
 				{:else}
 					<tr use:applyRow={row.order} data-row-order={row.order} data-tail-row="true">

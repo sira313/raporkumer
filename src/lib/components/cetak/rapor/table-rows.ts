@@ -46,6 +46,12 @@ export type TailTableRow = {
 	tailKey: TailBlockKey;
 };
 
+export type TanggapanTableRow = {
+	kind: 'tanggapan';
+	order: number;
+	tailKey: 'tanggapan';
+};
+
 export type EkstrakurikulerHeaderRow = {
 	kind: 'ekstrakurikuler-header';
 	order: number;
@@ -73,6 +79,7 @@ export type TableRow =
 	| EmptyTableRow
 	| IntrakGroupHeaderRow
 	| TailTableRow
+	| TanggapanTableRow
 	| EkstrakurikulerHeaderRow
 	| EkstrakurikulerRow
 	| EkstrakurikulerEmptyRow;
@@ -227,12 +234,21 @@ export function createTableRows(
 				});
 			}
 		} else {
-			// Regular tail block (kokurikuler, ketidakhadiran, tanggapan)
-			result.push({
-				kind: 'tail',
-				order: order++,
-				tailKey
-			});
+			// Regular tail block (kokurikuler, ketidakhadiran) 
+			// Tanggapan dipisah jadi kind tersendiri
+			if (tailKey === 'tanggapan') {
+				result.push({
+					kind: 'tanggapan',
+					order: order++,
+					tailKey: 'tanggapan'
+				});
+			} else {
+				result.push({
+					kind: 'tail',
+					order: order++,
+					tailKey
+				});
+			}
 		}
 	}
 

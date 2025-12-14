@@ -152,9 +152,10 @@ export function measureRows(containerElement: HTMLElement, rows: TableRow[]): Me
  * - Baris 20-30 pindah ke halaman 3 (reset accumulated = 0)
  */
 
-// Minimum sisa ruang yang harus tersedia setelah menambahkan tail block
-// Untuk mencegah tail block "mepet" di boundary lalu row berikutnya overflow
-const MIN_REMAINING_SPACE = 100; // px
+// Minimum sisa ruang yang harus tersedia setelah menambahkan tail/tanggapan block
+// Untuk mencegah block "mepet" di boundary lalu row berikutnya overflow
+const MIN_REMAINING_SPACE_TAIL = 50; // px (ketidakhadiran - lebih lenient)
+const MIN_REMAINING_SPACE_TANGGAPAN = 100; // px (tanggapan - ketat)
 
 // Toleransi overflow untuk intrakurikuler
 // Mengakomodasi perbedaan antara calculated height vs actual rendered height
@@ -187,9 +188,10 @@ export function detectBoundaryViolations(
 		const { row, height } = measurement;
 
 		// Cek apakah menambah row ini akan melebihi boundary
-		// Untuk tail blocks, gunakan stricter check dengan minimum remaining space
+		// Untuk tail/tanggapan blocks, gunakan stricter check dengan minimum remaining space
 		// Untuk intrakurikuler, hanya cek height asli tanpa toleransi
 		const isTailBlock = row.kind === 'tail';
+		const isTanggapanBlock = row.kind === 'tanggapan';
 		const isIntrakRow = row.kind === 'intrak' || row.kind === 'intrak-group-header';
 
 		let wouldExceedBoundary: boolean;
@@ -204,10 +206,15 @@ export function detectBoundaryViolations(
 			wouldExceedBoundary = overflow > tolerance;
 			checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}=${Math.round(totalWithRow)} vs ${Math.round(boundary.availableHeight)} (overflow=${Math.round(overflow)}px, tol=${tolerance}px)`;
 		} else if (isTailBlock) {
-			// Tail blocks: tambahkan minimum remaining space
+			// Tail blocks (ketidakhadiran): tambahkan minimum remaining space (lenient)
 			wouldExceedBoundary =
-				currentPageHeight + height + MIN_REMAINING_SPACE > boundary.availableHeight;
-			checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}+${MIN_REMAINING_SPACE}=${Math.round(currentPageHeight + height + MIN_REMAINING_SPACE)} vs ${Math.round(boundary.availableHeight)}`;
+				currentPageHeight + height + MIN_REMAINING_SPACE_TAIL > boundary.availableHeight;
+			checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}+${MIN_REMAINING_SPACE_TAIL}=${Math.round(currentPageHeight + height + MIN_REMAINING_SPACE_TAIL)} vs ${Math.round(boundary.availableHeight)}`;
+		} else if (isTanggapanBlock) {
+			// Tanggapan block: tambahkan minimum remaining space (strict)
+			wouldExceedBoundary =
+				currentPageHeight + height + MIN_REMAINING_SPACE_TANGGAPAN > boundary.availableHeight;
+			checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}+${MIN_REMAINING_SPACE_TANGGAPAN}=${Math.round(currentPageHeight + height + MIN_REMAINING_SPACE_TANGGAPAN)} vs ${Math.round(boundary.availableHeight)}`;
 		} else {
 			// Others (ekstrakurikuler): gunakan exact height
 			wouldExceedBoundary = currentPageHeight + height > boundary.availableHeight;
@@ -295,7 +302,9 @@ export function detectBoundaryViolations(
 		];
 
 		if (isTailBlock) {
-			logParts.push(`required=${Math.round(height + MIN_REMAINING_SPACE)}px`);
+			logParts.push(`required=${Math.round(height + MIN_REMAINING_SPACE_TAIL)}px`);
+		} else if (isTanggapanBlock) {
+			logParts.push(`required=${Math.round(height + MIN_REMAINING_SPACE_TANGGAPAN)}px`);
 		}
 
 		// Tampilkan check calculation jika exceed
