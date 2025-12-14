@@ -20,6 +20,7 @@ export const helpMaps: HelpMapEntry[] = [
 	{ matcher: '/ekstrakurikuler/tp-ekstra', file: 'tp-ekstra' },
 	{ matcher: '/kelas', file: 'data-kelas' },
 	{ matcher: '/kelas/form', file: 'data-kelas' },
+	{ matcher: /^\/kelas\/form\/\d+$/, file: 'edit-data-kelas' },
 	{ matcher: '/asesmen-formatif', file: 'asesmen-formatif' },
 	{ matcher: '/asesmen-formatif/formulir-asesmen', file: 'form-formatif' },
 	{ matcher: '/asesmen-sumatif', file: 'asesmen-sumatif' },
@@ -32,6 +33,11 @@ export const helpMaps: HelpMapEntry[] = [
 	{ matcher: '/catatan-wali-kelas', file: 'catatan-wali' },
 	{ matcher: '/pengaturan', file: 'pengaturan' },
 	{ matcher: '/pengguna', file: 'pengguna' },
+	{ matcher: '/keasramaan', file: 'keasramaan' },
+	{ matcher: '/asesmen-keasramaan', file: 'asesmen-keasramaan' },
+	{ matcher: '/asesmen-keasramaan/form-asesmen', file: 'form-keasramaan' },
+	{ matcher: '/keasramaan/mata-evaluasi', file: 'matev-keasramaan' },
+	{ matcher: '/keasramaan/tp', file: 'tp-keasramaan' },
 	{ matcher: '/cetak', file: 'cetak' }
 ];
 

@@ -441,10 +441,10 @@
 									</div>
 								</td>
 								<td class="align-top">
-									<div class="flex gap-1">
+									<div class="flex">
 										<button
 											type="button"
-											class="btn btn-sm btn-soft shadow-none"
+											class="btn btn-sm btn-soft rounded-r-none shadow-none"
 											onclick={() => openEdit(group)}
 											disabled={isEditMode || !tableReady}
 											title="Edit mata evaluasi"
@@ -453,7 +453,7 @@
 										</button>
 										<button
 											type="button"
-											class="btn btn-sm btn-error btn-soft shadow-none"
+											class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
 											onclick={() => deleteGroup(group.id)}
 											disabled={isEditMode || !tableReady}
 											title="Hapus mata evaluasi"

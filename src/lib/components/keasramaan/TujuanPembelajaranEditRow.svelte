@@ -60,9 +60,9 @@
 		</FormEnhance>
 	</td>
 	<td class="align-top">
-		<div class="flex gap-2">
+		<div class="flex">
 			<button
-				class="btn btn-sm btn-soft shadow-none"
+				class="btn btn-sm btn-soft rounded-r-none shadow-none"
 				type="button"
 				title="Batal"
 				onclick={onCancel}
@@ -70,7 +70,7 @@
 				<Icon name="close" />
 			</button>
 			<button
-				class="btn btn-sm btn-primary shadow-none"
+				class="btn btn-sm btn-primary rounded-l-none shadow-none"
 				type="submit"
 				form={`tp-keasramaan-edit-${item.id}`}
 				disabled={submitting || !localDeskripsi.trim()}

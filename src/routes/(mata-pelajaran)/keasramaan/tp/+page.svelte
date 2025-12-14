@@ -234,9 +234,9 @@
 									{item.deskripsi}
 								</td>
 								<td class="align-top">
-									<div class="flex gap-2">
+									<div class="flex">
 										<button
-											class="btn btn-sm btn-soft shadow-none"
+											class="btn btn-sm btn-soft rounded-r-none shadow-none"
 											type="button"
 											title="Edit tujuan"
 											disabled={!canManage}
@@ -245,7 +245,7 @@
 											<Icon name="edit" />
 										</button>
 										<button
-											class="btn btn-sm btn-soft btn-error shadow-none"
+											class="btn btn-sm btn-soft btn-error rounded-l-none shadow-none"
 											type="button"
 											title="Hapus tujuan"
 											disabled={!canManage}
