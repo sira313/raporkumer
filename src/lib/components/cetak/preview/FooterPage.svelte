@@ -46,16 +46,16 @@
 			pointer-events: none;
 		}
 
-		/* For printing, use fixed so the footer appears on every physical page and
-           align to page margins (20mm). */
+		/* For printing, keep absolute positioning to prevent overlapping footers.
+           Each footer stays within its own page container context. */
 		@media print {
 			.footer-page {
-				position: fixed;
-				left: 20mm;
-				right: 20mm;
+				position: absolute;
+				left: 0;
+				right: 0;
 				bottom: 10mm;
-				padding-left: 0;
-				padding-right: 0;
+				padding-left: 20mm;
+				padding-right: 20mm;
 			}
 
 			/* Show the prop-based page number in print (use value passed from parent) */
