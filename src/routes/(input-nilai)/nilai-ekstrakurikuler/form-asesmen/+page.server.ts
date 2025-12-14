@@ -4,7 +4,8 @@ import {
 	tableAsesmenEkstrakurikuler,
 	tableEkstrakurikuler,
 	tableEkstrakurikulerTujuan,
-	tableMurid
+	tableMurid,
+	tableMuridEkstrakurikuler
 } from '$lib/server/db/schema';
 import {
 	ekstrakurikulerNilaiLabelByValue,
@@ -73,6 +74,15 @@ export async function load({ parent, url, depends }) {
 		throw error(404, 'Data ekstrakurikuler tidak ditemukan');
 	}
 
+	// Ambil flag nilai_kosong per murid
+	const muridEkstrak = await db.query.tableMuridEkstrakurikuler.findFirst({
+		columns: { nilaiKosong: true },
+		where: and(
+			eq(tableMuridEkstrakurikuler.muridId, murid.id),
+			eq(tableMuridEkstrakurikuler.ekstrakurikulerId, ekstrak.id)
+		)
+	});
+
 	if (murid.kelasId !== ekstrak.kelasId) {
 		throw error(403, 'Murid dan ekstrakurikuler tidak berada pada kelas yang sama');
 	}
@@ -109,7 +119,11 @@ export async function load({ parent, url, depends }) {
 	return {
 		meta,
 		murid: { id: murid.id, nama: murid.nama },
-		ekstrakurikuler: { id: ekstrak.id, nama: ekstrak.nama },
+		ekstrakurikuler: {
+			id: ekstrak.id,
+			nama: ekstrak.nama,
+			nilaiKosong: Boolean(muridEkstrak?.nilaiKosong)
+		},
 		tujuan,
 		nilaiByTujuan,
 		kategoriOptions: ekstrakurikulerNilaiOptions,
@@ -165,11 +179,13 @@ export const actions = {
 		});
 		const tujuanIdSet = new Set(tujuanRecords.map((item) => item.id));
 
-		const payload = unflattenFormData<{ nilai?: Record<string, FormDataEntryValue> }>(
-			formData,
-			false
-		);
+		const payload = unflattenFormData<{
+			nilai?: Record<string, FormDataEntryValue>;
+			nilaiKosong?: FormDataEntryValue;
+		}>(formData, false);
 		const nilaiEntries = payload.nilai ?? {};
+		const nilaiKosongRaw = payload.nilaiKosong;
+		const nilaiKosong = nilaiKosongRaw === '1' || nilaiKosongRaw === 'true';
 
 		const sanitized: Array<{ tujuanId: number; kategori: EkstrakurikulerNilaiKategori }> = [];
 
@@ -185,6 +201,31 @@ export const actions = {
 		await ensureAsesmenEkstrakurikulerSchema();
 
 		await db.transaction(async (tx) => {
+			// Update atau insert flag nilaiKosong ke tabel murid_ekstrakurikuler
+			const existing = await tx.query.tableMuridEkstrakurikuler.findFirst({
+				columns: { id: true },
+				where: and(
+					eq(tableMuridEkstrakurikuler.muridId, muridRecord.id),
+					eq(tableMuridEkstrakurikuler.ekstrakurikulerId, ekstrakRecord.id)
+				)
+			});
+
+			const now = new Date().toISOString();
+			if (existing) {
+				await tx
+					.update(tableMuridEkstrakurikuler)
+					.set({ nilaiKosong: nilaiKosong ? 1 : 0, updatedAt: now })
+					.where(eq(tableMuridEkstrakurikuler.id, existing.id));
+			} else {
+				await tx.insert(tableMuridEkstrakurikuler).values({
+					muridId: muridRecord.id,
+					ekstrakurikulerId: ekstrakRecord.id,
+					nilaiKosong: nilaiKosong ? 1 : 0,
+					createdAt: now,
+					updatedAt: now
+				});
+			}
+
 			await tx
 				.delete(tableAsesmenEkstrakurikuler)
 				.where(

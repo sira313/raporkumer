@@ -241,17 +241,28 @@ export function paginateRaporWithFixedHeights(
 		pages.push({ rows: currentPageRows, hasFooter: false });
 	}
 
-	// Post-process: add repeated ekstrakurikuler header to pages that start with ekstrakurikuler row
+	// Post-process: add repeated ekstrakurikuler header to pages that contain ekstrakurikuler rows
 	// but don't have the header (because of page break)
 	for (let pageIdx = 1; pageIdx < pages.length; pageIdx++) {
 		const page = pages[pageIdx];
-		if (page.rows.length > 0 && page.rows[0].kind === 'ekstrakurikuler') {
-			// This page starts with ekstrakurikuler row but no header - add header at the top
-			const headerRow: TableRow = {
-				kind: 'ekstrakurikuler-header',
-				order: page.rows[0].order - 0.5 // Use fractional order to insert before
-			};
-			page.rows.unshift(headerRow);
+		if (page.rows.length > 0) {
+			// Check if this page has ekstrakurikuler rows but no header
+			const hasEkstrakRow = page.rows.some(
+				(r) => r.kind === 'ekstrakurikuler' || r.kind === 'ekstrakurikuler-empty'
+			);
+			const hasEkstrakHeader = page.rows.some((r) => r.kind === 'ekstrakurikuler-header');
+
+			if (hasEkstrakRow && !hasEkstrakHeader) {
+				// This page has ekstrakurikuler content but no header - add header at the top
+				const firstEkstrakRow = page.rows.find(
+					(r) => r.kind === 'ekstrakurikuler' || r.kind === 'ekstrakurikuler-empty'
+				);
+				const headerRow: TableRow = {
+					kind: 'ekstrakurikuler-header',
+					order: firstEkstrakRow ? firstEkstrakRow.order - 0.5 : page.rows[0].order - 0.5
+				};
+				page.rows.unshift(headerRow);
+			}
 		}
 	}
 

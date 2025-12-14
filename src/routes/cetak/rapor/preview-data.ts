@@ -7,7 +7,8 @@ import {
 	tableAsesmenSumatif,
 	tableAsesmenSumatifTujuan,
 	tableEkstrakurikuler,
-	tableMurid
+	tableMurid,
+	tableMuridEkstrakurikuler
 } from '$lib/server/db/schema';
 import {
 	jenisMapel,
@@ -225,7 +226,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		asesmenEkstrakurikuler,
 		asesmenKokurikuler,
 		asesmenSumatifTujuan,
-		allEkstrakurikuler
+		allEkstrakurikuler,
+		muridEkstrakurikulerSettings
 	] = await Promise.all([
 		db.query.tableAsesmenSumatif.findMany({
 			where: eq(tableAsesmenSumatif.muridId, murid.id),
@@ -268,8 +270,18 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		db.query.tableEkstrakurikuler.findMany({
 			where: eq(tableEkstrakurikuler.kelasId, murid.kelasId),
 			orderBy: [asc(tableEkstrakurikuler.nama)]
+		}),
+		db.query.tableMuridEkstrakurikuler.findMany({
+			columns: { ekstrakurikulerId: true, nilaiKosong: true },
+			where: eq(tableMuridEkstrakurikuler.muridId, murid.id)
 		})
 	]);
+
+	// Buat map untuk flag nilai kosong per ekstrakurikuler untuk murid ini
+	const nilaiKosongMap = new Map<number, boolean>();
+	for (const setting of muridEkstrakurikulerSettings) {
+		nilaiKosongMap.set(setting.ekstrakurikulerId, Boolean(setting.nilaiKosong));
+	}
 
 	const tujuanScoresByMapel = new Map<number, TujuanScoreEntry[]>();
 
@@ -454,6 +466,7 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		number,
 		{
 			nama: string;
+			nilaiKosong: boolean;
 			parts: Array<{ kategori: EkstrakurikulerNilaiKategori; tujuan: string }>;
 		}
 	>();
@@ -466,30 +479,38 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		if (!tujuan) continue;
 		const group = ekstrakurikulerGrouped.get(kegiatan.id) ?? {
 			nama: kegiatan.nama,
+			nilaiKosong: nilaiKosongMap.get(kegiatan.id) || false,
 			parts: []
 		};
 		group.parts.push({ kategori: item.kategori, tujuan });
 		ekstrakurikulerGrouped.set(kegiatan.id, group);
 	}
 
-	// Tambahkan ekstrakurikuler yang belum dinilai dengan deskripsi "-"
+	// Tambahkan ekstrakurikuler yang belum dinilai (hanya jika flag nilaiKosong aktif untuk murid ini)
 	for (const ekskul of allEkstrakurikuler) {
 		if (!ekstrakurikulerGrouped.has(ekskul.id)) {
-			ekstrakurikulerGrouped.set(ekskul.id, {
-				nama: ekskul.nama,
-				parts: [] // empty parts indicates "belum dinilai"
-			});
+			// Hanya tambahkan jika flag nilaiKosong aktif untuk murid ini
+			const hasNilaiKosong = nilaiKosongMap.get(ekskul.id) || false;
+			if (hasNilaiKosong) {
+				ekstrakurikulerGrouped.set(ekskul.id, {
+					nama: ekskul.nama,
+					nilaiKosong: true,
+					parts: []
+				});
+			}
 		}
 	}
 
 	const ekstrakurikuler = Array.from(ekstrakurikulerGrouped.values())
 		.map((entry) => ({
 			nama: entry.nama,
-			deskripsi:
-				entry.parts.length > 0
+			deskripsi: entry.nilaiKosong
+				? '-'
+				: entry.parts.length > 0
 					? (buildEkstrakurikulerDeskripsi(entry.parts, murid.nama) ?? 'Belum ada catatan.')
-					: '-'
+					: '' // Kosong untuk yang belum dinilai dan tidak ada flag
 		}))
+		.filter((entry) => entry.deskripsi !== '') // Filter yang benar-benar kosong
 		.sort((a, b) => a.nama.localeCompare(b.nama, LOCALE_ID));
 
 	const sanitizeTujuan = (value: string | null | undefined) =>

@@ -6,7 +6,7 @@
 
 	type PageData = {
 		murid: { id: number; nama: string };
-		ekstrakurikuler: { id: number; nama: string };
+		ekstrakurikuler: { id: number; nama: string; nilaiKosong: boolean };
 		tujuan: Array<{ id: number; deskripsi: string }>;
 		nilaiByTujuan: Record<number, EkstrakurikulerNilaiKategori>;
 		kategoriOptions: Array<{ value: EkstrakurikulerNilaiKategori; label: string }>;
@@ -19,7 +19,8 @@
 	const initValue = $derived.by(() => ({
 		muridId: data.murid.id,
 		ekstrakurikulerId: data.ekstrakurikuler.id,
-		nilai: data.nilaiByTujuan
+		nilai: data.nilaiByTujuan,
+		nilaiKosong: data.ekstrakurikuler.nilaiKosong
 	}));
 
 	function capitalizeSentence(value: string | null | undefined) {
@@ -63,9 +64,25 @@
 				Isi nilai untuk tiap tujuan pembelajaran ekstrakurikuler di bawah ini untuk Ananda
 				<span class="text-primary">{capitalizeSentence(data.murid.nama)}</span>.
 			</h3>
-			<p class="text-base-content/70 text-sm">
-				Ekstrakurikuler: <strong>{capitalizeSentence(data.ekstrakurikuler.nama)}</strong>
-			</p>
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<p class="text-base-content/70 text-sm">
+					Ekstrakurikuler: <strong>{capitalizeSentence(data.ekstrakurikuler.nama)}</strong>
+				</p>
+				<div
+					class="tooltip sm:tooltip-left tooltip-right"
+					data-tip="Toggle ini untuk menandai ekstrakurikuler tanpa nilai. Di rapor akan muncul &quot;-&quot;"
+				>
+					<label class="swap swap-flip text-sm">
+						<input type="checkbox" name="nilaiKosong" value="1" />
+						<div class="swap-on btn btn-sm btn-error btn-soft font-semibold shadow-none">
+							Nilai Kosong
+						</div>
+						<div class="swap-off btn btn-sm btn-success btn-soft font-semibold shadow-none">
+							Nilai Ada
+						</div>
+					</label>
+				</div>
+			</div>
 
 			{#if !hasTujuan}
 				<div class="alert alert-soft alert-warning mt-6">

@@ -326,6 +326,39 @@ export function detectBoundaryViolations(
 		});
 	}
 
+	// Post-process: Tambahkan header ekstrakurikuler di halaman yang dimulai dengan baris ekstrakurikuler
+	// tapi tidak memiliki header (karena terkena split)
+	for (let pageIdx = 1; pageIdx < pages.length; pageIdx++) {
+		const page = pages[pageIdx];
+		if (page.rows.length > 0) {
+			// Cek apakah halaman ini memiliki baris ekstrakurikuler tapi tidak ada headernya
+			const hasEkstrakRow = page.rows.some(
+				(r) => r.kind === 'ekstrakurikuler' || r.kind === 'ekstrakurikuler-empty'
+			);
+			const hasEkstrakHeader = page.rows.some((r) => r.kind === 'ekstrakurikuler-header');
+
+			if (hasEkstrakRow && !hasEkstrakHeader) {
+				// Temukan baris ekstrakurikuler pertama untuk mendapatkan order-nya
+				const firstEkstrakRow = page.rows.find(
+					(r) => r.kind === 'ekstrakurikuler' || r.kind === 'ekstrakurikuler-empty'
+				);
+
+				if (firstEkstrakRow) {
+					// Tambahkan header ekstrakurikuler di awal halaman
+					const headerRow: TableRow = {
+						kind: 'ekstrakurikuler-header',
+						order: firstEkstrakRow.order - 0.5 // Fractional order agar muncul sebelum row pertama
+					};
+					page.rows.unshift(headerRow);
+
+					debugLogs.push(
+						`[POST-PROCESS] Added ekstrakurikuler header to page ${pageIdx + 1} (before order ${firstEkstrakRow.order})`
+					);
+				}
+			}
+		}
+	}
+
 	// Tentukan penempatan footer
 	if (pages.length > 0) {
 		const lastPage = pages[pages.length - 1];

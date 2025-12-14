@@ -57,6 +57,8 @@
 	function descriptionBlocks(value: string | null | undefined): DescriptionBlock[] {
 		const formatted = formatValue(value);
 		if (formatted === '—') return [{ kind: 'text', text: formatted }];
+		// Untuk nilai kosong (hanya "-"), kembalikan tanpa tambahan titik
+		if (formatted === '-') return [{ kind: 'text', text: formatted }];
 
 		const lines = formatted
 			.split(/\r?\n/)

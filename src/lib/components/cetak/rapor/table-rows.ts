@@ -199,10 +199,11 @@ export function createTableRows(
 
 		if (tailKey === 'ekstrakurikuler') {
 			// Insert ekstrakurikuler as individual rows here for efficient pagination
-			// Filter ekstrakurikuler yang memiliki nilai (bukan kosong atau "-")
-			const ekskulWithValues = (ekstrakurikuler || []).filter((ekskul) => {
+			// Tampilkan ekstrakurikuler yang punya nilai atau yang ditandai nilai kosong ("-")
+			const allEkskul = (ekstrakurikuler || []).filter((ekskul) => {
 				const deskripsi = (ekskul.deskripsi || '').trim();
-				return deskripsi !== '' && deskripsi !== '-';
+				// Tampilkan jika ada deskripsi (termasuk "-")
+				return deskripsi !== '';
 			});
 
 			// Add ekstrakurikuler header
@@ -211,10 +212,10 @@ export function createTableRows(
 				order: order++
 			});
 
-			if (ekskulWithValues.length > 0) {
+			if (allEkskul.length > 0) {
 				// Add each ekstrakurikuler as a separate row
-				for (let i = 0; i < ekskulWithValues.length; i++) {
-					const ekskul = ekskulWithValues[i];
+				for (let i = 0; i < allEkskul.length; i++) {
+					const ekskul = allEkskul[i];
 					result.push({
 						kind: 'ekstrakurikuler',
 						order: order++,
@@ -222,7 +223,7 @@ export function createTableRows(
 						nomor: i + 1,
 						entry: {
 							nama: ekskul.nama || '',
-							deskripsi: ekskul.deskripsi || ''
+							deskripsi: ekskul.deskripsi || '-'
 						}
 					});
 				}

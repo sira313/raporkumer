@@ -197,6 +197,36 @@ async function main() {
 			sql: `CREATE INDEX IF NOT EXISTS "asesmen_keasramaan_keasramaan_idx" ON "asesmen_keasramaan" ("keasramaan_id")`
 		});
 
+		// Ensure murid_ekstrakurikuler table exists (from migration 0030)
+		await ensureTableExists(
+			client,
+			'murid_ekstrakurikuler',
+			`
+			CREATE TABLE IF NOT EXISTS "murid_ekstrakurikuler" (
+				"id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+				"murid_id" integer NOT NULL,
+				"ekstrakurikuler_id" integer NOT NULL,
+				"nilai_kosong" integer DEFAULT 0 NOT NULL,
+				"created_at" text NOT NULL,
+				"updated_at" text,
+				CONSTRAINT "murid_ekstrakurikuler_murid_id_murid_id_fk" FOREIGN KEY ("murid_id") REFERENCES "murid" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+				CONSTRAINT "murid_ekstrakurikuler_ekstrakurikuler_id_ekstrakurikuler_id_fk" FOREIGN KEY ("ekstrakurikuler_id") REFERENCES "ekstrakurikuler" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+			)
+		`
+		);
+
+		await client.execute({
+			sql: `CREATE UNIQUE INDEX IF NOT EXISTS "murid_ekstrakurikuler_murid_ekstrak_unique" ON "murid_ekstrakurikuler" ("murid_id", "ekstrakurikuler_id")`
+		});
+
+		await client.execute({
+			sql: `CREATE INDEX IF NOT EXISTS "murid_ekstrakurikuler_murid_idx" ON "murid_ekstrakurikuler" ("murid_id")`
+		});
+
+		await client.execute({
+			sql: `CREATE INDEX IF NOT EXISTS "murid_ekstrakurikuler_ekstrak_idx" ON "murid_ekstrakurikuler" ("ekstrakurikuler_id")`
+		});
+
 		// ===== PERFORMANCE OPTIMIZATION INDEXES =====
 		// These indexes significantly improve query performance, especially on /pengguna page
 		// which performs heavy consolidation queries on every load
@@ -392,6 +422,14 @@ async function main() {
 			{ table: 'asesmen_sumatif', column: 'mata_pelajaran_id', type: 'INTEGER' },
 			{ table: 'asesmen_sumatif_tujuan', column: 'mata_pelajaran_id', type: 'INTEGER' },
 			{ table: 'asesmen_formatif', column: 'mata_pelajaran_id', type: 'INTEGER' },
+			// Tabel murid_ekstrakurikuler untuk tracking nilai kosong per murid (0030)
+			{ table: 'murid_ekstrakurikuler', column: 'murid_id', type: 'INTEGER NOT NULL' },
+			{ table: 'murid_ekstrakurikuler', column: 'ekstrakurikuler_id', type: 'INTEGER NOT NULL' },
+			{
+				table: 'murid_ekstrakurikuler',
+				column: 'nilai_kosong',
+				type: 'INTEGER DEFAULT 0 NOT NULL'
+			},
 			// Columns referenced by newer migrations that older DBs may not have
 			// Naungan (organisasi pengelola sekolah)
 			{ table: 'sekolah', column: 'naungan', type: "TEXT NOT NULL DEFAULT 'kemendikbud'" },
