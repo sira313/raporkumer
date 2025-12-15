@@ -34,11 +34,20 @@ function isXlsxMime(type: string | null | undefined) {
 }
 
 export async function load({ depends, params, parent }) {
-	authority('rapor_manage');
+	// Check permission: admin and users with rapor_manage can access
+	// Also allow 'user' type (guru mapel) since they're filtered server-side
+	const { user } = await parent();
+	const userType = (user as { type?: string } | null)?.type;
+
+	// Only block if not admin and doesn't have rapor_manage permission
+	// Allow 'user' (guru mapel) to proceed - they'll be filtered by mapel assignment
+	if (userType !== 'admin' && userType !== 'user') {
+		authority('rapor_manage');
+	}
 
 	depends('app:mapel_tp-rl');
 	// pull mapel and user from parent so we can adapt behaviour for assigned agama teachers
-	const { mapel, user } = await parent();
+	const { mapel } = await parent();
 
 	await ensureAgamaMapelForClasses([mapel.kelasId]);
 	await ensurePksMapelForClasses([mapel.kelasId]);
@@ -309,8 +318,12 @@ export async function load({ depends, params, parent }) {
 }
 
 export const actions = {
-	async save({ params, request }) {
-		authority('rapor_manage');
+	async save({ params, request, locals }) {
+		// Allow admin, rapor_manage permission holders, and guru mapel
+		const userType = (locals.user as { type?: string } | null)?.type;
+		if (userType !== 'admin' && userType !== 'user') {
+			authority('rapor_manage');
+		}
 
 		const formData = await request.formData();
 		const payload = unflattenFormData<{
@@ -420,8 +433,12 @@ export const actions = {
 		return { message: `Tujuan pembelajaran berhasil diperbarui` };
 	},
 
-	async delete({ request }) {
-		authority('rapor_manage');
+	async delete({ request, locals }) {
+		// Allow admin, rapor_manage permission holders, and guru mapel
+		const userType = (locals.user as { type?: string } | null)?.type;
+		if (userType !== 'admin' && userType !== 'user') {
+			authority('rapor_manage');
+		}
 
 		const formData = await request.formData();
 		const idsRaw = formData.getAll('ids');
@@ -435,8 +452,20 @@ export const actions = {
 		return { message: `Lingkup materi dan tujuan pembelajaran telah dihapus.` };
 	},
 
-	async savebobot({ params, request }: { params: Record<string, string>; request: Request }) {
-		authority('rapor_manage');
+	async savebobot({
+		params,
+		request,
+		locals
+	}: {
+		params: Record<string, string>;
+		request: Request;
+		locals: App.Locals;
+	}) {
+		// Allow admin, rapor_manage permission holders, and guru mapel
+		const userType = (locals.user as { type?: string } | null)?.type;
+		if (userType !== 'admin' && userType !== 'user') {
+			authority('rapor_manage');
+		}
 
 		const mataPelajaranId = Number(params.id);
 		if (!Number.isFinite(mataPelajaranId)) {
@@ -508,8 +537,12 @@ export const actions = {
 		};
 	},
 
-	async import({ params, request }) {
-		authority('rapor_manage');
+	async import({ params, request, locals }) {
+		// Allow admin, rapor_manage permission holders, and guru mapel
+		const userType = (locals.user as { type?: string } | null)?.type;
+		if (userType !== 'admin' && userType !== 'user') {
+			authority('rapor_manage');
+		}
 
 		const mataPelajaranId = Number(params.id);
 		if (!Number.isFinite(mataPelajaranId)) {

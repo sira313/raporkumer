@@ -152,16 +152,15 @@ export function measureRows(containerElement: HTMLElement, rows: TableRow[]): Me
  * - Baris 20-30 pindah ke halaman 3 (reset accumulated = 0)
  */
 
-// Minimum sisa ruang yang harus tersedia setelah menambahkan tail/tanggapan block
+// Minimum sisa ruang yang harus tersedia setelah menambahkan tail/tanggapan blocks
 // Untuk mencegah block "mepet" di boundary lalu row berikutnya overflow
 const MIN_REMAINING_SPACE_TAIL = 50; // px (ketidakhadiran - lebih lenient)
 const MIN_REMAINING_SPACE_TANGGAPAN = 100; // px (tanggapan - ketat)
 
-// Toleransi overflow untuk intrakurikuler
-// Mengakomodasi perbedaan antara calculated height vs actual rendered height
-// Dibuat lebih generous agar universal untuk semua murid dengan konten dinamis
-const INTRAK_OVERFLOW_TOLERANCE_PAGE1 = 150; // px (halaman 1 - paling toleran)
-const INTRAK_OVERFLOW_TOLERANCE_OTHER = 100; // px (halaman lain - tetap toleran)
+// Tolerance overflow untuk intrakurikuler
+// Mengakomodasi perbedaan antara calculated HEIGHTS vs actual rendered height
+// Allow slight overflow untuk maximal space utilization
+const INTRAK_OVERFLOW_TOLERANCE = 80; // px (generous untuk HEIGHTS offset error)
 
 export function detectBoundaryViolations(
 	measurements: MeasuredRow[],
@@ -188,33 +187,33 @@ export function detectBoundaryViolations(
 		const { row, height } = measurement;
 
 		// Cek apakah menambah row ini akan melebihi boundary
-		// Untuk tail/tanggapan blocks, gunakan stricter check dengan minimum remaining space
-		// Untuk intrakurikuler, hanya cek height asli tanpa toleransi
+		// Semua blocks sekarang menggunakan MIN_REMAINING_SPACE untuk konsistensi
+		// Tolerance hanya digunakan untuk mencegah split terlalu dini pada kasus edge
 		const isTailBlock = row.kind === 'tail';
 		const isTanggapanBlock = row.kind === 'tanggapan';
 		const isIntrakRow = row.kind === 'intrak' || row.kind === 'intrak-group-header';
 
 		let wouldExceedBoundary: boolean;
 		let checkDetails = '';
+
 		if (isIntrakRow) {
-			// Intrakurikuler: ijinkan slight overflow (tolerance untuk measurement inaccuracy)
-			// Halaman 1 lebih toleran karena HEIGHTS offset calculation mungkin kurang akurat
-			const tolerance =
-				currentPageIndex === 0 ? INTRAK_OVERFLOW_TOLERANCE_PAGE1 : INTRAK_OVERFLOW_TOLERANCE_OTHER;
+			// Intrakurikuler: allow slight overflow untuk maximal space utilization
+			// Tolerance mengakomodasi perbedaan calculated HEIGHTS vs actual rendered
 			const totalWithRow = currentPageHeight + height;
 			const overflow = totalWithRow - boundary.availableHeight;
-			wouldExceedBoundary = overflow > tolerance;
-			checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}=${Math.round(totalWithRow)} vs ${Math.round(boundary.availableHeight)} (overflow=${Math.round(overflow)}px, tol=${tolerance}px)`;
+			// Split hanya jika overflow melebihi tolerance
+			wouldExceedBoundary = overflow > INTRAK_OVERFLOW_TOLERANCE;
+			checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}=${Math.round(totalWithRow)} vs ${Math.round(boundary.availableHeight)} (overflow=${Math.round(overflow)}px, tol=${INTRAK_OVERFLOW_TOLERANCE}px)`;
 		} else if (isTailBlock) {
-			// Tail blocks (ketidakhadiran): tambahkan minimum remaining space (lenient)
-			wouldExceedBoundary =
-				currentPageHeight + height + MIN_REMAINING_SPACE_TAIL > boundary.availableHeight;
-			checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}+${MIN_REMAINING_SPACE_TAIL}=${Math.round(currentPageHeight + height + MIN_REMAINING_SPACE_TAIL)} vs ${Math.round(boundary.availableHeight)}`;
+			// Tail blocks (ketidakhadiran): tambahkan minimum remaining space
+			const totalWithRow = currentPageHeight + height + MIN_REMAINING_SPACE_TAIL;
+			wouldExceedBoundary = totalWithRow > boundary.availableHeight;
+			checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}+${MIN_REMAINING_SPACE_TAIL}=${Math.round(totalWithRow)} vs ${Math.round(boundary.availableHeight)}`;
 		} else if (isTanggapanBlock) {
-			// Tanggapan block: tambahkan minimum remaining space (strict)
-			wouldExceedBoundary =
-				currentPageHeight + height + MIN_REMAINING_SPACE_TANGGAPAN > boundary.availableHeight;
-			checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}+${MIN_REMAINING_SPACE_TANGGAPAN}=${Math.round(currentPageHeight + height + MIN_REMAINING_SPACE_TANGGAPAN)} vs ${Math.round(boundary.availableHeight)}`;
+			// Tanggapan block: tambahkan minimum remaining space (paling strict)
+			const totalWithRow = currentPageHeight + height + MIN_REMAINING_SPACE_TANGGAPAN;
+			wouldExceedBoundary = totalWithRow > boundary.availableHeight;
+			checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}+${MIN_REMAINING_SPACE_TANGGAPAN}=${Math.round(totalWithRow)} vs ${Math.round(boundary.availableHeight)}`;
 		} else {
 			// Others (ekstrakurikuler): gunakan exact height
 			wouldExceedBoundary = currentPageHeight + height > boundary.availableHeight;
@@ -235,7 +234,7 @@ export function detectBoundaryViolations(
 		}
 
 		if (wouldExceedBoundary) {
-			// Special case: prevent orphaned group headers
+			// Special case 1: prevent orphaned group headers
 			const lastRow = currentPageRows[currentPageRows.length - 1];
 			if (lastRow.kind === 'intrak-group-header' || lastRow.kind === 'ekstrakurikuler-header') {
 				// Cari tinggi header
@@ -266,6 +265,58 @@ export function detectBoundaryViolations(
 						`  ↳ SPLIT (orphan header): Row ${i} moved to page ${currentPageIndex + 1} with header`
 					);
 					continue;
+				}
+			}
+
+			// Special case 2: jika current row adalah bagian dari group, cari headernya
+			if (row.kind === 'intrak' && 'groupId' in row && row.groupId) {
+				// Cek apakah ada header untuk group ini di halaman saat ini
+				const groupHeader = currentPageRows.find(
+					(r) => r.kind === 'intrak-group-header' && 'groupId' in r && r.groupId === row.groupId
+				);
+
+				if (groupHeader) {
+					// Header ada di halaman ini, tapi row tidak muat
+					// Collect semua rows dari group ini + header untuk dipindah ke halaman baru
+					const groupRows = currentPageRows.filter(
+						(r) =>
+							(r.kind === 'intrak-group-header' && 'groupId' in r && r.groupId === row.groupId) ||
+							(r.kind === 'intrak' && 'groupId' in r && r.groupId === row.groupId)
+					);
+
+					// Jika group sudah punya rows, pindahkan semua ke halaman baru
+					if (groupRows.length > 1) {
+						// Remove group rows dari halaman saat ini
+						const remainingRows = currentPageRows.filter((r) => !groupRows.includes(r));
+
+						// Hitung height untuk group rows
+						let groupHeight = 0;
+						for (const r of groupRows) {
+							const m = measurements.find((meas) => meas.order === r.order);
+							if (m) groupHeight += m.height;
+						}
+
+						// Save halaman saat ini (tanpa group)
+						if (remainingRows.length > 0) {
+							pages.push({
+								pageIndex: currentPageIndex,
+								rows: remainingRows,
+								hasFooter: false,
+								boundary
+							});
+						}
+
+						// Mulai halaman baru dengan group rows + current row
+						currentPageIndex++;
+						boundary = calculatePageBoundary(currentPageIndex, false);
+						currentPageRows = [...groupRows, row];
+						currentPageHeight = groupHeight + height;
+
+						debugLogs.push(
+							`  ↳ SPLIT (keep group together): ${groupRows.length} group rows + row ${i} moved to page ${currentPageIndex + 1}`
+						);
+						continue;
+					}
 				}
 			}
 
@@ -326,28 +377,26 @@ export function detectBoundaryViolations(
 		});
 	}
 
-	// Post-process: Tambahkan header ekstrakurikuler di halaman yang dimulai dengan baris ekstrakurikuler
+	// Post-process: Tambahkan header di halaman yang dimulai dengan baris
 	// tapi tidak memiliki header (karena terkena split)
 	for (let pageIdx = 1; pageIdx < pages.length; pageIdx++) {
 		const page = pages[pageIdx];
 		if (page.rows.length > 0) {
-			// Cek apakah halaman ini memiliki baris ekstrakurikuler tapi tidak ada headernya
+			// 1. Cek ekstrakurikuler header
 			const hasEkstrakRow = page.rows.some(
 				(r) => r.kind === 'ekstrakurikuler' || r.kind === 'ekstrakurikuler-empty'
 			);
 			const hasEkstrakHeader = page.rows.some((r) => r.kind === 'ekstrakurikuler-header');
 
 			if (hasEkstrakRow && !hasEkstrakHeader) {
-				// Temukan baris ekstrakurikuler pertama untuk mendapatkan order-nya
 				const firstEkstrakRow = page.rows.find(
 					(r) => r.kind === 'ekstrakurikuler' || r.kind === 'ekstrakurikuler-empty'
 				);
 
 				if (firstEkstrakRow) {
-					// Tambahkan header ekstrakurikuler di awal halaman
 					const headerRow: TableRow = {
 						kind: 'ekstrakurikuler-header',
-						order: firstEkstrakRow.order - 0.5 // Fractional order agar muncul sebelum row pertama
+						order: firstEkstrakRow.order - 0.5
 					};
 					page.rows.unshift(headerRow);
 
@@ -356,6 +405,11 @@ export function detectBoundaryViolations(
 					);
 				}
 			}
+
+			// Note: IntrakGroupHeaderRow post-process tidak dilakukan karena TableRow types
+			// tidak memiliki groupId property untuk tracking. Group detection perlu dilakukan
+			// di level yang lebih tinggi (saat createTableRows) dengan informasi groupLetter/groupLabel.
+			// Orphan header prevention di main loop sudah handle case utama.
 		}
 	}
 
@@ -427,9 +481,9 @@ export function debugBoundaryDetection(result: BoundaryDetectionResult, muridNam
 		const remaining = capacity - used;
 		const utilization = capacity > 0 ? Math.round((used / capacity) * 100) : 0;
 
-		// Toleransi overflow: page 1 = 150px, page lain = 100px
-		const tolerance = page.pageIndex === 0 ? -150 : -100;
-		const isWithinTolerance = remaining >= tolerance;
+		// Check apakah remaining space masih cukup atau terlalu tight
+		// Allow overflow hingga tolerance untuk maximal utilization
+		const isWithinTolerance = remaining < 0 && Math.abs(remaining) <= 80; // Match INTRAK_OVERFLOW_TOLERANCE
 
 		return {
 			page: page.pageIndex + 1,

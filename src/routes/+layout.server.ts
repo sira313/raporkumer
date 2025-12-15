@@ -200,26 +200,18 @@ export async function load({ url, locals, cookies }) {
 		kelasAktif = daftarKelas[0];
 	}
 
-	const secure = locals.requestIsSecure ?? false;
-	if (kelasAktif) {
-		cookies.set(cookieNames.ACTIVE_KELAS_ID, String(kelasAktif.id), {
-			path: '/',
-			secure
-		});
-	} else {
-		cookies.delete(cookieNames.ACTIVE_KELAS_ID, { path: '/', secure });
-	}
-
 	// Enrich user with pegawai name when possible so client can display the
 	// human-readable name (e.g. in navbar alerts). Keep original shape
 	// otherwise. Also attach a small permission flag so client can easily
 	// disable UI for restricted 'user' accounts.
 	let userForClient = user;
 	if (user) {
-		// default permission: users with type 'user' or 'wali_asuh' should not be allowed
-		// to manage mata pelajaran. Other account types retain access.
+		// Permission logic:
+		// - 'wali_asuh' should not be allowed to manage mata pelajaran
+		// - 'user' (guru mapel) CAN manage mata pelajaran (they are filtered server-side)
+		// - Other account types retain full access
 		const userType = (user as { type?: string }).type;
-		const canManageMapel = userType !== 'user' && userType !== 'wali_asuh';
+		const canManageMapel = userType !== 'wali_asuh';
 
 		if (user.pegawaiId) {
 			const pegawaiRecord = await db.query.tablePegawai.findFirst({
@@ -234,6 +226,17 @@ export async function load({ url, locals, cookies }) {
 		} else {
 			userForClient = Object.assign({}, user, { canManageMapel });
 		}
+	}
+
+	// Set cookies AFTER all async operations are complete
+	const secure = locals.requestIsSecure ?? false;
+	if (kelasAktif) {
+		cookies.set(cookieNames.ACTIVE_KELAS_ID, String(kelasAktif.id), {
+			path: '/',
+			secure
+		});
+	} else {
+		cookies.delete(cookieNames.ACTIVE_KELAS_ID, { path: '/', secure });
 	}
 
 	return { sekolah, meta, daftarKelas, kelasAktif, user: userForClient };
