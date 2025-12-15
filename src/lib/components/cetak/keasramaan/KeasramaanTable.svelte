@@ -55,10 +55,10 @@
 	<table class="table-compact table w-full text-xs print:text-xs">
 		<thead>
 			<tr class="text-black print:text-black">
-				<th class="border border-black px-2 py-1 print:border-black">No</th>
-				<th class="border border-black px-2 py-1 print:border-black">Indikator</th>
-				<th class="border border-black px-2 py-1 print:border-black">Predikat</th>
-				<th class="border border-black px-2 py-1 print:border-black">Deskripsi</th>
+				<th class="border border-black px-2 py-1 text-center print:border-black">No</th>
+				<th class="border border-black px-2 py-1 text-center print:border-black">Indikator</th>
+				<th class="border border-black px-2 py-1 text-center print:border-black">Predikat</th>
+				<th class="border border-black px-2 py-1 text-center print:border-black">Deskripsi</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -72,17 +72,24 @@
 					</tr>
 				{:else}
 					<tr use:applyRow={rowOrder} data-row-order={rowOrder}>
-						<td class="border border-black px-2 py-1 text-center print:border-black">{row.no}</td>
-						<td class="border border-black px-2 py-1 print:border-black"
+						<td class="border border-black px-2 py-1 text-center align-top print:border-black"
+							>{row.no}</td
+						>
+						<td class="border border-black px-2 py-1 align-top print:border-black"
 							>{formatValue(row.indikator)}</td
 						>
 						<td class="border border-black px-2 py-1 text-center print:border-black"
 							>{row.predikat ? predikatToHuruf(row.predikat) : '—'}</td
 						>
-						<td
-							class="break-word border border-black px-2 py-1 whitespace-pre-wrap print:border-black"
-							>{formatValue(row.deskripsi)}</td
-						>
+						<td class="break-word border border-black px-2 py-1 align-top print:border-black">
+							<div class="flex flex-col gap-0.5">
+								{#each formatValue(row.deskripsi)
+									.split('\n')
+									.filter((p: string) => p.trim()) as paragraph}
+									<p>{paragraph}</p>
+								{/each}
+							</div>
+						</td>
 					</tr>
 				{/if}
 			{/each}
