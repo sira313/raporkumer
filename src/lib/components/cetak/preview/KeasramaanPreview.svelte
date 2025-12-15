@@ -332,7 +332,7 @@
 								<table class="w-full border">
 									<thead>
 										<tr>
-											<th class="border px-3 py-2 text-left font-bold" colspan="3"
+											<th class="border px-3 py-2 text-center font-bold" colspan="3"
 												>KETIDAKHADIRAN</th
 											>
 										</tr>
