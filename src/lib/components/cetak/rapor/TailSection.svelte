@@ -213,13 +213,13 @@
 			<table class="w-full border">
 				<thead>
 					<tr>
-						<th class="border px-3 py-2 text-center">Kokurikuler</th>
+						<th class="border px-2 py-1 text-center">Kokurikuler</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr>
-						<td class="border px-3 py-3">
-							<div class="flex flex-col gap-2 whitespace-pre-line">
+						<td class="border px-2 py-1">
+							<div class="flex flex-col gap-0.5 whitespace-pre-line">
 								{#each kokurikulerSentences as sentence, idx (idx)}
 									<span>{sentence}</span>
 								{/each}
@@ -238,25 +238,25 @@
 		<table class="w-full border">
 			<thead>
 				<tr>
-					<th class="border px-3 py-2 text-center" colspan="2">Ketidakhadiran</th>
+					<th class="border px-2 py-1 text-center" colspan="2">Ketidakhadiran</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td class="border px-3 py-2">Sakit</td>
-					<td class="border px-3 py-2 text-center">
+					<td class="border px-2 py-1">Sakit</td>
+					<td class="border px-2 py-1 text-center">
 						{formatHari(rapor?.ketidakhadiran?.sakit)}
 					</td>
 				</tr>
 				<tr>
-					<td class="border px-3 py-2">Izin</td>
-					<td class="border px-3 py-2 text-center">
+					<td class="border px-2 py-1">Izin</td>
+					<td class="border px-2 py-1 text-center">
 						{formatHari(rapor?.ketidakhadiran?.izin)}
 					</td>
 				</tr>
 				<tr>
-					<td class="border px-3 py-2">Tanpa Keterangan</td>
-					<td class="border px-3 py-2 text-center">
+					<td class="border px-2 py-1">Tanpa Keterangan</td>
+					<td class="border px-2 py-1 text-center">
 						{formatHari(rapor?.ketidakhadiran?.tanpaKeterangan)}
 					</td>
 				</tr>
@@ -265,12 +265,12 @@
 		<table class="w-full border">
 			<thead>
 				<tr>
-					<th class="border px-3 py-2 text-center">Catatan Wali Kelas</th>
+					<th class="border px-2 py-1 text-center">Catatan Wali Kelas</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td class="min-h-20 border px-3 py-3 align-top whitespace-pre-line">
+					<td class="min-h-20 border px-2 py-1 align-top whitespace-pre-line">
 						{formatValue(rapor?.catatanWali)}
 					</td>
 				</tr>
@@ -282,12 +282,12 @@
 		<table class="w-full border">
 			<thead>
 				<tr>
-					<th class="border px-3 py-2 text-center"> Tanggapan Orang Tua/Wali Murid </th>
+					<th class="border px-2 py-1 text-center"> Tanggapan Orang Tua/Wali Murid </th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td class="border px-3 py-4 align-top">
+					<td class="border px-2 py-1 align-top">
 						<div class="min-h-[70px] whitespace-pre-line">
 							{rapor?.tanggapanOrangTua?.trim() || ''}
 						</div>

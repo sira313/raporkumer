@@ -118,10 +118,10 @@
 		{#if shouldRenderHeader}
 			<thead>
 				<tr>
-					<th class="border px-3 py-2 text-center">No.</th>
-					<th class="border px-3 py-2 text-center">Muatan Pelajaran</th>
-					<th class="border px-3 py-2 text-center">Nilai Akhir</th>
-					<th class="border px-3 py-2 text-center">Capaian Kompetensi</th>
+					<th class="border px-2 py-1 text-center">No.</th>
+					<th class="border px-2 py-1 text-center">Muatan Pelajaran</th>
+					<th class="border px-2 py-1 text-center">Nilai Akhir</th>
+					<th class="border px-2 py-1 text-center">Capaian Kompetensi</th>
 				</tr>
 			</thead>
 		{/if}
@@ -138,18 +138,18 @@
 						</td>
 					</tr>
 					<tr class="ekstrakurikuler-header" data-row-order="{row.order}-header">
-						<th class="border px-3 py-2 text-center" style="width: 40px;">No.</th>
-						<th class="border px-3 py-2 text-center">Ekstrakurikuler</th>
-						<th class="border px-3 py-2 text-center" colspan="2">Keterangan</th>
+						<th class="border px-2 py-1 text-center" style="width: 40px;">No.</th>
+						<th class="border px-2 py-1 text-center">Ekstrakurikuler</th>
+						<th class="border px-2 py-1 text-center" colspan="2">Keterangan</th>
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler'}
 					<tr use:applyRow={row.order} data-row-order={row.order} class="ekstrakurikuler-row">
-						<td class="border px-3 py-2 align-top">{row.nomor}</td>
-						<td class="border px-3 py-2 align-top">
+						<td class="border px-2 py-1 align-top">{row.nomor}</td>
+						<td class="border px-2 py-1 align-top">
 							{formatValue(row.entry.nama)}
 						</td>
-						<td class="border px-3 py-2 align-top" colspan="2">
-							<div class="flex flex-col gap-2">
+						<td class="border px-2 py-1 align-top" colspan="2">
+							<div class="flex flex-col gap-0.5">
 								{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
 									{#if block.kind === 'text'}
 										<span class="whitespace-pre-line">{block.text}</span>
@@ -168,11 +168,11 @@
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler-empty'}
 					<tr use:applyRow={row.order} data-row-order={row.order} class="ekstrakurikuler-empty">
-						<td class="border px-3 py-2 text-center" colspan="4"> Tidak ada ekstrakurikuler </td>
+						<td class="border px-2 py-1 text-center" colspan="4"> Tidak ada ekstrakurikuler </td>
 					</tr>
 				{:else if row.kind === 'intrak-group-header'}
 					<tr use:applyRow={row.order} data-row-order={row.order} class="intrak-group-header">
-						<td class="border px-3 py-2 align-top" colspan="4">
+						<td class="border px-2 py-1 align-top" colspan="4">
 							<span class="font-semibold">{row.groupLetter}. {row.groupLabel}</span>
 						</td>
 					</tr>
@@ -184,20 +184,20 @@
 							data-row-order={row.order}
 							class={rows[ridx + 1]?.index !== row.index ? 'intrak-groupend' : ''}
 						>
-							<td class="border px-3 py-2 align-top">{row.nomorInGroup}</td>
-							<td class="border px-3 py-2 align-top">
+							<td class="border px-2 py-1 align-top">{row.nomorInGroup}</td>
+							<td class="border px-2 py-1 align-top">
 								<span class="font-semibold">{row.entry.mataPelajaran}</span>
 							</td>
-							<td class="border px-3 py-2 text-center align-top font-semibold">
+							<td class="border px-2 py-1 text-center align-top font-semibold">
 								{formatValue(row.entry.nilaiAkhir)}
 							</td>
 							<td
-								class={'border px-3 align-top ' +
+								class={'border px-2 align-top ' +
 									(rapor?.tpMode === 'compact'
-										? 'py-2'
+										? 'py-1'
 										: predikatClassFromParagraph(row.entry.deskripsi))}
 							>
-								<div class="flex flex-col gap-2">
+								<div class="flex flex-col gap-0.5">
 									{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
 										{#if block.kind === 'text'}
 											<span class="whitespace-pre-line">{block.text}</span>
@@ -223,8 +223,8 @@
 								class={'intrak-multistart' +
 									(rows[ridx + 1]?.index !== row.index ? ' intrak-groupend' : '')}
 							>
-								<td class="border px-3 py-2 align-top">{row.nomorInGroup}</td>
-								<td class="border px-3 py-2 align-top">
+								<td class="border px-2 py-1 align-top">{row.nomorInGroup}</td>
+								<td class="border px-2 py-1 align-top">
 									<span class="font-semibold">{row.entry.mataPelajaran}</span>
 								</td>
 								<td class="border px-3 py-2 text-center align-top font-semibold">
@@ -236,7 +236,7 @@
 											? 'py-2'
 											: predikatClassFromParagraph(row.entry.deskripsi))}
 								>
-									<div class="flex flex-col gap-2">
+									<div class="flex flex-col gap-0.5">
 										{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
 											{#if block.kind === 'text'}
 												<span class="whitespace-pre-line">{block.text}</span>
@@ -263,16 +263,16 @@
 										? ' intrak-multilast intrak-groupend'
 										: '')}
 							>
-								<td class="border px-3 align-top">&nbsp;</td>
-								<td class="border px-3 align-top">&nbsp;</td>
-								<td class="border px-3 text-center align-top font-semibold">&nbsp;</td>
+								<td class="border px-2 align-top">&nbsp;</td>
+								<td class="border px-2 align-top">&nbsp;</td>
+								<td class="border px-2 text-center align-top font-semibold">&nbsp;</td>
 								<td
-									class={'border px-3 align-top ' +
+									class={'border px-2 align-top ' +
 										(rapor?.tpMode === 'compact'
-											? 'py-2'
+											? 'py-1'
 											: predikatClassFromParagraph(row.entry.deskripsi))}
 								>
-									<div class="flex flex-col gap-2">
+									<div class="flex flex-col gap-0.5">
 										{#each descriptionBlocks(row.entry.deskripsi) as block, bidx (bidx)}
 											{#if block.kind === 'text'}
 												<span class="whitespace-pre-line">{block.text}</span>
@@ -293,7 +293,7 @@
 					{/if}
 				{:else if row.kind === 'empty'}
 					<tr use:applyRow={row.order} data-row-order={row.order}>
-						<td class="border px-3 py-2 text-center" colspan="4">
+						<td class="border px-2 py-1 text-center" colspan="4">
 							Belum ada data intrakurikuler.
 						</td>
 					</tr>
