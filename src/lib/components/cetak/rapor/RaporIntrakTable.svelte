@@ -118,10 +118,10 @@
 		{#if shouldRenderHeader}
 			<thead>
 				<tr>
-					<th class="border px-3 py-2 text-left">No.</th>
-					<th class="border px-3 py-2 text-left">Muatan Pelajaran</th>
+					<th class="border px-3 py-2 text-center">No.</th>
+					<th class="border px-3 py-2 text-center">Muatan Pelajaran</th>
 					<th class="border px-3 py-2 text-center">Nilai Akhir</th>
-					<th class="border px-3 py-2 text-left">Capaian Kompetensi</th>
+					<th class="border px-3 py-2 text-center">Capaian Kompetensi</th>
 				</tr>
 			</thead>
 		{/if}
@@ -138,9 +138,9 @@
 						</td>
 					</tr>
 					<tr class="ekstrakurikuler-header" data-row-order="{row.order}-header">
-						<th class="border px-3 py-2 text-left" style="width: 40px;">No.</th>
-						<th class="border px-3 py-2 text-left">Ekstrakurikuler</th>
-						<th class="border px-3 py-2 text-left" colspan="2">Keterangan</th>
+						<th class="border px-3 py-2 text-center" style="width: 40px;">No.</th>
+						<th class="border px-3 py-2 text-center">Ekstrakurikuler</th>
+						<th class="border px-3 py-2 text-center" colspan="2">Keterangan</th>
 					</tr>
 				{:else if row.kind === 'ekstrakurikuler'}
 					<tr use:applyRow={row.order} data-row-order={row.order} class="ekstrakurikuler-row">

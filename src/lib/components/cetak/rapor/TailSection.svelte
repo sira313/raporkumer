@@ -213,7 +213,7 @@
 			<table class="w-full border">
 				<thead>
 					<tr>
-						<th class="border px-3 py-2 text-left">Kokurikuler</th>
+						<th class="border px-3 py-2 text-center">Kokurikuler</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -238,7 +238,7 @@
 		<table class="w-full border">
 			<thead>
 				<tr>
-					<th class="border px-3 py-2 text-left" colspan="2">Ketidakhadiran</th>
+					<th class="border px-3 py-2 text-center" colspan="2">Ketidakhadiran</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -265,7 +265,7 @@
 		<table class="w-full border">
 			<thead>
 				<tr>
-					<th class="border px-3 py-2 text-left">Catatan Wali Kelas</th>
+					<th class="border px-3 py-2 text-center">Catatan Wali Kelas</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -282,7 +282,7 @@
 		<table class="w-full border">
 			<thead>
 				<tr>
-					<th class="border px-3 py-2 text-left"> Tanggapan Orang Tua/Wali Murid </th>
+					<th class="border px-3 py-2 text-center"> Tanggapan Orang Tua/Wali Murid </th>
 				</tr>
 			</thead>
 			<tbody>
