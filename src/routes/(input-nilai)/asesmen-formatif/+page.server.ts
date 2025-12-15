@@ -162,30 +162,92 @@ export async function load({ parent, url, depends }) {
 	// default to it in the UI. This does NOT grant them wider grading
 	// access; that remains restricted to their assigned variant.
 	let treatAssignedAgamaVariantAsBase = false;
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+	if (maybeUser && maybeUser.type === 'user' && maybeUser.id) {
 		try {
-			const assigned = await db.query.tableMataPelajaran.findFirst({
-				columns: { id: true, nama: true },
-				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+			// First check join table auth_user_mata_pelajaran for multi-mapel support
+			const multiMapels = await db.query.tableAuthUserMataPelajaran.findMany({
+				columns: { mataPelajaranId: true },
+				where: eq(tableAuthUserMataPelajaran.authUserId, maybeUser.id)
 			});
-			if (assigned && assigned.nama) {
-				const norm = normalizeText(assigned.nama);
-				const agamaVariantValues = new Set(
-					Object.values(AGAMA_VARIANT_MAP).map((v) => normalizeText(v))
-				);
+
+			if (multiMapels.length > 0) {
+				// Get mapel names from join table assignments
+				const assignedMapels = await db.query.tableMataPelajaran.findMany({
+					columns: { id: true, nama: true },
+					where: inArray(
+						tableMataPelajaran.id,
+						multiMapels.map((m) => m.mataPelajaranId)
+					)
+				});
+
+				// Build a set of allowed mapel names (normalize for comparison)
+				const allowedNames = new Set(assignedMapels.map((m) => normalizeText(m.nama)));
+
+				// Check if any assigned mapel is an agama variant
+				let hasAgamaVariant = false;
+				for (const record of assignedMapels) {
+					const norm = normalizeText(record.nama);
+					if (norm.startsWith('pendidikan agama') && norm !== normalizeText(AGAMA_BASE_SUBJECT)) {
+						hasAgamaVariant = true;
+						break;
+					}
+				}
+
+				// Check for PKS variants
 				const pksVariantValues = new Set(
 					Object.values(PKS_VARIANT_MAP).map((v) => normalizeText(v))
 				);
-				// If assigned to a known agama or PKS variant, do NOT lock mapelRecords to the
-				// variant. Instead show the base subject and let the select
-				// default to the base (handled further down).
-				if (agamaVariantValues.has(norm) || pksVariantValues.has(norm)) {
-					treatAssignedAgamaVariantAsBase = true;
-				} else {
-					mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
+				let hasPksVariant = false;
+				for (const record of assignedMapels) {
+					const norm = normalizeText(record.nama);
+					if (pksVariantValues.has(norm)) {
+						hasPksVariant = true;
+						break;
+					}
 				}
-			} else {
-				mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
+
+				// If has agama variant, also add the parent agama mapel name
+				if (hasAgamaVariant) {
+					allowedNames.add(normalizeText(AGAMA_BASE_SUBJECT));
+					treatAssignedAgamaVariantAsBase = true;
+				}
+
+				// If has PKS variant, also add the parent PKS mapel name
+				if (hasPksVariant) {
+					allowedNames.add(normalizeText(PKS_BASE_SUBJECT));
+					treatAssignedAgamaVariantAsBase = true;
+				}
+
+				// Filter current kelas' mapel by name match
+				mapelRecords = mapelRecords.filter((r) => {
+					const rNorm = normalizeText(r.nama);
+					return allowedNames.has(rNorm);
+				});
+			} else if (maybeUser.mataPelajaranId) {
+				// Fallback: check legacy single mataPelajaranId column
+				const assigned = await db.query.tableMataPelajaran.findFirst({
+					columns: { id: true, nama: true },
+					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+				});
+				if (assigned && assigned.nama) {
+					const norm = normalizeText(assigned.nama);
+					const agamaVariantValues = new Set(
+						Object.values(AGAMA_VARIANT_MAP).map((v) => normalizeText(v))
+					);
+					const pksVariantValues = new Set(
+						Object.values(PKS_VARIANT_MAP).map((v) => normalizeText(v))
+					);
+					// If assigned to a known agama or PKS variant, do NOT lock mapelRecords to the
+					// variant. Instead show the base subject and let the select
+					// default to the base (handled further down).
+					if (agamaVariantValues.has(norm) || pksVariantValues.has(norm)) {
+						treatAssignedAgamaVariantAsBase = true;
+					} else {
+						mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
+					}
+				} else {
+					mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
+				}
 			}
 		} catch (err) {
 			console.warn('[asesmen-formatif] Failed to resolve assigned mapel name', err);
