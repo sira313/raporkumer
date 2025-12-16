@@ -224,19 +224,19 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 	// ===== PAGE 1: HEADER + IDENTITY + TABLE START =====
 
 	// Header Judul: font-bold, tracking-wide, uppercase
-	doc.setFontSize(14); // ukuran yang sama dengan keasramaan
+	doc.setFontSize(14); // ukuran yang sama dengan identity
 	doc.setFont('helvetica', 'bold');
 	doc.text('LAPORAN HASIL BELAJAR', pageWidth / 2, currentY, { align: 'center' });
 	currentY += 5.5; // line height
 
 	// Sub-header: font-semibold, tracking-wide, uppercase
-	doc.setFontSize(10); // ukuran yang sama dengan keasramaan
+	doc.setFontSize(10); // ukuran yang sama dengan identity
 	doc.setFont('helvetica', 'normal'); // semibold fallback ke normal
 	doc.text('(RAPOR)', pageWidth / 2, currentY, { align: 'center' });
 	currentY += 5; // pb-4
 
 	// Identity Table - Layout 2 kolom seperti preview
-	doc.setFontSize(10); // ukuran yang sama dengan keasramaan
+	doc.setFontSize(10); // ukuran yang sama dengan identity
 	doc.setFont('helvetica', 'normal');
 
 	// Format semester (hilangkan kata "Semester" di depan jika ada)
@@ -278,7 +278,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 		body: identityData,
 		theme: 'plain',
 		styles: {
-			fontSize: 10, // ukuran yang sama dengan keasramaan
+			fontSize: 10, // ukuran yang sama dengan identity
 			cellPadding: 0,
 			lineColor: [0, 0, 0],
 			lineWidth: 0,
@@ -351,7 +351,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 					styles: {
 						fontStyle: 'bold' as const,
 						fillColor: [255, 255, 255],
-						fontSize: 9, // ukuran yang sama dengan keasramaan
+						fontSize: 10, // ukuran yang sama dengan identity
 						cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 },
 						halign: 'left'
 					}
@@ -377,7 +377,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 		theme: 'grid',
 		rowPageBreak: 'avoid',
 		styles: {
-			fontSize: 9, // ukuran yang sama dengan keasramaan
+			fontSize: 10, // ukuran yang sama dengan identity
 			cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 },
 			valign: 'top',
 			lineColor: [0, 0, 0],
@@ -390,7 +390,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			fontStyle: 'bold',
 			halign: 'center',
 			valign: 'middle',
-			fontSize: 9, // ukuran yang sama dengan keasramaan
+			fontSize: 10, // ukuran yang sama dengan identity
 			cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 		},
 		columnStyles: {
@@ -408,7 +408,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			).internal.getCurrentPageInfo().pageNumber;
 
 			const footerY = pageHeight - 10; // bottom: 10mm
-			doc.setFontSize(9); // ukuran yang sama dengan keasramaan
+			doc.setFontSize(9); // ukuran yang sama dengan identity
 
 			// Footer metadata di kiri (rombel | nama | nis)
 			const footerMeta = `${formatValue(data.rombel.nama)} | ${formatValue(data.murid.nama)} | ${formatValue(data.murid.nis)}`;
@@ -443,14 +443,14 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				[
 					{
 						content: 'Kokurikuler',
-						styles: { halign: 'center', fontStyle: 'bold', fontSize: 9 }
+						styles: { halign: 'center', fontStyle: 'bold', fontSize: 10 }
 					}
 				]
 			],
 			body: [[sentences.join('\n')]],
 			theme: 'grid',
 			styles: {
-				fontSize: 9,
+				fontSize: 10,
 				cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 },
 				lineColor: [0, 0, 0],
 				lineWidth: 0.3,
@@ -463,7 +463,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				fontStyle: 'bold',
 				halign: 'center',
 				valign: 'middle',
-				fontSize: 9,
+					fontSize: 10,
 				cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 			},
 			margin: { left: margin, right: margin }
@@ -491,7 +491,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			body: ekstraBody,
 			theme: 'grid',
 			styles: {
-				fontSize: 9, // ukuran yang sama dengan keasramaan
+				fontSize: 10, // ukuran yang sama dengan identity
 				cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 },
 				lineColor: [0, 0, 0],
 				lineWidth: 0.3,
@@ -504,7 +504,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				fontStyle: 'bold',
 				halign: 'center',
 				valign: 'middle',
-				fontSize: 9, // ukuran yang sama dengan keasramaan
+				fontSize: 10, // ukuran yang sama dengan identity
 				cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 			},
 			columnStyles: {
@@ -589,7 +589,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			body: tableBody,
 			theme: 'grid',
 			styles: {
-				fontSize: 9,
+				fontSize: 10,
 				cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 },
 				lineColor: [0, 0, 0],
 				lineWidth: 0.3,
@@ -643,14 +643,14 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				{
 					content: 'Tanggapan Orang Tua/Wali Murid',
 					colSpan: 1,
-					styles: { halign: 'center', fontStyle: 'bold', fontSize: 9 }
+					styles: { halign: 'center', fontStyle: 'bold', fontSize: 10 }
 				}
 			]
 		],
 		body: [[data.tanggapanOrangTua?.trim() || '']],
 		theme: 'grid',
 		styles: {
-			fontSize: 9,
+			fontSize: 10,
 			cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 },
 			lineColor: [0, 0, 0],
 			lineWidth: 0.3,
@@ -666,7 +666,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			fontStyle: 'bold',
 			halign: 'center',
 			valign: 'middle',
-			fontSize: 9,
+			fontSize: 10,
 			cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 		},
 		margin: { left: margin, right: margin }
@@ -693,7 +693,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 					{
 						content: 'KEPUTUSAN',
 						colSpan: 1,
-						styles: { halign: 'left', fontStyle: 'bold', fontSize: 9 }
+						styles: { halign: 'left', fontStyle: 'bold', fontSize: 10 }
 					}
 				]
 			],
@@ -710,7 +710,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			],
 			theme: 'grid',
 			styles: {
-				fontSize: 9,
+				fontSize: 10,
 				lineColor: [0, 0, 0],
 				lineWidth: 0.3,
 				textColor: [0, 0, 0]
@@ -721,7 +721,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				fontStyle: 'bold',
 				halign: 'left',
 				valign: 'middle',
-				fontSize: 9,
+				fontSize: 10,
 				cellPadding: { top: 4.2, right: 4.2, bottom: 4.2, left: 4.2 }
 			},
 			margin: { left: margin, right: margin },
@@ -769,7 +769,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 	const sigColWidth = contentWidth / 3;
 	const sigStartY = currentY;
 
-	doc.setFontSize(10); // ukuran yang sama dengan keasramaan
+	doc.setFontSize(10); // ukuran yang sama dengan identity
 	doc.setFont('helvetica', 'normal');
 
 	// Tempat, Tanggal (absolute di atas Wali Kelas)
