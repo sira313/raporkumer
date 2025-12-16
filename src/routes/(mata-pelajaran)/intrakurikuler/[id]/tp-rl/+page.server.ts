@@ -34,14 +34,14 @@ function isXlsxMime(type: string | null | undefined) {
 }
 
 export async function load({ depends, params, parent }) {
-	// Check permission: admin and users with rapor_manage can access
+	// Check permission: admin, wali_kelas, wali_asuh, and users with rapor_manage can access
 	// Also allow 'user' type (guru mapel) since they're filtered server-side
 	const { user } = await parent();
 	const userType = (user as { type?: string } | null)?.type;
 
-	// Only block if not admin and doesn't have rapor_manage permission
-	// Allow 'user' (guru mapel) to proceed - they'll be filtered by mapel assignment
-	if (userType !== 'admin' && userType !== 'user') {
+	// Allow admin, wali_kelas, wali_asuh, and 'user' (guru mapel) to proceed
+	// wali_kelas/wali_asuh already validated by hooks.server.ts to access only their own kelas
+	if (userType !== 'admin' && userType !== 'user' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
 		authority('rapor_manage');
 	}
 
@@ -319,9 +319,9 @@ export async function load({ depends, params, parent }) {
 
 export const actions = {
 	async save({ params, request, locals }) {
-		// Allow admin, rapor_manage permission holders, and guru mapel
+		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'user') {
+		if (userType !== 'admin' && userType !== 'user' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
 			authority('rapor_manage');
 		}
 
@@ -434,9 +434,9 @@ export const actions = {
 	},
 
 	async delete({ request, locals }) {
-		// Allow admin, rapor_manage permission holders, and guru mapel
+		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'user') {
+		if (userType !== 'admin' && userType !== 'user' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
 			authority('rapor_manage');
 		}
 
@@ -461,9 +461,9 @@ export const actions = {
 		request: Request;
 		locals: App.Locals;
 	}) {
-		// Allow admin, rapor_manage permission holders, and guru mapel
+		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'user') {
+		if (userType !== 'admin' && userType !== 'user' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
 			authority('rapor_manage');
 		}
 
@@ -538,9 +538,9 @@ export const actions = {
 	},
 
 	async import({ params, request, locals }) {
-		// Allow admin, rapor_manage permission holders, and guru mapel
+		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'user') {
+		if (userType !== 'admin' && userType !== 'user' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
 			authority('rapor_manage');
 		}
 

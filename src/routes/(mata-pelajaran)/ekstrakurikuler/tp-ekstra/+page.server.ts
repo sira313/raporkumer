@@ -18,10 +18,15 @@ function isTableMissingError(error: unknown, tableName: string) {
 }
 
 export async function load({ depends, url, parent }) {
-	authority('rapor_manage');
+	const { kelasAktif, user } = await parent();
+
+	// Permission check: Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
+	const userType = (user as { type?: string } | null)?.type;
+	if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		authority('rapor_manage');
+	}
 
 	depends('app:ekstrakurikuler:tp');
-	const { kelasAktif } = await parent();
 	const ekstrakurikulerIdParam = url.searchParams.get('ekstrakurikulerId');
 
 	if (!ekstrakurikulerIdParam) {
@@ -84,8 +89,12 @@ export async function load({ depends, url, parent }) {
 }
 
 export const actions = {
-	create: async ({ request }) => {
-		authority('rapor_manage');
+	create: async ({ request, locals }) => {
+		// Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
+		const userType = (locals.user as { type?: string } | null)?.type;
+		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+			authority('rapor_manage');
+		}
 
 		const formData = await request.formData();
 		const ekstrakurikulerIdRaw = formData.get('ekstrakurikulerId');
@@ -119,8 +128,12 @@ export const actions = {
 		return { message: 'Tujuan ekstrakurikuler berhasil ditambahkan' };
 	},
 
-	update: async ({ request }) => {
-		authority('rapor_manage');
+	update: async ({ request, locals }) => {
+		// Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
+		const userType = (locals.user as { type?: string } | null)?.type;
+		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+			authority('rapor_manage');
+		}
 
 		const formData = await request.formData();
 		const idRaw = formData.get('id');
@@ -172,8 +185,12 @@ export const actions = {
 		return { message: 'Tujuan ekstrakurikuler berhasil diperbarui', id };
 	},
 
-	delete: async ({ request }) => {
-		authority('rapor_manage');
+	delete: async ({ request, locals }) => {
+		// Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
+		const userType = (locals.user as { type?: string } | null)?.type;
+		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+			authority('rapor_manage');
+		}
 
 		const formData = await request.formData();
 		const rawIds = formData.getAll('ids');

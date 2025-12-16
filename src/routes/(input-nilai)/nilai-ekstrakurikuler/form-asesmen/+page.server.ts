@@ -35,8 +35,12 @@ function sanitizeRedirect(value: string | null | undefined) {
 	return decoded || '/nilai-ekstrakurikuler';
 }
 
-export async function load({ parent, url, depends }) {
-	authority('rapor_manage');
+export async function load({ parent, url, depends, locals }) {
+	// Permission check: Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
+	const userType = (locals.user as { type?: string } | null)?.type;
+	if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		authority('rapor_manage');
+	}
 
 	depends('app:nilai-ekstrakurikuler:form');
 	const { kelasAktif } = await parent();
@@ -133,8 +137,12 @@ export async function load({ parent, url, depends }) {
 }
 
 export const actions = {
-	save: async ({ request }) => {
-		authority('rapor_manage');
+	save: async ({ request, locals }) => {
+		// Permission check: Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
+		const userType = (locals.user as { type?: string } | null)?.type;
+		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+			authority('rapor_manage');
+		}
 
 		const formData = await request.formData();
 		const muridIdRaw = formData.get('muridId');

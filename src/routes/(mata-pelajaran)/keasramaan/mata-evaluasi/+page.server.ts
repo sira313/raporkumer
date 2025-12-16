@@ -2,10 +2,12 @@ import db from '$lib/server/db';
 import {
 	tableKeasramaan,
 	tableKeasramaanIndikator,
-	tableAsesmenKeasramaan
+	tableAsesmenKeasramaan,
+	tableAuthUserKelas
 } from '$lib/server/db/schema';
 import { fail, redirect } from '@sveltejs/kit';
-import { asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, eq, inArray } from 'drizzle-orm';
+import { authority } from '../../../pengguna/utils.server';
 
 const TABLE_MISSING_MESSAGE =
 	'Tabel keasramaan belum tersedia. Jalankan "pnpm db:push" untuk menerapkan migrasi terbaru.';
@@ -19,8 +21,40 @@ function isTableMissingError(error: unknown) {
 
 export async function load({ depends, parent }) {
 	depends('app:keasramaan');
-	const { kelasAktif } = await parent();
+	const { kelasAktif, user } = await parent();
 	const kelasId = kelasAktif?.id ?? null;
+
+	// Permission check: same logic as parent keasramaan page
+	if (kelasId) {
+		const userType = (user as { type?: string; id?: number; kelasId?: number } | null)?.type;
+		
+		// Allow admin, wali_kelas, and wali_asuh without further checks
+		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+			// For 'user' type (guru), check rapor_manage permission OR kelas assignment
+			if (userType === 'user' && user?.id) {
+				const userPermissions = (user as { permissions?: string[] })?.permissions ?? [];
+				const hasRaporManage = userPermissions.includes('rapor_manage');
+				
+				if (!hasRaporManage) {
+					// Check if user has access to this kelas via join table
+					const hasKelasAccess = await db.query.tableAuthUserKelas.findFirst({
+						columns: { id: true },
+						where: and(
+							eq(tableAuthUserKelas.authUserId, user.id),
+							eq(tableAuthUserKelas.kelasId, kelasId)
+						)
+					});
+					
+					if (!hasKelasAccess) {
+						throw redirect(303, `/forbidden?required=rapor_manage`);
+					}
+				}
+			} else {
+				// Other user types need rapor_manage permission
+				authority('rapor_manage');
+			}
+		}
+	}
 
 	let keasramaanRaw: Awaited<ReturnType<typeof db.query.tableKeasramaan.findMany>> = [];
 	let tableReady = true;
