@@ -632,18 +632,18 @@
 							alfa: data.kehadiran.alfa
 						}
 					: undefined,
-			keasramaanRows: data.keasramaanRows || [],
-			showBgLogo: showBgLogo
-	});
+				keasramaanRows: data.keasramaanRows || [],
+				showBgLogo: showBgLogo
+			});
 
-		toast('PDF berhasil dibuat!', 'success');
-	} catch (error) {
-		console.error('PDF generation error:', error);
-		toast('Gagal membuat PDF', 'error');
+			toast('PDF berhasil dibuat!', 'success');
+		} catch (error) {
+			console.error('PDF generation error:', error);
+			toast('Gagal membuat PDF', 'error');
+		}
 	}
-}
 
-async function handleBgRefresh() {
+	async function handleBgRefresh() {
 		bgRefreshKey = Date.now();
 		if (previewDocument === 'piagam') await handlePreview();
 	}

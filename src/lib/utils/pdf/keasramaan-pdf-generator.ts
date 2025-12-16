@@ -114,7 +114,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 
 			const img = new Image();
 			img.crossOrigin = 'anonymous';
-			
+
 			// Try to load logo, but don't fail PDF generation if it fails
 			try {
 				await new Promise<void>((resolve, reject) => {
@@ -188,7 +188,12 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 
 			// Add image to PDF at calculated position
 			doc.addImage(dataUrl, 'PNG', logoX, logoY, logoSize, logoSize, undefined, 'NONE');
-			console.log('[PDF] Image added to PDF at position:', { x: logoX, y: logoY, w: logoSize, h: logoSize });
+			console.log('[PDF] Image added to PDF at position:', {
+				x: logoX,
+				y: logoY,
+				w: logoSize,
+				h: logoSize
+			});
 
 			console.log('[PDF] Watermark drawn successfully');
 		} catch (error) {
@@ -574,7 +579,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const totalPages = (doc as any).internal.pages.length - 1; // -1 because first element is not a page
 		console.log('[PDF] Total pages:', totalPages);
-		
+
 		for (let i = 1; i <= totalPages; i++) {
 			doc.setPage(i);
 			console.log(`[PDF] Drawing watermark on page ${i}`);
