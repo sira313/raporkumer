@@ -67,7 +67,7 @@
 <!-- removed page-edge visual guide: no extra border at page edge -->
 
 <div class={cardClasses} style="break-inside: avoid-page;">
-	<div class={contentContainerClasses} style="position: relative;">
+	<div id="paperA4" class={contentContainerClasses} style="position: relative;">
 		{#if backgroundStyle}
 			<div
 				style={backgroundStyle +

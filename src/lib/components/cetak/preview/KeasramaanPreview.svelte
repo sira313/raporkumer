@@ -372,7 +372,10 @@
 
 						{#if page.hasSignature}
 							<!-- Signatures Section -->
-							<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid debug-blue-border" id="splitTrigger-signature">
+							<section
+								class="debug-blue-border mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid"
+								id="splitTrigger-signature"
+							>
 								<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
 									<div class="flex flex-col items-center text-center text-xs print:text-xs">
 										<p>Wali Asrama</p>
