@@ -3,12 +3,19 @@ import path from 'node:path';
 import db from '$lib/server/db/index.js';
 import { tableAlamat, tableKelas, tableMurid, tableWaliMurid } from '$lib/server/db/schema.js';
 import { unflattenFormData } from '$lib/utils.js';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
-import { authority } from '../../../../pengguna/utils.server';
+import { isAuthorizedUser } from '../../../../pengguna/permissions';
 
-export async function load({ params }) {
-	authority('kelas_manage');
+export async function load({ params, locals }) {
+	// Allow wali_kelas and wali_asuh to access student forms, or users with kelas_manage permission
+	if (
+		locals.user?.type !== 'wali_kelas' &&
+		locals.user?.type !== 'wali_asuh' &&
+		!isAuthorizedUser(['kelas_manage'], locals.user)
+	) {
+		redirect(303, '/forbidden?required=kelas_manage');
+	}
 
 	const meta: PageMeta = { title: 'Form Murid' };
 	if (!params.id) return { meta };
@@ -23,7 +30,14 @@ export async function load({ params }) {
 
 export const actions = {
 	async save({ locals, request, params }) {
-		authority('kelas_manage');
+		// Allow wali_kelas and wali_asuh to save student forms, or users with kelas_manage permission
+		if (
+			locals.user?.type !== 'wali_kelas' &&
+			locals.user?.type !== 'wali_asuh' &&
+			!isAuthorizedUser(['kelas_manage'], locals.user)
+		) {
+			redirect(303, '/forbidden?required=kelas_manage');
+		}
 
 		const formData = await request.formData();
 		const uploadedFile = formData.get('foto') as File | null;
