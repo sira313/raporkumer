@@ -32,6 +32,7 @@
 	} from '$lib/rapor-params';
 	import { downloadKeasramaanPDF } from '$lib/utils/pdf/keasramaan-pdf-generator';
 	import { downloadRaporPDF } from '$lib/utils/pdf/rapor-pdf-generator';
+	import { downloadCoverPDF } from '$lib/utils/pdf/cover-pdf-generator';
 
 	let { data } = $props();
 
@@ -749,8 +750,42 @@
 				console.error('PDF generation error:', error);
 				toast('Gagal membuat PDF', 'error');
 			}
+		} else if (doc === 'cover') {
+			const coverData = (previewData as { coverData?: typeof previewData }).coverData;
+			if (!coverData || typeof coverData !== 'object') {
+				toast('Data cover tidak tersedia', 'error');
+				return;
+			}
+
+			// Type assertion untuk coverData
+			const data = coverData as any;
+
+			try {
+				toast('Membuat PDF...', 'info');
+
+				await downloadCoverPDF({
+					sekolah: {
+						nama: data.sekolah.nama,
+						jenjang: data.sekolah.jenjang,
+						jenjangVariant: data.sekolah.jenjangVariant,
+						npsn: data.sekolah.npsn,
+						naungan: data.sekolah.naungan,
+						alamat: data.sekolah.alamat,
+						website: data.sekolah.website,
+						email: data.sekolah.email,
+						logoUrl: data.sekolah.logoUrl
+					},
+					murid: data.murid,
+					showBgLogo: showBgLogo
+				});
+
+				toast('PDF berhasil dibuat!', 'success');
+			} catch (error) {
+				console.error('PDF generation error:', error);
+				toast('Gagal membuat PDF', 'error');
+			}
 		} else {
-			toast('Export PDF hanya tersedia untuk Rapor dan Rapor Keasramaan', 'warning');
+			toast('Export PDF hanya tersedia untuk Cover, Rapor, dan Rapor Keasramaan', 'warning');
 		}
 	}
 
@@ -874,8 +909,8 @@
 		onBgRefresh={handleBgRefresh}
 	/>
 
-	<!-- Download PDF Button (untuk rapor dan keasramaan, single preview) -->
-	{#if (previewDocument === 'rapor' || previewDocument === 'keasramaan') && !isBulkMode && previewData}
+	<!-- Download PDF Button (untuk cover, rapor dan keasramaan, single preview) -->
+	{#if (previewDocument === 'cover' || previewDocument === 'rapor' || previewDocument === 'keasramaan') && !isBulkMode && previewData}
 		<div class="mt-4 flex justify-center">
 			<button
 				type="button"
