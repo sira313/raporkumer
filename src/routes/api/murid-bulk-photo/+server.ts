@@ -25,42 +25,6 @@ function uploadsDir() {
 	return path.resolve(raw);
 }
 
-function slugifyName(name: string) {
-	if (!name) return 'murid';
-	const cleaned = name
-		.normalize('NFKD')
-		.replace(/[\u0300-\u036f]/g, '')
-		.replace(/[^\p{L}\p{N}\s-]/gu, '')
-		.trim()
-		.replace(/\s+/g, '-')
-		.toLowerCase();
-	return cleaned.substring(0, 80) || 'murid';
-}
-
-async function generateUniqueFilename(
-	dbInstance: typeof db,
-	base: string,
-	ext: string,
-	dir: string
-) {
-	let filename = `${base}${ext}`;
-	let counter = 1;
-	let exists = false;
-
-	do {
-		try {
-			await fs.access(path.join(dir, filename));
-			exists = true;
-			filename = `${base}-${counter}${ext}`;
-			counter++;
-		} catch {
-			exists = false;
-		}
-	} while (exists && counter < 1000);
-
-	return filename;
-}
-
 interface PhotoFile {
 	filename: string;
 	buffer: Buffer;
@@ -238,9 +202,15 @@ export async function POST({
 
 		let uploadedCount = 0;
 		let failedCount = 0;
+		const processedNisn = new Set<string>();
 
-		// Process each murid with photos
+		// Process each murid with photos (only first murid per NISN if duplicate)
 		for (const murid of allowedMurids) {
+			// Skip if this NISN already processed
+			if (processedNisn.has(murid.nisn)) {
+				continue;
+			}
+
 			const photos = photosByNisn.get(murid.nisn);
 			if (!photos || photos.length === 0) continue;
 
@@ -248,27 +218,27 @@ export async function POST({
 				// Use first photo (or could allow multiple - for now use first)
 				const photo = photos[0];
 
-				// Generate unique filename
-				const base = slugifyName(murid.nama || `murid-${murid.id}`);
-				const filename = await generateUniqueFilename(db, base, photo.ext, uploadsPath);
+				// Use NISN as filename (guaranteed unique per murid)
+				const filename = `${murid.nisn}${photo.ext}`;
 				const filePath = path.join(uploadsPath, filename);
 
-				// Remove old file if exists
+				// Remove old file if exists and has different name
 				if (murid.foto && murid.foto !== filename) {
 					try {
 						await fs.unlink(path.join(uploadsPath, murid.foto));
 					} catch {
-						// ignore
+						// ignore if file doesn't exist
 					}
 				}
 
-				// Write file
+				// Write file (will replace if exists)
 				await fs.writeFile(filePath, photo.buffer, { mode: 0o644 });
 
 				// Update database
 				await db.update(tableMurid).set({ foto: filename }).where(eq(tableMurid.id, murid.id));
 
 				uploadedCount++;
+				processedNisn.add(murid.nisn);
 			} catch (err) {
 				console.error(`Failed to upload photo for murid ${murid.id}:`, err);
 				failedCount++;

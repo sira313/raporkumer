@@ -73,6 +73,7 @@
 
 	async function saveUploadPhotos() {
 		if (!selectedFile) return;
+		if (uploadingPhotos) return;
 
 		uploadingPhotos = true;
 		uploadProgress = { current: 0, total: 1 };

@@ -203,6 +203,13 @@
 									<strong>{displayUserName}</strong> - Guru Mapel
 								</span>
 							</div>
+						{:else if user?.type === 'wali_asuh'}
+							<div role="alert" class="alert alert-info mb-4">
+								<Icon name="info" />
+								<span>
+									<strong>{displayUserName}</strong> - Wali Asuh
+								</span>
+							</div>
 						{/if}
 
 						<div class="flex items-center gap-4">

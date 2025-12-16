@@ -13,7 +13,7 @@
 	import EmptyStates from '$lib/components/asesmen-keasramaan/empty-states.svelte';
 	import ImportModalBody from '$lib/components/asesmen-keasramaan/import-modal-body.svelte';
 	import { capitalizeSentence, buildNilaiLink } from '$lib/components/asesmen-keasramaan/utils';
-	import { createNavigationActions } from '$lib/components/asesmen-keasramaan/navigation';
+	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 	import { downloadTemplate, importNilai } from '$lib/components/asesmen-keasramaan/api';
 	import type { PageData } from '$lib/components/asesmen-keasramaan/types';
 
@@ -41,13 +41,59 @@
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
 	});
 
-	// Create navigation helper
-	const nav = createNavigationActions(page.url.pathname, page.url.search, (url) =>
-		goto(url, { replaceState: true, keepFocus: true })
-	);
+	// Create navigation helper functions yang selalu gunakan URL terkini dari $page
+	const nav = {
+		async selectKeasramaan(value: string) {
+			const params = new SvelteURLSearchParams(page.url.search);
+			if (value) {
+				params.set('keasramaan_id', value);
+			} else {
+				params.delete('keasramaan_id');
+			}
+			params.delete('page');
+			const nextQuery = params.toString();
+			const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+			await goto(nextUrl, { replaceState: true, keepFocus: true });
+		},
+
+		async applySearch(value: string) {
+			const params = new SvelteURLSearchParams(page.url.search);
+			const cleaned = value.trim();
+			if (cleaned) {
+				params.set('q', cleaned);
+			} else {
+				params.delete('q');
+			}
+			params.delete('page');
+			const nextQuery = params.toString();
+			const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+			await goto(nextUrl, { replaceState: true, keepFocus: true });
+		},
+
+		async gotoPage(pageNumber: number) {
+			const params = new SvelteURLSearchParams(page.url.search);
+			const sanitized = pageNumber < 1 ? 1 : pageNumber;
+			if (sanitized <= 1) {
+				params.delete('page');
+			} else {
+				params.set('page', String(sanitized));
+			}
+			const nextQuery = params.toString();
+			const nextUrl = `${page.url.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+			await goto(nextUrl, { replaceState: true, keepFocus: true });
+		}
+	};
 
 	$effect(() => {
-		selectedKeasramaanValue = data.selectedKeasramaanId ? String(data.selectedKeasramaanId) : '';
+		// Sinkronisasi state dengan data dari server
+		// Jika server mengirim selectedKeasramaanId, gunakan nilai tersebut
+		// Jika tidak, pertahankan nilai yang sudah ada di state (untuk kasus pagination)
+		if (data.selectedKeasramaanId) {
+			const newValue = String(data.selectedKeasramaanId);
+			if (selectedKeasramaanValue !== newValue) {
+				selectedKeasramaanValue = newValue;
+			}
+		}
 		searchTerm = data.search ?? '';
 	});
 
@@ -223,10 +269,12 @@
 			disabled={!selectedKeasraamHasTujuan}
 			onNilaiClick={handleNilaiClick}
 		/>
-		<PaginationControls
-			{currentPage}
-			{totalPages}
-			onPageClick={(pageNumber) => void nav.gotoPage(pageNumber)}
-		/>
+		{#if totalPages > 1}
+			<PaginationControls
+				{currentPage}
+				{totalPages}
+				onPageClick={(pageNumber) => void nav.gotoPage(pageNumber)}
+			/>
+		{/if}
 	{/if}
 </div>

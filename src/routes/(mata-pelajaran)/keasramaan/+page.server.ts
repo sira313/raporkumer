@@ -2,12 +2,14 @@ import db from '$lib/server/db';
 import {
 	tableKeasramaan,
 	tableKeasramaanIndikator,
-	tableKeasramaanTujuan
+	tableKeasramaanTujuan,
+	tableAuthUserKelas
 } from '$lib/server/db/schema';
 import { redirect, fail } from '@sveltejs/kit';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { readBufferToAoA } from '$lib/utils/excel.js';
 import { cookieNames } from '$lib/utils';
+import { authority } from '../../pengguna/utils.server';
 
 interface KeasramaanWithIndikator {
 	id: number;
@@ -41,10 +43,42 @@ const MAX_IMPORT_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
 export async function load({ depends, parent }) {
 	depends('app:keasramaan');
-	const { kelasAktif } = await parent();
+	const { kelasAktif, user } = await parent();
 
 	if (!kelasAktif?.id) {
 		throw redirect(303, `/forbidden?required=kelas_id`);
+	}
+
+	// Permission check: Admin, wali_kelas (for their own class), wali_asuh (for their own class),
+	// and users with rapor_manage permission can access
+	const userType = (user as { type?: string; id?: number; kelasId?: number } | null)?.type;
+
+	// Allow admin, wali_kelas, and wali_asuh without further checks
+	// (wali_kelas/wali_asuh already validated by hooks.server.ts to access only their own kelas)
+	if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		// For 'user' type (guru), check rapor_manage permission OR kelas assignment
+		if (userType === 'user' && user?.id) {
+			const userPermissions = (user as { permissions?: string[] })?.permissions ?? [];
+			const hasRaporManage = userPermissions.includes('rapor_manage');
+
+			if (!hasRaporManage) {
+				// Check if user has access to this kelas via join table
+				const hasKelasAccess = await db.query.tableAuthUserKelas.findFirst({
+					columns: { id: true },
+					where: and(
+						eq(tableAuthUserKelas.authUserId, user.id),
+						eq(tableAuthUserKelas.kelasId, kelasAktif.id)
+					)
+				});
+
+				if (!hasKelasAccess) {
+					throw redirect(303, `/forbidden?required=rapor_manage`);
+				}
+			}
+		} else {
+			// Other user types need rapor_manage permission
+			authority('rapor_manage');
+		}
 	}
 
 	let keasramaanRaw: KeasramaanWithIndikator[] = [];

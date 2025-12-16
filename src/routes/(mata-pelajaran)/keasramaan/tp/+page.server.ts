@@ -2,10 +2,12 @@ import db from '$lib/server/db';
 import {
 	tableKeasramaan,
 	tableKeasramaanIndikator,
-	tableKeasramaanTujuan
+	tableKeasramaanTujuan,
+	tableAuthUserKelas
 } from '$lib/server/db/schema';
 import { fail, redirect, error } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
+import { authority } from '../../../pengguna/utils.server';
 
 const TABLE_INDIKATOR_MISSING_MESSAGE =
 	'Tabel indikator keasramaan belum tersedia. Jalankan "pnpm db:push" untuk menerapkan migrasi terbaru.';
@@ -22,7 +24,39 @@ function isTableMissingError(error: unknown, tableName: string) {
 
 export async function load({ depends, url, parent }) {
 	depends('app:keasramaan:tp');
-	const { kelasAktif } = await parent();
+	const { kelasAktif, user } = await parent();
+
+	// Permission check: same logic as parent keasramaan page
+	if (kelasAktif?.id) {
+		const userType = (user as { type?: string; id?: number; kelasId?: number } | null)?.type;
+
+		// Allow admin, wali_kelas, and wali_asuh without further checks
+		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+			// For 'user' type (guru), check rapor_manage permission OR kelas assignment
+			if (userType === 'user' && user?.id) {
+				const userPermissions = (user as { permissions?: string[] })?.permissions ?? [];
+				const hasRaporManage = userPermissions.includes('rapor_manage');
+
+				if (!hasRaporManage) {
+					// Check if user has access to this kelas via join table
+					const hasKelasAccess = await db.query.tableAuthUserKelas.findFirst({
+						columns: { id: true },
+						where: and(
+							eq(tableAuthUserKelas.authUserId, user.id),
+							eq(tableAuthUserKelas.kelasId, kelasAktif.id)
+						)
+					});
+
+					if (!hasKelasAccess) {
+						throw redirect(303, `/forbidden?required=rapor_manage`);
+					}
+				}
+			} else {
+				// Other user types need rapor_manage permission
+				authority('rapor_manage');
+			}
+		}
+	}
 	const indikatorIdParam = url.searchParams.get('indikatorId');
 
 	if (!indikatorIdParam) {

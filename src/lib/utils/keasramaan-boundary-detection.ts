@@ -1,22 +1,20 @@
 /**
- * Boundary Detection System for Keasramaan Pagination
+ * Boundary Detection System for Keasramaan Pagination - NEW SPLIT LOGIC
  *
- * Menggunakan DOM measurement untuk mendeteksi boundary violations
- * dan melakukan split otomatis berdasarkan posisi aktual elemen.
- * Sistem ini mengadaptasi rapor-boundary-detection.ts untuk keasramaan.
+ * Sistem split baru menggunakan:
+ * - paperA4: container kertas (seperti halaman di MS Word)
+ * - splitTrigger: elemen yang dihitung (baris tabel dengan id "splitTrigger-{order}")
+ * - sensorTrigger: garis merah - batas yang tidak boleh dilewati
+ * - paperEnd: garis kuning - akhir kertas
+ *
+ * Logika:
+ * 1. Hitung semua splitTrigger dalam satu murid
+ * 2. Urutkan splitTrigger dari atas ke bawah di paperA4 pertama
+ * 3. Jika ada splitTrigger yang melewati sensorTrigger, split ke paperA4 baru
+ * 4. Ulangi proses untuk paperA4 selanjutnya
  */
 
-// Paper dimensions (A4 Portrait)
-const PAPER_HEIGHT_MM = 297;
-const PAGE_PADDING_MM = 20;
-const CONTENT_HEIGHT_MM = PAPER_HEIGHT_MM - PAGE_PADDING_MM * 2; // 257mm
-
-// Convert mm to pixels (at 96 DPI)
-const MM_TO_PX = 3.7795275591;
-export const CONTENT_HEIGHT_PX = CONTENT_HEIGHT_MM * MM_TO_PX; // ~971px
-export const BOUNDARY_TRIGGER_PX = CONTENT_HEIGHT_PX - 10; // 10px safety margin
-
-// Reserved heights for fixed elements
+// Reserved heights for fixed elements (dipertahankan untuk kompatibilitas)
 export const HEIGHTS = {
 	header: 70,
 	identityTable: 200,
@@ -41,17 +39,15 @@ export type KeasramaanRowWithOrder = KeasramaanRow & { order: number };
 
 export interface PageBoundary {
 	pageIndex: number;
-	availableHeight: number;
-	startY: number;
-	endY: number;
-	triggerY: number;
+	sensorTriggerY: number; // Posisi garis merah (sensorTrigger)
+	paperEndY: number; // Posisi garis kuning (paperEnd)
 }
 
 export interface MeasuredRow {
 	row: KeasramaanRowWithOrder;
 	element: HTMLElement;
-	top: number;
-	bottom: number;
+	top: number; // Posisi atas relative ke container
+	bottom: number; // Posisi bawah relative ke container
 	height: number;
 	order: number;
 }
@@ -71,52 +67,40 @@ export interface BoundaryDetectionResult {
 }
 
 /**
- * Calculate page boundaries based on page index
+ * Calculate page boundaries - NEW LOGIC
+ * Tidak perlu kompleks, cukup track posisi sensorTrigger dan paperEnd
  */
-export function calculatePageBoundary(pageIndex: number, hasHeader: boolean): PageBoundary {
-	const firstPageOffset = hasHeader
-		? HEIGHTS.header + HEIGHTS.identityTable + HEIGHTS.tableHeader + HEIGHTS.pageFooter
-		: HEIGHTS.tableHeader + HEIGHTS.pageFooter;
-
-	const continuationPageOffset = HEIGHTS.tableHeader + HEIGHTS.pageFooter;
-
-	const availableHeight =
-		pageIndex === 0
-			? CONTENT_HEIGHT_PX - firstPageOffset
-			: CONTENT_HEIGHT_PX - continuationPageOffset;
-
-	const startY = pageIndex * CONTENT_HEIGHT_PX;
-	const endY = startY + CONTENT_HEIGHT_PX;
-	const triggerY = startY + availableHeight;
-
+export function calculatePageBoundary(pageIndex: number): PageBoundary {
 	return {
 		pageIndex,
-		availableHeight,
-		startY,
-		endY,
-		triggerY
+		sensorTriggerY: 0, // Akan diukur dari DOM
+		paperEndY: 0 // Akan diukur dari DOM
 	};
 }
 
 /**
- * Measure all row elements and their positions
+ * Measure all row elements (splitTriggers) and their positions - NEW LOGIC
  */
 export function measureRows(
 	containerElement: HTMLElement,
 	rows: KeasramaanRowWithOrder[]
 ): MeasuredRow[] {
 	const measurements: MeasuredRow[] = [];
-	const rowElements = containerElement.querySelectorAll<HTMLElement>('[data-row-order]');
+
+	// Cari semua elemen dengan id yang mengandung "splitTrigger"
+	const splitTriggerElements =
+		containerElement.querySelectorAll<HTMLElement>('[id^="splitTrigger-"]');
 	const seenOrders = new Set<number>();
 
-	rowElements.forEach((element) => {
-		const orderAttr = element.getAttribute('data-row-order');
-		if (!orderAttr) return;
+	splitTriggerElements.forEach((element) => {
+		// Extract order from id="splitTrigger-{order}"
+		const idAttr = element.getAttribute('id');
+		if (!idAttr) return;
 
-		// Skip non-numeric order
-		if (!/^\d+$/.test(orderAttr)) return;
+		const match = idAttr.match(/^splitTrigger-(\d+)$/);
+		if (!match) return;
 
-		const order = parseInt(orderAttr, 10);
+		const order = parseInt(match[1], 10);
 		const row = rows.find((r) => r.order === order);
 		if (!row) return;
 
@@ -145,22 +129,42 @@ export function measureRows(
 		seenOrders.add(order);
 	});
 
+	// Sort by order (top to bottom)
 	return measurements.sort((a, b) => a.order - b.order);
 }
 
-// Toleransi overflow untuk keasramaan (fleksibel untuk konten dinamis)
-const OVERFLOW_TOLERANCE_PAGE1 = 130; // px (halaman 1 - fleksibel untuk text wrapping dinamis)
-const OVERFLOW_TOLERANCE_OTHER = 80; // px (halaman lain - moderat)
+/**
+ * Measure position of sensorTrigger element - NEW HELPER
+ */
+export function measureSensorTrigger(containerElement: HTMLElement): number {
+	const sensorElement = containerElement.querySelector<HTMLElement>('#sensorTrigger');
+	if (!sensorElement) {
+		console.warn('⚠️ sensorTrigger element not found, using default position');
+		return 900; // Default fallback
+	}
 
-// Minimum sisa ruang untuk footer (buffer kecil saja)
-const MIN_REMAINING_SPACE_FOOTER = 30; // px
+	const rect = sensorElement.getBoundingClientRect();
+	const containerRect = containerElement.getBoundingClientRect();
+	const sensorY = rect.top - containerRect.top;
+
+	console.log(`🔴 sensorTrigger measured at: ${Math.round(sensorY)}px from container top`);
+	return sensorY;
+}
 
 /**
- * Detect boundary violations and paginate accordingly
+ * NEW SPLIT LOGIC - Detect boundary violations and paginate accordingly
+ *
+ * Logika:
+ * 1. Ukur semua splitTrigger (baris tabel) dan posisi sensorTrigger
+ * 2. Urutkan splitTrigger dari atas ke bawah
+ * 3. Isi paperA4 pertama dari atas sampai ada splitTrigger yang melewati sensorTrigger
+ * 4. Jika ada yang melewati, split ke paperA4 baru
+ * 5. Ulangi untuk paperA4 berikutnya
  */
 export function detectBoundaryViolations(
 	measurements: MeasuredRow[],
-	hasHeader: boolean = true
+	hasHeader: boolean = true,
+	sensorTriggerY?: number
 ): BoundaryDetectionResult {
 	if (measurements.length === 0) {
 		return {
@@ -170,78 +174,40 @@ export function detectBoundaryViolations(
 		};
 	}
 
+	console.log('🔵 [NEW SPLIT LOGIC] Starting boundary detection');
+	console.log(`📊 Total splitTriggers to process: ${measurements.length}`);
+
+	// Gunakan sensorTriggerY yang diukur atau fallback ke estimasi
+	const SENSOR_TRIGGER_POSITION = sensorTriggerY ?? (hasHeader ? 900 : 950); // px dari atas container
+	console.log(`🔴 Using sensorTrigger position: ${Math.round(SENSOR_TRIGGER_POSITION)}px`);
+
 	const pages: PaginatedPage[] = [];
 	let currentPageIndex = 0;
 	let currentPageRows: KeasramaanRowWithOrder[] = [];
-	let currentPageHeight = 0;
-	let boundary = calculatePageBoundary(currentPageIndex, hasHeader);
-
-	const kehadiranHeight = HEIGHTS.kehadiran + HEIGHTS.kehadiranGap + MIN_REMAINING_SPACE_FOOTER;
-	const signatureHeight = HEIGHTS.signature + HEIGHTS.signatureGap + MIN_REMAINING_SPACE_FOOTER;
 	const debugLogs: string[] = [];
 
-	for (let i = 0; i < measurements.length; i++) {
-		const measurement = measurements[i];
-		const { row, height } = measurement;
+	// Sort measurements by order (top to bottom)
+	const sortedMeasurements = [...measurements].sort((a, b) => a.order - b.order);
 
-		// Cek apakah menambah row ini akan melebihi boundary
-		const tolerance = currentPageIndex === 0 ? OVERFLOW_TOLERANCE_PAGE1 : OVERFLOW_TOLERANCE_OTHER;
-		const totalWithRow = currentPageHeight + height;
-		const overflow = totalWithRow - boundary.availableHeight;
-		const wouldExceedBoundary = overflow > tolerance;
+	// Process each splitTrigger
+	for (let i = 0; i < sortedMeasurements.length; i++) {
+		const measurement = sortedMeasurements[i];
+		const { row, bottom } = measurement;
 
-		const checkDetails = `${Math.round(currentPageHeight)}+${Math.round(height)}=${Math.round(totalWithRow)} vs ${Math.round(boundary.availableHeight)} (overflow=${Math.round(overflow)}px, tol=${tolerance}px)`;
+		debugLogs.push(
+			`Processing splitTrigger ${i + 1}/${measurements.length}: order=${row.order}, ` +
+				`kategori=${row.kategoriHeader ?? 'indicator'}, bottom=${Math.round(bottom)}px`
+		);
 
-		// Baris pertama di halaman selalu ditambahkan (even if oversized)
-		if (currentPageRows.length === 0) {
-			currentPageRows.push(row);
-			currentPageHeight += height;
+		// Cek apakah bottom dari splitTrigger ini melewati sensorTrigger
+		const crossesSensor = bottom > SENSOR_TRIGGER_POSITION;
 
-			debugLogs.push(
-				`Row ${i} (order:${row.order}, kategori:${row.kategoriHeader ?? 'indicator'}): height=${Math.round(height)}px | ` +
-					`acc=${Math.round(currentPageHeight)}px | ` +
-					`[FIRST ROW on page ${currentPageIndex + 1}]`
-			);
-			continue;
-		}
+		if (crossesSensor && currentPageRows.length > 0) {
+			// Split! Simpan halaman saat ini dan mulai halaman baru
+			const boundary = calculatePageBoundary(currentPageIndex);
+			boundary.sensorTriggerY = SENSOR_TRIGGER_POSITION;
+			boundary.paperEndY = SENSOR_TRIGGER_POSITION + 50; // Estimasi
 
-		if (wouldExceedBoundary) {
-			// Special case: prevent orphaned category headers
-			const lastRow = currentPageRows[currentPageRows.length - 1];
-			if (lastRow.kategoriHeader && currentPageRows.length > 1) {
-				// Cari tinggi header
-				const headerMeasurement = measurements.find((m) => m.order === lastRow.order);
-
-				if (headerMeasurement) {
-					// Remove header dari halaman saat ini
-					currentPageRows.pop();
-					currentPageHeight -= headerMeasurement.height;
-
-					// Save halaman saat ini
-					pages.push({
-						pageIndex: currentPageIndex,
-						rows: currentPageRows,
-						hasKehadiran: false,
-						hasSignature: false,
-						boundary
-					});
-
-					// Mulai halaman baru
-					currentPageIndex++;
-					boundary = calculatePageBoundary(currentPageIndex, false);
-
-					// Halaman baru dimulai dengan: header + current row
-					currentPageRows = [lastRow, row];
-					currentPageHeight = headerMeasurement.height + height;
-
-					debugLogs.push(
-						`  ↳ SPLIT (orphan header): Row ${i} moved to page ${currentPageIndex + 1} with header`
-					);
-					continue;
-				}
-			}
-
-			// Normal split: save halaman saat ini, mulai halaman baru
 			pages.push({
 				pageIndex: currentPageIndex,
 				rows: currentPageRows,
@@ -250,37 +216,33 @@ export function detectBoundaryViolations(
 				boundary
 			});
 
+			debugLogs.push(
+				`  🔴 SPLIT! splitTrigger #${i + 1} crosses sensorTrigger (${Math.round(bottom)}px > ${Math.round(SENSOR_TRIGGER_POSITION)}px)`
+			);
+			debugLogs.push(`  📄 Page ${currentPageIndex + 1} saved with ${currentPageRows.length} rows`);
+			debugLogs.push(`  📄 Starting new page ${currentPageIndex + 2}`);
+
 			// Mulai halaman baru
 			currentPageIndex++;
-			boundary = calculatePageBoundary(currentPageIndex, false);
 			currentPageRows = [row];
-			currentPageHeight = height; // RESET accumulated height
-
-			debugLogs.push(
-				`  ↳ SPLIT: Row ${i} (order:${row.order}) moved to page ${currentPageIndex + 1} | ` +
-					`check: ${checkDetails} | new acc=${Math.round(height)}px`
-			);
 		} else {
-			// Row muat di halaman saat ini
+			// Masih muat di halaman saat ini
 			currentPageRows.push(row);
-			currentPageHeight += height;
+
+			if (crossesSensor && currentPageRows.length === 1) {
+				debugLogs.push(`  ⚠️ First row on page ${currentPageIndex + 1} crosses sensor (allowed)`);
+			} else {
+				debugLogs.push(`  ✅ Fits on page ${currentPageIndex + 1}`);
+			}
 		}
-
-		// Log setelah decision
-		const remaining = boundary.availableHeight - currentPageHeight;
-		const logParts = [
-			`Row ${i} (order:${row.order}, kategori:${row.kategoriHeader ?? 'indicator'}): height=${Math.round(height)}px`,
-			`acc=${Math.round(currentPageHeight)}px`,
-			`remaining=${Math.round(remaining)}px`,
-			`exceed=${wouldExceedBoundary}`,
-			`page=${currentPageIndex + 1}`
-		];
-
-		debugLogs.push(logParts.join(' | '));
 	}
 
 	// Tambahkan halaman terakhir jika ada isi
 	if (currentPageRows.length > 0) {
+		const boundary = calculatePageBoundary(currentPageIndex);
+		boundary.sensorTriggerY = SENSOR_TRIGGER_POSITION;
+		boundary.paperEndY = SENSOR_TRIGGER_POSITION + 50;
+
 		pages.push({
 			pageIndex: currentPageIndex,
 			rows: currentPageRows,
@@ -288,75 +250,62 @@ export function detectBoundaryViolations(
 			hasSignature: false,
 			boundary
 		});
+		debugLogs.push(
+			`  📄 Final page ${currentPageIndex + 1} saved with ${currentPageRows.length} rows`
+		);
 	}
 
-	// Tentukan penempatan ketidakhadiran dan tandatangan secara terpisah
+	// Tentukan penempatan ketidakhadiran dan tandatangan
+	const MIN_SPACE_FOR_KEHADIRAN = 150; // px
+	const MIN_SPACE_FOR_SIGNATURE = 200; // px
+
 	if (pages.length > 0) {
 		const lastPage = pages[pages.length - 1];
+		const lastRow = lastPage.rows[lastPage.rows.length - 1];
+		const lastMeasurement = measurements.find((m) => m.order === lastRow?.order);
+		const lastBottom = lastMeasurement?.bottom ?? 0;
+		const remainingSpace = SENSOR_TRIGGER_POSITION - lastBottom;
 
-		// Hitung total tinggi halaman terakhir
-		let lastPageHeight = 0;
-		for (const row of lastPage.rows) {
-			const measurement = measurements.find((m) => m.order === row.order);
-			if (measurement) {
-				lastPageHeight += measurement.height;
-			}
-		}
+		debugLogs.push(`\n🎯 Footer placement: remaining space = ${Math.round(remainingSpace)}px`);
 
-		let remainingSpace = lastPage.boundary.availableHeight - lastPageHeight;
-
-		// Cek apakah ketidakhadiran muat di halaman terakhir
-		if (remainingSpace >= kehadiranHeight) {
+		if (remainingSpace >= MIN_SPACE_FOR_KEHADIRAN + MIN_SPACE_FOR_SIGNATURE) {
+			// Kehadiran dan signature muat di halaman terakhir
 			lastPage.hasKehadiran = true;
-			remainingSpace -= HEIGHTS.kehadiran + HEIGHTS.kehadiranGap;
+			lastPage.hasSignature = true;
+			debugLogs.push(`  ✅ Kehadiran + Signature on page ${lastPage.pageIndex + 1}`);
+		} else if (remainingSpace >= MIN_SPACE_FOR_KEHADIRAN) {
+			// Hanya kehadiran yang muat
+			lastPage.hasKehadiran = true;
 
-			// Cek apakah tandatangan juga muat di halaman yang sama
-			if (remainingSpace >= signatureHeight) {
-				lastPage.hasSignature = true;
-			} else {
-				// Tandatangan perlu halaman baru
-				pages.push({
-					pageIndex: pages.length,
-					rows: [],
-					hasKehadiran: false,
-					hasSignature: true,
-					boundary: calculatePageBoundary(pages.length, false)
-				});
-			}
+			// Signature perlu halaman baru
+			const boundary = calculatePageBoundary(pages.length);
+			pages.push({
+				pageIndex: pages.length,
+				rows: [],
+				hasKehadiran: false,
+				hasSignature: true,
+				boundary
+			});
+			debugLogs.push(`  ✅ Kehadiran on page ${lastPage.pageIndex + 1}`);
+			debugLogs.push(`  📄 Signature on new page ${pages.length}`);
 		} else {
-			// Ketidakhadiran dan tandatangan perlu halaman baru
+			// Kehadiran dan signature perlu halaman baru
+			const boundary = calculatePageBoundary(pages.length);
 			pages.push({
 				pageIndex: pages.length,
 				rows: [],
 				hasKehadiran: true,
-				hasSignature: false,
-				boundary: calculatePageBoundary(pages.length, false)
+				hasSignature: true,
+				boundary
 			});
-
-			// Cek apakah tandatangan muat di halaman yang sama dengan ketidakhadiran
-			const kehadiranPageRemainingSpace =
-				calculatePageBoundary(pages.length - 1, false).availableHeight -
-				HEIGHTS.kehadiran -
-				HEIGHTS.kehadiranGap;
-
-			if (kehadiranPageRemainingSpace >= signatureHeight) {
-				pages[pages.length - 1].hasSignature = true;
-			} else {
-				// Tandatangan perlu halaman terpisah
-				pages.push({
-					pageIndex: pages.length,
-					rows: [],
-					hasKehadiran: false,
-					hasSignature: true,
-					boundary: calculatePageBoundary(pages.length, false)
-				});
-			}
+			debugLogs.push(`  📄 Kehadiran + Signature on new page ${pages.length}`);
 		}
 	}
 
 	// Log detection process
-	console.groupCollapsed('📐 Keasramaan Boundary Detection Process');
+	console.groupCollapsed('📐 NEW Keasramaan Boundary Detection Process');
 	debugLogs.forEach((log) => console.log(log));
+	console.log(`\n✅ Total pages: ${pages.length}`);
 	console.groupEnd();
 
 	return {
@@ -367,77 +316,45 @@ export function detectBoundaryViolations(
 }
 
 /**
- * Debug helper to visualize boundary detection
+ * Debug helper to visualize boundary detection - NEW LOGIC
  */
 export function debugBoundaryDetection(result: BoundaryDetectionResult, muridName: string): void {
-	const pageDetails = result.pages.map((page, idx) => {
-		// Hitung total tinggi halaman ini dengan accumulated height
-		let totalHeight = 0;
-		const rowDetails: Array<{ kategori: string; height: number; order: number }> = [];
-
-		for (const row of page.rows) {
+	const pageDetails = result.pages.map((page) => {
+		const rowDetails = page.rows.map((row) => {
 			const measurement = result.measurements.find((m) => m.order === row.order);
-			if (measurement) {
-				totalHeight += measurement.height;
-				rowDetails.push({
-					kategori: row.kategoriHeader ?? 'indicator',
-					height: Math.round(measurement.height),
-					order: row.order
-				});
-			}
-		}
-
-		const used = Math.round(totalHeight);
-		const capacity = Math.round(page.boundary.availableHeight);
-		const remaining = capacity - used;
-		const utilization = capacity > 0 ? Math.round((used / capacity) * 100) : 0;
-
-		// Toleransi overflow: page 1 = 130px, page lain = 80px (fleksibel)
-		const tolerance = page.pageIndex === 0 ? -130 : -80;
-		const isWithinTolerance = remaining >= tolerance;
+			return {
+				order: row.order,
+				kategori: row.kategoriHeader ?? 'indicator',
+				height: measurement ? Math.round(measurement.height) : 0,
+				bottom: measurement ? Math.round(measurement.bottom) : 0
+			};
+		});
 
 		return {
 			page: page.pageIndex + 1,
 			rows: page.rows.length,
-			kehadiran: page.hasKehadiran,
-			signature: page.hasSignature,
-			used,
-			capacity,
-			remaining,
-			utilization: `${utilization}%`,
-			status: remaining >= 0 ? '✅' : isWithinTolerance ? '⚠️ TIGHT' : '❌ OVERFLOW',
-			rowDetails: idx === 0 || idx === 1 ? rowDetails : undefined // Show details for first 2 pages
+			kehadiran: page.hasKehadiran ? '✅' : '❌',
+			signature: page.hasSignature ? '✅' : '❌',
+			sensorY: Math.round(page.boundary.sensorTriggerY),
+			rowDetails: rowDetails.slice(0, 3) // Show first 3 rows per page
 		};
 	});
 
-	console.log(`[Keasramaan Boundary Detection] ${muridName}:`, {
-		pages: result.totalPages,
-		measurements: result.measurements.length,
-		details: pageDetails
+	console.log(`🎯 [NEW SPLIT] ${muridName}:`, {
+		totalPages: result.totalPages,
+		totalSplitTriggers: result.measurements.length,
+		pages: pageDetails
 	});
 
-	// Show all measurements for debugging
-	console.log(
-		`[Measurements] First 10 rows:`,
-		result.measurements.slice(0, 10).map((m) => ({
-			order: m.order,
-			kategori: m.row.kategoriHeader ?? 'indicator',
-			height: Math.round(m.height)
-		}))
-	);
-
-	// Warn only if page overflows beyond tolerance
-	const overflowPages = pageDetails.filter((p) => p.status === '❌ OVERFLOW');
-	if (overflowPages.length > 0) {
-		console.warn(`❌ ${muridName}: ${overflowPages.length} pages OVERFLOW!`, overflowPages);
-	}
-
-	// Info for tight pages (within tolerance)
-	const tightPages = pageDetails.filter((p) => p.status === '⚠️ TIGHT');
-	if (tightPages.length > 0) {
-		console.info(
-			`⚠️ ${muridName}: ${tightPages.length} pages TIGHT (within tolerance)`,
-			tightPages
+	// Show sample measurements
+	if (result.measurements.length > 0) {
+		console.log(
+			`📊 Sample splitTriggers (first 5):`,
+			result.measurements.slice(0, 5).map((m) => ({
+				order: m.order,
+				kategori: m.row.kategoriHeader ?? 'indicator',
+				bottom: Math.round(m.bottom)
+			}))
 		);
 	}
 }

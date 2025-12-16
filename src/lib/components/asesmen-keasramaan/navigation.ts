@@ -57,6 +57,8 @@ export function createNavigationActions(
 		async gotoPage(pageNumber: number) {
 			const sanitized = pageNumber < 1 ? 1 : pageNumber;
 			await this.applyNavigation((params) => {
+				// Pertahankan keasramaan_id saat navigasi pagination
+				// Hanya update parameter page
 				if (sanitized <= 1) {
 					params.delete('page');
 				} else {

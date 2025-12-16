@@ -6,7 +6,6 @@
 	import DocumentMuridSelector from '$lib/components/cetak/DocumentMuridSelector.svelte';
 	import PreviewFooter from '$lib/components/cetak/PreviewFooter.svelte';
 	import PreviewContent from '$lib/components/cetak/PreviewContent.svelte';
-	import { printElement } from '$lib/utils';
 	import { toast } from '$lib/components/toast.svelte';
 	import { onDestroy, tick } from 'svelte';
 	import {
@@ -28,22 +27,6 @@
 	const documentOptions: Array<{ value: DocumentType; label: string }> = [
 		{ value: 'keasramaan', label: 'Rapor Keasramaan' }
 	];
-
-	const documentPaths: Record<DocumentType, string> = {
-		cover: '/cetak/cover',
-		biodata: '/cetak/biodata',
-		rapor: '/cetak/rapor',
-		piagam: '/cetak/piagam',
-		keasramaan: '/cetak/keasramaan'
-	};
-
-	const printFailureMessages: Record<DocumentType, string> = {
-		cover: 'Elemen cover belum siap untuk dicetak. Coba muat ulang halaman.',
-		biodata: 'Elemen biodata belum siap untuk dicetak. Coba muat ulang halaman.',
-		rapor: 'Elemen rapor belum siap untuk dicetak. Coba muat ulang halaman.',
-		piagam: 'Elemen piagam belum siap untuk dicetak. Coba muat ulang halaman.',
-		keasramaan: 'Elemen rapor keasramaan belum siap untuk dicetak. Coba muat ulang halaman.'
-	};
 
 	let selectedDocument = $state<DocumentType | ''>('keasramaan');
 	let selectedMuridId = $state('');
@@ -353,14 +336,6 @@
 		}
 	});
 
-	async function handlePrint() {
-		if (!previewPrintable) return;
-		const success = await printElement(previewPrintable);
-		if (!success) {
-			toast(printFailureMessages[previewDocument as DocumentType] ?? 'Gagal mencetak.', 'error');
-		}
-	}
-
 	onDestroy(() => {
 		if (previewAbortController) {
 			previewAbortController.abort();
@@ -391,14 +366,11 @@
 			{daftarMurid}
 			selectedTemplate="1"
 			piagamRankingOptions={[]}
-			onPreview={handlePreview}
-			onBulkPreview={handleBulkPreview}
-			onPrint={handlePrint}
-			{previewDisabled}
-			{printDisabled}
-			{previewButtonTitle}
-			{printButtonTitle}
-			previewLoading={isPrintLoading}
+			onDownload={handlePreview}
+			onBulkDownload={handleBulkPreview}
+			downloadDisabled={previewDisabled}
+			downloadButtonTitle={previewButtonTitle}
+			downloadLoading={isPrintLoading}
 		/>
 
 		<PreviewFooter
@@ -429,12 +401,7 @@
 		<PreviewContent
 			previewDocument={previewDocument as DocumentType | ''}
 			{previewData}
-			{previewLoading}
 			{previewError}
-			{isBulkMode}
-			{bulkPreviewData}
-			{bulkLoadProgress}
-			{waitingForPrintable}
 			selectedTemplate="1"
 			bgRefreshKey={0}
 			{showBgLogo}

@@ -149,7 +149,11 @@ function deriveLingkupBobot(
 }
 
 export async function load({ url, locals, depends }) {
-	authority('rapor_manage');
+	// Permission check: Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
+	const userType = (locals.user as { type?: string } | null)?.type;
+	if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		authority('rapor_manage');
+	}
 
 	depends('app:asesmen-sumatif/formulir');
 	const muridIdParam = url.searchParams.get('murid_id');
@@ -310,7 +314,11 @@ export async function load({ url, locals, depends }) {
 
 export const actions = {
 	save: async ({ request, locals }) => {
-		authority('rapor_manage');
+		// Permission check: Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
+		const userType = (locals.user as { type?: string } | null)?.type;
+		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+			authority('rapor_manage');
+		}
 
 		const formPayload = unflattenFormData<{
 			muridId?: string;

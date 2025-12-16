@@ -23,28 +23,22 @@
 		selectedMuridId = $bindable(''),
 		daftarMurid = [],
 		piagamRankingOptions = [],
-		onPreview,
-		onBulkPreview,
-		onPrint,
-		previewDisabled = false,
-		printDisabled = false,
-		previewButtonTitle = '',
-		printButtonTitle = '',
-		previewLoading = false
+		onDownload,
+		onBulkDownload,
+		downloadDisabled = false,
+		downloadButtonTitle = '',
+		downloadLoading = false
 	}: {
 		selectedDocument: DocumentType | '';
 		selectedTemplate: '1' | '2';
 		selectedMuridId: string;
 		daftarMurid: MuridData[];
 		piagamRankingOptions: PiagamRankingOption[];
-		onPreview: () => void;
-		onBulkPreview: () => void;
-		onPrint: () => void;
-		previewDisabled?: boolean;
-		printDisabled?: boolean;
-		previewButtonTitle?: string;
-		printButtonTitle?: string;
-		previewLoading?: boolean;
+		onDownload: () => void;
+		onBulkDownload: () => void;
+		downloadDisabled?: boolean;
+		downloadButtonTitle?: string;
+		downloadLoading?: boolean;
 	} = $props();
 
 	const documentOptions: Array<{ value: DocumentType; label: string }> = [
@@ -140,12 +134,16 @@
 		<button
 			class="btn btn-soft flex-1 rounded-r-none shadow-none"
 			type="button"
-			title={previewButtonTitle}
-			disabled={previewDisabled}
-			onclick={onPreview}
+			title={downloadButtonTitle}
+			disabled={downloadDisabled}
+			onclick={onDownload}
 		>
-			<Icon name="eye" />
-			Preview
+			{#if downloadLoading}
+				<span class="loading loading-spinner loading-sm"></span>
+			{:else}
+				<Icon name="download" />
+			{/if}
+			Download
 		</button>
 		<div class="dropdown dropdown-end">
 			<div
@@ -153,7 +151,7 @@
 				role="button"
 				class="btn btn-primary rounded-l-none shadow-none"
 				class:btn-disabled={!selectedDocument}
-				title={selectedDocument ? 'Opsi preview lainnya' : 'Pilih dokumen terlebih dahulu'}
+				title={selectedDocument ? 'Opsi download lainnya' : 'Pilih dokumen terlebih dahulu'}
 			>
 				<Icon name="down" />
 			</div>
@@ -164,7 +162,7 @@
 				<li>
 					<button
 						type="button"
-						onclick={onBulkPreview}
+						onclick={onBulkDownload}
 						disabled={!selectedDocument || !hasSelectionOptions}
 					>
 						Semua Murid
@@ -173,18 +171,4 @@
 			</ul>
 		</div>
 	</div>
-	<button
-		class="btn btn-primary shadow-none"
-		type="button"
-		title={printButtonTitle}
-		disabled={printDisabled}
-		onclick={onPrint}
-	>
-		{#if previewLoading}
-			<span class="loading loading-spinner loading-sm"></span>
-		{:else}
-			<Icon name="print" />
-		{/if}
-		Cetak
-	</button>
 </div>
