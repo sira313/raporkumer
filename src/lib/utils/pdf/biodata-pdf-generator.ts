@@ -227,16 +227,16 @@ export async function generateBiodataPDF(data: BiodataPDFData): Promise<jsPDF> {
 			// Value - dengan text wrapping untuk nilai panjang
 			doc.setFont('helvetica', bold ? 'bold' : 'normal');
 			const displayValue = uppercase ? value.toUpperCase() : value;
-			
+
 			// Max width untuk value (sisa halaman - margins)
 			const maxValueWidth = contentWidth - (numberWidth + labelWidth + colonWidth);
-			
+
 			// Split text jika terlalu panjang
 			const lines = doc.splitTextToSize(displayValue, maxValueWidth);
-			
+
 			// Render baris pertama di posisi currentY
 			doc.text(lines[0], xValue, currentY, { align: 'left' });
-			
+
 			// Render baris berikutnya (jika ada) dengan indent
 			for (let i = 1; i < lines.length; i++) {
 				currentY += 5;
@@ -445,7 +445,7 @@ export async function generateBiodataPDF(data: BiodataPDFData): Promise<jsPDF> {
 	const ttdWidth = 60; // 60mm untuk area TTD
 	const footerGap = 4; // gap antara foto dan TTD (dikurangi)
 	const totalFooterWidth = pasFotoWidth + footerGap + ttdWidth;
-	
+
 	// Align ke kanan
 	const pasFotoX = pageWidth - margin - totalFooterWidth;
 	const pasFotoY = currentY;
@@ -493,7 +493,7 @@ export async function generateBiodataPDF(data: BiodataPDFData): Promise<jsPDF> {
 		doc.setDrawColor(0, 0, 0);
 		doc.setLineWidth(0.3);
 		doc.rect(pasFotoX, pasFotoY, pasFotoWidth, pasFotoHeight);
-		
+
 		doc.setFont('helvetica', 'normal');
 		doc.setFontSize(8);
 		doc.text('PAS FOTO', pasFotoX + pasFotoWidth / 2, pasFotoY + pasFotoHeight / 2 - 2, {
@@ -506,7 +506,7 @@ export async function generateBiodataPDF(data: BiodataPDFData): Promise<jsPDF> {
 
 	// TTD Section (sebelah kanan foto) - sejajar dengan foto
 	const ttdX = pasFotoX + pasFotoWidth + footerGap;
-	
+
 	doc.setFont('helvetica', 'normal');
 	doc.setFontSize(10);
 
@@ -521,7 +521,7 @@ export async function generateBiodataPDF(data: BiodataPDFData): Promise<jsPDF> {
 	const kepalaSekolahTitle =
 		data.sekolah.statusKepalaSekolah === 'plt' ? 'Plt. Kepala Sekolah' : 'Kepala Sekolah';
 	doc.text(kepalaSekolahTitle, ttdX, ttdY, { align: 'left' });
-	
+
 	// Hitung posisi untuk nama dan NIP agar NIP sejajar dengan bawah foto
 	// pasFotoHeight = 40mm, NIP harus di pasFotoY + 40mm
 	// Working backwards: NIP position = pasFotoY + pasFotoHeight
@@ -529,7 +529,7 @@ export async function generateBiodataPDF(data: BiodataPDFData): Promise<jsPDF> {
 	// Signature space = Nama position - current ttdY - 5mm (after "Kepala Sekolah")
 	const nipY = pasFotoY + pasFotoHeight;
 	const namaY = nipY - 4;
-	
+
 	// Nama Kepala Sekolah (bold) - positioned relative to bottom
 	doc.setFont('helvetica', 'bold');
 	doc.text(formatValue(data.ttd.kepalaSekolah), ttdX, namaY, { align: 'left' });
