@@ -433,8 +433,8 @@ async function generateTemplate1PDF(data: PiagamPDFData, bgImage: string | null)
 	leftY += 5;
 	rightY = leftY;
 
-	// Nama sekolah sejajar dengan "Wali Kelas"
-	doc.text(formatTitle(data.sekolah.nama), col1X, leftY, { align: 'center' });
+	// Nama sekolah sejajar dengan "Wali Kelas" - gunakan kapitalisasi asli dari user
+	doc.text(data.sekolah.nama, col1X, leftY, { align: 'center' });
 
 	doc.setFont('helvetica', 'bold');
 	doc.text('Wali Kelas', col2X, rightY, { align: 'center' });
@@ -486,10 +486,44 @@ async function generateTemplate2PDF(data: PiagamPDFData, bgImage: string | null)
 	const pageHeight = doc.internal.pageSize.getHeight();
 	const margin = 14;
 
-	// Draw background image if provided
+	// Draw background image if provided with opacity
 	if (bgImage) {
 		try {
-			doc.addImage(bgImage, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+			// Load and process image with opacity using canvas
+			await new Promise<void>((resolve) => {
+				const canvas = document.createElement('canvas');
+				const ctx = canvas.getContext('2d');
+				if (!ctx) {
+					console.error('[PDF] Failed to get canvas context');
+					resolve();
+					return;
+				}
+
+				const img = new Image();
+				img.onload = () => {
+					// Set canvas size to match PDF page (in pixels, approx 3.78 pixels per mm)
+					canvas.width = pageWidth * 3.78;
+					canvas.height = pageHeight * 3.78;
+
+					// Fill with white background first
+					ctx.fillStyle = '#FFFFFF';
+					ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+					// Draw image with 70% opacity on top of white background
+					ctx.globalAlpha = 0.7;
+					ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+					// Convert canvas to data URL and add to PDF
+					const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+					doc.addImage(dataUrl, 'JPEG', 0, 0, pageWidth, pageHeight, undefined, 'FAST');
+					resolve();
+				};
+				img.onerror = () => {
+					console.error('[PDF] Error loading background image');
+					resolve();
+				};
+				img.src = bgImage;
+			});
 		} catch (error) {
 			console.error('[PDF] Error adding background:', error);
 		}
@@ -545,13 +579,16 @@ async function generateTemplate2PDF(data: PiagamPDFData, bgImage: string | null)
 	if (!logoLeft) logoLeft = '/garudaPancasila.png';
 	if (!logoRight) logoRight = '/tutwuri-bw.png';
 
-	let currentY = margin + 1;
+	let currentY = margin + 4;
 
 	// === HEADER: LOGOS HORIZONTAL ===
-	const logoSize = 14; // h-14 = 14mm
-	const logoGap = 1; // small gap
-	const totalLogoWidth = logoSize * 3 + logoGap * 2;
-	let logoX = (pageWidth - totalLogoWidth) / 2;
+	const logoSize = 14; // Ukuran logo
+	const logoGap = 3; // Gap antar logo
+	const kumerHeight = 14; // Tinggi logo kumer sama dengan logo lain
+
+	// Hitung posisi center untuk logo (estimasi lebar total)
+	const estimatedTotalWidth = logoSize * 2 + 80 + logoGap * 2; // estimasi untuk centering
+	let logoX = (pageWidth - estimatedTotalWidth) / 2;
 
 	if (logoLeft) {
 		doc.addImage(logoLeft, 'PNG', logoX, currentY, logoSize, logoSize, undefined, 'FAST');
@@ -564,55 +601,56 @@ async function generateTemplate2PDF(data: PiagamPDFData, bgImage: string | null)
 	}
 
 	if (logoKumer) {
-		// Logo kumer slightly larger (h-16 = 16mm)
-		const kumerSize = 16;
-		doc.addImage(logoKumer, 'PNG', logoX, currentY - 1, kumerSize, kumerSize, undefined, 'FAST');
+		// Logo kumer dengan aspect ratio proporsional (logo horizontal panjang)
+		// Ratio asli logo kumer sekitar 6:1 (width:height)
+		const kumerWidth = kumerHeight * 6;
+		doc.addImage(logoKumer, 'PNG', logoX, currentY, kumerWidth, kumerHeight, undefined, 'FAST');
 	}
 
-	currentY += logoSize + 4;
+	currentY += logoSize + 14; // Jarak lebih lebar lagi antara logo dan nama sekolah
 
 	// === SCHOOL NAME ===
 	doc.setFont('helvetica', 'bold');
-	doc.setFontSize(24); // text-3xl
+	doc.setFontSize(22);
 	doc.text(formatUpper(data.sekolah.nama), pageWidth / 2, currentY, { align: 'center' });
-	currentY += 10;
+	currentY += 12;
 
 	// === MAIN TITLE ===
-	doc.setFont('helvetica', 'bold');
-	doc.setFontSize(24);
+	doc.setFont('times', 'bold');
+	doc.setFontSize(28);
 	doc.text(formatUpper(data.penghargaan.judul), pageWidth / 2, currentY, { align: 'center' });
-	currentY += 10;
+	currentY += 12;
 
 	// Subtitle
-	doc.setFont('helvetica', 'bold');
+	doc.setFont('helvetica', 'normal');
 	doc.setFontSize(14);
-	doc.text(data.penghargaan.subjudul, pageWidth / 2, currentY, { align: 'center' });
-	currentY += 8;
+	doc.text(formatUpper(data.penghargaan.subjudul), pageWidth / 2, currentY, { align: 'center' });
+	currentY += 12;
 
-	// Murid name (title case, not cursive since PDF doesn't support custom fonts easily)
-	doc.setFont('helvetica', 'bolditalic');
-	doc.setFontSize(36); // text-5xl
+	// Murid name - menggunakan Times italic untuk kesan elegan seperti tegak bersambung
+	doc.setFont('times', 'bolditalic');
+	doc.setFontSize(24);
 	doc.text(formatTitle(data.murid.nama), pageWidth / 2, currentY, { align: 'center' });
 	currentY += 12;
 
 	// "Sebagai"
-	doc.setFont('helvetica', 'bold');
+	doc.setFont('helvetica', 'normal');
 	doc.setFontSize(14);
-	doc.text('Sebagai', pageWidth / 2, currentY, { align: 'center' });
-	currentY += 6;
+	doc.text('SEBAGAI', pageWidth / 2, currentY, { align: 'center' });
+	currentY += 12;
 
 	// Ranking label
 	doc.setFont('helvetica', 'bold');
-	doc.setFontSize(16);
+	doc.setFontSize(21);
 	doc.text(formatUpper(data.penghargaan.rankingLabel), pageWidth / 2, currentY, {
 		align: 'center'
 	});
-	currentY += 8;
+	currentY += 10;
 
 	// Achievement text - rata kiri tapi posisi di tengah
-	doc.setFontSize(10);
-	const achievementWidth = 130; // max width
-	const achievementStartX = (pageWidth - achievementWidth) / 2; // posisi kiri dari block di tengah
+	doc.setFontSize(13);
+	const achievementWidth = 130; // max width sama dengan template 1
+	const achievementStartX = (pageWidth - achievementWidth) / 2;
 
 	// Split teks untuk membuat nilai rata-rata bold
 	const textBefore2 = 'Dengan total nilai rata-rata ';
@@ -660,54 +698,64 @@ async function generateTemplate2PDF(data: PiagamPDFData, bgImage: string | null)
 	}
 
 	// === FOOTER ===
-	const footerY = pageHeight - margin - 26;
+	const footerY = pageHeight - margin - 33;
 	const col1X = margin + 60;
 	const col2X = pageWidth - margin - 60;
 
-	doc.setFont('helvetica', 'bold');
-	doc.setFontSize(10);
-
 	// Left - Kepala Sekolah
 	let leftY = footerY;
+	doc.setFont('helvetica', 'normal');
+	doc.setFontSize(13);
 	doc.text('Mengetahui', col1X, leftY, { align: 'center' });
-	leftY += 4;
-
-	const kepalaTitle =
-		data.ttd.kepalaSekolah.statusKepalaSekolah === 'plt'
-			? `Plt. Kepala ${formatTitle(data.sekolah.nama)}`
-			: `Kepala ${formatTitle(data.sekolah.nama)}`;
-	doc.setFont('helvetica', 'normal');
-	doc.text(kepalaTitle, col1X, leftY, { align: 'center' });
-	leftY += 16;
-
-	doc.setFont('helvetica', 'bold');
-	doc.setFontSize(10);
-	doc.text(formatValue(data.ttd.kepalaSekolah.nama), col1X, leftY, { align: 'center' });
-	leftY += 4;
-
-	doc.setFont('helvetica', 'normal');
-	doc.setFontSize(10);
-	doc.text(formatValue(data.ttd.kepalaSekolah.nip), col1X, leftY, { align: 'center' });
+	leftY += 5;
 
 	// Right - Wali Kelas
 	let rightY = footerY;
-	doc.setFont('helvetica', 'normal');
-	doc.setFontSize(10);
+
+	// "Kepala" sejajar dengan tanggal
+	const kepalatitlePrefix =
+		data.ttd.kepalaSekolah.statusKepalaSekolah === 'plt' ? 'Plt. Kepala' : 'Kepala';
+	doc.text(kepalatitlePrefix, col1X, leftY, { align: 'center' });
+
 	const locationDate = `${formatTitle(data.ttd.tempat)}, ${data.ttd.tanggal}`;
-	doc.text(locationDate, col2X, rightY, { align: 'center' });
-	rightY += 4;
+	doc.text(locationDate, col2X, leftY, { align: 'center' });
+	leftY += 5;
+	rightY = leftY;
+
+	// Nama sekolah sejajar dengan "Wali Kelas" - gunakan kapitalisasi asli dari user
+	doc.text(data.sekolah.nama, col1X, leftY, { align: 'center' });
 
 	doc.setFont('helvetica', 'bold');
 	doc.text('Wali Kelas', col2X, rightY, { align: 'center' });
-	rightY += 16;
+	leftY += 20; // space for signature
+	rightY += 20;
 
+	// Nama kepala sekolah sejajar dengan nama wali kelas
 	doc.setFont('helvetica', 'bold');
-	doc.setFontSize(10);
-	doc.text(formatValue(data.ttd.waliKelas.nama), col2X, rightY, { align: 'center' });
-	rightY += 4;
+	doc.setFontSize(13);
+	const kepalaName = formatValue(data.ttd.kepalaSekolah.nama);
+	doc.text(kepalaName, col1X, leftY, { align: 'center' });
 
+	// Underline nama kepala sekolah
+	const kepalaNameWidth = doc.getTextWidth(kepalaName);
+	doc.setLineWidth(0.3);
+	doc.line(col1X - kepalaNameWidth / 2, leftY + 1, col1X + kepalaNameWidth / 2, leftY + 1);
+
+	const waliName = formatValue(data.ttd.waliKelas.nama);
+	doc.text(waliName, col2X, rightY, { align: 'center' });
+
+	// Underline nama wali kelas
+	const waliNameWidth = doc.getTextWidth(waliName);
+	doc.setLineWidth(0.3);
+	doc.line(col2X - waliNameWidth / 2, rightY + 1, col2X + waliNameWidth / 2, rightY + 1);
+
+	leftY += 5;
+	rightY += 5;
+
+	// NIP sejajar
 	doc.setFont('helvetica', 'normal');
-	doc.setFontSize(10);
+	doc.setFontSize(13);
+	doc.text(formatValue(data.ttd.kepalaSekolah.nip), col1X, leftY, { align: 'center' });
 	doc.text(formatValue(data.ttd.waliKelas.nip), col2X, rightY, { align: 'center' });
 
 	return doc;
