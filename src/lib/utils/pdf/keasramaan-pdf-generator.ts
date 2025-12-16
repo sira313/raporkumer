@@ -208,7 +208,8 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		).internal.getCurrentPageInfo().pageNumber;
 
 		const footerY = pageHeight - 10; // bottom: 10mm
-		doc.setFontSize(10);
+		doc.setFontSize(9); // sama dengan rapor
+		doc.setFont('helvetica', 'normal'); // pastikan font normal
 
 		// Footer metadata di kiri (rombel | nama | nis)
 		const footerMeta = `${formatValue(data.rombel.nama)} | ${formatValue(data.murid.nama)} | ${formatValue(data.murid.nis)}`;
@@ -390,9 +391,9 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		didDrawPage: drawFooter
 	});
 
-	currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8.5; // mt-6 = 24px = 8.5mm
+	currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4.2; // spacing antar tabel (sama dengan rapor)
 
-	// Kehadiran Section: mt-6, w-full, border
+	// Kehadiran Section
 	if (data.kehadiran) {
 		checkNewPage(50);
 
@@ -598,6 +599,14 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 			console.log(`[PDF] Drawing watermark on page ${i}`);
 			drawBgLogo();
 		}
+	}
+
+	// Draw footer on all pages to ensure consistency
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const totalPages = (doc as any).internal.pages.length - 1;
+	for (let i = 1; i <= totalPages; i++) {
+		doc.setPage(i);
+		drawFooter();
 	}
 
 	return doc;
