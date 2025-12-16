@@ -41,7 +41,12 @@ export async function load({ depends, params, parent }) {
 
 	// Allow admin, wali_kelas, wali_asuh, and 'user' (guru mapel) to proceed
 	// wali_kelas/wali_asuh already validated by hooks.server.ts to access only their own kelas
-	if (userType !== 'admin' && userType !== 'user' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+	if (
+		userType !== 'admin' &&
+		userType !== 'user' &&
+		userType !== 'wali_kelas' &&
+		userType !== 'wali_asuh'
+	) {
 		authority('rapor_manage');
 	}
 
@@ -321,7 +326,12 @@ export const actions = {
 	async save({ params, request, locals }) {
 		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'user' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		if (
+			userType !== 'admin' &&
+			userType !== 'user' &&
+			userType !== 'wali_kelas' &&
+			userType !== 'wali_asuh'
+		) {
 			authority('rapor_manage');
 		}
 
@@ -436,7 +446,12 @@ export const actions = {
 	async delete({ request, locals }) {
 		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'user' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		if (
+			userType !== 'admin' &&
+			userType !== 'user' &&
+			userType !== 'wali_kelas' &&
+			userType !== 'wali_asuh'
+		) {
 			authority('rapor_manage');
 		}
 
@@ -463,7 +478,12 @@ export const actions = {
 	}) {
 		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'user' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		if (
+			userType !== 'admin' &&
+			userType !== 'user' &&
+			userType !== 'wali_kelas' &&
+			userType !== 'wali_asuh'
+		) {
 			authority('rapor_manage');
 		}
 
@@ -540,7 +560,12 @@ export const actions = {
 	async import({ params, request, locals }) {
 		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'user' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		if (
+			userType !== 'admin' &&
+			userType !== 'user' &&
+			userType !== 'wali_kelas' &&
+			userType !== 'wali_asuh'
+		) {
 			authority('rapor_manage');
 		}
 

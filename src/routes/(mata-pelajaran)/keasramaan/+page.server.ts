@@ -52,7 +52,7 @@ export async function load({ depends, parent }) {
 	// Permission check: Admin, wali_kelas (for their own class), wali_asuh (for their own class),
 	// and users with rapor_manage permission can access
 	const userType = (user as { type?: string; id?: number; kelasId?: number } | null)?.type;
-	
+
 	// Allow admin, wali_kelas, and wali_asuh without further checks
 	// (wali_kelas/wali_asuh already validated by hooks.server.ts to access only their own kelas)
 	if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
@@ -60,7 +60,7 @@ export async function load({ depends, parent }) {
 		if (userType === 'user' && user?.id) {
 			const userPermissions = (user as { permissions?: string[] })?.permissions ?? [];
 			const hasRaporManage = userPermissions.includes('rapor_manage');
-			
+
 			if (!hasRaporManage) {
 				// Check if user has access to this kelas via join table
 				const hasKelasAccess = await db.query.tableAuthUserKelas.findFirst({
@@ -70,7 +70,7 @@ export async function load({ depends, parent }) {
 						eq(tableAuthUserKelas.kelasId, kelasAktif.id)
 					)
 				});
-				
+
 				if (!hasKelasAccess) {
 					throw redirect(303, `/forbidden?required=rapor_manage`);
 				}
