@@ -258,6 +258,9 @@
 		if (!kelasAktif) return null;
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
 	});
+
+	// Calculate offset for pagination numbering
+	const offset = $derived((currentPage - 1) * data.page.perPage);
 </script>
 
 {#if academicContext}
@@ -430,7 +433,7 @@
 										disabled={submitting}
 									/>
 								</td>
-								<td>{index + 1}</td>
+								<td>{offset + index + 1}</td>
 								<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
 								<td>{murid.agama}</td>
 								<td>{murid.tempatLahir}</td>
