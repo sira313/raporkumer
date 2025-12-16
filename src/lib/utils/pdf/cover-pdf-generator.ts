@@ -287,24 +287,24 @@ export async function generateCoverPDF(data: CoverPDFData): Promise<jsPDF> {
 	// Add top spacing
 	currentY += 30;
 
-	// Header section - "R A P O R" with letter spacing
+	// Header section - "R A P O R" with letter spacing (rata tengah, font lebih besar)
 	doc.setFont('helvetica', 'bold');
-	doc.setFontSize(14);
+	doc.setFontSize(18); // lebih besar dari 14
 	doc.text('R  A  P  O  R', pageWidth / 2, currentY, { align: 'center' });
+	currentY += 8;
+
+	// Sub-header (rata tengah, font lebih besar)
+	doc.setFont('helvetica', 'bold');
+	doc.setFontSize(14); // lebih besar dari 11
+	doc.text('HASIL BELAJAR MURID', pageWidth / 2, currentY, { align: 'center' });
 	currentY += 7;
 
-	// Sub-header
-	doc.setFont('helvetica', 'bold');
-	doc.setFontSize(11);
-	doc.text('HASIL BELAJAR MURID', pageWidth / 2, currentY, { align: 'center' });
-	currentY += 6;
-
-	// School jenjang
+	// School jenjang (rata tengah, font lebih besar)
 	const schoolJenjang = getSchoolJenjang(data);
 	if (schoolJenjang) {
-		doc.setFontSize(11);
+		doc.setFontSize(14); // lebih besar dari 11
 		doc.text(schoolJenjang, pageWidth / 2, currentY, { align: 'center' });
-		currentY += 6;
+		currentY += 7;
 	}
 
 	currentY += 15; // gap before table
@@ -325,23 +325,23 @@ export async function generateCoverPDF(data: CoverPDFData): Promise<jsPDF> {
 
 	const labelWidth = 60;
 	const colonWidth = 5;
-	const tableStartX = margin + 30; // indent from left
+	const tableStartX = margin; // rata kiri dari margin
 
 	for (const row of biodataRows) {
-		// Label (left aligned, font-normal)
+		// Label (left aligned, font lebih besar)
 		doc.setFont('helvetica', 'normal');
-		doc.setFontSize(10);
+		doc.setFontSize(12); // lebih besar dari 10
 		doc.text(row.label, tableStartX, currentY, { align: 'left' });
 
 		// Colon
 		doc.text(':', tableStartX + labelWidth, currentY, { align: 'left' });
 
-		// Value (normal font for values)
-		doc.setFont('helvetica', 'normal');
-		doc.setFontSize(10);
+		// Value (bold font for values, lebih besar)
+		doc.setFont('helvetica', 'bold');
+		doc.setFontSize(12); // lebih besar dari 10
 		doc.text(row.value, tableStartX + labelWidth + colonWidth, currentY, { align: 'left' });
 
-		currentY += 7; // consistent line spacing
+		currentY += 8; // spacing sedikit lebih besar
 	}
 
 	// Draw background logo on page 2
