@@ -71,7 +71,7 @@
 						</td>
 					</tr>
 				{:else}
-					<tr use:applyRow={rowOrder} data-row-order={rowOrder}>
+					<tr use:applyRow={rowOrder} data-row-order={rowOrder} class="debug-blue-border">
 						<td class="border border-black px-2 py-1 text-center align-top print:border-black"
 							>{row.no}</td
 						>
@@ -96,3 +96,16 @@
 		</tbody>
 	</table>
 </section>
+
+<style>
+	/* Debug borders - tidak muncul saat print */
+	:global(.debug-blue-border) {
+		border-bottom: 2px solid blue;
+	}
+
+	@media print {
+		:global(.debug-blue-border) {
+			border-bottom: none !important;
+		}
+	}
+</style>

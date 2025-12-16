@@ -77,9 +77,35 @@
 		{/if}
 		<div class={bodyClasses} bind:this={contentRef} use:applySplit data-content-ref>
 			{@render children?.()}
+			<!-- Garis merah debug di padding bottom -->
+			<div
+				class="debug-red-border"
+				style="position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background-color: red; z-index: 999;"
+			></div>
 		</div>
 
 		<!-- Per-page footer placed outside of the measured contentRef so it doesn't affect pagination -->
 		<FooterPage {murid} {rombel} {pageNumber} />
+
+		<!-- Garis kuning di akhir bawah kertas -->
+		<div
+			class="debug-yellow-border"
+			style="position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background-color: yellow; z-index: 999;"
+		></div>
 	</div>
 </div>
+
+<style>
+	/* Debug borders - tidak muncul saat print */
+	:global(.debug-red-border),
+	:global(.debug-yellow-border) {
+		display: block;
+	}
+
+	@media print {
+		:global(.debug-red-border),
+		:global(.debug-yellow-border) {
+			display: none !important;
+		}
+	}
+</style>
