@@ -201,11 +201,31 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		}
 	};
 
+	// Helper: draw footer on current page
+	const drawFooter = () => {
+		const currentPage = (
+			doc as unknown as { internal: { getCurrentPageInfo: () => { pageNumber: number } } }
+		).internal.getCurrentPageInfo().pageNumber;
+
+		const footerY = pageHeight - 10; // bottom: 10mm
+		doc.setFontSize(10);
+
+		// Footer metadata di kiri (rombel | nama | nis)
+		const footerMeta = `${formatValue(data.rombel.nama)} | ${formatValue(data.murid.nama)} | ${formatValue(data.murid.nis)}`;
+		doc.text(footerMeta, margin, footerY, { align: 'left' });
+
+		// Page number di kanan
+		doc.text(`Halaman: ${currentPage}`, pageWidth - margin, footerY, {
+			align: 'right'
+		});
+	};
+
 	// Helper: check if we need new page
 	const checkNewPage = (requiredHeight: number) => {
 		if (currentY + requiredHeight > pageHeight - margin) {
 			doc.addPage();
 			currentY = margin;
+			drawFooter(); // Draw footer on new page
 			return true;
 		}
 		return false;
@@ -271,7 +291,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		body: identityData,
 		theme: 'plain',
 		styles: {
-			fontSize: 10, // diperkecil dari 12px
+			fontSize: 10,
 			cellPadding: 0, // no padding di preview
 			lineColor: [0, 0, 0],
 			lineWidth: 0,
@@ -287,7 +307,8 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 			4: { cellWidth: 3 }, // colon kanan
 			5: { cellWidth: 'auto', fontStyle: 'bold' } // value kanan, auto untuk sisa ruang
 		},
-		margin: { left: margin, right: margin }
+		margin: { left: margin, right: margin },
+		didDrawPage: drawFooter
 	});
 
 	currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8.5; // mt-8 = 32px = 11.3mm (tapi disesuaikan ke 8.5mm)
@@ -298,7 +319,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 
 	data.keasramaanRows.forEach((row) => {
 		if (row.kategoriHeader) {
-			// Kategori header row: colspan="4", font-semibold, px-2 py-1, text-left
+			// Kategori header row: colspan="4", font-semibold, px-3 py-2, text-left (sama dengan header kehadiran)
 			tableBody.push([
 				{
 					content: row.kategoriHeader,
@@ -306,8 +327,8 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 					styles: {
 						fontStyle: 'bold' as const, // font-semibold (use bold)
 						fillColor: [255, 255, 255], // bg putih
-						fontSize: 9, // ukuran lebih kecil
-						cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 }, // px-2 py-1
+						fontSize: 10,
+						cellPadding: { top: 2.8, right: 4.2, bottom: 2.8, left: 4.2 }, // px-3 py-2 (sama dengan header kehadiran)
 						halign: 'left' // rata kiri
 					}
 				}
@@ -335,12 +356,13 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		theme: 'grid',
 		rowPageBreak: 'avoid', // hindari baris kosong sebelum page break
 		styles: {
-			fontSize: 9, // ukuran lebih kecil
+			fontSize: 10,
 			cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 }, // px-2 py-1
 			valign: 'top', // align-top
 			lineColor: [0, 0, 0], // border-black
 			lineWidth: 0.3, // border yang visible
-			textColor: [0, 0, 0]
+			textColor: [0, 0, 0],
+			minCellHeight: 5
 		},
 		headStyles: {
 			fillColor: [255, 255, 255], // bg putih
@@ -348,35 +370,24 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 			fontStyle: 'bold', // <th> implicitly bold
 			halign: 'center', // text-center
 			valign: 'middle',
-			fontSize: 9, // ukuran lebih kecil
-			cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 } // px-2 py-1
+			fontSize: 10,
+			cellPadding: { top: 2.8, right: 4.2, bottom: 2.8, left: 4.2 } // px-3 py-2 (sama dengan header kehadiran)
 		},
 		columnStyles: {
-			0: { cellWidth: 12, halign: 'center' }, // No, text-center
-			1: { cellWidth: 60 }, // Indikator
-			2: { cellWidth: 20, halign: 'center' }, // Predikat, text-center
-			3: { cellWidth: contentWidth - 92 } // Deskripsi, align-top
+			0: {
+				cellWidth: 15,
+				halign: 'center',
+				overflow: 'hidden',
+				minCellWidth: 15,
+				cellPadding: { top: 2.8, right: 1.4, bottom: 2.8, left: 1.4 }
+			}, // No, text-center, no wrap, padding x lebih kecil
+			1: { cellWidth: 57 }, // Indikator
+			2: { cellWidth: 25, halign: 'center', overflow: 'hidden', minCellWidth: 25 }, // Predikat, text-center, no wrap
+			3: { cellWidth: contentWidth - 97 } // Deskripsi, align-top
 		},
-		margin: { left: margin, right: margin },
+		margin: { left: margin, right: margin, bottom: 20 }, // tambah bottom margin untuk mencegah orphan header
 		showHead: 'everyPage',
-		didDrawPage: () => {
-			// Add footer dengan style FooterPage: text-[12px], metadata di kiri, page number di kanan
-			const currentPage = (
-				doc as unknown as { internal: { getCurrentPageInfo: () => { pageNumber: number } } }
-			).internal.getCurrentPageInfo().pageNumber;
-
-			const footerY = pageHeight - 10; // bottom: 10mm
-			doc.setFontSize(9); // sama dengan orphan header
-
-			// Footer metadata di kiri (rombel | nama | nis)
-			const footerMeta = `${formatValue(data.rombel.nama)} | ${formatValue(data.murid.nama)} | ${formatValue(data.murid.nis)}`;
-			doc.text(footerMeta, margin, footerY, { align: 'left' });
-
-			// Page number di kanan
-			doc.text(`Halaman: ${currentPage}`, pageWidth - margin, footerY, {
-				align: 'right'
-			});
-		}
+		didDrawPage: drawFooter
 	});
 
 	currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8.5; // mt-6 = 24px = 8.5mm
@@ -407,11 +418,12 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 			],
 			theme: 'grid',
 			styles: {
-				fontSize: 9, // ukuran lebih kecil
+				fontSize: 10,
 				cellPadding: { top: 2.8, right: 4.2, bottom: 2.8, left: 4.2 }, // px-3 py-2
 				lineColor: [0, 0, 0], // border
 				lineWidth: 0.3,
-				textColor: [0, 0, 0]
+				textColor: [0, 0, 0],
+				minCellHeight: 5
 			},
 			headStyles: {
 				fillColor: [255, 255, 255], // bg putih
@@ -419,7 +431,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 				fontStyle: 'bold', // font-bold untuk header row 1, font-semibold untuk row 2
 				halign: 'center', // text-center
 				valign: 'middle',
-				fontSize: 9, // ukuran lebih kecil
+				fontSize: 10,
 				cellPadding: { top: 2.8, right: 4.2, bottom: 2.8, left: 4.2 } // px-3 py-2
 			},
 			columnStyles: {
@@ -427,7 +439,8 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 				1: { cellWidth: contentWidth - 17 - 22.6, halign: 'left' }, // sisa, text-left
 				2: { cellWidth: 22.6, halign: 'center' } // w-16 = 64px = 22.6mm, text-center
 			},
-			margin: { left: margin, right: margin }
+			margin: { left: margin, right: margin },
+			didDrawPage: drawFooter
 		});
 
 		currentY =
@@ -523,10 +536,10 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 	// Orang Tua/Wali (left) - text-xs, text-center
 	doc.setFontSize(10); // match dengan header tabel
 	doc.text('Orang Tua/Wali Murid', margin + sigColWidth / 2, sig2StartY, { align: 'center' });
-	// Gunakan lebar dan posisi Y yang sama dengan underline nama kepala sekolah
+	// Gunakan lebar yang sedikit lebih panjang dari nama kepala sekolah
 	const kepalaSekolahNamaTemp = formatValue(data.kepalaSekolah?.nama);
 	doc.setFont('helvetica', 'bold');
-	const dashedLineWidth = doc.getTextWidth(kepalaSekolahNamaTemp); // sama dengan lebar nama kepala sekolah
+	const dashedLineWidth = doc.getTextWidth(kepalaSekolahNamaTemp) + 10; // tambah 10mm agar lebih panjang
 	doc.setFont('helvetica', 'normal');
 
 	const lineY = sig2StartY + 23.2; // posisi Y sama dengan underline Kepala Sekolah
