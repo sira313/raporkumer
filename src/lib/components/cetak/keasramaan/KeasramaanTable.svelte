@@ -71,7 +71,12 @@
 						</td>
 					</tr>
 				{:else}
-					<tr use:applyRow={rowOrder} data-row-order={rowOrder} class="debug-blue-border">
+					<tr
+						use:applyRow={rowOrder}
+						data-row-order={rowOrder}
+						class="debug-blue-border"
+						id="splitTrigger-{rowOrder}"
+					>
 						<td class="border border-black px-2 py-1 text-center align-top print:border-black"
 							>{row.no}</td
 						>

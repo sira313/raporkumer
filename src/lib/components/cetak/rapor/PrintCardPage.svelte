@@ -79,6 +79,7 @@
 			{@render children?.()}
 			<!-- Garis merah debug di padding bottom -->
 			<div
+				id="sensorTrigger"
 				class="debug-red-border"
 				style="position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background-color: red; z-index: 999;"
 			></div>
@@ -89,6 +90,7 @@
 
 		<!-- Garis kuning di akhir bawah kertas -->
 		<div
+			id="paperEnd"
 			class="debug-yellow-border"
 			style="position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background-color: yellow; z-index: 999;"
 		></div>

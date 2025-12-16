@@ -344,21 +344,21 @@
 										</tr>
 									</thead>
 									<tbody>
-										<tr>
+										<tr class="debug-blue-border" id="splitTrigger-kehadiran-1">
 											<td class="border px-3 py-2 text-center">1</td>
 											<td class="border px-3 py-2">Sakit</td>
 											<td class="border px-3 py-2 text-center">
 												{kehadiran.sakit}
 											</td>
 										</tr>
-										<tr>
+										<tr class="debug-blue-border" id="splitTrigger-kehadiran-2">
 											<td class="border px-3 py-2 text-center">2</td>
 											<td class="border px-3 py-2">Izin</td>
 											<td class="border px-3 py-2 text-center">
 												{kehadiran.izin}
 											</td>
 										</tr>
-										<tr>
+										<tr class="debug-blue-border" id="splitTrigger-kehadiran-3">
 											<td class="border px-3 py-2 text-center">3</td>
 											<td class="border px-3 py-2">Tanpa Keterangan</td>
 											<td class="border px-3 py-2 text-center">
@@ -372,7 +372,7 @@
 
 						{#if page.hasSignature}
 							<!-- Signatures Section -->
-							<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid">
+							<section class="mt-8 flex break-inside-avoid flex-col gap-6 print:break-inside-avoid debug-blue-border" id="splitTrigger-signature">
 								<div class="grid gap-4 md:grid-cols-2 print:grid-cols-2">
 									<div class="flex flex-col items-center text-center text-xs print:text-xs">
 										<p>Wali Asrama</p>
@@ -430,5 +430,16 @@
 	:global(.print\:break-inside-avoid) {
 		page-break-inside: avoid;
 		break-inside: avoid;
+	}
+
+	/* Debug borders - tidak muncul saat print */
+	:global(.debug-blue-border) {
+		border-bottom: 2px solid blue;
+	}
+
+	@media print {
+		:global(.debug-blue-border) {
+			border-bottom: none !important;
+		}
 	}
 </style>
