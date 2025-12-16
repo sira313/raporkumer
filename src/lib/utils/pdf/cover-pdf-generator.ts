@@ -264,14 +264,14 @@ export async function generateCoverPDF(data: CoverPDFData): Promise<jsPDF> {
 
 	currentY += 8; // small gap before ministry
 
-	// Ministry lines (text-lg font-bold, gap kecil)
+	// Ministry lines (text-2xl font-bold, sama dengan HASIL BELAJAR MURID)
 	const ministryLines = getMinistryLines(data.sekolah.naungan);
 	doc.setFont('helvetica', 'bold');
-	doc.setFontSize(12); // text-lg
+	doc.setFontSize(16); // text-2xl, sama dengan HASIL BELAJAR MURID
 
 	for (const line of ministryLines) {
 		doc.text(line, pageWidth / 2, currentY, { align: 'center' });
-		currentY += 5.5; // gap kecil between lines
+		currentY += 8; // gap lebih kecil
 	}
 
 	// Draw background logo on page 1
