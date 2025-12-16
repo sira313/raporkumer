@@ -30,6 +30,7 @@
 		type RaporCriteria,
 		DEFAULT_RAPOR_CRITERIA
 	} from '$lib/rapor-params';
+	import { downloadKeasramaanPDF } from '$lib/utils/pdf/keasramaan-pdf-generator';
 
 	let { data } = $props();
 
@@ -561,6 +562,86 @@
 		}
 	}
 
+	async function handleDownloadPDF() {
+		if (!previewData || !previewMurid || isBulkMode) {
+			toast('Preview dokumen terlebih dahulu', 'warning');
+			return;
+		}
+
+		const keasramaanData = (previewData as { keasramaanData?: typeof previewData }).keasramaanData;
+		if (!keasramaanData || typeof keasramaanData !== 'object') {
+			toast('Data keasramaan tidak tersedia', 'error');
+			return;
+		}
+
+		// Type assertion untuk keasramaanData
+		const data = keasramaanData as any;
+
+		try {
+			toast('Membuat PDF...', 'info');
+
+			await downloadKeasramaanPDF({
+				sekolah: {
+					nama: data.sekolah.nama,
+					npsn: data.sekolah.npsn || '',
+					alamat: data.sekolah.alamat || '',
+					logoUrl: data.sekolah.logoUrl
+				},
+				murid: {
+					nama: data.murid.nama,
+					nis: data.murid.nis || '',
+					nisn: data.murid.nisn || ''
+				},
+				rombel: {
+					nama: data.rombel.nama,
+					fase: data.rombel.fase
+				},
+				periode: {
+					tahunAjaran: data.periode.tahunAjaran,
+					semester: data.periode.semester
+				},
+				waliAsrama: data.waliAsrama
+					? {
+							nama: data.waliAsrama.nama,
+							nip: data.waliAsrama.nip || ''
+						}
+					: undefined,
+				waliAsuh: data.waliAsuh
+					? {
+							nama: data.waliAsuh.nama,
+							nip: data.waliAsuh.nip || ''
+						}
+					: undefined,
+				kepalaSekolah: data.kepalaSekolah
+					? {
+							nama: data.kepalaSekolah.nama,
+							nip: data.kepalaSekolah.nip || '',
+							statusKepalaSekolah: data.kepalaSekolah.statusKepalaSekolah
+						}
+					: undefined,
+				ttd: data.ttd
+					? {
+							tempat: data.ttd.tempat,
+							tanggal: data.ttd.tanggal
+						}
+					: undefined,
+				kehadiran: data.kehadiran
+					? {
+							sakit: data.kehadiran.sakit,
+							izin: data.kehadiran.izin,
+							alfa: data.kehadiran.alfa
+						}
+					: undefined,
+				keasramaanRows: data.keasramaanRows || []
+			});
+
+			toast('PDF berhasil dibuat!', 'success');
+		} catch (error) {
+			console.error('PDF generation error:', error);
+			toast('Gagal membuat PDF', 'error');
+		}
+	}
+
 	async function handleBgRefresh() {
 		bgRefreshKey = Date.now();
 		if (previewDocument === 'piagam') await handlePreview();
@@ -680,6 +761,34 @@
 		}}
 		onBgRefresh={handleBgRefresh}
 	/>
+
+	<!-- Download PDF Button (hanya untuk keasramaan, single preview) -->
+	{#if previewDocument === 'keasramaan' && !isBulkMode && previewData}
+		<div class="mt-4 flex justify-center">
+			<button
+				type="button"
+				class="btn btn-primary gap-2"
+				onclick={handleDownloadPDF}
+				disabled={!previewData || !previewMurid}
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+					/>
+				</svg>
+				Download PDF
+			</button>
+		</div>
+	{/if}
 </div>
 
 <PreviewContent
