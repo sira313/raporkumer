@@ -33,6 +33,7 @@
 	import { downloadKeasramaanPDF } from '$lib/utils/pdf/keasramaan-pdf-generator';
 	import { downloadRaporPDF } from '$lib/utils/pdf/rapor-pdf-generator';
 	import { downloadCoverPDF } from '$lib/utils/pdf/cover-pdf-generator';
+	import { downloadBiodataPDF } from '$lib/utils/pdf/biodata-pdf-generator';
 
 	let { data } = $props();
 
@@ -784,8 +785,73 @@
 				console.error('PDF generation error:', error);
 				toast('Gagal membuat PDF', 'error');
 			}
+		} else if (doc === 'biodata') {
+			const biodataData = (previewData as { biodataData?: typeof previewData }).biodataData;
+			if (!biodataData || typeof biodataData !== 'object') {
+				toast('Data biodata tidak tersedia', 'error');
+				return;
+			}
+
+			// Type assertion untuk biodataData
+			const data = biodataData as any;
+
+			try {
+				toast('Membuat PDF...', 'info');
+
+				await downloadBiodataPDF({
+					sekolah: {
+						nama: data.sekolah.nama,
+						logoUrl: data.sekolah.logoUrl,
+						statusKepalaSekolah: data.sekolah.statusKepalaSekolah
+					},
+					murid: {
+						id: data.murid.id,
+						foto: data.murid.foto,
+						nama: data.murid.nama,
+						nis: data.murid.nis,
+						nisn: data.murid.nisn,
+						tempatLahir: data.murid.tempatLahir,
+						tanggalLahir: data.murid.tanggalLahir,
+						jenisKelamin: data.murid.jenisKelamin,
+						agama: data.murid.agama,
+						pendidikanSebelumnya: data.murid.pendidikanSebelumnya,
+						alamat: data.murid.alamat
+					},
+					orangTua: {
+						ayah: {
+							nama: data.orangTua.ayah.nama,
+							pekerjaan: data.orangTua.ayah.pekerjaan
+						},
+						ibu: {
+							nama: data.orangTua.ibu.nama,
+							pekerjaan: data.orangTua.ibu.pekerjaan
+						},
+						alamat: data.orangTua.alamat
+					},
+					wali: {
+						nama: data.wali.nama,
+						pekerjaan: data.wali.pekerjaan,
+						alamat: data.wali.alamat
+					},
+					ttd: {
+						tempat: data.ttd.tempat,
+						tanggal: data.ttd.tanggal,
+						kepalaSekolah: data.ttd.kepalaSekolah,
+						nip: data.ttd.nip
+					},
+					showBgLogo: showBgLogo
+				});
+
+				toast('PDF berhasil dibuat!', 'success');
+			} catch (error) {
+				console.error('PDF generation error:', error);
+				toast('Gagal membuat PDF', 'error');
+			}
 		} else {
-			toast('Export PDF hanya tersedia untuk Cover, Rapor, dan Rapor Keasramaan', 'warning');
+			toast(
+				'Export PDF hanya tersedia untuk Cover, Biodata, Rapor, dan Rapor Keasramaan',
+				'warning'
+			);
 		}
 	}
 
@@ -909,8 +975,8 @@
 		onBgRefresh={handleBgRefresh}
 	/>
 
-	<!-- Download PDF Button (untuk cover, rapor dan keasramaan, single preview) -->
-	{#if (previewDocument === 'cover' || previewDocument === 'rapor' || previewDocument === 'keasramaan') && !isBulkMode && previewData}
+	<!-- Download PDF Button (untuk cover, biodata, rapor dan keasramaan, single preview) -->
+	{#if (previewDocument === 'cover' || previewDocument === 'biodata' || previewDocument === 'rapor' || previewDocument === 'keasramaan') && !isBulkMode && previewData}
 		<div class="mt-4 flex justify-center">
 			<button
 				type="button"
