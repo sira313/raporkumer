@@ -60,6 +60,7 @@ type KeasramaanPDFData = {
 		alfa: number;
 	};
 	keasramaanRows: KeasramaanRow[];
+	showBgLogo?: boolean;
 };
 
 /**
@@ -100,6 +101,101 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 
 	let currentY = margin;
 
+	// Load logo image if showBgLogo is enabled
+	let logoImage: HTMLImageElement | null = null;
+	if (data.showBgLogo && data.sekolah.logoUrl) {
+		console.log('[PDF] BG Logo enabled, loading logo from:', data.sekolah.logoUrl);
+		try {
+			const logoUrl = data.sekolah.logoUrl.startsWith('http')
+				? data.sekolah.logoUrl
+				: `${window.location.origin}${data.sekolah.logoUrl}`;
+
+			console.log('[PDF] Full logo URL:', logoUrl);
+
+			const img = new Image();
+			img.crossOrigin = 'anonymous';
+			
+			// Try to load logo, but don't fail PDF generation if it fails
+			try {
+				await new Promise<void>((resolve, reject) => {
+					const timeout = setTimeout(() => reject(new Error('Logo load timeout')), 5000);
+					img.onload = () => {
+						clearTimeout(timeout);
+						console.log('[PDF] Logo loaded successfully');
+						resolve();
+					};
+					img.onerror = (e) => {
+						clearTimeout(timeout);
+						console.error('[PDF] Logo load error:', e);
+						reject(new Error('Failed to load logo'));
+					};
+					img.src = logoUrl;
+				});
+				logoImage = img;
+				console.log('[PDF] Logo ready for watermark');
+			} catch (loadError) {
+				console.warn('[PDF] Logo load failed, continuing without watermark:', loadError);
+			}
+		} catch (error) {
+			console.warn('[PDF] Error preparing logo for watermark:', error);
+		}
+	} else {
+		console.log('[PDF] BG Logo disabled or no logo URL');
+	}
+
+	// Helper: draw background logo watermark on current page with opacity
+	const drawBgLogo = () => {
+		if (!logoImage) {
+			console.log('[PDF] No logo image available for watermark');
+			return;
+		}
+
+		try {
+			// Calculate center position and size (45% of page width)
+			const logoSize = pageWidth * 0.45;
+			const logoX = (pageWidth - logoSize) / 2;
+			const logoY = (pageHeight - logoSize) / 2;
+
+			console.log('[PDF] Drawing watermark at:', { logoX, logoY, logoSize });
+
+			// Create canvas to apply opacity
+			const canvas = document.createElement('canvas');
+			const ctx = canvas.getContext('2d');
+			if (!ctx) {
+				console.error('[PDF] Failed to get canvas context');
+				return;
+			}
+
+			// Use actual image dimensions for better quality
+			const imgWidth = logoImage.naturalWidth || logoImage.width;
+			const imgHeight = logoImage.naturalHeight || logoImage.height;
+			canvas.width = imgWidth;
+			canvas.height = imgHeight;
+
+			console.log('[PDF] Canvas size:', { width: canvas.width, height: canvas.height });
+
+			// Clear canvas (transparent background)
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+			// Draw image with opacity (increased for visibility testing)
+			ctx.globalAlpha = 0.15; // 15% opacity (increased from 10% for better visibility)
+			ctx.drawImage(logoImage, 0, 0, canvas.width, canvas.height);
+
+			// Convert canvas to data URL and add to PDF
+			const dataUrl = canvas.toDataURL('image/png', 0.8); // quality 0.8
+			console.log('[PDF] Data URL length:', dataUrl.length);
+			console.log('[PDF] Adding image to PDF with addImage()');
+
+			// Add image to PDF at calculated position
+			doc.addImage(dataUrl, 'PNG', logoX, logoY, logoSize, logoSize, undefined, 'NONE');
+			console.log('[PDF] Image added to PDF at position:', { x: logoX, y: logoY, w: logoSize, h: logoSize });
+
+			console.log('[PDF] Watermark drawn successfully');
+		} catch (error) {
+			console.error('[PDF] Error drawing watermark:', error);
+		}
+	};
+
 	// Helper: check if we need new page
 	const checkNewPage = (requiredHeight: number) => {
 		if (currentY + requiredHeight > pageHeight - margin) {
@@ -109,6 +205,8 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		}
 		return false;
 	};
+
+	// Don't draw logo here - will draw after all content is added
 
 	// ===== PAGE 1: HEADER + IDENTITY + TABLE START =====
 
@@ -469,6 +567,20 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		sig2StartY + 22.6 + 1.4 + 3,
 		{ align: 'center' }
 	);
+
+	// Draw watermark on all pages AFTER all content is added
+	if (logoImage) {
+		console.log('[PDF] Adding watermark to all pages...');
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const totalPages = (doc as any).internal.pages.length - 1; // -1 because first element is not a page
+		console.log('[PDF] Total pages:', totalPages);
+		
+		for (let i = 1; i <= totalPages; i++) {
+			doc.setPage(i);
+			console.log(`[PDF] Drawing watermark on page ${i}`);
+			drawBgLogo();
+		}
+	}
 
 	return doc;
 }

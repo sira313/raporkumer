@@ -62,9 +62,8 @@
 
 	const logoUrl = $derived.by(() => sekolah?.logoUrl ?? '/tutwuri.png');
 	const backgroundStyle = $derived.by(() => {
-		if (!showBgLogo) return '';
-		const escapedUrl = logoUrl.replace(/'/g, "\\'");
-		return `background-image: url('${escapedUrl}'); background-position: center center; background-repeat: no-repeat; background-size: 45%; background-attachment: local; position: relative;`;
+		// Background logo tidak digunakan di preview, hanya di PDF
+		return '';
 	});
 
 	const keasramaanRows = $derived.by<KeasramaanRowWithOrder[]>(() => {
