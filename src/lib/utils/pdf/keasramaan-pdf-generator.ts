@@ -77,11 +77,16 @@ function predikatToHuruf(predikat: KeasramaanRow['predikat']): string {
 }
 
 /**
- * Format value dengan fallback
+ * Format value dengan fallback dan sanitasi invisible characters
  */
 function formatValue(value: string | null | undefined): string {
 	if (value === null || value === undefined || value === '') return '—';
-	return value;
+	// Remove invisible characters: Zero-Width Space, Word Joiner, Zero-Width Non-Joiner, etc.
+	// These characters can cause jsPDF to render text with weird spacing
+	return value
+		.replace(/[\u200B-\u200D\u2060\uFEFF]/g, '') // Remove zero-width characters
+		.replace(/[\u00A0]/g, ' ') // Replace non-breaking space with regular space
+		.trim();
 }
 
 /**
@@ -461,7 +466,8 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 	const sigGapVertical = 8.5; // gap-6 = 24px = 8.5mm
 	const sigStartY = currentY;
 
-	doc.setFontSize(10); // match dengan header tabel KETIDAKHADIRAN
+	// CRITICAL: Reset all text state after autoTable to prevent character spacing issues
+	doc.setFontSize(10);
 	doc.setFont('helvetica', 'normal');
 
 	// Tempat, Tanggal (absolute -top-6 = 24px = 8.5mm di atas Wali Asuh)
@@ -478,22 +484,16 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 	// Wali Asrama (left) - text-xs, text-center
 	doc.text('Wali Asrama', margin + sigColWidth / 2, sigStartY, { align: 'center' });
 	// mt-16 = 64px = 22.6mm, font-semibold, tracking-wide, underline
-	doc.setFont('helvetica', 'bold'); // font-semibold (use bold)
+	// Gunakan normal font karena bold Helvetica di jsPDF memiliki bug rendering untuk nama panjang
+	doc.setFont('helvetica', 'normal');
+	doc.setFontSize(11); // sedikit lebih besar dari default untuk emphasis
 	const waliAsramaNama = formatValue(data.waliAsrama?.nama);
-	doc.text(
-		waliAsramaNama,
-		margin + sigColWidth / 2,
-		sigStartY + 22.6, // mt-16 = 64px = 22.6mm
-		{ align: 'center' }
-	);
+	// Calculate centered position manually
+	const waliAsramaTextWidth = doc.getTextWidth(waliAsramaNama);
+	const waliAsramaX = margin + sigColWidth / 2 - waliAsramaTextWidth / 2;
+	doc.text(waliAsramaNama, waliAsramaX, sigStartY + 22.6);
 	// Underline manual
-	const waliAsramaWidth = doc.getTextWidth(waliAsramaNama);
-	doc.line(
-		margin + sigColWidth / 2 - waliAsramaWidth / 2,
-		sigStartY + 23.2,
-		margin + sigColWidth / 2 + waliAsramaWidth / 2,
-		sigStartY + 23.2
-	);
+	doc.line(waliAsramaX, sigStartY + 23.2, waliAsramaX + waliAsramaTextWidth, sigStartY + 23.2);
 
 	// mt-1 = 4px = 1.4mm, text-xs
 	doc.setFont('helvetica', 'normal');
@@ -508,19 +508,16 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 	// Wali Asuh (right) - text-xs, text-center
 	doc.setFontSize(10); // match dengan header tabel
 	doc.text('Wali Asuh', margin + sigColWidth + sigColWidth / 2, sigStartY, { align: 'center' });
-	doc.setFont('helvetica', 'bold');
+	// Gunakan normal font karena bold Helvetica di jsPDF memiliki bug rendering untuk nama panjang
+	doc.setFont('helvetica', 'normal');
+	doc.setFontSize(11); // sedikit lebih besar dari default untuk emphasis
 	const waliAsuhNama = formatValue(data.waliAsuh?.nama);
-	doc.text(waliAsuhNama, margin + sigColWidth + sigColWidth / 2, sigStartY + 22.6, {
-		align: 'center'
-	});
+	// Calculate centered position manually
+	const waliAsuhTextWidth = doc.getTextWidth(waliAsuhNama);
+	const waliAsuhX = margin + sigColWidth + sigColWidth / 2 - waliAsuhTextWidth / 2;
+	doc.text(waliAsuhNama, waliAsuhX, sigStartY + 22.6);
 	// Underline
-	const waliAsuhWidth = doc.getTextWidth(waliAsuhNama);
-	doc.line(
-		margin + sigColWidth + sigColWidth / 2 - waliAsuhWidth / 2,
-		sigStartY + 23.2,
-		margin + sigColWidth + sigColWidth / 2 + waliAsuhWidth / 2,
-		sigStartY + 23.2
-	);
+	doc.line(waliAsuhX, sigStartY + 23.2, waliAsuhX + waliAsuhTextWidth, sigStartY + 23.2);
 	doc.setFont('helvetica', 'normal');
 	doc.setFontSize(10); // match dengan header tabel
 	doc.text(
@@ -564,17 +561,19 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		align: 'center'
 	});
 	// mt-16 = 64px = 22.6mm, font-semibold, tracking-wide, underline
-	doc.setFont('helvetica', 'bold');
+	// Gunakan normal font karena bold Helvetica di jsPDF memiliki bug rendering untuk nama panjang
+	doc.setFont('helvetica', 'normal');
+	doc.setFontSize(11); // sedikit lebih besar dari default untuk emphasis
 	const kepalaSekolahNama = formatValue(data.kepalaSekolah?.nama);
-	doc.text(kepalaSekolahNama, margin + sigColWidth + sigColWidth / 2, sig2StartY + 22.6, {
-		align: 'center'
-	});
+	// Calculate centered position manually
+	const kepalaSekolahTextWidth = doc.getTextWidth(kepalaSekolahNama);
+	const kepalaSekolahX = margin + sigColWidth + sigColWidth / 2 - kepalaSekolahTextWidth / 2;
+	doc.text(kepalaSekolahNama, kepalaSekolahX, sig2StartY + 22.6);
 	// Underline
-	const kepalaSekolahWidth = doc.getTextWidth(kepalaSekolahNama);
 	doc.line(
-		margin + sigColWidth + sigColWidth / 2 - kepalaSekolahWidth / 2,
+		kepalaSekolahX,
 		sig2StartY + 23.2,
-		margin + sigColWidth + sigColWidth / 2 + kepalaSekolahWidth / 2,
+		kepalaSekolahX + kepalaSekolahTextWidth,
 		sig2StartY + 23.2
 	);
 	// mt-1 = 4px = 1.4mm, text-xs
