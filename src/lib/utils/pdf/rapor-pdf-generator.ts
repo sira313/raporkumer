@@ -211,6 +211,25 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 		}
 	};
 
+	// Helper: draw footer on current page
+	const drawFooter = () => {
+		const currentPage = (
+			doc as unknown as { internal: { getCurrentPageInfo: () => { pageNumber: number } } }
+		).internal.getCurrentPageInfo().pageNumber;
+
+		const footerY = pageHeight - 10; // bottom: 10mm
+		doc.setFontSize(9);
+
+		// Footer metadata di kiri (rombel | nama | nis)
+		const footerMeta = `${formatValue(data.rombel.nama)} | ${formatValue(data.murid.nama)} | ${formatValue(data.murid.nis)}`;
+		doc.text(footerMeta, margin, footerY, { align: 'left' });
+
+		// Page number di kanan
+		doc.text(`Halaman: ${currentPage}`, pageWidth - margin, footerY, {
+			align: 'right'
+		});
+	};
+
 	// Helper: check if we need new page
 	const checkNewPage = (requiredHeight: number) => {
 		if (currentY + requiredHeight > pageHeight - margin) {
@@ -294,7 +313,8 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			4: { cellWidth: 3 }, // colon kanan
 			5: { cellWidth: 'auto', fontStyle: 'bold' } // value kanan, auto untuk sisa ruang
 		},
-		margin: { left: margin, right: margin }
+		margin: { left: margin, right: margin },
+		didDrawPage: drawFooter
 	});
 
 	currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4.2; // spacing
@@ -463,10 +483,11 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				fontStyle: 'bold',
 				halign: 'center',
 				valign: 'middle',
-					fontSize: 10,
+				fontSize: 10,
 				cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 			},
-			margin: { left: margin, right: margin }
+			margin: { left: margin, right: margin },
+			didDrawPage: drawFooter
 		});
 
 		currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 2.8; // spacing
@@ -476,7 +497,6 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 	if (data.ekstrakurikuler && data.ekstrakurikuler.length > 0) {
 		checkNewPage(50);
 
-		// Add spacing
 		currentY += 2.8; // spacing konsisten
 
 		const ekstraBody: RowInput[] = data.ekstrakurikuler.map((row, idx) => [
@@ -512,7 +532,8 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				1: { cellWidth: 50 }, // Ekstrakurikuler
 				2: { cellWidth: contentWidth - 62 } // Keterangan
 			},
-			margin: { left: margin, right: margin }
+			margin: { left: margin, right: margin },
+			didDrawPage: drawFooter
 		});
 
 		currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 2.8; // spacing
@@ -602,6 +623,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				3: { cellWidth: (contentWidth - 5.6) * 0.5 } // Catatan wali (50%)
 			},
 			margin: { left: margin, right: margin },
+			didDrawPage: drawFooter,
 			didDrawCell: (data) => {
 				// Remove top and bottom borders for gap column (column 2)
 				if (data.column.index === 2) {
@@ -669,7 +691,8 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			fontSize: 10,
 			cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 		},
-		margin: { left: margin, right: margin }
+		margin: { left: margin, right: margin },
+		didDrawPage: drawFooter
 	});
 
 	currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8.5; // jarak lebih besar dengan signature
@@ -725,6 +748,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				cellPadding: { top: 4.2, right: 4.2, bottom: 4.2, left: 4.2 }
 			},
 			margin: { left: margin, right: margin },
+			didDrawPage: drawFooter,
 			didDrawCell: (data) => {
 				if (data.section === 'body' && data.row.index === 0) {
 					const cellX = data.cell.x;
@@ -784,8 +808,8 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 
 	// Col 1: Orang Tua/Wali
 	doc.text('Orang Tua/Wali Murid', margin + sigColWidth / 2, sigStartY, { align: 'center' });
-	// Draw dashed line
-	const dashedLineWidth = doc.getTextWidth(formatValue(data.kepalaSekolah?.nama));
+	// Draw dashed line (1.5x lebih panjang dari nama kepala sekolah)
+	const dashedLineWidth = doc.getTextWidth(formatValue(data.kepalaSekolah?.nama)) * 1.5;
 	const lineY = sigStartY + 23.2;
 	const lineStartX = margin + sigColWidth / 2 - dashedLineWidth / 2;
 	const lineEndX = margin + sigColWidth / 2 + dashedLineWidth / 2;
