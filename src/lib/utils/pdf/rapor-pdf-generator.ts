@@ -219,7 +219,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 
 		const footerY = pageHeight - 10; // bottom: 10mm
 		doc.setFontSize(9);
-
+		doc.setFont('helvetica', 'normal'); // pastikan font normal
 		// Footer metadata di kiri (rombel | nama | nis)
 		const footerMeta = `${formatValue(data.rombel.nama)} | ${formatValue(data.murid.nama)} | ${formatValue(data.murid.nis)}`;
 		doc.text(footerMeta, margin, footerY, { align: 'left' });
@@ -235,6 +235,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 		if (currentY + requiredHeight > pageHeight - margin) {
 			doc.addPage();
 			currentY = margin;
+			drawFooter(); // Draw footer on new page
 			return true;
 		}
 		return false;
@@ -890,6 +891,14 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			console.log(`[PDF] Drawing watermark on page ${i}`);
 			drawBgLogo();
 		}
+	}
+
+	// Draw footer on all pages to ensure consistency
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const totalPages = (doc as any).internal.pages.length - 1;
+	for (let i = 1; i <= totalPages; i++) {
+		doc.setPage(i);
+		drawFooter();
 	}
 
 	return doc;
