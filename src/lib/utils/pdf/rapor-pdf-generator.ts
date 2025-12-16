@@ -352,7 +352,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 						fontStyle: 'bold' as const,
 						fillColor: [255, 255, 255],
 						fontSize: 9, // ukuran yang sama dengan keasramaan
-						cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 },
+						cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 },
 						halign: 'left'
 					}
 				}
@@ -378,7 +378,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 		rowPageBreak: 'avoid',
 		styles: {
 			fontSize: 9, // ukuran yang sama dengan keasramaan
-			cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 },
+			cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 },
 			valign: 'top',
 			lineColor: [0, 0, 0],
 			lineWidth: 0.3,
@@ -391,7 +391,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			halign: 'center',
 			valign: 'middle',
 			fontSize: 9, // ukuran yang sama dengan keasramaan
-			cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 }
+			cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 		},
 		columnStyles: {
 			0: { cellWidth: 12, halign: 'center' }, // No.
@@ -422,52 +422,6 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 	});
 
 	currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4.2; // spacing
-
-	// Ekstrakurikuler Section (if exists)
-	if (data.ekstrakurikuler && data.ekstrakurikuler.length > 0) {
-		checkNewPage(50);
-
-		// Add spacing
-		currentY += 2.8; // spacing konsisten
-
-		const ekstraBody: RowInput[] = data.ekstrakurikuler.map((row, idx) => [
-			(idx + 1).toString(),
-			formatValue(row.nama),
-			formatValue(row.deskripsi)
-		]);
-
-		autoTable(doc, {
-			startY: currentY,
-			head: [['No.', 'Ekstrakurikuler', 'Keterangan']],
-			body: ekstraBody,
-			theme: 'grid',
-			styles: {
-				fontSize: 9, // ukuran yang sama dengan keasramaan
-				cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 },
-				lineColor: [0, 0, 0],
-				lineWidth: 0.3,
-				textColor: [0, 0, 0],
-				valign: 'top'
-			},
-			headStyles: {
-				fillColor: [255, 255, 255],
-				textColor: [0, 0, 0],
-				fontStyle: 'bold',
-				halign: 'center',
-				valign: 'middle',
-				fontSize: 9, // ukuran yang sama dengan keasramaan
-				cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 }
-			},
-			columnStyles: {
-				0: { cellWidth: 12, halign: 'center' }, // No.
-				1: { cellWidth: 50 }, // Ekstrakurikuler
-				2: { cellWidth: contentWidth - 62 } // Keterangan
-			},
-			margin: { left: margin, right: margin }
-		});
-
-		currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 2.8; // spacing
-	}
 
 	// Kokurikuler Section (if exists)
 	if (data.kokurikuler && data.kokurikuler.length > 0 && data.hasKokurikuler) {
@@ -510,7 +464,53 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				halign: 'center',
 				valign: 'middle',
 				fontSize: 9,
-				cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 }
+				cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
+			},
+			margin: { left: margin, right: margin }
+		});
+
+		currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 2.8; // spacing
+	}
+
+	// Ekstrakurikuler Section (if exists)
+	if (data.ekstrakurikuler && data.ekstrakurikuler.length > 0) {
+		checkNewPage(50);
+
+		// Add spacing
+		currentY += 2.8; // spacing konsisten
+
+		const ekstraBody: RowInput[] = data.ekstrakurikuler.map((row, idx) => [
+			(idx + 1).toString(),
+			formatValue(row.nama),
+			formatValue(row.deskripsi)
+		]);
+
+		autoTable(doc, {
+			startY: currentY,
+			head: [['No.', 'Ekstrakurikuler', 'Keterangan']],
+			body: ekstraBody,
+			theme: 'grid',
+			styles: {
+				fontSize: 9, // ukuran yang sama dengan keasramaan
+				cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 },
+				lineColor: [0, 0, 0],
+				lineWidth: 0.3,
+				textColor: [0, 0, 0],
+				valign: 'top'
+			},
+			headStyles: {
+				fillColor: [255, 255, 255],
+				textColor: [0, 0, 0],
+				fontStyle: 'bold',
+				halign: 'center',
+				valign: 'middle',
+				fontSize: 9, // ukuran yang sama dengan keasramaan
+				cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
+			},
+			columnStyles: {
+				0: { cellWidth: 12, halign: 'center' }, // No.
+				1: { cellWidth: 50 }, // Ekstrakurikuler
+				2: { cellWidth: contentWidth - 62 } // Keterangan
 			},
 			margin: { left: margin, right: margin }
 		});
@@ -541,7 +541,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 					styles: {
 						halign: 'center',
 						fontStyle: 'bold',
-						cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 }
+						cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 					}
 				},
 				{ content: '', rowSpan: 4, styles: { lineWidth: 0 } }, // gap cell tanpa border
@@ -550,7 +550,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 					styles: {
 						halign: 'center',
 						fontStyle: 'bold',
-						cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 }
+						cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 					}
 				}
 			],
@@ -667,7 +667,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			halign: 'center',
 			valign: 'middle',
 			fontSize: 9,
-			cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 }
+			cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 		},
 		margin: { left: margin, right: margin }
 	});
