@@ -386,7 +386,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 			2: { cellWidth: 25, halign: 'center', overflow: 'hidden', minCellWidth: 25 }, // Predikat, text-center, no wrap
 			3: { cellWidth: contentWidth - 97 } // Deskripsi, align-top
 		},
-		margin: { left: margin, right: margin, bottom: 20 }, // tambah bottom margin untuk mencegah orphan header
+		margin: { left: margin, right: margin, bottom: 35 }, // perbesar bottom margin untuk mencegah orphan header (20mm -> 35mm)
 		showHead: 'everyPage',
 		didDrawPage: drawFooter
 	});

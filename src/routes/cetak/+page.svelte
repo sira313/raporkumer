@@ -1346,7 +1346,7 @@
 
 		// Download PDF gabungan
 		const docLabel = selectedDocumentEntry?.label || doc;
-		const kelasLabel = data.kelasAktif || 'Semua-Kelas';
+		const kelasLabel = kelasAktifLabel ? kelasAktifLabel.replace(/\s+/g, '') : 'Semua-Kelas';
 		const filename = `${docLabel}-${kelasLabel}-${previewDataList.length}murid.pdf`;
 		mergedPdf.save(filename);
 	}
