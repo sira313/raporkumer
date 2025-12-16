@@ -34,6 +34,7 @@
 	import { downloadRaporPDF } from '$lib/utils/pdf/rapor-pdf-generator';
 	import { downloadCoverPDF } from '$lib/utils/pdf/cover-pdf-generator';
 	import { downloadBiodataPDF } from '$lib/utils/pdf/biodata-pdf-generator';
+	import { downloadPiagamPDF } from '$lib/utils/pdf/piagam-pdf-generator';
 
 	let { data } = $props();
 
@@ -847,9 +848,92 @@
 				console.error('PDF generation error:', error);
 				toast('Gagal membuat PDF', 'error');
 			}
+		} else if (doc === 'piagam') {
+			const piagamData = (previewData as { piagamData?: typeof previewData }).piagamData;
+			if (!piagamData || typeof piagamData !== 'object') {
+				toast('Data piagam tidak tersedia', 'error');
+				return;
+			}
+
+			// Type assertion untuk piagamData
+			const data = piagamData as any;
+
+			try {
+				toast('Membuat PDF...', 'info');
+
+				// Load background image
+				let bgImage: string | null = null;
+				try {
+					const response = await fetch(`/api/sekolah/piagam-bg/${selectedTemplate}`);
+					const blob = await response.blob();
+					bgImage = await new Promise<string>((resolve) => {
+						const reader = new FileReader();
+						reader.onloadend = () => resolve(reader.result as string);
+						reader.readAsDataURL(blob);
+					});
+				} catch (error) {
+					console.error('Error loading piagam background:', error);
+				}
+
+				await downloadPiagamPDF({
+					sekolah: {
+						nama: data.sekolah.nama,
+						jenjang: data.sekolah.jenjang,
+						npsn: data.sekolah.npsn,
+						alamat: {
+							jalan: data.sekolah.alamat.jalan || '',
+							desa: data.sekolah.alamat.desa || '',
+							kecamatan: data.sekolah.alamat.kecamatan || '',
+							kabupaten: data.sekolah.alamat.kabupaten || '',
+							provinsi: data.sekolah.alamat.provinsi,
+							kodePos: data.sekolah.alamat.kodePos
+						},
+						website: data.sekolah.website,
+						email: data.sekolah.email,
+						logoUrl: data.sekolah.logoUrl,
+						logoDinasUrl: data.sekolah.logoDinasUrl
+					},
+					murid: {
+						nama: data.murid.nama
+					},
+					penghargaan: {
+						rataRata: data.penghargaan.rataRata,
+						rataRataFormatted: data.penghargaan.rataRataFormatted,
+						ranking: data.penghargaan.ranking,
+						rankingLabel: data.penghargaan.rankingLabel,
+						judul: data.penghargaan.judul,
+						subjudul: data.penghargaan.subjudul,
+						motivasi: data.penghargaan.motivasi
+					},
+					periode: {
+						semester: data.periode.semester,
+						tahunAjaran: data.periode.tahunAjaran
+					},
+					ttd: {
+						tempat: data.ttd.tempat,
+						tanggal: data.ttd.tanggal,
+						kepalaSekolah: {
+							nama: data.ttd.kepalaSekolah.nama,
+							nip: data.ttd.kepalaSekolah.nip,
+							statusKepalaSekolah: data.ttd.kepalaSekolah.statusKepalaSekolah
+						},
+						waliKelas: {
+							nama: data.ttd.waliKelas.nama,
+							nip: data.ttd.waliKelas.nip
+						}
+					},
+					template: selectedTemplate,
+					bgImage
+				});
+
+				toast('PDF berhasil dibuat!', 'success');
+			} catch (error) {
+				console.error('PDF generation error:', error);
+				toast('Gagal membuat PDF', 'error');
+			}
 		} else {
 			toast(
-				'Export PDF hanya tersedia untuk Cover, Biodata, Rapor, dan Rapor Keasramaan',
+				'Export PDF hanya tersedia untuk Cover, Biodata, Rapor, Piagam, dan Rapor Keasramaan',
 				'warning'
 			);
 		}
@@ -975,8 +1059,8 @@
 		onBgRefresh={handleBgRefresh}
 	/>
 
-	<!-- Download PDF Button (untuk cover, biodata, rapor dan keasramaan, single preview) -->
-	{#if (previewDocument === 'cover' || previewDocument === 'biodata' || previewDocument === 'rapor' || previewDocument === 'keasramaan') && !isBulkMode && previewData}
+	<!-- Download PDF Button (untuk cover, biodata, rapor, piagam dan keasramaan, single preview) -->
+	{#if (previewDocument === 'cover' || previewDocument === 'biodata' || previewDocument === 'rapor' || previewDocument === 'piagam' || previewDocument === 'keasramaan') && !isBulkMode && previewData}
 		<div class="mt-4 flex justify-center">
 			<button
 				type="button"
