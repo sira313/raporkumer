@@ -391,9 +391,40 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 			2: { cellWidth: 25, halign: 'center', overflow: 'hidden', minCellWidth: 25 }, // Predikat, text-center, no wrap
 			3: { cellWidth: contentWidth - 97 } // Deskripsi, align-top
 		},
-		margin: { left: margin, right: margin, bottom: 35 }, // perbesar bottom margin untuk mencegah orphan header (20mm -> 35mm)
+		margin: { left: margin, right: margin, bottom: 20 }, // margin bottom untuk reserve space dan prevent orphan header
 		showHead: 'everyPage',
-		didDrawPage: drawFooter
+		didDrawPage: drawFooter,
+		didDrawCell: (data) => {
+			// Prevent orphan category headers dengan memaksa page break
+			if (data.section === 'body' && data.column.index === 0) {
+				const cell = data.cell;
+
+				// Cek apakah ini adalah kategori header (row dengan colSpan 4)
+				const isKategoriHeader =
+					cell.raw &&
+					typeof cell.raw === 'object' &&
+					'colSpan' in cell.raw &&
+					cell.raw.colSpan === 4;
+
+				if (isKategoriHeader) {
+					const cellBottomY = cell.y + cell.height;
+					// Reserve minimal 25mm untuk kategori header + minimal 1 baris data setelahnya
+					// 25mm = ~8mm header + ~10mm untuk 1 baris data + ~7mm margin safety
+					const minSpaceForHeaderAndRows = 25;
+					const availableSpace = pageHeight - cellBottomY;
+
+					// Jika ruang tersisa kurang dari yang dibutuhkan, paksa page break untuk row ini
+					if (availableSpace < minSpaceForHeaderAndRows) {
+						// Force new page dengan memanipulasi cursor Y
+						// Trick: set startY untuk row berikutnya ke halaman baru
+						data.cursor = {
+							x: margin,
+							y: margin // pindah ke halaman baru
+						};
+					}
+				}
+			}
+		}
 	});
 
 	currentY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4.2; // spacing antar tabel (sama dengan rapor)
