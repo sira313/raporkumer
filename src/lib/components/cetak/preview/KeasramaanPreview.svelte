@@ -5,6 +5,7 @@
 	import KeasramaanTable from '$lib/components/cetak/keasramaan/KeasramaanTable.svelte';
 	import {
 		measureRows,
+		measureSensorTrigger,
 		detectBoundaryViolations,
 		debugBoundaryDetection,
 		waitForRender,
@@ -106,35 +107,26 @@
 			// Wait for DOM to fully render all rows
 			await waitForRender(150);
 
-			// Measure all row positions
+			// Measure all splitTrigger positions
 			const measurements = measureRows(measurementContainer, keasramaanRows);
 
 			console.debug(
-				`[Keasramaan-${instanceId}] Measured ${measurements.length} rows from ${keasramaanRows.length} total rows`
+				`[Keasramaan-${instanceId}] 🔵 NEW LOGIC: Measured ${measurements.length} splitTriggers from ${keasramaanRows.length} total rows`
 			);
 
-			// Measure actual available space on page 1
-			if (measurementContainer && measurements.length > 0) {
-				const containerRect = measurementContainer.getBoundingClientRect();
-				const firstRow = measurements[0];
-				const actualOffsetToFirstRow = firstRow.top - containerRect.top;
-				console.debug(
-					`[Keasramaan-${instanceId}] Actual offset to first row: ${Math.round(actualOffsetToFirstRow)}px (expected: 360px)`
-				);
-			}
+			// Measure sensorTrigger position
+			const sensorY = measureSensorTrigger(measurementContainer);
 
-			// Log ALL measurements for debugging
+			// Log measurements summary
 			if (measurements.length > 0) {
-				const totalHeight = measurements.reduce((sum, m) => sum + m.height, 0);
-				console.table(
-					measurements.map((m) => ({
+				console.debug(`[Keasramaan-${instanceId}] 🔴 sensorTrigger at: ${Math.round(sensorY)}px`);
+				console.debug(
+					`[Keasramaan-${instanceId}] Sample splitTriggers:`,
+					measurements.slice(0, 5).map((m) => ({
 						order: m.order,
 						kategori: m.row.kategoriHeader ?? 'indicator',
-						height: Math.round(m.height)
+						bottom: Math.round(m.bottom)
 					}))
-				);
-				console.debug(
-					`[Keasramaan-${instanceId}] Total height: ${Math.round(totalHeight)}px | Page 1 capacity: 611px | Page 2+ capacity: 881px`
 				);
 			}
 
@@ -142,15 +134,16 @@
 				console.warn(`[Keasramaan-${instanceId}] No measurements found, retrying...`);
 				await waitForRender(150);
 				const retryMeasurements = measureRows(measurementContainer, keasramaanRows);
+				const retrySensorY = measureSensorTrigger(measurementContainer);
 				if (retryMeasurements.length === 0) {
 					console.error(`[Keasramaan-${instanceId}] Failed to measure rows after retry`);
 					isDetecting = false;
 					return;
 				}
-				boundaryResult = detectBoundaryViolations(retryMeasurements, true);
+				boundaryResult = detectBoundaryViolations(retryMeasurements, true, retrySensorY);
 			} else {
-				// Detect boundaries and split pages
-				boundaryResult = detectBoundaryViolations(measurements, true);
+				// Detect boundaries and split pages with NEW LOGIC
+				boundaryResult = detectBoundaryViolations(measurements, true, sensorY);
 			}
 
 			// Debug log
@@ -243,7 +236,8 @@
 		>
 			<div
 				class="bg-base-100 text-base-content mx-auto flex flex-col text-[12px]"
-				style="width: 210mm; padding: 20mm; box-sizing: border-box;"
+				style="width: 210mm; max-height: 297mm; min-height: 297mm; padding: 20mm; box-sizing: border-box; position: relative;"
+				bind:this={measurementContainer}
 			>
 				<header class="pb-4 text-center">
 					<h1 class="text-2xl font-bold tracking-wide uppercase">Laporan Kegiatan Keasramaan</h1>
@@ -261,9 +255,16 @@
 					{formatUpper}
 				/>
 
-				<div class="mt-8" bind:this={measurementContainer}>
+				<div class="mt-8">
 					<KeasramaanTable rows={keasramaanRows} tableRowAction={() => {}} {formatValue} />
 				</div>
+
+				<!-- Garis merah sensorTrigger untuk measurement -->
+				<div
+					id="sensorTrigger"
+					class="debug-red-border"
+					style="position: absolute; bottom: 20mm; left: 0; right: 0; height: 2px; background-color: red; z-index: 999;"
+				></div>
 			</div>
 		</div>
 
