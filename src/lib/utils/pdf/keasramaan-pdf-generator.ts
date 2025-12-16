@@ -177,12 +177,12 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 			cellWidth: 'auto'
 		},
 		columnStyles: {
-			0: { cellWidth: 39 }, // width: 110px = 39mm
-			1: { cellWidth: 3 }, // width: 0.75rem = ~3mm
-			2: { cellWidth: (contentWidth - 84) / 2, fontStyle: 'bold' }, // font-semibold (use bold)
-			3: { cellWidth: 39 }, // width: 110px = 39mm
-			4: { cellWidth: 3 }, // width: 0.75rem = ~3mm
-			5: { cellWidth: (contentWidth - 84) / 2, fontStyle: 'bold' } // font-semibold (use bold)
+			0: { cellWidth: 28 }, // label kiri diperkecil
+			1: { cellWidth: 3 }, // colon kiri
+			2: { cellWidth: 70, fontStyle: 'bold' }, // value kiri, fixed width lebih besar
+			3: { cellWidth: 35 }, // label kanan diperkecil
+			4: { cellWidth: 3 }, // colon kanan
+			5: { cellWidth: 'auto', fontStyle: 'bold' } // value kanan, auto untuk sisa ruang
 		},
 		margin: { left: margin, right: margin }
 	});
@@ -230,6 +230,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		head: [['No', 'Indikator', 'Predikat', 'Deskripsi']],
 		body: tableBody,
 		theme: 'grid',
+		rowPageBreak: 'avoid', // hindari baris kosong sebelum page break
 		styles: {
 			fontSize: 9, // ukuran lebih kecil
 			cellPadding: { top: 1.4, right: 2.8, bottom: 1.4, left: 2.8 }, // px-2 py-1
@@ -256,14 +257,20 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 		margin: { left: margin, right: margin },
 		showHead: 'everyPage',
 		didDrawPage: () => {
-			// Add page number on every page
+			// Add footer dengan style FooterPage: text-[12px], metadata di kiri, page number di kanan
 			const currentPage = (
 				doc as unknown as { internal: { getCurrentPageInfo: () => { pageNumber: number } } }
 			).internal.getCurrentPageInfo().pageNumber;
 
-			doc.setFontSize(10);
-			doc.setFont('helvetica', 'normal');
-			doc.text(`Halaman: ${currentPage}`, pageWidth - margin - 20, pageHeight - 10, {
+			const footerY = pageHeight - 10; // bottom: 10mm
+			doc.setFontSize(9); // sama dengan orphan header
+
+			// Footer metadata di kiri (rombel | nama | nis)
+			const footerMeta = `${formatValue(data.rombel.nama)} | ${formatValue(data.murid.nama)} | ${formatValue(data.murid.nis)}`;
+			doc.text(footerMeta, margin, footerY, { align: 'left' });
+
+			// Page number di kanan
+			doc.text(`Halaman: ${currentPage}`, pageWidth - margin, footerY, {
 				align: 'right'
 			});
 		}
