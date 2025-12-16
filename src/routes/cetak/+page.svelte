@@ -31,6 +31,7 @@
 		DEFAULT_RAPOR_CRITERIA
 	} from '$lib/rapor-params';
 	import { downloadKeasramaanPDF } from '$lib/utils/pdf/keasramaan-pdf-generator';
+	import { downloadRaporPDF } from '$lib/utils/pdf/rapor-pdf-generator';
 
 	let { data } = $props();
 
@@ -568,78 +569,188 @@
 			return;
 		}
 
-		const keasramaanData = (previewData as { keasramaanData?: typeof previewData }).keasramaanData;
-		if (!keasramaanData || typeof keasramaanData !== 'object') {
-			toast('Data keasramaan tidak tersedia', 'error');
-			return;
-		}
+		const doc = previewDocument;
+		if (doc === 'keasramaan') {
+			const keasramaanData = (previewData as { keasramaanData?: typeof previewData })
+				.keasramaanData;
+			if (!keasramaanData || typeof keasramaanData !== 'object') {
+				toast('Data keasramaan tidak tersedia', 'error');
+				return;
+			}
 
-		// Type assertion untuk keasramaanData
-		const data = keasramaanData as any;
+			// Type assertion untuk keasramaanData
+			const data = keasramaanData as any;
 
-		try {
-			toast('Membuat PDF...', 'info');
+			try {
+				toast('Membuat PDF...', 'info');
 
-			await downloadKeasramaanPDF({
-				sekolah: {
-					nama: data.sekolah.nama,
-					npsn: data.sekolah.npsn || '',
-					alamat: data.sekolah.alamat || '',
-					logoUrl: data.sekolah.logoUrl
-				},
-				murid: {
-					nama: data.murid.nama,
-					nis: data.murid.nis || '',
-					nisn: data.murid.nisn || ''
-				},
-				rombel: {
-					nama: data.rombel.nama,
-					fase: data.rombel.fase
-				},
-				periode: {
-					tahunAjaran: data.periode.tahunAjaran,
-					semester: data.periode.semester
-				},
-				waliAsrama: data.waliAsrama
-					? {
-							nama: data.waliAsrama.nama,
-							nip: data.waliAsrama.nip || ''
-						}
-					: undefined,
-				waliAsuh: data.waliAsuh
-					? {
-							nama: data.waliAsuh.nama,
-							nip: data.waliAsuh.nip || ''
-						}
-					: undefined,
-				kepalaSekolah: data.kepalaSekolah
-					? {
-							nama: data.kepalaSekolah.nama,
-							nip: data.kepalaSekolah.nip || '',
-							statusKepalaSekolah: data.kepalaSekolah.statusKepalaSekolah
-						}
-					: undefined,
-				ttd: data.ttd
-					? {
-							tempat: data.ttd.tempat,
-							tanggal: data.ttd.tanggal
-						}
-					: undefined,
-				kehadiran: data.kehadiran
-					? {
-							sakit: data.kehadiran.sakit,
-							izin: data.kehadiran.izin,
-							alfa: data.kehadiran.alfa
-						}
-					: undefined,
-				keasramaanRows: data.keasramaanRows || [],
-				showBgLogo: showBgLogo
-			});
+				await downloadKeasramaanPDF({
+					sekolah: {
+						nama: data.sekolah.nama,
+						npsn: data.sekolah.npsn || '',
+						alamat: data.sekolah.alamat || '',
+						logoUrl: data.sekolah.logoUrl
+					},
+					murid: {
+						nama: data.murid.nama,
+						nis: data.murid.nis || '',
+						nisn: data.murid.nisn || ''
+					},
+					rombel: {
+						nama: data.rombel.nama,
+						fase: data.rombel.fase
+					},
+					periode: {
+						tahunAjaran: data.periode.tahunAjaran,
+						semester: data.periode.semester
+					},
+					waliAsrama: data.waliAsrama
+						? {
+								nama: data.waliAsrama.nama,
+								nip: data.waliAsrama.nip || ''
+							}
+						: undefined,
+					waliAsuh: data.waliAsuh
+						? {
+								nama: data.waliAsuh.nama,
+								nip: data.waliAsuh.nip || ''
+							}
+						: undefined,
+					kepalaSekolah: data.kepalaSekolah
+						? {
+								nama: data.kepalaSekolah.nama,
+								nip: data.kepalaSekolah.nip || '',
+								statusKepalaSekolah: data.kepalaSekolah.statusKepalaSekolah
+							}
+						: undefined,
+					ttd: data.ttd
+						? {
+								tempat: data.ttd.tempat,
+								tanggal: data.ttd.tanggal
+							}
+						: undefined,
+					kehadiran: data.kehadiran
+						? {
+								sakit: data.kehadiran.sakit,
+								izin: data.kehadiran.izin,
+								alfa: data.kehadiran.alfa
+							}
+						: undefined,
+					keasramaanRows: data.keasramaanRows || [],
+					showBgLogo: showBgLogo
+				});
 
-			toast('PDF berhasil dibuat!', 'success');
-		} catch (error) {
-			console.error('PDF generation error:', error);
-			toast('Gagal membuat PDF', 'error');
+				toast('PDF berhasil dibuat!', 'success');
+			} catch (error) {
+				console.error('PDF generation error:', error);
+				toast('Gagal membuat PDF', 'error');
+			}
+		} else if (doc === 'rapor') {
+			const raporData = (previewData as { raporData?: typeof previewData }).raporData;
+			if (!raporData || typeof raporData !== 'object') {
+				toast('Data rapor tidak tersedia', 'error');
+				return;
+			}
+
+			// Type assertion untuk raporData
+			const data = raporData as any;
+
+			try {
+				toast('Membuat PDF...', 'info');
+
+				// Build intrakurikuler data
+				const intrakurikuler =
+					data.nilaiIntrakurikuler?.map((item: any, idx: number) => ({
+						nomor: idx + 1,
+						mataPelajaran: item.mataPelajaran || '',
+						nilai: item.nilaiAkhir,
+						deskripsi: item.deskripsi || '',
+						jenis: item.jenis || 'wajib'
+					})) || [];
+
+				// Build ekstrakurikuler data (already in correct format)
+				const ekstrakurikuler = Array.isArray(data.ekstrakurikuler)
+					? data.ekstrakurikuler.map((item: any) => ({
+							nama: item.nama || '',
+							deskripsi: item.deskripsi || ''
+						}))
+					: [];
+
+				// Build kokurikuler data (kokurikuler is a string, not array)
+				// Convert to array format for PDF with single entry
+				const kokurikuler =
+					data.kokurikuler && typeof data.kokurikuler === 'string' && data.hasKokurikuler
+						? [
+								{
+									dimensi: 'Profil Pelajar Pancasila',
+									deskripsi: data.kokurikuler
+								}
+							]
+						: [];
+
+				await downloadRaporPDF({
+					sekolah: {
+						nama: data.sekolah.nama || '',
+						npsn: data.sekolah.npsn || '',
+						alamat: data.sekolah.alamat || '',
+						logoUrl: data.sekolah.logoUrl
+					},
+					murid: {
+						nama: data.murid.nama || '',
+						nis: data.murid.nis || '',
+						nisn: data.murid.nisn || ''
+					},
+					rombel: {
+						nama: data.rombel.nama || '',
+						fase: data.rombel.fase
+					},
+					periode: {
+						tahunPelajaran: data.periode.tahunPelajaran || '',
+						semester: data.periode.semester || ''
+					},
+					waliKelas: data.waliKelas
+						? {
+								nama: data.waliKelas.nama || '',
+								nip: data.waliKelas.nip || ''
+							}
+						: undefined,
+					kepalaSekolah: data.kepalaSekolah
+						? {
+								nama: data.kepalaSekolah.nama || '',
+								nip: data.kepalaSekolah.nip || '',
+								statusKepalaSekolah: data.kepalaSekolah.statusKepalaSekolah
+							}
+						: undefined,
+					ttd: data.ttd
+						? {
+								tempat: data.ttd.tempat || '',
+								tanggal: data.ttd.tanggal || ''
+							}
+						: undefined,
+					kehadiran: data.ketidakhadiran
+						? {
+								sakit: data.ketidakhadiran.sakit ?? 0,
+								izin: data.ketidakhadiran.izin ?? 0,
+								alfa: data.ketidakhadiran.tanpaKeterangan ?? 0
+							}
+						: undefined,
+					catatanWali: data.catatanWali,
+					tanggapanOrangTua: data.tanggapanOrangTua || '',
+					intrakurikuler,
+					ekstrakurikuler,
+					kokurikuler,
+					hasKokurikuler: data.hasKokurikuler,
+					jenjangVariant: data.sekolah?.jenjangVariant,
+					showBgLogo: showBgLogo
+				});
+
+				toast('PDF berhasil dibuat!', 'success');
+			} catch (error) {
+				console.error('PDF generation error:', error);
+				toast('Gagal membuat PDF', 'error');
+			}
+		} else {
+			toast('Export PDF hanya tersedia untuk Rapor dan Rapor Keasramaan', 'warning');
 		}
 	}
 
@@ -763,8 +874,8 @@
 		onBgRefresh={handleBgRefresh}
 	/>
 
-	<!-- Download PDF Button (hanya untuk keasramaan, single preview) -->
-	{#if previewDocument === 'keasramaan' && !isBulkMode && previewData}
+	<!-- Download PDF Button (untuk rapor dan keasramaan, single preview) -->
+	{#if (previewDocument === 'rapor' || previewDocument === 'keasramaan') && !isBulkMode && previewData}
 		<div class="mt-4 flex justify-center">
 			<button
 				type="button"

@@ -1,8 +1,8 @@
-# Migrasi Rapor Keasramaan ke jsPDF-AutoTable
+# Migrasi Rapor ke jsPDF-AutoTable
 
 ## 📋 Overview
 
-Sistem cetak rapor keasramaan telah dimigrasi dari HTML/CSS print ke jsPDF-AutoTable untuk mengatasi masalah pagination yang kompleks dengan konten dinamis.
+Sistem cetak rapor (keasramaan dan rapor utama) telah dimigrasi dari HTML/CSS print ke jsPDF-AutoTable untuk mengatasi masalah pagination yang kompleks dengan konten dinamis.
 
 ## 🎯 Pendekatan Dual System
 
@@ -133,6 +133,78 @@ Tombol "Download PDF" ditambahkan di halaman cetak:
 4. **Progress Indicator**
    - Loading state saat generate PDF
    - Progress bar untuk bulk export
+
+---
+
+# Migrasi Rapor Utama ke jsPDF-AutoTable
+
+## 📋 Overview Rapor Utama
+
+Sistem cetak rapor utama (Laporan Hasil Belajar) juga telah dimigrasi mengikuti pola yang sama dengan rapor keasramaan, menggunakan ukuran font yang konsisten.
+
+## 🎯 Pendekatan Dual System - Rapor Utama
+
+### Preview (HTML/CSS)
+
+- Tetap menggunakan component Svelte existing
+- Boundary detection untuk pagination dinamis
+- Path: `src/lib/components/cetak/preview/RaporPreviewFixed.svelte`
+
+### Export PDF (jsPDF-AutoTable)
+
+- Generate PDF langsung dari data
+- Auto-pagination dengan jsPDF-AutoTable
+- Desain mengikuti template HTML
+- Path: `src/lib/utils/pdf/rapor-pdf-generator.ts`
+
+## 🔧 Implementasi Rapor Utama
+
+### PDF Generator API
+
+```typescript
+import { downloadRaporPDF } from '$lib/utils/pdf/rapor-pdf-generator';
+
+await downloadRaporPDF({
+  sekolah: { nama, npsn, alamat, logoUrl },
+  murid: { nama, nis, nisn },
+  rombel: { nama, fase },
+  periode: { tahunPelajaran, semester },
+  waliKelas: { nama, nip },
+  kepalaSekolah: { nama, nip, statusKepalaSekolah },
+  ttd: { tempat, tanggal },
+  kehadiran: { sakit, izin, alfa },
+  catatanWali: '...',
+  intrakurikuler: [...],
+  ekstrakurikuler: [...],
+  kokurikuler: [...],
+  hasKokurikuler: true,
+  jenjangVariant: 'SMK',
+  showBgLogo: true
+});
+```
+
+### UI Integration
+
+Button "Export PDF" muncul untuk dokumen rapor dan keasramaan:
+
+```svelte
+{#if (previewDocument === 'rapor' || previewDocument === 'keasramaan') && !isBulkMode && previewData}
+	<button onclick={handleDownloadPDF}>Export PDF</button>
+{/if}
+```
+
+## 📐 Ukuran Font Konsisten
+
+Kedua generator (rapor dan keasramaan) menggunakan ukuran font yang sama:
+
+- **Header Judul**: 14pt (bold)
+- **Sub-header**: 10pt (normal)
+- **Identity Table**: 10pt
+- **Table Content**: 9pt (body & header)
+- **Footer**: 9pt
+- **Signatures**: 10pt
+
+Ini memastikan konsistensi visual antara kedua jenis dokumen.
 
 ## 🔗 References
 
