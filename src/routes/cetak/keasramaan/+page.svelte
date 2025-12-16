@@ -401,12 +401,7 @@
 		<PreviewContent
 			previewDocument={previewDocument as DocumentType | ''}
 			{previewData}
-			{previewLoading}
 			{previewError}
-			{isBulkMode}
-			{bulkPreviewData}
-			{bulkLoadProgress}
-			{waitingForPrintable}
 			selectedTemplate="1"
 			bgRefreshKey={0}
 			{showBgLogo}

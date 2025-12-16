@@ -1,5 +1,6 @@
 <script lang="ts">
 	/* eslint-disable @typescript-eslint/no-unused-vars */
+	/* eslint-disable @typescript-eslint/no-explicit-any */
 	import { page } from '$app/state';
 	import PreviewHeader from '$lib/components/cetak/PreviewHeader.svelte';
 	import DocumentMuridSelector from '$lib/components/cetak/DocumentMuridSelector.svelte';
@@ -1431,12 +1432,7 @@
 <PreviewContent
 	{previewDocument}
 	{previewData}
-	{previewLoading}
 	{previewError}
-	{isBulkMode}
-	{bulkPreviewData}
-	{bulkLoadProgress}
-	{waitingForPrintable}
 	{selectedTemplate}
 	{bgRefreshKey}
 	{showBgLogo}

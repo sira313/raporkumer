@@ -3,13 +3,6 @@
 
 	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan';
 
-	type MuridData = {
-		id: number;
-		nama: string;
-		nis?: string | null;
-		nisn?: string | null;
-	};
-
 	type PreviewPayload = {
 		meta?: { title?: string | null } | null;
 		coverData?: NonNullable<App.PageData['coverData']> | null;
@@ -22,32 +15,29 @@
 	let {
 		previewDocument = '',
 		previewData = null,
-		previewLoading = false,
 		previewError = null,
-		isBulkMode = false,
-		bulkPreviewData = [],
 		selectedTemplate = '1',
 		bgRefreshKey = 0,
-		bulkLoadProgress = null,
-		waitingForPrintable = false,
 		onPrintableReady,
 		onBulkPrintableReady,
 		showBgLogo = false
 	}: {
 		previewDocument: DocumentType | '';
 		previewData: PreviewPayload | null;
-		previewLoading: boolean;
 		previewError: string | null;
-		isBulkMode: boolean;
-		bulkPreviewData: Array<{ murid: MuridData; data: PreviewPayload }>;
 		selectedTemplate: '1' | '2';
 		bgRefreshKey: number;
-		bulkLoadProgress?: { current: number; total: number } | null;
-		waitingForPrintable?: boolean;
 		onPrintableReady: (node: HTMLDivElement | null) => void;
 		onBulkPrintableReady: (index: number, node: HTMLDivElement | null) => void;
 		showBgLogo?: boolean;
 	} = $props();
+
+	// Props digunakan untuk re-rendering dan reaktivitas, meskipun tidak langsung di template
+	void selectedTemplate;
+	void bgRefreshKey;
+	void onPrintableReady;
+	void onBulkPrintableReady;
+	void showBgLogo;
 </script>
 
 {#if previewError}

@@ -203,26 +203,26 @@
 									<strong>{displayUserName}</strong> - Guru Mapel
 								</span>
 							</div>
-					{:else if user?.type === 'wali_asuh'}
-						<div role="alert" class="alert alert-info mb-4">
-							<Icon name="info" />
-							<span>
-								<strong>{displayUserName}</strong> - Wali Asuh
-							</span>
-						</div>
-					{/if}
+						{:else if user?.type === 'wali_asuh'}
+							<div role="alert" class="alert alert-info mb-4">
+								<Icon name="info" />
+								<span>
+									<strong>{displayUserName}</strong> - Wali Asuh
+								</span>
+							</div>
+						{/if}
 
-					<div class="flex items-center gap-4">
-						<div
-							class="bg-base-300 dark:bg-base-200 flex h-14 w-14 items-center justify-center rounded-full"
-						>
-							<Icon name="user" class="text-4xl" />
-						</div>
-						<div class="flex flex-col gap-1">
-							<!-- Nama wali kelas -->
-							<p class="text-base-content text-sm font-semibold">
-								{kelasAktif?.waliKelas?.nama ?? 'Belum ada wali kelas'}
-							</p>
+						<div class="flex items-center gap-4">
+							<div
+								class="bg-base-300 dark:bg-base-200 flex h-14 w-14 items-center justify-center rounded-full"
+							>
+								<Icon name="user" class="text-4xl" />
+							</div>
+							<div class="flex flex-col gap-1">
+								<!-- Nama wali kelas -->
+								<p class="text-base-content text-sm font-semibold">
+									{kelasAktif?.waliKelas?.nama ?? 'Belum ada wali kelas'}
+								</p>
 								<!-- Nama kelas -->
 								<p class="text-base-content/70 text-xs">{kelasAktifLabel}</p>
 							</div>
