@@ -1,11 +1,5 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
-	import BiodataPreview from '$lib/components/cetak/preview/BiodataPreview.svelte';
-	import CoverPreview from '$lib/components/cetak/preview/CoverPreview.svelte';
-	import RaporPreviewFixed from '$lib/components/cetak/preview/RaporPreviewFixed.svelte';
-	import PiagamPreview from '$lib/components/cetak/preview/PiagamPreview.svelte';
-	import PiagamPreview2 from '$lib/components/cetak/preview/PiagamPreview2.svelte';
-	import KeasramaanPreview from '$lib/components/cetak/preview/KeasramaanPreview.svelte';
 
 	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan';
 
@@ -46,7 +40,6 @@
 		previewError: string | null;
 		isBulkMode: boolean;
 		bulkPreviewData: Array<{ murid: MuridData; data: PreviewPayload }>;
-		// selectedDocumentEntry: { value: DocumentType; label: string } | null; // Removed unused prop
 		selectedTemplate: '1' | '2';
 		bgRefreshKey: number;
 		bulkLoadProgress?: { current: number; total: number } | null;
@@ -55,130 +48,18 @@
 		onBulkPrintableReady: (index: number, node: HTMLDivElement | null) => void;
 		showBgLogo?: boolean;
 	} = $props();
-
-	const previewComponents: Record<DocumentType, typeof CoverPreview> = {
-		cover: CoverPreview,
-		biodata: BiodataPreview,
-		rapor: RaporPreviewFixed,
-		piagam: PiagamPreview,
-		keasramaan: KeasramaanPreview
-	};
-
-	function getPiagamPreviewComponent() {
-		return selectedTemplate === '2' ? PiagamPreview2 : PiagamPreview;
-	}
 </script>
 
-{#if previewLoading}
-	<div class="mt-6 mb-6 space-y-2 print:hidden">
-		<div class="flex items-center gap-2 text-sm">
-			<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
-			<span class="text-base-content/70">
-				{#if isBulkMode && bulkLoadProgress}
-					Memuat murid {bulkLoadProgress.current}/{bulkLoadProgress.total}
-				{:else}
-					Menyiapkan preview…
-				{/if}
-			</span>
-		</div>
-		<progress
-			class="progress progress-primary h-1 w-full"
-			value={isBulkMode && bulkLoadProgress
-				? Math.round((bulkLoadProgress.current / bulkLoadProgress.total) * 100)
-				: 30}
-			max="100"
-		></progress>
-	</div>
-{:else if previewError}
+{#if previewError}
 	<div class="alert alert-error mt-6 flex items-center gap-2 text-sm">
 		<Icon name="error" />
 		<span>{previewError}</span>
 	</div>
-{:else if isBulkMode && bulkPreviewData.length > 0}
-	{#if waitingForPrintable}
-		<div class="mt-6 mb-6 space-y-2 print:hidden">
-			<div class="flex items-center gap-2 text-sm">
-				<span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
-				<span class="text-base-content/70">Memproses {bulkPreviewData.length} dokumen…</span>
-			</div>
-			<progress class="progress progress-primary h-1 w-full" value="60" max="100"></progress>
-		</div>
-	{/if}
-	<div class="mt-6">
-		<div
-			class="flex flex-col gap-6"
-			style={isBulkMode
-				? 'content-visibility: visible;'
-				: 'content-visibility: auto; contain: layout style;'}
-		>
-			{#each bulkPreviewData as item, index (item.murid.id)}
-				<div class="border-base-300 border-b last:border-b-0">
-					<div class="text-base-content/70 mb-3 text-sm font-semibold">
-						{index + 1}. {item.murid.nama}
-						{#if item.murid.nisn}
-							— NISN: {item.murid.nisn}
-						{:else if item.murid.nis}
-							— NIS: {item.murid.nis}
-						{/if}
-					</div>
-					{#if previewDocument === 'piagam'}
-						{@const PreviewComponent = getPiagamPreviewComponent()}
-						<PreviewComponent
-							data={item.data}
-							muridProp={item.murid}
-							onPrintableReady={(node) => onBulkPrintableReady(index, node)}
-							{bgRefreshKey}
-							template={selectedTemplate}
-						/>
-					{:else if previewDocument === 'biodata'}
-						{#key showBgLogo}
-							<BiodataPreview
-								data={item.data}
-								muridProp={item.murid}
-								onPrintableReady={(node) => onBulkPrintableReady(index, node)}
-								{showBgLogo}
-							/>
-						{/key}
-					{:else}
-						{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
-						{#key showBgLogo}
-							<PreviewComponent
-								data={item.data}
-								muridProp={item.murid}
-								onPrintableReady={(node) => onBulkPrintableReady(index, node)}
-								{showBgLogo}
-							/>
-						{/key}
-					{/if}
-				</div>
-			{/each}
-		</div>
-	</div>
 {:else if previewDocument && previewData}
-	{#if previewDocument === 'piagam'}
-		{@const PreviewComponent = getPiagamPreviewComponent()}
-		<div class="mt-6">
-			<PreviewComponent
-				data={previewData}
-				{onPrintableReady}
-				{bgRefreshKey}
-				template={selectedTemplate}
-			/>
-		</div>
-	{:else if previewDocument === 'biodata'}
-		<div class="mt-6">
-			{#key showBgLogo}
-				<BiodataPreview data={previewData} {onPrintableReady} {showBgLogo} />
-			{/key}
-		</div>
-	{:else}
-		{@const PreviewComponent = previewComponents[previewDocument as DocumentType]}
-		<div class="mt-6">
-			{#key showBgLogo}
-				<PreviewComponent data={previewData} {onPrintableReady} {showBgLogo} />
-			{/key}
-		</div>
-	{/if}
+	<div class="alert alert-info mt-6">
+		<Icon name="info" />
+		<span>Pilih murid dan klik tombol "Download PDF" untuk mengunduh dokumen.</span>
+	</div>
 {/if}
 
 <style lang="postcss">

@@ -143,7 +143,7 @@
 			{:else}
 				<Icon name="download" />
 			{/if}
-			Download PDF
+			Download
 		</button>
 		<div class="dropdown dropdown-end">
 			<div

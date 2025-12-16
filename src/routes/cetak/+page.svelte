@@ -36,22 +36,6 @@
 		{ value: 'keasramaan', label: 'Rapor Keasramaan' }
 	];
 
-	const documentPaths: Record<DocumentType, string> = {
-		cover: '/cetak/cover',
-		biodata: '/cetak/biodata',
-		rapor: '/cetak/rapor',
-		piagam: '/cetak/piagam',
-		keasramaan: '/cetak/keasramaan'
-	};
-
-	const printFailureMessages: Record<DocumentType, string> = {
-		cover: 'Elemen cover belum siap untuk dicetak. Coba muat ulang halaman.',
-		biodata: 'Elemen biodata belum siap untuk dicetak. Coba muat ulang halaman.',
-		rapor: 'Elemen rapor belum siap untuk dicetak. Coba muat ulang halaman.',
-		piagam: 'Elemen piagam belum siap untuk dicetak. Coba muat ulang halaman.',
-		keasramaan: 'Elemen rapor keasramaan belum siap untuk dicetak. Coba muat ulang halaman.'
-	};
-
 	let selectedDocument = $state<DocumentType | ''>('');
 	let selectedMuridId = $state('');
 	let selectedTemplate = $state<'1' | '2'>('1');
