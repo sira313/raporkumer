@@ -391,14 +391,11 @@
 			{daftarMurid}
 			selectedTemplate="1"
 			piagamRankingOptions={[]}
-			onPreview={handlePreview}
-			onBulkPreview={handleBulkPreview}
-			onPrint={handlePrint}
-			{previewDisabled}
-			{printDisabled}
-			{previewButtonTitle}
-			{printButtonTitle}
-			previewLoading={isPrintLoading}
+			onDownload={handlePreview}
+			onBulkDownload={handleBulkPreview}
+			downloadDisabled={previewDisabled}
+			downloadButtonTitle={previewButtonTitle}
+			downloadLoading={isPrintLoading}
 		/>
 
 		<PreviewFooter

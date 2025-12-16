@@ -1,35 +1,21 @@
 <script lang="ts">
 	/* eslint-disable @typescript-eslint/no-unused-vars */
-	// preview parameter building uses SvelteURLSearchParams; no file-level ESLint disables needed
 	import { page } from '$app/state';
-	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 	import PreviewHeader from '$lib/components/cetak/PreviewHeader.svelte';
 	import DocumentMuridSelector from '$lib/components/cetak/DocumentMuridSelector.svelte';
 	import PreviewFooter from '$lib/components/cetak/PreviewFooter.svelte';
 	import PreviewContent from '$lib/components/cetak/PreviewContent.svelte';
-	import { printElement } from '$lib/utils';
 	import { toast } from '$lib/components/toast.svelte';
-	import { onDestroy, tick, onMount } from 'svelte';
+	import { tick, onMount } from 'svelte';
 	import {
 		loadSinglePreview,
-		resetPreviewState,
 		isPreviewableDocument,
-		buildPreviewButtonTitle,
 		type DocumentType,
 		type MuridData,
 		type PreviewPayload
 	} from '$lib/single-preview-logic';
-	import {
-		loadBulkPreviews_robust,
-		buildBulkErrorMessage,
-		buildBulkSuccessMessage,
-		type BulkPreviewRequest
-	} from '$lib/bulk-preview-logic';
-	import {
-		createPreviewURLSearchParams,
-		type RaporCriteria,
-		DEFAULT_RAPOR_CRITERIA
-	} from '$lib/rapor-params';
+	import { loadBulkPreviews_robust, buildBulkErrorMessage } from '$lib/bulk-preview-logic';
+	import { DEFAULT_RAPOR_CRITERIA } from '$lib/rapor-params';
 	import { downloadKeasramaanPDF } from '$lib/utils/pdf/keasramaan-pdf-generator';
 	import { downloadRaporPDF } from '$lib/utils/pdf/rapor-pdf-generator';
 	import { downloadCoverPDF } from '$lib/utils/pdf/cover-pdf-generator';
@@ -73,6 +59,7 @@
 	let previewLoading = $state(false);
 	let previewError = $state<string | null>(null);
 	let showBgLogo = $state(false);
+	let downloadLoading = $state(false);
 
 	// show TP listing: 'compact' | 'full-desc'
 	let fullTP = $state<'compact' | 'full-desc'>('compact');
@@ -222,37 +209,21 @@
 		return parts.join(' - ');
 	});
 
-	const previewDisabled = $derived.by(
-		() => !selectedDocument || !hasSelectionOptions || !selectedMurid
+	const downloadDisabled = $derived.by(
+		() => !selectedDocument || !hasSelectionOptions || !selectedMurid || downloadLoading
 	);
-	const previewButtonTitle = $derived.by(() => {
-		return buildPreviewButtonTitle(
-			selectedDocument,
-			hasSelectionOptions,
-			selectedMurid,
-			isPiagamSelected
-		);
-	});
-
-	const isPrintLoading = $derived.by(() => previewLoading || waitingForPrintable);
-	const printDisabled = $derived.by(() => !previewDocument || !previewPrintable || isPrintLoading);
-	const printButtonTitle = $derived.by(() => {
-		if (!previewDocument) {
-			return 'Preview dokumen terlebih dahulu sebelum mencetak';
+	const downloadButtonTitle = $derived.by(() => {
+		if (!selectedDocument) return 'Pilih dokumen terlebih dahulu';
+		if (!hasSelectionOptions) {
+			return isPiagamSelected
+				? 'Tidak ada data peringkat piagam untuk kelas ini'
+				: 'Tidak ada murid di kelas ini';
 		}
-		if (isPrintLoading) {
-			return isBulkMode && bulkPreviewData.length > 0
-				? 'Menyiapkan dokumen untuk dicetak, tunggu sebentar...'
-				: 'Preview sedang disiapkan untuk dicetak';
+		if (!selectedMurid) {
+			return isPiagamSelected ? 'Pilih peringkat piagam' : 'Pilih murid';
 		}
-		if (!previewPrintable) {
-			return 'Preview sedang disiapkan untuk dicetak';
-		}
-		if (isBulkMode) {
-			return `Cetak ${bulkPreviewData.length} ${previewDocumentEntry?.label ?? 'dokumen'} untuk semua murid`;
-		}
-		const targetName = previewMurid?.nama ?? 'murid ini';
-		return `Cetak ${previewDocumentEntry?.label ?? 'dokumen'} untuk ${targetName}`;
+		if (downloadLoading) return 'Sedang membuat PDF...';
+		return `Download PDF ${selectedDocumentEntry?.label ?? 'dokumen'} untuk ${selectedMurid.nama}`;
 	});
 
 	let previewAbortController: AbortController | null = null;
@@ -270,16 +241,10 @@
 		waitingForPrintable = false;
 	}
 
-	async function handlePreview() {
-		// Clear bulk mode when previewing single murid
-		isBulkMode = false;
-		bulkPreviewData = [];
-		bulkPrintableNodes = [];
-		waitingForPrintable = false;
-
+	async function handleDownloadSingle() {
 		const documentType = selectedDocument;
 		if (!documentType) {
-			toast('Pilih dokumen yang ingin di-preview terlebih dahulu.', 'warning');
+			toast('Pilih dokumen terlebih dahulu', 'warning');
 			return;
 		}
 		if (!isPreviewableDocument(documentType)) {
@@ -288,8 +253,8 @@
 		if (!hasSelectionOptions) {
 			const message =
 				documentType === 'piagam'
-					? 'Tidak ada data peringkat piagam yang dapat di-preview untuk kelas ini.'
-					: 'Tidak ada murid yang dapat di-preview untuk kelas ini.';
+					? 'Tidak ada data peringkat piagam untuk kelas ini.'
+					: 'Tidak ada murid di kelas ini.';
 			toast(message, 'warning');
 			return;
 		}
@@ -297,20 +262,13 @@
 		if (!murid) {
 			const message =
 				documentType === 'piagam'
-					? 'Pilih peringkat piagam yang ingin di-preview.'
-					: 'Pilih murid yang ingin di-preview.';
+					? 'Pilih peringkat piagam yang ingin diunduh.'
+					: 'Pilih murid yang ingin diunduh.';
 			toast(message, 'warning');
 			return;
 		}
 
-		if (previewAbortController) {
-			previewAbortController.abort();
-		}
-		const controller = new AbortController();
-		previewAbortController = controller;
-
-		previewLoading = true;
-		previewError = null;
+		downloadLoading = true;
 
 		try {
 			const result = await loadSinglePreview({
@@ -319,28 +277,17 @@
 				kelasId: data.kelasId ? Number(data.kelasId) : undefined,
 				tpMode: fullTP,
 				criteria: { kritCukup, kritBaik },
-				signal: controller.signal
+				signal: new AbortController().signal
 			});
 
-			if (controller.signal.aborted) {
-				return;
-			}
-
-			previewDocument = documentType;
-			previewData = result.data;
-			previewMetaTitle = result.title;
-			previewMurid = murid;
+			await generatePDFFromPreviewData(documentType, result.data);
+			toast('PDF berhasil dibuat!', 'success');
 		} catch (err) {
-			if (controller.signal.aborted) {
-				return;
-			}
-			console.error('Preview error:', err);
-			const errorMsg = err instanceof Error ? err.message : 'Gagal memuat preview dokumen';
-			previewError = errorMsg;
+			console.error('Download error:', err);
+			const errorMsg = err instanceof Error ? err.message : 'Gagal membuat PDF';
 			toast(errorMsg, 'error');
 		} finally {
-			previewLoading = false;
-			previewAbortController = null;
+			downloadLoading = false;
 		}
 	}
 
@@ -355,20 +302,12 @@
 		const targetId = list[targetIndex];
 		selectedMuridId = targetId;
 		await tick();
-		if (isPreviewMatchingSelection) {
-			await handlePreview();
-		}
 	}
 
-	async function handleBulkPreview() {
-		// Clear single murid preview state when doing bulk preview
-		previewData = null;
-		previewMurid = null;
-		previewPrintable = null;
-
+	async function handleDownloadBulk() {
 		const documentType = selectedDocument;
 		if (!documentType) {
-			toast('Pilih dokumen yang ingin di-preview terlebih dahulu.', 'warning');
+			toast('Pilih dokumen terlebih dahulu', 'warning');
 			return;
 		}
 		if (!isPreviewableDocument(documentType)) {
@@ -387,76 +326,64 @@
 
 		if (!muridList.length) {
 			const message = isPiagamSelected
-				? 'Tidak ada data peringkat piagam yang dapat di-preview untuk kelas ini.'
-				: 'Tidak ada murid yang dapat di-preview untuk kelas ini.';
+				? 'Tidak ada data peringkat piagam untuk kelas ini.'
+				: 'Tidak ada murid di kelas ini.';
 			toast(message, 'warning');
 			return;
 		}
 
-		if (previewAbortController) {
-			previewAbortController.abort();
-		}
-		const controller = new AbortController();
-		previewAbortController = controller;
-
-		previewLoading = true;
-		previewError = null;
+		downloadLoading = true;
 
 		try {
-			let lastProgressUpdate = 0;
+			toast(`Memproses ${muridList.length} murid...`, 'info');
+
 			const result = await loadBulkPreviews_robust({
 				documentType,
 				muridList,
 				kelasId: data.kelasId ? Number(data.kelasId) : undefined,
 				tpMode: fullTP,
 				criteria: { kritCukup, kritBaik },
-				signal: controller.signal,
-				onProgress: (current, total) => {
-					// Debounce progress updates to avoid excessive re-renders
-					const now = Date.now();
-					if (now - lastProgressUpdate > 100) {
-						bulkLoadProgress = { current, total };
-						lastProgressUpdate = now;
-					}
-				}
+				signal: new AbortController().signal
 			});
-
-			if (controller.signal.aborted) {
-				return;
-			}
 
 			if (!result.isValid) {
 				const docLabel = selectedDocumentEntry?.label ?? 'dokumen';
 				const errorMsg = buildBulkErrorMessage(docLabel, result.failureCount, result.failedMurids);
-				previewError = errorMsg;
 				toast(errorMsg, 'warning');
 
-				// Still show successful ones if any
 				if (result.data.length === 0) {
-					previewAbortController = null;
-					previewLoading = false;
 					return;
 				}
 			}
 
-			isBulkMode = true;
-			bulkPreviewData = result.data;
-			previewDocument = documentType;
-			previewMetaTitle = `${selectedDocumentEntry?.label ?? 'Dokumen'} - Semua Murid`;
-			bulkLoadProgress = null; // Clear progress indicator
-			waitingForPrintable = true;
-		} catch (err) {
-			if (controller.signal.aborted) {
-				return;
+			let successCount = 0;
+			let failCount = 0;
+
+			for (let i = 0; i < result.data.length; i++) {
+				const item = result.data[i];
+				try {
+					await generatePDFFromPreviewData(documentType, item.data);
+					successCount++;
+				} catch (error) {
+					console.error(`Error generating PDF for ${item.murid.nama}:`, error);
+					failCount++;
+				}
 			}
-			bulkLoadProgress = null;
-			console.error('Bulk preview error:', err);
-			const errorMsg = err instanceof Error ? err.message : 'Gagal memuat preview dokumen';
-			previewError = errorMsg;
+
+			if (failCount > 0) {
+				toast(
+					`${successCount} PDF berhasil dibuat, ${failCount} gagal`,
+					successCount > 0 ? 'warning' : 'error'
+				);
+			} else {
+				toast(`${successCount} PDF berhasil dibuat!`, 'success');
+			}
+		} catch (err) {
+			console.error('Bulk download error:', err);
+			const errorMsg = err instanceof Error ? err.message : 'Gagal membuat PDF';
 			toast(errorMsg, 'error');
 		} finally {
-			previewLoading = false;
-			previewAbortController = null;
+			downloadLoading = false;
 		}
 	}
 
@@ -540,39 +467,7 @@
 		waitingForPrintable = true;
 	});
 
-	function handlePrint() {
-		const doc = previewDocument;
-		if (!doc) {
-			toast('Preview dokumen belum tersedia untuk dicetak.', 'warning');
-			return;
-		}
-		if (!isPreviewableDocument(doc)) {
-			return;
-		}
-		const printableNode = previewPrintable;
-		if (!printableNode) {
-			toast(printFailureMessages[doc], 'warning');
-			return;
-		}
-		const landscape = doc === 'piagam';
-		const ok = printElement(printableNode, {
-			title: previewMetaTitle || previewDocumentEntry?.label || 'Dokumen Rapor',
-			pageMargin: '0',
-			pageWidth: landscape ? '297mm' : '210mm',
-			pageHeight: landscape ? '210mm' : '297mm'
-		});
-		if (!ok) {
-			toast(printFailureMessages[doc], 'warning');
-		}
-	}
-
-	async function handleDownloadPDF() {
-		if (!previewData || !previewMurid || isBulkMode) {
-			toast('Preview dokumen terlebih dahulu', 'warning');
-			return;
-		}
-
-		const doc = previewDocument;
+	async function generatePDFFromPreviewData(doc: DocumentType, previewData: PreviewPayload) {
 		if (doc === 'keasramaan') {
 			const keasramaanData = (previewData as { keasramaanData?: typeof previewData })
 				.keasramaanData;
@@ -585,8 +480,6 @@
 			const data = keasramaanData as any;
 
 			try {
-				toast('Membuat PDF...', 'info');
-
 				await downloadKeasramaanPDF({
 					sekolah: {
 						nama: data.sekolah.nama,
@@ -642,8 +535,6 @@
 					keasramaanRows: data.keasramaanRows || [],
 					showBgLogo: showBgLogo
 				});
-
-				toast('PDF berhasil dibuat!', 'success');
 			} catch (error) {
 				console.error('PDF generation error:', error);
 				toast('Gagal membuat PDF', 'error');
@@ -659,8 +550,6 @@
 			const data = raporData as any;
 
 			try {
-				toast('Membuat PDF...', 'info');
-
 				// Build intrakurikuler data
 				const intrakurikuler =
 					data.nilaiIntrakurikuler?.map((item: any, idx: number) => ({
@@ -746,8 +635,6 @@
 					jenjangVariant: data.sekolah?.jenjangVariant,
 					showBgLogo: showBgLogo
 				});
-
-				toast('PDF berhasil dibuat!', 'success');
 			} catch (error) {
 				console.error('PDF generation error:', error);
 				toast('Gagal membuat PDF', 'error');
@@ -763,8 +650,6 @@
 			const data = coverData as any;
 
 			try {
-				toast('Membuat PDF...', 'info');
-
 				await downloadCoverPDF({
 					sekolah: {
 						nama: data.sekolah.nama,
@@ -780,8 +665,6 @@
 					murid: data.murid,
 					showBgLogo: showBgLogo
 				});
-
-				toast('PDF berhasil dibuat!', 'success');
 			} catch (error) {
 				console.error('PDF generation error:', error);
 				toast('Gagal membuat PDF', 'error');
@@ -797,8 +680,6 @@
 			const data = biodataData as any;
 
 			try {
-				toast('Membuat PDF...', 'info');
-
 				await downloadBiodataPDF({
 					sekolah: {
 						nama: data.sekolah.nama,
@@ -842,8 +723,6 @@
 					},
 					showBgLogo: showBgLogo
 				});
-
-				toast('PDF berhasil dibuat!', 'success');
 			} catch (error) {
 				console.error('PDF generation error:', error);
 				toast('Gagal membuat PDF', 'error');
@@ -859,8 +738,6 @@
 			const data = piagamData as any;
 
 			try {
-				toast('Membuat PDF...', 'info');
-
 				// Load background image
 				let bgImage: string | null = null;
 				try {
@@ -925,8 +802,6 @@
 					template: selectedTemplate,
 					bgImage
 				});
-
-				toast('PDF berhasil dibuat!', 'success');
 			} catch (error) {
 				console.error('PDF generation error:', error);
 				toast('Gagal membuat PDF', 'error');
@@ -941,39 +816,7 @@
 
 	async function handleBgRefresh() {
 		bgRefreshKey = Date.now();
-		if (previewDocument === 'piagam') await handlePreview();
 	}
-
-	$effect(() => {
-		if (keydownHandler) {
-			window.removeEventListener('keydown', keydownHandler);
-			keydownHandler = null;
-		}
-		const doc = previewDocument;
-		const printableNode = previewPrintable;
-		if (!doc || !printableNode) {
-			return;
-		}
-		const handler = (event: KeyboardEvent) => {
-			if (!(event.ctrlKey || event.metaKey)) return;
-			if (event.key.toLowerCase() !== 'p') return;
-			event.preventDefault();
-			handlePrint();
-		};
-		keydownHandler = handler;
-		window.addEventListener('keydown', handler);
-	});
-
-	onDestroy(() => {
-		if (keydownHandler) {
-			window.removeEventListener('keydown', keydownHandler);
-			keydownHandler = null;
-		}
-		if (previewAbortController) {
-			previewAbortController.abort();
-			previewAbortController = null;
-		}
-	});
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
@@ -994,14 +837,11 @@
 		bind:selectedMuridId
 		{daftarMurid}
 		{piagamRankingOptions}
-		onPreview={handlePreview}
-		onBulkPreview={handleBulkPreview}
-		onPrint={handlePrint}
-		{previewDisabled}
-		{printDisabled}
-		{previewButtonTitle}
-		{printButtonTitle}
-		previewLoading={isPrintLoading}
+		onDownload={handleDownloadSingle}
+		onBulkDownload={handleDownloadBulk}
+		{downloadDisabled}
+		{downloadButtonTitle}
+		{downloadLoading}
 	/>
 
 	<PreviewFooter
@@ -1017,7 +857,7 @@
 		tpMode={fullTP}
 		kelasId={data.kelasId}
 		{showBgLogo}
-		onToggleBgLogo={(value) => {
+		onToggleBgLogo={(value: boolean) => {
 			showBgLogo = value;
 		}}
 		onSetKriteria={(cukup: number, baik: number) => {
@@ -1043,49 +883,12 @@
 					console.error('Error saving kriteria rapor', err);
 					toast('Gagal menyimpan kriteria rapor (jaringan).', 'error');
 				});
-			// If a rapor preview is already shown, refresh it using new criteria
-			if (previewDocument === 'rapor') {
-				if (isBulkMode) handleBulkPreview();
-				else handlePreview();
-			}
 		}}
 		onToggleFullTP={(value: 'compact' | 'full-desc') => {
 			fullTP = value;
-			if (previewDocument === 'rapor') {
-				if (isBulkMode) handleBulkPreview();
-				else handlePreview();
-			}
 		}}
 		onBgRefresh={handleBgRefresh}
 	/>
-
-	<!-- Download PDF Button (untuk cover, biodata, rapor, piagam dan keasramaan, single preview) -->
-	{#if (previewDocument === 'cover' || previewDocument === 'biodata' || previewDocument === 'rapor' || previewDocument === 'piagam' || previewDocument === 'keasramaan') && !isBulkMode && previewData}
-		<div class="mt-4 flex justify-center">
-			<button
-				type="button"
-				class="btn btn-primary gap-2"
-				onclick={handleDownloadPDF}
-				disabled={!previewData || !previewMurid}
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-5 w-5"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke="currentColor"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-					/>
-				</svg>
-				Download PDF
-			</button>
-		</div>
-	{/if}
 </div>
 
 <PreviewContent
