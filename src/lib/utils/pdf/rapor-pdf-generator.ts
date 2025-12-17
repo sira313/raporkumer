@@ -809,8 +809,8 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 
 	// Col 1: Orang Tua/Wali
 	doc.text('Orang Tua/Wali Murid', margin + sigColWidth / 2, sigStartY, { align: 'center' });
-	// Draw dashed line (1.5x lebih panjang dari nama kepala sekolah)
-	const dashedLineWidth = doc.getTextWidth(formatValue(data.kepalaSekolah?.nama)) * 1.5;
+	// Draw dashed line (fixed width sepanjang teks "Orang Tua/Wali Murid")
+	const dashedLineWidth = doc.getTextWidth('Orang Tua/Wali Murid');
 	const lineY = sigStartY + 23.2;
 	const lineStartX = margin + sigColWidth / 2 - dashedLineWidth / 2;
 	const lineEndX = margin + sigColWidth / 2 + dashedLineWidth / 2;

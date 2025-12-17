@@ -227,6 +227,36 @@ async function main() {
 			sql: `CREATE INDEX IF NOT EXISTS "murid_ekstrakurikuler_ekstrak_idx" ON "murid_ekstrakurikuler" ("ekstrakurikuler_id")`
 		});
 
+		// Ensure murid_mata_pelajaran table exists (from migration 0031)
+		await ensureTableExists(
+			client,
+			'murid_mata_pelajaran',
+			`
+			CREATE TABLE IF NOT EXISTS "murid_mata_pelajaran" (
+				"id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+				"murid_id" integer NOT NULL,
+				"mata_pelajaran_id" integer NOT NULL,
+				"nilai_kosong" integer DEFAULT 0 NOT NULL,
+				"created_at" text NOT NULL,
+				"updated_at" text,
+				CONSTRAINT "murid_mata_pelajaran_murid_id_murid_id_fk" FOREIGN KEY ("murid_id") REFERENCES "murid" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
+				CONSTRAINT "murid_mata_pelajaran_mata_pelajaran_id_mata_pelajaran_id_fk" FOREIGN KEY ("mata_pelajaran_id") REFERENCES "mata_pelajaran" ("id") ON UPDATE NO ACTION ON DELETE CASCADE
+			)
+		`
+		);
+
+		await client.execute({
+			sql: `CREATE UNIQUE INDEX IF NOT EXISTS "murid_mata_pelajaran_murid_mapel_unique" ON "murid_mata_pelajaran" ("murid_id", "mata_pelajaran_id")`
+		});
+
+		await client.execute({
+			sql: `CREATE INDEX IF NOT EXISTS "murid_mata_pelajaran_murid_idx" ON "murid_mata_pelajaran" ("murid_id")`
+		});
+
+		await client.execute({
+			sql: `CREATE INDEX IF NOT EXISTS "murid_mata_pelajaran_mapel_idx" ON "murid_mata_pelajaran" ("mata_pelajaran_id")`
+		});
+
 		// ===== PERFORMANCE OPTIMIZATION INDEXES =====
 		// These indexes significantly improve query performance, especially on /pengguna page
 		// which performs heavy consolidation queries on every load
@@ -427,6 +457,14 @@ async function main() {
 			{ table: 'murid_ekstrakurikuler', column: 'ekstrakurikuler_id', type: 'INTEGER NOT NULL' },
 			{
 				table: 'murid_ekstrakurikuler',
+				column: 'nilai_kosong',
+				type: 'INTEGER DEFAULT 0 NOT NULL'
+			},
+			// Tabel murid_mata_pelajaran untuk tracking nilai kosong per murid per mata pelajaran (0031)
+			{ table: 'murid_mata_pelajaran', column: 'murid_id', type: 'INTEGER NOT NULL' },
+			{ table: 'murid_mata_pelajaran', column: 'mata_pelajaran_id', type: 'INTEGER NOT NULL' },
+			{
+				table: 'murid_mata_pelajaran',
 				column: 'nilai_kosong',
 				type: 'INTEGER DEFAULT 0 NOT NULL'
 			},

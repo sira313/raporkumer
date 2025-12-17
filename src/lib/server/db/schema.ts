@@ -362,7 +362,7 @@ export const tableKehadiranMurid = sqliteTable(
 	(table) => [unique().on(table.muridId), index('kehadiran_murid_murid_idx').on(table.muridId)]
 );
 
-export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
+export const tableMuridRelations = relations(tableMurid, ({ one, many }) => ({
 	kelas: one(tableKelas, { fields: [tableMurid.kelasId], references: [tableKelas.id] }),
 	semester: one(tableSemester, { fields: [tableMurid.semesterId], references: [tableSemester.id] }),
 	alamat: one(tableAlamat, { fields: [tableMurid.alamatId], references: [tableAlamat.id] }),
@@ -376,7 +376,8 @@ export const tableMuridRelations = relations(tableMurid, ({ one }) => ({
 	catatanWali: one(tableCatatanWaliKelas, {
 		fields: [tableMurid.id],
 		references: [tableCatatanWaliKelas.muridId]
-	})
+	}),
+	muridMataPelajaran: many(tableMuridMataPelajaran)
 }));
 
 export const tableCatatanWaliKelasRelations = relations(tableCatatanWaliKelas, ({ one }) => ({
@@ -538,7 +539,8 @@ export const tableMataPelajaranRelations = relations(tableMataPelajaran, ({ one,
 	asesmenSumatifTujuan: many(tableAsesmenSumatifTujuan),
 	kelas: one(tableKelas, { fields: [tableMataPelajaran.kelasId], references: [tableKelas.id] }),
 	// many-to-many: mata pelajaran bisa diajar oleh multiple guru
-	authUsers: many(tableAuthUserMataPelajaran)
+	authUsers: many(tableAuthUserMataPelajaran),
+	muridMataPelajaran: many(tableMuridMataPelajaran)
 }));
 
 export const tableTujuanPembelajaranRelations = relations(tableTujuanPembelajaran, ({ one }) => ({
@@ -650,6 +652,26 @@ export const tableMuridEkstrakurikuler = sqliteTable(
 	]
 );
 
+export const tableMuridMataPelajaran = sqliteTable(
+	'murid_mata_pelajaran',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		muridId: int()
+			.references(() => tableMurid.id, { onDelete: 'cascade' })
+			.notNull(),
+		mataPelajaranId: int()
+			.references(() => tableMataPelajaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		nilaiKosong: int().notNull().default(0),
+		...audit
+	},
+	(table) => [
+		unique().on(table.muridId, table.mataPelajaranId),
+		index('murid_mata_pelajaran_murid_idx').on(table.muridId),
+		index('murid_mata_pelajaran_mapel_idx').on(table.mataPelajaranId)
+	]
+);
+
 export const tableEkstrakurikulerTujuan = sqliteTable('ekstrakurikuler_tujuan', {
 	id: int().primaryKey({ autoIncrement: true }),
 	ekstrakurikulerId: int()
@@ -718,6 +740,17 @@ export const tableMuridEkstrakurikulerRelations = relations(
 		})
 	})
 );
+
+export const tableMuridMataPelajaranRelations = relations(tableMuridMataPelajaran, ({ one }) => ({
+	murid: one(tableMurid, {
+		fields: [tableMuridMataPelajaran.muridId],
+		references: [tableMurid.id]
+	}),
+	mataPelajaran: one(tableMataPelajaran, {
+		fields: [tableMuridMataPelajaran.mataPelajaranId],
+		references: [tableMataPelajaran.id]
+	})
+}));
 
 export const tableEkstrakurikulerTujuanRelations = relations(
 	tableEkstrakurikulerTujuan,
