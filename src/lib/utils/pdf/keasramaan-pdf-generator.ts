@@ -90,6 +90,48 @@ function formatValue(value: string | null | undefined): string {
 }
 
 /**
+ * Render teks dengan pembatasan lebar dan auto font-size adjustment
+ * Jika nama terlalu panjang, akan dikurangi ukuran fontnya secara otomatis (single line)
+ */
+function renderNameWithConstraints(
+	doc: jsPDF,
+	text: string,
+	x: number,
+	y: number,
+	maxWidth: number,
+	options: {
+		align?: 'left' | 'center' | 'right';
+		baseFontSize?: number;
+		minFontSize?: number;
+	} = {}
+): { totalHeight: number; lines: Array<{ text: string; width: number }>; fontSize: number } {
+	const { align = 'center', baseFontSize = 10, minFontSize = 6 } = options;
+
+	// Mulai dengan font size dasar
+	let fontSize = baseFontSize;
+	doc.setFontSize(fontSize);
+
+	// Cek apakah teks muat dalam satu baris
+	let textWidth = doc.getTextWidth(text);
+
+	// Jika teks terlalu panjang, kurangi font size secara bertahap
+	while (textWidth > maxWidth && fontSize > minFontSize) {
+		fontSize -= 0.5;
+		doc.setFontSize(fontSize);
+		textWidth = doc.getTextWidth(text);
+	}
+
+	// Render single line dengan font size yang sudah disesuaikan
+	doc.text(text, x, y, { align });
+
+	return {
+		totalHeight: 4, // fixed height untuk single line
+		lines: [{ text, width: textWidth }],
+		fontSize
+	};
+}
+
+/**
  * Generate PDF untuk Rapor Keasramaan
  */
 export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<jsPDF> {
@@ -101,10 +143,14 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 
 	const pageWidth = doc.internal.pageSize.getWidth();
 	const pageHeight = doc.internal.pageSize.getHeight();
-	const margin = 20; // 20mm margin (sama dengan padding preview)
-	const contentWidth = pageWidth - 2 * margin;
+	// Margin: Kiri 2cm, Kanan 1.5cm, Atas 1.5cm, Bawah 2cm
+	const marginLeft = 20; // 2cm
+	const marginRight = 15; // 1.5cm
+	const marginTop = 15; // 1.5cm
+	const marginBottom = 20; // 2cm
+	const contentWidth = pageWidth - marginLeft - marginRight;
 
-	let currentY = margin;
+	let currentY = marginTop;
 
 	// Load logo image if showBgLogo is enabled
 	let logoImage: HTMLImageElement | null = null;
@@ -218,19 +264,19 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 
 		// Footer metadata di kiri (rombel | nama | nis)
 		const footerMeta = `${formatValue(data.rombel.nama)} | ${formatValue(data.murid.nama)} | ${formatValue(data.murid.nis)}`;
-		doc.text(footerMeta, margin, footerY, { align: 'left' });
+		doc.text(footerMeta, marginLeft, footerY, { align: 'left' });
 
 		// Page number di kanan
-		doc.text(`Halaman: ${currentPage}`, pageWidth - margin, footerY, {
+		doc.text(`Halaman: ${currentPage}`, pageWidth - marginRight, footerY, {
 			align: 'right'
 		});
 	};
 
 	// Helper: check if we need new page
 	const checkNewPage = (requiredHeight: number) => {
-		if (currentY + requiredHeight > pageHeight - margin) {
+		if (currentY + requiredHeight > pageHeight - marginBottom) {
 			doc.addPage();
-			currentY = margin;
+			currentY = marginTop;
 			drawFooter(); // Draw footer on new page
 			return true;
 		}
@@ -313,7 +359,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 			4: { cellWidth: 3 }, // colon kanan
 			5: { cellWidth: 'auto', fontStyle: 'bold' } // value kanan, auto untuk sisa ruang
 		},
-		margin: { left: margin, right: margin },
+		margin: { left: marginLeft, right: marginRight, top: marginTop, bottom: marginBottom },
 		didDrawPage: drawFooter
 	});
 
@@ -391,7 +437,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 			2: { cellWidth: 25, halign: 'center', overflow: 'hidden', minCellWidth: 25 }, // Predikat, text-center, no wrap
 			3: { cellWidth: contentWidth - 97 } // Deskripsi, align-top
 		},
-		margin: { left: margin, right: margin, bottom: 20 }, // margin bottom untuk reserve space dan prevent orphan header
+		margin: { left: marginLeft, right: marginRight, bottom: 20 }, // margin bottom untuk reserve space dan prevent orphan header
 		showHead: 'everyPage',
 		didDrawPage: drawFooter,
 		didDrawCell: (data) => {
@@ -418,8 +464,8 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 						// Force new page dengan memanipulasi cursor Y
 						// Trick: set startY untuk row berikutnya ke halaman baru
 						data.cursor = {
-							x: margin,
-							y: margin // pindah ke halaman baru
+							x: marginLeft,
+							y: marginTop // pindah ke halaman baru
 						};
 					}
 				}
@@ -476,7 +522,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 				1: { cellWidth: contentWidth - 17 - 22.6, halign: 'left' }, // sisa, text-left
 				2: { cellWidth: 22.6, halign: 'center' } // w-16 = 64px = 22.6mm, text-center
 			},
-			margin: { left: margin, right: margin },
+			margin: { left: marginLeft, right: marginRight, top: marginTop, bottom: marginBottom },
 			didDrawPage: drawFooter
 		});
 
@@ -486,7 +532,12 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 
 	// Signatures Section: mt-12, flex flex-col gap-6
 	// grid gap-4 md:grid-cols-2, text-xs print:text-xs, text-center
-	checkNewPage(75);
+	const needNewPageForSig = checkNewPage(75);
+
+	// Jika pindah halaman baru, tambahkan spacing dari top margin
+	if (needNewPageForSig) {
+		currentY += 8.5; // tambah spacing di halaman baru
+	}
 
 	const kepalaSekolahTitle =
 		data.kepalaSekolah?.statusKepalaSekolah === 'plt' ? 'Plt. Kepala Sekolah' : 'Kepala Sekolah';
@@ -502,61 +553,93 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 	doc.setFont('helvetica', 'normal');
 
 	// Tempat, Tanggal (absolute -top-6 = 24px = 8.5mm di atas Wali Asuh)
+	// Pastikan tidak keluar dari bounds jika di halaman baru
+	const tanggalY = Math.max(sigStartY - 8.5, marginTop);
 	if (data.ttd) {
 		doc.text(
 			`${data.ttd.tempat}, ${data.ttd.tanggal}`,
-			margin + sigColWidth + sigColWidth / 2,
-			sigStartY - 8.5, // -top-6 = -24px = -8.5mm
+			marginLeft + sigColWidth + sigColWidth / 2,
+			tanggalY,
 			{ align: 'center' }
 		);
 	}
 
 	// Row 1: Wali Asrama | Wali Asuh
 	// Wali Asrama (left) - text-xs, text-center
-	doc.text('Wali Asrama', margin + sigColWidth / 2, sigStartY, { align: 'center' });
-	// mt-16 = 64px = 22.6mm, font-semibold, tracking-wide, underline
-	// Gunakan normal font karena bold Helvetica di jsPDF memiliki bug rendering untuk nama panjang
+	doc.text('Wali Asrama', marginLeft + sigColWidth / 2, sigStartY, { align: 'center' });
 	doc.setFont('helvetica', 'normal');
-	doc.setFontSize(11); // sedikit lebih besar dari default untuk emphasis
 	const waliAsramaNama = formatValue(data.waliAsrama?.nama);
-	// Calculate centered position manually
-	const waliAsramaTextWidth = doc.getTextWidth(waliAsramaNama);
-	const waliAsramaX = margin + sigColWidth / 2 - waliAsramaTextWidth / 2;
-	doc.text(waliAsramaNama, waliAsramaX, sigStartY + 22.6);
-	// Underline manual
-	doc.line(waliAsramaX, sigStartY + 23.2, waliAsramaX + waliAsramaTextWidth, sigStartY + 23.2);
 
-	// mt-1 = 4px = 1.4mm, text-xs
-	doc.setFont('helvetica', 'normal');
-	doc.setFontSize(10); // match dengan header tabel
-	doc.text(
-		formatValue(data.waliAsrama?.nip),
-		margin + sigColWidth / 2,
-		sigStartY + 22.6 + 1.4 + 3, // mt-1 = 4px = 1.4mm + line spacing
-		{ align: 'center' }
+	// Render nama dengan pembatasan lebar
+	const waliAsramaX = marginLeft + sigColWidth / 2;
+	const waliAsramaNameY = sigStartY + 22.6;
+	const maxWaliAsramaWidth = sigColWidth * 0.9;
+
+	const waliAsramaResult = renderNameWithConstraints(
+		doc,
+		waliAsramaNama,
+		waliAsramaX,
+		waliAsramaNameY,
+		maxWaliAsramaWidth,
+		{
+			align: 'center',
+			baseFontSize: 11,
+			minFontSize: 6
+		}
 	);
+
+	// Underline (single line)
+	const asramaLine = waliAsramaResult.lines[0];
+	const asramaLineY = waliAsramaNameY + 0.6;
+	doc.line(
+		waliAsramaX - asramaLine.width / 2,
+		asramaLineY,
+		waliAsramaX + asramaLine.width / 2,
+		asramaLineY
+	);
+
+	// NIP
+	doc.setFont('helvetica', 'normal');
+	doc.setFontSize(10);
+	const asramaNipY = waliAsramaNameY + waliAsramaResult.totalHeight + 0.6 + 3;
+	doc.text(formatValue(data.waliAsrama?.nip), waliAsramaX, asramaNipY, {
+		align: 'center'
+	});
 
 	// Wali Asuh (right) - text-xs, text-center
-	doc.setFontSize(10); // match dengan header tabel
-	doc.text('Wali Asuh', margin + sigColWidth + sigColWidth / 2, sigStartY, { align: 'center' });
-	// Gunakan normal font karena bold Helvetica di jsPDF memiliki bug rendering untuk nama panjang
+	doc.setFontSize(10);
+	doc.text('Wali Asuh', marginLeft + sigColWidth + sigColWidth / 2, sigStartY, { align: 'center' });
 	doc.setFont('helvetica', 'normal');
-	doc.setFontSize(11); // sedikit lebih besar dari default untuk emphasis
 	const waliAsuhNama = formatValue(data.waliAsuh?.nama);
-	// Calculate centered position manually
-	const waliAsuhTextWidth = doc.getTextWidth(waliAsuhNama);
-	const waliAsuhX = margin + sigColWidth + sigColWidth / 2 - waliAsuhTextWidth / 2;
-	doc.text(waliAsuhNama, waliAsuhX, sigStartY + 22.6);
-	// Underline
-	doc.line(waliAsuhX, sigStartY + 23.2, waliAsuhX + waliAsuhTextWidth, sigStartY + 23.2);
-	doc.setFont('helvetica', 'normal');
-	doc.setFontSize(10); // match dengan header tabel
-	doc.text(
-		formatValue(data.waliAsuh?.nip),
-		margin + sigColWidth + sigColWidth / 2,
-		sigStartY + 22.6 + 1.4 + 3,
-		{ align: 'center' }
+
+	// Render nama dengan pembatasan lebar
+	const waliAsuhX = marginLeft + sigColWidth + sigColWidth / 2;
+	const waliAsuhNameY = sigStartY + 22.6;
+	const maxWaliAsuhWidth = sigColWidth * 0.9;
+
+	const waliAsuhResult = renderNameWithConstraints(
+		doc,
+		waliAsuhNama,
+		waliAsuhX,
+		waliAsuhNameY,
+		maxWaliAsuhWidth,
+		{
+			align: 'center',
+			baseFontSize: 11,
+			minFontSize: 6
+		}
 	);
+
+	// Underline (single line)
+	const asuhLine = waliAsuhResult.lines[0];
+	const asuhLineY = waliAsuhNameY + 0.6;
+	doc.line(waliAsuhX - asuhLine.width / 2, asuhLineY, waliAsuhX + asuhLine.width / 2, asuhLineY);
+
+	// NIP
+	doc.setFont('helvetica', 'normal');
+	doc.setFontSize(10);
+	const asuhNipY = waliAsuhNameY + waliAsuhResult.totalHeight + 0.6 + 3;
+	doc.text(formatValue(data.waliAsuh?.nip), waliAsuhX, asuhNipY, { align: 'center' });
 
 	// Row 2: Orang Tua/Wali | Kepala Sekolah
 	// gap-6 = 24px = 8.5mm dari row 1
@@ -564,7 +647,7 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 
 	// Orang Tua/Wali (left) - text-xs, text-center
 	doc.setFontSize(10); // match dengan header tabel
-	doc.text('Orang Tua/Wali Murid', margin + sigColWidth / 2, sig2StartY, { align: 'center' });
+	doc.text('Orang Tua/Wali Murid', marginLeft + sigColWidth / 2, sig2StartY, { align: 'center' });
 	// Gunakan lebar yang sedikit lebih panjang dari nama kepala sekolah
 	const kepalaSekolahNamaTemp = formatValue(data.kepalaSekolah?.nama);
 	doc.setFont('helvetica', 'bold');
@@ -572,8 +655,8 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 	doc.setFont('helvetica', 'normal');
 
 	const lineY = sig2StartY + 23.2; // posisi Y sama dengan underline Kepala Sekolah
-	const lineStartX = margin + sigColWidth / 2 - dashedLineWidth / 2;
-	const lineEndX = margin + sigColWidth / 2 + dashedLineWidth / 2;
+	const lineStartX = marginLeft + sigColWidth / 2 - dashedLineWidth / 2;
+	const lineEndX = marginLeft + sigColWidth / 2 + dashedLineWidth / 2;
 
 	// Draw dashed line (border-dashed)
 	const dashLength = 1.5; // diperpendek dari 2
@@ -587,35 +670,47 @@ export async function generateKeasramaanPDF(data: KeasramaanPDFData): Promise<js
 	}
 
 	// Kepala Sekolah (right) - text-xs, text-center
-	doc.setFontSize(10); // match dengan header tabel
-	doc.text(kepalaSekolahTitle, margin + sigColWidth + sigColWidth / 2, sig2StartY, {
+	doc.setFontSize(10);
+	doc.text(kepalaSekolahTitle, marginLeft + sigColWidth + sigColWidth / 2, sig2StartY, {
 		align: 'center'
 	});
-	// mt-16 = 64px = 22.6mm, font-semibold, tracking-wide, underline
-	// Gunakan normal font karena bold Helvetica di jsPDF memiliki bug rendering untuk nama panjang
 	doc.setFont('helvetica', 'normal');
-	doc.setFontSize(11); // sedikit lebih besar dari default untuk emphasis
 	const kepalaSekolahNama = formatValue(data.kepalaSekolah?.nama);
-	// Calculate centered position manually
-	const kepalaSekolahTextWidth = doc.getTextWidth(kepalaSekolahNama);
-	const kepalaSekolahX = margin + sigColWidth + sigColWidth / 2 - kepalaSekolahTextWidth / 2;
-	doc.text(kepalaSekolahNama, kepalaSekolahX, sig2StartY + 22.6);
-	// Underline
-	doc.line(
+
+	// Render nama dengan pembatasan lebar
+	const kepalaSekolahX = marginLeft + sigColWidth + sigColWidth / 2;
+	const kepalaSekolahNameY = sig2StartY + 22.6;
+	const maxKepalaSekolahWidth = sigColWidth * 0.9;
+
+	const kepalaSekolahResult = renderNameWithConstraints(
+		doc,
+		kepalaSekolahNama,
 		kepalaSekolahX,
-		sig2StartY + 23.2,
-		kepalaSekolahX + kepalaSekolahTextWidth,
-		sig2StartY + 23.2
+		kepalaSekolahNameY,
+		maxKepalaSekolahWidth,
+		{
+			align: 'center',
+			baseFontSize: 11,
+			minFontSize: 6
+		}
 	);
-	// mt-1 = 4px = 1.4mm, text-xs
+
+	// Underline (single line)
+	const kepalaLine = kepalaSekolahResult.lines[0];
+	const kepalaLineY = kepalaSekolahNameY + 0.6;
+	doc.line(
+		kepalaSekolahX - kepalaLine.width / 2,
+		kepalaLineY,
+		kepalaSekolahX + kepalaLine.width / 2,
+		kepalaLineY
+	);
+
 	doc.setFont('helvetica', 'normal');
-	doc.setFontSize(10); // match dengan header tabel
-	doc.text(
-		formatValue(data.kepalaSekolah?.nip),
-		margin + sigColWidth + sigColWidth / 2,
-		sig2StartY + 22.6 + 1.4 + 3,
-		{ align: 'center' }
-	);
+	doc.setFontSize(10);
+	const kepalaNipY = kepalaSekolahNameY + kepalaSekolahResult.totalHeight + 0.6 + 3;
+	doc.text(formatValue(data.kepalaSekolah?.nip), kepalaSekolahX, kepalaNipY, {
+		align: 'center'
+	});
 
 	// Draw watermark on all pages AFTER all content is added
 	if (logoImage) {
