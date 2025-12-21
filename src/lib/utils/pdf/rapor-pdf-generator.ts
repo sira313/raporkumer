@@ -95,6 +95,48 @@ function formatNilai(value: number | null | undefined): string {
 }
 
 /**
+ * Render teks dengan pembatasan lebar dan auto font-size adjustment
+ * Jika nama terlalu panjang, akan dikurangi ukuran fontnya secara otomatis (single line)
+ */
+function renderNameWithConstraints(
+	doc: jsPDF,
+	text: string,
+	x: number,
+	y: number,
+	maxWidth: number,
+	options: {
+		align?: 'left' | 'center' | 'right';
+		baseFontSize?: number;
+		minFontSize?: number;
+	} = {}
+): { totalHeight: number; lines: Array<{ text: string; width: number }>; fontSize: number } {
+	const { align = 'center', baseFontSize = 10, minFontSize = 6 } = options;
+
+	// Mulai dengan font size dasar
+	let fontSize = baseFontSize;
+	doc.setFontSize(fontSize);
+
+	// Cek apakah teks muat dalam satu baris
+	let textWidth = doc.getTextWidth(text);
+
+	// Jika teks terlalu panjang, kurangi font size secara bertahap
+	while (textWidth > maxWidth && fontSize > minFontSize) {
+		fontSize -= 0.5;
+		doc.setFontSize(fontSize);
+		textWidth = doc.getTextWidth(text);
+	}
+
+	// Render single line dengan font size yang sudah disesuaikan
+	doc.text(text, x, y, { align });
+
+	return {
+		totalHeight: 4, // fixed height untuk single line
+		lines: [{ text, width: textWidth }],
+		fontSize
+	};
+}
+
+/**
  * Generate PDF untuk Rapor
  */
 export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
@@ -106,10 +148,14 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 
 	const pageWidth = doc.internal.pageSize.getWidth();
 	const pageHeight = doc.internal.pageSize.getHeight();
-	const margin = 20; // 20mm margin (sama dengan keasramaan)
-	const contentWidth = pageWidth - 2 * margin;
+	// Margin: Kiri 2cm, Kanan 1.5cm, Atas 1.5cm, Bawah 2cm
+	const marginLeft = 20; // 2cm
+	const marginRight = 15; // 1.5cm
+	const marginTop = 15; // 1.5cm
+	const marginBottom = 20; // 2cm
+	const contentWidth = pageWidth - marginLeft - marginRight;
 
-	let currentY = margin;
+	let currentY = marginTop;
 
 	// Load logo image if showBgLogo is enabled
 	let logoImage: HTMLImageElement | null = null;
@@ -222,19 +268,19 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 		doc.setFont('helvetica', 'normal'); // pastikan font normal
 		// Footer metadata di kiri (rombel | nama | nis)
 		const footerMeta = `${formatValue(data.rombel.nama)} | ${formatValue(data.murid.nama)} | ${formatValue(data.murid.nis)}`;
-		doc.text(footerMeta, margin, footerY, { align: 'left' });
+		doc.text(footerMeta, marginLeft, footerY, { align: 'left' });
 
 		// Page number di kanan
-		doc.text(`Halaman: ${currentPage}`, pageWidth - margin, footerY, {
+		doc.text(`Halaman: ${currentPage}`, pageWidth - marginRight, footerY, {
 			align: 'right'
 		});
 	};
 
 	// Helper: check if we need new page
 	const checkNewPage = (requiredHeight: number) => {
-		if (currentY + requiredHeight > pageHeight - margin) {
+		if (currentY + requiredHeight > pageHeight - marginBottom) {
 			doc.addPage();
-			currentY = margin;
+			currentY = marginTop;
 			drawFooter(); // Draw footer on new page
 			return true;
 		}
@@ -314,7 +360,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			4: { cellWidth: 3 }, // colon kanan
 			5: { cellWidth: 'auto', fontStyle: 'bold' } // value kanan, auto untuk sisa ruang
 		},
-		margin: { left: margin, right: margin },
+		margin: { left: marginLeft, right: marginRight, top: marginTop, bottom: marginBottom },
 		didDrawPage: drawFooter
 	});
 
@@ -420,7 +466,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			2: { cellWidth: 20, halign: 'center' }, // Nilai Akhir
 			3: { cellWidth: contentWidth - 82 } // Capaian Kompetensi
 		},
-		margin: { left: margin, right: margin },
+		margin: { left: marginLeft, right: marginRight, top: marginTop, bottom: marginBottom },
 		showHead: 'everyPage',
 		didDrawPage: () => {
 			// Add footer dengan style FooterPage
@@ -433,10 +479,10 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 
 			// Footer metadata di kiri (rombel | nama | nis)
 			const footerMeta = `${formatValue(data.rombel.nama)} | ${formatValue(data.murid.nama)} | ${formatValue(data.murid.nis)}`;
-			doc.text(footerMeta, margin, footerY, { align: 'left' });
+			doc.text(footerMeta, marginLeft, footerY, { align: 'left' });
 
 			// Page number di kanan
-			doc.text(`Halaman: ${currentPage}`, pageWidth - margin, footerY, {
+			doc.text(`Halaman: ${currentPage}`, pageWidth - marginRight, footerY, {
 				align: 'right'
 			});
 		}
@@ -487,7 +533,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				fontSize: 10,
 				cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 			},
-			margin: { left: margin, right: margin },
+			margin: { left: marginLeft, right: marginRight, top: marginTop, bottom: marginBottom },
 			didDrawPage: drawFooter
 		});
 
@@ -533,7 +579,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				1: { cellWidth: 50 }, // Ekstrakurikuler
 				2: { cellWidth: contentWidth - 62 } // Keterangan
 			},
-			margin: { left: margin, right: margin },
+			margin: { left: marginLeft, right: marginRight, top: marginTop, bottom: marginBottom },
 			didDrawPage: drawFooter
 		});
 
@@ -623,7 +669,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				2: { cellWidth: 5.6, lineWidth: 0 }, // Gap column (no border)
 				3: { cellWidth: (contentWidth - 5.6) * 0.5 } // Catatan wali (50%)
 			},
-			margin: { left: margin, right: margin },
+			margin: { left: marginLeft, right: marginRight, top: marginTop, bottom: marginBottom },
 			didDrawPage: drawFooter,
 			didDrawCell: (data) => {
 				// Remove top and bottom borders for gap column (column 2)
@@ -692,7 +738,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 			fontSize: 10,
 			cellPadding: { top: 2.8, right: 2.8, bottom: 2.8, left: 2.8 }
 		},
-		margin: { left: margin, right: margin },
+		margin: { left: marginLeft, right: marginRight, top: marginTop, bottom: marginBottom },
 		didDrawPage: drawFooter
 	});
 
@@ -748,7 +794,7 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 				fontSize: 10,
 				cellPadding: { top: 4.2, right: 4.2, bottom: 4.2, left: 4.2 }
 			},
-			margin: { left: margin, right: margin },
+			margin: { left: marginLeft, right: marginRight, top: marginTop, bottom: marginBottom },
 			didDrawPage: drawFooter,
 			didDrawCell: (data) => {
 				if (data.section === 'body' && data.row.index === 0) {
@@ -785,35 +831,43 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 	}
 
 	// Signatures Section
-	checkNewPage(75);
+	const needNewPageForSig = checkNewPage(75);
+
+	// Jika pindah halaman baru, tambahkan spacing dari top margin
+	if (needNewPageForSig) {
+		currentY += 8.5; // tambah spacing di halaman baru
+	}
 
 	const kepalaSekolahTitle =
 		data.kepalaSekolah?.statusKepalaSekolah === 'plt' ? 'Plt. Kepala Sekolah' : 'Kepala Sekolah';
 
-	// Signature grid: 3 kolom layout
-	const sigColWidth = contentWidth / 3;
+	// Signature grid: 2 kolom di atas (Orang Tua, Wali Kelas), 1 di tengah bawah (Kepala Sekolah)
+	const sigColWidth = contentWidth / 2;
 	const sigStartY = currentY;
+	const sigGapVertical = 8.5; // gap-6 = 24px = 8.5mm
 
 	doc.setFontSize(10); // ukuran yang sama dengan identity
 	doc.setFont('helvetica', 'normal');
 
 	// Tempat, Tanggal (absolute di atas Wali Kelas)
+	// Pastikan tidak keluar dari bounds jika di halaman baru
+	const tanggalY = Math.max(sigStartY - 8.5, marginTop);
 	if (data.ttd) {
 		doc.text(
 			`${data.ttd.tempat}, ${data.ttd.tanggal}`,
-			margin + sigColWidth * 2 + sigColWidth / 2,
-			sigStartY - 8.5, // -top-6 = -24px = -8.5mm
+			marginLeft + sigColWidth + sigColWidth / 2,
+			tanggalY,
 			{ align: 'center' }
 		);
 	}
 
-	// Col 1: Orang Tua/Wali
-	doc.text('Orang Tua/Wali Murid', margin + sigColWidth / 2, sigStartY, { align: 'center' });
+	// Row 1 Col 1: Orang Tua/Wali
+	doc.text('Orang Tua/Wali Murid', marginLeft + sigColWidth / 2, sigStartY, { align: 'center' });
 	// Draw dashed line (fixed width sepanjang teks "Orang Tua/Wali Murid")
 	const dashedLineWidth = doc.getTextWidth('Orang Tua/Wali Murid');
-	const lineY = sigStartY + 23.2;
-	const lineStartX = margin + sigColWidth / 2 - dashedLineWidth / 2;
-	const lineEndX = margin + sigColWidth / 2 + dashedLineWidth / 2;
+	const orangTuaLineY = sigStartY + 23.2;
+	const lineStartX = marginLeft + sigColWidth / 2 - dashedLineWidth / 2;
+	const lineEndX = marginLeft + sigColWidth / 2 + dashedLineWidth / 2;
 
 	const dashLength = 1.5;
 	const gapLength = 1;
@@ -821,63 +875,76 @@ export async function generateRaporPDF(data: RaporPDFData): Promise<jsPDF> {
 	doc.setLineWidth(0.1);
 	while (currentX < lineEndX) {
 		const nextX = Math.min(currentX + dashLength, lineEndX);
-		doc.line(currentX, lineY, nextX, lineY);
+		doc.line(currentX, orangTuaLineY, nextX, orangTuaLineY);
 		currentX = nextX + gapLength;
 	}
 
-	// Col 2: Kepala Sekolah
+	// Row 1 Col 2: Wali Kelas
 	doc.setFontSize(10);
-	doc.text(kepalaSekolahTitle, margin + sigColWidth + sigColWidth / 2, sigStartY, {
-		align: 'center'
-	});
-	doc.setFont('helvetica', 'bold');
-	const kepalaSekolahNama = formatValue(data.kepalaSekolah?.nama);
-	doc.text(kepalaSekolahNama, margin + sigColWidth + sigColWidth / 2, sigStartY + 22.6, {
-		align: 'center'
-	});
-	// Underline
-	const kepalaSekolahWidth = doc.getTextWidth(kepalaSekolahNama);
-	doc.line(
-		margin + sigColWidth + sigColWidth / 2 - kepalaSekolahWidth / 2,
-		sigStartY + 23.2,
-		margin + sigColWidth + sigColWidth / 2 + kepalaSekolahWidth / 2,
-		sigStartY + 23.2
-	);
-	doc.setFont('helvetica', 'normal');
-	doc.setFontSize(10);
-	doc.text(
-		formatValue(data.kepalaSekolah?.nip),
-		margin + sigColWidth + sigColWidth / 2,
-		sigStartY + 22.6 + 1.4 + 3,
-		{ align: 'center' }
-	);
-
-	// Col 3: Wali Kelas
-	doc.setFontSize(10);
-	doc.text('Wali Kelas', margin + sigColWidth * 2 + sigColWidth / 2, sigStartY, {
+	doc.text('Wali Kelas', marginLeft + sigColWidth + sigColWidth / 2, sigStartY, {
 		align: 'center'
 	});
 	doc.setFont('helvetica', 'bold');
 	const waliKelasNama = formatValue(data.waliKelas?.nama);
-	doc.text(waliKelasNama, margin + sigColWidth * 2 + sigColWidth / 2, sigStartY + 22.6, {
-		align: 'center'
-	});
-	// Underline
-	const waliKelasWidth = doc.getTextWidth(waliKelasNama);
-	doc.line(
-		margin + sigColWidth * 2 + sigColWidth / 2 - waliKelasWidth / 2,
-		sigStartY + 23.2,
-		margin + sigColWidth * 2 + sigColWidth / 2 + waliKelasWidth / 2,
-		sigStartY + 23.2
+
+	// Render nama dengan pembatasan lebar (max 90% dari kolom width untuk padding)
+	const waliNameX = marginLeft + sigColWidth + sigColWidth / 2;
+	const waliNameY = sigStartY + 22.6;
+	const maxWaliNameWidth = sigColWidth * 0.9;
+
+	const waliResult = renderNameWithConstraints(
+		doc,
+		waliKelasNama,
+		waliNameX,
+		waliNameY,
+		maxWaliNameWidth,
+		{
+			align: 'center',
+			baseFontSize: 10,
+			minFontSize: 6
+		}
 	);
+
+	// Underline (single line dengan font size yang sudah disesuaikan)
+	const waliLine = waliResult.lines[0];
+	const waliLineY = waliNameY + 0.6;
+	doc.line(waliNameX - waliLine.width / 2, waliLineY, waliNameX + waliLine.width / 2, waliLineY);
+
 	doc.setFont('helvetica', 'normal');
 	doc.setFontSize(10);
-	doc.text(
-		formatValue(data.waliKelas?.nip),
-		margin + sigColWidth * 2 + sigColWidth / 2,
-		sigStartY + 22.6 + 1.4 + 3,
-		{ align: 'center' }
-	);
+	const waliNipY = waliNameY + waliResult.totalHeight + 0.6 + 3;
+	doc.text(formatValue(data.waliKelas?.nip), waliNameX, waliNipY, { align: 'center' });
+
+	// Row 2: Kepala Sekolah (tengah bawah)
+	const sig2StartY = sigStartY + 22.6 + 1.4 + 3 + sigGapVertical;
+
+	doc.setFontSize(10);
+	doc.text(kepalaSekolahTitle, pageWidth / 2, sig2StartY, {
+		align: 'center'
+	});
+	doc.setFont('helvetica', 'bold');
+	const kepalaSekolahNama = formatValue(data.kepalaSekolah?.nama);
+
+	// Render nama dengan pembatasan lebar (max 90% dari kolom width untuk padding)
+	const nameX = pageWidth / 2;
+	const nameY = sig2StartY + 22.6;
+	const maxNameWidth = sigColWidth * 0.9;
+
+	const nameResult = renderNameWithConstraints(doc, kepalaSekolahNama, nameX, nameY, maxNameWidth, {
+		align: 'center',
+		baseFontSize: 10,
+		minFontSize: 6
+	});
+
+	// Underline (single line dengan font size yang sudah disesuaikan)
+	const line = nameResult.lines[0];
+	const kepalaLineY = nameY + 0.6;
+	doc.line(nameX - line.width / 2, kepalaLineY, nameX + line.width / 2, kepalaLineY);
+
+	doc.setFont('helvetica', 'normal');
+	doc.setFontSize(10);
+	const nipY = nameY + nameResult.totalHeight + 0.6 + 3;
+	doc.text(formatValue(data.kepalaSekolah?.nip), nameX, nipY, { align: 'center' });
 
 	// Draw watermark on all pages AFTER all content is added
 	if (logoImage) {

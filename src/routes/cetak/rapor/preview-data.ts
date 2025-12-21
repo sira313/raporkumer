@@ -454,6 +454,11 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			}
 			return a.displayName.localeCompare(b.displayName, LOCALE_ID);
 		})
+		.filter((entry) => {
+			// Sembunyikan mapel yang belum dinilai
+			// Hanya tampilkan jika ada nilai akhir dan deskripsi bukan "Belum ada penilaian sumatif."
+			return entry.nilaiAkhir !== '—' && entry.deskripsi !== 'Belum ada penilaian sumatif.';
+		})
 		.map((entry) => ({
 			kelompok: entry.kelompok,
 			mataPelajaran: entry.displayName,
