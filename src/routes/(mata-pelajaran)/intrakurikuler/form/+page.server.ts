@@ -63,6 +63,17 @@ export const actions = {
 			kode = 'PAPB';
 		}
 
+		// Validasi duplikat: cek apakah sudah ada mapel dengan nama sama di kelas ini
+		const existing = await db.query.tableMataPelajaran.findFirst({
+			where: and(eq(tableMataPelajaran.kelasId, kelasId), eq(tableMataPelajaran.nama, nama))
+		});
+
+		if (existing) {
+			return fail(400, {
+				fail: `Mata pelajaran "${nama}" sudah ada di kelas ini. Tidak boleh duplikat.`
+			});
+		}
+
 		await db.insert(tableMataPelajaran).values({
 			nama,
 			jenis,

@@ -481,7 +481,19 @@ export const actions = {
 			});
 
 			const mapelByName = new Map<string, number>();
-			for (const m of existingMapel) mapelByName.set((m.nama ?? '').toLowerCase(), m.id);
+			for (const m of existingMapel) {
+				const nameLower = (m.nama ?? '').toLowerCase();
+				// Jika sudah ada mapel dengan nama sama, gunakan yang ID-nya lebih kecil (lebih dulu dibuat)
+				// dan log peringatan tentang duplikat
+				if (mapelByName.has(nameLower)) {
+					const existingId = mapelByName.get(nameLower)!;
+					console.warn(
+						`[DUPLIKAT] Mata pelajaran "${m.nama}" memiliki lebih dari satu ID di kelas ${kelasId}: ID ${existingId} dan ID ${m.id}. Menggunakan ID ${existingId}.`
+					);
+					continue; // Skip, gunakan ID yang sudah ada (yang lebih dulu)
+				}
+				mapelByName.set(nameLower, m.id);
+			}
 
 			for (const [mapelName, meta] of parsed.entries()) {
 				const lower = mapelName.toLowerCase();

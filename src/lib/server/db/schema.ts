@@ -436,18 +436,22 @@ export const tableAuthUserKelas = sqliteTable(
 	]
 );
 
-export const tableMataPelajaran = sqliteTable('mata_pelajaran', {
-	id: int().primaryKey({ autoIncrement: true }),
-	kelasId: int()
-		.references(() => tableKelas.id)
-		.notNull(),
-	nama: text().notNull(),
-	// optional short code for subjects (e.g. PAPB for Pendidikan Agama dan Budi Pekerti)
-	kode: text(),
-	kkm: int().notNull().default(0),
-	jenis: text({ enum: ['wajib', 'pilihan', 'mulok', 'kejuruan'] }).notNull(),
-	...audit
-});
+export const tableMataPelajaran = sqliteTable(
+	'mata_pelajaran',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		kelasId: int()
+			.references(() => tableKelas.id)
+			.notNull(),
+		nama: text().notNull(),
+		// optional short code for subjects (e.g. PAPB for Pendidikan Agama dan Budi Pekerti)
+		kode: text(),
+		kkm: int().notNull().default(0),
+		jenis: text({ enum: ['wajib', 'pilihan', 'mulok', 'kejuruan'] }).notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.kelasId, table.nama)]
+);
 
 export const tableTujuanPembelajaran = sqliteTable('tujuan_pembelajaran', {
 	id: int().primaryKey({ autoIncrement: true }),

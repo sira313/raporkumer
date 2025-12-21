@@ -270,7 +270,6 @@
 			});
 
 			await generatePDFFromPreviewData(documentType, result.data);
-			toast('PDF berhasil dibuat!', 'success');
 		} catch (err) {
 			console.error('Download error:', err);
 			const errorMsg = err instanceof Error ? err.message : 'Gagal membuat PDF';
@@ -324,8 +323,6 @@
 		downloadLoading = true;
 
 		try {
-			toast(`Memproses ${muridList.length} murid...`, 'info');
-
 			const result = await loadBulkPreviews_robust({
 				documentType,
 				muridList,
@@ -346,7 +343,7 @@
 			}
 
 			await generateBulkPDFFromPreviewData(documentType, result.data);
-			toast(`PDF dengan ${result.data.length} murid berhasil dibuat!`, 'success');
+			toast('PDF berhasil dibuat!', 'success');
 		} catch (err) {
 			console.error('Bulk download error:', err);
 			const errorMsg = err instanceof Error ? err.message : 'Gagal membuat PDF';
@@ -1333,9 +1330,11 @@
 
 			// Gabungkan halaman dari PDF baru ke mergedPdf
 			const pageCount = pdf.getNumberOfPages();
+			// Gunakan orientasi yang sesuai dengan tipe dokumen
+			const orientation = doc === 'piagam' ? 'landscape' : 'portrait';
 			for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-				// Tambah halaman baru
-				mergedPdf.addPage('a4', 'portrait');
+				// Tambah halaman baru dengan orientasi yang sesuai
+				mergedPdf.addPage('a4', orientation);
 
 				// Copy semua objek dari halaman PDF sumber ke halaman merged
 				const pageData = (pdf as any).internal.pages[pageNum];

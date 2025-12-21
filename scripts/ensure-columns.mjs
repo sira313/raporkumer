@@ -335,6 +335,13 @@ async function main() {
 			'CREATE INDEX IF NOT EXISTS "idx_mata_pelajaran_kelas_id" ON "mata_pelajaran" ("kelas_id")'
 		);
 
+		// Prevent duplicate mata pelajaran per kelas (0031)
+		await ensureIndexExists(
+			client,
+			'mata_pelajaran_kelas_id_nama_unique',
+			'CREATE UNIQUE INDEX IF NOT EXISTS "mata_pelajaran_kelas_id_nama_unique" ON "mata_pelajaran" ("kelas_id", "nama")'
+		);
+
 		// tujuan_pembelajaran table indexes
 		await ensureIndexExists(
 			client,
