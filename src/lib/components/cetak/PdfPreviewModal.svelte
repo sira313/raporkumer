@@ -38,7 +38,9 @@
 
 {#if open}
 	<dialog bind:this={dialogEl} class="modal" onclose={handleClose}>
-		<div class="modal-box relative flex h-dvh max-h-dvh w-screen max-w-screen flex-col rounded-none p-0">
+		<div
+			class="modal-box relative flex h-dvh max-h-dvh w-screen max-w-screen flex-col rounded-none p-0"
+		>
 			<div class="min-h-0 flex-1">
 				<embed src={pdfUrl} type="application/pdf" class="h-full w-full" title={pdfTitle} />
 			</div>

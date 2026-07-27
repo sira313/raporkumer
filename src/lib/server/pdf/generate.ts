@@ -9,9 +9,10 @@ import { renderBiodataHTML } from './templates/biodata';
 import { renderKeasramaanHTML } from './templates/keasramaan';
 import { renderPiagamHTML } from './templates/piagam';
 import { renderJurnalMengajarHTML } from './templates/jurnal-mengajar';
+import { renderBukuTamuHTML } from './templates/buku-tamu';
 
 export type DocumentType =
-	'cover' | 'rapor' | 'biodata' | 'keasramaan' | 'piagam' | 'jurnal-mengajar';
+	'cover' | 'rapor' | 'biodata' | 'keasramaan' | 'piagam' | 'jurnal-mengajar' | 'buku-tamu';
 
 export function renderHTML(
 	docType: DocumentType,
@@ -31,6 +32,8 @@ export function renderHTML(
 			return renderPiagamHTML(data as never, template ?? '1');
 		case 'jurnal-mengajar':
 			return renderJurnalMengajarHTML(data as never);
+		case 'buku-tamu':
+			return renderBukuTamuHTML(data as never);
 		default:
 			throw new Error(`Unknown document type: ${docType}`);
 	}
