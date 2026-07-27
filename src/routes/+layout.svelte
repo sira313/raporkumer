@@ -24,6 +24,8 @@
 	let stoppingServer = $state(false);
 	let loggingOut = $state(false);
 	const isLoginPage = $derived(page.url.pathname === '/login');
+	const isTamuPage = $derived(page.url.pathname === '/tamu');
+	const isJadwalPublikPage = $derived(page.url.pathname === '/jadwal-pelajaran');
 	let isJadwalPage = $derived(page.url.pathname === '/akademik/jadwal-pelajaran');
 	const jadwalCanManage = $derived(
 		((page.data.user as { permissions?: string[] })?.permissions ?? []).includes('rapor_manage')
@@ -192,8 +194,12 @@
 	<title>{appName}{page.data.meta.title ? ' - ' + page.data.meta.title : ''}</title>
 </svelte:head>
 
-{#if isLoginPage}
+{#if isLoginPage || isTamuPage}
 	<div class="bg-base-200 flex min-h-screen flex-col items-center justify-center p-6">
+		{@render children()}
+	</div>
+{:else if isJadwalPublikPage}
+	<div class="bg-base-200 flex min-h-screen flex-col p-6">
 		{@render children()}
 	</div>
 {:else}

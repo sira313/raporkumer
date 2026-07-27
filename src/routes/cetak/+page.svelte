@@ -3,12 +3,12 @@
 	import PreviewHeader from '$lib/components/cetak/PreviewHeader.svelte';
 	import DocumentMuridSelector from '$lib/components/cetak/DocumentMuridSelector.svelte';
 	import PdfPreviewModal from '$lib/components/cetak/PdfPreviewModal.svelte';
-	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import { onDestroy, onMount } from 'svelte';
 	import { DEFAULT_RAPOR_CRITERIA, type RaporPeriode } from '$lib/rapor-params';
 
-	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan' | 'jurnal-mengajar';
+	type DocumentType =
+		'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan' | 'jurnal-mengajar' | 'buku-tamu';
 	type MuridData = {
 		id: number;
 		nama: string;
@@ -27,7 +27,8 @@
 			{ value: 'rapor', label: 'Rapor' },
 			{ value: 'piagam', label: 'Piagam' },
 			{ value: 'keasramaan', label: 'Rapor Keasramaan' },
-			{ value: 'jurnal-mengajar', label: 'Jurnal Mengajar' }
+			{ value: 'jurnal-mengajar', label: 'Jurnal Mengajar' },
+			{ value: 'buku-tamu', label: 'Buku Tamu' }
 		];
 		if (userType === 'wali_asuh') {
 			return all.filter((o) => o.value === 'keasramaan');
@@ -74,11 +75,18 @@
 	let jurnalTanggalMulai = $state('');
 	let jurnalTanggalSelesai = $state('');
 
+	// Buku tamu date range
+	let bukuTamuTanggalMulai = $state('');
+	let bukuTamuTanggalSelesai = $state('');
+
 	$effect(() => {
 		jurnalTanggalMulai = data.tanggalMasuk || '';
 		jurnalTanggalSelesai = data.tanggalBagiRaport || '';
+		bukuTamuTanggalMulai = data.tanggalMasuk || '';
+		bukuTamuTanggalSelesai = data.tanggalBagiRaport || '';
 	});
 	const isJurnalMengajar = $derived(selectedDocument === 'jurnal-mengajar');
+	const isBukuTamu = $derived(selectedDocument === 'buku-tamu');
 	const isPiagamSelected = $derived(selectedDocument === 'piagam');
 
 	const academicContext = $derived(data.academicContext ?? null);
@@ -97,9 +105,11 @@
 	const hasSelectionOptions = $derived(
 		isJurnalMengajar
 			? Boolean(jurnalTanggalMulai && jurnalTanggalSelesai)
-			: isPiagamSelected
-				? hasPiagamRankingOptions
-				: hasMurid
+			: isBukuTamu
+				? Boolean(bukuTamuTanggalMulai && bukuTamuTanggalSelesai)
+				: isPiagamSelected
+					? hasPiagamRankingOptions
+					: hasMurid
 	);
 
 	const downloadDisabled = $derived(!selectedDocument || !hasSelectionOptions || downloadLoading);
@@ -258,6 +268,35 @@
 		}
 	}
 
+	async function handlePreviewBukuTamu() {
+		if (!isBukuTamu) return;
+		if (!bukuTamuTanggalMulai || !bukuTamuTanggalSelesai) {
+			toast('Pilih rentang tanggal terlebih dahulu', 'warning');
+			return;
+		}
+
+		downloadLoading = true;
+		try {
+			const params = new URLSearchParams({
+				tanggal_mulai: bukuTamuTanggalMulai,
+				tanggal_selesai: bukuTamuTanggalSelesai
+			});
+			const res = await fetch(`/api/pdf/buku-tamu?${params}`);
+			if (!res.ok) throw new Error('Gagal membuat PDF');
+			const blob = await res.blob();
+
+			closePdfModal();
+			pdfPreviewUrl = URL.createObjectURL(blob);
+			pdfPreviewTitle = `Buku Tamu ${bukuTamuTanggalMulai} - ${bukuTamuTanggalSelesai}`;
+			pdfModalOpen = true;
+		} catch (err) {
+			console.error('Buku tamu preview error:', err);
+			toast('Gagal membuat PDF Buku Tamu', 'error');
+		} finally {
+			downloadLoading = false;
+		}
+	}
+
 	async function handleDownloadBulk() {
 		const documentType = selectedDocument;
 		if (!documentType) {
@@ -328,15 +367,10 @@
 			downloadLoading = false;
 		}
 	}
-
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<PreviewHeader
-		{headingTitle}
-		{kelasAktifLabel}
-		{academicContext}
-	/>
+	<PreviewHeader {headingTitle} {kelasAktifLabel} {academicContext} />
 
 	<DocumentMuridSelector
 		bind:selectedDocument
@@ -352,6 +386,8 @@
 		{downloadLoading}
 		bind:jurnalTanggalMulai
 		bind:jurnalTanggalSelesai
+		bind:bukuTamuTanggalMulai
+		bind:bukuTamuTanggalSelesai
 		muridCount={daftarMurid.length}
 		isRaporSelected={selectedDocument === 'rapor'}
 		isBiodataSelected={selectedDocument === 'biodata'}
@@ -391,6 +427,7 @@
 		}}
 		onBgRefresh={() => {}}
 		onPreviewJurnal={handlePreviewJurnal}
+		onPreviewBukuTamu={handlePreviewBukuTamu}
 	/>
 </div>
 

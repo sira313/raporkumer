@@ -342,11 +342,7 @@
 </svelte:head>
 
 <div class="page-container bg-base-100 min-h-screen">
-	<PreviewHeader
-		{headingTitle}
-		kelasAktifLabel={null}
-		academicContext={null}
-	/>
+	<PreviewHeader {headingTitle} kelasAktifLabel={null} academicContext={null} />
 
 	<div class="flex flex-col gap-6 px-4 py-6">
 		<DocumentMuridSelector

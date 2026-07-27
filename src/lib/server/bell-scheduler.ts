@@ -18,6 +18,22 @@ import { eq, and, inArray } from 'drizzle-orm';
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
+let bellVolumeLock = 0;
+let savedMasterVolume: number | null = null;
+
+function parseAmixerPercent(stdout: string): number {
+	const match = stdout.match(/(\d+)%/);
+	return match ? parseInt(match[1], 10) : 100;
+}
+
+function execAsyncOutput(cmd: string, timeout = 10_000): Promise<string> {
+	return new Promise((resolve) => {
+		exec(cmd, { timeout }, (err, stdout) => {
+			resolve(err ? '' : stdout);
+		});
+	});
+}
+
 const triggeredPeriods = new Map<string, Set<string>>();
 const pergantianPeriods = new Map<string, Set<string>>();
 
@@ -82,35 +98,42 @@ async function playWin32(soundPath: string) {
 }
 
 async function playUnix(soundPath: string) {
-	await Promise.all([
-		execAsync('alsactl restore', { timeout: 3_000 }),
-		execAsync('amixer set Master unmute', { timeout: 3_000 })
-	]);
-	const candidates = [
-		`mpg123 "${soundPath}"`,
-		`paplay "${soundPath}"`,
-		`ffplay -nodisp -autoexit "${soundPath}"`,
-		`aplay "${soundPath}"`
-	];
-	for (const cmd of candidates) {
-		const spawned = await new Promise<boolean>((resolve) => {
-			let resolved = false;
-			const child = exec(cmd, { timeout: 10_000 }, (err) => {
-				if (!resolved) {
-					resolved = true;
+	bellVolumeLock++;
+	try {
+		if (bellVolumeLock === 1) {
+			const stdout = await execAsyncOutput('amixer get Master', 3_000);
+			savedMasterVolume = parseAmixerPercent(stdout);
+			await execAsync('amixer set Master 100%', { timeout: 3_000 }).catch(() => {});
+		}
+
+		await Promise.all([
+			execAsync('alsactl restore', { timeout: 3_000 }),
+			execAsync('amixer set Master unmute', { timeout: 3_000 })
+		]).catch(() => {});
+
+		const candidates = [
+			`mpg123 "${soundPath}"`,
+			`paplay "${soundPath}"`,
+			`ffplay -nodisp -autoexit "${soundPath}"`,
+			`aplay "${soundPath}"`
+		];
+		for (const cmd of candidates) {
+			const success = await new Promise<boolean>((resolve) => {
+				exec(cmd, { timeout: 10_000 }, (err) => {
 					resolve(!err);
-				}
+				});
 			});
-			setTimeout(() => {
-				if (!resolved) {
-					resolved = true;
-					resolve(!child.killed);
-				}
-			}, 200);
-		});
-		if (spawned) return;
+			if (success) break;
+		}
+	} finally {
+		bellVolumeLock--;
+		if (bellVolumeLock === 0 && savedMasterVolume !== null) {
+			await execAsync(`amixer set Master ${savedMasterVolume}%`, { timeout: 3_000 }).catch(
+				() => {}
+			);
+			savedMasterVolume = null;
+		}
 	}
-	console.error('[bell] No available audio player found');
 }
 
 export function playSoundOnServer(sekolahId: number, tipe: string) {

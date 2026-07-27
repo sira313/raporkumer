@@ -4,7 +4,8 @@
 	import { searchQueryMarker } from '$lib/utils';
 	import PreviewFooter from './PreviewFooter.svelte';
 
-	type DocumentType = 'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan' | 'jurnal-mengajar';
+	type DocumentType =
+		'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan' | 'jurnal-mengajar' | 'buku-tamu';
 	type RaporPeriode = 'rts' | 'ras';
 
 	type MuridData = {
@@ -38,6 +39,9 @@
 		onPreviewMurid,
 		onBulkDownload,
 		onPreviewJurnal = () => {},
+		onPreviewBukuTamu = () => {},
+		bukuTamuTanggalMulai = $bindable(''),
+		bukuTamuTanggalSelesai = $bindable(''),
 		downloadDisabled = false,
 		downloadLoading = false,
 		jurnalTanggalMulai = $bindable(''),
@@ -68,6 +72,9 @@
 		onPreviewMurid: (murid: MuridData) => void;
 		onBulkDownload: () => void;
 		onPreviewJurnal?: () => void;
+		onPreviewBukuTamu?: () => void;
+		bukuTamuTanggalMulai?: string;
+		bukuTamuTanggalSelesai?: string;
 		downloadDisabled?: boolean;
 		downloadLoading?: boolean;
 		jurnalTanggalMulai?: string;
@@ -90,6 +97,7 @@
 
 	const isPiagamSelected = $derived(selectedDocument === 'piagam');
 	const isJurnalMengajar = $derived(selectedDocument === 'jurnal-mengajar');
+	const isBukuTamu = $derived(selectedDocument === 'buku-tamu');
 	const hasMurid = $derived(daftarMurid.length > 0);
 	const hasPiagamRankingOptions = $derived(piagamRankingOptions.length > 0);
 
@@ -156,7 +164,10 @@
 	);
 	const paginatedPiagam = $derived(
 		showPiagamTable
-			? (currentItems as PiagamRankingOption[]).slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE)
+			? (currentItems as PiagamRankingOption[]).slice(
+					(currentPage - 1) * PER_PAGE,
+					currentPage * PER_PAGE
+				)
 			: []
 	);
 
@@ -172,12 +183,10 @@
 	}
 
 	const showMuridTable = $derived(
-		!isJurnalMengajar
-		&& selectedDocument
-		&& (
-			(isPiagamSelected && hasPiagamRankingOptions)
-			|| (showTable && hasMurid)
-		)
+		!isJurnalMengajar &&
+			!isBukuTamu &&
+			selectedDocument &&
+			((isPiagamSelected && hasPiagamRankingOptions) || (showTable && hasMurid))
 	);
 </script>
 
@@ -238,6 +247,30 @@
 				<p class="text-wrap">Pilih tanggal selesai</p>
 			</fieldset>
 		{/if}
+		{#if isBukuTamu}
+			<fieldset class="fieldset min-w-0 flex-1 py-0">
+				<input
+					type="date"
+					class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+					value={bukuTamuTanggalMulai}
+					onchange={(e) => {
+						bukuTamuTanggalMulai = (e.target as HTMLInputElement).value;
+					}}
+				/>
+				<p class="text-wrap">Pilih tanggal mulai</p>
+			</fieldset>
+			<fieldset class="fieldset min-w-0 flex-1 py-0">
+				<input
+					type="date"
+					class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+					value={bukuTamuTanggalSelesai}
+					onchange={(e) => {
+						bukuTamuTanggalSelesai = (e.target as HTMLInputElement).value;
+					}}
+				/>
+				<p class="text-wrap">Pilih tanggal selesai</p>
+			</fieldset>
+		{/if}
 		<div class="flex flex-row gap-2">
 			{#if isJurnalMengajar}
 				<button
@@ -248,6 +281,23 @@
 					title={!jurnalTanggalMulai || !jurnalTanggalSelesai
 						? 'Pilih rentang tanggal terlebih dahulu'
 						: 'Preview Jurnal Mengajar'}
+				>
+					{#if downloadLoading}
+						<span class="loading loading-spinner loading-sm"></span>
+					{:else}
+						<Icon name="eye" />
+					{/if}
+					Preview
+				</button>
+			{:else if isBukuTamu}
+				<button
+					class="btn btn-primary shadow-none"
+					type="button"
+					disabled={!bukuTamuTanggalMulai || !bukuTamuTanggalSelesai || downloadLoading}
+					onclick={onPreviewBukuTamu}
+					title={!bukuTamuTanggalMulai || !bukuTamuTanggalSelesai
+						? 'Pilih rentang tanggal terlebih dahulu'
+						: 'Preview Buku Tamu'}
 				>
 					{#if downloadLoading}
 						<span class="loading loading-spinner loading-sm"></span>
@@ -293,6 +343,7 @@
 		{showBgLogo}
 		{onToggleBgLogo}
 		{isJurnalMengajar}
+		{isBukuTamu}
 	/>
 
 	{#if showMuridTable}
@@ -320,7 +371,11 @@
 		{#if currentItems.length === 0}
 			<div class="alert alert-soft alert-info mt-2">
 				<Icon name="info" />
-				<span>{isPiagamSelected ? 'Tidak ada peringkat piagam yang cocok dengan pencarian.' : 'Tidak ada murid yang cocok dengan pencarian.'}</span>
+				<span
+					>{isPiagamSelected
+						? 'Tidak ada peringkat piagam yang cocok dengan pencarian.'
+						: 'Tidak ada murid yang cocok dengan pencarian.'}</span
+				>
 			</div>
 		{:else}
 			<div
@@ -349,7 +404,14 @@
 									<td>{(currentPage - 1) * PER_PAGE + i + 1}</td>
 									<td>{item.peringkat}</td>
 									<td>{@html searchQueryMarker(searchTerm || null, item.nama)}</td>
-									<td>{item.nilaiRataRata != null ? item.nilaiRataRata.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
+									<td
+										>{item.nilaiRataRata != null
+											? item.nilaiRataRata.toLocaleString('id-ID', {
+													minimumFractionDigits: 2,
+													maximumFractionDigits: 2
+												})
+											: '-'}</td
+									>
 									<td class="text-center">
 										<button
 											type="button"

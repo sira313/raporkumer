@@ -1231,3 +1231,25 @@ export const tableJadwalPelajaran = sqliteTable(
 		)
 	]
 );
+
+export const tableBukuTamu = sqliteTable(
+	'buku_tamu',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id, { onDelete: 'cascade' })
+			.notNull(),
+		tahunAjaranId: int()
+			.references(() => tableTahunAjaran.id, { onDelete: 'set null' }),
+		semesterId: int()
+			.references(() => tableSemester.id, { onDelete: 'set null' }),
+		nama: text().notNull(),
+		asalInstansi: text().notNull(),
+		nip: text(),
+		keperluan: text().notNull(),
+		pesanKesan: text(),
+		tandaTangan: text(),
+		...audit
+	},
+	(table) => [index('buku_tamu_sekolah_idx').on(table.sekolahId), index('buku_tamu_tanggal_idx').on(table.createdAt)]
+);

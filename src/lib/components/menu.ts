@@ -103,6 +103,11 @@ export const appMenuItems: MenuItem[] = [
 				path: '/keputusan',
 				tags: ['kenaikan', 'kelas', 'lulus', 'naik'],
 				condition: 'genap'
+			},
+			{
+				title: 'Buku Tamu',
+				path: '/buku-tamu',
+				tags: ['tamu', 'kunjungan', 'buku']
 			}
 		]
 	},

@@ -23,7 +23,8 @@
 		isKeasramaanSelected = false,
 		showBgLogo = false,
 		onToggleBgLogo = () => {},
-		isJurnalMengajar = false
+		isJurnalMengajar = false,
+		isBukuTamu = false
 	}: {
 		hasMurid: boolean;
 		muridCount: number;
@@ -42,6 +43,7 @@
 		showBgLogo?: boolean;
 		onToggleBgLogo?: (value: boolean) => void;
 		isJurnalMengajar?: boolean;
+		isBukuTamu?: boolean;
 	} = $props();
 
 	async function handleDeleteBg() {
@@ -130,9 +132,9 @@
 
 <div class="mt-4 flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
 	{#if isJurnalMengajar}
-		<p>
-			Default preview satu semester dari tanggal masuk sekolah sampai tanggal bagi rapor.
-		</p>
+		<p>Default preview satu semester dari tanggal masuk sekolah sampai tanggal bagi rapor.</p>
+	{:else if isBukuTamu}
+		<p>Preview daftar buku tamu berdasarkan rentang tanggal yang dipilih.</p>
 	{:else if hasMurid}
 		<p>
 			Terdapat <strong>{muridCount}</strong> murid di kelas ini. Download dokumen dalam bentuk PDF bisa
