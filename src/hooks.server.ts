@@ -116,7 +116,7 @@ const csrfGuard: Handle = async ({ event, resolve }) => {
 	throw error(403, 'Permintaan lintas origin tidak diizinkan.');
 };
 
-const PUBLIC_ROUTE_IDS = new Set(['/login', '/logout', '/tamu', '/api/buku-tamu']);
+const PUBLIC_ROUTE_IDS = new Set(['/login', '/logout', '/tamu', '/jadwal-pelajaran', '/api/buku-tamu']);
 
 let ensureDefaultAdminResolved = false;
 
