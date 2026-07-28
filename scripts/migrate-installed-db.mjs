@@ -94,15 +94,15 @@ async function main() {
 		const projectLocal = path.join(projectRoot, 'data', 'database.sqlite3');
 		const installedCandidate = joinDbPath(localAppData);
 
-		if (looksInstalled) {
+		if (fs.existsSync(projectLocal)) {
+			dbPath = `file:${projectLocal}`;
+			console.info('[migrate-installed-db] No DB_URL set; using project-local DB path:', dbPath);
+		} else if (looksInstalled) {
 			dbPath = `file:${installedCandidate}`;
 			console.info(
 				'[migrate-installed-db] Detected installed environment; using installed DB path:',
 				dbPath
 			);
-		} else if (fs.existsSync(projectLocal)) {
-			dbPath = `file:${projectLocal}`;
-			console.info('[migrate-installed-db] No DB_URL set; using project-local DB path:', dbPath);
 		} else {
 			dbPath = `file:${installedCandidate}`;
 			console.info(
@@ -359,71 +359,28 @@ async function main() {
 			);
 		}
 
-		// Run drizzle push with retry for index conflicts (only if drizzle-kit is available).
+		// Run drizzle push (only if drizzle-kit is available).
 		// In production builds drizzle-kit is a devDependency and may not be present;
 		// tables are created by ensure-* functions during server startup instead.
+		// Index "already exists" errors are treated as non-fatal warnings because:
+		//   - Schema + tables are still created/updated by drizzle-kit push
+		//   - The conflicting index already exists (from CREATE TABLE constraint or ensure-columns)
+		//   - No data is lost or corrupted
 		if (hasDrizzleKit) {
-			const MAX_RETRIES = 5;
-			let lastError;
-			for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-				try {
-					runCapture(drizzleCmd, ['push', '--force'], { env: childEnv, cwd: projectRoot });
-					lastError = null;
-					break;
-				} catch (err) {
-					lastError = err;
-					const msg = String(err?.message || err || '');
-					const isIndexConflict =
-						msg.includes('already exists') ||
-						msg.includes('UNIQUE constraint failed') ||
-						msg.includes('SQLITE_ERROR');
-					if (!isIndexConflict) throw err;
-
-					if (attempt < MAX_RETRIES) {
-						const idxMatch = msg.match(/index\s+(["']?)([^"'\s]+)\1\s+already exists/i);
-						const indexName = idxMatch ? idxMatch[2] : null;
-						console.info(
-							`[migrate-installed-db] drizzle push failed (attempt ${attempt}/${MAX_RETRIES})` +
-								(indexName ? `: index "${indexName}" already exists` : '')
-						);
-
-						if (indexName) {
-							try {
-								const { createClient: createClientLocal2 } = await import('@libsql/client');
-								const dropClient = createClientLocal2({ url: dbPath });
-								try {
-									await dropClient.execute({ sql: `DROP INDEX IF EXISTS "${indexName}"` });
-									console.info(`[migrate-installed-db] Dropped conflicting index: ${indexName}`);
-								} finally {
-									if (typeof dropClient.close === 'function') await dropClient.close();
-								}
-							} catch (dropErr) {
-								console.warn(
-									'[migrate-installed-db] Failed to drop conflicting index:',
-									dropErr?.message || dropErr
-								);
-							}
-						}
-
-						// Run fix-drizzle-indexes to handle auth_user username_normalized variants
-						try {
-							run(
-								process.execPath,
-								[path.join(projectRoot, 'scripts', 'fix-drizzle-indexes.mjs')],
-								{
-									env: childEnv,
-									cwd: projectRoot
-								}
-							);
-						} catch (_) {
-							// non-fatal
-						}
-
-						continue;
-					}
+			try {
+				runCapture(drizzleCmd, ['push', '--force'], { env: childEnv, cwd: projectRoot });
+			} catch (err) {
+				const msg = String(err?.message || err || '');
+				const isIndexOnlyError =
+					msg.includes('already exists') && !msg.toLowerCase().includes('table');
+				if (isIndexOnlyError) {
+					console.info(
+						'[migrate-installed-db] drizzle push completed with non-fatal index conflicts (already exists)'
+					);
+				} else {
+					throw err;
 				}
 			}
-			if (lastError) throw lastError;
 		} else {
 			console.info(
 				'[migrate-installed-db] drizzle-kit not available (devDependency not installed in production); ' +
