@@ -13,6 +13,66 @@
 		(page.data as { activeSemesterTipe?: string | null } | null)?.activeSemesterTipe ?? null
 	);
 
+	const readonlyRoutes = [
+		'/sekolah',
+		'/akademik',
+		'/kelas',
+		'/murid',
+		'/kokurikuler',
+		'/ekstrakurikuler',
+		'/keasramaan',
+		'/asesmen-kokurikuler',
+		'/nilai-ekstrakurikuler',
+		'/asesmen-keasramaan',
+		'/absen',
+		'/jurnal-mengajar',
+		'/catatan-wali-kelas',
+		'/keputusan',
+		'/cetak'
+	];
+
+	const adminOnlyRoutes = ['/buku-tamu'];
+
+	const userType = $derived((page.data as { user?: { type?: string } })?.user?.type);
+	const hasMataPelajaran = $derived(
+		!!(page.data as { hasMataPelajaran?: boolean })?.hasMataPelajaran
+	);
+	const isGuruMapel = $derived(userType === 'user' && hasMataPelajaran);
+
+	function isHiddenForUser(path: string): boolean {
+		// Admin-only pages (buku tamu) — hidden from all non-admin
+		if (userType !== 'admin') {
+			const isAdminOnly = adminOnlyRoutes.some((r) => path === r || path.startsWith(r + '/'));
+			if (isAdminOnly) return true;
+		}
+
+		// Guru mapel type-based restrictions (readonly pages)
+		if (userType !== 'user') return false;
+		const inReadonly = readonlyRoutes.some((r) => path === r || path.startsWith(r + '/'));
+		if (!inReadonly) return false;
+		// Exceptions for guru mapel with mata pelajaran (mirip disableInteraction)
+		if (isGuruMapel) {
+			const exceptions = ['/absen', '/jurnal-mengajar', '/cetak'];
+			const isException = exceptions.some((r) => path === r || path.startsWith(r + '/'));
+			if (isException) return false;
+		}
+		return true;
+	}
+
+	function filterMenuByUserType(items: MenuItem[]): MenuItem[] {
+		return items
+			.map((item) => {
+				if (item.path && isHiddenForUser(item.path)) return null;
+				if (item.subMenu) {
+					const filtered = filterMenuByUserType(item.subMenu);
+					if (filtered.length === 0 && !item.path) return null;
+					return { ...item, subMenu: filtered };
+				}
+				return item;
+			})
+			.filter((item): item is MenuItem => item !== null);
+	}
+
 	function filterByCondition(item: MenuItem, semesterTipe: string | null): boolean {
 		if (item.condition && item.condition !== semesterTipe) return false;
 		if (item.subMenu) {
@@ -50,9 +110,11 @@
 	}
 
 	let menuItems = $derived(
-		search
-			? filterMenu(appMenuItems, search)
-			: appMenuItems.filter((item) => filterByCondition(item, activeSemesterTipe))
+		filterMenuByUserType(
+			search
+				? filterMenu(appMenuItems, search)
+				: appMenuItems.filter((item) => filterByCondition(item, activeSemesterTipe))
+		)
 	);
 
 	function isMenuActive(currentPath: string, menuPath?: string) {
