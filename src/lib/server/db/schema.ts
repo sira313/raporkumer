@@ -39,6 +39,22 @@ export const tableAuthUser = sqliteTable(
 		kelasId: int().references(() => tableKelas.id),
 		// untuk akun tipe 'user' kita simpan pilihan mata pelajaran yang diassign saat pembuatan akun
 		mataPelajaranId: int().references(() => tableMataPelajaran.id),
+		// Profil pribadi pengguna (diisi via /pengaturan/profil)
+		namaLengkap: text(),
+		tempatLahir: text(),
+		tanggalLahir: text(),
+		jenisKelamin: text({ enum: ['L', 'P'] }),
+		ijazah: text(),
+		tahunIjazah: int(),
+		statusKepegawaian: text({
+			enum: ['CPNS', 'PNS', 'PPPK', 'Honor Pemda', 'Honorer Sekolah']
+		}),
+		golongan: text(),
+		jabatan: text(),
+		pangkat: text(),
+		tanggalDiangkat: text(),
+		tanggalBekerja: text(),
+		tanggalGajiBerkala: text(),
 		...audit
 	},
 	(table) => [unique().on(table.usernameNormalized)]
@@ -1239,10 +1255,8 @@ export const tableBukuTamu = sqliteTable(
 		sekolahId: int()
 			.references(() => tableSekolah.id, { onDelete: 'cascade' })
 			.notNull(),
-		tahunAjaranId: int()
-			.references(() => tableTahunAjaran.id, { onDelete: 'set null' }),
-		semesterId: int()
-			.references(() => tableSemester.id, { onDelete: 'set null' }),
+		tahunAjaranId: int().references(() => tableTahunAjaran.id, { onDelete: 'set null' }),
+		semesterId: int().references(() => tableSemester.id, { onDelete: 'set null' }),
 		nama: text().notNull(),
 		asalInstansi: text().notNull(),
 		nip: text(),
@@ -1251,5 +1265,8 @@ export const tableBukuTamu = sqliteTable(
 		tandaTangan: text(),
 		...audit
 	},
-	(table) => [index('buku_tamu_sekolah_idx').on(table.sekolahId), index('buku_tamu_tanggal_idx').on(table.createdAt)]
+	(table) => [
+		index('buku_tamu_sekolah_idx').on(table.sekolahId),
+		index('buku_tamu_tanggal_idx').on(table.createdAt)
+	]
 );
