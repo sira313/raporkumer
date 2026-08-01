@@ -126,6 +126,12 @@ const PUBLIC_ROUTE_IDS = new Set([
 	'/api/buku-tamu'
 ]);
 
+// Image endpoints exempt from the menu-permission guard. They are fetched by the
+// dashboard for every authenticated role (e.g. sekolah-overview-card), and must stay
+// reachable even for roles without `informasi_umum_sekolah`. Keep in sync with the
+// routes under /sekolah. Do NOT add page routes here — only GET-only image handlers.
+const PERMISSION_EXEMPT_PREFIXES = ['/sekolah/logo', '/sekolah/logo-dinas'];
+
 let ensureDefaultAdminResolved = false;
 
 function resolveRedirectTarget(value: string | null) {
@@ -247,9 +253,15 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	// Menu-based page access: block any route that belongs to a drawer menu item
 	// when the user lacks the corresponding access permission. Admins always pass.
 	if (event.locals.user) {
-		const required = resolveRoutePermission(event.url.pathname);
-		if (required && !isAuthorizedUser([required], event.locals.user)) {
-			throw redirect(303, `/forbidden?required=${required}`);
+		const pathname = event.url.pathname;
+		const isPermissionExempt = PERMISSION_EXEMPT_PREFIXES.some(
+			(p) => pathname === p || pathname.startsWith(p + '/')
+		);
+		if (!isPermissionExempt) {
+			const required = resolveRoutePermission(pathname);
+			if (required && !isAuthorizedUser([required], event.locals.user)) {
+				throw redirect(303, `/forbidden?required=${required}`);
+			}
 		}
 	}
 
