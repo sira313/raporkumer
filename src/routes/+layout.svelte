@@ -16,6 +16,7 @@
 
 	import NavIndicator from '$lib/components/nav-indicator.svelte';
 	import ScrollToTop from '$lib/components/scroll-to-top.svelte';
+	import FavoriteMenusFab from '$lib/components/dashboard/favorite-menus-fab.svelte';
 	import '../app.css';
 
 	let { data, children } = $props();
@@ -219,6 +220,7 @@
 					<div class="m-4 flex flex-row xl:gap-4">
 						<div class="w-full max-w-7xl min-w-0 flex-1">
 							<ScrollToTop />
+							<FavoriteMenusFab />
 							<div class={disableInteraction ? 'is-readonly' : ''}>
 								{@render children()}
 							</div>

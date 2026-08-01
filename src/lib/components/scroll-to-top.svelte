@@ -39,7 +39,7 @@
 </script>
 
 {#if isVisible}
-	<div class="fab">
+	<div class="fab bottom-24">
 		<button
 			type="button"
 			class="btn btn-lg btn-circle btn-primary"
