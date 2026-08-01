@@ -2,8 +2,10 @@
 	/* eslint-disable svelte/no-navigation-without-resolve -- links to edit/manage users are intentional */
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
 	import Authority from '../authority.svelte';
 	import { groupedUserPermissions } from '../permissions';
+	import ResetPermissionsBody from './reset-permissions-body.svelte';
 
 	let { data } = $props();
 	let user = $derived(data.userDetail);
@@ -28,6 +30,30 @@
 			user = { ...user, permissions: successData.permissions as UserPermission[] };
 		}
 	}
+
+	function confirmResetPermissions() {
+		showModal({
+			title: 'Reset Izin ke Default',
+			body: ResetPermissionsBody,
+			bodyProps: {
+				username: user.username,
+				roleType: formatRole(user.type)
+			},
+			onPositive: {
+				label: 'Reset',
+				class: 'btn-warning',
+				action: ({ close }) => {
+					close();
+					(
+						document.getElementById('reset-permissions-form') as HTMLFormElement | null
+					)?.requestSubmit();
+				}
+			},
+			onNegative: {
+				label: 'Batal'
+			}
+		});
+	}
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
@@ -44,7 +70,7 @@
 			</div>
 		{/if}
 	</header>
-	<FormEnhance action="?/set_permissions" onsuccess={handleSaveSuccess}>
+	<FormEnhance id="set-permissions-form" action="?/set_permissions" onsuccess={handleSaveSuccess}>
 		<div class="mt-2 overflow-x-auto">
 			<table class="table w-full">
 				<thead>
@@ -63,7 +89,7 @@
 							{@const isAdmin = user.type === 'admin'}
 							{@const checked = isAdmin || user.permissions.includes(key)}
 							<tr>
-								<td class="text-sm">{desc}</td>
+								<td class="text-sm pl-8">{desc}</td>
 								<td class="text-center">
 									{#if isAdmin}
 										<!-- Ensure the permission is submitted even if checkbox is disabled -->
@@ -92,18 +118,40 @@
 				</tbody>
 			</table>
 		</div>
+	</FormEnhance>
 
-		<section class="mt-6 flex justify-between">
+	<section class="mt-6 flex items-center justify-between gap-3">
+		<Authority permissions={['user_set_permissions']}>
+			<a href="/pengguna" class="btn btn-soft shadow-none">
+				<Icon name="left" />
+				Kembali
+			</a>
+		</Authority>
+		<div class="flex flex-wrap justify-end gap-2">
+			{#if user.type !== 'admin'}
+				<FormEnhance
+					id="reset-permissions-form"
+					action="?/reset_permissions"
+					onsuccess={handleSaveSuccess}
+				>
+					<Authority permissions={['user_set_permissions']}>
+						<button
+							type="button"
+							class="btn btn-soft btn-warning shadow-none"
+							onclick={confirmResetPermissions}
+						>
+							<Icon name="repeat" />
+							Reset ke Default
+						</button>
+					</Authority>
+				</FormEnhance>
+			{/if}
 			<Authority permissions={['user_set_permissions']}>
-				<a href="/pengguna" class="btn btn-soft shadow-none">
-					<Icon name="left" />
-					Kembali
-				</a>
-				<button class="btn btn-primary shadow-none">
+				<button form="set-permissions-form" type="submit" class="btn btn-primary shadow-none">
 					<Icon name="save" />
 					Simpan
 				</button>
 			</Authority>
-		</section>
-	</FormEnhance>
+		</div>
+	</section>
 </section>

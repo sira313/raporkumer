@@ -39,7 +39,7 @@ export async function load({ parent, url, depends, locals }) {
 	// Permission check: Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
 	const userType = (locals.user as { type?: string } | null)?.type;
 	if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
-		authority('rapor_manage');
+		authority('input_nilai_nilai_ekstrakurikuler');
 	}
 
 	depends('app:nilai-ekstrakurikuler:form');
@@ -138,10 +138,10 @@ export async function load({ parent, url, depends, locals }) {
 
 export const actions = {
 	save: async ({ request, locals }) => {
-		// Permission check: Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
+		// Permission check: Allow admin, wali_kelas, wali_asuh, and users with input_nilai_nilai_ekstrakurikuler
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
-			authority('rapor_manage');
+			authority('input_nilai_nilai_ekstrakurikuler');
 		}
 
 		const formData = await request.formData();

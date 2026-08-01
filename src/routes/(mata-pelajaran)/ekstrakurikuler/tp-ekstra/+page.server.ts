@@ -23,7 +23,7 @@ export async function load({ depends, url, parent }) {
 	// Permission check: Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
 	const userType = (user as { type?: string } | null)?.type;
 	if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
-		authority('rapor_manage');
+		authority('mata_pelajaran_ekstrakurikuler');
 	}
 
 	depends('app:ekstrakurikuler:tp');
@@ -93,7 +93,7 @@ export const actions = {
 		// Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
-			authority('rapor_manage');
+			authority('mata_pelajaran_ekstrakurikuler');
 		}
 
 		const formData = await request.formData();
@@ -132,7 +132,7 @@ export const actions = {
 		// Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
-			authority('rapor_manage');
+			authority('mata_pelajaran_ekstrakurikuler');
 		}
 
 		const formData = await request.formData();
@@ -189,7 +189,7 @@ export const actions = {
 		// Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
-			authority('rapor_manage');
+			authority('mata_pelajaran_ekstrakurikuler');
 		}
 
 		const formData = await request.formData();

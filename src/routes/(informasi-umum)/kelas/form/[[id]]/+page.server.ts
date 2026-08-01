@@ -111,7 +111,7 @@ function resolveEffectiveSemesterId(
 }
 
 export async function load({ params, locals }) {
-	authority('kelas_manage');
+	authority('informasi_umum_kelas');
 
 	const meta: PageMeta = { title: 'Form Kelas' };
 	const jenjang = locals.sekolah?.jenjangPendidikan as
@@ -194,7 +194,7 @@ export async function load({ params, locals }) {
 
 export const actions = {
 	async save({ request, params, locals }) {
-		authority('kelas_manage');
+		authority('informasi_umum_kelas');
 
 		if (!locals.sekolah?.id) error(400, `Sekolah aktif tidak ditemukan`);
 

@@ -44,7 +44,7 @@ async function getTahunAjaran(sekolahId: number): Promise<TahunAjaranWithMeta[]>
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	authority('sekolah_manage');
+	authority('informasi_umum_sekolah');
 
 	const sekolahList = await db.query.tableSekolah.findMany({
 		columns: { id: true, nama: true },
@@ -91,7 +91,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
 	create: async ({ request }) => {
-		authority('sekolah_manage');
+		authority('informasi_umum_sekolah');
 
 		const formData = await request.formData();
 		const nama = (formData.get('nama') as string | null)?.trim();
@@ -144,7 +144,7 @@ export const actions: Actions = {
 		};
 	},
 	update: async ({ request }) => {
-		authority('sekolah_manage');
+		authority('informasi_umum_sekolah');
 
 		const formData = await request.formData();
 		const tahunAjaranId = Number(formData.get('id'));
@@ -179,7 +179,7 @@ export const actions: Actions = {
 		};
 	},
 	delete: async ({ request }) => {
-		authority('sekolah_manage');
+		authority('informasi_umum_sekolah');
 
 		const formData = await request.formData();
 		const sekolahId = Number(formData.get('sekolahId'));

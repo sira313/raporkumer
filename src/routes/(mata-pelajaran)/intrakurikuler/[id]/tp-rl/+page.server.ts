@@ -47,7 +47,7 @@ export async function load({ depends, params, parent }) {
 		userType !== 'wali_kelas' &&
 		userType !== 'wali_asuh'
 	) {
-		authority('rapor_manage');
+		authority('mata_pelajaran_intrakurikuler');
 	}
 
 	depends('app:mapel_tp-rl');
@@ -332,7 +332,7 @@ export const actions = {
 			userType !== 'wali_kelas' &&
 			userType !== 'wali_asuh'
 		) {
-			authority('rapor_manage');
+			authority('mata_pelajaran_intrakurikuler');
 		}
 
 		const formData = await request.formData();
@@ -452,7 +452,7 @@ export const actions = {
 			userType !== 'wali_kelas' &&
 			userType !== 'wali_asuh'
 		) {
-			authority('rapor_manage');
+			authority('mata_pelajaran_intrakurikuler');
 		}
 
 		const formData = await request.formData();
@@ -484,7 +484,7 @@ export const actions = {
 			userType !== 'wali_kelas' &&
 			userType !== 'wali_asuh'
 		) {
-			authority('rapor_manage');
+			authority('mata_pelajaran_intrakurikuler');
 		}
 
 		const mataPelajaranId = Number(params.id);
@@ -566,7 +566,7 @@ export const actions = {
 			userType !== 'wali_kelas' &&
 			userType !== 'wali_asuh'
 		) {
-			authority('rapor_manage');
+			authority('mata_pelajaran_intrakurikuler');
 		}
 
 		const mataPelajaranId = Number(params.id);

@@ -12,7 +12,7 @@
 	// single permission for sekolah management
 	let canSekolahManage = $derived.by(() => {
 		const perms = (page.data.user ?? { permissions: [] }).permissions ?? [];
-		return (perms as string[]).includes('sekolah_manage');
+		return (perms as string[]).includes('informasi_umum_sekolah');
 	});
 
 	let { data } = $props();

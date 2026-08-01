@@ -1270,3 +1270,9 @@ export const tableBukuTamu = sqliteTable(
 		index('buku_tamu_tanggal_idx').on(table.createdAt)
 	]
 );
+
+export const tableAppMeta = sqliteTable('app_meta', {
+	key: text().primaryKey(),
+	value: text().notNull(),
+	...audit
+});

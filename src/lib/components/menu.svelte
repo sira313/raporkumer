@@ -5,6 +5,7 @@
 	import { searchQueryMarker } from '$lib/utils';
 	import Icon from './icon.svelte';
 	import { appMenuItems } from './menu';
+	import { isAuthorizedUser, resolveRoutePermission } from '../../routes/pengguna/permissions';
 
 	const expanded = new StorageState<boolean>('menu-expanded');
 
@@ -13,59 +14,34 @@
 		(page.data as { activeSemesterTipe?: string | null } | null)?.activeSemesterTipe ?? null
 	);
 
-	const readonlyRoutes = [
-		'/sekolah',
-		'/akademik',
-		'/kelas',
-		'/murid',
-		'/kokurikuler',
-		'/ekstrakurikuler',
-		'/keasramaan',
-		'/asesmen-kokurikuler',
-		'/nilai-ekstrakurikuler',
-		'/asesmen-keasramaan',
-		'/absen',
-		'/jurnal-mengajar',
-		'/catatan-wali-kelas',
-		'/keputusan',
-		'/cetak'
-	];
-
-	const adminOnlyRoutes = ['/buku-tamu'];
-
-	const userType = $derived((page.data as { user?: { type?: string } })?.user?.type);
-	const hasMataPelajaran = $derived(
-		!!(page.data as { hasMataPelajaran?: boolean })?.hasMataPelajaran
+	const user = $derived(
+		(page.data as { user?: Pick<AuthUser, 'permissions' | 'type'> | null } | null)?.user ?? null
 	);
-	const isGuruMapel = $derived(userType === 'user' && hasMataPelajaran);
 
-	function isHiddenForUser(path: string): boolean {
-		// Admin-only pages (buku tamu) — hidden from all non-admin
-		if (userType !== 'admin') {
-			const isAdminOnly = adminOnlyRoutes.some((r) => path === r || path.startsWith(r + '/'));
-			if (isAdminOnly) return true;
-		}
-
-		// Guru mapel type-based restrictions (readonly pages)
-		if (userType !== 'user') return false;
-		const inReadonly = readonlyRoutes.some((r) => path === r || path.startsWith(r + '/'));
-		if (!inReadonly) return false;
-		// Exceptions for guru mapel with mata pelajaran (mirip disableInteraction)
-		if (isGuruMapel) {
-			const exceptions = ['/absen', '/jurnal-mengajar', '/cetak'];
-			const isException = exceptions.some((r) => path === r || path.startsWith(r + '/'));
-			if (isException) return false;
-		}
-		return true;
+	function isHiddenForUser(path?: string): boolean {
+		// Menu items without a path (parent groups) are filtered recursively via subMenu
+		if (!path) return false;
+		const required = resolveRoutePermission(path);
+		if (!required) return false;
+		return !isAuthorizedUser([required], user ?? undefined);
 	}
 
 	function filterMenuByUserType(items: MenuItem[]): MenuItem[] {
 		return items
 			.map((item) => {
-				if (item.path && isHiddenForUser(item.path)) return null;
+				if (isHiddenForUser(item.path)) return null;
 				if (item.subMenu) {
-					const filtered = filterMenuByUserType(item.subMenu);
+					const subMenu = item.subMenu;
+					const filtered = filterMenuByUserType(subMenu);
 					if (filtered.length === 0 && !item.path) return null;
+					// Reuse the original item reference when nothing changed so the
+					// keyed {#each} doesn't recreate <details> (preserves manual open/close).
+					if (
+						filtered.length === subMenu.length &&
+						filtered.every((child, i) => child === subMenu[i])
+					) {
+						return item;
+					}
 					return { ...item, subMenu: filtered };
 				}
 				return item;
@@ -138,7 +114,7 @@
 					{@render menu_item_label(item)}
 				</summary>
 				<ul>
-					{#each item.subMenu as menu (menu)}
+					{#each item.subMenu as menu (menu.title)}
 						{@render menu_item(menu)}
 					{/each}
 				</ul>
@@ -180,7 +156,7 @@
 	<div
 		class="lg:bg-base-200 lg:rounded-box lg:max-h-[calc(100vh-13.5rem)] lg:overflow-y-auto lg:shadow-inner"
 	>
-		{#each menuItems as menu (menu)}
+		{#each menuItems as menu (menu.title)}
 			{@render menu_item(menu)}
 		{:else}
 			<li>

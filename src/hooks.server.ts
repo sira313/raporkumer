@@ -14,6 +14,8 @@ import {
 } from '$lib/server/csrf-origins';
 import { ensureJadwalBellSchema } from '$lib/server/db/ensure-jadwal-bell';
 import { ensurePresensiSettingsSchema } from '$lib/server/db/ensure-presensi-settings';
+import { ensurePermissionMigration } from '$lib/server/db/ensure-permission-migration';
+import { isAuthorizedUser, resolveRoutePermission } from './routes/pengguna/permissions';
 import { startBellScheduler } from '$lib/server/bell-scheduler';
 
 setTimeout(() => {
@@ -116,7 +118,13 @@ const csrfGuard: Handle = async ({ event, resolve }) => {
 	throw error(403, 'Permintaan lintas origin tidak diizinkan.');
 };
 
-const PUBLIC_ROUTE_IDS = new Set(['/login', '/logout', '/tamu', '/jadwal-pelajaran', '/api/buku-tamu']);
+const PUBLIC_ROUTE_IDS = new Set([
+	'/login',
+	'/logout',
+	'/tamu',
+	'/jadwal-pelajaran',
+	'/api/buku-tamu'
+]);
 
 let ensureDefaultAdminResolved = false;
 
@@ -133,6 +141,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		await ensureJadwalBellSchema();
 		await ensurePresensiSettingsSchema();
 		await ensureDefaultAdmin();
+		await ensurePermissionMigration();
 		ensureDefaultAdminResolved = true;
 	}
 
@@ -233,6 +242,15 @@ const authGuard: Handle = async ({ event, resolve }) => {
 			throw redirect(303, `/login${query}`);
 		}
 		throw redirect(303, '/login');
+	}
+
+	// Menu-based page access: block any route that belongs to a drawer menu item
+	// when the user lacks the corresponding access permission. Admins always pass.
+	if (event.locals.user) {
+		const required = resolveRoutePermission(event.url.pathname);
+		if (required && !isAuthorizedUser([required], event.locals.user)) {
+			throw redirect(303, `/forbidden?required=${required}`);
+		}
 	}
 
 	return resolve(event);

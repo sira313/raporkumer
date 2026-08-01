@@ -249,19 +249,33 @@ export async function ensureCoreSchema() {
 	// Create user_favorites table
 	try {
 		await db.$client.execute(`
-			CREATE TABLE IF NOT EXISTS user_favorites (
-				id INTEGER PRIMARY KEY AUTOINCREMENT,
-				user_id INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
-				path TEXT NOT NULL,
-				title TEXT NOT NULL,
-				created_at TEXT NOT NULL,
-				updated_at TEXT,
-				UNIQUE(user_id, path)
-			)
-		`);
+				CREATE TABLE IF NOT EXISTS user_favorites (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					user_id INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+					path TEXT NOT NULL,
+					title TEXT NOT NULL,
+					created_at TEXT NOT NULL,
+					updated_at TEXT,
+					UNIQUE(user_id, path)
+				)
+			`);
 		await db.$client.execute(
 			`CREATE INDEX IF NOT EXISTS user_favorites_user_idx ON user_favorites(user_id)`
 		);
+	} catch {
+		// table already exists
+	}
+
+	// Create app_meta table (key-value store for app-level migration markers)
+	try {
+		await db.$client.execute(`
+			CREATE TABLE IF NOT EXISTS app_meta (
+				key TEXT PRIMARY KEY,
+				value TEXT NOT NULL,
+				created_at TEXT NOT NULL,
+				updated_at TEXT
+			)
+		`);
 	} catch {
 		// table already exists
 	}
