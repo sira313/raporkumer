@@ -3,12 +3,7 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenisKelamin } from '$lib/statics';
-	import {
-		golonganByStatus,
-		jabatanByGolongan,
-		pangkatByGolongan,
-		statusKepegawaianOptions
-	} from '$lib/profile';
+	import { golonganByStatus, jabatanByGolongan, statusKepegawaianOptions } from '$lib/profile';
 
 	let { data } = $props();
 	const profile = data.profile;
@@ -33,8 +28,9 @@
 
 	const golonganOptions = $derived(golonganByStatus[statusKepegawaian] ?? []);
 	const jabatanOptions = $derived(golongan ? (jabatanByGolongan[golongan] ?? []) : []);
-	const pangkatAuto = $derived(pangkatByGolongan[golongan] ?? '');
-	const isPangkatManual = $derived(golongan === 'II');
+	const isHonor = $derived(
+		statusKepegawaian === 'Honor Pemda' || statusKepegawaian === 'Honorer Sekolah'
+	);
 
 	$effect(() => {
 		if (golonganOptions.length > 0) {
@@ -52,17 +48,10 @@
 		}
 	});
 
-	let prevGolongan: string | null = profile?.golongan ?? '';
-
 	$effect(() => {
-		const current = golongan;
-		if (current !== prevGolongan) {
-			// masuk mode manual (Golongan II): bersihkan pangkat otomatis dari golongan sebelumnya
-			if (current === 'II') pangkat = '';
-			prevGolongan = current;
-		}
-		if (current !== 'II') {
-			pangkat = pangkatAuto;
+		if (isHonor) {
+			pangkat = '-';
+			tanggalGajiBerkala = '-';
 		}
 	});
 </script>
@@ -223,28 +212,6 @@
 
 				<div class="flex flex-col gap-2 sm:flex-row">
 					<fieldset class="fieldset flex-1">
-						<legend class="fieldset-legend">Pangkat</legend>
-						{#if isPangkatManual}
-							<input
-								type="text"
-								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
-								placeholder="Masukkan pangkat"
-								bind:value={pangkat}
-								name="pangkat"
-							/>
-							<p class="text-base-content/70 mt-1 text-xs">Isi pangkat sesuai SK.</p>
-						{:else}
-							<input type="hidden" name="pangkat" value={pangkat} />
-							<input
-								type="text"
-								class="input input-disabled bg-base-200 dark:bg-base-300 w-full dark:border-none"
-								placeholder="Otomatis mengikuti golongan"
-								value={pangkat}
-								disabled
-							/>
-						{/if}
-					</fieldset>
-					<fieldset class="fieldset flex-1">
 						<legend class="fieldset-legend">Diangkat</legend>
 						<input
 							type="date"
@@ -254,9 +221,6 @@
 						/>
 						<p class="text-base-content/70 mt-1 text-xs">Pertama kali diangkat</p>
 					</fieldset>
-				</div>
-
-				<div class="flex flex-col gap-2 sm:flex-row">
 					<fieldset class="fieldset flex-1">
 						<legend class="fieldset-legend">Kerja di Sekolah Ini</legend>
 						<input
@@ -269,6 +233,9 @@
 							Tanggal bekerja di sekolah ini sesuai SK.
 						</p>
 					</fieldset>
+				</div>
+
+				<div class="flex flex-col gap-2 sm:flex-row">
 					<fieldset class="fieldset flex-1">
 						<legend class="fieldset-legend">Gaji Berkala</legend>
 						<input
@@ -276,8 +243,20 @@
 							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 							bind:value={tanggalGajiBerkala}
 							name="tanggalGajiBerkala"
+							disabled={isHonor}
 						/>
 						<p class="text-base-content/70 mt-1 text-xs">Gaji berkala yang akan datang</p>
+					</fieldset>
+					<fieldset class="fieldset flex-1">
+						<legend class="fieldset-legend">Tanggal Pangkat Terakhir</legend>
+						<input
+							type="date"
+							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							bind:value={pangkat}
+							name="pangkat"
+							disabled={isHonor}
+						/>
+						<p class="text-base-content/70 mt-1 text-xs">Tanggal pangkat terakhir sesuai SK.</p>
 					</fieldset>
 				</div>
 

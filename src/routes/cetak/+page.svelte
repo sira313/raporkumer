@@ -8,7 +8,14 @@
 	import { DEFAULT_RAPOR_CRITERIA, type RaporPeriode } from '$lib/rapor-params';
 
 	type DocumentType =
-		'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan' | 'jurnal-mengajar' | 'buku-tamu';
+		| 'cover'
+		| 'biodata'
+		| 'rapor'
+		| 'piagam'
+		| 'keasramaan'
+		| 'jurnal-mengajar'
+		| 'buku-tamu'
+		| 'presensi-guru';
 	type MuridData = {
 		id: number;
 		nama: string;
@@ -28,13 +35,17 @@
 			{ value: 'piagam', label: 'Piagam' },
 			{ value: 'keasramaan', label: 'Rapor Keasramaan' },
 			{ value: 'jurnal-mengajar', label: 'Jurnal Mengajar' },
-			{ value: 'buku-tamu', label: 'Buku Tamu' }
+			{ value: 'buku-tamu', label: 'Buku Tamu' },
+			{ value: 'presensi-guru', label: 'Presensi Guru' }
 		];
 		if (userType === 'wali_asuh') {
 			return all.filter((o) => o.value === 'keasramaan');
 		}
 		if (userType === 'user') {
 			return all.filter((o) => o.value === 'jurnal-mengajar');
+		}
+		if (userType !== 'admin') {
+			return all.filter((o) => o.value !== 'presensi-guru');
 		}
 		return all;
 	});
@@ -79,6 +90,10 @@
 	let bukuTamuTanggalMulai = $state('');
 	let bukuTamuTanggalSelesai = $state('');
 
+	// Presensi guru month/year
+	let presensiBulan = $state(new Date().getMonth() + 1);
+	let presensiTahun = $state(new Date().getFullYear());
+
 	$effect(() => {
 		jurnalTanggalMulai = data.tanggalMasuk || '';
 		jurnalTanggalSelesai = data.tanggalBagiRaport || '';
@@ -88,6 +103,7 @@
 	const isJurnalMengajar = $derived(selectedDocument === 'jurnal-mengajar');
 	const isBukuTamu = $derived(selectedDocument === 'buku-tamu');
 	const isPiagamSelected = $derived(selectedDocument === 'piagam');
+	const isPresensiGuru = $derived(selectedDocument === 'presensi-guru');
 
 	const academicContext = $derived(data.academicContext ?? null);
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
@@ -109,7 +125,14 @@
 				? Boolean(bukuTamuTanggalMulai && bukuTamuTanggalSelesai)
 				: isPiagamSelected
 					? hasPiagamRankingOptions
-					: hasMurid
+					: isPresensiGuru
+						? Boolean(
+								presensiBulan >= 1 &&
+								presensiBulan <= 12 &&
+								presensiTahun >= 2000 &&
+								presensiTahun <= 2099
+							)
+						: hasMurid
 	);
 
 	const downloadDisabled = $derived(!selectedDocument || !hasSelectionOptions || downloadLoading);
@@ -297,6 +320,31 @@
 		}
 	}
 
+	async function handlePreviewPresensiGuru() {
+		if (!isPresensiGuru) return;
+
+		downloadLoading = true;
+		try {
+			const params = new URLSearchParams({
+				bulan: String(presensiBulan),
+				tahun: String(presensiTahun)
+			});
+			const res = await fetch(`/api/pdf/presensi-guru?${params}`);
+			if (!res.ok) throw new Error('Gagal membuat PDF');
+			const blob = await res.blob();
+
+			closePdfModal();
+			pdfPreviewUrl = URL.createObjectURL(blob);
+			pdfPreviewTitle = `Presensi Guru ${presensiBulan}-${presensiTahun}`;
+			pdfModalOpen = true;
+		} catch (err) {
+			console.error('Presensi guru preview error:', err);
+			toast('Gagal membuat PDF Presensi Guru', 'error');
+		} finally {
+			downloadLoading = false;
+		}
+	}
+
 	async function handleDownloadBulk() {
 		const documentType = selectedDocument;
 		if (!documentType) {
@@ -388,6 +436,8 @@
 		bind:jurnalTanggalSelesai
 		bind:bukuTamuTanggalMulai
 		bind:bukuTamuTanggalSelesai
+		bind:presensiBulan
+		bind:presensiTahun
 		muridCount={daftarMurid.length}
 		isRaporSelected={selectedDocument === 'rapor'}
 		isBiodataSelected={selectedDocument === 'biodata'}
@@ -428,6 +478,7 @@
 		onBgRefresh={() => {}}
 		onPreviewJurnal={handlePreviewJurnal}
 		onPreviewBukuTamu={handlePreviewBukuTamu}
+		onPreviewPresensiGuru={handlePreviewPresensiGuru}
 	/>
 </div>
 

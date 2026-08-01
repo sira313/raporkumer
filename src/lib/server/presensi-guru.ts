@@ -11,7 +11,7 @@ import {
 	tablePresensiSettings
 } from '$lib/server/db/schema';
 import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
-import { buildLiburDates, buildRedDays } from './absen/libur';
+import { buildLiburDates, buildRedDaysByType } from './absen/libur';
 import { dateStr, getDaysInMonth, isSaturday, isSunday } from './absen/utils';
 
 /**
@@ -225,6 +225,7 @@ export async function listGuruBySekolah(sekolahId: number): Promise<GuruSekolah[
 			sekolahId: true,
 			kelasId: true
 		},
+		with: { pegawai: { columns: { nama: true } } },
 		where: and(ne(tableAuthUser.type, 'admin'), ne(tableAuthUser.type, 'wali_asuh'))
 	});
 
@@ -265,7 +266,7 @@ export async function listGuruBySekolah(sekolahId: number): Promise<GuruSekolah[
 			usersByKelasLink.has(u.id) ||
 			usersByMapelLink.has(u.id);
 		if (!inSchool) continue;
-		const nama = (u.namaLengkap ?? u.username ?? '').trim();
+		const nama = (u.namaLengkap ?? u.pegawai?.nama ?? u.username ?? '').trim();
 		if (!nama) continue;
 		result.push({ id: u.id, nama });
 	}
@@ -320,6 +321,7 @@ export type PresensiBulananRow = {
 	userId: number;
 	nama: string;
 	statusPerDay: PresensiBulananStatusPerDay[];
+	signaturesPerDay: string[];
 	countHadir: number;
 	countIzin: number;
 	countSakit: number;
@@ -334,6 +336,9 @@ export async function listPresensiBulanan(
 ): Promise<{
 	rows: PresensiBulananRow[];
 	redDays: number[];
+	weekendDays: number[];
+	liburNasionalDays: number[];
+	liburSemesterDays: number[];
 	totalHariBelajar: number;
 	daysInMonth: number;
 }> {
@@ -342,14 +347,20 @@ export async function listPresensiBulanan(
 	const settings = await getPresensiGuruSettings(sekolahId);
 	const daysInMonth = getDaysInMonth(tahun, bulan);
 	const hariSekolah = settings?.hariSekolah ?? 6;
-	const liburDates = settings ? buildLiburDates(settings, tahun, bulan) : new Set<string>();
-	const redDays = buildRedDays(hariSekolah, tahun, bulan, daysInMonth, liburDates);
+	const { weekend, liburNasional, liburSemester } = buildRedDaysByType(
+		hariSekolah,
+		tahun,
+		bulan,
+		daysInMonth,
+		settings
+	);
+	const redDays = [...weekend, ...liburNasional, ...liburSemester];
 
 	const monthStart = dateStr(tahun, bulan, 1);
 	const monthEnd = dateStr(tahun, bulan, daysInMonth);
 
 	const records = await db.query.tablePresensiGuru.findMany({
-		columns: { authUserId: true, tanggal: true, status: true },
+		columns: { authUserId: true, tanggal: true, status: true, tandaTangan: true },
 		where: and(
 			eq(tablePresensiGuru.sekolahId, sekolahId),
 			sql`${tablePresensiGuru.tanggal} >= ${monthStart}`,
@@ -358,8 +369,10 @@ export async function listPresensiBulanan(
 	});
 
 	const byUserDay = new Map<string, PresensiGuruStatusValue>();
+	const sigByUserDay = new Map<string, string | null>();
 	for (const r of records) {
 		byUserDay.set(`${r.authUserId}:${r.tanggal}`, r.status as PresensiGuruStatusValue);
+		sigByUserDay.set(`${r.authUserId}:${r.tanggal}`, r.tandaTangan);
 	}
 
 	const rows: PresensiBulananRow[] = gurus.map((g) => {
@@ -369,18 +382,22 @@ export async function listPresensiBulanan(
 		let countDinasLuar = 0;
 		let countBelum = 0;
 		const statusPerDay: PresensiBulananStatusPerDay[] = [];
+		const signaturesPerDay: string[] = [];
 
 		for (let d = 1; d <= daysInMonth; d++) {
 			if (redDays.includes(d)) {
 				statusPerDay.push('');
+				signaturesPerDay.push('');
 				continue;
 			}
 			const status = byUserDay.get(`${g.id}:${dateStr(tahun, bulan, d)}`);
 			if (!status) {
 				statusPerDay.push('belum');
+				signaturesPerDay.push('');
 				countBelum++;
 			} else {
 				statusPerDay.push(status);
+				signaturesPerDay.push(sigByUserDay.get(`${g.id}:${dateStr(tahun, bulan, d)}`) ?? '');
 				if (status === 'hadir') countHadir++;
 				else if (status === 'izin') countIzin++;
 				else if (status === 'sakit') countSakit++;
@@ -392,6 +409,7 @@ export async function listPresensiBulanan(
 			userId: g.id,
 			nama: g.nama,
 			statusPerDay,
+			signaturesPerDay,
 			countHadir,
 			countIzin,
 			countSakit,
@@ -400,7 +418,15 @@ export async function listPresensiBulanan(
 		};
 	});
 
-	return { rows, redDays, totalHariBelajar: daysInMonth - redDays.length, daysInMonth };
+	return {
+		rows,
+		redDays,
+		weekendDays: weekend,
+		liburNasionalDays: liburNasional,
+		liburSemesterDays: liburSemester,
+		totalHariBelajar: daysInMonth - redDays.length,
+		daysInMonth
+	};
 }
 
 export async function savePresensiGuruAdmin(params: {

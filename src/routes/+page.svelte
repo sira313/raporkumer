@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { dev } from '$app/environment';
 	import SekolahOverviewCard from '$lib/components/dashboard/sekolah-overview-card.svelte';
 	import RombelMuridStats from '$lib/components/dashboard/rombel-murid-stats.svelte';
 	import MapelEkstrakurikulerStats from '$lib/components/dashboard/mapel-ekstrakurikuler-stats.svelte';
@@ -7,6 +10,9 @@
 	import FavoriteMenusCard from '$lib/components/dashboard/favorite-menus-card.svelte';
 	import { computeNextEventMessage } from '$lib/utils/next-event-message';
 	import BellStatus from '$lib/components/jadwal-bell/bell-status.svelte';
+	import Icon from '$lib/components/icon.svelte';
+	import { showModal } from '$lib/components/global-modal.svelte';
+	import PresensiGuruModal from '$lib/components/presensi-guru/presensi-guru-modal.svelte';
 
 	let { data } = $props();
 	const sekolah = (data.sekolah ?? null) as Sekolah | null;
@@ -239,9 +245,101 @@
 		});
 		return `${hariNama}, ${tgl} - ${status}`;
 	});
+
+	// Fallback reminder: warn on the dashboard when the auto-prompt "Presensi Guru"
+	// modal was shown but the teacher still hasn't done presensi (e.g. force-closed
+	// via Escape, or the page was reloaded while the modal was open).
+	let presensiWarningVisible = $state(false);
+
+	const SIMULASI_STORAGE_KEY = 'rapkumer-simulasi-tanggal-jam';
+
+	function presensiApiUrl() {
+		const override =
+			page.url.searchParams.get('tanggal-jam') ??
+			(dev ? sessionStorage.getItem(SIMULASI_STORAGE_KEY) : null);
+		return {
+			override,
+			url: `/api/presensi-guru${override ? `?tanggal-jam=${encodeURIComponent(override)}` : ''}`
+		};
+	}
+
+	function checkPresensiFallback() {
+		if (presensiWarningVisible || !data.user) return;
+		if (document.querySelector('dialog.modal[open]')) return;
+		const userId = data.user.id;
+		const { override, url } = presensiApiUrl();
+		fetch(url)
+			.then((res) => (res.ok ? res.json() : null))
+			.then((status) => {
+				if (!status?.shouldPrompt) return;
+				// Match the layout's effective date so the fallback only fires once the
+				// auto-prompt has actually been triggered (works with ?tanggal-jam simulation).
+				const today = new Date().toISOString().slice(0, 10);
+				const simulatedDate = override ? override.slice(0, 10) : null;
+				const effectiveDate =
+					simulatedDate && /^\d{4}-\d{2}-\d{2}$/.test(simulatedDate) ? simulatedDate : today;
+				const promptKey = `rapkumer-presensi-guru-prompted-${userId}-${effectiveDate}`;
+				if (!sessionStorage.getItem(promptKey)) return;
+				presensiWarningVisible = true;
+			})
+			.catch(() => {});
+	}
+
+	async function openPresensiGuruModal() {
+		if (!data.user) return;
+		const { override, url } = presensiApiUrl();
+		let jamMasuk: string | null = null;
+		let jamPulang: string | null = null;
+		try {
+			const res = await fetch(url);
+			const status = await res.json().catch(() => null);
+			jamMasuk = status?.jamMasuk ?? null;
+			jamPulang = status?.jamPulang ?? null;
+		} catch {
+			// fall through with unknown jam window
+		}
+		presensiWarningVisible = false;
+		showModal({
+			title: 'Presensi Guru',
+			body: PresensiGuruModal,
+			bodyProps: {
+				jamMasuk,
+				jamPulang,
+				tanggalJam: override
+			},
+			dismissible: false
+		});
+	}
+
+	onMount(() => {
+		checkPresensiFallback();
+		// Re-check whenever a dialog closes (catches the teacher force-closing the modal).
+		const onDialogClose = () => checkPresensiFallback();
+		document.addEventListener('close', onDialogClose, true);
+		return () => document.removeEventListener('close', onDialogClose, true);
+	});
 </script>
 
 <BellStatus {bellActive} {hariIni} {nextEventMessage} class="alert alert-info alert-soft mb-4" />
+
+{#if presensiWarningVisible}
+	<div class="alert alert-warning alert-soft mb-4 flex items-center gap-3">
+		<Icon name="warning" class="h-5 w-5 shrink-0" />
+		<span>
+			Bapak/Ibu belum melakukan presensi guru hari ini. Silakan lakukan presensi melalui tombol
+			berikut:
+		</span>
+		<button
+			class="btn btn-primary btn-sm ml-auto shrink-0 shadow-none"
+			type="button"
+			title="Presensi Sekarang"
+			onclick={openPresensiGuruModal}
+		>
+			<Icon name="pen" />
+			<span class="hidden sm:inline">Presensi Sekarang</span>
+		</button>
+	</div>
+{/if}
 
 <!-- Kontainer Utama Grid -->
 <div class="grid w-full grid-cols-1 gap-4 md:grid-cols-2">

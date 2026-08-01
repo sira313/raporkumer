@@ -52,8 +52,8 @@
 	let lastX = 0;
 	let lastY = 0;
 
-	const CANVAS_W = 720;
-	const CANVAS_H = 240;
+	const CANVAS_W = 400;
+	const CANVAS_H = 400;
 
 	function initCanvas(el: HTMLCanvasElement) {
 		canvasEl = el;
@@ -100,7 +100,7 @@
 		e.preventDefault();
 		const pos = getPos(e);
 		ctx.strokeStyle = '#000000';
-		ctx.lineWidth = 2;
+		ctx.lineWidth = 18;
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
 		ctx.lineTo(pos.x, pos.y);
@@ -188,7 +188,7 @@
 	<label class="flex flex-col gap-1">
 		<span class="text-sm font-semibold">Status Kehadiran</span>
 		<select
-			class="select bg-base-100 w-full dark:border-none"
+			class="select bg-base-200 w-full dark:border-none"
 			bind:value={selectedStatus}
 			disabled={submitting}
 		>
@@ -221,7 +221,7 @@
 						use:initCanvas
 						width={CANVAS_W}
 						height={CANVAS_H}
-						class="bg-white w-full cursor-crosshair touch-none"
+						class="bg-white mx-auto w-full max-w-52 cursor-crosshair touch-none"
 						style="aspect-ratio: {CANVAS_W}/{CANVAS_H}; min-height: 180px;"
 						onmousedown={startDraw}
 						onmousemove={draw}
@@ -233,7 +233,7 @@
 					></canvas>
 				</div>
 				<div class="flex items-center justify-between gap-2">
-					<p class="text-base-content/50 text-xs">Tanda tangan / paraf di atas</p>
+					<p class="text-base-content/50 text-xs">Hanya paraf, bukan tanda tangan.</p>
 					<div class="flex items-center gap-1">
 						{#if initialTandaTangan && redraw}
 							<button
@@ -270,7 +270,7 @@
 			>Keterangan <span class="text-base-content/50 font-normal">(opsional)</span></span
 		>
 		<textarea
-			class="textarea bg-base-100 w-full dark:border-none"
+			class="textarea bg-base-200 w-full dark:border-none"
 			rows="2"
 			bind:value={keterangan}
 			placeholder="Catatan tambahan..."

@@ -42,28 +42,6 @@ export const jabatanByGolongan: Record<string, readonly string[]> = {
 	'-': ['-']
 };
 
-export const pangkatByGolongan: Record<string, string> = {
-	'III/a': 'Penata Muda',
-	'III/b': 'Penata Muda Tk. I',
-	'III/c': 'Penata',
-	'III/d': 'Penata TK. I',
-	'IV/a': 'Pembina',
-	'IV/b': 'Pembina Tk. I',
-	'IV/c': 'Pembina Utama Muda',
-	'IV/d': 'Pembina Utama Madya',
-	IX: 'Ahli Pertama',
-	'-': '-'
-};
-
-export function effectivePangkat(golongan: string | null, manualPangkat: string | null) {
-	if (!golongan) return null;
-	if (golongan === 'II') {
-		const trimmed = manualPangkat?.trim();
-		return trimmed ? trimmed : null;
-	}
-	return pangkatByGolongan[golongan] ?? null;
-}
-
 export function resolveProfileFields(input: {
 	statusKepegawaian: string;
 	golongan: string;
@@ -93,10 +71,8 @@ export function resolveProfileFields(input: {
 		jabatan = options.includes(input.jabatan.trim()) ? input.jabatan.trim() : (options[0] ?? null);
 	}
 
-	let pangkat: string | null = null;
-	if (golongan) {
-		pangkat = effectivePangkat(golongan, input.pangkat);
-	}
+	const pangkatRaw = input.pangkat.trim();
+	const pangkat: string | null = pangkatRaw ? pangkatRaw : null;
 
 	return { statusKepegawaian: status, golongan, jabatan, pangkat };
 }

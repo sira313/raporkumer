@@ -92,6 +92,10 @@ export const actions: Actions = {
 			pangkat: String(formData.get('pangkat') ?? '')
 		});
 
+		const isHonor =
+			resolved.statusKepegawaian === 'Honor Pemda' ||
+			resolved.statusKepegawaian === 'Honorer Sekolah';
+
 		const timestamp = new Date().toISOString();
 
 		// Nama lengkap & NIP terintegrasi dengan tabel pegawai:
@@ -167,10 +171,10 @@ export const actions: Actions = {
 						statusKepegawaian: resolved.statusKepegawaian,
 						golongan: resolved.golongan,
 						jabatan: resolved.jabatan,
-						pangkat: resolved.pangkat,
+						pangkat: isHonor ? '-' : resolved.pangkat,
 						tanggalDiangkat,
 						tanggalBekerja,
-						tanggalGajiBerkala,
+						tanggalGajiBerkala: isHonor ? '-' : tanggalGajiBerkala,
 						updatedAt: timestamp
 					})
 					.where(eq(tableAuthUser.id, locals.user!.id));
