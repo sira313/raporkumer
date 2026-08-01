@@ -1,8 +1,9 @@
 import { ensureBukuTamuSchema } from '$lib/server/db/ensure-buku-tamu';
-import { tableBukuTamu, tableSekolah, tableTahunAjaran, tableSemester } from '$lib/server/db/schema';
+import { tableBukuTamu, tableTahunAjaran, tableSemester } from '$lib/server/db/schema';
 import db from '$lib/server/db';
 import { eq, desc } from 'drizzle-orm';
 import { error, json } from '@sveltejs/kit';
+import { deleteSignatureFile, saveSignatureFile } from '$lib/server/ttd';
 import type { RequestHandler } from './$types';
 
 async function resolveSekolahContext(sekolahId?: number) {
@@ -56,15 +57,33 @@ export const POST = (async ({ request, locals }) => {
 
 	const ctx = await resolveSekolahContext(locals.sekolah?.id);
 
-	await db.insert(tableBukuTamu).values({
-		...ctx,
-		nama: trimmedNama,
-		asalInstansi: trimmedAsal,
-		nip: typeof nip === 'string' && nip.trim() ? nip.trim() : null,
-		keperluan: trimmedKeperluan,
-		pesanKesan: typeof pesanKesan === 'string' && pesanKesan.trim() ? pesanKesan.trim() : null,
-		tandaTangan: typeof tandaTangan === 'string' && tandaTangan.trim() ? tandaTangan.trim() : null
-	});
+	const rawTandaTangan =
+		typeof tandaTangan === 'string' && tandaTangan.trim() ? tandaTangan.trim() : null;
+	const storedSignature = rawTandaTangan
+		? await saveSignatureFile(
+				'tamu',
+				`tamu_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.png`,
+				rawTandaTangan
+			)
+		: null;
+
+	try {
+		await db.insert(tableBukuTamu).values({
+			...ctx,
+			nama: trimmedNama,
+			asalInstansi: trimmedAsal,
+			nip: typeof nip === 'string' && nip.trim() ? nip.trim() : null,
+			keperluan: trimmedKeperluan,
+			pesanKesan: typeof pesanKesan === 'string' && pesanKesan.trim() ? pesanKesan.trim() : null,
+			tandaTangan: storedSignature
+		});
+	} catch (e) {
+		// Don't leave an orphan file behind if the DB insert fails.
+		if (storedSignature) {
+			await deleteSignatureFile(storedSignature);
+		}
+		throw e;
+	}
 
 	return json({ message: 'Buku tamu berhasil disimpan. Terima kasih!' });
 }) satisfies RequestHandler;
@@ -82,7 +101,17 @@ export const DELETE = (async ({ url, locals }) => {
 		throw error(400, { message: 'ID tidak valid' });
 	}
 
+	const existing = await db.query.tableBukuTamu.findFirst({
+		columns: { tandaTangan: true },
+		where: eq(tableBukuTamu.id, id)
+	});
+
 	await db.delete(tableBukuTamu).where(eq(tableBukuTamu.id, id));
+
+	// Legacy data-URL values are skipped by deleteSignatureFile (invalid rel path).
+	if (existing?.tandaTangan) {
+		await deleteSignatureFile(existing.tandaTangan);
+	}
 
 	return json({ message: 'Data tamu berhasil dihapus' });
 }) satisfies RequestHandler;

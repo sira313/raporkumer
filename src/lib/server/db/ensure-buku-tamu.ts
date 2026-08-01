@@ -1,4 +1,5 @@
 import { ensureSchema } from './ensure-helper';
+import { migrateLegacySignatures } from '$lib/server/ttd';
 
 export async function ensureBukuTamuSchema() {
 	await ensureSchema('buku_tamu', [
@@ -22,4 +23,7 @@ export async function ensureBukuTamuSchema() {
 		`CREATE INDEX IF NOT EXISTS "buku_tamu_sekolah_idx" ON "buku_tamu" ("sekolah_id")`,
 		`CREATE INDEX IF NOT EXISTS "buku_tamu_tanggal_idx" ON "buku_tamu" ("created_at")`
 	]);
+
+	// One-time: move legacy inline signature data URLs out of the DB into data/ttd files.
+	await migrateLegacySignatures();
 }

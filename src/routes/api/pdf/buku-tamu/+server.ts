@@ -5,6 +5,7 @@ import { ensureBukuTamuSchema } from '$lib/server/db/ensure-buku-tamu';
 import { tableBukuTamu, tableSekolah } from '$lib/server/db/schema';
 import { renderPDF } from '$lib/server/pdf/pagedpdf';
 import { renderBukuTamuHTML } from '$lib/server/pdf/templates/buku-tamu';
+import { signatureToDataUrl } from '$lib/server/ttd';
 import { formatTanggal } from '$lib/server/pdf/preview-utils';
 import type { RequestHandler } from './$types';
 
@@ -48,16 +49,18 @@ export const GET = (async ({ locals, url }) => {
 		where: eq(tableSekolah.id, sekolahId)
 	});
 
-	const printRows = rows.map((row, i) => ({
-		no: i + 1,
-		tanggal: formatTanggal(row.createdAt),
-		nama: row.nama,
-		asalInstansi: row.asalInstansi,
-		nip: row.nip ?? '',
-		keperluan: row.keperluan,
-		pesanKesan: row.pesanKesan ?? '',
-		tandaTangan: row.tandaTangan ?? ''
-	}));
+	const printRows = await Promise.all(
+		rows.map(async (row, i) => ({
+			no: i + 1,
+			tanggal: formatTanggal(row.createdAt),
+			nama: row.nama,
+			asalInstansi: row.asalInstansi,
+			nip: row.nip ?? '',
+			keperluan: row.keperluan,
+			pesanKesan: row.pesanKesan ?? '',
+			tandaTangan: (await signatureToDataUrl(row.tandaTangan)) ?? ''
+		}))
+	);
 
 	const printData = {
 		sekolah: {

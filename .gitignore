@@ -29,6 +29,8 @@ vite.config.ts.timestamp-*
 /data/*.sqlite3
 /data/*.sqlite3-shm
 /data/*.sqlite3-wal
+# Signature PNG files
+/data/ttd
 # Uploaded photos
 /data/uploads
 # Bell sounds

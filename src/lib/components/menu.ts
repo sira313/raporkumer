@@ -108,6 +108,11 @@ export const appMenuItems: MenuItem[] = [
 				title: 'Buku Tamu',
 				path: '/buku-tamu',
 				tags: ['tamu', 'kunjungan', 'buku']
+			},
+			{
+				title: 'Presensi Guru',
+				path: '/presensi-guru',
+				tags: ['presensi', 'guru', 'hadir', 'sakit', 'izin']
 			}
 		]
 	},

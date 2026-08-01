@@ -1248,6 +1248,61 @@ export const tableJadwalPelajaran = sqliteTable(
 	]
 );
 
+export const tablePresensiGuru = sqliteTable(
+	'presensi_guru',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id, { onDelete: 'cascade' })
+			.notNull(),
+		tahunAjaranId: int()
+			.references(() => tableTahunAjaran.id, { onDelete: 'cascade' })
+			.notNull(),
+		semesterId: int()
+			.references(() => tableSemester.id, { onDelete: 'cascade' })
+			.notNull(),
+		authUserId: int()
+			.references(() => tableAuthUser.id, { onDelete: 'cascade' })
+			.notNull(),
+		tanggal: text().notNull(),
+		status: text({ enum: ['hadir', 'izin', 'sakit', 'dinas_luar'] }).notNull(),
+		// ISO timestamp saat presensi dicatat
+		waktu: text()
+			.$defaultFn(() => new Date().toISOString())
+			.notNull(),
+		tandaTangan: text(),
+		keterangan: text(),
+		...audit
+	},
+	(table) => [
+		uniqueIndex('presensi_guru_sekolah_user_tanggal_idx').on(
+			table.sekolahId,
+			table.authUserId,
+			table.tanggal
+		),
+		index('presensi_guru_sekolah_tanggal_idx').on(table.sekolahId, table.tanggal)
+	]
+);
+
+export const tablePresensiGuruRelations = relations(tablePresensiGuru, ({ one }) => ({
+	sekolah: one(tableSekolah, {
+		fields: [tablePresensiGuru.sekolahId],
+		references: [tableSekolah.id]
+	}),
+	tahunAjaran: one(tableTahunAjaran, {
+		fields: [tablePresensiGuru.tahunAjaranId],
+		references: [tableTahunAjaran.id]
+	}),
+	semester: one(tableSemester, {
+		fields: [tablePresensiGuru.semesterId],
+		references: [tableSemester.id]
+	}),
+	authUser: one(tableAuthUser, {
+		fields: [tablePresensiGuru.authUserId],
+		references: [tableAuthUser.id]
+	})
+}));
+
 export const tableBukuTamu = sqliteTable(
 	'buku_tamu',
 	{
