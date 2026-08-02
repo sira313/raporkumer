@@ -5,11 +5,11 @@
 	import Icon from '$lib/components/icon.svelte';
 	import UpdateModal from '$lib/components/settings/update-modal.svelte';
 	import { page } from '$app/state';
-	import { isAuthorizedUser } from '../pengguna/permissions';
 
 	let user = $derived(page.data.user);
-	const canCheckUpdate = $derived(isAuthorizedUser(['app_check_update'], user));
-	const canManageUsers = $derived(isAuthorizedUser(['user_list'], user));
+	const isAdmin = $derived(user?.type === 'admin');
+	const canCheckUpdate = $derived(isAdmin);
+	const canManageUsers = $derived(isAdmin);
 	import { toast } from '$lib/components/toast.svelte';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';

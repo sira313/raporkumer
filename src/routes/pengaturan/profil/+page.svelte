@@ -31,6 +31,8 @@
 	const isHonor = $derived(
 		statusKepegawaian === 'Honor Pemda' || statusKepegawaian === 'Honorer Sekolah'
 	);
+	const isPppk = $derived(statusKepegawaian === 'PPPK');
+	const isGajiBerkalaLocked = $derived(isHonor || isPppk);
 
 	$effect(() => {
 		if (golonganOptions.length > 0) {
@@ -49,7 +51,7 @@
 	});
 
 	$effect(() => {
-		if (isHonor) {
+		if (isGajiBerkalaLocked) {
 			pangkat = '-';
 			tanggalGajiBerkala = '-';
 		}
@@ -243,7 +245,7 @@
 							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 							bind:value={tanggalGajiBerkala}
 							name="tanggalGajiBerkala"
-							disabled={isHonor}
+							disabled={isGajiBerkalaLocked}
 						/>
 						<p class="text-base-content/70 mt-1 text-xs">Gaji berkala yang akan datang</p>
 					</fieldset>
@@ -254,7 +256,7 @@
 							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 							bind:value={pangkat}
 							name="pangkat"
-							disabled={isHonor}
+							disabled={isGajiBerkalaLocked}
 						/>
 						<p class="text-base-content/70 mt-1 text-xs">Tanggal pangkat terakhir sesuai SK.</p>
 					</fieldset>

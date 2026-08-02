@@ -95,6 +95,8 @@ export const actions: Actions = {
 		const isHonor =
 			resolved.statusKepegawaian === 'Honor Pemda' ||
 			resolved.statusKepegawaian === 'Honorer Sekolah';
+		const isPppk = resolved.statusKepegawaian === 'PPPK';
+		const isGajiBerkalaLocked = isHonor || isPppk;
 
 		const timestamp = new Date().toISOString();
 
@@ -171,10 +173,10 @@ export const actions: Actions = {
 						statusKepegawaian: resolved.statusKepegawaian,
 						golongan: resolved.golongan,
 						jabatan: resolved.jabatan,
-						pangkat: isHonor ? '-' : resolved.pangkat,
+						pangkat: isGajiBerkalaLocked ? '-' : resolved.pangkat,
 						tanggalDiangkat,
 						tanggalBekerja,
-						tanggalGajiBerkala: isHonor ? '-' : tanggalGajiBerkala,
+						tanggalGajiBerkala: isGajiBerkalaLocked ? '-' : tanggalGajiBerkala,
 						updatedAt: timestamp
 					})
 					.where(eq(tableAuthUser.id, locals.user!.id));

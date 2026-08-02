@@ -15,7 +15,8 @@
 		| 'keasramaan'
 		| 'jurnal-mengajar'
 		| 'buku-tamu'
-		| 'presensi-guru';
+		| 'presensi-guru'
+		| 'laporan-tpp';
 	type MuridData = {
 		id: number;
 		nama: string;
@@ -36,7 +37,8 @@
 			{ value: 'keasramaan', label: 'Rapor Keasramaan' },
 			{ value: 'jurnal-mengajar', label: 'Jurnal Mengajar' },
 			{ value: 'buku-tamu', label: 'Buku Tamu' },
-			{ value: 'presensi-guru', label: 'Presensi Guru' }
+			{ value: 'presensi-guru', label: 'Presensi Guru' },
+			{ value: 'laporan-tpp', label: 'Laporan TPP' }
 		];
 		if (userType === 'wali_asuh') {
 			return all.filter((o) => o.value === 'keasramaan');
@@ -45,7 +47,9 @@
 			return all.filter((o) => o.value === 'jurnal-mengajar');
 		}
 		if (userType !== 'admin') {
-			return all.filter((o) => o.value !== 'presensi-guru' && o.value !== 'buku-tamu');
+			return all.filter(
+				(o) => o.value !== 'presensi-guru' && o.value !== 'buku-tamu' && o.value !== 'laporan-tpp'
+			);
 		}
 		return all;
 	});
@@ -94,6 +98,11 @@
 	let presensiBulan = $state(new Date().getMonth() + 1);
 	let presensiTahun = $state(new Date().getFullYear());
 
+	// Laporan TPP month/year/status
+	let laporanBulan = $state(new Date().getMonth() + 1);
+	let laporanTahun = $state(new Date().getFullYear());
+	let statusKepegawaian = $state<'PNS' | 'PPPK'>('PNS');
+
 	$effect(() => {
 		jurnalTanggalMulai = data.tanggalMasuk || '';
 		jurnalTanggalSelesai = data.tanggalBagiRaport || '';
@@ -104,6 +113,7 @@
 	const isBukuTamu = $derived(selectedDocument === 'buku-tamu');
 	const isPiagamSelected = $derived(selectedDocument === 'piagam');
 	const isPresensiGuru = $derived(selectedDocument === 'presensi-guru');
+	const isLaporanTpp = $derived(selectedDocument === 'laporan-tpp');
 
 	const academicContext = $derived(data.academicContext ?? null);
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
@@ -132,7 +142,15 @@
 								presensiTahun >= 2000 &&
 								presensiTahun <= 2099
 							)
-						: hasMurid
+						: isLaporanTpp
+							? Boolean(
+									laporanBulan >= 1 &&
+									laporanBulan <= 12 &&
+									laporanTahun >= 2000 &&
+									laporanTahun <= 2099 &&
+									statusKepegawaian
+								)
+							: hasMurid
 	);
 
 	const downloadDisabled = $derived(!selectedDocument || !hasSelectionOptions || downloadLoading);
@@ -345,6 +363,39 @@
 		}
 	}
 
+	async function handleDownloadLaporanTpp() {
+		if (!isLaporanTpp) return;
+
+		downloadLoading = true;
+		try {
+			const params = new URLSearchParams({
+				bulan: String(laporanBulan),
+				tahun: String(laporanTahun),
+				status: statusKepegawaian
+			});
+			const res = await fetch(`/api/cetak/laporan-tpp?${params}`);
+			if (!res.ok) {
+				const errBody = await res.json().catch(() => ({}));
+				throw new Error(errBody?.error || 'Gagal membuat Laporan TPP');
+			}
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `Laporan-TPP-${laporanTahun}-${String(laporanBulan).padStart(2, '0')}-${statusKepegawaian}.xlsx`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			toast('Laporan TPP berhasil diunduh.', 'success');
+		} catch (err) {
+			console.error('Laporan TPP download error:', err);
+			toast(err instanceof Error ? err.message : 'Gagal mengunduh Laporan TPP.', 'error');
+		} finally {
+			downloadLoading = false;
+		}
+	}
+
 	async function handleDownloadBulk() {
 		const documentType = selectedDocument;
 		if (!documentType) {
@@ -438,6 +489,10 @@
 		bind:bukuTamuTanggalSelesai
 		bind:presensiBulan
 		bind:presensiTahun
+		bind:laporanBulan
+		bind:laporanTahun
+		bind:statusKepegawaian
+		onDownloadLaporanTpp={handleDownloadLaporanTpp}
 		muridCount={daftarMurid.length}
 		isRaporSelected={selectedDocument === 'rapor'}
 		isBiodataSelected={selectedDocument === 'biodata'}
