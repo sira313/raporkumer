@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { searchQueryMarker } from '$lib/utils';
 
-	type StatusPerDay = 'hadir' | 'izin' | 'sakit' | 'dinas_luar' | 'belum' | '';
+	type StatusPerDay = 'hadir' | 'izin' | 'sakit' | 'dinas_luar' | 'cuti' | 'belum' | '';
 
 	type BulananRow = {
 		no: number;
@@ -11,6 +11,7 @@
 		countIzin: number;
 		countSakit: number;
 		countDinasLuar: number;
+		countCuti: number;
 		countBelum: number;
 	};
 
@@ -50,6 +51,7 @@
 				<th class="text-center" style="width: 34px; min-width: 30px;">I</th>
 				<th class="text-center" style="width: 34px; min-width: 30px;">S</th>
 				<th class="text-center" style="width: 38px; min-width: 34px;">DL</th>
+				<th class="text-center" style="width: 38px; min-width: 34px;">Ct</th>
 				<th class="text-center" style="width: 38px; min-width: 34px;">TK</th>
 			</tr>
 		</thead>
@@ -74,6 +76,8 @@
 								<span class="text-info font-bold">I</span>
 							{:else if status === 'dinas_luar'}
 								<span class="text-primary font-bold">D</span>
+							{:else if status === 'cuti'}
+								<span class="text-base-content font-bold">Ct</span>
 							{:else if status === 'belum'}
 								<span class="text-error font-bold">TK</span>
 							{:else}
@@ -85,6 +89,7 @@
 					<td class="text-center font-bold">{row.countIzin || ''}</td>
 					<td class="text-center font-bold">{row.countSakit || ''}</td>
 					<td class="text-center font-bold">{row.countDinasLuar || ''}</td>
+					<td class="text-center font-bold">{row.countCuti || ''}</td>
 					<td class="text-center font-bold">{row.countBelum || ''}</td>
 				</tr>
 			{/each}

@@ -38,7 +38,30 @@ export type PresensiGuruStatus = {
 	status: PresensiGuruStatusValue | null;
 };
 
-export type PresensiGuruStatusValue = 'hadir' | 'izin' | 'sakit' | 'dinas_luar';
+export type PresensiGuruStatusValue = 'hadir' | 'izin' | 'sakit' | 'dinas_luar' | 'cuti';
+
+/** Enumerate YYYY-MM-DD dates from `mulai` to `selesai` (inclusive). */
+export function enumerateDates(mulai: string, selesai: string): string[] {
+	const dates: string[] = [];
+	const cur = new Date(`${mulai}T00:00:00`);
+	const end = new Date(`${selesai}T00:00:00`);
+	while (cur <= end) {
+		dates.push(dateStr(cur.getFullYear(), cur.getMonth() + 1, cur.getDate()));
+		cur.setDate(cur.getDate() + 1);
+	}
+	return dates;
+}
+
+/** "2026-08-10" -> "10-08-2026"; used to build the cuti keterangan label. */
+function formatDateDmy(value: string): string {
+	const [y, m, d] = value.split('-');
+	return `${d}-${m}-${y}`;
+}
+
+/** Keterangan label stored on every day of a cuti range. */
+export function formatCutiKeterangan(mulai: string, selesai: string): string {
+	return `Cuti ${formatDateDmy(mulai)} s/d ${formatDateDmy(selesai)}`;
+}
 
 function baseStatus(tanggal: string): PresensiGuruStatus {
 	return {
@@ -326,6 +349,7 @@ export type PresensiBulananRow = {
 	countIzin: number;
 	countSakit: number;
 	countDinasLuar: number;
+	countCuti: number;
 	countBelum: number;
 };
 
@@ -380,6 +404,7 @@ export async function listPresensiBulanan(
 		let countIzin = 0;
 		let countSakit = 0;
 		let countDinasLuar = 0;
+		let countCuti = 0;
 		let countBelum = 0;
 		const statusPerDay: PresensiBulananStatusPerDay[] = [];
 		const signaturesPerDay: string[] = [];
@@ -402,6 +427,7 @@ export async function listPresensiBulanan(
 				else if (status === 'izin') countIzin++;
 				else if (status === 'sakit') countSakit++;
 				else if (status === 'dinas_luar') countDinasLuar++;
+				else if (status === 'cuti') countCuti++;
 			}
 		}
 
@@ -414,6 +440,7 @@ export async function listPresensiBulanan(
 			countIzin,
 			countSakit,
 			countDinasLuar,
+			countCuti,
 			countBelum
 		};
 	});
@@ -429,19 +456,35 @@ export async function listPresensiBulanan(
 	};
 }
 
-export async function savePresensiGuruAdmin(params: {
-	sekolahId: number;
-	userId: number;
-	tanggal: string;
-	status: PresensiGuruStatusValue;
-	tandaTangan?: string | null;
-	keterangan?: string | null;
-	now?: Date;
-}): Promise<void> {
+/** Minimal db/tx handle that `savePresensiGuruAdmin` needs (works for both the
+ *  global drizzle instance and a `db.transaction` callback). */
+type PresensiGuruDbHandle = {
+	query: {
+		tablePresensiGuru: {
+			findFirst: typeof db.query.tablePresensiGuru.findFirst;
+		};
+	};
+	insert: typeof db.insert;
+};
+
+export async function savePresensiGuruAdmin(
+	params: {
+		sekolahId: number;
+		userId: number;
+		tanggal: string;
+		status: PresensiGuruStatusValue;
+		tandaTangan?: string | null;
+		keterangan?: string | null;
+		now?: Date;
+		tahunAjaranId?: number | null;
+		semesterId?: number | null;
+	},
+	d: PresensiGuruDbHandle = db
+): Promise<void> {
 	const { userId, tanggal, status, tandaTangan, keterangan } = params;
 	const now = params.now ?? new Date();
 
-	const existing = await db.query.tablePresensiGuru.findFirst({
+	const existing = await d.query.tablePresensiGuru.findFirst({
 		columns: { id: true, tandaTangan: true },
 		where: and(
 			eq(tablePresensiGuru.sekolahId, params.sekolahId),
@@ -450,19 +493,24 @@ export async function savePresensiGuruAdmin(params: {
 		)
 	});
 
-	const effectiveSignature = tandaTangan || existing?.tandaTangan || null;
+	const effectiveSignature =
+		status === 'cuti' ? null : tandaTangan || existing?.tandaTangan || null;
 	if (status === 'hadir' && !effectiveSignature) {
 		throw new Error('Paraf wajib diisi untuk status Hadir.');
 	}
 
-	const academic = await resolveSekolahAcademicContext(params.sekolahId);
-	const tahunAjaranId = academic.activeTahunAjaranId;
-	const semesterId = academic.activeSemesterId;
+	let tahunAjaranId = params.tahunAjaranId ?? null;
+	let semesterId = params.semesterId ?? null;
+	if (tahunAjaranId == null || semesterId == null) {
+		const academic = await resolveSekolahAcademicContext(params.sekolahId);
+		tahunAjaranId = tahunAjaranId ?? academic.activeTahunAjaranId;
+		semesterId = semesterId ?? academic.activeSemesterId;
+	}
 	if (!tahunAjaranId || !semesterId) {
 		throw new Error('Tahun ajaran atau semester belum diatur.');
 	}
 
-	await db
+	await d
 		.insert(tablePresensiGuru)
 		.values({
 			sekolahId: params.sekolahId,

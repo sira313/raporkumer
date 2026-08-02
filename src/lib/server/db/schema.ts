@@ -1265,7 +1265,7 @@ export const tablePresensiGuru = sqliteTable(
 			.references(() => tableAuthUser.id, { onDelete: 'cascade' })
 			.notNull(),
 		tanggal: text().notNull(),
-		status: text({ enum: ['hadir', 'izin', 'sakit', 'dinas_luar'] }).notNull(),
+		status: text({ enum: ['hadir', 'izin', 'sakit', 'dinas_luar', 'cuti'] }).notNull(),
 		// ISO timestamp saat presensi dicatat
 		waktu: text()
 			.$defaultFn(() => new Date().toISOString())

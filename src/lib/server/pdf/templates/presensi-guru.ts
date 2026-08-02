@@ -1,6 +1,7 @@
 import { sharedStyles, formatValue, FALLBACK } from './shared';
 
-export type PresensiGuruStatusPerDay = 'hadir' | 'izin' | 'sakit' | 'dinas_luar' | 'belum' | '';
+export type PresensiGuruStatusPerDay =
+	'hadir' | 'izin' | 'sakit' | 'dinas_luar' | 'cuti' | 'belum' | '';
 
 export const JABATAN_SINGKAT: Record<string, string> = {
 	Guru: 'Gu',
@@ -49,6 +50,7 @@ export interface PresensiGuruPrintRow {
 	countIzin: number;
 	countSakit: number;
 	countDinasLuar: number;
+	countCuti: number;
 	countBelum: number;
 }
 
@@ -84,7 +86,7 @@ const PAGE_MARGIN_MM = 7;
 const CONTENT_WIDTH_MM = PAGE_WIDTH_MM - PAGE_MARGIN_MM * 2;
 
 const FIXED_COL_WIDTHS_MM = [4, 18, 12, 4, 9, 7, 7, 7, 7, 9, 7, 7];
-const TOTAL_COL_WIDTHS_MM = [4, 4, 4, 5, 5];
+const TOTAL_COL_WIDTHS_MM = [4, 4, 4, 5, 5, 5];
 
 const FIXED_COLS_SUM_MM =
 	FIXED_COL_WIDTHS_MM.reduce((a, b) => a + b, 0) + TOTAL_COL_WIDTHS_MM.reduce((a, b) => a + b, 0);
@@ -203,6 +205,8 @@ export function renderPresensiGuruHTML(data: PresensiGuruPrintData): string {
 						content = '<span class="bold">I</span>';
 					} else if (status === 'dinas_luar') {
 						content = '<span class="bold">D</span>';
+					} else if (status === 'cuti') {
+						content = '<span class="bold">Ct</span>';
 					} else if (status === 'belum') {
 						content = '<span class="bold">TK</span>';
 					}
@@ -237,6 +241,7 @@ export function renderPresensiGuruHTML(data: PresensiGuruPrintData): string {
 	<td class="text-center bold">${row.countIzin || ''}</td>
 	<td class="text-center bold">${row.countSakit || ''}</td>
 	<td class="text-center bold">${row.countDinasLuar || ''}</td>
+	<td class="text-center bold">${row.countCuti || ''}</td>
 	<td class="text-center bold">${row.countBelum || ''}</td>
 </tr>`;
 		})
@@ -487,7 +492,7 @@ td {
 				<th rowspan="2"><span class="vh">Status Kepegawaian</span></th>
 				<th colspan="2">TGL Kenaikan</th>
 				<th colspan="${daysInMonth}">Tanggal Daftar Hadir</th>
-				<th colspan="5">Jumlah</th>
+				<th colspan="6">Jumlah</th>
 			</tr>
 			<tr class="thead-row2">
 				<th><span class="vh">Diangkat</span></th>
@@ -499,16 +504,18 @@ td {
 				<th>I</th>
 				<th>S</th>
 				<th>DL</th>
+				<th>Ct</th>
 				<th>TK</th>
 			</tr>
 		</thead>
 		<tbody>
-			${bodyRows || '<tr><td colspan="48" class="text-center" style="padding:20px;">Tidak ada data guru</td></tr>'}
+			${bodyRows || `<tr><td colspan="${12 + daysInMonth + 6}" class="text-center" style="padding:20px;">Tidak ada data guru</td></tr>`}
 		</tbody>
 	</table>
 	<div class="legend-row">
 		<div class="legend-notes">
 			${jabatanLegend}
+			<span class="legend-item"><strong>Ct</strong> : Cuti</span>
 		</div>
 		<div class="legend">
 			<span class="legend-item"><span class="swatch libur-weekend"></span>Libur akhir pekan</span>

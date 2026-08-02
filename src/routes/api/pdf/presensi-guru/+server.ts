@@ -135,6 +135,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 				countIzin: row.countIzin,
 				countSakit: row.countSakit,
 				countDinasLuar: row.countDinasLuar,
+				countCuti: row.countCuti,
 				countBelum: row.countBelum
 			};
 		})

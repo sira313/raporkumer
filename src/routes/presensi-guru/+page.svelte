@@ -24,11 +24,12 @@
 		no: number;
 		userId: number;
 		nama: string;
-		statusPerDay: Array<'hadir' | 'izin' | 'sakit' | 'dinas_luar' | 'belum' | ''>;
+		statusPerDay: Array<'hadir' | 'izin' | 'sakit' | 'dinas_luar' | 'cuti' | 'belum' | ''>;
 		countHadir: number;
 		countIzin: number;
 		countSakit: number;
 		countDinasLuar: number;
+		countCuti: number;
 		countBelum: number;
 	};
 
@@ -60,7 +61,8 @@
 		hadir: { label: 'Hadir', class: 'badge-success' },
 		izin: { label: 'Izin', class: 'badge-info' },
 		sakit: { label: 'Sakit', class: 'badge-warning' },
-		dinas_luar: { label: 'Dinas Luar', class: 'badge-primary' }
+		dinas_luar: { label: 'Dinas Luar', class: 'badge-primary' },
+		cuti: { label: 'Cuti', class: 'badge-secondary' }
 	};
 
 	const hariList = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];

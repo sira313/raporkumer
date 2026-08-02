@@ -25,23 +25,45 @@
 		initialKeterangan = null
 	}: Props = $props();
 
-	type Status = 'hadir' | 'izin' | 'sakit' | 'dinas_luar';
+	type Status = 'hadir' | 'izin' | 'sakit' | 'dinas_luar' | 'cuti';
 
 	const STATUS_OPTIONS: Array<{ value: Status; label: string }> = [
 		{ value: 'hadir', label: 'Hadir' },
 		{ value: 'izin', label: 'Izin' },
 		{ value: 'sakit', label: 'Sakit' },
-		{ value: 'dinas_luar', label: 'Dinas Luar' }
+		{ value: 'dinas_luar', label: 'Dinas Luar' },
+		{ value: 'cuti', label: 'Cuti' }
 	];
 
-	const VALID_STATUS: Status[] = ['hadir', 'izin', 'sakit', 'dinas_luar'];
+	const VALID_STATUS: Status[] = ['hadir', 'izin', 'sakit', 'dinas_luar', 'cuti'];
+
+	/** Parse "Cuti 15-08-2026 s/d 20-08-2026" (stored keterangan) back into ISO dates. */
+	function parseCutiRange(keterangan: string | null): { mulai: string; selesai: string } | null {
+		if (!keterangan) return null;
+		const m = /Cuti\s+(\d{2})-(\d{2})-(\d{4})\s+s\/d\s+(\d{2})-(\d{2})-(\d{4})/.exec(keterangan);
+		if (!m) return null;
+		return {
+			mulai: `${m[3]}-${m[2]}-${m[1]}`,
+			selesai: `${m[6]}-${m[5]}-${m[4]}`
+		};
+	}
+
+	/** Drop the auto-generated "Cuti dd-mm-yyyy s/d dd-mm-yyyy — " prefix from stored text. */
+	function stripCutiLabel(text: string): string {
+		const m = /^Cuti\s+\d{2}-\d{2}-\d{4}\s+s\/d\s+\d{2}-\d{2}-\d{4}(\s+—\s+)?/.exec(text);
+		return m ? text.slice(m[0].length) : text;
+	}
+
+	const initialCuti = parseCutiRange(initialKeterangan);
 
 	let selectedStatus = $state<Status>(
 		initialStatus && (VALID_STATUS as string[]).includes(initialStatus)
 			? (initialStatus as Status)
 			: 'hadir'
 	);
-	let keterangan = $state(initialKeterangan ?? '');
+	let keterangan = $state(stripCutiLabel(initialKeterangan ?? ''));
+	let cutiMulai = $state(initialCuti?.mulai ?? tanggal);
+	let cutiSelesai = $state(initialCuti?.selesai ?? tanggal);
 	let redraw = $state(false);
 	let submitting = $state(false);
 
@@ -141,6 +163,16 @@
 			toast('Silakan buat paraf terlebih dahulu.', 'warning');
 			return;
 		}
+		if (selectedStatus === 'cuti') {
+			if (!cutiMulai || !cutiSelesai) {
+				toast('Tanggal mulai dan selesai cuti wajib diisi.', 'warning');
+				return;
+			}
+			if (cutiSelesai < cutiMulai) {
+				toast('Tanggal selesai cuti tidak boleh sebelum tanggal mulai.', 'warning');
+				return;
+			}
+		}
 		submitting = true;
 		try {
 			const res = await fetch('/api/presensi-guru/admin', {
@@ -152,7 +184,11 @@
 					status: selectedStatus,
 					tandaTangan: selectedStatus === 'hadir' && showCanvas ? getSignatureData() : null,
 					keterangan: keterangan.trim() || null,
-					tanggalJam
+					tanggalJam,
+					cutiMulai: selectedStatus === 'cuti' ? cutiMulai : null,
+					cutiSelesai: selectedStatus === 'cuti' ? cutiSelesai : null,
+					cutiMulaiAsli: selectedStatus === 'cuti' ? (initialCuti?.mulai ?? null) : null,
+					cutiSelesaiAsli: selectedStatus === 'cuti' ? (initialCuti?.selesai ?? null) : null
 				})
 			});
 			const data = await res.json().catch(() => ({}));
@@ -263,6 +299,35 @@
 				</div>
 			</div>
 		{/if}
+	{/if}
+
+	{#if selectedStatus === 'cuti'}
+		<div class="border-base-300 space-y-2 rounded-md border p-3">
+			<span class="text-sm font-semibold">Rentang Cuti</span>
+			<div class="grid grid-cols-2 gap-2">
+				<label class="flex flex-col gap-1">
+					<span class="text-xs font-semibold">Tanggal Mulai</span>
+					<input
+						type="date"
+						class="input bg-base-200 w-full dark:border-none"
+						bind:value={cutiMulai}
+						disabled={submitting}
+					/>
+				</label>
+				<label class="flex flex-col gap-1">
+					<span class="text-xs font-semibold">Tanggal Selesai</span>
+					<input
+						type="date"
+						class="input bg-base-200 w-full dark:border-none"
+						bind:value={cutiSelesai}
+						disabled={submitting}
+					/>
+				</label>
+			</div>
+			<p class="text-base-content/50 text-xs">
+				Semua tanggal dalam rentang ini akan tercatat sebagai Cuti (Ct).
+			</p>
+		</div>
 	{/if}
 
 	<label class="flex flex-col gap-1">
