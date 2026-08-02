@@ -16,11 +16,29 @@ const REQUIRED_PERMISSIONS = [
 	'user_suspend',
 	'user_set_permissions',
 	'dashboard_manage',
-	'sekolah_manage',
 	'app_check_update',
-	'rapor_manage',
-	'kelas_manage',
-	'kelas_pindah'
+	'server_stop',
+	'kelas_pindah',
+	'informasi_umum_sekolah',
+	'informasi_umum_akademik',
+	'informasi_umum_kelas',
+	'informasi_umum_murid',
+	'mata_pelajaran_intrakurikuler',
+	'mata_pelajaran_kokurikuler',
+	'mata_pelajaran_ekstrakurikuler',
+	'mata_pelajaran_keasramaan',
+	'input_nilai_asesmen_formatif',
+	'input_nilai_asesmen_sumatif',
+	'input_nilai_asesmen_kokurikuler',
+	'input_nilai_nilai_ekstrakurikuler',
+	'input_nilai_asesmen_keasramaan',
+	'administrasi_absen',
+	'administrasi_jurnal_mengajar',
+	'administrasi_catatan_wali_kelas',
+	'administrasi_rekap_nilai',
+	'administrasi_keputusan',
+	'administrasi_buku_tamu',
+	'cetak_dokumen'
 ];
 
 const DEFAULT_DB_URL = 'file:./data/database.sqlite3';

@@ -1,27 +1,18 @@
 <script lang="ts">
-	/* eslint-disable svelte/no-navigation-without-resolve -- intentional href to home */
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
 
-	let required: string[] = [];
-
-	$: {
-		const raw = $page.url.searchParams.get('required') ?? '';
-		required = raw
-			? raw
-					.split(',')
-					.map((p) => p.trim())
-					.filter(Boolean)
-			: [];
-	}
+	const required = $derived(
+		(page.url.searchParams.get('required') ?? '')
+			.split(',')
+			.map((p) => p.trim())
+			.filter(Boolean)
+	);
 
 	function goBack() {
 		if (history.length > 1) history.back();
 		else location.href = '/';
 	}
-
-	// Build request access URL: go to settings with requested perms as query
-	$: requestUrl = '/pengaturan?request=' + encodeURIComponent(required.join(','));
 </script>
 
 <div class="flex items-center justify-center">
@@ -66,8 +57,7 @@
 				</div>
 
 				<p class="text-muted mt-6 text-sm">
-					Butuh bantuan lebih lanjut? Buka halaman <a class="link" href={requestUrl}>Pengaturan</a>
-					untuk menghubungi administrator sekolah atau periksa akun Anda.
+					Hubungi administrator sekolah jika memang membutuhkan akses ke halaman ini.
 				</p>
 			</div>
 		</div>

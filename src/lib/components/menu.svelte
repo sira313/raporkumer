@@ -5,6 +5,7 @@
 	import { searchQueryMarker } from '$lib/utils';
 	import Icon from './icon.svelte';
 	import { appMenuItems } from './menu';
+	import { isAuthorizedUser, resolveRoutePermission } from '../../routes/pengguna/permissions';
 
 	const expanded = new StorageState<boolean>('menu-expanded');
 
@@ -12,6 +13,46 @@
 	const activeSemesterTipe = $derived(
 		(page.data as { activeSemesterTipe?: string | null } | null)?.activeSemesterTipe ?? null
 	);
+
+	const user = $derived(
+		(page.data as { user?: Pick<AuthUser, 'permissions' | 'type'> | null } | null)?.user ?? null
+	);
+
+	const presensiGuruEnabled = $derived(
+		(page.data as { presensiGuruEnabled?: boolean } | null)?.presensiGuruEnabled ?? true
+	);
+
+	function isHiddenForUser(path?: string): boolean {
+		// Menu items without a path (parent groups) are filtered recursively via subMenu
+		if (!path) return false;
+		if (path === '/presensi-guru' && !presensiGuruEnabled) return true;
+		const required = resolveRoutePermission(path);
+		if (!required) return false;
+		return !isAuthorizedUser([required], user ?? undefined);
+	}
+
+	function filterMenuByUserType(items: MenuItem[]): MenuItem[] {
+		return items
+			.map((item) => {
+				if (isHiddenForUser(item.path)) return null;
+				if (item.subMenu) {
+					const subMenu = item.subMenu;
+					const filtered = filterMenuByUserType(subMenu);
+					if (filtered.length === 0 && !item.path) return null;
+					// Reuse the original item reference when nothing changed so the
+					// keyed {#each} doesn't recreate <details> (preserves manual open/close).
+					if (
+						filtered.length === subMenu.length &&
+						filtered.every((child, i) => child === subMenu[i])
+					) {
+						return item;
+					}
+					return { ...item, subMenu: filtered };
+				}
+				return item;
+			})
+			.filter((item): item is MenuItem => item !== null);
+	}
 
 	function filterByCondition(item: MenuItem, semesterTipe: string | null): boolean {
 		if (item.condition && item.condition !== semesterTipe) return false;
@@ -50,9 +91,11 @@
 	}
 
 	let menuItems = $derived(
-		search
-			? filterMenu(appMenuItems, search)
-			: appMenuItems.filter((item) => filterByCondition(item, activeSemesterTipe))
+		filterMenuByUserType(
+			search
+				? filterMenu(appMenuItems, search)
+				: appMenuItems.filter((item) => filterByCondition(item, activeSemesterTipe))
+		)
 	);
 
 	function isMenuActive(currentPath: string, menuPath?: string) {
@@ -76,7 +119,7 @@
 					{@render menu_item_label(item)}
 				</summary>
 				<ul>
-					{#each item.subMenu as menu (menu)}
+					{#each item.subMenu as menu (menu.title)}
 						{@render menu_item(menu)}
 					{/each}
 				</ul>
@@ -118,7 +161,7 @@
 	<div
 		class="lg:bg-base-200 lg:rounded-box lg:max-h-[calc(100vh-13.5rem)] lg:overflow-y-auto lg:shadow-inner"
 	>
-		{#each menuItems as menu (menu)}
+		{#each menuItems as menu (menu.title)}
 			{@render menu_item(menu)}
 		{:else}
 			<li>

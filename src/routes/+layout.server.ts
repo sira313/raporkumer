@@ -5,14 +5,17 @@ import {
 	tableMurid,
 	tablePegawai,
 	tableAuthUserKelas,
-	tableAuthUserMataPelajaran
+	tableAuthUserMataPelajaran,
+	tablePresensiSettings
 } from '$lib/server/db/schema';
 import { cookieNames, findTitleByPath } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
-export const load: LayoutServerLoad = async ({ url, locals, cookies }) => {
+export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) => {
+	depends('app:presensi-guru-enabled');
+
 	const meta: PageMeta = {
 		title:
 			url.pathname === '/' ? 'Rapkumer - Administrasi Guru Terpadu' : findTitleByPath(url.pathname),
@@ -22,6 +25,20 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies }) => {
 	const sekolah = locals.sekolah;
 	const user = locals.user ?? null;
 	const academicContext = sekolah?.id ? await resolveSekolahAcademicContext(sekolah.id) : null;
+
+	// Presensi guru feature toggle (per active sekolah + tahun ajaran). Defaults to
+	// enabled so existing installs keep the feature visible.
+	let presensiGuruEnabled = true;
+	if (sekolah?.id && academicContext?.activeTahunAjaranId) {
+		const presensiSetting = await db.query.tablePresensiSettings.findFirst({
+			columns: { presensiGuruEnabled: true },
+			where: and(
+				eq(tablePresensiSettings.sekolahId, sekolah.id),
+				eq(tablePresensiSettings.tahunAjaranId, academicContext.activeTahunAjaranId)
+			)
+		});
+		presensiGuruEnabled = presensiSetting?.presensiGuruEnabled ?? true;
+	}
 
 	// Query daftarKelas: for wali_kelas, get ALL kelas they manage (not just active semester)
 	// For user type (guru), get kelas from tableAuthUserKelas join table
@@ -297,6 +314,7 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies }) => {
 		kelasAktif,
 		user: userForClient,
 		hasMataPelajaran,
+		presensiGuruEnabled,
 		activeSemesterTipe: academicContext?.activeSemesterTipe ?? null,
 		academicContext
 	};

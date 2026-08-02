@@ -8,7 +8,15 @@
 	import { DEFAULT_RAPOR_CRITERIA, type RaporPeriode } from '$lib/rapor-params';
 
 	type DocumentType =
-		'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan' | 'jurnal-mengajar' | 'buku-tamu';
+		| 'cover'
+		| 'biodata'
+		| 'rapor'
+		| 'piagam'
+		| 'keasramaan'
+		| 'jurnal-mengajar'
+		| 'buku-tamu'
+		| 'presensi-guru'
+		| 'laporan-tpp';
 	type MuridData = {
 		id: number;
 		nama: string;
@@ -20,6 +28,10 @@
 
 	const userType = $derived((page.data.user as { type?: string } | null)?.type);
 
+	const presensiGuruEnabled = $derived(
+		(page.data as { presensiGuruEnabled?: boolean } | null)?.presensiGuruEnabled ?? true
+	);
+
 	const documentOptions = $derived.by<Array<{ value: DocumentType; label: string }>>(() => {
 		const all: Array<{ value: DocumentType; label: string }> = [
 			{ value: 'cover', label: 'Cover' },
@@ -28,15 +40,25 @@
 			{ value: 'piagam', label: 'Piagam' },
 			{ value: 'keasramaan', label: 'Rapor Keasramaan' },
 			{ value: 'jurnal-mengajar', label: 'Jurnal Mengajar' },
-			{ value: 'buku-tamu', label: 'Buku Tamu' }
+			{ value: 'buku-tamu', label: 'Buku Tamu' },
+			{ value: 'presensi-guru', label: 'Presensi Guru' },
+			{ value: 'laporan-tpp', label: 'Laporan TPP' }
 		];
+		const visible = all.filter(
+			(o) => !((o.value === 'presensi-guru' || o.value === 'laporan-tpp') && !presensiGuruEnabled)
+		);
 		if (userType === 'wali_asuh') {
-			return all.filter((o) => o.value === 'keasramaan');
+			return visible.filter((o) => o.value === 'keasramaan');
 		}
 		if (userType === 'user') {
-			return all.filter((o) => o.value === 'jurnal-mengajar');
+			return visible.filter((o) => o.value === 'jurnal-mengajar');
 		}
-		return all;
+		if (userType !== 'admin') {
+			return visible.filter(
+				(o) => o.value !== 'presensi-guru' && o.value !== 'buku-tamu' && o.value !== 'laporan-tpp'
+			);
+		}
+		return visible;
 	});
 
 	let selectedDocument = $state<DocumentType | ''>('');
@@ -79,6 +101,15 @@
 	let bukuTamuTanggalMulai = $state('');
 	let bukuTamuTanggalSelesai = $state('');
 
+	// Presensi guru month/year
+	let presensiBulan = $state(new Date().getMonth() + 1);
+	let presensiTahun = $state(new Date().getFullYear());
+
+	// Laporan TPP month/year/status
+	let laporanBulan = $state(new Date().getMonth() + 1);
+	let laporanTahun = $state(new Date().getFullYear());
+	let statusKepegawaian = $state<'PNS' | 'PPPK'>('PNS');
+
 	$effect(() => {
 		jurnalTanggalMulai = data.tanggalMasuk || '';
 		jurnalTanggalSelesai = data.tanggalBagiRaport || '';
@@ -88,6 +119,8 @@
 	const isJurnalMengajar = $derived(selectedDocument === 'jurnal-mengajar');
 	const isBukuTamu = $derived(selectedDocument === 'buku-tamu');
 	const isPiagamSelected = $derived(selectedDocument === 'piagam');
+	const isPresensiGuru = $derived(selectedDocument === 'presensi-guru');
+	const isLaporanTpp = $derived(selectedDocument === 'laporan-tpp');
 
 	const academicContext = $derived(data.academicContext ?? null);
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
@@ -109,7 +142,22 @@
 				? Boolean(bukuTamuTanggalMulai && bukuTamuTanggalSelesai)
 				: isPiagamSelected
 					? hasPiagamRankingOptions
-					: hasMurid
+					: isPresensiGuru
+						? Boolean(
+								presensiBulan >= 1 &&
+								presensiBulan <= 12 &&
+								presensiTahun >= 2000 &&
+								presensiTahun <= 2099
+							)
+						: isLaporanTpp
+							? Boolean(
+									laporanBulan >= 1 &&
+									laporanBulan <= 12 &&
+									laporanTahun >= 2000 &&
+									laporanTahun <= 2099 &&
+									statusKepegawaian
+								)
+							: hasMurid
 	);
 
 	const downloadDisabled = $derived(!selectedDocument || !hasSelectionOptions || downloadLoading);
@@ -297,6 +345,64 @@
 		}
 	}
 
+	async function handlePreviewPresensiGuru() {
+		if (!isPresensiGuru) return;
+
+		downloadLoading = true;
+		try {
+			const params = new URLSearchParams({
+				bulan: String(presensiBulan),
+				tahun: String(presensiTahun)
+			});
+			const res = await fetch(`/api/pdf/presensi-guru?${params}`);
+			if (!res.ok) throw new Error('Gagal membuat PDF');
+			const blob = await res.blob();
+
+			closePdfModal();
+			pdfPreviewUrl = URL.createObjectURL(blob);
+			pdfPreviewTitle = `Presensi Guru ${presensiBulan}-${presensiTahun}`;
+			pdfModalOpen = true;
+		} catch (err) {
+			console.error('Presensi guru preview error:', err);
+			toast('Gagal membuat PDF Presensi Guru', 'error');
+		} finally {
+			downloadLoading = false;
+		}
+	}
+
+	async function handleDownloadLaporanTpp() {
+		if (!isLaporanTpp) return;
+
+		downloadLoading = true;
+		try {
+			const params = new URLSearchParams({
+				bulan: String(laporanBulan),
+				tahun: String(laporanTahun),
+				status: statusKepegawaian
+			});
+			const res = await fetch(`/api/cetak/laporan-tpp?${params}`);
+			if (!res.ok) {
+				const errBody = await res.json().catch(() => ({}));
+				throw new Error(errBody?.error || 'Gagal membuat Laporan TPP');
+			}
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `Laporan-TPP-${laporanTahun}-${String(laporanBulan).padStart(2, '0')}-${statusKepegawaian}.xlsx`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(url);
+			toast('Laporan TPP berhasil diunduh.', 'success');
+		} catch (err) {
+			console.error('Laporan TPP download error:', err);
+			toast(err instanceof Error ? err.message : 'Gagal mengunduh Laporan TPP.', 'error');
+		} finally {
+			downloadLoading = false;
+		}
+	}
+
 	async function handleDownloadBulk() {
 		const documentType = selectedDocument;
 		if (!documentType) {
@@ -388,6 +494,12 @@
 		bind:jurnalTanggalSelesai
 		bind:bukuTamuTanggalMulai
 		bind:bukuTamuTanggalSelesai
+		bind:presensiBulan
+		bind:presensiTahun
+		bind:laporanBulan
+		bind:laporanTahun
+		bind:statusKepegawaian
+		onDownloadLaporanTpp={handleDownloadLaporanTpp}
 		muridCount={daftarMurid.length}
 		isRaporSelected={selectedDocument === 'rapor'}
 		isBiodataSelected={selectedDocument === 'biodata'}
@@ -428,6 +540,7 @@
 		onBgRefresh={() => {}}
 		onPreviewJurnal={handlePreviewJurnal}
 		onPreviewBukuTamu={handlePreviewBukuTamu}
+		onPreviewPresensiGuru={handlePreviewPresensiGuru}
 	/>
 </div>
 

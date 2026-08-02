@@ -5,9 +5,11 @@
 	import Icon from '$lib/components/icon.svelte';
 	import UpdateModal from '$lib/components/settings/update-modal.svelte';
 	import { page } from '$app/state';
-	import { isAuthorizedUser } from '../pengguna/permissions';
 
 	let user = $derived(page.data.user);
+	const isAdmin = $derived(user?.type === 'admin');
+	const canCheckUpdate = $derived(isAdmin);
+	const canManageUsers = $derived(isAdmin);
 	import { toast } from '$lib/components/toast.svelte';
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
@@ -131,40 +133,28 @@
 	</div>
 	<UpdateModal open={updateModalOpen} {currentVersion} on:close={() => (updateModalOpen = false)} />
 	<div class="mt-4 flex flex-col justify-between gap-2 sm:flex-row">
-		<button
-			class="btn btn-outline btn-secondary shadow-none sm:self-start {!isAuthorizedUser(
-				['app_check_update'],
-				user
-			)
-				? 'btn-disabled pointer-events-none opacity-60'
-				: ''}"
-			type="button"
-			onclick={() => (updateModalOpen = true)}
-			disabled={!isAuthorizedUser(['app_check_update'], user)}
-			title={!isAuthorizedUser(['app_check_update'], user)
-				? 'Anda tidak memiliki izin untuk memeriksa pembaruan'
-				: ''}
-		>
-			<Icon name="download" />
-			Cek Update
-		</button>
-		<a
-			class="btn btn-outline btn-info shadow-none {!isAuthorizedUser(['user_list'], user)
-				? 'btn-disabled pointer-events-none opacity-60'
-				: ''}"
-			href={isAuthorizedUser(['user_list'], user) ? '/pengguna' : '#'}
-			aria-disabled={!isAuthorizedUser(['user_list'], user)}
-			tabindex={!isAuthorizedUser(['user_list'], user) ? -1 : 0}
-			title={!isAuthorizedUser(['user_list'], user)
-				? 'Anda tidak memiliki izin untuk mengakses Manajemen Pengguna'
-				: ''}
-			onclick={(e) => {
-				if (!isAuthorizedUser(['user_list'], user)) e.preventDefault();
-			}}
-		>
-			<Icon name="users" />
-			Manajemen Pengguna
-		</a>
+		{#if canCheckUpdate}
+			<button
+				class="btn btn-outline btn-secondary shadow-none sm:self-start"
+				type="button"
+				onclick={() => (updateModalOpen = true)}
+			>
+				<Icon name="download" />
+				Cek Update
+			</button>
+		{/if}
+		<div class="flex flex-col gap-2 sm:flex-row">
+			{#if canManageUsers}
+				<a class="btn btn-outline btn-info shadow-none" href="/pengguna">
+					<Icon name="users" />
+					Manajemen Pengguna
+				</a>
+			{/if}
+			<a class="btn btn-outline btn-success shadow-none" href="/pengaturan/profil">
+				<Icon name="user" />
+				Edit Profil
+			</a>
+		</div>
 	</div>
 </section>
 

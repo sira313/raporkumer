@@ -36,6 +36,19 @@ export async function ensureCoreSchema() {
 			pegawai_id INTEGER REFERENCES pegawai(id),
 			kelas_id INTEGER REFERENCES kelas(id),
 			mata_pelajaran_id INTEGER REFERENCES mata_pelajaran(id),
+			nama_lengkap TEXT,
+			tempat_lahir TEXT,
+			tanggal_lahir TEXT,
+			jenis_kelamin TEXT,
+			ijazah TEXT,
+			tahun_ijazah INTEGER,
+			status_kepegawaian TEXT,
+			golongan TEXT,
+			jabatan TEXT,
+			pangkat TEXT,
+			tanggal_diangkat TEXT,
+			tanggal_bekerja TEXT,
+			tanggal_gaji_berkala TEXT,
 			created_at TEXT NOT NULL,
 			updated_at TEXT,
 			UNIQUE(username_normalized)
@@ -209,22 +222,60 @@ export async function ensureCoreSchema() {
 		// column already exists
 	}
 
+	// Profile columns on auth_user (migration for existing databases)
+	const profileColumns = [
+		['nama_lengkap', 'TEXT'],
+		['tempat_lahir', 'TEXT'],
+		['tanggal_lahir', 'TEXT'],
+		['jenis_kelamin', 'TEXT'],
+		['ijazah', 'TEXT'],
+		['tahun_ijazah', 'INTEGER'],
+		['status_kepegawaian', 'TEXT'],
+		['golongan', 'TEXT'],
+		['jabatan', 'TEXT'],
+		['pangkat', 'TEXT'],
+		['tanggal_diangkat', 'TEXT'],
+		['tanggal_bekerja', 'TEXT'],
+		['tanggal_gaji_berkala', 'TEXT']
+	] as const;
+	for (const [column, type] of profileColumns) {
+		try {
+			await db.$client.execute(`ALTER TABLE auth_user ADD COLUMN ${column} ${type}`);
+		} catch {
+			// column already exists
+		}
+	}
+
 	// Create user_favorites table
 	try {
 		await db.$client.execute(`
-			CREATE TABLE IF NOT EXISTS user_favorites (
-				id INTEGER PRIMARY KEY AUTOINCREMENT,
-				user_id INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
-				path TEXT NOT NULL,
-				title TEXT NOT NULL,
-				created_at TEXT NOT NULL,
-				updated_at TEXT,
-				UNIQUE(user_id, path)
-			)
-		`);
+				CREATE TABLE IF NOT EXISTS user_favorites (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					user_id INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+					path TEXT NOT NULL,
+					title TEXT NOT NULL,
+					created_at TEXT NOT NULL,
+					updated_at TEXT,
+					UNIQUE(user_id, path)
+				)
+			`);
 		await db.$client.execute(
 			`CREATE INDEX IF NOT EXISTS user_favorites_user_idx ON user_favorites(user_id)`
 		);
+	} catch {
+		// table already exists
+	}
+
+	// Create app_meta table (key-value store for app-level migration markers)
+	try {
+		await db.$client.execute(`
+			CREATE TABLE IF NOT EXISTS app_meta (
+				key TEXT PRIMARY KEY,
+				value TEXT NOT NULL,
+				created_at TEXT NOT NULL,
+				updated_at TEXT
+			)
+		`);
 	} catch {
 		// table already exists
 	}

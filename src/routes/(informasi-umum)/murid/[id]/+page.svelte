@@ -166,28 +166,30 @@
 							{/if}
 						</div>
 						<div class="mt-4 flex flex-row sm:mx-auto sm:mt-0">
-							<button
-								class="btn btn-soft rounded-l-md shadow-none"
-								type="button"
-								onclick={() => (isUploadModalOpen = true)}
-								disabled={!canEdit}
-								title={!canEdit ? 'Anda tidak memiliki izin untuk mengubah foto' : ''}
-								aria-label="Ubah Foto Murid"
-							>
-								<Icon name="edit" />
-								Ubah
-							</button>
-							<button
-								class="btn btn-soft btn-error rounded-r-md shadow-none"
-								type="button"
-								onclick={deleteFoto}
-								disabled={deletingFoto || !photoSrc || !canEdit}
-								title={!canEdit ? 'Anda tidak memiliki izin untuk menghapus foto' : ''}
-								aria-label="Hapus Foto Murid"
-							>
-								<Icon name="del" />
-								Hapus
-							</button>
+							<div class="join">
+								<button
+									class="btn btn-sm btn-soft join-item shadow-none"
+									type="button"
+									onclick={() => (isUploadModalOpen = true)}
+									disabled={!canEdit}
+									title={!canEdit ? 'Anda tidak memiliki izin untuk mengubah foto' : ''}
+									aria-label="Ubah Foto Murid"
+								>
+									<Icon name="edit" />
+									Ubah
+								</button>
+								<button
+									class="btn btn-sm btn-soft btn-error join-item shadow-none"
+									type="button"
+									onclick={deleteFoto}
+									disabled={deletingFoto || !photoSrc || !canEdit}
+									title={!canEdit ? 'Anda tidak memiliki izin untuk menghapus foto' : ''}
+									aria-label="Hapus Foto Murid"
+								>
+									<Icon name="del" />
+									Hapus
+								</button>
+							</div>
 						</div>
 					</div>
 					<!-- Data fields (kept as two-column grid inside the right area) -->

@@ -13,6 +13,7 @@ import {
 import { tableSekolah } from '$lib/server/db/schema';
 import { sql, eq, and, inArray, desc } from 'drizzle-orm';
 import { authority } from './utils.server';
+import { defaultPermissionsByType } from './permissions';
 import { hashPassword } from '$lib/server/auth';
 import { randomBytes } from 'node:crypto';
 import { fail } from '@sveltejs/kit';
@@ -202,8 +203,10 @@ export async function load({ url }) {
 				const timestamp = new Date().toISOString();
 
 				// If wali has >1 kelas, include 'kelas_pindah' permission
-				const permissions: UserPermission[] =
-					kelasArr.length > 1 ? (['kelas_pindah'] as UserPermission[]) : [];
+				const permissions: UserPermission[] = [
+					...(defaultPermissionsByType['wali_kelas'] ?? []),
+					...(kelasArr.length > 1 ? (['kelas_pindah'] as UserPermission[]) : [])
+				];
 
 				await db.insert(tableAuthUser).values({
 					username,
@@ -357,7 +360,7 @@ export async function load({ url }) {
 				passwordHash: hash,
 				passwordSalt: salt,
 				passwordUpdatedAt: timestamp,
-				permissions: [],
+				permissions: defaultPermissionsByType['wali_asuh'] ?? [],
 				type: 'wali_asuh',
 				pegawaiId,
 				createdAt: timestamp,
@@ -628,8 +631,11 @@ export const actions = {
 				}
 			}
 
-			// Auto-assign 'kelas_pindah' permission to user type (guru) dengan multiple kelas
-			const permissions: string[] = [];
+			// Auto-assign default permissions sesuai tipe akun.
+			// Tambahkan 'kelas_pindah' untuk user type (guru) dengan multiple kelas
+			const permissions: string[] = [
+				...(defaultPermissionsByType[roleValue as AuthUser['type']] ?? [])
+			];
 			if (roleValue === 'user' && kelasIds.length > 1) {
 				permissions.push('kelas_pindah');
 			}

@@ -78,7 +78,7 @@ export async function load({ url, locals, depends }) {
 				}
 			}
 		} else {
-			authority('rapor_manage');
+			authority('input_nilai_asesmen_formatif');
 		}
 	}
 
@@ -195,7 +195,7 @@ export const actions = {
 					}
 				}
 			} else {
-				authority('rapor_manage');
+				authority('input_nilai_asesmen_formatif');
 			}
 		}
 

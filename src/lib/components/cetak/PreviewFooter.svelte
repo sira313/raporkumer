@@ -24,7 +24,9 @@
 		showBgLogo = false,
 		onToggleBgLogo = () => {},
 		isJurnalMengajar = false,
-		isBukuTamu = false
+		isBukuTamu = false,
+		isPresensiGuru = false,
+		isLaporanTpp = false
 	}: {
 		hasMurid: boolean;
 		muridCount: number;
@@ -44,6 +46,8 @@
 		onToggleBgLogo?: (value: boolean) => void;
 		isJurnalMengajar?: boolean;
 		isBukuTamu?: boolean;
+		isPresensiGuru?: boolean;
+		isLaporanTpp?: boolean;
 	} = $props();
 
 	async function handleDeleteBg() {
@@ -135,6 +139,13 @@
 		<p>Default preview satu semester dari tanggal masuk sekolah sampai tanggal bagi rapor.</p>
 	{:else if isBukuTamu}
 		<p>Preview daftar buku tamu berdasarkan rentang tanggal yang dipilih.</p>
+	{:else if isPresensiGuru}
+		<p>Preview daftar hadir guru (format bulanan) berdasarkan bulan dan tahun yang dipilih.</p>
+	{:else if isLaporanTpp}
+		<p>
+			Unduh Laporan TPP (format Excel) berdasarkan bulan, tahun, dan status kepegawaian yang
+			dipilih.
+		</p>
 	{:else if hasMurid}
 		<p>
 			Terdapat <strong>{muridCount}</strong> murid di kelas ini. Download dokumen dalam bentuk PDF bisa

@@ -19,8 +19,6 @@
 		ctx = canvasEl.getContext('2d');
 		if (!ctx) return;
 		resizeCanvas();
-		ctx.fillStyle = '#ffffff';
-		ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
 		window.addEventListener('resize', resizeCanvas);
 		return () => window.removeEventListener('resize', resizeCanvas);
 	});
@@ -33,12 +31,15 @@
 		const tempCtx = tempCanvas.getContext('2d');
 		if (tempCtx) tempCtx.drawImage(canvasEl, 0, 0);
 		const rect = canvasEl.getBoundingClientRect();
-		canvasEl.width = rect.width * 2;
-		canvasEl.height = rect.height * 2;
-		ctx.scale(2, 2);
-		ctx.fillStyle = '#ffffff';
-		ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+		canvasEl.width = Math.max(1, Math.round(rect.width)) * 2;
+		canvasEl.height = Math.max(1, Math.round(rect.height)) * 2;
+		// Copy the previous content 1:1 (old and new bitmaps are both 2x CSS px).
+		ctx.save();
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
 		ctx.drawImage(tempCanvas, 0, 0);
+		ctx.restore();
+		// Logical space = CSS pixels; strokes render at 2x physical resolution.
+		ctx.setTransform(2, 0, 0, 2, 0, 0);
 	}
 
 	function getPos(e: MouseEvent | TouchEvent) {
@@ -79,8 +80,7 @@
 
 	function clearSignature() {
 		if (!ctx || !canvasEl) return;
-		ctx.fillStyle = '#ffffff';
-		ctx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+		ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
 		hasSignature = false;
 	}
 
@@ -153,130 +153,133 @@
 	<title>Buku Tamu</title>
 </svelte:head>
 
-	<div class="card bg-base-100 w-full sm:max-w-lg sm:shadow-xl rounded-box">
-		<div class="card-body space-y-4 p-4 sm:p-6">
-			<header class="mb-2 space-y-2 text-center">
-				<h1 class="text-2xl font-bold">Buku Tamu</h1>
-				<p class="text-base-content/70 text-sm">
-					Silakan mengisi data diri Anda untuk keperluan kunjungan.
-				</p>
-			</header>
+<div class="card bg-base-100 w-full sm:max-w-lg sm:shadow-xl rounded-box">
+	<div class="card-body space-y-4 p-4 sm:p-6">
+		<header class="mb-2 space-y-2 text-center">
+			<h1 class="text-2xl font-bold">Buku Tamu</h1>
+			<p class="text-base-content/70 text-sm">
+				Silakan mengisi data diri Anda untuk keperluan kunjungan.
+			</p>
+		</header>
 
-			{#if submitted}
-				<div class="space-y-4 text-center">
-					<div class="alert alert-success">
-						<Icon name="success" />
-						<span>Terima kasih! Data kunjungan Anda telah tersimpan.</span>
-					</div>
-					<button type="button" class="btn btn-primary shadow-none" onclick={submitAnother}>
-						<Icon name="plus" />
-						Tulis Lagi
-					</button>
+		{#if submitted}
+			<div class="space-y-4 text-center">
+				<div class="alert alert-success">
+					<Icon name="success" />
+					<span>Terima kasih! Data kunjungan Anda telah tersimpan.</span>
 				</div>
-			{:else}
-				<form bind:this={formEl}>
-					<div class="fieldset">
-						<label class="fieldset-legend" for="nama">Nama <span class="text-error">*</span></label>
-						<input
-							type="text"
-							id="nama"
-							name="nama"
-							required
-							placeholder="Nama lengkap"
-							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
-						/>
-					</div>
+				<button type="button" class="btn btn-primary shadow-none" onclick={submitAnother}>
+					<Icon name="plus" />
+					Tulis Lagi
+				</button>
+			</div>
+		{:else}
+			<form bind:this={formEl}>
+				<div class="fieldset">
+					<label class="fieldset-legend" for="nama">Nama <span class="text-error">*</span></label>
+					<input
+						type="text"
+						id="nama"
+						name="nama"
+						required
+						placeholder="Nama lengkap"
+						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+					/>
+				</div>
 
-					<div class="fieldset">
-						<label class="fieldset-legend" for="asalInstansi"
-							>Asal / Instansi <span class="text-error">*</span></label
-						>
-						<input
-							type="text"
-							id="asalInstansi"
-							name="asalInstansi"
-							required
-							placeholder="Masukkan alamat atau asal instansi"
-							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
-						/>
-					</div>
+				<div class="fieldset">
+					<label class="fieldset-legend" for="asalInstansi"
+						>Asal / Instansi <span class="text-error">*</span></label
+					>
+					<input
+						type="text"
+						id="asalInstansi"
+						name="asalInstansi"
+						required
+						placeholder="Masukkan alamat atau asal instansi"
+						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+					/>
+				</div>
 
-					<div class="fieldset">
-						<label class="fieldset-legend" for="nip">NIP (opsional)</label>
-						<input
-							type="text"
-							id="nip"
-							name="nip"
-							placeholder="Masukkan NIP jika ada"
-							class="input input-bordered dark:bg-base-200 w-full dark:border-none"
-						/>
-					</div>
+				<div class="fieldset">
+					<label class="fieldset-legend" for="nip">NIP (opsional)</label>
+					<input
+						type="text"
+						id="nip"
+						name="nip"
+						placeholder="Masukkan NIP jika ada"
+						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+					/>
+				</div>
 
-					<div class="fieldset">
-						<label class="fieldset-legend" for="keperluan"
-							>Keperluan <span class="text-error">*</span></label
-						>
-						<textarea
-							id="keperluan"
-							name="keperluan"
-							required
-							rows="2"
-							placeholder="Isi keperluan kunjungan"
-							class="textarea textarea-bordered dark:bg-base-200 w-full dark:border-none"
-						></textarea>
-					</div>
+				<div class="fieldset">
+					<label class="fieldset-legend" for="keperluan"
+						>Keperluan <span class="text-error">*</span></label
+					>
+					<textarea
+						id="keperluan"
+						name="keperluan"
+						required
+						rows="2"
+						placeholder="Isi keperluan kunjungan"
+						class="textarea textarea-bordered dark:bg-base-200 w-full dark:border-none"></textarea>
+				</div>
 
-					<div class="fieldset">
-						<label class="fieldset-legend" for="pesanKesan">Pesan & Kesan (opsional)</label>
-						<textarea
-							id="pesanKesan"
-							name="pesanKesan"
-							rows="2"
-							placeholder="Isi pesan atau kesan Anda"
-							class="textarea textarea-bordered dark:bg-base-200 w-full dark:border-none"
-						></textarea>
-					</div>
+				<div class="fieldset">
+					<label class="fieldset-legend" for="pesanKesan">Pesan & Kesan (opsional)</label>
+					<textarea
+						id="pesanKesan"
+						name="pesanKesan"
+						rows="2"
+						placeholder="Isi pesan atau kesan Anda"
+						class="textarea textarea-bordered dark:bg-base-200 w-full dark:border-none"></textarea>
+				</div>
 
-					<div class="fieldset">
-						<label class="fieldset-legend">
-							Tanda Tangan
-							{#if hasSignature}
-								<button
-									type="button"
-									class="btn btn-soft btn-xs text-error ml-2"
-									onclick={clearSignature}
-								>
-									Hapus
-								</button>
-								<button type="button" class="btn btn-soft btn-xs ml-1" onclick={undoSignature}>
-									Undo
-								</button>
-							{/if}
-						</label>
-						<div class="border-base-300 rounded-md border overflow-hidden">
-							<canvas
-								bind:this={canvasEl}
-								class="bg-white w-full cursor-crosshair touch-none"
-								style="height: 160px;"
-								onmousedown={startDraw}
-								onmousemove={draw}
-								onmouseup={endDraw}
-								onmouseleave={endDraw}
-								ontouchstart={startDraw}
-								ontouchmove={draw}
-								ontouchend={endDraw}
-							></canvas>
-						</div>
-						<p class="fieldset-label">Tanda tangan di atas (opsional)</p>
-					</div>
-
-					<button class="btn btn-primary mt-4 w-full" type="button" disabled={submitting} onclick={handleSubmit}>
-						{#if submitting}
-							<span class="loading loading-spinner loading-sm"></span>
+				<div class="fieldset">
+					<label class="fieldset-legend">
+						Tanda Tangan
+						{#if hasSignature}
+							<button
+								type="button"
+								class="btn btn-soft btn-xs text-error ml-2"
+								onclick={clearSignature}
+							>
+								Hapus
+							</button>
+							<button type="button" class="btn btn-soft btn-xs ml-1" onclick={undoSignature}>
+								Undo
+							</button>
 						{/if}
-						Kirim
-					</button>
-				</form>
-			{/if}
-		</div>
+					</label>
+					<div class="border-base-300 rounded-md border overflow-hidden">
+						<canvas
+							bind:this={canvasEl}
+							class="bg-white w-full cursor-crosshair touch-none"
+							style="height: 160px;"
+							onmousedown={startDraw}
+							onmousemove={draw}
+							onmouseup={endDraw}
+							onmouseleave={endDraw}
+							ontouchstart={startDraw}
+							ontouchmove={draw}
+							ontouchend={endDraw}
+						></canvas>
+					</div>
+					<p class="fieldset-label">Tanda tangan di atas (opsional)</p>
+				</div>
+
+				<button
+					class="btn btn-primary mt-4 w-full"
+					type="button"
+					disabled={submitting}
+					onclick={handleSubmit}
+				>
+					{#if submitting}
+						<span class="loading loading-spinner loading-sm"></span>
+					{/if}
+					Kirim
+				</button>
+			</form>
+		{/if}
 	</div>
+</div>

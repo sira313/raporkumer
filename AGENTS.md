@@ -66,6 +66,7 @@ pnpm format                  # prettier --write . (tabs, single quotes, no trail
 - `pnpm db:push` applies schema changes (custom orchestration, not raw `drizzle-kit push`).
 - Use `db.query.tableX` with Drizzle query builder. Avoid raw SQL.
 - Logos: `Uint8Array` blob + mime type string on `tableSekolah`.
+- **Signatures (tanda tangan / paraf):** stored as transparent PNG files under `<cwd>/data/ttd/<kategori>/` (`guru` = presensi guru, `tamu` = buku tamu), NOT inline base64 in the DB. The DB `tanda_tangan` column holds a rel path like `guru/27_2026-08-04.png` (legacy inline data URLs still render). Guru filenames include a timestamp (e.g. `27_2026-08-04_1722660000000.png`) so replacing a paraf yields a fresh URL (the old file is deleted by the admin handler); `/api/ttd` serves with `Cache-Control: immutable`. Helpers in `src/lib/server/ttd.ts` (`saveSignatureFile`, `readSignatureFile`, `deleteSignatureFile`, `signatureToDataUrl`, `migrateLegacySignatures`). Files are served via `/api/ttd/[...path]`; client-side `signatureDisplaySrc()` in `$lib/utils.ts` maps stored values to displayable `<img>` srcs. Guru canvas is 400×400 (1:1, for paraf only, `bg-white` CSS); tamu canvas uses 2× DPI. `migrateLegacySignatures()` runs once per process from the ensure-* scripts.
 - `.env` loaders exist in `db/index.ts`, `start-build.mjs`, and `prepare-windows.mjs` — each handles its own subset; don't rely on a single loader.
 
 ## Windows installer

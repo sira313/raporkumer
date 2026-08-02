@@ -15,7 +15,7 @@ export async function GET({ locals }) {
 }
 
 export async function PUT({ request, locals }) {
-	if (!isAuthorizedUser(['sekolah_manage'], locals.user)) {
+	if (!isAuthorizedUser(['informasi_umum_sekolah'], locals.user)) {
 		return json({ error: 'Tidak memiliki izin.' }, { status: 403 });
 	}
 

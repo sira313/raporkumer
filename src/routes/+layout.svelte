@@ -1,6 +1,7 @@
 <script lang="ts">
 	/* eslint-disable svelte/no-navigation-without-resolve -- layout contains many intentional href links for navigation */
 	import { page } from '$app/state';
+	import { dev } from '$app/environment';
 	import { invalidate } from '$app/navigation';
 	import GlobalModal, { showModal } from '$lib/components/global-modal.svelte';
 	import Icon from '$lib/components/icon.svelte';
@@ -16,6 +17,8 @@
 
 	import NavIndicator from '$lib/components/nav-indicator.svelte';
 	import ScrollToTop from '$lib/components/scroll-to-top.svelte';
+	import FavoriteMenusFab from '$lib/components/dashboard/favorite-menus-fab.svelte';
+	import PresensiGuruModal from '$lib/components/presensi-guru/presensi-guru-modal.svelte';
 	import '../app.css';
 
 	let { data, children } = $props();
@@ -27,8 +30,81 @@
 	const isTamuPage = $derived(page.url.pathname === '/tamu');
 	const isJadwalPublikPage = $derived(page.url.pathname === '/jadwal-pelajaran');
 	let isJadwalPage = $derived(page.url.pathname === '/akademik/jadwal-pelajaran');
+
+	const skipPresensiGuruPrompt = $derived(
+		isLoginPage ||
+			isTamuPage ||
+			isJadwalPublikPage ||
+			page.url.pathname.startsWith('/logout') ||
+			data.presensiGuruEnabled === false
+	);
+	let presensiGuruPromptChecked = $state(false);
+	let presensiGuruShown = $state(false);
+
+	const SIMULASI_STORAGE_KEY = 'rapkumer-simulasi-tanggal-jam';
+	let simulasiTanggalJam = $state<string | null>(null);
+
+	$effect(() => {
+		if (!dev) return;
+		const fromUrl = page.url.searchParams.get('tanggal-jam');
+		if (fromUrl) {
+			sessionStorage.setItem(SIMULASI_STORAGE_KEY, fromUrl);
+		}
+		simulasiTanggalJam = fromUrl ?? sessionStorage.getItem(SIMULASI_STORAGE_KEY) ?? null;
+	});
+
+	function resetSimulasi() {
+		sessionStorage.removeItem(SIMULASI_STORAGE_KEY);
+		simulasiTanggalJam = null;
+	}
+
+	$effect(() => {
+		const user = data.user;
+		if (!user || skipPresensiGuruPrompt || presensiGuruPromptChecked || presensiGuruShown) return;
+
+		const override =
+			page.url.searchParams.get('tanggal-jam') ??
+			(dev ? sessionStorage.getItem(SIMULASI_STORAGE_KEY) : null);
+		if (override) {
+			sessionStorage.setItem(SIMULASI_STORAGE_KEY, override);
+		}
+
+		presensiGuruPromptChecked = true;
+
+		const today = new Date().toISOString().slice(0, 10);
+		const simulatedDate = override ? override.slice(0, 10) : null;
+		const effectiveDate =
+			simulatedDate && /^\d{4}-\d{2}-\d{2}$/.test(simulatedDate) ? simulatedDate : today;
+		const storageKey = `rapkumer-presensi-guru-prompted-${user.id}-${effectiveDate}`;
+		if (sessionStorage.getItem(storageKey)) return;
+
+		const apiUrl = `/api/presensi-guru${override ? `?tanggal-jam=${encodeURIComponent(override)}` : ''}`;
+
+		fetch(apiUrl)
+			.then((res) => (res.ok ? res.json() : null))
+			.then((status) => {
+				if (!status?.shouldPrompt) return;
+				presensiGuruShown = true;
+				sessionStorage.setItem(storageKey, '1');
+				showModal({
+					title: 'Presensi Guru',
+					body: PresensiGuruModal,
+					bodyProps: {
+						jamMasuk: status.jamMasuk ?? null,
+						jamPulang: status.jamPulang ?? null,
+						tanggalJam: override
+					},
+					dismissible: false
+				});
+			})
+			.catch(() => {
+				presensiGuruPromptChecked = false;
+			});
+	});
 	const jadwalCanManage = $derived(
-		((page.data.user as { permissions?: string[] })?.permissions ?? []).includes('rapor_manage')
+		((page.data.user as { permissions?: string[] })?.permissions ?? []).includes(
+			'informasi_umum_akademik'
+		)
 	);
 
 	async function handleHapusKegiatan(kode: string) {
@@ -217,6 +293,7 @@
 					<div class="m-4 flex flex-row xl:gap-4">
 						<div class="w-full max-w-7xl min-w-0 flex-1">
 							<ScrollToTop />
+							<FavoriteMenusFab />
 							<div class={disableInteraction ? 'is-readonly' : ''}>
 								{@render children()}
 							</div>
@@ -302,6 +379,24 @@
 <Toast />
 <GlobalModal />
 <NavIndicator />
+{#if dev && simulasiTanggalJam && data.user}
+	<div class="fixed right-4 bottom-4 z-40 flex items-center gap-2">
+		<div class="alert alert-soft alert-warning shadow-lg">
+			<Icon name="calendar" class="h-5 w-5 shrink-0" />
+			<div class="text-xs leading-tight">
+				<div class="font-bold">Mode simulasi presensi aktif</div>
+				<div>{simulasiTanggalJam}</div>
+			</div>
+			<button
+				type="button"
+				class="btn btn-soft btn-warning btn-sm shadow-none"
+				onclick={resetSimulasi}
+			>
+				Reset
+			</button>
+		</div>
+	</div>
+{/if}
 
 <style>
 	:global(

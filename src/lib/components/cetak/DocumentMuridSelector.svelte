@@ -5,7 +5,15 @@
 	import PreviewFooter from './PreviewFooter.svelte';
 
 	type DocumentType =
-		'cover' | 'biodata' | 'rapor' | 'piagam' | 'keasramaan' | 'jurnal-mengajar' | 'buku-tamu';
+		| 'cover'
+		| 'biodata'
+		| 'rapor'
+		| 'piagam'
+		| 'keasramaan'
+		| 'jurnal-mengajar'
+		| 'buku-tamu'
+		| 'presensi-guru'
+		| 'laporan-tpp';
 	type RaporPeriode = 'rts' | 'ras';
 
 	type MuridData = {
@@ -40,8 +48,15 @@
 		onBulkDownload,
 		onPreviewJurnal = () => {},
 		onPreviewBukuTamu = () => {},
+		onPreviewPresensiGuru = () => {},
+		onDownloadLaporanTpp = () => {},
 		bukuTamuTanggalMulai = $bindable(''),
 		bukuTamuTanggalSelesai = $bindable(''),
+		presensiBulan = $bindable(0),
+		presensiTahun = $bindable(0),
+		laporanBulan = $bindable(0),
+		laporanTahun = $bindable(0),
+		statusKepegawaian = $bindable<'PNS' | 'PPPK'>('PNS'),
 		downloadDisabled = false,
 		downloadLoading = false,
 		jurnalTanggalMulai = $bindable(''),
@@ -73,8 +88,15 @@
 		onBulkDownload: () => void;
 		onPreviewJurnal?: () => void;
 		onPreviewBukuTamu?: () => void;
+		onPreviewPresensiGuru?: () => void;
+		onDownloadLaporanTpp?: () => void;
 		bukuTamuTanggalMulai?: string;
 		bukuTamuTanggalSelesai?: string;
+		presensiBulan?: number;
+		presensiTahun?: number;
+		laporanBulan?: number;
+		laporanTahun?: number;
+		statusKepegawaian?: 'PNS' | 'PPPK';
 		downloadDisabled?: boolean;
 		downloadLoading?: boolean;
 		jurnalTanggalMulai?: string;
@@ -98,10 +120,27 @@
 	const isPiagamSelected = $derived(selectedDocument === 'piagam');
 	const isJurnalMengajar = $derived(selectedDocument === 'jurnal-mengajar');
 	const isBukuTamu = $derived(selectedDocument === 'buku-tamu');
+	const isPresensiGuru = $derived(selectedDocument === 'presensi-guru');
+	const isLaporanTpp = $derived(selectedDocument === 'laporan-tpp');
 	const hasMurid = $derived(daftarMurid.length > 0);
 	const hasPiagamRankingOptions = $derived(piagamRankingOptions.length > 0);
 
 	const hasSelectionOptions = $derived(isPiagamSelected ? hasPiagamRankingOptions : hasMurid);
+
+	const bulanList = [
+		'Januari',
+		'Februari',
+		'Maret',
+		'April',
+		'Mei',
+		'Juni',
+		'Juli',
+		'Agustus',
+		'September',
+		'Oktober',
+		'November',
+		'Desember'
+	];
 
 	const filteredMurid = $derived.by(() => {
 		if (!searchTerm.trim()) return daftarMurid;
@@ -185,6 +224,8 @@
 	const showMuridTable = $derived(
 		!isJurnalMengajar &&
 			!isBukuTamu &&
+			!isPresensiGuru &&
+			!isLaporanTpp &&
 			selectedDocument &&
 			((isPiagamSelected && hasPiagamRankingOptions) || (showTable && hasMurid))
 	);
@@ -271,6 +312,62 @@
 				<p class="text-wrap">Pilih tanggal selesai</p>
 			</fieldset>
 		{/if}
+		{#if isPresensiGuru}
+			<div class="min-w-0 flex-1">
+				<select
+					class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+					bind:value={presensiBulan}
+					title="Pilih bulan"
+				>
+					{#each bulanList as nama, i (nama)}
+						<option value={i + 1}>{nama}</option>
+					{/each}
+				</select>
+			</div>
+			<div class="min-w-0 flex-1">
+				<input
+					type="number"
+					class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+					bind:value={presensiTahun}
+					min="2000"
+					max="2099"
+					title="Pilih tahun"
+				/>
+			</div>
+		{/if}
+		{#if isLaporanTpp}
+			<div class="w-32 min-w-0">
+				<select
+					class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+					bind:value={laporanBulan}
+					title="Pilih bulan"
+				>
+					{#each bulanList as nama, i (nama)}
+						<option value={i + 1}>{nama}</option>
+					{/each}
+				</select>
+			</div>
+			<div class="w-24 min-w-0">
+				<input
+					type="number"
+					class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+					bind:value={laporanTahun}
+					min="2000"
+					max="2099"
+					title="Pilih tahun"
+				/>
+			</div>
+			<div class="w-40 min-w-0">
+				<select
+					class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+					bind:value={statusKepegawaian}
+					title="Pilih status kepegawaian"
+				>
+					<option value="PNS">PNS</option>
+					<option value="PPPK">PPPK</option>
+				</select>
+			</div>
+		{/if}
 		<div class="flex flex-row gap-2">
 			{#if isJurnalMengajar}
 				<button
@@ -305,6 +402,36 @@
 						<Icon name="eye" />
 					{/if}
 					Preview
+				</button>
+			{:else if isPresensiGuru}
+				<button
+					class="btn btn-primary shadow-none"
+					type="button"
+					disabled={downloadLoading}
+					onclick={onPreviewPresensiGuru}
+					title="Preview Presensi Guru"
+				>
+					{#if downloadLoading}
+						<span class="loading loading-spinner loading-sm"></span>
+					{:else}
+						<Icon name="eye" />
+					{/if}
+					Preview
+				</button>
+			{:else if isLaporanTpp}
+				<button
+					class="btn btn-primary shadow-none"
+					type="button"
+					disabled={downloadLoading}
+					onclick={onDownloadLaporanTpp}
+					title="Download Laporan TPP"
+				>
+					{#if downloadLoading}
+						<span class="loading loading-spinner loading-sm"></span>
+					{:else}
+						<Icon name="download" />
+					{/if}
+					Download
 				</button>
 			{:else}
 				<button
@@ -344,6 +471,8 @@
 		{onToggleBgLogo}
 		{isJurnalMengajar}
 		{isBukuTamu}
+		{isPresensiGuru}
+		{isLaporanTpp}
 	/>
 
 	{#if showMuridTable}
@@ -473,8 +602,8 @@
 			<Icon name="info" />
 			<span>Pilih dokumen terlebih dahulu untuk melihat file yang ingin dicetak.</span>
 		</div>
-	{:else if !showTable && !isPiagamSelected}
-		<!-- no table shown for jurnal -->
+	{:else if (!showTable || isJurnalMengajar || isBukuTamu || isPresensiGuru || isLaporanTpp) && !isPiagamSelected}
+		<!-- no table shown for jurnal / buku tamu / presensi guru / laporan tpp -->
 	{:else if !hasMurid && !isPiagamSelected}
 		<div class="alert alert-soft alert-warning">
 			<Icon name="alert" />

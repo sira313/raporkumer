@@ -24,6 +24,10 @@ a[data-preloading] {
 }
 
 @layer components {
+	.fab {
+		@apply fixed right-6 z-50;
+	}
+
 	.select-ellipsis {
 		max-width: min(100vw, 20rem);
 	}

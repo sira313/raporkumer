@@ -1,8 +1,9 @@
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- search & pagination use replaceState navigation */
 	import { goto, invalidate } from '$app/navigation';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
-	import { searchQueryMarker } from '$lib/utils';
+	import { searchQueryMarker, signatureDisplaySrc } from '$lib/utils';
 	import { onDestroy } from 'svelte';
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
@@ -147,11 +148,12 @@
 			</div>
 		`;
 
-		if (tamu.tandaTangan) {
+		const tandaTanganSrc = signatureDisplaySrc(tamu.tandaTangan);
+		if (tandaTanganSrc) {
 			bodyHtml += `
 				<div class="mt-4">
 					<strong class="text-sm">Tanda Tangan:</strong>
-					<img src="${tamu.tandaTangan}" alt="Tanda tangan" class="mt-2 max-h-32 rounded border" />
+					<img src="${tandaTanganSrc}" alt="Tanda tangan" class="mt-2 max-h-32 rounded border" />
 				</div>
 			`;
 		}

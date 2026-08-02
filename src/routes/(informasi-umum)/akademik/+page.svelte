@@ -210,11 +210,11 @@
 		applyAcademicContext(data);
 	};
 
-	// permission runes (single permission for managing rapor)
+	// permission runes (single permission for managing akademik)
 	import { page } from '$app/state';
 	let canRaporManage = $derived.by(() => {
 		const perms = (page.data.user ?? { permissions: [] }).permissions ?? [];
-		return (perms as string[]).includes('rapor_manage');
+		return (perms as string[]).includes('informasi_umum_akademik');
 	});
 
 	// Check if selected school is different from active school
@@ -253,6 +253,7 @@
 				hariSekolah: existing?.hariSekolah ?? 6,
 				tipePresensi: existing?.tipePresensi ?? 'masuk_pulang',
 				jenisPresensi: existing?.jenisPresensi ?? 'wali_kelas_saja',
+				presensiGuruEnabled: existing?.presensiGuruEnabled ?? true,
 				liburNasional: existing?.liburNasional ?? '[]',
 				liburSemester: existing?.liburSemester ?? '[]',
 				onAction: (a: { submit: () => Promise<void>; cancel: () => void }) => {

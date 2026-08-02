@@ -19,6 +19,27 @@ function hashPassword(password, salt) {
 	return { hash: derived.toString('hex'), salt: resolvedSalt };
 }
 
+// Wali kelas defaults: 16 menu tanpa sekolah/akademik/kelas/buku-tamu.
+// Keep in sync dengan `defaultPermissionsByType['wali_kelas']` di src/routes/pengguna/permissions.ts.
+const WALI_KELAS_DEFAULT_PERMISSIONS = [
+	'informasi_umum_murid',
+	'mata_pelajaran_intrakurikuler',
+	'mata_pelajaran_kokurikuler',
+	'mata_pelajaran_ekstrakurikuler',
+	'mata_pelajaran_keasramaan',
+	'input_nilai_asesmen_formatif',
+	'input_nilai_asesmen_sumatif',
+	'input_nilai_asesmen_kokurikuler',
+	'input_nilai_nilai_ekstrakurikuler',
+	'input_nilai_asesmen_keasramaan',
+	'administrasi_absen',
+	'administrasi_jurnal_mengajar',
+	'administrasi_catatan_wali_kelas',
+	'administrasi_rekap_nilai',
+	'administrasi_keputusan',
+	'cetak_dokumen'
+];
+
 async function main() {
 	console.info(`[seed-wali] Target DB: ${dbUrl}`);
 
@@ -74,7 +95,7 @@ async function main() {
 				hash,
 				salt,
 				timestamp,
-				'[]',
+				JSON.stringify(WALI_KELAS_DEFAULT_PERMISSIONS),
 				'wali_kelas',
 				waliId,
 				kelasId,

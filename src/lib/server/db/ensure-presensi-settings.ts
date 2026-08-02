@@ -29,6 +29,13 @@ export async function ensurePresensiSettingsSchema() {
 	} catch {
 		// column already exists
 	}
+	try {
+		await db.$client.execute(
+			`ALTER TABLE "${TABLE}" ADD COLUMN "presensi_guru_enabled" integer NOT NULL DEFAULT 1`
+		);
+	} catch {
+		// column already exists
+	}
 	for (const col of ['libur_nasional', 'libur_semester']) {
 		try {
 			await db.$client.execute(

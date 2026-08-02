@@ -37,7 +37,9 @@
 
 	const daftarKelas = (page.data.daftarKelas ?? []) as Array<{ id: number; nama: string }>;
 	const canManage = $derived(
-		((page.data.user as { permissions?: string[] })?.permissions ?? []).includes('rapor_manage')
+		((page.data.user as { permissions?: string[] })?.permissions ?? []).includes(
+			'informasi_umum_akademik'
+		)
 	);
 
 	const hariLabel: Record<string, string> = {

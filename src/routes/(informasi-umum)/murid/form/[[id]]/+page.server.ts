@@ -8,13 +8,12 @@ import { eq } from 'drizzle-orm';
 import { isAuthorizedUser } from '../../../../pengguna/permissions';
 
 export async function load({ params, locals }) {
-	// Allow wali_kelas and wali_asuh to access student forms, or users with kelas_manage permission
+	// Allow wali_kelas to access student forms, or users with informasi_umum_murid permission
 	if (
 		locals.user?.type !== 'wali_kelas' &&
-		locals.user?.type !== 'wali_asuh' &&
-		!isAuthorizedUser(['kelas_manage'], locals.user)
+		!isAuthorizedUser(['informasi_umum_murid'], locals.user)
 	) {
-		redirect(303, '/forbidden?required=kelas_manage');
+		redirect(303, '/forbidden?required=informasi_umum_murid');
 	}
 
 	const meta: PageMeta = { title: 'Form Murid' };
@@ -30,13 +29,12 @@ export async function load({ params, locals }) {
 
 export const actions = {
 	async save({ locals, request, params }) {
-		// Allow wali_kelas and wali_asuh to save student forms, or users with kelas_manage permission
+		// Allow wali_kelas to save student forms, or users with informasi_umum_murid permission
 		if (
 			locals.user?.type !== 'wali_kelas' &&
-			locals.user?.type !== 'wali_asuh' &&
-			!isAuthorizedUser(['kelas_manage'], locals.user)
+			!isAuthorizedUser(['informasi_umum_murid'], locals.user)
 		) {
-			redirect(303, '/forbidden?required=kelas_manage');
+			redirect(303, '/forbidden?required=informasi_umum_murid');
 		}
 
 		const formData = await request.formData();

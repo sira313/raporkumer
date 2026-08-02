@@ -15,9 +15,7 @@
 	const daftarKodeMapel = $derived(data.daftarKodeMapel as string[]);
 	const daftarKodeKokurikuler = $derived(data.daftarKodeKokurikuler as string[]);
 
-	const daftarKelas = $derived(
-		(data.daftarKelas ?? []) as Array<{ id: number; nama: string }>
-	);
+	const daftarKelas = $derived((data.daftarKelas ?? []) as Array<{ id: number; nama: string }>);
 
 	const hariLabel: Record<string, string> = {
 		senin: 'Senin',
@@ -245,7 +243,9 @@
 					<p>Belum ada data jadwal pelajaran</p>
 				</div>
 			{:else}
-				<div class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none">
+				<div
+					class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+				>
 					<table class="border-base-200 dark:border-base-100 table border">
 						<thead class="sticky top-0 z-10">
 							<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
@@ -256,10 +256,7 @@
 							</tr>
 							<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
 								{#each kelasTerurut as kelas (kelas.id)}
-									<th
-										class="min-w-[70px] max-w-[15ch] truncate text-center"
-										title={kelas.nama}
-									>
+									<th class="min-w-[70px] max-w-[15ch] truncate text-center" title={kelas.nama}>
 										{kelas.nama.slice(0, 15)}{kelas.nama.length > 15 ? '…' : ''}
 									</th>
 								{/each}
@@ -306,7 +303,7 @@
 														<span
 															class="badge {badgeColorMap[kode] ??
 																'badge-primary'} badge-soft text-xs"
-														>{kodeNamaMap.get(kode) ?? kode}</span
+															>{kodeNamaMap.get(kode) ?? kode}</span
 														>
 													{:else}
 														<span class="text-base-content/30 text-xs">—</span>

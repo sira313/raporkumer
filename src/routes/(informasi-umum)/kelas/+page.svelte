@@ -28,7 +28,7 @@
 	// single permission to manage kelas actions
 	let canKelasManage = $derived.by(() => {
 		const perms = (page.data.user ?? { permissions: [] }).permissions ?? [];
-		return (perms as string[]).includes('kelas_manage');
+		return (perms as string[]).includes('informasi_umum_kelas');
 	});
 </script>
 

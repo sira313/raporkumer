@@ -14,6 +14,8 @@ import {
 } from '$lib/server/csrf-origins';
 import { ensureJadwalBellSchema } from '$lib/server/db/ensure-jadwal-bell';
 import { ensurePresensiSettingsSchema } from '$lib/server/db/ensure-presensi-settings';
+import { ensurePermissionMigration } from '$lib/server/db/ensure-permission-migration';
+import { isAuthorizedUser, resolveRoutePermission } from './routes/pengguna/permissions';
 import { startBellScheduler } from '$lib/server/bell-scheduler';
 
 setTimeout(() => {
@@ -116,7 +118,19 @@ const csrfGuard: Handle = async ({ event, resolve }) => {
 	throw error(403, 'Permintaan lintas origin tidak diizinkan.');
 };
 
-const PUBLIC_ROUTE_IDS = new Set(['/login', '/logout', '/tamu', '/jadwal-pelajaran', '/api/buku-tamu']);
+const PUBLIC_ROUTE_IDS = new Set([
+	'/login',
+	'/logout',
+	'/tamu',
+	'/jadwal-pelajaran',
+	'/api/buku-tamu'
+]);
+
+// Image endpoints exempt from the menu-permission guard. They are fetched by the
+// dashboard for every authenticated role (e.g. sekolah-overview-card), and must stay
+// reachable even for roles without `informasi_umum_sekolah`. Keep in sync with the
+// routes under /sekolah. Do NOT add page routes here — only GET-only image handlers.
+const PERMISSION_EXEMPT_PREFIXES = ['/sekolah/logo', '/sekolah/logo-dinas'];
 
 let ensureDefaultAdminResolved = false;
 
@@ -133,6 +147,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		await ensureJadwalBellSchema();
 		await ensurePresensiSettingsSchema();
 		await ensureDefaultAdmin();
+		await ensurePermissionMigration();
 		ensureDefaultAdminResolved = true;
 	}
 
@@ -233,6 +248,21 @@ const authGuard: Handle = async ({ event, resolve }) => {
 			throw redirect(303, `/login${query}`);
 		}
 		throw redirect(303, '/login');
+	}
+
+	// Menu-based page access: block any route that belongs to a drawer menu item
+	// when the user lacks the corresponding access permission. Admins always pass.
+	if (event.locals.user) {
+		const pathname = event.url.pathname;
+		const isPermissionExempt = PERMISSION_EXEMPT_PREFIXES.some(
+			(p) => pathname === p || pathname.startsWith(p + '/')
+		);
+		if (!isPermissionExempt) {
+			const required = resolveRoutePermission(pathname);
+			if (required && !isAuthorizedUser([required], event.locals.user)) {
+				throw redirect(303, `/forbidden?required=${required}`);
+			}
+		}
 	}
 
 	return resolve(event);
