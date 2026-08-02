@@ -10,9 +10,15 @@ import { formatTanggal } from '$lib/server/pdf/preview-utils';
 import type { RequestHandler } from './$types';
 
 export const GET = (async ({ locals, url }) => {
+	const user = locals.user;
+	if (!user) throw error(401, 'Unauthorized');
+	if (user.type !== 'admin') {
+		throw error(403, 'Hanya admin yang dapat mencetak buku tamu.');
+	}
+
 	const sekolahId = locals.sekolah?.id;
-	if (!sekolahId || !locals.user) {
-		throw error(401, 'Unauthorized');
+	if (!sekolahId) {
+		throw error(400, 'Sekolah belum diatur.');
 	}
 
 	await ensureBukuTamuSchema();

@@ -45,7 +45,7 @@
 			return all.filter((o) => o.value === 'jurnal-mengajar');
 		}
 		if (userType !== 'admin') {
-			return all.filter((o) => o.value !== 'presensi-guru');
+			return all.filter((o) => o.value !== 'presensi-guru' && o.value !== 'buku-tamu');
 		}
 		return all;
 	});
