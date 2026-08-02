@@ -230,19 +230,31 @@
 </script>
 
 <div class="not-prose flex flex-col gap-2">
-	<div class="flex flex-wrap items-center justify-between gap-2">
+	<div class="alert alert-info alert-soft flex-wrap items-center justify-between gap-2">
 		<div>
 			<span class="fieldset-legend text-sm font-semibold">Presensi Guru</span>
 			<p class="text-base-content/70 text-sm">
 				Aktifkan agar guru dapat melakukan presensi dan menu Presensi Guru tampil.
 			</p>
 		</div>
-		<label class="swap swap-flip text-sm">
-			<input type="checkbox" bind:checked={presensiGuruEnabledValue} disabled={submitting} />
-			<div class="swap-on btn btn-sm btn-success btn-soft font-semibold shadow-none">Aktif</div>
-			<div class="swap-off btn btn-sm btn-error btn-soft font-semibold shadow-none">Nonaktif</div>
+		<label class="flex cursor-pointer items-center gap-2">
+			<input
+				type="checkbox"
+				class="toggle toggle-success"
+				bind:checked={presensiGuruEnabledValue}
+				disabled={submitting}
+			/>
+			<span class="text-sm font-semibold">
+				{#if presensiGuruEnabledValue}
+					<span class="text-success">Aktif</span>
+				{:else}
+					<span class="text-error">Nonaktif</span>
+				{/if}
+			</span>
 		</label>
 	</div>
+
+	<div class="divider divider-middle text-sm font-semibold">Presensi Murid</div>
 
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 		<label class="fieldset flex flex-col gap-1">
