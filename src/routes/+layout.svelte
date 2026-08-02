@@ -32,7 +32,11 @@
 	let isJadwalPage = $derived(page.url.pathname === '/akademik/jadwal-pelajaran');
 
 	const skipPresensiGuruPrompt = $derived(
-		isLoginPage || isTamuPage || isJadwalPublikPage || page.url.pathname.startsWith('/logout')
+		isLoginPage ||
+			isTamuPage ||
+			isJadwalPublikPage ||
+			page.url.pathname.startsWith('/logout') ||
+			data.presensiGuruEnabled === false
 	);
 	let presensiGuruPromptChecked = $state(false);
 	let presensiGuruShown = $state(false);

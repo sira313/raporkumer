@@ -4,7 +4,7 @@ import { eq, inArray } from 'drizzle-orm';
 import db from '$lib/server/db';
 import { ensurePresensiGuruSchema } from '$lib/server/db/ensure-presensi-guru';
 import { tableAuthUser, tablePegawai, tableSekolah } from '$lib/server/db/schema';
-import { listPresensiBulanan } from '$lib/server/presensi-guru';
+import { listPresensiBulanan, getPresensiGuruSettings } from '$lib/server/presensi-guru';
 import type { RequestHandler } from './$types';
 
 const BULAN_NAMES = [
@@ -73,6 +73,11 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 
 	const sekolahId = locals.sekolah?.id;
 	if (!sekolahId) return json({ error: 'Sekolah belum diatur.' }, { status: 400 });
+
+	const presensiSettings = await getPresensiGuruSettings(sekolahId);
+	if (presensiSettings?.presensiGuruEnabled === false) {
+		return json({ error: 'Fitur presensi guru sedang dinonaktifkan.' }, { status: 400 });
+	}
 
 	const bulan = Number(url.searchParams.get('bulan'));
 	const tahun = Number(url.searchParams.get('tahun'));
@@ -216,7 +221,23 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		'JUMLAH PERSENTASE KETIDAKHADIRAN',
 		'KETERANGAN'
 	];
-	const header2 = ['', '', '', '', '', '', 'S', 'I', 'TK', 'DL', 'CUTI', 'SENIN', 'HARI BESAR', '', ''];
+	const header2 = [
+		'',
+		'',
+		'',
+		'',
+		'',
+		'',
+		'S',
+		'I',
+		'TK',
+		'DL',
+		'CUTI',
+		'SENIN',
+		'HARI BESAR',
+		'',
+		''
+	];
 	for (let colNum = 1; colNum <= LAST_COL; colNum++) {
 		worksheet.getCell(6, colNum).value = header1[colNum - 1];
 		worksheet.getCell(7, colNum).value = header2[colNum - 1];
@@ -298,7 +319,9 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	const sigEndCol = LAST_COL; // O
 	let sigRow = lastDataRow + 2;
 	const writeSigLine = (value: string, opts?: { bold?: boolean; height?: number }) => {
-		worksheet.mergeCells(`${lastColLetter(sigStartCol)}${sigRow}:${lastColLetter(sigEndCol)}${sigRow}`);
+		worksheet.mergeCells(
+			`${lastColLetter(sigStartCol)}${sigRow}:${lastColLetter(sigEndCol)}${sigRow}`
+		);
 		const cell = worksheet.getCell(sigRow, sigStartCol);
 		cell.value = value;
 		cell.font = { bold: opts?.bold ?? false, size: 11 };

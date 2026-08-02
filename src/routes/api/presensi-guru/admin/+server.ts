@@ -6,6 +6,7 @@ import { tablePresensiGuru } from '$lib/server/db/schema';
 import {
 	enumerateDates,
 	formatCutiKeterangan,
+	getPresensiGuruSettings,
 	listGuruBySekolah,
 	parseSimulatedNow,
 	savePresensiGuruAdmin,
@@ -31,6 +32,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	await ensurePresensiGuruSchema();
+
+	const presensiSettings = await getPresensiGuruSettings(sekolahId);
+	if (presensiSettings?.presensiGuruEnabled === false) {
+		throw error(400, { message: 'Fitur presensi guru sedang dinonaktifkan.' });
+	}
 
 	const body = await request.json().catch(() => ({}));
 

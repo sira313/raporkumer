@@ -9,7 +9,7 @@ import {
 	tableSemester,
 	tableTahunAjaran
 } from '$lib/server/db/schema';
-import { listPresensiBulanan } from '$lib/server/presensi-guru';
+import { listPresensiBulanan, getPresensiGuruSettings } from '$lib/server/presensi-guru';
 import { renderPDF } from '$lib/server/pdf/pagedpdf';
 import {
 	renderPresensiGuruHTML,
@@ -53,6 +53,11 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	if (!sekolahId) throw error(400, 'Sekolah belum diatur.');
 
 	await ensurePresensiGuruSchema();
+
+	const presensiSettings = await getPresensiGuruSettings(sekolahId);
+	if (presensiSettings?.presensiGuruEnabled === false) {
+		throw error(400, 'Fitur presensi guru sedang dinonaktifkan.');
+	}
 
 	const bulan = Number(url.searchParams.get('bulan'));
 	const tahun = Number(url.searchParams.get('tahun'));

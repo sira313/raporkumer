@@ -53,6 +53,7 @@
 		jamMasuk: string | null;
 		jamPulang: string | null;
 		isLibur: boolean;
+		disabled?: boolean;
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -352,218 +353,230 @@
 </script>
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<div class="mb-4 flex items-start justify-between gap-2 max-sm:flex-col sm:flex-row">
-		<div>
-			<h2 class="text-xl font-bold">
-				Presensi guru -
-				<span class="text-primary">
-					{#if data.mode === 'bulanan'}
-						{bulanList[data.bulan - 1]} {data.tahun}
-					{:else}
-						{formatTanggal(data.tanggal)}
-					{/if}
-				</span>
-			</h2>
-			<p class="text-base-content/80 block text-sm">
-				{#if data.mode === 'bulanan'}
-					{data.guruCount} guru
-					{#if data.totalHariBelajar > 0}
-						· {data.totalHariBelajar} hari belajar
-					{/if}
-				{:else}
-					{data.guruCount} guru
-					{#if data.jamMasuk && data.jamPulang}
-						· jam presensi {data.jamMasuk} - {data.jamPulang}
-					{/if}
-					· {data.isLibur ? 'Libur' : 'Masuk'}
-				{/if}
-			</p>
+	{#if data.disabled}
+		<div class="alert alert-soft alert-warning flex items-center gap-3">
+			<Icon name="warning" class="h-5 w-5 shrink-0" />
+			<span>
+				Fitur presensi guru sedang dinonaktifkan. Aktifkan kembali melalui
+				<strong>Akademik &gt; Pengaturan Presensi</strong> untuk menggunakan halaman ini.
+			</span>
 		</div>
-	</div>
-
-	<div class="mb-4 flex items-start justify-between gap-2 max-sm:flex-col sm:flex-row">
-		<div class="flex flex-wrap items-center gap-2 max-sm:w-full">
-			<div class="join flex max-sm:w-full">
-				{#if data.mode === 'bulanan'}
-					<div class="min-w-0 flex-1">
-						<select
-							class="select bg-base-200 dark:bg-base-300 w-full truncate rounded-r-none max-sm:w-full dark:border-none"
-							bind:value={selectedBulan}
-						>
-							{#each bulanList as nama, i (nama)}
-								<option value={i + 1}>{nama}</option>
-							{/each}
-						</select>
-					</div>
-					<input
-						type="number"
-						class="input bg-base-200 dark:bg-base-300 w-24 rounded-none max-sm:flex-1 dark:border-none"
-						bind:value={selectedTahun}
-						min="2000"
-						max="2099"
-					/>
-				{:else}
-					<input
-						type="date"
-						class="input bg-base-200 dark:bg-base-300 w-full rounded-r-none max-sm:w-full dark:border-none"
-						bind:value={selectedTanggal}
-					/>
-				{/if}
-				<button
-					type="button"
-					class="btn btn-soft rounded-none shadow-none"
-					aria-label="Lihat presensi"
-					title="Lihat presensi"
-					onclick={viewDate}
-				>
-					<Icon name="eye" />
-				</button>
-				<button
-					type="button"
-					class="btn btn-soft rounded-l-none shadow-none"
-					aria-label={data.mode === 'bulanan' ? 'Kembali ke bulan ini' : 'Kembali ke hari ini'}
-					title={data.mode === 'bulanan' ? 'Kembali ke bulan ini' : 'Kembali ke hari ini'}
-					onclick={data.mode === 'bulanan' ? resetToCurrentBulan : resetToToday}
-					disabled={data.mode === 'bulanan' ? isCurrentBulan : isToday}
-				>
-					<Icon name="repeat" />
-				</button>
-			</div>
-		</div>
-
-		<form
-			class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row max-sm:w-full"
-			data-sveltekit-keepfocus
-			data-sveltekit-replacestate
-			autocomplete="off"
-			spellcheck="false"
-			onsubmit={submitSearch}
-		>
-			<div class="join w-full min-w-0">
-				<label class="input bg-base-200 dark:bg-base-300 join-item min-w-0 grow dark:border-none">
-					<Icon name="search" />
-					<input
-						type="search"
-						name="q"
-						value={searchTerm}
-						placeholder="Cari nama guru..."
-						oninput={handleSearchInput}
-						autocomplete="off"
-					/>
-				</label>
-				<select
-					class="select bg-base-200 dark:bg-base-300 join-item w-auto shrink truncate dark:border-none"
-					value={selectedMode}
-					title="Pilih mode presensi"
-					onchange={(e) => {
-						selectedMode = (e.currentTarget as HTMLSelectElement).value as 'harian' | 'bulanan';
-						handleModeChange();
-					}}
-				>
-					<option value="harian">Harian</option>
-					<option value="bulanan">Bulanan</option>
-				</select>
-			</div>
-		</form>
-	</div>
-
-	{#if data.guruCount === 0}
-		<div class="alert alert-soft alert-warning mt-6">
-			<Icon name="alert" />
-			<span>Belum ada guru terdaftar di sekolah ini.</span>
-		</div>
-	{:else if !data.rows.length}
-		<div class="alert alert-soft alert-info mt-6">
-			<Icon name="info" />
-			<span>Tidak ada guru yang cocok dengan pencarian.</span>
-		</div>
-	{:else if data.mode === 'bulanan'}
-		<TablePresensiGuruBulanan
-			rows={data.rows as BulananRow[]}
-			daysInMonth={data.daysInMonth}
-			redDays={data.redDays}
-			search={data.page.search}
-		/>
 	{:else}
-		{@const harianRows = data.rows as RecapRow[]}
-		<div
-			class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
-		>
-			<table class="border-base-200 table border dark:border-none">
-				<thead>
-					<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
-						<th style="width: 50px; min-width: 40px;">No</th>
-						<th style="min-width: 180px;">Nama Guru</th>
-						<th style="min-width: 120px;">Status</th>
-						<th style="min-width: 80px;">Jam</th>
-						<th class="text-center" style="min-width: 110px;">Aksi</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each harianRows as row (row.userId)}
-						{@const statusMeta = row.status
-							? (STATUS_META[row.status] ?? { label: row.status, class: '' })
-							: null}
-						<tr>
-							<td>{row.no}</td>
-							<td>{@html searchQueryMarker(data.page.search, row.nama)}</td>
-							<td>
-								{#if statusMeta}
-									<span class="badge whitespace-nowrap {statusMeta.class}">{statusMeta.label}</span>
-								{:else}
-									<span class="badge badge-soft whitespace-nowrap">Belum presensi</span>
-								{/if}
-							</td>
-							<td class="whitespace-nowrap">
-								{#if row.waktu}
-									{new Date(row.waktu).toLocaleTimeString('id-ID', {
-										hour: '2-digit',
-										minute: '2-digit'
-									})}
-								{:else}
-									<span class="text-base-content/50">—</span>
-								{/if}
-							</td>
-							<td class="whitespace-nowrap text-center">
-								<div class="flex justify-center gap-1">
-									<button
-										type="button"
-										class="btn btn-primary btn-soft btn-sm shadow-none"
-										title="Ubah presensi"
-										onclick={() => openEdit(row)}
-									>
-										<Icon name="edit" />
-									</button>
-									<button
-										type="button"
-										class="btn btn-soft btn-sm shadow-none"
-										title="Lihat detail"
-										onclick={() => viewDetail(row)}
-									>
-										<Icon name="eye" />
-									</button>
-								</div>
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+		<div class="mb-4 flex items-start justify-between gap-2 max-sm:flex-col sm:flex-row">
+			<div>
+				<h2 class="text-xl font-bold">
+					Presensi guru -
+					<span class="text-primary">
+						{#if data.mode === 'bulanan'}
+							{bulanList[data.bulan - 1]} {data.tahun}
+						{:else}
+							{formatTanggal(data.tanggal)}
+						{/if}
+					</span>
+				</h2>
+				<p class="text-base-content/80 block text-sm">
+					{#if data.mode === 'bulanan'}
+						{data.guruCount} guru
+						{#if data.totalHariBelajar > 0}
+							· {data.totalHariBelajar} hari belajar
+						{/if}
+					{:else}
+						{data.guruCount} guru
+						{#if data.jamMasuk && data.jamPulang}
+							· jam presensi {data.jamMasuk} - {data.jamPulang}
+						{/if}
+						· {data.isLibur ? 'Libur' : 'Masuk'}
+					{/if}
+				</p>
+			</div>
 		</div>
-	{/if}
 
-	{#if totalPages > 1}
-		<div class="join mx-auto mt-4">
-			{#each pages as pageNumber (pageNumber)}
-				<button
-					type="button"
-					class="join-item btn pointer-events-auto"
-					class:btn-active={pageNumber === currentPage}
-					onclick={() => handlePageClick(pageNumber)}
-					aria-current={pageNumber === currentPage ? 'page' : undefined}
-				>
-					{pageNumber}
-				</button>
-			{/each}
+		<div class="mb-4 flex items-start justify-between gap-2 max-sm:flex-col sm:flex-row">
+			<div class="flex flex-wrap items-center gap-2 max-sm:w-full">
+				<div class="join flex max-sm:w-full">
+					{#if data.mode === 'bulanan'}
+						<div class="min-w-0 flex-1">
+							<select
+								class="select bg-base-200 dark:bg-base-300 w-full truncate rounded-r-none max-sm:w-full dark:border-none"
+								bind:value={selectedBulan}
+							>
+								{#each bulanList as nama, i (nama)}
+									<option value={i + 1}>{nama}</option>
+								{/each}
+							</select>
+						</div>
+						<input
+							type="number"
+							class="input bg-base-200 dark:bg-base-300 w-24 rounded-none max-sm:flex-1 dark:border-none"
+							bind:value={selectedTahun}
+							min="2000"
+							max="2099"
+						/>
+					{:else}
+						<input
+							type="date"
+							class="input bg-base-200 dark:bg-base-300 w-full rounded-r-none max-sm:w-full dark:border-none"
+							bind:value={selectedTanggal}
+						/>
+					{/if}
+					<button
+						type="button"
+						class="btn btn-soft rounded-none shadow-none"
+						aria-label="Lihat presensi"
+						title="Lihat presensi"
+						onclick={viewDate}
+					>
+						<Icon name="eye" />
+					</button>
+					<button
+						type="button"
+						class="btn btn-soft rounded-l-none shadow-none"
+						aria-label={data.mode === 'bulanan' ? 'Kembali ke bulan ini' : 'Kembali ke hari ini'}
+						title={data.mode === 'bulanan' ? 'Kembali ke bulan ini' : 'Kembali ke hari ini'}
+						onclick={data.mode === 'bulanan' ? resetToCurrentBulan : resetToToday}
+						disabled={data.mode === 'bulanan' ? isCurrentBulan : isToday}
+					>
+						<Icon name="repeat" />
+					</button>
+				</div>
+			</div>
+
+			<form
+				class="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row max-sm:w-full"
+				data-sveltekit-keepfocus
+				data-sveltekit-replacestate
+				autocomplete="off"
+				spellcheck="false"
+				onsubmit={submitSearch}
+			>
+				<div class="join w-full min-w-0">
+					<label class="input bg-base-200 dark:bg-base-300 join-item min-w-0 grow dark:border-none">
+						<Icon name="search" />
+						<input
+							type="search"
+							name="q"
+							value={searchTerm}
+							placeholder="Cari nama guru..."
+							oninput={handleSearchInput}
+							autocomplete="off"
+						/>
+					</label>
+					<select
+						class="select bg-base-200 dark:bg-base-300 join-item w-auto shrink truncate dark:border-none"
+						value={selectedMode}
+						title="Pilih mode presensi"
+						onchange={(e) => {
+							selectedMode = (e.currentTarget as HTMLSelectElement).value as 'harian' | 'bulanan';
+							handleModeChange();
+						}}
+					>
+						<option value="harian">Harian</option>
+						<option value="bulanan">Bulanan</option>
+					</select>
+				</div>
+			</form>
 		</div>
+
+		{#if data.guruCount === 0}
+			<div class="alert alert-soft alert-warning mt-6">
+				<Icon name="alert" />
+				<span>Belum ada guru terdaftar di sekolah ini.</span>
+			</div>
+		{:else if !data.rows.length}
+			<div class="alert alert-soft alert-info mt-6">
+				<Icon name="info" />
+				<span>Tidak ada guru yang cocok dengan pencarian.</span>
+			</div>
+		{:else if data.mode === 'bulanan'}
+			<TablePresensiGuruBulanan
+				rows={data.rows as BulananRow[]}
+				daysInMonth={data.daysInMonth}
+				redDays={data.redDays}
+				search={data.page.search}
+			/>
+		{:else}
+			{@const harianRows = data.rows as RecapRow[]}
+			<div
+				class="bg-base-100 dark:bg-base-200 mt-4 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+			>
+				<table class="border-base-200 table border dark:border-none">
+					<thead>
+						<tr class="bg-base-200 dark:bg-base-300 text-base-content text-left font-bold">
+							<th style="width: 50px; min-width: 40px;">No</th>
+							<th style="min-width: 180px;">Nama Guru</th>
+							<th style="min-width: 120px;">Status</th>
+							<th style="min-width: 80px;">Jam</th>
+							<th class="text-center" style="min-width: 110px;">Aksi</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each harianRows as row (row.userId)}
+							{@const statusMeta = row.status
+								? (STATUS_META[row.status] ?? { label: row.status, class: '' })
+								: null}
+							<tr>
+								<td>{row.no}</td>
+								<td>{@html searchQueryMarker(data.page.search, row.nama)}</td>
+								<td>
+									{#if statusMeta}
+										<span class="badge whitespace-nowrap {statusMeta.class}"
+											>{statusMeta.label}</span
+										>
+									{:else}
+										<span class="badge badge-soft whitespace-nowrap">Belum presensi</span>
+									{/if}
+								</td>
+								<td class="whitespace-nowrap">
+									{#if row.waktu}
+										{new Date(row.waktu).toLocaleTimeString('id-ID', {
+											hour: '2-digit',
+											minute: '2-digit'
+										})}
+									{:else}
+										<span class="text-base-content/50">—</span>
+									{/if}
+								</td>
+								<td class="whitespace-nowrap text-center">
+									<div class="flex justify-center gap-1">
+										<button
+											type="button"
+											class="btn btn-primary btn-soft btn-sm shadow-none"
+											title="Ubah presensi"
+											onclick={() => openEdit(row)}
+										>
+											<Icon name="edit" />
+										</button>
+										<button
+											type="button"
+											class="btn btn-soft btn-sm shadow-none"
+											title="Lihat detail"
+											onclick={() => viewDetail(row)}
+										>
+											<Icon name="eye" />
+										</button>
+									</div>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+
+		{#if totalPages > 1}
+			<div class="join mx-auto mt-4">
+				{#each pages as pageNumber (pageNumber)}
+					<button
+						type="button"
+						class="join-item btn pointer-events-auto"
+						class:btn-active={pageNumber === currentPage}
+						onclick={() => handlePageClick(pageNumber)}
+						aria-current={pageNumber === currentPage ? 'page' : undefined}
+					>
+						{pageNumber}
+					</button>
+				{/each}
+			</div>
+		{/if}
 	{/if}
 </div>

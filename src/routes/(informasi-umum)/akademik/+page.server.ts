@@ -1250,6 +1250,8 @@ export const actions: Actions = {
 			return fail(400, { fail: 'Jenis presensi tidak valid' });
 		}
 
+		const presensiGuruEnabled = formData.get('presensiGuruEnabled') === '1';
+
 		if (jenisPresensiEnum === 'tiap_mapel') {
 			const jadwalCount = await db.$client.execute({
 				sql: `SELECT COUNT(*) as cnt FROM jadwal_pelajaran WHERE sekolah_id = ?`,
@@ -1279,6 +1281,7 @@ export const actions: Actions = {
 				hariSekolah,
 				tipePresensi: tipePresensiEnum,
 				jenisPresensi: jenisPresensiEnum,
+				presensiGuruEnabled,
 				liburNasional,
 				liburSemester,
 				updatedAt: new Date().toISOString()
@@ -1291,6 +1294,7 @@ export const actions: Actions = {
 					hariSekolah,
 					tipePresensi: tipePresensiEnum,
 					jenisPresensi: jenisPresensiEnum,
+					presensiGuruEnabled,
 					liburNasional,
 					liburSemester,
 					updatedAt: new Date().toISOString()

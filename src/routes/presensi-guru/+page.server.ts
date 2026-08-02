@@ -39,6 +39,29 @@ export async function load({ locals, url, depends }) {
 
 	const sekolahId = locals.sekolah?.id ?? null;
 
+	const settings = sekolahId ? await getPresensiGuruSettings(sekolahId) : null;
+
+	if (settings?.presensiGuruEnabled === false) {
+		return {
+			meta: { title: 'Presensi Guru' } satisfies PageMeta,
+			disabled: true,
+			mode: 'harian' as const,
+			rows: [],
+			page: { search: null, currentPage: 1, totalPages: 1, totalItems: 0 },
+			guruCount: 0,
+			tanggal: '',
+			bulan: 0,
+			tahun: 0,
+			daysInMonth: 0,
+			redDays: [],
+			totalHariBelajar: 0,
+			jamMasuk: settings.jamMasuk ?? null,
+			jamPulang: settings.jamPulang ?? null,
+			isLibur: false,
+			isWeekend: false
+		};
+	}
+
 	const modeParam = url.searchParams.get('mode');
 	const mode: Mode = modeParam === 'bulanan' ? 'bulanan' : 'harian';
 
@@ -47,8 +70,6 @@ export async function load({ locals, url, depends }) {
 	const requestedPage = Number(url.searchParams.get('page')) || 1;
 	const pageNumber =
 		Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1;
-
-	const settings = sekolahId ? await getPresensiGuruSettings(sekolahId) : null;
 
 	if (mode === 'bulanan') {
 		const now = new Date();

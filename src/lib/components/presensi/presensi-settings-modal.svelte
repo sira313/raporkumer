@@ -17,6 +17,7 @@
 		hariSekolah?: number;
 		tipePresensi?: string;
 		jenisPresensi?: string;
+		presensiGuruEnabled?: boolean;
 		liburNasional?: string;
 		liburSemester?: string;
 		onAction?: (actions: { submit: () => Promise<void>; cancel: () => void }) => void;
@@ -29,6 +30,7 @@
 		hariSekolah = 6,
 		tipePresensi = 'masuk_pulang',
 		jenisPresensi = 'wali_kelas_saja',
+		presensiGuruEnabled = true,
 		liburNasional = '[]',
 		liburSemester = '[]',
 		onAction
@@ -40,6 +42,7 @@
 	let hariSekolahValue = $state(String(hariSekolah));
 	let tipePresensiValue = $state(tipePresensi);
 	let jenisPresensiValue = $state(jenisPresensi);
+	let presensiGuruEnabledValue = $state(presensiGuruEnabled);
 
 	let liburDates = $state<string[]>([]);
 	try {
@@ -171,6 +174,7 @@
 		formData.append('hariSekolah', hariSekolahValue);
 		formData.append('tipePresensi', tipePresensiValue);
 		formData.append('jenisPresensi', jenisPresensiValue);
+		formData.append('presensiGuruEnabled', presensiGuruEnabledValue ? '1' : '0');
 		formData.append('liburNasional', JSON.stringify(liburDates));
 		formData.append(
 			'liburSemester',
@@ -194,6 +198,7 @@
 			hideModal();
 			toast('Pengaturan presensi berhasil disimpan', 'success');
 			await invalidate('app:akademik');
+			await invalidate('app:presensi-guru-enabled');
 		} catch (e) {
 			const message = e instanceof Error ? e.message : 'Gagal menyimpan pengaturan presensi';
 			toast(message, 'error');
@@ -225,6 +230,20 @@
 </script>
 
 <div class="not-prose flex flex-col gap-2">
+	<div class="flex flex-wrap items-center justify-between gap-2">
+		<div>
+			<span class="fieldset-legend text-sm font-semibold">Presensi Guru</span>
+			<p class="text-base-content/70 text-sm">
+				Aktifkan agar guru dapat melakukan presensi dan menu Presensi Guru tampil.
+			</p>
+		</div>
+		<label class="swap swap-flip text-sm">
+			<input type="checkbox" bind:checked={presensiGuruEnabledValue} disabled={submitting} />
+			<div class="swap-on btn btn-sm btn-success btn-soft font-semibold shadow-none">Aktif</div>
+			<div class="swap-off btn btn-sm btn-error btn-soft font-semibold shadow-none">Nonaktif</div>
+		</label>
+	</div>
+
 	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 		<label class="fieldset flex flex-col gap-1">
 			<span class="fieldset-legend text-sm font-semibold">Jam Masuk</span>

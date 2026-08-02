@@ -18,9 +18,14 @@
 		(page.data as { user?: Pick<AuthUser, 'permissions' | 'type'> | null } | null)?.user ?? null
 	);
 
+	const presensiGuruEnabled = $derived(
+		(page.data as { presensiGuruEnabled?: boolean } | null)?.presensiGuruEnabled ?? true
+	);
+
 	function isHiddenForUser(path?: string): boolean {
 		// Menu items without a path (parent groups) are filtered recursively via subMenu
 		if (!path) return false;
+		if (path === '/presensi-guru' && !presensiGuruEnabled) return true;
 		const required = resolveRoutePermission(path);
 		if (!required) return false;
 		return !isAuthorizedUser([required], user ?? undefined);

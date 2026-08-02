@@ -906,6 +906,7 @@ export const tablePresensiSettings = sqliteTable(
 		jenisPresensi: text({ enum: ['wali_kelas_saja', 'tiap_mapel'] })
 			.notNull()
 			.default('wali_kelas_saja'),
+		presensiGuruEnabled: int({ mode: 'boolean' }).notNull().default(true),
 		...audit
 	},
 	(table) => [unique().on(table.sekolahId, table.tahunAjaranId)]

@@ -26,6 +26,7 @@ export function parseSimulatedNow(value: string | null | undefined): Date | unde
 
 export type PresensiGuruStatus = {
 	ready: boolean;
+	enabled: boolean;
 	message: string;
 	shouldPrompt: boolean;
 	tanggal: string;
@@ -66,6 +67,7 @@ export function formatCutiKeterangan(mulai: string, selesai: string): string {
 function baseStatus(tanggal: string): PresensiGuruStatus {
 	return {
 		ready: false,
+		enabled: true,
 		message: '',
 		shouldPrompt: false,
 		tanggal,
@@ -109,6 +111,12 @@ export async function getPresensiGuruStatus(
 		result.message = 'Pengaturan presensi belum diatur di halaman Akademik.';
 		return result;
 	}
+	if (settings.presensiGuruEnabled === false) {
+		result.ready = true;
+		result.enabled = false;
+		result.message = 'Fitur presensi guru sedang dinonaktifkan di Pengaturan Presensi.';
+		return result;
+	}
 
 	const [thn, bln, hri] = tanggal.split('-').map(Number);
 	const hariSekolah = settings.hariSekolah ?? 6;
@@ -141,6 +149,7 @@ export async function getPresensiGuruStatus(
 
 	return {
 		ready: true,
+		enabled: true,
 		message: '',
 		shouldPrompt: isSchoolDay && inWindow && !existing,
 		tanggal,
@@ -172,6 +181,9 @@ export async function savePresensiGuru(
 	const sekolahId = params.sekolahId;
 
 	const check = await getPresensiGuruStatus(sekolahId, userId, now);
+	if (!check.enabled) {
+		throw new Error('Fitur presensi guru sedang dinonaktifkan.');
+	}
 	if (!check.isSchoolDay) {
 		throw new Error('Hari ini bukan hari sekolah.');
 	}

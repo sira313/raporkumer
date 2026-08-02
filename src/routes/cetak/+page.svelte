@@ -28,6 +28,10 @@
 
 	const userType = $derived((page.data.user as { type?: string } | null)?.type);
 
+	const presensiGuruEnabled = $derived(
+		(page.data as { presensiGuruEnabled?: boolean } | null)?.presensiGuruEnabled ?? true
+	);
+
 	const documentOptions = $derived.by<Array<{ value: DocumentType; label: string }>>(() => {
 		const all: Array<{ value: DocumentType; label: string }> = [
 			{ value: 'cover', label: 'Cover' },
@@ -40,18 +44,21 @@
 			{ value: 'presensi-guru', label: 'Presensi Guru' },
 			{ value: 'laporan-tpp', label: 'Laporan TPP' }
 		];
+		const visible = all.filter(
+			(o) => !((o.value === 'presensi-guru' || o.value === 'laporan-tpp') && !presensiGuruEnabled)
+		);
 		if (userType === 'wali_asuh') {
-			return all.filter((o) => o.value === 'keasramaan');
+			return visible.filter((o) => o.value === 'keasramaan');
 		}
 		if (userType === 'user') {
-			return all.filter((o) => o.value === 'jurnal-mengajar');
+			return visible.filter((o) => o.value === 'jurnal-mengajar');
 		}
 		if (userType !== 'admin') {
-			return all.filter(
+			return visible.filter(
 				(o) => o.value !== 'presensi-guru' && o.value !== 'buku-tamu' && o.value !== 'laporan-tpp'
 			);
 		}
-		return all;
+		return visible;
 	});
 
 	let selectedDocument = $state<DocumentType | ''>('');
