@@ -36,7 +36,11 @@ export async function POST({ request, cookies }) {
 		console.warn('[database-import] gagal memverifikasi sesi sebelum import', e);
 		return null;
 	});
-	if (!resolved || !resolved.user || resolved.user.type !== 'admin') {
+	if (
+		!resolved ||
+		!resolved.user ||
+		(resolved.user.type !== 'admin' && resolved.user.type !== 'kepala_sekolah')
+	) {
 		console.warn('[database-import] user tidak memiliki izin admin');
 		throw error(403, 'Akses ditolak');
 	}

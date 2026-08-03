@@ -22,7 +22,7 @@ const ALLOWED_STATUS: PresensiGuruStatusValue[] = ['hadir', 'izin', 'sakit', 'di
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) throw redirect(303, '/login');
 
-	if (locals.user.type !== 'admin') {
+	if (locals.user.type !== 'admin' && locals.user.type !== 'kepala_sekolah') {
 		throw error(403, { message: 'Hanya admin yang dapat mengubah presensi guru.' });
 	}
 

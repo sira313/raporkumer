@@ -261,7 +261,11 @@ export async function listGuruBySekolah(sekolahId: number): Promise<GuruSekolah[
 			kelasId: true
 		},
 		with: { pegawai: { columns: { nama: true } } },
-		where: and(ne(tableAuthUser.type, 'admin'), ne(tableAuthUser.type, 'wali_asuh'))
+		where: and(
+			ne(tableAuthUser.type, 'admin'),
+			ne(tableAuthUser.type, 'kepala_sekolah'),
+			ne(tableAuthUser.type, 'wali_asuh')
+		)
 	});
 
 	const kelasRows = await db.query.tableKelas.findMany({

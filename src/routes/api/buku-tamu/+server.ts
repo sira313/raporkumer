@@ -89,7 +89,7 @@ export const POST = (async ({ request, locals }) => {
 }) satisfies RequestHandler;
 
 export const DELETE = (async ({ url, locals }) => {
-	if (!locals.user || locals.user.type !== 'admin') {
+	if (!locals.user || (locals.user.type !== 'admin' && locals.user.type !== 'kepala_sekolah')) {
 		throw error(403, { message: 'Hanya admin yang dapat menghapus data' });
 	}
 

@@ -17,7 +17,14 @@ declare global {
 			sekolahDirty?: boolean;
 			user?: Pick<
 				AuthUser,
-				'id' | 'username' | 'permissions' | 'type' | 'kelasId' | 'pegawaiId' | 'mataPelajaranId'
+				| 'id'
+				| 'username'
+				| 'permissions'
+				| 'type'
+				| 'kelasId'
+				| 'pegawaiId'
+				| 'mataPelajaranId'
+				| 'sekolahId'
 			>;
 			session?: (Pick<AuthSession, 'id' | 'expiresAt'> & { tokenHash?: string }) | undefined;
 			requestIsSecure?: boolean;
@@ -48,7 +55,14 @@ declare global {
 			piagamRankingOptions?: PiagamRankingOption[];
 			user?: Pick<
 				AuthUser,
-				'id' | 'username' | 'permissions' | 'type' | 'kelasId' | 'pegawaiId' | 'mataPelajaranId'
+				| 'id'
+				| 'username'
+				| 'permissions'
+				| 'type'
+				| 'kelasId'
+				| 'pegawaiId'
+				| 'mataPelajaranId'
+				| 'sekolahId'
 			>;
 		}
 		interface PageState {

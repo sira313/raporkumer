@@ -7,7 +7,7 @@
 	import { page } from '$app/state';
 
 	let user = $derived(page.data.user);
-	const isAdmin = $derived(user?.type === 'admin');
+	const isAdmin = $derived(user?.type === 'admin' || user?.type === 'kepala_sekolah');
 	const canCheckUpdate = $derived(isAdmin);
 	const canManageUsers = $derived(isAdmin);
 	import { toast } from '$lib/components/toast.svelte';

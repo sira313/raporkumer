@@ -67,7 +67,7 @@ const thinBorder = {
 export const GET: RequestHandler = async ({ locals, url }) => {
 	const user = locals.user;
 	if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
-	if (user.type !== 'admin') {
+	if (user.type !== 'admin' && user.type !== 'kepala_sekolah') {
 		return json({ error: 'Hanya admin yang dapat mengunduh Laporan TPP.' }, { status: 403 });
 	}
 

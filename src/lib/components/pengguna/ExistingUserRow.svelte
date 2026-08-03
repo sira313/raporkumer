@@ -19,6 +19,8 @@
 		Wali {u.kelasName ?? (u.kelasId ? `Kelas ${u.kelasId}` : '-')}
 	{:else if u.type === 'wali_asuh'}
 		Wali Asuh {u.kelasName ?? (u.kelasId ? `Kelas ${u.kelasId}` : '-')}
+	{:else if u.type === 'kepala_sekolah'}
+		Kepala Sekolah
 	{:else if u.type === 'admin'}
 		Admin
 	{:else}

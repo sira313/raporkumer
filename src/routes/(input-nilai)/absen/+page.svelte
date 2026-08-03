@@ -157,10 +157,10 @@
 		return `${base} - ${presensiLabel} - ${tipeLabel}`;
 	});
 
-	// Restrict editing: only admin and wali_kelas can edit
+	// Restrict editing: only admin, kepala sekolah, and wali_kelas can edit
 	const canEdit = $derived.by(() => {
 		const u = page.data.user as { type?: string } | null | undefined;
-		return u?.type === 'admin' || u?.type === 'wali_kelas';
+		return u?.type === 'admin' || u?.type === 'kepala_sekolah' || u?.type === 'wali_kelas';
 	});
 
 	const currentPage = $derived.by(() => data.page?.currentPage ?? 1);

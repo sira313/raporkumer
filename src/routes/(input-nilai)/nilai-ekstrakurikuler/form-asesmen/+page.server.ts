@@ -38,7 +38,12 @@ function sanitizeRedirect(value: string | null | undefined) {
 export async function load({ parent, url, depends, locals }) {
 	// Permission check: Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
 	const userType = (locals.user as { type?: string } | null)?.type;
-	if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+	if (
+		userType !== 'admin' &&
+		userType !== 'kepala_sekolah' &&
+		userType !== 'wali_kelas' &&
+		userType !== 'wali_asuh'
+	) {
 		authority('input_nilai_nilai_ekstrakurikuler');
 	}
 
@@ -140,7 +145,12 @@ export const actions = {
 	save: async ({ request, locals }) => {
 		// Permission check: Allow admin, wali_kelas, wali_asuh, and users with input_nilai_nilai_ekstrakurikuler
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		if (
+			userType !== 'admin' &&
+			userType !== 'kepala_sekolah' &&
+			userType !== 'wali_kelas' &&
+			userType !== 'wali_asuh'
+		) {
 			authority('input_nilai_nilai_ekstrakurikuler');
 		}
 

@@ -31,7 +31,7 @@ export async function load({ locals, url, depends }) {
 
 	if (!locals.user) throw redirect(303, '/login');
 
-	if (locals.user.type !== 'admin') {
+	if (locals.user.type !== 'admin' && locals.user.type !== 'kepala_sekolah') {
 		throw redirect(303, '/forbidden?required=admin');
 	}
 

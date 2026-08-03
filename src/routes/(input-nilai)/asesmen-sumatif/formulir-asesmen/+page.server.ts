@@ -186,7 +186,12 @@ export async function load({ url, locals, depends }) {
 
 	// Permission check: Allow admin, wali_kelas, wali_asuh, and user (guru mapel) assigned to this subject
 	const smUserType = (locals.user as { type?: string } | null)?.type;
-	if (smUserType !== 'admin' && smUserType !== 'wali_kelas' && smUserType !== 'wali_asuh') {
+	if (
+		smUserType !== 'admin' &&
+		smUserType !== 'kepala_sekolah' &&
+		smUserType !== 'wali_kelas' &&
+		smUserType !== 'wali_asuh'
+	) {
 		if (smUserType === 'user' && locals.user?.id) {
 			const smUserId = locals.user.id;
 			const smAssigned = await db.query.tableAuthUserMataPelajaran.findMany({
@@ -391,6 +396,7 @@ export const actions = {
 		const saveSmUserType = (locals.user as { type?: string } | null)?.type;
 		if (
 			saveSmUserType !== 'admin' &&
+			saveSmUserType !== 'kepala_sekolah' &&
 			saveSmUserType !== 'wali_kelas' &&
 			saveSmUserType !== 'wali_asuh'
 		) {

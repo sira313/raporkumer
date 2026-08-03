@@ -40,6 +40,38 @@ const WALI_KELAS_DEFAULT_PERMISSIONS = [
 	'cetak_dokumen'
 ];
 
+// Compact username from a name, e.g. "Agus Wira, S.Pd." -> "aguswira".
+// Tokens containing a period are treated as titles/abbreviations and dropped.
+// Keep in sync dengan slugifyUsername() di src/lib/server/usernames.ts.
+function slugifyUsername(nama) {
+	const tokens = String(nama || '')
+		.toLowerCase()
+		.split(/[\s,]+/);
+	const words = tokens.filter((t) => t && !t.includes('.'));
+	const slug = words.join('').replace(/[^a-z0-9]/g, '');
+	if (slug) return slug;
+	return (
+		String(nama || '')
+			.toLowerCase()
+			.replace(/[^a-z0-9]/g, '') || 'user'
+	);
+}
+
+async function resolveUniqueUsername(client, nama) {
+	const base = slugifyUsername(nama);
+	let candidate = base;
+	let n = 2;
+	while (true) {
+		const hit = await client.execute({
+			sql: 'SELECT id FROM auth_user WHERE username_normalized = ? LIMIT 1',
+			args: [candidate]
+		});
+		if (!(hit.rows && hit.rows.length)) return candidate;
+		candidate = `${base}${n}`;
+		n += 1;
+	}
+}
+
 async function main() {
 	console.info(`[seed-wali] Target DB: ${dbUrl}`);
 
@@ -66,7 +98,8 @@ async function main() {
 		const nama = (r.pegawai_nama || '').trim();
 		if (!nama) continue;
 
-		const usernameNormalized = nama.toLowerCase();
+		const username = await resolveUniqueUsername(client, nama);
+		const usernameNormalized = username.toLowerCase();
 
 		// Check if a user already exists for this pegawai or normalized username
 		const exists = await client.execute({
@@ -90,7 +123,7 @@ async function main() {
 			sql: `INSERT INTO auth_user (username, username_normalized, password_hash, password_salt, password_updated_at, permissions, type, pegawai_id, kelas_id, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			args: [
-				nama,
+				username,
 				usernameNormalized,
 				hash,
 				salt,
