@@ -25,6 +25,9 @@ Dokumentasi lengkap aplikasi ini disusun dalam bahasa Indonesia. File README ini
 - Pembuatan rapor, piagam, dan berbagai dokumen pendukung yang siap dicetak.
 - Mendukung penggunaan campuran huruf latin dan arab pada Capaian Pembelajaran (CP) di rapor.
 - Ekspor nilai dan Tujuan Pembelajaran (TP) ke file Excel yang dapat diimpor ke E-Rapor Kemdikdas.
+- Presensi guru beserta laporannya
+- Buku tamu digital yang dapat diakses melalui halaman [ipAddress]:3000/tamu
+- Jadwal pelajaran yang dapat diakses melalui halaman [ipAddress]:3000/jadwal-pelajaran
 
 ## Siapa yang Cocok Menggunakan Rapkumer?
 
