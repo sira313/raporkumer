@@ -62,9 +62,10 @@ async function mergePermissions(existingJson) {
 async function main() {
 	console.info('[grant-admin-perms] Target DB:', dbUrl);
 
-	// Find admin users (type = 'admin' or username_normalized = 'admin')
+	// Find admin and kepala_sekolah users (both have full administrative access;
+	// kepala_sekolah is admin-equivalent but scoped to one sekolah).
 	const rows = await client.execute({
-		sql: "SELECT id, username, username_normalized, permissions FROM auth_user WHERE type = 'admin' OR username_normalized = 'admin'"
+		sql: "SELECT id, username, username_normalized, permissions FROM auth_user WHERE type IN ('admin', 'kepala_sekolah') OR username_normalized = 'admin'"
 	});
 
 	const results = rows.rows || [];
@@ -85,7 +86,7 @@ async function main() {
 			args: [mergedJson, id]
 		});
 		console.info(
-			`[grant-admin-perms] Updated admin: ${username} (id=${id}) -> ${merged.length} permissions`
+			`[grant-admin-perms] Updated admin/kepala_sekolah: ${username} (id=${id}) -> ${merged.length} permissions`
 		);
 	}
 

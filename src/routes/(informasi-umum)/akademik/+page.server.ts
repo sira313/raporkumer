@@ -745,6 +745,12 @@ export const actions: Actions = {
 			error(404, 'Data sekolah tidak ditemukan');
 		}
 
+		// Kepala sekolah is locked to their own sekolah — cannot switch active sekolah.
+		const authUser = locals.user as { type?: string; sekolahId?: number } | null;
+		if (authUser?.type === 'kepala_sekolah' && authUser.sekolahId !== sekolah.id) {
+			error(403, 'Kepala Sekolah hanya dapat mengakses sekolah aktifnya.');
+		}
+
 		const secure = locals.requestIsSecure ?? false;
 		cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(sekolah.id), {
 			path: '/',

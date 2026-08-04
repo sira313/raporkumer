@@ -172,7 +172,11 @@ export const actions = {
 
 		// Permission check: only admin and wali_kelas can save keputusan
 		const saveUserType = (locals.user as { type?: string } | null)?.type;
-		if (saveUserType !== 'admin' && saveUserType !== 'wali_kelas') {
+		if (
+			saveUserType !== 'admin' &&
+			saveUserType !== 'kepala_sekolah' &&
+			saveUserType !== 'wali_kelas'
+		) {
 			return fail(403, {
 				fail: 'Anda tidak memiliki izin untuk menyimpan keputusan kenaikan kelas.'
 			});

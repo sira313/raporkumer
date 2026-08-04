@@ -27,6 +27,7 @@ export const POST = async (event: RequestEvent) => {
 	const user = locals?.user as { permissions?: string[]; type?: string } | undefined;
 	const hasPermission =
 		user?.type === 'admin' ||
+		user?.type === 'kepala_sekolah' ||
 		(Array.isArray(user?.permissions) && user!.permissions!.includes('server_stop'));
 	if (!hasPermission) {
 		return json(

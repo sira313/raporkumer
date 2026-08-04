@@ -51,7 +51,12 @@ export async function load({ url, locals, depends }) {
 
 	// Permission check: Allow admin, wali_kelas, wali_asuh, and user (guru mapel) assigned to this subject
 	const userType = (locals.user as { type?: string } | null)?.type;
-	if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+	if (
+		userType !== 'admin' &&
+		userType !== 'kepala_sekolah' &&
+		userType !== 'wali_kelas' &&
+		userType !== 'wali_asuh'
+	) {
 		if (userType === 'user' && locals.user?.id) {
 			const userId = locals.user.id;
 			const assignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({

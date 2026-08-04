@@ -22,7 +22,12 @@ export async function load({ depends, url, parent }) {
 
 	// Permission check: Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
 	const userType = (user as { type?: string } | null)?.type;
-	if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+	if (
+		userType !== 'admin' &&
+		userType !== 'kepala_sekolah' &&
+		userType !== 'wali_kelas' &&
+		userType !== 'wali_asuh'
+	) {
 		authority('mata_pelajaran_ekstrakurikuler');
 	}
 
@@ -92,7 +97,12 @@ export const actions = {
 	create: async ({ request, locals }) => {
 		// Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		if (
+			userType !== 'admin' &&
+			userType !== 'kepala_sekolah' &&
+			userType !== 'wali_kelas' &&
+			userType !== 'wali_asuh'
+		) {
 			authority('mata_pelajaran_ekstrakurikuler');
 		}
 
@@ -131,7 +141,12 @@ export const actions = {
 	update: async ({ request, locals }) => {
 		// Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		if (
+			userType !== 'admin' &&
+			userType !== 'kepala_sekolah' &&
+			userType !== 'wali_kelas' &&
+			userType !== 'wali_asuh'
+		) {
 			authority('mata_pelajaran_ekstrakurikuler');
 		}
 
@@ -188,7 +203,12 @@ export const actions = {
 	delete: async ({ request, locals }) => {
 		// Allow admin, wali_kelas, wali_asuh, and users with rapor_manage
 		const userType = (locals.user as { type?: string } | null)?.type;
-		if (userType !== 'admin' && userType !== 'wali_kelas' && userType !== 'wali_asuh') {
+		if (
+			userType !== 'admin' &&
+			userType !== 'kepala_sekolah' &&
+			userType !== 'wali_kelas' &&
+			userType !== 'wali_asuh'
+		) {
 			authority('mata_pelajaran_ekstrakurikuler');
 		}
 

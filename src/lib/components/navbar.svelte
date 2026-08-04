@@ -22,7 +22,7 @@
 		pegawaiName?: string;
 		username?: string;
 		permissions?: string[];
-		type?: 'admin' | 'user' | 'wali_asuh';
+		type?: 'admin' | 'kepala_sekolah' | 'user' | 'wali_asuh';
 	};
 
 	let {
@@ -268,6 +268,13 @@
 							<div role="alert" class="alert alert-info mb-4">
 								<Icon name="info" />
 								<span>Login sebagai <strong>Admin</strong></span>
+							</div>
+						{:else if user?.type === 'kepala_sekolah'}
+							<div role="alert" class="alert alert-info mb-4">
+								<Icon name="info" />
+								<span>
+									<strong>{displayUserName}</strong> - Kepala Sekolah
+								</span>
 							</div>
 						{:else if user?.type === 'user'}
 							<div role="alert" class="alert alert-info mb-4">

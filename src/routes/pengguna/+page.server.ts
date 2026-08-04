@@ -15,6 +15,7 @@ import { sql, eq, and, inArray, desc } from 'drizzle-orm';
 import { authority } from './utils.server';
 import { defaultPermissionsByType } from './permissions';
 import { hashPassword } from '$lib/server/auth';
+import { resolveUniqueUsername } from '$lib/server/usernames';
 import { randomBytes } from 'node:crypto';
 import { fail } from '@sveltejs/kit';
 
@@ -196,7 +197,7 @@ export async function load({ url }) {
 				const nama = (peg?.nama || '').trim();
 				if (!nama) continue;
 
-				const username = nama;
+				const username = await resolveUniqueUsername(nama);
 				const usernameNormalized = username.toLowerCase();
 				const password = randomBytes(6).toString('base64url');
 				const { hash, salt } = hashPassword(password);
@@ -348,7 +349,7 @@ export async function load({ url }) {
 			if (exists) continue;
 
 			// Create auth_user — no kelasId since wali_asuh is per-student, not per-class
-			const username = nama;
+			const username = await resolveUniqueUsername(nama);
 			const usernameNormalized = username.toLowerCase();
 			const password = randomBytes(6).toString('base64url');
 			const { hash, salt } = hashPassword(password);

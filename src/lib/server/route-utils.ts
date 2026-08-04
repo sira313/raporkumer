@@ -66,7 +66,7 @@ export async function getKelasContextForUser(
 	};
 	const kelasId = student.kelasId;
 
-	if (user.type === 'admin') return { hasAccess: true };
+	if (user.type === 'admin' || user.type === 'kepala_sekolah') return { hasAccess: true };
 	if (user.type === 'wali_kelas' && user.pegawaiId) {
 		const kelasRow = await db.query.tableKelas.findFirst({
 			columns: { id: true, waliKelasId: true },

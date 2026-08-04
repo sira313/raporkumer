@@ -43,6 +43,7 @@ export async function load({ depends, params, parent }) {
 	// wali_kelas/wali_asuh already validated by hooks.server.ts to access only their own kelas
 	if (
 		userType !== 'admin' &&
+		userType !== 'kepala_sekolah' &&
 		userType !== 'user' &&
 		userType !== 'wali_kelas' &&
 		userType !== 'wali_asuh'
@@ -328,6 +329,7 @@ export const actions = {
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (
 			userType !== 'admin' &&
+			userType !== 'kepala_sekolah' &&
 			userType !== 'user' &&
 			userType !== 'wali_kelas' &&
 			userType !== 'wali_asuh'
@@ -448,6 +450,7 @@ export const actions = {
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (
 			userType !== 'admin' &&
+			userType !== 'kepala_sekolah' &&
 			userType !== 'user' &&
 			userType !== 'wali_kelas' &&
 			userType !== 'wali_asuh'
@@ -480,6 +483,7 @@ export const actions = {
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (
 			userType !== 'admin' &&
+			userType !== 'kepala_sekolah' &&
 			userType !== 'user' &&
 			userType !== 'wali_kelas' &&
 			userType !== 'wali_asuh'
@@ -562,6 +566,7 @@ export const actions = {
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (
 			userType !== 'admin' &&
+			userType !== 'kepala_sekolah' &&
 			userType !== 'user' &&
 			userType !== 'wali_kelas' &&
 			userType !== 'wali_asuh'

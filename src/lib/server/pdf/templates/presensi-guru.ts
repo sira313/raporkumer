@@ -1,4 +1,5 @@
 import { sharedStyles, formatValue, FALLBACK } from './shared';
+import { compareKepegawaian } from '$lib/server/kepegawaian-order';
 
 export type PresensiGuruStatusPerDay =
 	'hadir' | 'izin' | 'sakit' | 'dinas_luar' | 'cuti' | 'belum' | '';
@@ -92,31 +93,8 @@ const FIXED_COLS_SUM_MM =
 	FIXED_COL_WIDTHS_MM.reduce((a, b) => a + b, 0) + TOTAL_COL_WIDTHS_MM.reduce((a, b) => a + b, 0);
 
 export function renderPresensiGuruHTML(data: PresensiGuruPrintData): string {
-	const GOLONGAN_ROMAN: Record<string, number> = {
-		I: 1,
-		II: 2,
-		III: 3,
-		IV: 4,
-		V: 5,
-		VI: 6,
-		VII: 7,
-		VIII: 8,
-		IX: 9,
-		X: 10
-	};
-
-	/** "IV/a" -> 402, "II" -> 200, "IX" -> 900; unparseable/honor ("-") -> -Infinity. */
-	function golonganSortKey(value: string | null | undefined): number {
-		const m = /^([IVX]+)(?:\/([a-e]))?$/i.exec((value ?? '').trim());
-		if (!m) return -Infinity;
-		const num = GOLONGAN_ROMAN[m[1].toUpperCase()];
-		if (num === undefined) return -Infinity;
-		const letter = m[2] ? m[2].toLowerCase().charCodeAt(0) - 97 : -1;
-		return num * 100 + letter;
-	}
-
 	const rows = [...(data.rows ?? [])]
-		.sort((a, b) => golonganSortKey(b.golongan) - golonganSortKey(a.golongan))
+		.sort((a, b) => compareKepegawaian(a, b))
 		.map((row, i) => ({ ...row, no: i + 1 }));
 	const daysInMonth = data.daysInMonth ?? 31;
 	const redDays = new Set(data.redDays ?? []);

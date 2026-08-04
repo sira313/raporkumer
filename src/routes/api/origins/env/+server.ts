@@ -7,7 +7,7 @@ import {
 } from '$lib/server/csrf-origins';
 
 function isAdmin(user: { type?: string } | undefined) {
-	return user?.type === 'admin';
+	return user?.type === 'admin' || user?.type === 'kepala_sekolah';
 }
 
 export const GET = async () => {

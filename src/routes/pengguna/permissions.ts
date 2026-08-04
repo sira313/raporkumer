@@ -80,6 +80,7 @@ export const userPermissions = Object.entries(groupedUserPermissions) //
  * Default permission per tipe akun non-admin. Admin otomatis memiliki semua akses.
  */
 export const defaultPermissionsByType: Partial<Record<AuthUser['type'], UserPermission[]>> = {
+	kepala_sekolah: userPermissions,
 	wali_kelas: [
 		'informasi_umum_murid',
 		'mata_pelajaran_intrakurikuler',
@@ -172,7 +173,16 @@ export function isAuthorizedUser(
 	if (!user) return false;
 	// Admins are authorized for everything by policy
 	// wali_kelas and wali_asuh are NOT admins and must check permissions
-	if ('type' in user && user.type === 'admin') return true;
+	if ('type' in user && (user.type === 'admin' || user.type === 'kepala_sekolah')) return true;
 	const userPermissions = user.permissions || [];
 	return allowedPermissions.some((r) => userPermissions.includes(r));
+}
+
+/**
+ * True for roles with full administrative access (admin, kepala_sekolah).
+ * Kepala sekolah has the same access as admin but is scoped to a specific
+ * (active) sekolah rather than being a global account.
+ */
+export function isAdminUser(user?: Pick<AuthUser, 'type'> | null): boolean {
+	return user?.type === 'admin' || user?.type === 'kepala_sekolah';
 }

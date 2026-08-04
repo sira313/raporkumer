@@ -10,7 +10,7 @@ export const load = (async (event) => {
 	}
 
 	// For non-admin users, verify they have access to the requested student's class
-	if (event.locals.user.type !== 'admin') {
+	if (event.locals.user.type !== 'admin' && event.locals.user.type !== 'kepala_sekolah') {
 		const muridIdParam = event.url.searchParams.get('murid_id');
 		if (muridIdParam) {
 			const { hasAccess } = await getKelasContextForUser(event.locals, event.url, muridIdParam);

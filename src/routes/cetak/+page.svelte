@@ -53,7 +53,7 @@
 		if (userType === 'user') {
 			return visible.filter((o) => o.value === 'jurnal-mengajar');
 		}
-		if (userType !== 'admin') {
+		if (userType !== 'admin' && userType !== 'kepala_sekolah') {
 			return visible.filter(
 				(o) => o.value !== 'presensi-guru' && o.value !== 'buku-tamu' && o.value !== 'laporan-tpp'
 			);

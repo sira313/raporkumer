@@ -217,6 +217,13 @@
 		return (perms as string[]).includes('informasi_umum_akademik');
 	});
 
+	// Kepala sekolah is locked to their own sekolah — hide school switching UI.
+	let canSwitchSekolah = $derived.by(() => {
+		const u = page.data.user as { type?: string } | null;
+		if (u?.type === 'kepala_sekolah') return false;
+		return canRaporManage;
+	});
+
 	// Check if selected school is different from active school
 	let isSekolahChanged = $derived.by(() => {
 		if (!activeSekolahId || !selectedSekolahId) return false;
@@ -307,7 +314,7 @@
 									name="sekolahId"
 									bind:value={selectedSekolahId}
 									required
-									disabled={disabledSekolahActions || submitting || !canRaporManage}
+									disabled={disabledSekolahActions || submitting || !canSwitchSekolah}
 								>
 									<option value="" disabled>Pilih Sekolah</option>
 									{#if sekolahList.length === 0}
@@ -324,11 +331,11 @@
 								type="submit"
 								disabled={submitting ||
 									disabledSekolahActions ||
-									!canRaporManage ||
+									!canSwitchSekolah ||
 									!isSekolahChanged}
-								aria-disabled={!canRaporManage || !isSekolahChanged}
-								title={!canRaporManage
-									? 'Anda tidak memiliki izin untuk mengganti sekolah'
+								aria-disabled={!canSwitchSekolah || !isSekolahChanged}
+								title={!canSwitchSekolah
+									? 'Kepala Sekolah hanya dapat mengakses sekolah aktifnya'
 									: !isSekolahChanged
 										? 'Sekolah ini sudah aktif'
 										: ''}

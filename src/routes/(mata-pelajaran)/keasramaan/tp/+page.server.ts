@@ -93,7 +93,12 @@ export async function load({ depends, url, parent }) {
 function canManageKeasramaan(user: unknown): boolean {
 	if (!user || typeof user !== 'object') return false;
 	const u = user as { type?: string };
-	return u.type === 'admin' || u.type === 'wali_kelas' || u.type === 'wali_asuh';
+	return (
+		u.type === 'admin' ||
+		u.type === 'kepala_sekolah' ||
+		u.type === 'wali_kelas' ||
+		u.type === 'wali_asuh'
+	);
 }
 
 export const actions = {

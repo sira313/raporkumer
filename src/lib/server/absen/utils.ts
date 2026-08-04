@@ -2,7 +2,8 @@ export async function canUserEditAbsen(
 	user: NonNullable<App.Locals['user']>,
 	_sekolahId: number
 ): Promise<boolean> {
-	if (user.type === 'admin' || user.type === 'wali_kelas') return true;
+	if (user.type === 'admin' || user.type === 'kepala_sekolah' || user.type === 'wali_kelas')
+		return true;
 	return false;
 }
 

@@ -1,6 +1,7 @@
 import db from '$lib/server/db/index.js';
 import { tableAlamat, tablePegawai, tableSekolah } from '$lib/server/db/schema.js';
 import { cookieNames, unflattenFormData } from '$lib/utils';
+import { ensureKepalaSekolahUser } from '$lib/server/kepala-sekolah.js';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { authority } from '../../../pengguna/utils.server';
@@ -11,9 +12,14 @@ export async function load({ url, locals }) {
 	const isNew = url.searchParams.get('mode') === 'new';
 	const sekolahIdParam = url.searchParams.get('sekolahId');
 
+	// Kepala sekolah is scoped to their own sekolah — ignore ?sekolahId= and
+	// always edit the active (own) sekolah via locals.sekolah (pinned in hooks).
+	const activeUser = locals.user as { type?: string } | null;
+	const isKepalaSekolah = activeUser?.type === 'kepala_sekolah';
+
 	// Jika ada parameter sekolahId, load sekolah tersebut
 	let sekolahToEdit: Sekolah | Omit<Sekolah, 'logo'> | undefined = undefined;
-	if (sekolahIdParam && !isNew) {
+	if (sekolahIdParam && !isNew && !isKepalaSekolah) {
 		const sekolahId = Number(sekolahIdParam);
 		if (Number.isInteger(sekolahId) && sekolahId > 0) {
 			const sekolah = await db.query.tableSekolah.findFirst({
@@ -51,6 +57,15 @@ export const actions = {
 
 		const formData = await request.formData();
 		const formSekolah = unflattenFormData<Sekolah>(formData);
+
+		// Kepala sekolah can only save their own sekolah — never edit another one.
+		const activeUser = locals.user as { type?: string; sekolahId?: number } | null;
+		if (
+			activeUser?.type === 'kepala_sekolah' &&
+			(formSekolah.id ? Number(formSekolah.id) !== activeUser.sekolahId : true)
+		) {
+			error(403, 'Kepala Sekolah hanya dapat mengubah data sekolah aktifnya.');
+		}
 
 		// TODO: input validation
 
@@ -106,6 +121,9 @@ export const actions = {
 						updatedAt: new Date().toISOString()
 					})
 					.where(eq(tableSekolah.id, formSekolah.id));
+
+				// Keep the kepala sekolah auth account in sync with the saved pegawai
+				formSekolah.kepalaSekolahId = sekolah.kepalaSekolahId;
 			} else {
 				if (formSekolah.alamat) {
 					const [alamat] = await db
@@ -135,6 +153,11 @@ export const actions = {
 
 			if (!formSekolah.id) error(409, `Gagal simpan data sekolah`);
 		});
+
+		// Auto-create/update the kepala sekolah login account for this sekolah.
+		if (formSekolah.id && formSekolah.kepalaSekolahId) {
+			await ensureKepalaSekolahUser(Number(formSekolah.id), formSekolah.kepalaSekolahId);
+		}
 
 		locals.sekolahDirty = true;
 		const secure = locals.requestIsSecure ?? false;

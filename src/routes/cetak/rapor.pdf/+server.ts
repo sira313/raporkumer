@@ -10,7 +10,7 @@ async function handle({ locals, url }: { locals: App.Locals; url: URL }) {
 		throw redirect(303, '/login');
 	}
 
-	if (locals.user.type !== 'admin') {
+	if (locals.user.type !== 'admin' && locals.user.type !== 'kepala_sekolah') {
 		const muridIdParam = url.searchParams.get('murid_id');
 		if (muridIdParam) {
 			const { hasAccess } = await getKelasContextForUser(locals, url, muridIdParam);

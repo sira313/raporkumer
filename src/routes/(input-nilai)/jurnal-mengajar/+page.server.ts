@@ -79,7 +79,7 @@ export async function load({ locals, url, depends, parent }) {
 
 	let hasAnyMapel = false;
 
-	if (userType === 'admin' || userType === 'wali_kelas') {
+	if (userType === 'admin' || userType === 'kepala_sekolah' || userType === 'wali_kelas') {
 		const dayNames = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
 		const dateObj = tanggal ? new Date(tanggal + 'T00:00:00') : new Date();
 		const hari = dayNames[dateObj.getDay()];
@@ -460,7 +460,10 @@ export const actions = {
 			});
 			if (
 				!existing ||
-				(existing.authUserId !== user.id && user.type !== 'admin' && user.type !== 'wali_kelas')
+				(existing.authUserId !== user.id &&
+					user.type !== 'admin' &&
+					user.type !== 'kepala_sekolah' &&
+					user.type !== 'wali_kelas')
 			) {
 				return fail(404, { fail: 'Jurnal tidak ditemukan' });
 			}
@@ -585,7 +588,10 @@ export const actions = {
 		});
 		if (
 			!existing ||
-			(existing.authUserId !== user.id && user.type !== 'admin' && user.type !== 'wali_kelas')
+			(existing.authUserId !== user.id &&
+				user.type !== 'admin' &&
+				user.type !== 'kepala_sekolah' &&
+				user.type !== 'wali_kelas')
 		) {
 			return fail(404, { fail: 'Jurnal tidak ditemukan' });
 		}

@@ -1,5 +1,6 @@
 import '$lib/server/load-env';
 import { applySessionCookie, ensureDefaultAdmin, resolveSession } from '$lib/server/auth';
+import { ensureKepalaSekolahAccounts } from '$lib/server/kepala-sekolah';
 import db from '$lib/server/db';
 import { tableSekolah } from '$lib/server/db/schema';
 import { ensureCoreSchema } from '$lib/server/db/ensure-core-schema';
@@ -148,6 +149,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		await ensurePresensiSettingsSchema();
 		await ensureDefaultAdmin();
 		await ensurePermissionMigration();
+		await ensureKepalaSekolahAccounts();
 		ensureDefaultAdminResolved = true;
 	}
 
@@ -177,6 +179,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 				type: resolved.user.type,
 				kelasId: resolved.user.kelasId,
 				pegawaiId: resolved.user.pegawaiId,
+				sekolahId: resolved.user.sekolahId,
 				// preferred/assigned mata pelajaran for 'user' accounts (may be undefined)
 				mataPelajaranId:
 					(resolved.user as unknown as { mataPelajaranId?: number }).mataPelajaranId ?? null
@@ -274,7 +277,22 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 	}
 
 	const secure = event.locals.requestIsSecure ?? false;
-	const sekolahId = Number(event.cookies.get(cookieNames.ACTIVE_SEKOLAH_ID) || '');
+	let sekolahId = Number(event.cookies.get(cookieNames.ACTIVE_SEKOLAH_ID) || '');
+
+	// Kepala sekolah is locked to their own sekolah: pin the active-sekolah cookie
+	// to the account's sekolahId so no other school can be reached (via a hand-edited
+	// cookie, the /akademik switch, or ?sekolahId= on /sekolah/form).
+	const activeUser = event.locals.user as { type?: string; sekolahId?: number } | null;
+	if (activeUser?.type === 'kepala_sekolah' && activeUser.sekolahId) {
+		if (sekolahId !== activeUser.sekolahId) {
+			event.cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(activeUser.sekolahId), {
+				path: '/',
+				secure
+			});
+			sekolahId = activeUser.sekolahId;
+		}
+	}
+
 	if (sekolahId === event.locals.sekolah?.id && !event.locals.sekolahDirty) {
 		return resolve(event);
 	}
