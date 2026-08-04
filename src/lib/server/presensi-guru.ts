@@ -11,6 +11,7 @@ import {
 	tablePresensiSettings
 } from '$lib/server/db/schema';
 import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
+import { compareKepegawaian } from '$lib/server/kepegawaian-order';
 import { buildLiburDates, buildRedDaysByType } from './absen/libur';
 import { dateStr, getDaysInMonth, isSaturday, isSunday } from './absen/utils';
 
@@ -243,12 +244,18 @@ export async function getPresensiGuruSettings(
 	);
 }
 
-export type GuruSekolah = { id: number; nama: string };
+export type GuruSekolah = {
+	id: number;
+	nama: string;
+	statusKepegawaian: string | null;
+	golongan: string | null;
+};
 
 /**
  * All "guru" (non-admin, non-wali_asuh) accounts belonging to a sekolah.
- * Membership resolves via auth_user.sekolahId, auth_user.kelasId,
- * auth_user_kelas, or auth_user_mata_pelajaran (-> mapel -> kelas).
+ * kepala_sekolah accounts are included so their own presence is tracked and
+ * shows in tables/reports. Membership resolves via auth_user.sekolahId,
+ * auth_user.kelasId, auth_user_kelas, or auth_user_mata_pelajaran (-> mapel -> kelas).
  */
 export async function listGuruBySekolah(sekolahId: number): Promise<GuruSekolah[]> {
 	const users = await db.query.tableAuthUser.findMany({
@@ -258,14 +265,12 @@ export async function listGuruBySekolah(sekolahId: number): Promise<GuruSekolah[
 			namaLengkap: true,
 			type: true,
 			sekolahId: true,
-			kelasId: true
+			kelasId: true,
+			statusKepegawaian: true,
+			golongan: true
 		},
 		with: { pegawai: { columns: { nama: true } } },
-		where: and(
-			ne(tableAuthUser.type, 'admin'),
-			ne(tableAuthUser.type, 'kepala_sekolah'),
-			ne(tableAuthUser.type, 'wali_asuh')
-		)
+		where: and(ne(tableAuthUser.type, 'admin'), ne(tableAuthUser.type, 'wali_asuh'))
 	});
 
 	const kelasRows = await db.query.tableKelas.findMany({
@@ -307,9 +312,14 @@ export async function listGuruBySekolah(sekolahId: number): Promise<GuruSekolah[
 		if (!inSchool) continue;
 		const nama = (u.namaLengkap ?? u.pegawai?.nama ?? u.username ?? '').trim();
 		if (!nama) continue;
-		result.push({ id: u.id, nama });
+		result.push({
+			id: u.id,
+			nama,
+			statusKepegawaian: u.statusKepegawaian ?? null,
+			golongan: u.golongan ?? null
+		});
 	}
-	result.sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
+	result.sort((a, b) => compareKepegawaian(a, b) || a.nama.localeCompare(b.nama, 'id'));
 	return result;
 }
 
