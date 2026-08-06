@@ -29,6 +29,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			golongan: true,
 			jabatan: true,
 			pangkat: true,
+			tanggalPangkat: true,
 			tanggalDiangkat: true,
 			tanggalBekerja: true,
 			tanggalGajiBerkala: true,
@@ -66,6 +67,7 @@ export const actions: Actions = {
 		const tanggalDiangkat = toNullableString(formData.get('tanggalDiangkat'));
 		const tanggalBekerja = toNullableString(formData.get('tanggalBekerja'));
 		const tanggalGajiBerkala = toNullableString(formData.get('tanggalGajiBerkala'));
+		const tanggalPangkat = toNullableString(formData.get('tanggalPangkat'));
 
 		if (!namaLengkap) {
 			return fail(400, { message: 'Nama lengkap wajib diisi.' });
@@ -88,8 +90,7 @@ export const actions: Actions = {
 		const resolved = resolveProfileFields({
 			statusKepegawaian: String(formData.get('statusKepegawaian') ?? ''),
 			golongan: String(formData.get('golongan') ?? ''),
-			jabatan: String(formData.get('jabatan') ?? ''),
-			pangkat: String(formData.get('pangkat') ?? '')
+			jabatan: String(formData.get('jabatan') ?? '')
 		});
 
 		const isHonor =
@@ -174,6 +175,7 @@ export const actions: Actions = {
 						golongan: resolved.golongan,
 						jabatan: resolved.jabatan,
 						pangkat: isGajiBerkalaLocked ? '-' : resolved.pangkat,
+						tanggalPangkat: isGajiBerkalaLocked ? '-' : tanggalPangkat,
 						tanggalDiangkat,
 						tanggalBekerja,
 						tanggalGajiBerkala: isGajiBerkalaLocked ? '-' : tanggalGajiBerkala,

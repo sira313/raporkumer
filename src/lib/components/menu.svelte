@@ -26,6 +26,10 @@
 		// Menu items without a path (parent groups) are filtered recursively via subMenu
 		if (!path) return false;
 		if (path === '/presensi-guru' && !presensiGuruEnabled) return true;
+		// Dinas Luar is an admin-only menu (not part of the permission model).
+		if (path === '/sppd') {
+			return (user as { type?: string } | null)?.type !== 'admin';
+		}
 		const required = resolveRoutePermission(path);
 		if (!required) return false;
 		return !isAuthorizedUser([required], user ?? undefined);

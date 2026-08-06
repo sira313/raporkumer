@@ -95,7 +95,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 					tanggalBekerja: true,
 					statusKepegawaian: true,
 					tanggalGajiBerkala: true,
-					pangkat: true
+					tanggalPangkat: true
 				},
 				with: { pegawai: { columns: { nama: true, nip: true } } },
 				where: inArray(tableAuthUser.id, guruIds)
@@ -133,7 +133,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 				tanggalBekerja: formatTanggalInput(prof?.tanggalBekerja),
 				statusKepegawaian: prof?.statusKepegawaian ?? '',
 				tanggalGajiBerkala: formatTanggalInput(prof?.tanggalGajiBerkala),
-				pangkat: formatTanggalInput(prof?.pangkat),
+				pangkat: formatTanggalInput(prof?.tanggalPangkat),
 				statusPerDay: row.statusPerDay,
 				signaturesPerDay,
 				countHadir: row.countHadir,

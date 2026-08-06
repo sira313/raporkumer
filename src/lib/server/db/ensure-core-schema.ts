@@ -234,6 +234,7 @@ export async function ensureCoreSchema() {
 		['golongan', 'TEXT'],
 		['jabatan', 'TEXT'],
 		['pangkat', 'TEXT'],
+		['tanggal_pangkat', 'TEXT'],
 		['tanggal_diangkat', 'TEXT'],
 		['tanggal_bekerja', 'TEXT'],
 		['tanggal_gaji_berkala', 'TEXT']
@@ -244,6 +245,42 @@ export async function ensureCoreSchema() {
 		} catch {
 			// column already exists
 		}
+	}
+
+	// pangkat column used to hold "tanggal pangkat terakhir" (a date). Now pangkat
+	// holds the pangkat name (from /pengaturan/profil) and the date lives in
+	// tanggal_pangkat. Move any existing date values over.
+	try {
+		await db.$client.execute(
+			`UPDATE auth_user SET tanggal_pangkat = pangkat, pangkat = NULL
+			 WHERE pangkat IS NOT NULL AND pangkat GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`
+		);
+	} catch {
+		// column not yet available on old rows; ignore
+	}
+
+	// Backfill pangkat (nama pangkat) otomatis dari golongan. Data ini ditampilkan di SPPD.
+	try {
+		await db.$client.execute(
+			`UPDATE auth_user
+			 SET pangkat = CASE golongan
+				WHEN 'II' THEN 'Pengatur Tingkat I'
+				WHEN 'II/d' THEN 'Pengatur Tingkat I'
+				WHEN 'III/a' THEN 'Penata Muda'
+				WHEN 'III/b' THEN 'Penata Muda Tingkat I'
+				WHEN 'III/c' THEN 'Penata'
+				WHEN 'III/d' THEN 'Penata Tingkat I'
+				WHEN 'IV/a' THEN 'Pembina'
+				WHEN 'IV/b' THEN 'Pembina Tingkat I'
+				WHEN 'IV/c' THEN 'Pembina Utama Muda'
+				WHEN 'IV/d' THEN 'Pembina Utama Madya'
+				WHEN 'IV/e' THEN 'Pembina Utama'
+				ELSE pangkat
+			 END
+			 WHERE pangkat IS NULL OR pangkat = ''`
+		);
+	} catch {
+		// column not yet available on old rows; ignore
 	}
 
 	// Create user_favorites table

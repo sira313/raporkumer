@@ -3,7 +3,12 @@
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { jenisKelamin } from '$lib/statics';
-	import { golonganByStatus, jabatanByGolongan, statusKepegawaianOptions } from '$lib/profile';
+	import {
+		golonganByStatus,
+		jabatanByGolongan,
+		pangkatByGolongan,
+		statusKepegawaianOptions
+	} from '$lib/profile';
 
 	let { data } = $props();
 	const profile = data.profile;
@@ -21,7 +26,7 @@
 	let statusKepegawaian = $state(profile?.statusKepegawaian ?? '');
 	let golongan = $state(profile?.golongan ?? '');
 	let jabatan = $state(profile?.jabatan ?? '');
-	let pangkat = $state(profile?.pangkat ?? '');
+	let tanggalPangkat = $state(profile?.tanggalPangkat ?? '');
 	let tanggalDiangkat = $state(profile?.tanggalDiangkat ?? '');
 	let tanggalBekerja = $state(profile?.tanggalBekerja ?? '');
 	let tanggalGajiBerkala = $state(profile?.tanggalGajiBerkala ?? '');
@@ -33,6 +38,9 @@
 	);
 	const isPppk = $derived(statusKepegawaian === 'PPPK');
 	const isGajiBerkalaLocked = $derived(isHonor || isPppk);
+	const pangkat = $derived(
+		isGajiBerkalaLocked ? '-' : golongan ? (pangkatByGolongan[golongan] ?? '') : ''
+	);
 
 	$effect(() => {
 		if (golonganOptions.length > 0) {
@@ -52,7 +60,7 @@
 
 	$effect(() => {
 		if (isGajiBerkalaLocked) {
-			pangkat = '-';
+			tanggalPangkat = '-';
 			tanggalGajiBerkala = '-';
 		}
 	});
@@ -210,6 +218,20 @@
 							{/each}
 						</select>
 					</fieldset>
+					<fieldset class="fieldset flex-1">
+						<legend class="fieldset-legend">Pangkat</legend>
+						<input
+							type="text"
+							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							value={pangkat}
+							placeholder="Otomatis dari golongan"
+							disabled
+							readonly
+						/>
+						<p class="text-base-content/70 mt-1 text-xs">
+							Pangkat otomatis mengikuti golongan dan tersimpan saat profil disimpan.
+						</p>
+					</fieldset>
 				</div>
 
 				<div class="flex flex-col gap-2 sm:flex-row">
@@ -254,8 +276,8 @@
 						<input
 							type="date"
 							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
-							bind:value={pangkat}
-							name="pangkat"
+							bind:value={tanggalPangkat}
+							name="tanggalPangkat"
 							disabled={isGajiBerkalaLocked}
 						/>
 						<p class="text-base-content/70 mt-1 text-xs">Tanggal pangkat terakhir sesuai SK.</p>

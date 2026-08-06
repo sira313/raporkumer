@@ -19,7 +19,11 @@
 		modalProps = props as ModalState;
 		modalShown = true;
 		isLoading = false;
-		requestAnimationFrame(() => modal?.showModal());
+		requestAnimationFrame(() => {
+			if (modal && !modal.open) {
+				modal.showModal();
+			}
+		});
 	}
 
 	export function updateModal<BodyProps extends Record<string, unknown>>(
@@ -71,7 +75,7 @@
 			</div>
 
 			{#if modalProps.onPositive || modalProps.onNeutral || modalProps.onNegative}
-				<div class="modal-action shrink-0">
+				<div class="modal-action {modalProps.spreadActions ? 'justify-between' : ''} shrink-0">
 					{#if modalProps.onNegative}
 						<button
 							class="btn {modalProps.onNegative.class ?? 'btn-soft'} gap-2 shadow-none"

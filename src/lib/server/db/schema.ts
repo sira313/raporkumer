@@ -52,6 +52,7 @@ export const tableAuthUser = sqliteTable(
 		golongan: text(),
 		jabatan: text(),
 		pangkat: text(),
+		tanggalPangkat: text(),
 		tanggalDiangkat: text(),
 		tanggalBekerja: text(),
 		tanggalGajiBerkala: text(),
@@ -1326,6 +1327,105 @@ export const tableBukuTamu = sqliteTable(
 		index('buku_tamu_tanggal_idx').on(table.createdAt)
 	]
 );
+
+export const tableSppd = sqliteTable(
+	'sppd',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id, { onDelete: 'cascade' })
+			.notNull(),
+		tahunAjaranId: int().references(() => tableTahunAjaran.id, { onDelete: 'set null' }),
+		semesterId: int().references(() => tableSemester.id, { onDelete: 'set null' }),
+		maksud: text().notNull(),
+		nomorSuratTugas: text(),
+		tanggalSuratTugas: text(),
+		dasarSuratTugas: text(),
+		alatAngkut: text(),
+		tempatBerangkat: text(),
+		tempatTujuan: text(),
+		lamanya: text(),
+		tanggalBerangkat: text().notNull(),
+		tanggalKembali: text().notNull(),
+		keteranganPengikut: text(),
+		kodeRekening: text(),
+		tingkatBiaya: text(),
+		keteranganLain: text(),
+		...audit
+	},
+	(table) => [
+		index('sppd_sekolah_idx').on(table.sekolahId),
+		index('sppd_tanggal_berangkat_idx').on(table.tanggalBerangkat)
+	]
+);
+
+export const tableSppdPegawai = sqliteTable(
+	'sppd_pegawai',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sppdId: int()
+			.references(() => tableSppd.id, { onDelete: 'cascade' })
+			.notNull(),
+		authUserId: int().references(() => tableAuthUser.id, { onDelete: 'set null' }),
+		nama: text().notNull(),
+		urutan: int().notNull().default(0),
+		...audit
+	},
+	(table) => [
+		index('sppd_pegawai_sppd_idx').on(table.sppdId),
+		index('sppd_pegawai_user_idx').on(table.authUserId)
+	]
+);
+
+export const tableSppdPengikut = sqliteTable(
+	'sppd_pengikut',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sppdId: int()
+			.references(() => tableSppd.id, { onDelete: 'cascade' })
+			.notNull(),
+		nama: text().notNull(),
+		tempatLahir: text().notNull(),
+		tanggalLahir: text().notNull(),
+		...audit
+	},
+	(table) => [index('sppd_pengikut_sppd_idx').on(table.sppdId)]
+);
+
+export const tableSppdRelations = relations(tableSppd, ({ one, many }) => ({
+	sekolah: one(tableSekolah, {
+		fields: [tableSppd.sekolahId],
+		references: [tableSekolah.id]
+	}),
+	tahunAjaran: one(tableTahunAjaran, {
+		fields: [tableSppd.tahunAjaranId],
+		references: [tableTahunAjaran.id]
+	}),
+	semester: one(tableSemester, {
+		fields: [tableSppd.semesterId],
+		references: [tableSemester.id]
+	}),
+	pegawai: many(tableSppdPegawai),
+	pengikut: many(tableSppdPengikut)
+}));
+
+export const tableSppdPegawaiRelations = relations(tableSppdPegawai, ({ one }) => ({
+	sppd: one(tableSppd, {
+		fields: [tableSppdPegawai.sppdId],
+		references: [tableSppd.id]
+	}),
+	authUser: one(tableAuthUser, {
+		fields: [tableSppdPegawai.authUserId],
+		references: [tableAuthUser.id]
+	})
+}));
+
+export const tableSppdPengikutRelations = relations(tableSppdPengikut, ({ one }) => ({
+	sppd: one(tableSppd, {
+		fields: [tableSppdPengikut.sppdId],
+		references: [tableSppd.id]
+	})
+}));
 
 export const tableAppMeta = sqliteTable('app_meta', {
 	key: text().primaryKey(),
