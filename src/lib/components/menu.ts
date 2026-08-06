@@ -113,6 +113,11 @@ export const appMenuItems: MenuItem[] = [
 				title: 'Presensi Guru',
 				path: '/presensi-guru',
 				tags: ['presensi', 'guru', 'hadir', 'sakit', 'izin']
+			},
+			{
+				title: 'Dinas Luar',
+				path: '/sppd',
+				tags: ['sppd', 'dinas', 'luar', 'perjalanan', 'surat', 'perintah']
 			}
 		]
 	},

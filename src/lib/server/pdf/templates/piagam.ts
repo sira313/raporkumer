@@ -110,6 +110,13 @@ function getJenjangLabel(jenjang: string | null): string {
 	}
 }
 
+function schoolHeading(jenjang: string | null, nama: string): string {
+	const label = getJenjangLabel(jenjang);
+	const upper = formatUpper(nama);
+	const words = label.split(' ').slice(1).join(' ');
+	return words && upper.includes(words) ? upper : `${label} ${upper}`;
+}
+
 function piagamStyles(margin16mm = true): string {
 	let fontCss = '';
 	for (const [name, file, style, weight] of [
@@ -371,7 +378,7 @@ export function renderPiagamHTML(data: PiagamPrintData, template: '1' | '2'): st
 	const kabupatenUpper = formatUpper(data.sekolah.alamat.kabupaten);
 	const kecamatanUpper = formatUpper(data.sekolah.alamat.kecamatan);
 
-	const schoolHeading = `${getJenjangLabel(data.sekolah.jenjang)} ${formatUpper(data.sekolah.nama)}`;
+	const schoolHeadingText = schoolHeading(data.sekolah.jenjang, data.sekolah.nama);
 
 	const penghargaan = data.penghargaan;
 	const periode = data.periode;
@@ -418,7 +425,7 @@ ${bgCert ? `<div class="piagam-bg" style="background-image: url('${bgCert}')"></
 			<div class="header-text">PEMERINTAH ${kabupatenUpper}</div>
 			<div class="header-text">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
 			${data.sekolah.alamat.kecamatan ? `<div class="header-text">KOORDINATOR WILAYAH ${kecamatanUpper}</div>` : ''}
-			<div class="header-text-14">${schoolHeading}</div>
+			<div class="header-text-14">${schoolHeadingText}</div>
 			${alamatLine ? `<div class="header-info">${alamatLine}</div>` : ''}
 			${contactLine ? `<div class="header-contact">${contactLine}</div>` : ''}
 		</div>

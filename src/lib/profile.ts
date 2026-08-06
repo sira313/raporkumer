@@ -9,7 +9,7 @@ export const statusKepegawaianOptions = [
 export type StatusKepegawaian = (typeof statusKepegawaianOptions)[number];
 
 const golonganCpnsPns = [
-	'II',
+	'II/d',
 	'III/a',
 	'III/b',
 	'III/c',
@@ -17,7 +17,8 @@ const golonganCpnsPns = [
 	'IV/a',
 	'IV/b',
 	'IV/c',
-	'IV/d'
+	'IV/d',
+	'IV/e'
 ] as const;
 
 export const golonganByStatus: Record<string, readonly string[]> = {
@@ -30,7 +31,7 @@ export const golonganByStatus: Record<string, readonly string[]> = {
 
 export const jabatanByGolongan: Record<string, readonly string[]> = {
 	IX: ['Ahli Pertama'],
-	II: ['Guru'],
+	'II/d': ['Guru'],
 	'III/a': ['Guru Pertama'],
 	'III/b': ['Guru Pertama'],
 	'III/c': ['Guru Muda'],
@@ -39,14 +40,27 @@ export const jabatanByGolongan: Record<string, readonly string[]> = {
 	'IV/b': ['Guru Madya'],
 	'IV/c': ['Guru Madya'],
 	'IV/d': ['Guru Utama'],
+	'IV/e': ['Guru Utama'],
 	'-': ['-']
+};
+
+export const pangkatByGolongan: Record<string, string> = {
+	'II/d': 'Pengatur Tingkat I',
+	'III/a': 'Penata Muda',
+	'III/b': 'Penata Muda Tingkat I',
+	'III/c': 'Penata',
+	'III/d': 'Penata Tingkat I',
+	'IV/a': 'Pembina',
+	'IV/b': 'Pembina Tingkat I',
+	'IV/c': 'Pembina Utama Muda',
+	'IV/d': 'Pembina Utama Madya',
+	'IV/e': 'Pembina Utama'
 };
 
 export function resolveProfileFields(input: {
 	statusKepegawaian: string;
 	golongan: string;
 	jabatan: string;
-	pangkat: string;
 }): {
 	statusKepegawaian: StatusKepegawaian | null;
 	golongan: string | null;
@@ -71,8 +85,8 @@ export function resolveProfileFields(input: {
 		jabatan = options.includes(input.jabatan.trim()) ? input.jabatan.trim() : (options[0] ?? null);
 	}
 
-	const pangkatRaw = input.pangkat.trim();
-	const pangkat: string | null = pangkatRaw ? pangkatRaw : null;
+	// Pangkat diturunkan otomatis dari golongan (data yang dipakai di SPPD).
+	const pangkat: string | null = golongan ? (pangkatByGolongan[golongan] ?? null) : null;
 
 	return { statusKepegawaian: status, golongan, jabatan, pangkat };
 }
