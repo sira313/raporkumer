@@ -22,7 +22,7 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async ({ locals, url }) => {
 	const user = locals.user;
 	if (!user) throw error(401, 'Unauthorized');
-	if (user.type !== 'admin') {
+	if (user.type !== 'admin' && user.type !== 'kepala_sekolah') {
 		throw error(403, 'Hanya admin yang dapat mencetak surat perintah perjalanan dinas.');
 	}
 

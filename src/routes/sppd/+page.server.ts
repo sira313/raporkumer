@@ -3,7 +3,7 @@ import { tableSppd, tableSppdPegawai, tableSppdPengikut } from '$lib/server/db/s
 import db from '$lib/server/db';
 import { listGuruBySekolah } from '$lib/server/presensi-guru';
 import { redirect } from '@sveltejs/kit';
-import { desc, like, sql } from 'drizzle-orm';
+import { and, desc, eq, like, sql } from 'drizzle-orm';
 
 const PER_PAGE = 20;
 
@@ -55,7 +55,7 @@ export async function load({ locals, url, depends }) {
 
 	if (!locals.user) throw redirect(303, '/login');
 
-	if (locals.user.type !== 'admin') {
+	if (locals.user.type !== 'admin' && locals.user.type !== 'kepala_sekolah') {
 		throw redirect(303, '/forbidden?required=admin');
 	}
 
@@ -71,11 +71,14 @@ export async function load({ locals, url, depends }) {
 		Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1;
 
 	const searchFilter = search ? like(tableSppd.maksud, `%${search}%`) : undefined;
+	const sekolahScope = sekolahId ? eq(tableSppd.sekolahId, sekolahId) : undefined;
+	const whereFilter =
+		searchFilter && sekolahScope ? and(searchFilter, sekolahScope) : (searchFilter ?? sekolahScope);
 
 	const [{ totalItems }] = await db
 		.select({ totalItems: sql<number>`count(*)` })
 		.from(tableSppd)
-		.where(searchFilter);
+		.where(whereFilter);
 
 	const total = totalItems ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
@@ -83,7 +86,7 @@ export async function load({ locals, url, depends }) {
 	const offset = (currentPage - 1) * PER_PAGE;
 
 	const rows = await db.query.tableSppd.findMany({
-		where: searchFilter,
+		where: whereFilter,
 		with: {
 			pegawai: {
 				columns: { id: true, authUserId: true, nama: true, urutan: true },
