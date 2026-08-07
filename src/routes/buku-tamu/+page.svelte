@@ -6,6 +6,7 @@
 	import { searchQueryMarker, signatureDisplaySrc } from '$lib/utils';
 	import { onDestroy } from 'svelte';
 	import { showModal } from '$lib/components/global-modal.svelte';
+	import BukuTamuDetailBody from '$lib/components/buku-tamu/buku-tamu-detail-body.svelte';
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 
 	type BukuTamuRow = {
@@ -129,38 +130,19 @@
 	}
 
 	function viewDetail(tamu: BukuTamuRow) {
-		const tgl = new Date(tamu.createdAt).toLocaleDateString('id-ID', {
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
-
-		let bodyHtml = `
-			<div class="space-y-3 text-sm">
-				<div><strong>Tanggal:</strong> ${tgl}</div>
-				<div><strong>Nama:</strong> ${tamu.nama}</div>
-				<div><strong>Asal/Instansi:</strong> ${tamu.asalInstansi}</div>
-				${tamu.nip ? `<div><strong>NIP:</strong> ${tamu.nip}</div>` : ''}
-				<div><strong>Keperluan:</strong> ${tamu.keperluan}</div>
-				${tamu.pesanKesan ? `<div><strong>Pesan & Kesan:</strong> ${tamu.pesanKesan}</div>` : ''}
-			</div>
-		`;
-
-		const tandaTanganSrc = signatureDisplaySrc(tamu.tandaTangan);
-		if (tandaTanganSrc) {
-			bodyHtml += `
-				<div class="mt-4">
-					<strong class="text-sm">Tanda Tangan:</strong>
-					<img src="${tandaTanganSrc}" alt="Tanda tangan" class="mt-2 max-h-32 rounded border" />
-				</div>
-			`;
-		}
-
 		showModal({
 			title: `Detail Tamu - ${tamu.nama}`,
-			body: bodyHtml,
+			body: BukuTamuDetailBody,
+			bodyProps: {
+				nama: tamu.nama,
+				asalInstansi: tamu.asalInstansi,
+				nip: tamu.nip,
+				keperluan: tamu.keperluan,
+				pesanKesan: tamu.pesanKesan,
+				tandaTangan: signatureDisplaySrc(tamu.tandaTangan),
+				createdAt: tamu.createdAt
+			},
+			dismissible: true,
 			onNeutral: { label: 'Tutup' }
 		});
 	}

@@ -7,6 +7,7 @@
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 	import PresensiGuruEditModal from '$lib/components/presensi-guru/presensi-guru-edit-modal.svelte';
+	import PresensiGuruDetailBody from '$lib/components/presensi-guru/presensi-guru-detail-body.svelte';
 	import TablePresensiGuruBulanan from '$lib/components/presensi-guru/table-presensi-guru-bulanan.svelte';
 	import { searchQueryMarker, signatureDisplaySrc } from '$lib/utils';
 
@@ -300,46 +301,21 @@
 		const statusMeta = row.status
 			? (STATUS_META[row.status] ?? { label: row.status, class: '' })
 			: null;
-		const tanggal = formatTanggal(data.tanggal);
-
-		let bodyHtml = `
-			<div class="space-y-3 text-sm">
-				<div><strong>Nama:</strong> ${row.nama}</div>
-				<div><strong>Tanggal:</strong> ${tanggal}</div>
-				<div>
-					<strong>Status:</strong>
-					${
-						statusMeta
-							? `<span class="badge ${statusMeta.class}">${statusMeta.label}</span>`
-							: '<span class="badge">Belum presensi</span>'
-					}
-				</div>
-			`;
-
-		if (row.status && row.waktu) {
-			const waktu = new Date(row.waktu).toLocaleTimeString('id-ID', {
-				hour: '2-digit',
-				minute: '2-digit'
-			});
-			bodyHtml += `<div><strong>Jam:</strong> ${waktu}</div>`;
-		}
-		if (row.keterangan) {
-			bodyHtml += `<div><strong>Keterangan:</strong> ${row.keterangan}</div>`;
-		}
-		const tandaTanganSrc = signatureDisplaySrc(row.tandaTangan);
-		if (tandaTanganSrc) {
-			bodyHtml += `
-				<div class="mt-4">
-					<strong class="text-sm">Paraf:</strong>
-					<img src="${tandaTanganSrc}" alt="Paraf" class="mt-2 max-h-32 rounded border" />
-				</div>
-			`;
-		}
-		bodyHtml += '</div>';
 
 		showModal({
 			title: `Detail Presensi - ${row.nama}`,
-			body: bodyHtml,
+			body: PresensiGuruDetailBody,
+			bodyProps: {
+				nama: row.nama,
+				tanggal: data.tanggal,
+				status: row.status,
+				statusLabel: statusMeta?.label ?? null,
+				statusClass: statusMeta?.class ?? '',
+				waktu: row.waktu,
+				keterangan: row.keterangan,
+				tandaTangan: signatureDisplaySrc(row.tandaTangan)
+			},
+			dismissible: true,
 			onNeutral: { label: 'Tutup' }
 		});
 	}
