@@ -6,17 +6,10 @@ import {
 	tableAbsensi,
 	tableKetidakhadiranRapor
 } from '$lib/server/db/schema';
+import { isSchoolDay } from '$lib/hari-sekolah';
 
 function dateStr(year: number, month: number, day: number) {
 	return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
-
-function isSunday(year: number, month: number, day: number) {
-	return new Date(year, month - 1, day).getDay() === 0;
-}
-
-function isSaturday(year: number, month: number, day: number) {
-	return new Date(year, month - 1, day).getDay() === 6;
 }
 
 export type AttendanceCounts = {
@@ -47,6 +40,7 @@ export async function computeRaporAttendance(
 	});
 
 	const hariSekolah = presensiSettings?.hariSekolah ?? 6;
+	const hariSekolahCustom = presensiSettings?.hariSekolahCustom ?? null;
 
 	const liburDates = new Set<string>();
 	const rangeStartDate = new Date(tanggalMulaiRapor + 'T00:00:00');
@@ -109,8 +103,7 @@ export async function computeRaporAttendance(
 		const tgl = dateStr(y, m, d);
 		allDates.push(tgl);
 
-		const isWeekend =
-			hariSekolah === 5 ? isSaturday(y, m, d) || isSunday(y, m, d) : isSunday(y, m, d);
+		const isWeekend = !isSchoolDay(hariSekolah, hariSekolahCustom, y, m, d);
 
 		if (isWeekend || liburDates.has(tgl)) {
 			redDaySet.add(tgl);

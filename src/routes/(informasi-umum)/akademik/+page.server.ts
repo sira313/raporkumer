@@ -2,6 +2,7 @@ import db from '$lib/server/db';
 import type { AcademicContext } from '$lib/server/db/academic';
 import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import { ensurePresensiSettingsSchema } from '$lib/server/db/ensure-presensi-settings';
+import { parseHariSekolahCustom } from '$lib/hari-sekolah';
 import {
 	tableAlamat,
 	tableKelas,
@@ -1190,6 +1191,7 @@ export const actions: Actions = {
 		const jamMasuk = formData.get('jamMasuk')?.toString().trim() ?? '';
 		const jamPulang = formData.get('jamPulang')?.toString().trim() ?? '';
 		const hariSekolahRaw = formData.get('hariSekolah')?.toString().trim() ?? '';
+		const hariSekolahCustomRaw = formData.get('hariSekolahCustom')?.toString() ?? '';
 		const tipePresensi = formData.get('tipePresensi')?.toString().trim() ?? '';
 		const liburNasionalRaw = formData.get('liburNasional')?.toString() ?? '[]';
 
@@ -1238,9 +1240,20 @@ export const actions: Actions = {
 			return fail(400, { fail: 'Jam masuk harus lebih awal dari jam pulang' });
 		}
 
-		const hariSekolah = Number(hariSekolahRaw);
-		if (!Number.isInteger(hariSekolah) || ![5, 6].includes(hariSekolah)) {
-			return fail(400, { fail: 'Hari sekolah tidak valid' });
+		let hariSekolah: number;
+		let hariSekolahCustom: string | null = null;
+		if (hariSekolahRaw === 'custom') {
+			const parsedCustom = parseHariSekolahCustom(hariSekolahCustomRaw);
+			if (!parsedCustom || parsedCustom.length === 0) {
+				return fail(400, { fail: 'Pilih minimal satu hari belajar' });
+			}
+			hariSekolah = 0;
+			hariSekolahCustom = JSON.stringify(parsedCustom);
+		} else {
+			hariSekolah = Number(hariSekolahRaw);
+			if (!Number.isInteger(hariSekolah) || ![5, 6].includes(hariSekolah)) {
+				return fail(400, { fail: 'Hari sekolah tidak valid' });
+			}
 		}
 
 		const validTipe = ['masuk_pulang', 'masuk_saja', 'awal_mapel', 'awal_akhir_mapel'];
@@ -1285,6 +1298,7 @@ export const actions: Actions = {
 				jamMasuk,
 				jamPulang,
 				hariSekolah,
+				hariSekolahCustom,
 				tipePresensi: tipePresensiEnum,
 				jenisPresensi: jenisPresensiEnum,
 				presensiGuruEnabled,
@@ -1298,6 +1312,7 @@ export const actions: Actions = {
 					jamMasuk,
 					jamPulang,
 					hariSekolah,
+					hariSekolahCustom,
 					tipePresensi: tipePresensiEnum,
 					jenisPresensi: jenisPresensiEnum,
 					presensiGuruEnabled,

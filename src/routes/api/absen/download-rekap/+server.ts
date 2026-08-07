@@ -20,19 +20,12 @@ import {
 	buildRangeRedDays
 } from '$lib/server/absen/libur';
 import { getUniqueSubjectKodes } from '$lib/server/absen/first-mapel';
+import { isSchoolDay } from '$lib/hari-sekolah';
 import ExcelJS from 'exceljs';
 import { error } from '@sveltejs/kit';
 
 function getDaysInMonth(year: number, month: number) {
 	return new Date(year, month, 0).getDate();
-}
-
-function isSunday(year: number, month: number, day: number) {
-	return new Date(year, month - 1, day).getDay() === 0;
-}
-
-function isSaturday(year: number, month: number, day: number) {
-	return new Date(year, month - 1, day).getDay() === 6;
 }
 
 const BULAN_NAMES = [
@@ -103,6 +96,7 @@ export async function POST({ cookies, locals, request }) {
 				where: eq(tablePresensiSettings.sekolahId, sekolahId)
 			});
 	const hariSekolah = presensiSettings?.hariSekolah ?? 6;
+	const hariSekolahCustom = presensiSettings?.hariSekolahCustom ?? null;
 	const jenisPresensi = presensiSettings?.jenisPresensi ?? 'wali_kelas_saja';
 	const tipePresensi = presensiSettings?.tipePresensi ?? '';
 	const isWaliKelasMasukPulang =
@@ -442,10 +436,7 @@ export async function POST({ cookies, locals, request }) {
 	function isRedDay(day: number): boolean {
 		const tanggal = dateStr(tahun, bulan, day);
 		if (liburDates.has(tanggal)) return true;
-		if (hariSekolah === 5) {
-			return isSaturday(tahun, bulan, day) || isSunday(tahun, bulan, day);
-		}
-		return isSunday(tahun, bulan, day);
+		return !isSchoolDay(hariSekolah, hariSekolahCustom, tahun, bulan, day);
 	}
 
 	let rowIdx = 1;
@@ -924,7 +915,14 @@ export async function POST({ cookies, locals, request }) {
 
 	// ---- Compute persentase bulanan with all 4 presensi mode variants ----
 	const liburDatesMonth = buildLiburDates(presensiSettings ?? null, tahun, bulan);
-	const redDays = buildRedDays(hariSekolah, tahun, bulan, daysInMonth, liburDatesMonth);
+	const redDays = buildRedDays(
+		hariSekolah,
+		hariSekolahCustom,
+		tahun,
+		bulan,
+		daysInMonth,
+		liburDatesMonth
+	);
 	const totalHariBelajarBulanan = daysInMonth - redDays.length;
 
 	// For tiap_mapel, build day -> subject mapping for the month
@@ -1131,6 +1129,7 @@ export async function POST({ cookies, locals, request }) {
 		);
 		const { allDates, redDaySet } = buildRangeRedDays(
 			hariSekolah,
+			hariSekolahCustom,
 			tanggalMulaiSem,
 			tanggalAkhirSem,
 			rangeLiburDates

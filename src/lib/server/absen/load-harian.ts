@@ -8,8 +8,9 @@ import {
 	tableJadwalPelajaran
 } from '$lib/server/db/schema';
 import { asc, desc, eq, inArray, and, sql } from 'drizzle-orm';
-import { isTableMissingError, isSunday, isSaturday } from './utils';
+import { isTableMissingError } from './utils';
 import { buildLiburDates } from './libur';
+import { isSchoolDay } from '$lib/hari-sekolah';
 import { computePagination, PER_PAGE } from './pagination';
 import {
 	computeJamKeFromTime,
@@ -765,13 +766,14 @@ export async function loadHarian(params: {
 	}
 
 	const [thn, bln, hri] = tanggal.split('-').map(Number);
-	const hariSekolah = presensiSettings.hariSekolah ?? 6;
-	const isWeekend =
-		hariSekolah === 5
-			? isSaturday(thn, bln, hri) || isSunday(thn, bln, hri)
-			: isSunday(thn, bln, hri);
-	const liburDates = buildLiburDates(presensiSettings, thn, bln);
-	const isLibur = isWeekend || liburDates.has(tanggal);
+	const isLibur =
+		!isSchoolDay(
+			presensiSettings.hariSekolah ?? 6,
+			presensiSettings.hariSekolahCustom ?? null,
+			thn,
+			bln,
+			hri
+		) || buildLiburDates(presensiSettings, thn, bln).has(tanggal);
 
 	return {
 		meta: { title: 'Kehadiran Murid' },

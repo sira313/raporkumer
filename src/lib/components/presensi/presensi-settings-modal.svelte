@@ -4,6 +4,11 @@
 	import { toast } from '$lib/components/toast.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { isValidTime } from '$lib/utils';
+	import {
+		HARI_SEKOLAH_KEYS,
+		parseHariSekolahCustom,
+		type HariSekolahKey
+	} from '$lib/hari-sekolah';
 
 	interface SemesterRange {
 		start: string;
@@ -15,6 +20,7 @@
 		jamMasuk?: string;
 		jamPulang?: string;
 		hariSekolah?: number;
+		hariSekolahCustom?: string | null;
 		tipePresensi?: string;
 		jenisPresensi?: string;
 		presensiGuruEnabled?: boolean;
@@ -28,6 +34,7 @@
 		jamMasuk = '07:30',
 		jamPulang = '15:00',
 		hariSekolah = 6,
+		hariSekolahCustom = null,
 		tipePresensi = 'masuk_pulang',
 		jenisPresensi = 'wali_kelas_saja',
 		presensiGuruEnabled = true,
@@ -39,7 +46,31 @@
 	let submitting = $state(false);
 	let jamMasukValue = $state(jamMasuk);
 	let jamPulangValue = $state(jamPulang);
-	let hariSekolahValue = $state(String(hariSekolah));
+	const parsedCustom = parseHariSekolahCustom(hariSekolahCustom);
+	let hariSekolahValue = $state(
+		parsedCustom && parsedCustom.length > 0
+			? 'custom'
+			: hariSekolah === 5 || hariSekolah === 6
+				? String(hariSekolah)
+				: '6'
+	);
+	let customDays = $state<HariSekolahKey[]>(parsedCustom ?? []);
+
+	const customDayLabels: Record<HariSekolahKey, string> = {
+		senin: 'Senin',
+		selasa: 'Selasa',
+		rabu: 'Rabu',
+		kamis: 'Kamis',
+		jumat: 'Jumat',
+		sabtu: 'Sabtu',
+		minggu: 'Minggu'
+	};
+
+	function toggleCustomDay(key: HariSekolahKey) {
+		customDays = customDays.includes(key)
+			? customDays.filter((x) => x !== key)
+			: [...customDays, key];
+	}
 	let tipePresensiValue = $state(tipePresensi);
 	let jenisPresensiValue = $state(jenisPresensi);
 	let presensiGuruEnabledValue = $state(presensiGuruEnabled);
@@ -92,7 +123,9 @@
 		if (!isValidTime(jamMasukValue)) return 'Format jam masuk tidak valid (HH:mm)';
 		if (!isValidTime(jamPulangValue)) return 'Format jam pulang tidak valid (HH:mm)';
 		if (jamMasukValue >= jamPulangValue) return 'Jam masuk harus lebih awal dari jam pulang';
-		if (!['5', '6'].includes(hariSekolahValue)) return 'Pilih hari sekolah';
+		if (!['5', '6', 'custom'].includes(hariSekolahValue)) return 'Pilih hari sekolah';
+		if (hariSekolahValue === 'custom' && customDays.length === 0)
+			return 'Pilih minimal satu hari belajar';
 		if (
 			!['masuk_pulang', 'masuk_saja', 'awal_mapel', 'awal_akhir_mapel'].includes(tipePresensiValue)
 		)
@@ -129,8 +162,12 @@
 			toast('Jam masuk harus lebih awal dari jam pulang', 'warning');
 			return false;
 		}
-		if (!['5', '6'].includes(hariSekolahValue)) {
+		if (!['5', '6', 'custom'].includes(hariSekolahValue)) {
 			toast('Pilih hari sekolah', 'warning');
+			return false;
+		}
+		if (hariSekolahValue === 'custom' && customDays.length === 0) {
+			toast('Pilih minimal satu hari belajar', 'warning');
 			return false;
 		}
 		if (
@@ -172,6 +209,10 @@
 		formData.append('jamMasuk', jamMasukValue);
 		formData.append('jamPulang', jamPulangValue);
 		formData.append('hariSekolah', hariSekolahValue);
+		formData.append(
+			'hariSekolahCustom',
+			hariSekolahValue === 'custom' ? JSON.stringify(customDays) : ''
+		);
 		formData.append('tipePresensi', tipePresensiValue);
 		formData.append('jenisPresensi', jenisPresensiValue);
 		formData.append('presensiGuruEnabled', presensiGuruEnabledValue ? '1' : '0');
@@ -290,7 +331,23 @@
 			>
 				<option value="5">5 Hari Sekolah (Senin - Jumat)</option>
 				<option value="6">6 Hari Sekolah (Senin - Sabtu)</option>
+				<option value="custom">Kustom (pilih hari belajar)</option>
 			</select>
+			{#if hariSekolahValue === 'custom'}
+				<div class="flex flex-wrap gap-1.5 pt-1">
+					{#each HARI_SEKOLAH_KEYS as key (key)}
+						<button
+							type="button"
+							class="badge badge-outline cursor-pointer px-2.5 py-3 {customDays.includes(key)
+								? 'badge-primary'
+								: ''}"
+							onclick={() => toggleCustomDay(key)}
+						>
+							{customDayLabels[key]}
+						</button>
+					{/each}
+				</div>
+			{/if}
 		</label>
 		<label class="fieldset flex flex-col gap-1">
 			<span class="fieldset-legend text-sm font-semibold">Jenis Presensi</span>

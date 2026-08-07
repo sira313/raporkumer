@@ -284,7 +284,13 @@ export async function load(event) {
 			: Promise.resolve(null),
 		sekolahId
 			? db.query.tablePresensiSettings.findFirst({
-					columns: { hariSekolah: true, jamPulang: true, liburNasional: true, liburSemester: true },
+					columns: {
+						hariSekolah: true,
+						hariSekolahCustom: true,
+						jamPulang: true,
+						liburNasional: true,
+						liburSemester: true
+					},
 					where: eq(tablePresensiSettings.sekolahId, sekolahId),
 					orderBy: [desc(tablePresensiSettings.id)]
 				})
@@ -316,6 +322,7 @@ export async function load(event) {
 	}
 
 	const hariSekolah = presensiRow?.hariSekolah ?? 6;
+	const hariSekolahCustom = presensiRow?.hariSekolahCustom ?? null;
 
 	let liburNasional: string[] = [];
 	let liburSemester: Array<{ start: string; end: string }> = [];
@@ -348,6 +355,7 @@ export async function load(event) {
 		statistikDashboard,
 		bellActive: bellRow?.isActive === 1,
 		hariSekolah,
+		hariSekolahCustom,
 		liburNasional,
 		liburSemester,
 		bellSettings: bellRow

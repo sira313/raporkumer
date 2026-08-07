@@ -165,6 +165,7 @@ export async function loadRapor(params: {
 	}
 
 	const hariSekolah = presensiSettings.hariSekolah ?? 6;
+	const hariSekolahCustom = presensiSettings.hariSekolahCustom ?? null;
 	const rangeLiburDates = buildRangeLiburDates(
 		presensiSettings,
 		tanggalMulaiRapor,
@@ -172,6 +173,7 @@ export async function loadRapor(params: {
 	);
 	const { allDates, redDaySet } = buildRangeRedDays(
 		hariSekolah,
+		hariSekolahCustom,
 		tanggalMulaiRapor,
 		tanggalAkhirRapor,
 		rangeLiburDates

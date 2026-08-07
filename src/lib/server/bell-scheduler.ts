@@ -14,6 +14,7 @@ import {
 } from '$lib/server/db/schema';
 import { ensureJadwalBellSchema } from '$lib/server/db/ensure-jadwal-bell';
 import { ensurePresensiSettingsSchema } from '$lib/server/db/ensure-presensi-settings';
+import { isSchoolDay } from '$lib/hari-sekolah';
 import { eq, and, inArray } from 'drizzle-orm';
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -38,6 +39,7 @@ const triggeredPeriods = new Map<string, Set<string>>();
 const pergantianPeriods = new Map<string, Set<string>>();
 
 const dayNameMap: Record<number, string> = {
+	0: 'minggu',
 	1: 'senin',
 	2: 'selasa',
 	3: 'rabu',
@@ -217,10 +219,17 @@ async function checkSekolah(
 	if (!presensiSettings) return;
 
 	const jamPulang = presensiSettings.jamPulang ?? '15:00';
-	const hariSekolah = presensiSettings.hariSekolah ?? 6;
 
-	if (hariSekolah === 5 && (now.getDay() === 0 || now.getDay() === 6)) return;
-	if (hariSekolah === 6 && now.getDay() === 0) return;
+	if (
+		!isSchoolDay(
+			presensiSettings.hariSekolah ?? 6,
+			presensiSettings.hariSekolahCustom ?? null,
+			now.getFullYear(),
+			now.getMonth() + 1,
+			now.getDate()
+		)
+	)
+		return;
 
 	let liburNasional: string[] = [];
 	let liburSemester: Array<{ start: string; end: string }> = [];

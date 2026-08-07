@@ -13,6 +13,7 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import PresensiGuruModal from '$lib/components/presensi-guru/presensi-guru-modal.svelte';
+	import { getHariSekolahList, isSchoolDay } from '$lib/hari-sekolah';
 
 	let { data } = $props();
 	const sekolah = (data.sekolah ?? null) as Sekolah | null;
@@ -42,6 +43,7 @@
 	const ekstrakurikulerStats = $derived(statistikDashboard.ekstrakurikuler ?? { total: 0 });
 	const bellActive = $derived(data.bellActive ?? false);
 	const hariSekolah = $derived((data.hariSekolah as number) ?? 6);
+	const hariSekolahCustom = $derived((data.hariSekolahCustom as string | null) ?? null);
 	const liburNasional = $derived((data.liburNasional as string[]) ?? []);
 	const liburSemester = $derived(
 		(data.liburSemester as Array<{ start: string; end: string }>) ?? []
@@ -69,15 +71,12 @@
 	const daftarKodeMapel = $derived((data.daftarKodeMapel as string[]) ?? []);
 	const daftarKelas = $derived((data.daftarKelas as Array<{ id: number; nama: string }>) ?? []);
 
-	const hariList = $derived(
-		hariSekolah === 5
-			? ['senin', 'selasa', 'rabu', 'kamis', 'jumat']
-			: ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']
-	);
+	const hariList = $derived(getHariSekolahList(hariSekolah, hariSekolahCustom));
 
 	const hariNamaList = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
 	const hariIndexMap: Record<number, string> = {
+		0: 'minggu',
 		1: 'senin',
 		2: 'selasa',
 		3: 'rabu',
@@ -94,9 +93,16 @@
 	}
 
 	function isHoliday(date: Date): boolean {
-		const dayOfWeek = date.getDay();
-		if (hariSekolah === 5 && (dayOfWeek === 0 || dayOfWeek === 6)) return true;
-		if (hariSekolah === 6 && dayOfWeek === 0) return true;
+		if (
+			!isSchoolDay(
+				hariSekolah,
+				hariSekolahCustom,
+				date.getFullYear(),
+				date.getMonth() + 1,
+				date.getDate()
+			)
+		)
+			return true;
 		const dateStr = toDateStr(date);
 		if (liburNasional.includes(dateStr)) return true;
 		for (const range of liburSemester) {

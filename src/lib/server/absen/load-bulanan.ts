@@ -71,8 +71,16 @@ export async function loadBulanan(params: {
 
 	const muridIds = semuaMurid.map((m) => m.id);
 	const hariSekolah = presensiSettings.hariSekolah ?? 6;
+	const hariSekolahCustom = presensiSettings.hariSekolahCustom ?? null;
 	const liburDates = buildLiburDates(presensiSettings, tahun, bulan);
-	const redDays = buildRedDays(hariSekolah, tahun, bulan, daysInMonth, liburDates);
+	const redDays = buildRedDays(
+		hariSekolah,
+		hariSekolahCustom,
+		tahun,
+		bulan,
+		daysInMonth,
+		liburDates
+	);
 
 	// For tiap_mapel, precompute the first mapel for each day of the month
 	const firstMapelByDay = new Map<number, { mpId: number; kode: string }>();

@@ -11,6 +11,7 @@
 	import TambahKegiatanModal from '$lib/components/jadwal-bell/tambah-kegiatan-modal.svelte';
 	import SimulasiModal from '$lib/components/jadwal-bell/simulasi-modal.svelte';
 	import { jadwalIsEditing } from '$lib/stores/jadwal-edit';
+	import { getHariSekolahList, isSchoolDay } from '$lib/hari-sekolah';
 	import type { PageData } from './$types';
 
 	type BellSettingsRow = typeof import('$lib/server/db/schema').tableBellSettings.$inferSelect;
@@ -52,11 +53,8 @@
 	};
 
 	const hariSekolah = $derived((data.hariSekolah as number) ?? 6);
-	const hariList = $derived(
-		hariSekolah === 5
-			? ['senin', 'selasa', 'rabu', 'kamis', 'jumat']
-			: ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']
-	);
+	const hariSekolahCustom = $derived((data.hariSekolahCustom as string | null) ?? null);
+	const hariList = $derived(getHariSekolahList(hariSekolah, hariSekolahCustom));
 
 	const kodeTambahan = ['UPB', 'IST', 'PLG'];
 	const kodeMerged = $derived(
@@ -135,9 +133,16 @@
 	}
 
 	function isHoliday(date: Date): boolean {
-		const dayOfWeek = date.getDay();
-		if (hariSekolah === 5 && (dayOfWeek === 0 || dayOfWeek === 6)) return true;
-		if (hariSekolah === 6 && dayOfWeek === 0) return true;
+		if (
+			!isSchoolDay(
+				hariSekolah,
+				hariSekolahCustom,
+				date.getFullYear(),
+				date.getMonth() + 1,
+				date.getDate()
+			)
+		)
+			return true;
 
 		const dateStr = toDateStr(date);
 		if (liburNasional.includes(dateStr)) return true;
@@ -665,6 +670,7 @@
 	}
 
 	const dayNameMap: Record<number, string> = {
+		0: 'minggu',
 		1: 'senin',
 		2: 'selasa',
 		3: 'rabu',

@@ -258,6 +258,7 @@
 				jamMasuk: existing?.jamMasuk ?? '07:30',
 				jamPulang: existing?.jamPulang ?? '15:00',
 				hariSekolah: existing?.hariSekolah ?? 6,
+				hariSekolahCustom: existing?.hariSekolahCustom ?? null,
 				tipePresensi: existing?.tipePresensi ?? 'masuk_pulang',
 				jenisPresensi: existing?.jenisPresensi ?? 'wali_kelas_saja',
 				presensiGuruEnabled: existing?.presensiGuruEnabled ?? true,
