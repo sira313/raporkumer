@@ -336,36 +336,38 @@
 			</div>
 		{/if}
 		{#if isLaporanTpp}
-			<div class="w-32 min-w-0">
-				<select
-					class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
-					bind:value={laporanBulan}
-					title="Pilih bulan"
-				>
-					{#each bulanList as nama, i (nama)}
-						<option value={i + 1}>{nama}</option>
-					{/each}
-				</select>
-			</div>
-			<div class="w-24 min-w-0">
-				<input
-					type="number"
-					class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
-					bind:value={laporanTahun}
-					min="2000"
-					max="2099"
-					title="Pilih tahun"
-				/>
-			</div>
-			<div class="w-40 min-w-0">
-				<select
-					class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
-					bind:value={statusKepegawaian}
-					title="Pilih status kepegawaian"
-				>
-					<option value="PNS">PNS</option>
-					<option value="PPPK">PPPK</option>
-				</select>
+			<div class="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-row sm:gap-2">
+				<div class="min-w-0 sm:w-32">
+					<select
+						class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+						bind:value={laporanBulan}
+						title="Pilih bulan"
+					>
+						{#each bulanList as nama, i (nama)}
+							<option value={i + 1}>{nama}</option>
+						{/each}
+					</select>
+				</div>
+				<div class="min-w-0 sm:w-24">
+					<input
+						type="number"
+						class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+						bind:value={laporanTahun}
+						min="2000"
+						max="2099"
+						title="Pilih tahun"
+					/>
+				</div>
+				<div class="col-span-2 min-w-0 sm:w-40">
+					<select
+						class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+						bind:value={statusKepegawaian}
+						title="Pilih status kepegawaian"
+					>
+						<option value="PNS">PNS</option>
+						<option value="PPPK">PPPK</option>
+					</select>
+				</div>
 			</div>
 		{/if}
 		<div class="flex flex-row gap-2">
@@ -420,7 +422,7 @@
 				</button>
 			{:else if isLaporanTpp}
 				<button
-					class="btn btn-primary shadow-none"
+					class="btn btn-primary shadow-none w-full sm:w-auto"
 					type="button"
 					disabled={downloadLoading}
 					onclick={onDownloadLaporanTpp}
