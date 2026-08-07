@@ -189,7 +189,7 @@ async function insertPegawaiPengikut(
 }
 
 export const POST = (async ({ request, locals }) => {
-	if (!locals.user || locals.user.type !== 'admin') {
+	if (!locals.user || (locals.user.type !== 'admin' && locals.user.type !== 'kepala_sekolah')) {
 		throw error(403, { message: 'Hanya admin yang dapat menambah data' });
 	}
 
@@ -217,7 +217,7 @@ export const POST = (async ({ request, locals }) => {
 }) satisfies RequestHandler;
 
 export const PATCH = (async ({ request, url, locals }) => {
-	if (!locals.user || locals.user.type !== 'admin') {
+	if (!locals.user || (locals.user.type !== 'admin' && locals.user.type !== 'kepala_sekolah')) {
 		throw error(403, { message: 'Hanya admin yang dapat mengubah data' });
 	}
 
@@ -231,10 +231,13 @@ export const PATCH = (async ({ request, url, locals }) => {
 
 	const existing = await db.query.tableSppd.findFirst({
 		where: eq(tableSppd.id, id),
-		columns: { id: true }
+		columns: { id: true, sekolahId: true }
 	});
 	if (!existing) {
 		throw error(404, { message: 'Data tidak ditemukan' });
+	}
+	if (locals.user.type === 'kepala_sekolah' && existing.sekolahId !== locals.sekolah?.id) {
+		throw error(403, { message: 'Tidak dapat mengubah data sekolah lain' });
 	}
 
 	const { values, selectedGuru, validPengikut } = await buildSppdPayload(
@@ -258,7 +261,7 @@ export const PATCH = (async ({ request, url, locals }) => {
 }) satisfies RequestHandler;
 
 export const DELETE = (async ({ url, locals }) => {
-	if (!locals.user || locals.user.type !== 'admin') {
+	if (!locals.user || (locals.user.type !== 'admin' && locals.user.type !== 'kepala_sekolah')) {
 		throw error(403, { message: 'Hanya admin yang dapat menghapus data' });
 	}
 
@@ -268,6 +271,17 @@ export const DELETE = (async ({ url, locals }) => {
 	const id = Number(idParam);
 	if (!Number.isInteger(id) || id <= 0) {
 		throw error(400, { message: 'ID tidak valid' });
+	}
+
+	const existing = await db.query.tableSppd.findFirst({
+		where: eq(tableSppd.id, id),
+		columns: { id: true, sekolahId: true }
+	});
+	if (!existing) {
+		throw error(404, { message: 'Data tidak ditemukan' });
+	}
+	if (locals.user.type === 'kepala_sekolah' && existing.sekolahId !== locals.sekolah?.id) {
+		throw error(403, { message: 'Tidak dapat menghapus data sekolah lain' });
 	}
 
 	// Delete child rows first (FK cascade isn't enforced in this app).

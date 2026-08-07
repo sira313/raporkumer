@@ -63,7 +63,8 @@ export const groupedUserPermissions = {
 			['rekap_nilai', 'Rekap Nilai'],
 			['keputusan', 'Keputusan'],
 			['buku_tamu', 'Buku Tamu'],
-			['presensi_guru', 'Presensi Guru']
+			['presensi_guru', 'Presensi Guru'],
+			['sppd', 'SPPD']
 		],
 		description: 'Administrasi'
 	},
@@ -150,6 +151,7 @@ export const menuRoutePermissions: { path: string; permission: UserPermission }[
 	{ path: '/keputusan', permission: 'administrasi_keputusan' },
 	{ path: '/buku-tamu', permission: 'administrasi_buku_tamu' },
 	{ path: '/presensi-guru', permission: 'administrasi_presensi_guru' },
+	{ path: '/sppd', permission: 'administrasi_sppd' },
 	{ path: '/cetak', permission: 'cetak_dokumen' }
 ];
 

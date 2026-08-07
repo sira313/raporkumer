@@ -16,6 +16,7 @@ import { authority } from './utils.server';
 import { defaultPermissionsByType } from './permissions';
 import { hashPassword } from '$lib/server/auth';
 import { resolveUniqueUsername } from '$lib/server/usernames';
+import { mergeAccountsUnderKepalaSekolah } from '$lib/server/pengguna-merge';
 import { randomBytes } from 'node:crypto';
 import { fail } from '@sveltejs/kit';
 
@@ -98,6 +99,23 @@ export async function load({ url }) {
 							.where(eq(tableKelas.id, k.id));
 						console.log(
 							`[pengguna:consolidate] Updated kelas ID=${k.id}: waliKelasId ${dup.id} → ${keepPegawai.id}`
+						);
+					}
+
+					// Update any sekolah whose kepalaSekolahId points to the dup pegawai
+					// → point to keep pegawai instead (prevents a dangling FK and keeps
+					// the kepala sekolah account tied to the merged pegawai).
+					const dupSekolah = await db.query.tableSekolah.findMany({
+						where: eq(tableSekolah.kepalaSekolahId, dup.id),
+						columns: { id: true }
+					});
+					for (const s of dupSekolah) {
+						await db
+							.update(tableSekolah)
+							.set({ kepalaSekolahId: keepPegawai.id })
+							.where(eq(tableSekolah.id, s.id));
+						console.log(
+							`[pengguna:consolidate] Updated sekolah ID=${s.id}: kepalaSekolahId ${dup.id} → ${keepPegawai.id}`
 						);
 					}
 
@@ -370,6 +388,11 @@ export async function load({ url }) {
 
 			console.info(`[pengguna] Created user for wali_asuh "${nama}" (pegawaiId=${pegawaiId})`);
 		}
+
+		// Cross-type merge: if the same person is both kepala_sekolah and a guru
+		// (wali_kelas / user, e.g. a PLT kepala sekolah who must keep teaching
+		// hours), keep the kepala_sekolah account and merge the rest.
+		await mergeAccountsUnderKepalaSekolah();
 	} catch (err) {
 		console.warn('[pengguna] Failed to ensure wali_kelas/wali_asuh users:', err);
 	}

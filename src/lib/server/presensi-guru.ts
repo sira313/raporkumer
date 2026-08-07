@@ -303,6 +303,9 @@ export async function listGuruBySekolah(sekolahId: number): Promise<GuruSekolah[
 	}
 
 	const result: GuruSekolah[] = [];
+	const byName = new Map<string, GuruSekolah & { type: string }>();
+	const rank = (t: string) =>
+		t === 'kepala_sekolah' ? 3 : t === 'wali_kelas' ? 2 : t === 'user' ? 1 : 0;
 	for (const u of users) {
 		const inSchool =
 			u.sekolahId === sekolahId ||
@@ -312,11 +315,27 @@ export async function listGuruBySekolah(sekolahId: number): Promise<GuruSekolah[
 		if (!inSchool) continue;
 		const nama = (u.namaLengkap ?? u.pegawai?.nama ?? u.username ?? '').trim();
 		if (!nama) continue;
-		result.push({
+		const key = nama.toLowerCase();
+		const candidate: GuruSekolah & { type: string } = {
 			id: u.id,
 			nama,
 			statusKepegawaian: u.statusKepegawaian ?? null,
-			golongan: u.golongan ?? null
+			golongan: u.golongan ?? null,
+			type: u.type ?? ''
+		};
+		// Safety net: if the same person still has several accounts (legacy data),
+		// keep only the most privileged one so they don't appear twice / presensi twice.
+		const existing = byName.get(key);
+		if (!existing || rank(candidate.type) > rank(existing.type)) {
+			byName.set(key, candidate);
+		}
+	}
+	for (const g of byName.values()) {
+		result.push({
+			id: g.id,
+			nama: g.nama,
+			statusKepegawaian: g.statusKepegawaian,
+			golongan: g.golongan
 		});
 	}
 	result.sort((a, b) => compareKepegawaian(a, b) || a.nama.localeCompare(b.nama, 'id'));

@@ -248,6 +248,34 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 		}
 	}
 
+	// 3.5) A kepala_sekolah who also serves as wali kelas (PLT keeping teaching
+	// hours) defaults to their assigned class on first login (no cookie yet).
+	// Runs after the cookie step so a manually chosen kelas is always respected.
+	if (!kelasAktif && user && sekolah?.id) {
+		const userWithType = user as { type?: string; pegawaiId?: number };
+		if (userWithType.type === 'kepala_sekolah' && userWithType.pegawaiId) {
+			const waliKelasRecord = await db.query.tableKelas.findFirst({
+				columns: { id: true, nama: true, fase: true },
+				where: academicContext?.activeSemesterId
+					? and(
+							eq(tableKelas.sekolahId, sekolah.id),
+							eq(tableKelas.waliKelasId, userWithType.pegawaiId),
+							eq(tableKelas.semesterId, academicContext.activeSemesterId)
+						)
+					: and(
+							eq(tableKelas.sekolahId, sekolah.id),
+							eq(tableKelas.waliKelasId, userWithType.pegawaiId)
+						)
+			});
+			if (waliKelasRecord) {
+				kelasAktif = daftarKelas.find((kelas) => kelas.id === waliKelasRecord.id) ?? null;
+				if (!kelasAktif) {
+					kelasAktif = daftarKelas.find((kelas) => kelas.nama === waliKelasRecord.nama) ?? null;
+				}
+			}
+		}
+	}
+
 	if (!kelasAktif && daftarKelas.length) {
 		kelasAktif = daftarKelas[0];
 	}

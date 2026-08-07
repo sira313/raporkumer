@@ -2,6 +2,10 @@ import db from '$lib/server/db/index.js';
 import { tableAlamat, tablePegawai, tableSekolah } from '$lib/server/db/schema.js';
 import { cookieNames, unflattenFormData } from '$lib/utils';
 import { ensureKepalaSekolahUser } from '$lib/server/kepala-sekolah.js';
+import {
+	deletePegawaiIfOrphaned,
+	findGuruPegawaiForKepalaSekolah
+} from '$lib/server/pengguna-merge.js';
 import { error } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { authority } from '../../../pengguna/utils.server';
@@ -95,6 +99,29 @@ export const actions = {
 		// Use updateData for further processing
 		const formSekolahFinal = updateData as typeof formSekolah;
 
+		// A PLT kepala sekolah is often also a wali kelas / guru mapel (must keep
+		// teaching hours). Reuse that existing guru pegawai instead of keeping a
+		// separate person record — otherwise the same name produces two accounts
+		// in /pengguna and two rows in presensi guru.
+		const kpNama = formSekolah.kepalaSekolah?.nama?.trim();
+		const kpNip = formSekolah.kepalaSekolah?.nip?.trim();
+		const currentSekolah = formSekolah.id
+			? await db.query.tableSekolah.findFirst({
+					columns: { id: true, kepalaSekolahId: true },
+					where: eq(tableSekolah.id, +formSekolah.id)
+				})
+			: null;
+		const matchedKepalaPegawai =
+			currentSekolah && kpNama
+				? await findGuruPegawaiForKepalaSekolah(
+						currentSekolah.id,
+						currentSekolah.kepalaSekolahId,
+						kpNama,
+						kpNip
+					)
+				: null;
+		let orphanedKepalaSekolahPegawaiId: number | null = null;
+
 		await db.transaction(async (db) => {
 			if (formSekolah.id) {
 				const sekolah = await db.query.tableSekolah.findFirst({
@@ -102,28 +129,40 @@ export const actions = {
 				});
 				if (!sekolah) error(404, `Data sekolah tidak ditemukan`);
 
+				let resolvedKepalaSekolahId = sekolah.kepalaSekolahId;
+				if (matchedKepalaPegawai) {
+					// Link the kepala sekolah to the existing guru pegawai (the
+					// match already excludes the current kepala sekolah pegawai).
+					await db
+						.update(tablePegawai)
+						.set(formSekolah.kepalaSekolah)
+						.where(eq(tablePegawai.id, matchedKepalaPegawai.id));
+					resolvedKepalaSekolahId = matchedKepalaPegawai.id;
+					orphanedKepalaSekolahPegawaiId = sekolah.kepalaSekolahId;
+				} else {
+					await db
+						.update(tablePegawai)
+						.set(formSekolah.kepalaSekolah)
+						.where(eq(tablePegawai.id, sekolah.kepalaSekolahId));
+				}
+
 				await db
 					.update(tableAlamat) //
 					.set(formSekolah.alamat)
 					.where(eq(tableAlamat.id, sekolah.alamatId));
 
 				await db
-					.update(tablePegawai)
-					.set(formSekolah.kepalaSekolah)
-					.where(eq(tablePegawai.id, sekolah.kepalaSekolahId));
-
-				await db
 					.update(tableSekolah)
 					.set({
 						...formSekolahFinal,
 						alamatId: sekolah.alamatId,
-						kepalaSekolahId: sekolah.kepalaSekolahId,
+						kepalaSekolahId: resolvedKepalaSekolahId,
 						updatedAt: new Date().toISOString()
 					})
 					.where(eq(tableSekolah.id, formSekolah.id));
 
 				// Keep the kepala sekolah auth account in sync with the saved pegawai
-				formSekolah.kepalaSekolahId = sekolah.kepalaSekolahId;
+				formSekolah.kepalaSekolahId = resolvedKepalaSekolahId;
 			} else {
 				if (formSekolah.alamat) {
 					const [alamat] = await db
@@ -157,6 +196,12 @@ export const actions = {
 		// Auto-create/update the kepala sekolah login account for this sekolah.
 		if (formSekolah.id && formSekolah.kepalaSekolahId) {
 			await ensureKepalaSekolahUser(Number(formSekolah.id), formSekolah.kepalaSekolahId);
+		}
+
+		// Remove the now-orphaned separate kepala sekolah pegawai (only if nothing
+		// references it anymore; otherwise the /pengguna consolidation will clean it).
+		if (orphanedKepalaSekolahPegawaiId != null) {
+			await deletePegawaiIfOrphaned(orphanedKepalaSekolahPegawaiId);
 		}
 
 		locals.sekolahDirty = true;
