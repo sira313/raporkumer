@@ -39,14 +39,6 @@ export function getDaysInMonth(year: number, month: number) {
 	return new Date(year, month, 0).getDate();
 }
 
-export function isSunday(year: number, month: number, day: number) {
-	return new Date(year, month - 1, day).getDay() === 0;
-}
-
-export function isSaturday(year: number, month: number, day: number) {
-	return new Date(year, month - 1, day).getDay() === 6;
-}
-
 export function dateStr(year: number, month: number, day: number) {
 	return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }

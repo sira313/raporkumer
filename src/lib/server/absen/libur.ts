@@ -1,4 +1,5 @@
-import { isSunday, isSaturday, dateStr } from './utils';
+import { dateStr } from './utils';
+import { isSchoolDay } from '$lib/hari-sekolah';
 
 export function buildLiburDates(
 	presensiSettings: { liburNasional?: string | null; liburSemester?: string | null } | null,
@@ -65,6 +66,7 @@ export function buildLiburDates(
 
 export function buildRedDays(
 	hariSekolah: number,
+	hariSekolahCustom: string | null | undefined,
 	tahun: number,
 	bulan: number,
 	daysInMonth: number,
@@ -72,10 +74,7 @@ export function buildRedDays(
 ): number[] {
 	const redDays: number[] = [];
 	for (let d = 1; d <= daysInMonth; d++) {
-		const isWeekend =
-			hariSekolah === 5
-				? isSaturday(tahun, bulan, d) || isSunday(tahun, bulan, d)
-				: isSunday(tahun, bulan, d);
+		const isWeekend = !isSchoolDay(hariSekolah, hariSekolahCustom, tahun, bulan, d);
 		const tgl = dateStr(tahun, bulan, d);
 		if (isWeekend || liburDates.has(tgl)) {
 			redDays.push(d);
@@ -91,6 +90,7 @@ export function buildRedDays(
  */
 export function buildRedDaysByType(
 	hariSekolah: number,
+	hariSekolahCustom: string | null | undefined,
 	tahun: number,
 	bulan: number,
 	daysInMonth: number,
@@ -150,10 +150,7 @@ export function buildRedDaysByType(
 	const nasional: number[] = [];
 	const semester: number[] = [];
 	for (let d = 1; d <= daysInMonth; d++) {
-		const isWeekend =
-			hariSekolah === 5
-				? isSaturday(tahun, bulan, d) || isSunday(tahun, bulan, d)
-				: isSunday(tahun, bulan, d);
+		const isWeekend = !isSchoolDay(hariSekolah, hariSekolahCustom, tahun, bulan, d);
 		const tgl = dateStr(tahun, bulan, d);
 		if (isWeekend) weekend.push(d);
 		else if (liburNasional.has(tgl)) nasional.push(d);
@@ -225,6 +222,7 @@ export function buildRangeLiburDates(
 
 export function buildRangeRedDays(
 	hariSekolah: number,
+	hariSekolahCustom: string | null | undefined,
 	tanggalMulai: string,
 	tanggalAkhir: string,
 	liburDates: Set<string>
@@ -242,8 +240,7 @@ export function buildRangeRedDays(
 		const tgl = dateStr(y, m, d);
 		allDates.push(tgl);
 
-		const isWeekend =
-			hariSekolah === 5 ? isSaturday(y, m, d) || isSunday(y, m, d) : isSunday(y, m, d);
+		const isWeekend = !isSchoolDay(hariSekolah, hariSekolahCustom, y, m, d);
 
 		if (isWeekend || liburDates.has(tgl)) {
 			redDaySet.add(tgl);

@@ -13,7 +13,8 @@ import {
 import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import { compareKepegawaian } from '$lib/server/kepegawaian-order';
 import { buildLiburDates, buildRedDaysByType } from './absen/libur';
-import { dateStr, getDaysInMonth, isSaturday, isSunday } from './absen/utils';
+import { dateStr, getDaysInMonth } from './absen/utils';
+import { isSchoolDay } from '$lib/hari-sekolah';
 
 /**
  * Dev-only: allow overriding "now" via ?tanggal-jam=YYYY-MM-DDTHH:mm so the
@@ -120,13 +121,15 @@ export async function getPresensiGuruStatus(
 	}
 
 	const [thn, bln, hri] = tanggal.split('-').map(Number);
-	const hariSekolah = settings.hariSekolah ?? 6;
-	const isWeekend =
-		hariSekolah === 5
-			? isSaturday(thn, bln, hri) || isSunday(thn, bln, hri)
-			: isSunday(thn, bln, hri);
+	const isWeekend = !isSchoolDay(
+		settings.hariSekolah ?? 6,
+		settings.hariSekolahCustom ?? null,
+		thn,
+		bln,
+		hri
+	);
 	const liburDates = buildLiburDates(settings, thn, bln);
-	const isSchoolDay = !isWeekend && !liburDates.has(tanggal);
+	const isSchoolDayDate = !isWeekend && !liburDates.has(tanggal);
 
 	const existing = await db.query.tablePresensiGuru.findFirst({
 		columns: { id: true, status: true },
@@ -152,14 +155,14 @@ export async function getPresensiGuruStatus(
 		ready: true,
 		enabled: true,
 		message: '',
-		shouldPrompt: isSchoolDay && inWindow && !existing,
+		shouldPrompt: isSchoolDayDate && inWindow && !existing,
 		tanggal,
-		isSchoolDay,
+		isSchoolDay: isSchoolDayDate,
 		inWindow,
 		hasDoneToday: !!existing,
 		jamMasuk,
 		jamPulang,
-		hariSekolah,
+		hariSekolah: settings.hariSekolah ?? 6,
 		status: (existing?.status as PresensiGuruStatusValue | null) ?? null
 	};
 }
@@ -416,8 +419,10 @@ export async function listPresensiBulanan(
 	const settings = await getPresensiGuruSettings(sekolahId);
 	const daysInMonth = getDaysInMonth(tahun, bulan);
 	const hariSekolah = settings?.hariSekolah ?? 6;
+	const hariSekolahCustom = settings?.hariSekolahCustom ?? null;
 	const { weekend, liburNasional, liburSemester } = buildRedDaysByType(
 		hariSekolah,
+		hariSekolahCustom,
 		tahun,
 		bulan,
 		daysInMonth,

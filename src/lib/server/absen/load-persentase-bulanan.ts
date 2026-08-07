@@ -72,8 +72,16 @@ export async function loadPersentaseBulanan(params: {
 
 	const muridIds = semuaMurid.map((m) => m.id);
 	const hariSekolah = presensiSettings.hariSekolah ?? 6;
+	const hariSekolahCustom = presensiSettings.hariSekolahCustom ?? null;
 	const liburDates = buildLiburDates(presensiSettings, tahun, bulan);
-	const redDays = buildRedDays(hariSekolah, tahun, bulan, daysInMonth, liburDates);
+	const redDays = buildRedDays(
+		hariSekolah,
+		hariSekolahCustom,
+		tahun,
+		bulan,
+		daysInMonth,
+		liburDates
+	);
 	const totalHariBelajar = daysInMonth - redDays.length;
 
 	const monthStartISO = `${monthStart}T00:00:00.000Z`;

@@ -7,13 +7,8 @@ import {
 	parseSimulatedNow
 } from '$lib/server/presensi-guru';
 import { buildLiburDates } from '$lib/server/absen/libur';
-import {
-	dateStr,
-	isSaturday,
-	isSunday,
-	isValidDate,
-	todayDateString
-} from '$lib/server/absen/utils';
+import { dateStr, isValidDate, todayDateString } from '$lib/server/absen/utils';
+import { isSchoolDay } from '$lib/hari-sekolah';
 
 const PER_PAGE = 20;
 
@@ -171,11 +166,13 @@ export async function load({ locals, url, depends }) {
 	let isWeekend = false;
 	if (settings) {
 		const [thn, bln, hri] = tanggal.split('-').map(Number);
-		const hariSekolah = settings.hariSekolah ?? 6;
-		isWeekend =
-			hariSekolah === 5
-				? isSaturday(thn, bln, hri) || isSunday(thn, bln, hri)
-				: isSunday(thn, bln, hri);
+		isWeekend = !isSchoolDay(
+			settings.hariSekolah ?? 6,
+			settings.hariSekolahCustom ?? null,
+			thn,
+			bln,
+			hri
+		);
 		const liburDates = buildLiburDates(settings, thn, bln);
 		isLibur = isWeekend || liburDates.has(tanggal);
 	}

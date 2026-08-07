@@ -29,6 +29,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 			daftarKodeKokurikuler: [],
 			bellSounds: [],
 			hariSekolah: 6,
+			hariSekolahCustom: null,
 			jamPulang: '15:00',
 			liburNasional: [],
 			liburSemester: []
@@ -62,6 +63,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 		]);
 
 	const hariSekolah = presensiSettings?.hariSekolah ?? 6;
+	const hariSekolahCustom = presensiSettings?.hariSekolahCustom ?? null;
 	const jamPulang = presensiSettings?.jamPulang ?? '15:00';
 
 	let liburNasional: string[] = [];
@@ -140,6 +142,7 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 		daftarKodeKokurikuler,
 		bellSounds,
 		hariSekolah,
+		hariSekolahCustom,
 		jamPulang,
 		liburNasional,
 		liburSemester

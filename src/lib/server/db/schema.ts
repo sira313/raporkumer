@@ -899,6 +899,7 @@ export const tablePresensiSettings = sqliteTable(
 		jamMasuk: text().notNull().default('07:30'),
 		jamPulang: text().notNull().default('15:00'),
 		hariSekolah: int().notNull().default(6),
+		hariSekolahCustom: text(),
 		tipePresensi: text({ enum: ['masuk_pulang', 'masuk_saja', 'awal_mapel', 'awal_akhir_mapel'] })
 			.notNull()
 			.default('masuk_pulang'),

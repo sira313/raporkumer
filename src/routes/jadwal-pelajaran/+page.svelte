@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import Icon from '$lib/components/icon.svelte';
+	import { getHariSekolahList } from '$lib/hari-sekolah';
 
 	type BellSettingsRow = typeof import('$lib/server/db/schema').tableBellSettings.$inferSelect;
 	type KegiatanCustomRow = typeof import('$lib/server/db/schema').tableKegiatanCustom.$inferSelect;
@@ -27,11 +28,8 @@
 	};
 
 	const hariSekolah = $derived((data.hariSekolah as number) ?? 6);
-	const hariList = $derived(
-		hariSekolah === 5
-			? ['senin', 'selasa', 'rabu', 'kamis', 'jumat']
-			: ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']
-	);
+	const hariSekolahCustom = $derived((data.hariSekolahCustom as string | null) ?? null);
+	const hariList = $derived(getHariSekolahList(hariSekolah, hariSekolahCustom));
 
 	const kodeTambahan = ['UPB', 'IST', 'PLG'];
 

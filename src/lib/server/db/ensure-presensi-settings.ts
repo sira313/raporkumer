@@ -46,6 +46,11 @@ export async function ensurePresensiSettingsSchema() {
 		}
 	}
 	try {
+		await db.$client.execute(`ALTER TABLE "${TABLE}" ADD COLUMN "hari_sekolah_custom" text`);
+	} catch {
+		// column already exists
+	}
+	try {
 		await db.$client.execute(
 			`ALTER TABLE "${TABLE}" ADD COLUMN "tahun_ajaran_id" integer REFERENCES "tahun_ajaran"("id") ON DELETE CASCADE`
 		);

@@ -149,6 +149,7 @@ export async function loadPersentaseSemester(params: {
 	const muridIds = semuaMurid.map((m) => m.id);
 
 	const hariSekolah = presensiSettings.hariSekolah ?? 6;
+	const hariSekolahCustom = presensiSettings.hariSekolahCustom ?? null;
 	const rangeLiburDates = buildRangeLiburDates(
 		presensiSettings,
 		tanggalMulaiRapor,
@@ -156,6 +157,7 @@ export async function loadPersentaseSemester(params: {
 	);
 	const { allDates, redDaySet } = buildRangeRedDays(
 		hariSekolah,
+		hariSekolahCustom,
 		tanggalMulaiRapor,
 		tanggalAkhirRapor,
 		rangeLiburDates
