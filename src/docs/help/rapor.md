@@ -5,6 +5,8 @@ title: Petunjuk
 Jika sekolah lebih dari satu, maka pilihan sekolah akan muncul di sini. Dan jika hanya terdeteksi satu sekolah, maka pilihan sekolah akan terkunci pada sekolah yang ada saja.<br>
 Pilih tahun ajaran dan semester yang akan dikerjakan, lalu setel tanggal bagi rapor.
 
+Tombol <kbd class="kbd">Pengaturan Presensi</kbd> digunakan untuk mengatur presensi guru dan murid.
+
 Untuk _import_ data murid dan kelas, buka aplikasi Dapodik, pilih **Peserta Didik** > **Peserta Didik**, lalu klik <kbd class="kbd">Unduh</kbd> dan pilih <kbd class="kbd">Daftar PD</kbd> seperti gambar di bawah maka akan ter-_download_ file excel daftar murid.
 ![dapodik](/unduhpd.png)
 Buka file excel tersebut, bila muncul permintaan recover pilih saja <kbd class="kbd">Yes</kbd>. Itu normal karna biasanya terdeteksi file rusak.<br>
