@@ -35,6 +35,8 @@ vite.config.ts.timestamp-*
 /data/uploads
 # Bell sounds
 /data/sounds
+# Dinas luar attachments (undangan PDF, SPPD bukti PDF & foto)
+/data/dinas-luar
 
 #cert
 /installer/cert

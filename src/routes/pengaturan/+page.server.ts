@@ -13,6 +13,17 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { networkInterfaces } from 'node:os';
 import { isIPv4 } from 'node:net';
+import { updateEnvFile, envFilePath } from '$lib/server/env-file';
+import {
+	copyFileIfMissing,
+	copyMissingFiles,
+	effectiveDataRoot,
+	ensureStorageTree,
+	getStorageInfo,
+	normalizeStoragePath
+} from '$lib/server/storage-settings';
+import { dataRoot, soundsDir, uploadsDir } from '$lib/server/data-dirs';
+import path from 'node:path';
 
 interface AddressEntry {
 	name: string;
@@ -87,7 +98,10 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		addresses.push(hostWithPort);
 	}
 
-	return { meta, appAddresses: addresses, protocol, appVersion: getAppVersion() };
+	const isAdmin = locals.user?.type === 'admin';
+	const storage = isAdmin ? await getStorageInfo() : undefined;
+
+	return { meta, appAddresses: addresses, protocol, appVersion: getAppVersion(), storage };
 };
 
 export const actions: Actions = {
@@ -193,5 +207,89 @@ export const actions: Actions = {
 			.where(eq(tableAuthUser.id, locals.user.id));
 
 		return { message: 'Username berhasil diperbarui.' };
+	},
+	'update-storage-location': async ({ request, locals }) => {
+		if (locals.user?.type !== 'admin') {
+			return fail(403, { message: 'Hanya admin yang dapat mengubah lokasi data.' });
+		}
+
+		const form = await request.formData();
+		const rawRoot = String(form.get('dataRoot') ?? '').trim();
+		const rawUploads = String(form.get('uploads') ?? '').trim();
+		const rawSounds = String(form.get('sounds') ?? '').trim();
+
+		let rootValue: string | null;
+		let uploadsValue: string | null;
+		let soundsValue: string | null;
+		try {
+			rootValue = normalizeStoragePath(rawRoot);
+			uploadsValue = normalizeStoragePath(rawUploads);
+			soundsValue = normalizeStoragePath(rawSounds);
+		} catch (err) {
+			return fail(400, { message: (err as Error).message });
+		}
+
+		const oldRoot = dataRoot();
+		const oldUploads = uploadsDir();
+		const oldSounds = soundsDir();
+		// On Windows the launcher forces the root on every start, so a typed
+		// root here would be silently overridden. Keep the launcher's root and
+		// only honor uploads/sounds overrides.
+		const launcherManagedRoot =
+			process.platform === 'win32' && Boolean(process.env.RAPKUMER_DATA_DIR);
+		const newRoot = launcherManagedRoot ? oldRoot : effectiveDataRoot(rootValue);
+		const newUploads = uploadsValue ?? path.join(newRoot, 'uploads');
+		const newSounds = soundsValue ?? path.join(newRoot, 'sounds');
+
+		try {
+			const envUpdates: Record<string, string> = {
+				photo: uploadsValue ? `file:${uploadsValue}` : '',
+				sounds: soundsValue ? `file:${soundsValue}` : ''
+			};
+			if (!launcherManagedRoot) {
+				envUpdates.RAPKUMER_DATA_DIR = rootValue ?? '';
+			}
+			await updateEnvFile(envUpdates);
+		} catch {
+			return fail(500, {
+				message: `Gagal menulis file .env (${envFilePath()}). Periksa izin tulis lalu coba lagi.`
+			});
+		}
+
+		// Move existing data to the new locations (only files missing in the
+		// target are copied; nothing is deleted). Uses the values the new .env
+		// will resolve to after restart, so relative DB paths keep working.
+		let copied = 0;
+		try {
+			// Create the standard tree (ttd/{guru,tamu}, dinas-luar, uploads,
+			// sounds) so picking a root once is enough.
+			await ensureStorageTree(newRoot, newUploads, newSounds);
+			if (oldRoot !== newRoot) {
+				copied += await copyMissingFiles(path.join(oldRoot, 'ttd'), path.join(newRoot, 'ttd'));
+				copied += await copyMissingFiles(
+					path.join(oldRoot, 'dinas-luar'),
+					path.join(newRoot, 'dinas-luar')
+				);
+				copied += await copyFileIfMissing(
+					path.join(oldRoot, 'csrf-origins.txt'),
+					path.join(newRoot, 'csrf-origins.txt')
+				);
+			}
+			if (oldUploads !== newUploads) {
+				copied += await copyMissingFiles(oldUploads, newUploads);
+			}
+			if (oldSounds !== newSounds) {
+				copied += await copyMissingFiles(oldSounds, newSounds);
+			}
+		} catch (err) {
+			return fail(500, {
+				message: `Lokasi tersimpan di .env, tetapi sebagian file gagal dipindahkan: ${(err as Error).message}`
+			});
+		}
+
+		const movedNote = copied > 0 ? ` ${copied} file dipindahkan ke lokasi baru.` : '';
+		return {
+			message: `Lokasi data berhasil disimpan.${movedNote} Mulai ulang server agar perubahan berlaku.`
+		};
 	}
 };

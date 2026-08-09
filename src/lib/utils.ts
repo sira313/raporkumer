@@ -97,11 +97,20 @@ export function searchQueryMarker(query?: string | null, target?: string | null)
 	// escape special characters in the query string
 	const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+	// escape the target so user-supplied text can't inject markup; the result
+	// is rendered via {@html ...}
+	const safeTarget = target
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#039;');
+
 	// create a regular expression pattern to match the query string as whole words
 	const pattern = new RegExp(escaped.split(/\s+/).join('|'), 'gi');
 
 	// replace matches using the pattern
-	return target.replace(pattern, (match) => `<mark>${match}</mark>`);
+	return safeTarget.replace(pattern, (match) => `<mark>${match}</mark>`);
 }
 
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;

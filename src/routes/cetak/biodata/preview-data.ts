@@ -4,6 +4,7 @@ import path from 'node:path';
 import { and, eq } from 'drizzle-orm';
 import db from '$lib/server/db';
 import { tableMurid } from '$lib/server/db/schema';
+import { uploadsDir } from '$lib/server/data-dirs';
 import { jenisKelamin } from '$lib/statics';
 import {
 	requireInteger,
@@ -79,12 +80,6 @@ function composeOrangTuaAlamat(
 		kabupaten: kabupaten ?? fallback.kabupaten,
 		provinsi: provinsi ?? fallback.provinsi
 	};
-}
-
-function uploadsDir(): string {
-	const envPhoto = process.env.photo || 'file:./data/uploads';
-	const raw = envPhoto.startsWith('file:') ? envPhoto.slice(5) : envPhoto;
-	return path.resolve(raw);
 }
 
 function readFotoDataUri(filename: string | null | undefined): string | null {

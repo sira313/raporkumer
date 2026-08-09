@@ -3,6 +3,7 @@ import path from 'node:path';
 import { Readable } from 'stream';
 import db from '$lib/server/db/index.js';
 import { tableMurid } from '$lib/server/db/schema.js';
+import { uploadsDir } from '$lib/server/data-dirs';
 import { eq, inArray } from 'drizzle-orm';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let unzipper: any;
@@ -17,12 +18,6 @@ async function getUnzipper() {
 		}
 	}
 	return unzipper;
-}
-
-function uploadsDir() {
-	const envPhoto = process.env.photo || 'file:./data/uploads';
-	const raw = envPhoto.startsWith('file:') ? envPhoto.slice(5) : envPhoto;
-	return path.resolve(raw);
 }
 
 interface PhotoFile {

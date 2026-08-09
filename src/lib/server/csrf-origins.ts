@@ -2,12 +2,11 @@ import { readFile, writeFile, rename, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { networkInterfaces } from 'node:os';
 import { env } from '$env/dynamic/private';
+import { dataRoot } from '$lib/server/data-dirs';
 
-// Prefer install-time data directory for persistence. Use explicit env var if set,
-// otherwise use LOCALAPPDATA\Rapkumer-data on Windows, else fallback to repo ./data.
-const dataDir =
-	env.RAPKUMER_DATA_DIR ||
-	(env.LOCALAPPDATA ? join(env.LOCALAPPDATA, 'Rapkumer-data') : join(process.cwd(), 'data'));
+// Use the shared user-data root (RAPKUMER_DATA_DIR -> LOCALAPPDATA\Rapkumer-data
+// on Windows -> <cwd>/data), so trusted origins persist across upgrades.
+const dataDir = dataRoot();
 
 const ORIGINS_FILE = join(dataDir, 'csrf-origins.txt');
 const CACHE_TTL = 5_000; // ms

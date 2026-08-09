@@ -7,14 +7,13 @@
 	import { toast } from '$lib/components/toast.svelte';
 	import { onDestroy } from 'svelte';
 	import { showModal } from '$lib/components/global-modal.svelte';
-	import PdfPreviewModal from '$lib/components/cetak/PdfPreviewModal.svelte';
-	import SppdFormModal from '$lib/components/sppd/sppd-form-modal.svelte';
+	import DinasLuarFormModal from '$lib/components/dinas-luar/dinas-luar-form-modal.svelte';
 	import DinasLuarDetailBody from '$lib/components/dinas-luar/dinas-luar-detail-body.svelte';
 	import DinasLuarDetailDisetujuiBody from '$lib/components/dinas-luar/dinas-luar-detail-disetujui-body.svelte';
 	import DinasLuarBuktiModal from '$lib/components/dinas-luar/dinas-luar-bukti-modal.svelte';
 	import SvelteURLSearchParams from '$lib/svelte-helpers/url-search-params';
 
-	import type { DinasLuarItem, DinasLuarPermohonanRow, SppdRow } from './+page.server';
+	import type { DinasLuarItem, DinasLuarPermohonanRow, SppdDisetujuiRow } from './+page.server';
 
 	type PageState = {
 		search: string | null;
@@ -23,17 +22,11 @@
 		totalItems: number;
 	};
 
-	type GuruItem = {
-		id: number;
-		nama: string;
-	};
-
 	type PageData = {
 		daftarItem: DinasLuarItem[];
-		guruList: GuruItem[];
 		page: PageState;
-		sppdCount: number;
 		permohonanCount: number;
+		disetujuiCount: number;
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -133,25 +126,12 @@
 
 	function formatTanggalShort(value: string | null | undefined): string {
 		if (!value) return '';
-		const d = new Date(`${value}T00:00:00`);
-		if (Number.isNaN(d.getTime())) return value;
-		return d.toLocaleDateString('id-ID', {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
-	}
-
-	function formatTanggalWaktu(value: string | null | undefined): string {
-		if (!value) return '';
 		const d = new Date(value);
 		if (Number.isNaN(d.getTime())) return value;
 		return d.toLocaleDateString('id-ID', {
 			day: 'numeric',
 			month: 'short',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
+			year: 'numeric'
 		});
 	}
 
@@ -167,74 +147,26 @@
 
 	function openTambahModal() {
 		showModal({
-			title: 'Tambah Dinas Luar',
-			body: SppdFormModal,
-			bodyProps: {
-				guruList: data.guruList
-			},
+			title: 'Permohonan Perjalanan Dinas',
+			body: DinasLuarFormModal,
 			dismissible: true
 		});
 	}
 
-	function openEditModal(sppd: SppdRow) {
+	function viewDetail(permohonan: DinasLuarPermohonanRow) {
 		showModal({
-			title: 'Edit Dinas Luar',
-			body: SppdFormModal,
-			bodyProps: {
-				guruList: data.guruList,
-				sppd
-			},
-			dismissible: false
+			title: 'Detail Perjalanan Dinas',
+			body: DinasLuarDetailBody,
+			bodyProps: { permohonan },
+			dismissible: true,
+			onNeutral: { label: 'Tutup' }
 		});
 	}
 
-	// PDF preview modal state
-	let pdfPreviewUrl = $state('');
-	let pdfPreviewTitle = $state('');
-	let pdfModalOpen = $state(false);
-	let downloadLoading = $state(false);
-
-	function closePdfModal() {
-		if (pdfPreviewUrl) {
-			URL.revokeObjectURL(pdfPreviewUrl);
-		}
-		pdfPreviewUrl = '';
-		pdfPreviewTitle = '';
-		pdfModalOpen = false;
-	}
-
-	async function handlePrint(sppd: SppdRow) {
-		downloadLoading = true;
-		try {
-			const res = await fetch(`/api/pdf/sppd?id=${sppd.id}`);
-			if (!res.ok) {
-				let message = 'Gagal membuat PDF';
-				try {
-					message = (await res.json())?.message ?? message;
-				} catch {
-					// ignore
-				}
-				throw new Error(message);
-			}
-			const blob = await res.blob();
-
-			closePdfModal();
-			if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
-			pdfPreviewUrl = URL.createObjectURL(blob);
-			pdfPreviewTitle = `Surat Perintah Perjalanan Dinas - ${sppd.namaLengkap}`;
-			pdfModalOpen = true;
-		} catch (err) {
-			console.error('SPPD preview error:', err);
-			toast(err instanceof Error ? err.message : 'Gagal membuat PDF', 'error');
-		} finally {
-			downloadLoading = false;
-		}
-	}
-
-	function viewDetail(sppd: SppdRow) {
+	function viewDisetujui(sppd: SppdDisetujuiRow) {
 		const hasBukti = sppd.bukti.length > 0;
 		showModal({
-			title: `Detail Dinas Luar - ${sppd.namaLengkap}`,
+			title: 'Detail Dinas Luar',
 			body: DinasLuarDetailDisetujuiBody,
 			bodyProps: { sppd },
 			dismissible: true,
@@ -243,13 +175,7 @@
 				label: hasBukti ? 'Edit Bukti' : 'Upload Bukti',
 				icon: 'download',
 				class: 'btn-primary',
-				action: () => openBuktiModal(sppd)
-			},
-			onNegative: {
-				label: 'Edit',
-				icon: 'edit',
-				class: 'btn-warning btn-soft',
-				action: () => openEditModal(sppd)
+				action: () => openBuktiUpload(sppd)
 			},
 			...(hasBukti
 				? {
@@ -265,7 +191,7 @@
 		});
 	}
 
-	function openBuktiModal(sppd: SppdRow) {
+	function openBuktiUpload(sppd: SppdDisetujuiRow) {
 		showModal({
 			title: 'Edit Bukti Perjalanan Dinas',
 			body: DinasLuarBuktiModal,
@@ -274,42 +200,12 @@
 		});
 	}
 
-	function viewPermohonan(permohonan: DinasLuarPermohonanRow) {
+	async function handleDelete(permohonan: DinasLuarPermohonanRow) {
 		showModal({
-			title: 'Detail Pengajuan Perjalanan Dinas',
-			body: DinasLuarDetailBody,
-			bodyProps: { permohonan },
-			dismissible: true,
-			onPositive: {
-				label: 'Setujui',
-				class: 'btn-success',
-				icon: 'check',
-				action: () => {
-					showModal({
-						title: 'Tambah Dinas Luar',
-						body: SppdFormModal,
-						bodyProps: {
-							guruList: data.guruList,
-							prefill: {
-								maksud: permohonan.maksud,
-								authUserId: permohonan.authUserId,
-								permohonanId: permohonan.id
-							}
-						},
-						dismissible: false
-					});
-				}
-			},
-			onNeutral: { label: 'Tutup' }
-		});
-	}
-
-	function handleDeletePermohonan(permohonan: DinasLuarPermohonanRow) {
-		showModal({
-			title: 'Hapus Pengajuan Perjalanan Dinas',
-			body: `Hapus pengajuan perjalanan dinas <strong>${escapeHtml(
-				permohonan.nama
-			)}</strong> (${escapeHtml(permohonan.maksud)})? Tindakan ini tidak dapat dibatalkan.`,
+			title: 'Hapus Data Permohonan Perjalanan Dinas',
+			body: `Hapus permohonan perjalanan dinas <strong>${escapeHtml(
+				permohonan.maksud
+			)}</strong>? Tindakan ini tidak dapat dibatalkan.`,
 			dismissible: false,
 			onPositive: {
 				label: 'Hapus',
@@ -320,44 +216,12 @@
 							method: 'DELETE'
 						});
 						if (res.ok) {
-							toast('Pengajuan perjalanan dinas berhasil dihapus', 'success');
-							await invalidate('app:sppd');
+							toast('Permohonan perjalanan dinas berhasil dihapus', 'success');
+							await invalidate('app:dinas-luar');
 						} else {
 							toast('Gagal menghapus data', 'error');
 						}
 					} catch {
-						toast('Terjadi kesalahan', 'error');
-					}
-					close();
-				}
-			},
-			onNegative: { label: 'Batal' }
-		});
-	}
-
-	async function handleDelete(sppd: SppdRow) {
-		showModal({
-			title: 'Hapus Data Dinas Luar',
-			body: `Hapus data dinas luar <strong>${escapeHtml(sppd.namaLengkap)}</strong> (${escapeHtml(
-				sppd.maksud
-			)})? Tindakan ini tidak dapat dibatalkan.`,
-			dismissible: false,
-			onPositive: {
-				label: 'Hapus',
-				class: 'btn-error',
-				action: async ({ close }) => {
-					try {
-						const res = await fetch(`/api/sppd?id=${sppd.id}`, { method: 'DELETE' });
-						if (res.ok) {
-							const toast = (await import('$lib/components/toast.svelte')).toast;
-							toast('Data dinas luar berhasil dihapus', 'success');
-							await invalidate('app:sppd');
-						} else {
-							const toast = (await import('$lib/components/toast.svelte')).toast;
-							toast('Gagal menghapus data', 'error');
-						}
-					} catch {
-						const toast = (await import('$lib/components/toast.svelte')).toast;
 						toast('Terjadi kesalahan', 'error');
 					}
 					close();
@@ -374,7 +238,7 @@
 		searchTimer = undefined;
 	});
 
-	const hasData = $derived(data.permohonanCount > 0 || data.sppdCount > 0);
+	const hasData = $derived(data.permohonanCount > 0 || data.disetujuiCount > 0);
 	const hasFiltered = $derived(data.page.totalItems > 0);
 </script>
 
@@ -383,17 +247,17 @@
 		<div>
 			<h2 class="text-xl font-bold">Dinas Luar</h2>
 			<p class="text-base-content/80 block text-sm">
-				{data.permohonanCount} pengajuan, {data.sppdCount} perjalanan dinas disetujui
+				{data.permohonanCount} pengajuan, {data.disetujuiCount} perjalanan dinas disetujui
 			</p>
 		</div>
 		<button
 			type="button"
 			class="btn btn-primary btn-soft shadow-none"
 			onclick={openTambahModal}
-			title="Tambah perjalanan dinas"
+			title="Tambah permohonan perjalanan dinas"
 		>
 			<Icon name="plus" />
-			Tambah
+			Tambah Permohonan Perjalanan Dinas
 		</button>
 	</div>
 
@@ -411,7 +275,7 @@
 				type="search"
 				name="q"
 				value={searchTerm}
-				placeholder="Cari keterangan/tujuan perjalanan..."
+				placeholder="Cari maksud perjalanan dinas..."
 				oninput={handleSearchInput}
 				autocomplete="off"
 			/>
@@ -455,11 +319,7 @@
 									<span class="badge badge-soft badge-success">Disetujui</span>
 								{/if}
 							</td>
-							<td class="whitespace-nowrap">
-								{item.status === 'pengajuan'
-									? formatTanggalWaktu(item.tanggal)
-									: formatTanggalShort(item.tanggal)}
-							</td>
+							<td class="whitespace-nowrap">{formatTanggalShort(item.tanggal)}</td>
 							<td class="whitespace-nowrap">{item.nama}</td>
 							<td class="text-center">{item.jumlah}</td>
 							<td class="max-w-60 truncate">
@@ -471,16 +331,16 @@
 										<button
 											type="button"
 											class="btn btn-primary btn-soft btn-sm shadow-none"
-											onclick={() => viewPermohonan(item.permohonan)}
-											title="Lihat detail pengajuan"
+											onclick={() => viewDetail(item.permohonan)}
+											title="Lihat detail"
 										>
 											<Icon name="eye" />
 										</button>
 										<button
 											type="button"
 											class="btn btn-error btn-soft btn-sm shadow-none"
-											onclick={() => handleDeletePermohonan(item.permohonan)}
-											title="Hapus pengajuan"
+											onclick={() => handleDelete(item.permohonan)}
+											title="Hapus"
 										>
 											<Icon name="del" />
 										</button>
@@ -488,27 +348,10 @@
 										<button
 											type="button"
 											class="btn btn-primary btn-soft btn-sm shadow-none"
-											onclick={() => viewDetail(item.sppd)}
-											title="Lihat detail"
+											onclick={() => viewDisetujui(item.sppd)}
+											title="Lihat detail dinas luar"
 										>
 											<Icon name="eye" />
-										</button>
-										<button
-											type="button"
-											class="btn btn-success btn-soft btn-sm shadow-none"
-											onclick={() => handlePrint(item.sppd)}
-											disabled={downloadLoading}
-											title="Cetak surat perintah perjalanan dinas"
-										>
-											<Icon name="print" />
-										</button>
-										<button
-											type="button"
-											class="btn btn-error btn-soft btn-sm shadow-none"
-											onclick={() => handleDelete(item.sppd)}
-											title="Hapus"
-										>
-											<Icon name="del" />
 										</button>
 									{/if}
 								</div>
@@ -534,11 +377,3 @@
 		</div>
 	{/if}
 </div>
-
-<PdfPreviewModal
-	bind:open={pdfModalOpen}
-	pdfUrl={pdfPreviewUrl}
-	pdfTitle={pdfPreviewTitle}
-	loading={downloadLoading}
-	onClose={closePdfModal}
-/>

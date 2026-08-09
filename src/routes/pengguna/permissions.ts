@@ -64,7 +64,8 @@ export const groupedUserPermissions = {
 			['keputusan', 'Keputusan'],
 			['buku_tamu', 'Buku Tamu'],
 			['presensi_guru', 'Presensi Guru'],
-			['sppd', 'SPPD']
+			['sppd', 'SPPD'],
+			['dinas_luar', 'Dinas Luar']
 		],
 		description: 'Administrasi'
 	},
@@ -98,13 +99,15 @@ export const defaultPermissionsByType: Partial<Record<AuthUser['type'], UserPerm
 		'administrasi_catatan_wali_kelas',
 		'administrasi_rekap_nilai',
 		'administrasi_keputusan',
+		'administrasi_dinas_luar',
 		'cetak_dokumen'
 	],
 	wali_asuh: [
 		'mata_pelajaran_keasramaan',
 		'input_nilai_asesmen_keasramaan',
 		'cetak_dokumen',
-		'kelas_pindah'
+		'kelas_pindah',
+		'administrasi_dinas_luar'
 	],
 	user: [
 		'mata_pelajaran_intrakurikuler',
@@ -113,6 +116,7 @@ export const defaultPermissionsByType: Partial<Record<AuthUser['type'], UserPerm
 		'administrasi_absen',
 		'administrasi_jurnal_mengajar',
 		'administrasi_rekap_nilai',
+		'administrasi_dinas_luar',
 		'cetak_dokumen'
 	]
 };
@@ -152,6 +156,7 @@ export const menuRoutePermissions: { path: string; permission: UserPermission }[
 	{ path: '/buku-tamu', permission: 'administrasi_buku_tamu' },
 	{ path: '/presensi-guru', permission: 'administrasi_presensi_guru' },
 	{ path: '/sppd', permission: 'administrasi_sppd' },
+	{ path: '/dinas-luar', permission: 'administrasi_dinas_luar' },
 	{ path: '/cetak', permission: 'cetak_dokumen' }
 ];
 

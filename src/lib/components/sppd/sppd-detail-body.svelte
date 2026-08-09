@@ -146,7 +146,7 @@
 		<ul class="mt-2 space-y-2">
 			{#each sppd.pegawai as p (p.id)}
 				<li
-					class="border-base-200 dark:border-base-300 flex items-center gap-3 rounded-box border p-2"
+					class="border-base-200 dark:border-none bg-base-200 flex items-center gap-3 rounded-box border p-2"
 				>
 					<span
 						class="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"

@@ -3,6 +3,7 @@ import path from 'node:path';
 import db from '$lib/server/db';
 import { ensureJadwalBellSchema } from '$lib/server/db/ensure-jadwal-bell';
 import { tableBellSounds } from '$lib/server/db/schema';
+import { soundsDir } from '$lib/server/data-dirs';
 import { error } from '@sveltejs/kit';
 import { eq, and } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
@@ -16,12 +17,6 @@ const allowedTypes = [
 	'masuk',
 	'pulang'
 ];
-
-function soundsDir() {
-	const envSounds = process.env.sounds || 'file:./data/sounds';
-	const raw = envSounds.startsWith('file:') ? envSounds.slice(5) : envSounds;
-	return path.resolve(raw);
-}
 
 function filePath(dir: string, sekolahId: number, tipe: string) {
 	return path.join(dir, `${sekolahId}_${tipe}.mp3`);

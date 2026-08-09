@@ -18,6 +18,42 @@ async function ensureDir(dir) {
 	}
 }
 
+// Copy a directory tree, keeping destination files that already exist.
+// Used to migrate legacy user data (ttd, dinas-luar, uploads) from the old
+// install-dir location (<install>/data/<sub>) into %LOCALAPPDATA%\Rapkumer-data
+// on first run after an upgrade. Returns the number of files copied.
+async function copyTreeIfMissing(src, dst, logFile) {
+	try {
+		const stat = await fsPromises.stat(src);
+		if (!stat.isDirectory()) return 0;
+	} catch {
+		return 0;
+	}
+	let copied = 0;
+	await fsPromises.mkdir(dst, { recursive: true });
+	const entries = await fsPromises.readdir(src, { withFileTypes: true });
+	for (const entry of entries) {
+		const s = path.join(src, entry.name);
+		const d = path.join(dst, entry.name);
+		if (entry.isDirectory()) {
+			copied += await copyTreeIfMissing(s, d, logFile);
+		} else if (entry.isFile()) {
+			try {
+				await fsPromises.access(d);
+			} catch {
+				try {
+					await fsPromises.mkdir(path.dirname(d), { recursive: true });
+					await fsPromises.copyFile(s, d);
+					copied += 1;
+				} catch (err) {
+					await appendLog(logFile, `Migrasi data gagal menyalin ${s}: ${String(err)}`);
+				}
+			}
+		}
+	}
+	return copied;
+}
+
 async function appendLog(logFile, msg) {
 	const line = `[${timeStamp()}] ${msg}\n`;
 	try {
@@ -89,6 +125,41 @@ async function main() {
 		await appendLog(LOG_FILE, `Error while ensuring database: ${String(err)}`);
 	}
 
+	// Migrate legacy user data from the install dir into the user-data root on
+	// first run, so ttd / dinas-luar / uploads keep working after an in-place
+	// upgrade. The pre-upgrade app wrote to <cwd>/data/<sub> with cwd = the app
+	// dir, so check {app}\data first, then {app}\..\data for older layouts.
+	// Files that already exist in the target win (photos uploaded via the
+	// `photo` env already live in the user dir).
+	const legacyCandidates = [path.join(APP_HOME, 'data'), path.join(APP_HOME, '..', 'data')];
+	let legacyDataRoot = null;
+	for (const cand of legacyCandidates) {
+		try {
+			const st = await fsPromises.stat(cand);
+			if (st.isDirectory()) {
+				legacyDataRoot = cand;
+				break;
+			}
+		} catch {
+			// keep looking
+		}
+	}
+	if (legacyDataRoot) {
+		for (const sub of ['ttd', 'dinas-luar', 'uploads', 'sounds']) {
+			const srcSub = path.join(legacyDataRoot, sub);
+			if (!fs.existsSync(srcSub)) continue;
+			const dstSub = path.join(USER_STATE_ROOT, sub);
+			try {
+				const copied = await copyTreeIfMissing(srcSub, dstSub, LOG_FILE);
+				if (copied > 0) {
+					await appendLog(LOG_FILE, `Data ${sub} dipindahkan dari ${srcSub} (${copied} file baru)`);
+				}
+			} catch (err) {
+				await appendLog(LOG_FILE, `Gagal memigrasi ${sub}: ${String(err)}`);
+			}
+		}
+	}
+
 	// PagedJS + Puppeteer will use system Chrome/Chromium for PDF generation
 
 	// Prepare DB URL (replace backslashes with slashes)
@@ -108,7 +179,8 @@ async function main() {
 		NODE_ENV,
 		BODY_SIZE_LIMIT: '5242880',
 		DB_URL,
-		DATABASE_URL: DB_URL
+		DATABASE_URL: DB_URL,
+		RAPKUMER_DATA_DIR: USER_STATE_ROOT
 	};
 	const nodeBin = process.execPath || 'node';
 
