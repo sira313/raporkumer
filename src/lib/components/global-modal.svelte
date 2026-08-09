@@ -36,11 +36,10 @@
 					...((props.bodyProps as Record<string, unknown>) ?? {})
 				}
 			: modalProps.bodyProps;
-		if (nextBodyProps === undefined || nextBodyProps === null) return;
 		modalProps = {
 			...modalProps,
 			...(props as Partial<ModalState>),
-			bodyProps: nextBodyProps
+			bodyProps: nextBodyProps ?? {}
 		};
 	}
 
@@ -56,6 +55,7 @@
 </script>
 
 <script lang="ts">
+	/* eslint-disable svelte/no-navigation-without-resolve -- onExtra is an external link opened in a new tab */
 	import Icon from '$lib/components/icon.svelte';
 </script>
 
@@ -74,28 +74,9 @@
 				{/if}
 			</div>
 
-			{#if modalProps.onPositive || modalProps.onNeutral || modalProps.onNegative}
-				<div class="modal-action {modalProps.spreadActions ? 'justify-between' : ''} shrink-0">
-					{#if modalProps.onNegative}
-						<button
-							class="btn {modalProps.onNegative.class ?? 'btn-soft'} gap-2 shadow-none"
-							type="button"
-							onclick={() => {
-								if (modalProps?.onNegative?.action) {
-									modalProps.onNegative.action({ close: hideModal });
-								} else {
-									hideModal();
-								}
-							}}
-						>
-							{#if modalProps.onNegative.icon}
-								<Icon name={modalProps.onNegative.icon} />
-							{/if}
-							{modalProps.onNegative.label}
-						</button>
-					{/if}
-
-					{#if modalProps.onNeutral}
+			{#if modalProps.onPositive || modalProps.onNeutral || modalProps.onNegative || modalProps.onExtra}
+				<div class="modal-action shrink-0 {modalProps.spreadActions ? 'justify-between' : ''}">
+					{#if modalProps.spreadActions && modalProps.onNeutral}
 						<button
 							class="btn {modalProps.onNeutral.class ?? ''} gap-2 shadow-none"
 							type="button"
@@ -114,39 +95,93 @@
 						</button>
 					{/if}
 
-					{#if modalProps.onPositive}
-						<button
-							class="btn {modalProps.onPositive.class ?? 'btn-primary'} gap-2 shadow-none"
-							type="button"
-							disabled={isLoading}
-							onclick={() => {
-								if (modalProps?.onPositive?.action) {
-									const actionFn = modalProps.onPositive.action;
-									const closeFn = hideModal;
-									setLoading(true);
-									try {
-										const result = actionFn({ close: closeFn });
-										Promise.resolve(result)
-											.catch(() => {})
-											.finally(() => {
-												if (modalShown) setLoading(false);
-											});
-									} catch {
-										setLoading(false);
+					<div class="flex flex-wrap justify-end gap-2">
+						{#if modalProps.onNegative}
+							<button
+								class="btn {modalProps.onNegative.class ?? 'btn-soft'} gap-2 shadow-none"
+								type="button"
+								onclick={() => {
+									if (modalProps?.onNegative?.action) {
+										modalProps.onNegative.action({ close: hideModal });
+									} else {
+										hideModal();
 									}
-								} else {
-									hideModal();
-								}
-							}}
-						>
-							{#if isLoading}
-								<span class="loading loading-spinner loading-sm"></span>
-							{:else if modalProps.onPositive.icon}
-								<Icon name={modalProps.onPositive.icon} />
-							{/if}
-							{modalProps.onPositive.label}
-						</button>
-					{/if}
+								}}
+							>
+								{#if modalProps.onNegative.icon}
+									<Icon name={modalProps.onNegative.icon} />
+								{/if}
+								{modalProps.onNegative.label}
+							</button>
+						{/if}
+
+						{#if !modalProps.spreadActions && modalProps.onNeutral}
+							<button
+								class="btn {modalProps.onNeutral.class ?? ''} gap-2 shadow-none"
+								type="button"
+								onclick={() => {
+									if (modalProps?.onNeutral?.action) {
+										modalProps.onNeutral.action({ close: hideModal });
+									} else {
+										hideModal();
+									}
+								}}
+							>
+								{#if modalProps.onNeutral.icon}
+									<Icon name={modalProps.onNeutral.icon} />
+								{/if}
+								{modalProps.onNeutral.label}
+							</button>
+						{/if}
+
+						{#if modalProps.onPositive}
+							<button
+								class="btn {modalProps.onPositive.class ?? 'btn-primary'} gap-2 shadow-none"
+								type="button"
+								disabled={isLoading}
+								onclick={() => {
+									if (modalProps?.onPositive?.action) {
+										const actionFn = modalProps.onPositive.action;
+										const closeFn = hideModal;
+										setLoading(true);
+										try {
+											const result = actionFn({ close: closeFn });
+											Promise.resolve(result)
+												.catch(() => {})
+												.finally(() => {
+													if (modalShown) setLoading(false);
+												});
+										} catch {
+											setLoading(false);
+										}
+									} else {
+										hideModal();
+									}
+								}}
+							>
+								{#if isLoading}
+									<span class="loading loading-spinner loading-sm"></span>
+								{:else if modalProps.onPositive.icon}
+									<Icon name={modalProps.onPositive.icon} />
+								{/if}
+								{modalProps.onPositive.label}
+							</button>
+						{/if}
+
+						{#if modalProps.onExtra}
+							<a
+								class="btn {modalProps.onExtra.class ?? 'btn-soft'} gap-2 shadow-none"
+								href={modalProps.onExtra.href}
+								target="_blank"
+								rel="noopener"
+							>
+								{#if modalProps.onExtra.icon}
+									<Icon name={modalProps.onExtra.icon} />
+								{/if}
+								{modalProps.onExtra.label}
+							</a>
+						{/if}
+					</div>
 				</div>
 			{/if}
 		</div>

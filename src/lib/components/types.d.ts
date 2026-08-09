@@ -2,6 +2,8 @@ interface ModalAction {
 	label: string;
 	icon?: IconName;
 	class?: string;
+	/** renders the action as an anchor (opened in a new tab) instead of a button */
+	href?: string;
 	action?: (params: { close: () => void }) => MaybePromise<void>;
 }
 
@@ -17,6 +19,8 @@ interface ModalProps<BodyProps extends Record<string, unknown> = Record<string, 
 	onPositive?: ModalAction;
 	onNeutral?: ModalAction;
 	onNegative?: ModalAction;
+	/** renders an additional action (e.g. link) after onPositive */
+	onExtra?: ModalAction;
 	onClose?: () => void;
 }
 

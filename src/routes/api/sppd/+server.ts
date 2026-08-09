@@ -1,5 +1,7 @@
 import { ensureSppdSchema } from '$lib/server/db/ensure-sppd';
 import {
+	tableDinasLuarBukti,
+	tableDinasLuarPermohonan,
 	tableSppd,
 	tableSppdPegawai,
 	tableSppdPengikut,
@@ -7,6 +9,7 @@ import {
 	tableSemester
 } from '$lib/server/db/schema';
 import db from '$lib/server/db';
+import { deleteBuktiFile, deleteUndanganFile } from '$lib/server/dinas-luar';
 import { listGuruBySekolah } from '$lib/server/presensi-guru';
 import { eq, desc } from 'drizzle-orm';
 import { error, json } from '@sveltejs/kit';
@@ -162,13 +165,20 @@ async function buildSppdPayload(body: unknown, sekolahId: number | undefined) {
 	return { ctx, values, selectedGuru, validPengikut };
 }
 
+/** Minimal db/tx handle for `insertPegawaiPengikut` (works for both the global
+ *  drizzle instance and a `db.transaction` callback). */
+type SppdDbHandle = {
+	insert: typeof db.insert;
+};
+
 async function insertPegawaiPengikut(
 	sppdId: number,
 	selectedGuru: Array<{ id: number; nama: string }>,
-	validPengikut: Array<{ nama: string; tempatLahir: string; tanggalLahir: string }>
+	validPengikut: Array<{ nama: string; tempatLahir: string; tanggalLahir: string }>,
+	d: SppdDbHandle = db
 ) {
 	if (selectedGuru.length > 0) {
-		await db.insert(tableSppdPegawai).values(
+		await d.insert(tableSppdPegawai).values(
 			selectedGuru.map((g, index) => ({
 				sppdId,
 				authUserId: g.id,
@@ -179,7 +189,7 @@ async function insertPegawaiPengikut(
 	}
 
 	if (validPengikut.length > 0) {
-		await db.insert(tableSppdPengikut).values(
+		await d.insert(tableSppdPengikut).values(
 			validPengikut.map((p) => ({
 				sppdId,
 				...p
@@ -195,19 +205,48 @@ export const POST = (async ({ request, locals }) => {
 
 	await ensureSppdSchema();
 
+	const body = await request.json();
 	const { ctx, values, selectedGuru, validPengikut } = await buildSppdPayload(
-		await request.json(),
+		body,
 		locals.sekolah?.id
 	);
 
-	try {
-		const [inserted] = await db
-			.insert(tableSppd)
-			.values({ ...ctx, ...values })
-			.returning({ id: tableSppd.id });
+	// When the SPPD is created from an approved permohonan, carry the undangan
+	// file over and consume the permohonan atomically so it can't be approved
+	// twice (which would create duplicate SPPDs sharing the same undangan file).
+	let undanganFile: string | null = null;
+	let permohonanToConsume: { id: number; undanganFile: string | null } | null = null;
+	const permohonanId = (body as { permohonanId?: unknown }).permohonanId;
+	if (Number.isInteger(permohonanId) && (permohonanId as number) > 0) {
+		const permohonan = await db.query.tableDinasLuarPermohonan.findFirst({
+			where: eq(tableDinasLuarPermohonan.id, permohonanId as number),
+			columns: { id: true, sekolahId: true, undanganFile: true }
+		});
+		if (permohonan) {
+			if (locals.sekolah?.id && permohonan.sekolahId !== locals.sekolah.id) {
+				throw error(403, { message: 'Tidak dapat menyetujui pengajuan sekolah lain' });
+			}
+			undanganFile = permohonan.undanganFile;
+			permohonanToConsume = { id: permohonan.id, undanganFile: permohonan.undanganFile };
+		}
+	}
 
-		const sppdId = inserted.id;
-		await insertPegawaiPengikut(sppdId, selectedGuru, validPengikut);
+	try {
+		await db.transaction(async (tx) => {
+			const [inserted] = await tx
+				.insert(tableSppd)
+				.values({ ...ctx, ...values, undanganFile })
+				.returning({ id: tableSppd.id });
+
+			const sppdId = inserted.id;
+			await insertPegawaiPengikut(sppdId, selectedGuru, validPengikut, tx);
+
+			if (permohonanToConsume) {
+				await tx
+					.delete(tableDinasLuarPermohonan)
+					.where(eq(tableDinasLuarPermohonan.id, permohonanToConsume.id));
+			}
+		});
 
 		return json({ message: 'Dinas luar berhasil disimpan' });
 	} catch (e) {
@@ -275,7 +314,7 @@ export const DELETE = (async ({ url, locals }) => {
 
 	const existing = await db.query.tableSppd.findFirst({
 		where: eq(tableSppd.id, id),
-		columns: { id: true, sekolahId: true }
+		columns: { id: true, sekolahId: true, undanganFile: true }
 	});
 	if (!existing) {
 		throw error(404, { message: 'Data tidak ditemukan' });
@@ -287,6 +326,18 @@ export const DELETE = (async ({ url, locals }) => {
 	// Delete child rows first (FK cascade isn't enforced in this app).
 	await db.delete(tableSppdPegawai).where(eq(tableSppdPegawai.sppdId, id));
 	await db.delete(tableSppdPengikut).where(eq(tableSppdPengikut.sppdId, id));
+
+	// Remove stored bukti files and the carried-over undangan file.
+	const buktiRows = await db.query.tableDinasLuarBukti.findMany({
+		where: eq(tableDinasLuarBukti.sppdId, id),
+		columns: { namaFile: true }
+	});
+	for (const b of buktiRows) {
+		await deleteBuktiFile(b.namaFile);
+	}
+	await db.delete(tableDinasLuarBukti).where(eq(tableDinasLuarBukti.sppdId, id));
+	await deleteUndanganFile(existing.undanganFile);
+
 	await db.delete(tableSppd).where(eq(tableSppd.id, id));
 
 	return json({ message: 'Data dinas luar berhasil dihapus' });

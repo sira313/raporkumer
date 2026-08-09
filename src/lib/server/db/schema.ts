@@ -1352,6 +1352,7 @@ export const tableSppd = sqliteTable(
 		kodeRekening: text(),
 		tingkatBiaya: text(),
 		keteranganLain: text(),
+		undanganFile: text(),
 		...audit
 	},
 	(table) => [
@@ -1425,6 +1426,67 @@ export const tableSppdPengikutRelations = relations(tableSppdPengikut, ({ one })
 	sppd: one(tableSppd, {
 		fields: [tableSppdPengikut.sppdId],
 		references: [tableSppd.id]
+	})
+}));
+
+export const tableDinasLuarPermohonan = sqliteTable(
+	'dinas_luar_permohonan',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id, { onDelete: 'cascade' })
+			.notNull(),
+		authUserId: int()
+			.references(() => tableAuthUser.id, { onDelete: 'cascade' })
+			.notNull(),
+		nama: text().notNull(),
+		maksud: text().notNull(),
+		undanganFile: text(),
+		...audit
+	},
+	(table) => [
+		index('dinas_luar_permohonan_sekolah_idx').on(table.sekolahId),
+		index('dinas_luar_permohonan_auth_user_idx').on(table.authUserId)
+	]
+);
+
+export const tableDinasLuarPermohonanRelations = relations(tableDinasLuarPermohonan, ({ one }) => ({
+	sekolah: one(tableSekolah, {
+		fields: [tableDinasLuarPermohonan.sekolahId],
+		references: [tableSekolah.id]
+	}),
+	authUser: one(tableAuthUser, {
+		fields: [tableDinasLuarPermohonan.authUserId],
+		references: [tableAuthUser.id]
+	})
+}));
+
+export const tableDinasLuarBukti = sqliteTable(
+	'dinas_luar_bukti',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sppdId: int()
+			.references(() => tableSppd.id, { onDelete: 'cascade' })
+			.notNull(),
+		authUserId: int().references(() => tableAuthUser.id, { onDelete: 'set null' }),
+		jenis: text({ enum: ['pdf', 'foto'] }).notNull(),
+		namaFile: text().notNull(),
+		...audit
+	},
+	(table) => [
+		index('dinas_luar_bukti_sppd_idx').on(table.sppdId),
+		index('dinas_luar_bukti_auth_user_idx').on(table.authUserId)
+	]
+);
+
+export const tableDinasLuarBuktiRelations = relations(tableDinasLuarBukti, ({ one }) => ({
+	sppd: one(tableSppd, {
+		fields: [tableDinasLuarBukti.sppdId],
+		references: [tableSppd.id]
+	}),
+	authUser: one(tableAuthUser, {
+		fields: [tableDinasLuarBukti.authUserId],
+		references: [tableAuthUser.id]
 	})
 }));
 

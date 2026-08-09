@@ -118,6 +118,11 @@ export const appMenuItems: MenuItem[] = [
 				title: 'Dinas Luar',
 				path: '/sppd',
 				tags: ['sppd', 'dinas', 'luar', 'perjalanan', 'surat', 'perintah']
+			},
+			{
+				title: 'Dinas Luar',
+				path: '/dinas-luar',
+				tags: ['dinas', 'luar', 'perjalanan', 'permohonan', 'undangan']
 			}
 		]
 	},

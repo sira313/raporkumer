@@ -40,20 +40,35 @@
 	interface Props {
 		guruList: GuruItem[];
 		sppd?: EditSppdData;
+		prefill?: {
+			maksud: string;
+			authUserId: number;
+			permohonanId: number;
+		};
 	}
 
-	let { guruList, sppd }: Props = $props();
+	let { guruList, sppd, prefill }: Props = $props();
 
 	const editSppd = $state<EditSppdData | null>(untrack(() => sppd ?? null));
 	const isEdit = !!editSppd;
 
+	const prefillAuthUserId = prefill?.authUserId;
+	const prefillUserIdInGuruList =
+		prefillAuthUserId != null && untrack(() => guruList).some((g) => g.id === prefillAuthUserId)
+			? prefillAuthUserId
+			: null;
+
 	let selectedPegawaiIds = $state<number[]>(
-		editSppd ? editSppd.pegawai.map((p) => p.authUserId).filter((v): v is number => v !== null) : []
+		editSppd
+			? editSppd.pegawai.map((p) => p.authUserId).filter((v): v is number => v !== null)
+			: prefillUserIdInGuruList
+				? [prefillUserIdInGuruList]
+				: []
 	);
 	let nomorSuratTugas = $state(editSppd?.nomorSuratTugas ?? '');
 	let tanggalSuratTugas = $state(editSppd?.tanggalSuratTugas ?? '');
 	let dasarSuratTugas = $state(editSppd?.dasarSuratTugas ?? '');
-	let maksud = $state(editSppd?.maksud ?? '');
+	let maksud = $state(editSppd?.maksud ?? prefill?.maksud ?? '');
 	let alatAngkut = $state(editSppd?.alatAngkut ?? '');
 	let tempatBerangkat = $state(editSppd?.tempatBerangkat ?? '');
 	let tempatTujuan = $state(editSppd?.tempatTujuan ?? '');
@@ -157,6 +172,7 @@
 				method: isEdit ? 'PATCH' : 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
+					...(prefill?.permohonanId ? { permohonanId: prefill.permohonanId } : {}),
 					nomorSuratTugas: nomorSuratTugas.trim() || null,
 					tanggalSuratTugas: tanggalSuratTugas || null,
 					dasarSuratTugas: dasarSuratTugas.trim() || null,

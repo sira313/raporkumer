@@ -21,6 +21,7 @@ export async function ensureSppdSchema() {
 			"keterangan_pengikut" text,
 			"kode_rekening" text,
 			"keterangan_lain" text,
+			"undangan_file" text,
 			"created_at" text NOT NULL,
 			"updated_at" text,
 			FOREIGN KEY ("sekolah_id") REFERENCES "sekolah" ("id") ON UPDATE NO ACTION ON DELETE CASCADE,
@@ -75,6 +76,12 @@ export async function ensureSppdSchema() {
 
 	try {
 		await db.$client.execute(`ALTER TABLE "sppd" ADD COLUMN "tingkat_biaya" text`);
+	} catch {
+		// column already exists
+	}
+
+	try {
+		await db.$client.execute(`ALTER TABLE "sppd" ADD COLUMN "undangan_file" text`);
 	} catch {
 		// column already exists
 	}
