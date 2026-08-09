@@ -24,6 +24,40 @@
 	let copying = $state(false);
 	let updateModalOpen = $state(false);
 
+	// Storage location form (admin only)
+	let storageRoot = $state(data.storage?.dataRoot ?? '');
+	let storageUploads = $state(data.storage?.uploads ?? '');
+	let storageSounds = $state(data.storage?.sounds ?? '');
+
+	// Folder picker
+	import StorageFolderPicker from '$lib/components/settings/storage-folder-picker.svelte';
+	type StorageField = 'dataRoot' | 'uploads' | 'sounds';
+	let pickerOpen = $state(false);
+	let pickerTarget = $state<StorageField>('dataRoot');
+	let pickerInitial = $state('');
+	let pickerTitle = $state('Pilih Folder');
+
+	function openPicker(target: StorageField) {
+		pickerTarget = target;
+		pickerInitial =
+			target === 'dataRoot' ? storageRoot : target === 'uploads' ? storageUploads : storageSounds;
+		pickerTitle =
+			target === 'dataRoot'
+				? 'Pilih Folder Root Data'
+				: target === 'uploads'
+					? 'Pilih Folder Upload'
+					: 'Pilih Folder Sound Bell';
+		pickerOpen = true;
+	}
+
+	function handlePickerSelect(event: CustomEvent<{ path: string }>) {
+		const picked = event.detail.path;
+		if (pickerTarget === 'dataRoot') storageRoot = picked;
+		else if (pickerTarget === 'uploads') storageUploads = picked;
+		else storageSounds = picked;
+		pickerOpen = false;
+	}
+
 	// Password visibility toggles
 	let showAdminPassword = $state(false);
 	let showCurrentPassword = $state(false);
@@ -230,6 +264,123 @@
 		{/snippet}
 	</FormEnhance>
 </section>
+
+{#if user?.type === 'admin' && data.storage}
+	<section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
+		<FormEnhance action="?/update-storage-location">
+			{#snippet children({ submitting })}
+				<header class="mb-4 space-y-2">
+					<h2 class="text-xl font-semibold">Lokasi Data</h2>
+					<p class="text-base-content/70 text-sm">
+						Pilih root data — subfolder <code>ttd/</code>, <code>dinas-luar/</code>,
+						<code>uploads/</code>, dan <code>sounds/</code> akan dibuat otomatis di dalamnya. File yang
+						ada akan dipindahkan otomatis ke lokasi baru; perubahan berlaku setelah server dimulai ulang.
+					</p>
+				</header>
+
+				{#if data.storage.rootManagedByLauncher}
+					<div role="alert" class="alert alert-warning mb-4">
+						<Icon name="alert" />
+						<span
+							>Pada instalasi Windows, root data ditetapkan oleh peluncur aplikasi
+							(%LOCALAPPDATA%\Rapkumer-data). Mengubah folder root di sini tidak akan berpengaruh;
+							folder upload/sounds tetap bisa diubah.</span
+						>
+					</div>
+				{/if}
+
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">Root data (RAPKUMER_DATA_DIR)</legend>
+					<div class="join w-full">
+						<input
+							class="input bg-base-200 dark:bg-base-300 join-item w-full dark:border-none"
+							type="text"
+							name="dataRoot"
+							bind:value={storageRoot}
+							placeholder="Kosongkan untuk default"
+						/>
+						<button
+							class="btn join-item btn-soft btn-info shadow-none"
+							type="button"
+							onclick={() => openPicker('dataRoot')}
+						>
+							<Icon name="folder" />
+							Jelajah
+						</button>
+					</div>
+					<p class="text-base-content/70 mt-1 text-xs">
+						Cukup pilih root ini saja — subfolder <code>ttd/</code>, <code>dinas-luar/</code>,
+						<code>uploads/</code>, dan <code>sounds/</code> dibuat otomatis saat disimpan.
+					</p>
+				</fieldset>
+
+				<fieldset class="fieldset mt-3">
+					<legend class="fieldset-legend">Folder upload — opsional (photo)</legend>
+					<div class="join w-full">
+						<input
+							class="input bg-base-200 dark:bg-base-300 join-item w-full dark:border-none"
+							type="text"
+							name="uploads"
+							bind:value={storageUploads}
+							placeholder="Kosongkan untuk default (<root>/uploads)"
+						/>
+						<button
+							class="btn join-item btn-soft btn-info shadow-none"
+							type="button"
+							onclick={() => openPicker('uploads')}
+						>
+							<Icon name="folder" />
+							Jelajah
+						</button>
+					</div>
+				</fieldset>
+
+				<fieldset class="fieldset mt-3">
+					<legend class="fieldset-legend">Folder sound bell — opsional (sounds)</legend>
+					<div class="join w-full">
+						<input
+							class="input bg-base-200 dark:bg-base-300 join-item w-full dark:border-none"
+							type="text"
+							name="sounds"
+							bind:value={storageSounds}
+							placeholder="Kosongkan untuk default (<root>/sounds)"
+						/>
+						<button
+							class="btn join-item btn-soft btn-info shadow-none"
+							type="button"
+							onclick={() => openPicker('sounds')}
+						>
+							<Icon name="folder" />
+							Jelajah
+						</button>
+					</div>
+				</fieldset>
+
+				<div role="alert" class="alert alert-info mt-4">
+					<Icon name="info" />
+					<span
+						>File di lokasi lama akan disalin ke lokasi baru (tidak dihapus). Perlu mulai ulang server agar aplikasi membaca folder baru.</span
+					>
+				</div>
+
+				<div class="mt-6 flex justify-end">
+					<button class="btn btn-primary shadow-none" type="submit" disabled={submitting}>
+						<Icon name="save" />
+						{submitting ? 'Menyimpan…' : 'Simpan Lokasi'}
+					</button>
+				</div>
+			{/snippet}
+		</FormEnhance>
+
+		<StorageFolderPicker
+			open={pickerOpen}
+			title={pickerTitle}
+			initial={pickerInitial}
+			on:select={handlePickerSelect}
+			on:close={() => (pickerOpen = false)}
+		/>
+	</section>
+{/if}
 
 <section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
 	<div class="space-y-4">

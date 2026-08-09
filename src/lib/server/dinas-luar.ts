@@ -2,15 +2,15 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
 import db from '$lib/server/db';
+import { dataRoot } from '$lib/server/data-dirs';
 import { tableAuthUser, tablePegawai } from '$lib/server/db/schema';
 
-// Dinas luar files live under <cwd>/data/dinas-luar/ alongside the default
-// SQLite database (data/database.sqlite3):
-//   - undangan PDFs:   data/dinas-luar/undangan/
-//   - SPPD bukti PDFs: data/dinas-luar/sppd/<sppdId>/
-//   - bukti foto:      data/dinas-luar/<nama-akun>/<sppdId>/
+// Dinas luar files live under the user-data root (dataRoot()):
+//   - undangan PDFs:   <root>/dinas-luar/undangan/
+//   - SPPD bukti PDFs: <root>/dinas-luar/sppd/<sppdId>/
+//   - bukti foto:      <root>/dinas-luar/<nama-akun>/<sppdId>/
 // One kegiatan (SPPD) = one folder, so all files for a single trip stay together.
-const DINAS_LUAR_DIR = path.resolve(process.cwd(), 'data', 'dinas-luar');
+const DINAS_LUAR_DIR = path.join(dataRoot(), 'dinas-luar');
 const UNDANGAN_DIR = path.join(DINAS_LUAR_DIR, 'undangan');
 const SPPD_DIR = path.join(DINAS_LUAR_DIR, 'sppd');
 

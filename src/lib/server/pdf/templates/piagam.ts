@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
+import { uploadsDir } from '$lib/server/data-dirs';
 import { sharedStyles, formatUpper, formatValue } from './shared';
 
 export interface PiagamPrintData {
@@ -56,7 +57,7 @@ function getKumerLogoDataUri(): string | null {
 }
 
 function getCustomBgPath(sekolahId: number, template: '1' | '2'): string {
-	return resolve('data', 'uploads', `sekolah-${sekolahId}-piagam-bg-${template}.png`);
+	return join(uploadsDir(), `sekolah-${sekolahId}-piagam-bg-${template}.png`);
 }
 
 function getBgCertificateDataUri(sekolahId?: number): string | null {

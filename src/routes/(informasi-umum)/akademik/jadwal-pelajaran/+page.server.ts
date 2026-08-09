@@ -1,4 +1,5 @@
 import db from '$lib/server/db';
+import { soundsDir } from '$lib/server/data-dirs';
 import { ensureJadwalBellSchema } from '$lib/server/db/ensure-jadwal-bell';
 import { ensurePresensiSettingsSchema } from '$lib/server/db/ensure-presensi-settings';
 import {
@@ -237,7 +238,7 @@ export const actions: Actions = {
 				return fail(400, { fail: 'Hanya file MP3 yang dapat diterima' });
 			}
 			const buffer = Buffer.from(await soundFile.arrayBuffer());
-			const soundDir = path.resolve(process.env.sounds?.replace(/^file:/, '') || './data/sounds');
+			const soundDir = soundsDir();
 			fs.mkdirSync(soundDir, { recursive: true });
 			fs.writeFileSync(path.join(soundDir, `${sekolahId}_custom_${kode}.mp3`), buffer);
 			soundFileName = soundFile.name;
@@ -269,7 +270,7 @@ export const actions: Actions = {
 
 		if (!kode) return fail(400, { fail: 'Kode tidak valid' });
 
-		const soundDir = path.resolve(process.env.sounds?.replace(/^file:/, '') || './data/sounds');
+		const soundDir = soundsDir();
 		const soundPath = path.join(soundDir, `${sekolahId}_custom_${kode}.mp3`);
 		try {
 			fs.unlinkSync(soundPath);
@@ -313,7 +314,7 @@ export const actions: Actions = {
 			if (existing) return fail(400, { fail: 'Kode sudah digunakan' });
 		}
 
-		const soundDir = path.resolve(process.env.sounds?.replace(/^file:/, '') || './data/sounds');
+		const soundDir = soundsDir();
 		let soundFileName: string | null | undefined = undefined;
 		let soundMimeType: string | null | undefined = undefined;
 

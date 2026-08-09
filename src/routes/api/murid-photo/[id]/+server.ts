@@ -3,13 +3,8 @@ import path from 'node:path';
 import { error } from '@sveltejs/kit';
 import db from '$lib/server/db/index.js';
 import { tableMurid } from '$lib/server/db/schema.js';
+import { uploadsDir } from '$lib/server/data-dirs';
 import { eq } from 'drizzle-orm';
-
-function uploadsDir() {
-	const envPhoto = process.env.photo || 'file:./data/uploads';
-	const raw = envPhoto.startsWith('file:') ? envPhoto.slice(5) : envPhoto;
-	return path.resolve(raw);
-}
 
 function contentTypeFor(filename: string) {
 	if (filename.endsWith('.png')) return 'image/png';

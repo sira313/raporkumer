@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import db from '$lib/server/db/index.js';
 import { tableAlamat, tableKelas, tableMurid, tableWaliMurid } from '$lib/server/db/schema.js';
+import { uploadsDir } from '$lib/server/data-dirs';
 import { unflattenFormData } from '$lib/utils.js';
 import { error, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
@@ -40,12 +41,6 @@ export const actions = {
 		const formData = await request.formData();
 		const uploadedFile = formData.get('foto') as File | null;
 		const formMurid = unflattenFormData<Murid>(formData);
-
-		function uploadsDir() {
-			const envPhoto = process.env.photo || 'file:./data/uploads';
-			const raw = envPhoto.startsWith('file:') ? envPhoto.slice(5) : envPhoto;
-			return path.resolve(raw);
-		}
 
 		function slugifyName(name: string) {
 			if (!name) return 'murid';

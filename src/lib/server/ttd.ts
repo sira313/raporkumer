@@ -2,13 +2,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { eq, like } from 'drizzle-orm';
 import db from '$lib/server/db';
+import { dataRoot } from '$lib/server/data-dirs';
 import { tableBukuTamu, tablePresensiGuru } from '$lib/server/db/schema';
 
 export type TtdKategori = 'guru' | 'tamu';
 
-// Signatures are stored as transparent PNG files under <cwd>/data/ttd/<kategori>/,
-// alongside the default SQLite database (data/database.sqlite3).
-const DATA_DIR = path.resolve(process.cwd(), 'data', 'ttd');
+// Signatures are stored as transparent PNG files under <root>/ttd/<kategori>/,
+// alongside the other user data (database, uploads, dinas-luar).
+const DATA_DIR = path.join(dataRoot(), 'ttd');
 
 const SAFE_REL = /^[a-z]+\/[A-Za-z0-9._-]+$/;
 const SAFE_NAME = /^[A-Za-z0-9._-]+$/;

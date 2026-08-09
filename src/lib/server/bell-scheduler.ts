@@ -2,6 +2,7 @@ import { exec, execFile } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import db from '$lib/server/db';
+import { soundsDir } from '$lib/server/data-dirs';
 import {
 	tableBellSettings,
 	tableJadwalPelajaran,
@@ -55,12 +56,6 @@ function toDateStr(date: Date): string {
 function timeToMinutes(t: string): number {
 	const [h, m] = t.split(':').map(Number);
 	return h * 60 + m;
-}
-
-function soundsDir(): string {
-	const envSounds = process.env.sounds || 'file:./data/sounds';
-	const raw = envSounds.startsWith('file:') ? envSounds.slice(5) : envSounds;
-	return path.resolve(raw);
 }
 
 function execAsync(cmd: string, options?: { timeout?: number }): Promise<void> {

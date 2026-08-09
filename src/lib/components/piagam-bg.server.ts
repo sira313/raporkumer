@@ -1,10 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { error } from '@sveltejs/kit';
-
-function uploadsDir() {
-	return path.resolve('data', 'uploads');
-}
+import { uploadsDir } from '$lib/server/data-dirs';
 
 async function ensureUploadsDir() {
 	const dir = uploadsDir();
