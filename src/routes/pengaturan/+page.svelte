@@ -192,81 +192,190 @@
 	</div>
 </section>
 
-<section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
-	<!-- Change Admin Username -->
-	<FormEnhance action="?/change-admin-username" onsuccess={handleAdminUsernameSuccess}>
-		{#snippet children({ submitting, invalid })}
-			<header class="mb-4 space-y-2">
-				<h2 class="text-xl font-semibold">Ganti Username</h2>
-				<p class="text-base-content/70 text-sm">
-					Perbarui username untuk menjaga keamanan akses aplikasi.
-				</p>
-			</header>
-			<div class="flex flex-col gap-2 sm:flex-row">
-				<div class="w-full">
-					<fieldset class="fieldset">
-						<legend class="fieldset-legend">Username</legend>
-						<div class="form-control">
-							<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
-								<span class="pl-2"><Icon name="users" /></span>
-								<input
-									type="text"
-									id="adminUsername"
-									name="adminUsername"
-									required
-									pattern="^[A-Za-z0-9._-]&#123;3,&#125;$"
-									title="Gunakan huruf, angka, titik, underscore atau minus. Minimal 3 karakter."
-									placeholder="contoh: laila2"
-								/>
-							</label>
-							<p class="text-base-content/70 mt-1 text-xs">Masukkan username baru.</p>
-						</div>
-					</fieldset>
+<div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
+		<!-- Change Admin Username -->
+		<FormEnhance action="?/change-admin-username" onsuccess={handleAdminUsernameSuccess}>
+			{#snippet children({ submitting, invalid })}
+				<header class="mb-4 space-y-2">
+					<h2 class="text-xl font-semibold">Ganti Username</h2>
+					<p class="text-base-content/70 text-sm">
+						Perbarui username untuk menjaga keamanan akses aplikasi.
+					</p>
+				</header>
+				<div class="flex flex-col gap-2">
+					<div class="w-full">
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend">Username</legend>
+							<div class="form-control">
+								<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+									<span class="pl-2"><Icon name="users" /></span>
+									<input
+										type="text"
+										id="adminUsername"
+										name="adminUsername"
+										required
+										pattern="^[A-Za-z0-9._-]&#123;3,&#125;$"
+										title="Gunakan huruf, angka, titik, underscore atau minus. Minimal 3 karakter."
+										placeholder="contoh: laila2"
+									/>
+								</label>
+								<p class="text-base-content/70 mt-1 text-xs">Masukkan username baru.</p>
+							</div>
+						</fieldset>
+					</div>
+
+					<div class="w-full">
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend">Konfirmasi Dengan Kata Sandi</legend>
+							<div class="form-control">
+								<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+									<span class="pl-2"><Icon name="lock" /></span>
+									<input
+										type={showAdminPassword ? 'text' : 'password'}
+										id="adminPassword"
+										name="adminPassword"
+										required
+										placeholder="Masukkan kata sandi"
+										autocomplete="current-password"
+									/>
+									<button
+										type="button"
+										class="cursor-pointer pr-2"
+										onclick={() => (showAdminPassword = !showAdminPassword)}
+										aria-label="Toggle password visibility"
+									>
+										<Icon name={showAdminPassword ? 'eye-off' : 'eye'} />
+									</button>
+								</label>
+								<p class="text-base-content/70 mt-1 text-xs">
+									Masukkan kata sandi saat ini untuk konfirmasi perubahan username.
+								</p>
+							</div>
+						</fieldset>
+					</div>
 				</div>
 
-				<div class="w-full">
-					<fieldset class="fieldset">
-						<legend class="fieldset-legend">Konfirmasi dengan Kata Sandi</legend>
-						<div class="form-control">
+				<div class="mt-6 flex justify-end">
+					<button
+						class="btn btn-primary shadow-none"
+						type="submit"
+						disabled={submitting || invalid}
+					>
+						<Icon name="save" />
+						{submitting ? 'Menyimpan…' : 'Terapkan'}
+					</button>
+				</div>
+			{/snippet}
+		</FormEnhance>
+	</section>
+
+	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
+		<div class="space-y-4">
+			<header class="space-y-2">
+				<h2 class="text-xl font-semibold">Ganti Password</h2>
+				<p class="text-base-content/70 text-sm">
+					Perbarui kata sandi untuk menjaga keamanan akses aplikasi.
+				</p>
+			</header>
+
+			<FormEnhance action="?/change-password" onsuccess={handlePasswordSuccess}>
+				{#snippet children({ submitting, invalid })}
+					<div>
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend">Kata sandi saat ini</legend>
 							<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 								<span class="pl-2"><Icon name="lock" /></span>
 								<input
-									type={showAdminPassword ? 'text' : 'password'}
-									id="adminPassword"
-									name="adminPassword"
+									type={showCurrentPassword ? 'text' : 'password'}
+									id="currentPassword"
+									name="currentPassword"
 									required
-									placeholder="Masukkan kata sandi"
 									autocomplete="current-password"
+									placeholder="Masukkan kata sandi lama"
 								/>
 								<button
 									type="button"
 									class="cursor-pointer pr-2"
-									onclick={() => (showAdminPassword = !showAdminPassword)}
+									onclick={() => (showCurrentPassword = !showCurrentPassword)}
 									aria-label="Toggle password visibility"
 								>
-									<Icon name={showAdminPassword ? 'eye-off' : 'eye'} />
+									<Icon name={showCurrentPassword ? 'eye-off' : 'eye'} />
 								</button>
 							</label>
-							<p class="text-base-content/70 mt-1 text-xs">
-								Masukkan kata sandi saat ini untuk konfirmasi perubahan username.
-							</p>
-						</div>
-					</fieldset>
-				</div>
-			</div>
+						</fieldset>
 
-			<div class="mt-6 flex justify-end">
-				<button class="btn btn-primary shadow-none" type="submit" disabled={submitting || invalid}>
-					<Icon name="save" />
-					{submitting ? 'Menyimpan…' : 'Terapkan'}
-				</button>
-			</div>
-		{/snippet}
-	</FormEnhance>
-</section>
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend">Kata sandi baru</legend>
+							<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+								<span class="pl-2"><Icon name="lock" /></span>
+								<input
+									type={showNewPassword ? 'text' : 'password'}
+									id="newPassword"
+									name="newPassword"
+									required
+									minlength={8}
+									autocomplete="new-password"
+									placeholder="Minimal 8 karakter"
+								/>
+								<button
+									type="button"
+									class="cursor-pointer pr-2"
+									onclick={() => (showNewPassword = !showNewPassword)}
+									aria-label="Toggle password visibility"
+								>
+									<Icon name={showNewPassword ? 'eye-off' : 'eye'} />
+								</button>
+							</label>
+						</fieldset>
+
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend">Konfirmasi kata sandi baru</legend>
+							<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+								<span class="pl-2"><Icon name="lock" /></span>
+								<input
+									type={showConfirmPassword ? 'text' : 'password'}
+									id="confirmPassword"
+									name="confirmPassword"
+									required
+									minlength={8}
+									autocomplete="new-password"
+									placeholder="Ulangi kata sandi baru"
+								/>
+								<button
+									type="button"
+									class="cursor-pointer pr-2"
+									onclick={() => (showConfirmPassword = !showConfirmPassword)}
+									aria-label="Toggle password visibility"
+								>
+									<Icon name={showConfirmPassword ? 'eye-off' : 'eye'} />
+								</button>
+							</label>
+						</fieldset>
+
+						<p class="text-base-content/70 text-xs">
+							Gunakan kombinasi huruf dan angka untuk keamanan maksimal.
+						</p>
+
+						<div class="mt-6 flex justify-end">
+							<button
+								class="btn btn-primary shadow-none"
+								type="submit"
+								disabled={submitting || invalid}
+							>
+								<Icon name="save" />
+								{submitting ? 'Menyimpan…' : 'Simpan kata sandi'}
+							</button>
+						</div>
+					</div>
+				{/snippet}
+			</FormEnhance>
+		</div>
+	</section>
+</div>
 
 {#if user?.type === 'admin' && data.storage}
-	<section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
+	<section class="card bg-base-100 mt-4 rounded-lg border border-none p-6 shadow-md">
 		<FormEnhance action="?/update-storage-location">
 			{#snippet children({ submitting })}
 				<header class="mb-4 space-y-2">
@@ -359,7 +468,8 @@
 				<div role="alert" class="alert alert-info mt-4">
 					<Icon name="info" />
 					<span
-						>File di lokasi lama akan disalin ke lokasi baru (tidak dihapus). Perlu mulai ulang server agar aplikasi membaca folder baru.</span
+						>File di lokasi lama akan disalin ke lokasi baru (tidak dihapus). Perlu mulai ulang
+						server agar aplikasi membaca folder baru.</span
 					>
 				</div>
 
@@ -381,117 +491,3 @@
 		/>
 	</section>
 {/if}
-
-<section class="card bg-base-100 mt-5 rounded-lg border border-none p-6 shadow-md">
-	<div class="space-y-4">
-		<header class="space-y-2">
-			<h2 class="text-xl font-semibold">Ganti Password</h2>
-			<p class="text-base-content/70 text-sm">
-				Perbarui kata sandi untuk menjaga keamanan akses aplikasi.
-			</p>
-		</header>
-
-		<FormEnhance action="?/change-password" onsuccess={handlePasswordSuccess}>
-			{#snippet children({ submitting, invalid })}
-				<div>
-					<fieldset class="fieldset">
-						<legend class="fieldset-legend">Kata sandi saat ini</legend>
-						<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
-							<span class="pl-2"><Icon name="lock" /></span>
-							<input
-								type={showCurrentPassword ? 'text' : 'password'}
-								id="currentPassword"
-								name="currentPassword"
-								required
-								autocomplete="current-password"
-								placeholder="Masukkan kata sandi lama"
-							/>
-							<button
-								type="button"
-								class="cursor-pointer pr-2"
-								onclick={() => (showCurrentPassword = !showCurrentPassword)}
-								aria-label="Toggle password visibility"
-							>
-								<Icon name={showCurrentPassword ? 'eye-off' : 'eye'} />
-							</button>
-						</label>
-					</fieldset>
-
-					<fieldset class="fieldset">
-						<legend class="fieldset-legend">Kata sandi baru</legend>
-						<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
-							<span class="pl-2"><Icon name="lock" /></span>
-							<input
-								type={showNewPassword ? 'text' : 'password'}
-								id="newPassword"
-								name="newPassword"
-								required
-								minlength={8}
-								autocomplete="new-password"
-								placeholder="Minimal 8 karakter"
-							/>
-							<button
-								type="button"
-								class="cursor-pointer pr-2"
-								onclick={() => (showNewPassword = !showNewPassword)}
-								aria-label="Toggle password visibility"
-							>
-								<Icon name={showNewPassword ? 'eye-off' : 'eye'} />
-							</button>
-						</label>
-					</fieldset>
-
-					<fieldset class="fieldset">
-						<legend class="fieldset-legend">Konfirmasi kata sandi baru</legend>
-						<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
-							<span class="pl-2"><Icon name="lock" /></span>
-							<input
-								type={showConfirmPassword ? 'text' : 'password'}
-								id="confirmPassword"
-								name="confirmPassword"
-								required
-								minlength={8}
-								autocomplete="new-password"
-								placeholder="Ulangi kata sandi baru"
-							/>
-							<button
-								type="button"
-								class="cursor-pointer pr-2"
-								onclick={() => (showConfirmPassword = !showConfirmPassword)}
-								aria-label="Toggle password visibility"
-							>
-								<Icon name={showConfirmPassword ? 'eye-off' : 'eye'} />
-							</button>
-						</label>
-					</fieldset>
-
-					<p class="text-base-content/70 text-xs">
-						Gunakan kombinasi huruf dan angka untuk keamanan maksimal.
-					</p>
-
-					<div role="alert" class="alert alert-info mt-4">
-						<Icon name="info" />
-						<span
-							>Khusus wali kelas, dapat mengubah kata sandi mereka sendiri. Bila lupa sandi atau
-							username, dapat menghubungi admin untuk melakukan reset.</span
-						>
-					</div>
-					<div role="alert" class="alert alert-warning mt-4">
-						<Icon name="alert" />
-						<span>Khusus Admin, simpan sandi dengan aman. Tidak ada garansi lupa sandi!</span>
-					</div>
-					<div class="mt-6 flex justify-end">
-						<button
-							class="btn btn-primary shadow-none"
-							type="submit"
-							disabled={submitting || invalid}
-						>
-							<Icon name="save" />
-							{submitting ? 'Menyimpan…' : 'Simpan kata sandi'}
-						</button>
-					</div>
-				</div>
-			{/snippet}
-		</FormEnhance>
-	</div>
-</section>
