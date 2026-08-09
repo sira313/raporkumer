@@ -110,12 +110,15 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 			id: sekolah.id,
 			nama: sekolah.nama,
 			jenjang: sekolah.jenjangPendidikan,
+			jenjangVariant: sekolah.jenjangVariant,
+			naungan: sekolah.naungan,
 			npsn: sekolah.npsn,
 			alamat: {
 				jalan: sekolah.alamat?.jalan ?? '',
 				desa: sekolah.alamat?.desa ?? '',
 				kecamatan: sekolah.alamat?.kecamatan ?? '',
-				kabupaten: sekolah.alamat?.kabupaten ?? ''
+				kabupaten: sekolah.alamat?.kabupaten ?? '',
+				provinsi: sekolah.alamat?.provinsi ?? null
 			},
 			website: sekolah.website ?? null,
 			email: sekolah.email ?? null,

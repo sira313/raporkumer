@@ -2,7 +2,7 @@
 	/* eslint-disable svelte/no-navigation-without-resolve -- layout contains many intentional href links for navigation */
 	import { page } from '$app/state';
 	import { dev } from '$app/environment';
-	import { invalidate } from '$app/navigation';
+	import { invalidate, onNavigate } from '$app/navigation';
 	import GlobalModal, { showModal } from '$lib/components/global-modal.svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import Menu from '$lib/components/menu.svelte';
@@ -26,6 +26,16 @@
 	const appName = 'Rapkumer';
 	let stoppingServer = $state(false);
 	let loggingOut = $state(false);
+
+	// Close the mobile drawer when a menu item triggers client-side navigation.
+	// The toggle checkbox lives in the layout (survives soft navigation), so
+	// without this the drawer + overlay stay open on the target page and block
+	// all clicks until a manual reload.
+	onNavigate(() => {
+		const drawerToggle = document.getElementById('my-drawer-2') as HTMLInputElement | null;
+		if (drawerToggle) drawerToggle.checked = false;
+	});
+
 	const isLoginPage = $derived(page.url.pathname === '/login');
 	const isTamuPage = $derived(page.url.pathname === '/tamu');
 	const isJadwalPublikPage = $derived(page.url.pathname === '/jadwal-pelajaran');

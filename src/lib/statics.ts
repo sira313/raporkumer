@@ -47,6 +47,40 @@ export const nauganHeaderByKey: Record<NauganKey, [string, string]> = {
 	kemenag: ['KEMENTERIAN AGAMA', 'REPUBLIK INDONESIA']
 };
 
+const KOP_FALLBACK = '\u2014';
+
+/**
+ * Baris kop surat dinas berdasarkan jenjang/varian sekolah.
+ * - Sekolah Rakyat (srd/srmp/srma/srt): hanya naungan, tanpa baris dinas.
+ * - SLB/SMA/SMK: Pemerintah {provinsi} + Dinas Pendidikan dan Kebudayaan.
+ * - Madrasah (mi/mts/ma/mak): naungan + Kantor Kemenag {kabupaten}.
+ * - Selain itu: Pemerintah {kabupaten} + Dinas Pendidikan dan Kebudayaan.
+ */
+export function getKopSuratLines(input: {
+	jenjangVariant?: string | null;
+	naungan?: NauganKey | null;
+	kabupaten: string;
+	provinsi?: string | null;
+}): string[] {
+	const variant = input.jenjangVariant ?? '';
+	const upper = (v: string | null | undefined) => (v ? v.toUpperCase() : KOP_FALLBACK);
+	const kabupaten = upper(input.kabupaten);
+	const provinsi = upper(input.provinsi);
+	const naunganLabel = upper(nauganLabelByKey[input.naungan ?? 'kemendikbud']);
+
+	if (['srd', 'srmp', 'srma', 'srt'].includes(variant)) {
+		return [naunganLabel];
+	}
+	if (['slb', 'sma', 'smk'].includes(variant)) {
+		const daerah = provinsi === KOP_FALLBACK ? kabupaten : provinsi;
+		return [`PEMERINTAH ${daerah}`, 'DINAS PENDIDIKAN DAN KEBUDAYAAN'];
+	}
+	if (['mi', 'mts', 'ma', 'mak'].includes(variant)) {
+		return [naunganLabel, `KANTOR KEMENAG ${kabupaten}`];
+	}
+	return [`PEMERINTAH ${kabupaten}`, 'DINAS PENDIDIKAN DAN KEBUDAYAAN'];
+}
+
 export const jenisKelamin: Record<Murid['jenisKelamin'], string> = {
 	L: 'Laki-laki',
 	P: 'Perempuan'

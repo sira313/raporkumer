@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { uploadsDir } from '$lib/server/data-dirs';
+import { getKopSuratLines } from '$lib/statics';
 import { sharedStyles, formatUpper, formatValue } from './shared';
 
 export interface PiagamPrintData {
@@ -8,6 +9,8 @@ export interface PiagamPrintData {
 		id?: number;
 		nama: string;
 		jenjang: 'sd' | 'smp' | 'sma' | 'slb' | 'pkbm' | 'srt';
+		jenjangVariant?: string | null;
+		naungan?: 'kemendikbud' | 'kemsos' | 'kemenag' | null;
 		npsn: string;
 		alamat: {
 			jalan: string;
@@ -376,10 +379,14 @@ export function renderPiagamHTML(data: PiagamPrintData, template: '1' | '2'): st
 	if (data.sekolah.email) contactParts.push(`Email: ${data.sekolah.email}`);
 	const contactLine = contactParts.join(' | ');
 
-	const kabupatenUpper = formatUpper(data.sekolah.alamat.kabupaten);
-	const kecamatanUpper = formatUpper(data.sekolah.alamat.kecamatan);
-
 	const schoolHeadingText = schoolHeading(data.sekolah.jenjang, data.sekolah.nama);
+
+	const kopLines = getKopSuratLines({
+		jenjangVariant: data.sekolah.jenjangVariant,
+		naungan: data.sekolah.naungan,
+		kabupaten: data.sekolah.alamat.kabupaten,
+		provinsi: data.sekolah.alamat.provinsi
+	});
 
 	const penghargaan = data.penghargaan;
 	const periode = data.periode;
@@ -423,9 +430,7 @@ ${bgCert ? `<div class="piagam-bg" style="background-image: url('${bgCert}')"></
 	<div class="header">
 		${logoDinasUrl ? `<img src="${logoDinasUrl}" alt="" class="header-logo">` : '<div class="header-logo"></div>'}
 		<div class="header-center">
-			<div class="header-text">PEMERINTAH ${kabupatenUpper}</div>
-			<div class="header-text">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
-			${data.sekolah.alamat.kecamatan ? `<div class="header-text">KOORDINATOR WILAYAH ${kecamatanUpper}</div>` : ''}
+			${kopLines.map((line) => `<div class="header-text">${line}</div>`).join('')}
 			<div class="header-text-14">${schoolHeadingText}</div>
 			${alamatLine ? `<div class="header-info">${alamatLine}</div>` : ''}
 			${contactLine ? `<div class="header-contact">${contactLine}</div>` : ''}

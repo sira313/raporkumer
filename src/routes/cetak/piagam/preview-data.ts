@@ -135,6 +135,8 @@ export async function getPiagamPreviewPayload({ locals, url }: { locals: App.Loc
 			id: sekolah.id,
 			nama: sekolah.nama,
 			jenjang: sekolah.jenjangPendidikan,
+			jenjangVariant: sekolah.jenjangVariant,
+			naungan: sekolah.naungan,
 			npsn: sekolah.npsn,
 			alamat: {
 				jalan: sekolah.alamat?.jalan ?? '',

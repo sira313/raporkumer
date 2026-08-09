@@ -1,16 +1,20 @@
 import { sharedStyles, formatUpper, formatValue } from './shared';
+import { getKopSuratLines } from '$lib/statics';
 
 export interface SppdPrintData {
 	sekolah: {
 		id: number;
 		nama: string;
 		jenjang: string;
+		jenjangVariant?: string | null;
+		naungan?: 'kemendikbud' | 'kemsos' | 'kemenag' | null;
 		npsn: string;
 		alamat: {
 			jalan: string;
 			desa: string;
 			kecamatan: string;
 			kabupaten: string;
+			provinsi?: string | null;
 		};
 		website?: string | null;
 		email?: string | null;
@@ -331,9 +335,14 @@ export function renderSppdHTML(data: SppdPrintData): string {
 	if (sekolah.email) contactParts.push(`Email: ${sekolah.email}`);
 	const contactLine = contactParts.join(' | ');
 
-	const kabupatenUpper = formatUpper(sekolah.alamat.kabupaten);
-	const kecamatanUpper = formatUpper(sekolah.alamat.kecamatan);
 	const schoolHeadingText = schoolHeading(sekolah.jenjang, sekolah.nama);
+
+	const kopLines = getKopSuratLines({
+		jenjangVariant: sekolah.jenjangVariant,
+		naungan: sekolah.naungan,
+		kabupaten: sekolah.alamat.kabupaten,
+		provinsi: sekolah.alamat.provinsi
+	});
 
 	const kepalaLabel = ttd.statusKepalaSekolah === 'plt' ? 'Plt. Kepala' : 'Kepala';
 	const kepalaLabelSekolah =
@@ -346,9 +355,7 @@ export function renderSppdHTML(data: SppdPrintData): string {
 <div class="kop">
 	${logoDinas ? `<img src="${logoDinas}" alt="" class="kop-logo">` : '<div class="kop-logo"></div>'}
 	<div class="kop-center">
-		<div class="kop-text">PEMERINTAH ${kabupatenUpper}</div>
-		<div class="kop-text">DINAS PENDIDIKAN DAN KEBUDAYAAN</div>
-		${sekolah.alamat.kecamatan ? `<div class="kop-text">KOORDINATOR WILAYAH ${kecamatanUpper}</div>` : ''}
+		${kopLines.map((line) => `<div class="kop-text">${line}</div>`).join('')}
 		<div class="kop-sekolah">${schoolHeadingText}</div>
 		${alamatLine ? `<div class="kop-info">${alamatLine}</div>` : ''}
 		${contactLine ? `<div class="kop-contact">${contactLine}</div>` : ''}
@@ -362,30 +369,30 @@ export function renderSppdHTML(data: SppdPrintData): string {
 		.map(
 			(p, i) => `
 		<tr>
-			<td class="lbl">${i === 0 ? 'Kepada' : ''}</td>
+			<td>${i === 0 ? 'Kepada' : ''}</td>
 			<td class="colon">:</td>
-			<td class="lbl">Nama</td>
+			<td>Nama</td>
 			<td class="colon">:</td>
 			<td>${formatValue(p.nama)}</td>
 		</tr>
 		<tr>
 			<td></td>
 			<td></td>
-			<td class="lbl">Pangkat/gol</td>
+			<td>Pangkat/gol</td>
 			<td class="colon">:</td>
 			<td>${[p.pangkat, p.golongan].filter(Boolean).join(' / ') || '—'}</td>
 		</tr>
 		<tr>
 			<td></td>
 			<td></td>
-			<td class="lbl">NIP</td>
+			<td>NIP</td>
 			<td class="colon">:</td>
 			<td>${formatValue(p.nip)}</td>
 		</tr>
 		<tr>
 			<td></td>
 			<td></td>
-			<td class="lbl">Jabatan</td>
+			<td>Jabatan</td>
 			<td class="colon">:</td>
 			<td>${formatValue(p.jabatan)}</td>
 		</tr>`
@@ -402,16 +409,16 @@ export function renderSppdHTML(data: SppdPrintData): string {
 	<table class="plain">
 		<tbody>
 			<tr>
-				<th class="lbl" style="width: 35mm;">Dasar</th>
+				<th style="width: 35mm;">Dasar</th>
 				<th class="colon">:</th>
 				<td colspan="3">${formatValue(surat.dasar)}</td>
 			</tr>
 			<tr>
-				<td colspan="5" style="font-weight: bold;">Memerintahkan:</td>
+				<td colspan="5" style="font-weight: bold; text-align: center;">Memerintahkan:</td>
 			</tr>
 			${tugasRows}
 			<tr>
-				<td class="lbl">Untuk</td>
+				<td>Untuk</td>
 				<td class="colon">:</td>
 				<td colspan="3">${formatValue(surat.maksud)}</td>
 			</tr>

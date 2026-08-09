@@ -128,7 +128,7 @@
 					{@render menu_item_label(item)}
 				</summary>
 				<ul>
-					{#each item.subMenu as menu (menu.title)}
+					{#each item.subMenu as menu (menu.path ?? menu.title)}
 						{@render menu_item(menu)}
 					{/each}
 				</ul>
@@ -170,7 +170,7 @@
 	<div
 		class="lg:bg-base-200 lg:rounded-box lg:max-h-[calc(100vh-13.5rem)] lg:overflow-y-auto lg:shadow-inner"
 	>
-		{#each menuItems as menu (menu.title)}
+		{#each menuItems as menu (menu.path ?? menu.title)}
 			{@render menu_item(menu)}
 		{:else}
 			<li>

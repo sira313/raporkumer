@@ -161,6 +161,8 @@ interface PiagamPrintData {
 	sekolah: {
 		nama: string;
 		jenjang: 'sd' | 'smp' | 'sma' | 'slb' | 'pkbm' | 'srt';
+		jenjangVariant?: string | null;
+		naungan?: 'kemendikbud' | 'kemsos' | 'kemenag' | null;
 		npsn: string;
 		alamat: {
 			jalan: string;
