@@ -41,6 +41,32 @@ function main() {
 
 	const hasPnpm = hasCommand('pnpm');
 
+	// 0) Sync installer version with package.json so Inno Setup AppVersion matches the app.
+	//    Inno Setup requires a numeric version, so any semver prerelease suffix is stripped.
+	const pkgJson = JSON.parse(fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf-8'));
+	const appVersion = typeof pkgJson.version === 'string' ? pkgJson.version.trim() : '';
+	const installerVersion = appVersion.replace(/-[0-9A-Za-z.-]+$/, '');
+	if (appVersion) {
+		const issPath = path.join(projectRoot, 'installer', 'rapkumer.iss');
+		const issContent = fs.readFileSync(issPath, 'utf-8');
+		if (/#define\s+AppVersion\s+"[^"]*"/.test(issContent)) {
+			const updated = issContent.replace(
+				/#define\s+AppVersion\s+"[^"]*"/,
+				`#define AppVersion "${installerVersion}"`
+			);
+			if (updated !== issContent) {
+				fs.writeFileSync(issPath, updated, 'utf-8');
+				console.info(`Synced installer AppVersion to ${installerVersion} in ${issPath}`);
+			} else {
+				console.info(`Installer AppVersion already matches ${installerVersion}`);
+			}
+		} else {
+			console.warn(
+				`Skipping installer version sync: no "#define AppVersion" line found in ${issPath}`
+			);
+		}
+	}
+
 	// 1) Build
 	if (!skipBuild) {
 		if (hasPnpm) {
@@ -112,7 +138,6 @@ function main() {
 
 	// 8) Generate runtime package.json
 	console.info('Generating runtime package manifest...');
-	const pkgJson = JSON.parse(fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf-8'));
 	const runtimePkg = {
 		name: pkgJson.name,
 		version: pkgJson.version,
