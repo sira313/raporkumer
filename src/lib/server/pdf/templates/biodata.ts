@@ -211,6 +211,9 @@ ${bgLogoSrc ? `<img class="watermark" src="${bgLogoSrc}" alt="logo" />` : ''}
 </table>
 
 <div class="footer">
+	<div class="photo-box">
+		${foto ? `<img src="${foto}" alt="foto" />` : 'PAS FOTO 3x4'}
+	</div>
 	<div class="ttd-section">
 		<div class="ttd-top">
 			<p>${formatValue(ttd.tempat)}, ${formatValue(ttd.tanggal)}</p>
@@ -220,9 +223,6 @@ ${bgLogoSrc ? `<img class="watermark" src="${bgLogoSrc}" alt="logo" />` : ''}
 			<p class="font-bold">${formatValue(ttd.kepalaSekolah)}</p>
 			<p>${formatValue(ttd.nip)}</p>
 		</div>
-	</div>
-	<div class="photo-box">
-		${foto ? `<img src="${foto}" alt="foto" />` : 'PAS FOTO 3x4'}
 	</div>
 </div>
 

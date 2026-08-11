@@ -21,7 +21,10 @@ export const jenjangPendidikanSederajat: Record<
 		{ key: 'srma', label: 'Sekolah Rakyat Menengah Atas (SRMA)' }
 	],
 	slb: [{ key: 'slb', label: 'Sekolah Luar Biasa (SLB)' }],
-	pkbm: [{ key: 'pkbm', label: 'Pusat Kegiatan Belajar Masyarakat (PKBM)' }],
+	pkbm: [
+		{ key: 'pkbm', label: 'Pusat Kegiatan Belajar Masyarakat (PKBM)' },
+		{ key: 'skb', label: 'Sanggar Kegiatan Belajar (SKB)' }
+	],
 	srt: [{ key: 'srt', label: 'Sekolah Rakyat Terintegrasi (SRT)' }]
 };
 
