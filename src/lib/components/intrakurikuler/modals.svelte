@@ -19,7 +19,9 @@
 {#if formModalData}
 	<dialog class="modal" open onclose={() => history.back()}>
 		<div class="modal-box p-4 sm:w-full sm:max-w-2xl">
-			<FormMataPelajaran data={formModalData} />
+			{#key formModalData}
+				<FormMataPelajaran data={formModalData} />
+			{/key}
 		</div>
 		<form method="dialog" class="modal-backdrop">
 			<button>close</button>

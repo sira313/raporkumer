@@ -37,26 +37,29 @@
 	} & Record<string, unknown>;
 
 	let { data }: { data: FormData } = $props();
-	const mode: 'add' | 'edit' = data?.mode === 'edit' ? 'edit' : 'add';
-	const mapel = data?.mapel ?? null;
-	const kelasAktif = data?.kelasAktif ?? mapel?.kelas ?? null;
-	const kelasAktifLabel = kelasAktif
-		? kelasAktif.fase
-			? `${kelasAktif.nama} - ${kelasAktif.fase}`
-			: kelasAktif.nama
-		: 'Belum ada kelas aktif';
-	const isAgamaGroup = !!mapel?.nama && AGAMA_MAPEL_NAME_SET.has(mapel.nama);
-	const isAgamaParent = !!mapel?.nama && mapel.nama === agamaParentName;
-	const isPksGroup = !!mapel?.nama && PKS_MAPEL_NAME_SET.has(mapel.nama);
-	const isPksParent = !!mapel?.nama && mapel.nama === pksParentName;
-	const disableNama = !kelasAktif || (mode === 'edit' && (isAgamaGroup || isPksGroup));
-	const disableJenis = !kelasAktif || (mode === 'edit' && isAgamaGroup);
-	const formAction = mode === 'edit' ? '?/update' : '?/add';
-	const invalidateTargets =
+	const mode: 'add' | 'edit' = $derived(data?.mode === 'edit' ? 'edit' : 'add');
+	const mapel = $derived(data?.mapel ?? null);
+	const kelasAktif = $derived(data?.kelasAktif ?? mapel?.kelas ?? null);
+	const kelasAktifLabel = $derived(
+		kelasAktif
+			? kelasAktif.fase
+				? `${kelasAktif.nama} - ${kelasAktif.fase}`
+				: kelasAktif.nama
+			: 'Belum ada kelas aktif'
+	);
+	const isAgamaGroup = $derived(!!mapel?.nama && AGAMA_MAPEL_NAME_SET.has(mapel.nama));
+	const isAgamaParent = $derived(!!mapel?.nama && mapel.nama === agamaParentName);
+	const isPksGroup = $derived(!!mapel?.nama && PKS_MAPEL_NAME_SET.has(mapel.nama));
+	const isPksParent = $derived(!!mapel?.nama && mapel.nama === pksParentName);
+	const disableNama = $derived(!kelasAktif || (mode === 'edit' && (isAgamaGroup || isPksGroup)));
+	const disableJenis = $derived(!kelasAktif || (mode === 'edit' && isAgamaGroup));
+	const formAction = $derived(mode === 'edit' ? '?/update' : '?/add');
+	const invalidateTargets = $derived(
 		mode === 'edit'
 			? ['app:mapel', 'app:mapel_tp-rl', 'app:asesmen-formatif']
-			: ['app:mapel', 'app:asesmen-formatif'];
-	const formInit =
+			: ['app:mapel', 'app:asesmen-formatif']
+	);
+	const formInit = $derived(
 		mode === 'edit' && mapel
 			? {
 					nama: mapel.nama,
@@ -64,14 +67,14 @@
 					jenis: mapel.jenis,
 					kode: mapel.kode ?? ''
 				}
-			: undefined;
-	let localKode = $state(mapel?.kode ?? '');
-	if (mode === 'edit' && isAgamaGroup) {
-		localKode = 'PAPB';
+			: undefined
+	);
+	function initialKode(): string {
+		if (mode === 'edit' && isAgamaGroup) return 'PAPB';
+		if (mode === 'edit' && isPksGroup) return 'PKS';
+		return mapel?.kode ?? '';
 	}
-	if (mode === 'edit' && isPksGroup) {
-		localKode = 'PKS';
-	}
+	let localKode = $state(initialKode());
 
 	// Dapatkan jenjang varian dari sekolah (misalnya 'SMK')
 	const jenjangVariant = $derived.by(() => {
@@ -117,11 +120,12 @@
 			if (localKode === 'PAPB' || localKode === 'PKS') localKode = '';
 		}
 	}
-	const heading = mode === 'edit' ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran';
-	const namaPlaceholder =
+	const heading = $derived(mode === 'edit' ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran');
+	const namaPlaceholder = $derived(
 		mode === 'edit' && isAgamaParent
 			? 'Pendidikan Agama dan Budi Pekerti'
-			: 'Contoh: Ilmu Pengetahuan Alam dan Sosial';
+			: 'Contoh: Ilmu Pengetahuan Alam dan Sosial'
+	);
 </script>
 
 <FormEnhance
