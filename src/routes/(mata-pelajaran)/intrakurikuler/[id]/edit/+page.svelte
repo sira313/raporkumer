@@ -5,4 +5,6 @@
 	const editData = $derived.by(() => ({ ...data, mode: 'edit' as const }));
 </script>
 
-<FormMataPelajaran data={editData} />
+{#key editData.mapel?.id}
+	<FormMataPelajaran data={editData} />
+{/key}

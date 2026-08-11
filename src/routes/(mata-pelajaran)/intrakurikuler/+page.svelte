@@ -56,9 +56,9 @@
 		return jenjangVariant?.toUpperCase() === 'SMK';
 	}
 
-	// Fungsi untuk mengecek apakah section pemberdayaan harus ditampilkan (hanya untuk PKBM)
+	// Fungsi untuk mengecek apakah section pemberdayaan harus ditampilkan (hanya untuk PKBM/SKB)
 	function shouldShowPemberdayaan(): boolean {
-		return jenjangVariant?.toUpperCase() === 'PKBM';
+		return ['PKBM', 'SKB'].includes(jenjangVariant?.toUpperCase() ?? '');
 	}
 
 	const totalMapel = $derived.by(
