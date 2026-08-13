@@ -1,4 +1,5 @@
 import { applySessionCookie, authenticateUser, createSession } from '$lib/server/auth';
+import { getAppVersion } from '$lib/server/app-info';
 import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
 import { cookieNames } from '$lib/utils';
 import db from '$lib/server/db';
@@ -25,7 +26,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		description: 'Masuk ke Rapkumer untuk mengelola data administrasi guru.'
 	};
 
-	return { meta };
+	return { meta, appVersion: getAppVersion() };
 };
 
 const LOGIN_LOG_PREFIX = '[login action]';

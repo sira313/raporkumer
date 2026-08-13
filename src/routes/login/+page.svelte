@@ -3,6 +3,8 @@
 	import Icon from '$lib/components/icon.svelte';
 
 	let showPassword = $state(false);
+
+	let { data } = $props();
 </script>
 
 <section class="card bg-base-100 w-full max-w-md shadow-xl">
@@ -56,5 +58,7 @@
 				</button>
 			{/snippet}
 		</FormEnhance>
+
+		<p class="text-base-content/50 text-center text-xs">Rapkumer v{data.appVersion}</p>
 	</div>
 </section>
