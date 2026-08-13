@@ -169,7 +169,7 @@
 		'/asesmen-kokurikuler',
 		'/nilai-ekstrakurikuler',
 		'/asesmen-keasramaan',
-		'/absen',
+		'/presensi-murid',
 		'/jurnal-mengajar',
 		'/catatan-wali-kelas',
 		'/keputusan',
@@ -182,14 +182,14 @@
 	);
 
 	const userIsGuruMapel = $derived(data.user?.type === 'user' && data.hasMataPelajaran);
-	const isAbsenPage = $derived(page.url.pathname.startsWith('/absen'));
+	const isPresensiMuridPage = $derived(page.url.pathname.startsWith('/presensi-murid'));
 	const isJurnalMengajarPage = $derived(page.url.pathname.startsWith('/jurnal-mengajar'));
 	const isCetakPage = $derived(page.url.pathname.startsWith('/cetak'));
 
 	const disableInteraction = $derived(
 		data.user?.type === 'user' &&
 			isReadonlyPage &&
-			!((isAbsenPage || isJurnalMengajarPage || isCetakPage) && userIsGuruMapel)
+			!((isPresensiMuridPage || isJurnalMengajarPage || isCetakPage) && userIsGuruMapel)
 	);
 
 	async function stopServer() {
