@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
+	import { openQrisImage } from '$lib/components/qris-image-modal';
 
 	interface Props {
 		tokenText: string;
@@ -33,18 +34,13 @@
 		<Icon name="alert" />
 		<div class="flex flex-col gap-2 sm:flex-row">
 			<span>
-				Ini adalah fitur cheat, donasi minimal 5 gelas kopi di tombol exclusive content. Token akan
-				muncul di sana. Copy paste token ke kolom di bawah.
+				Ini adalah fitur cheat, kami tidak menyarankannya. Donasi minimal Rp.50.000,- melalui tombol
+				QRIS, lalu kirim screenshot melalui tombol <b>Konfirmasi</b> di bawah.
 			</span>
-			<a
-				href="https://trakteer.id/raporkumer/showcase"
-				target="_blank"
-				rel="noopener noreferrer"
-				class="btn my-auto shadow-none"
-			>
-				<Icon name="coffee" />
-				Exclusive Content
-			</a>
+			<button type="button" class="btn my-auto shadow-none" onclick={openQrisImage}>
+				<Icon name="grid" />
+				QRIS
+			</button>
 		</div>
 	</div>
 
@@ -64,7 +60,7 @@
 			</p>
 		{/if}
 		<p class="label text-wrap">
-			Jika belum memiliki token, silakan dukung pengembangan Rapkumer melalui tombol Traktir agar
+			Jika belum memiliki token, silakan donasi melalui tombol QRIS lalu konfirmasi ke Telegram agar
 			fitur ini dapat kami buka.
 		</p>
 	</fieldset>

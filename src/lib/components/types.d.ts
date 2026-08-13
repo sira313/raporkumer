@@ -19,7 +19,7 @@ interface ModalProps<BodyProps extends Record<string, unknown> = Record<string, 
 	onPositive?: ModalAction;
 	onNeutral?: ModalAction;
 	onNegative?: ModalAction;
-	/** renders an additional action (e.g. link) after onPositive */
+	/** renders an additional action (e.g. link) before onPositive */
 	onExtra?: ModalAction;
 	onClose?: () => void;
 }

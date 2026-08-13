@@ -134,6 +134,20 @@
 							</button>
 						{/if}
 
+						{#if modalProps.onExtra}
+							<a
+								class="btn {modalProps.onExtra.class ?? 'btn-soft'} gap-2 shadow-none"
+								href={modalProps.onExtra.href}
+								target="_blank"
+								rel="noopener"
+							>
+								{#if modalProps.onExtra.icon}
+									<Icon name={modalProps.onExtra.icon} />
+								{/if}
+								{modalProps.onExtra.label}
+							</a>
+						{/if}
+
 						{#if modalProps.onPositive}
 							<button
 								class="btn {modalProps.onPositive.class ?? 'btn-primary'} gap-2 shadow-none"
@@ -166,20 +180,6 @@
 								{/if}
 								{modalProps.onPositive.label}
 							</button>
-						{/if}
-
-						{#if modalProps.onExtra}
-							<a
-								class="btn {modalProps.onExtra.class ?? 'btn-soft'} gap-2 shadow-none"
-								href={modalProps.onExtra.href}
-								target="_blank"
-								rel="noopener"
-							>
-								{#if modalProps.onExtra.icon}
-									<Icon name={modalProps.onExtra.icon} />
-								{/if}
-								{modalProps.onExtra.label}
-							</a>
 						{/if}
 					</div>
 				</div>

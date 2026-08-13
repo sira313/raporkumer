@@ -187,10 +187,17 @@
 				onInput: handleCheatUnlockInput
 			},
 			dismissible: true,
-			onNegative: {
+			spreadActions: true,
+			onNeutral: {
 				label: 'Tutup',
 				icon: 'close',
+				class: 'btn-soft',
 				action: ({ close }) => close()
+			},
+			onExtra: {
+				label: 'Konfirmasi',
+				icon: 'telegram',
+				href: 'https://t.me/apoxic4m'
 			},
 			onPositive: {
 				label: 'Verifikasi Token',
