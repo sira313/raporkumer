@@ -72,6 +72,12 @@ async function resolveUniqueUsername(client, nama) {
 	}
 }
 
+async function hasAuthUserColumn(name) {
+	const res = await client.execute('PRAGMA table_info(auth_user)');
+	const cols = res.rows || [];
+	return cols.some((c) => c.name === name);
+}
+
 async function main() {
 	console.info(`[seed-wali] Target DB: ${dbUrl}`);
 
@@ -119,23 +125,45 @@ async function main() {
 		const { hash, salt } = hashPassword(password);
 		const timestamp = nowIso();
 
-		await client.execute({
-			sql: `INSERT INTO auth_user (username, username_normalized, password_hash, password_salt, password_updated_at, permissions, type, pegawai_id, kelas_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			args: [
-				username,
-				usernameNormalized,
-				hash,
-				salt,
-				timestamp,
-				JSON.stringify(WALI_KELAS_DEFAULT_PERMISSIONS),
-				'wali_kelas',
-				waliId,
-				kelasId,
-				timestamp,
-				timestamp
-			]
-		});
+		// Only set must_change_password when the column exists: on an older DB
+		// that has not been migrated yet (no server request has run the ALTER
+		// TABLE) the column is missing and including it would break the INSERT.
+		const canFlagPasswordChange = await hasAuthUserColumn('must_change_password');
+		const columns = [
+			'username',
+			'username_normalized',
+			'password_hash',
+			'password_salt',
+			'password_updated_at',
+			'permissions',
+			'type',
+			'pegawai_id',
+			'kelas_id',
+			'created_at',
+			'updated_at'
+		];
+		const placeholders = columns.map(() => '?');
+		const args = [
+			username,
+			usernameNormalized,
+			hash,
+			salt,
+			timestamp,
+			JSON.stringify(WALI_KELAS_DEFAULT_PERMISSIONS),
+			'wali_kelas',
+			waliId,
+			kelasId,
+			timestamp,
+			timestamp
+		];
+		if (canFlagPasswordChange) {
+			columns.push('must_change_password');
+			placeholders.push('?');
+			args.push(1);
+		}
+		const insertSql = `INSERT INTO auth_user (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`;
+
+		await client.execute({ sql: insertSql, args });
 
 		created.push({ nama, kelasId, waliId, password });
 		console.info(

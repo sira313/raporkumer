@@ -25,6 +25,7 @@ declare global {
 				| 'pegawaiId'
 				| 'mataPelajaranId'
 				| 'sekolahId'
+				| 'mustChangePassword'
 			>;
 			session?: (Pick<AuthSession, 'id' | 'expiresAt'> & { tokenHash?: string }) | undefined;
 			requestIsSecure?: boolean;
@@ -63,6 +64,7 @@ declare global {
 				| 'pegawaiId'
 				| 'mataPelajaranId'
 				| 'sekolahId'
+				| 'mustChangePassword'
 			>;
 		}
 		interface PageState {

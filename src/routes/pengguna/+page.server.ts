@@ -15,6 +15,7 @@ import { sql, eq, and, inArray, desc } from 'drizzle-orm';
 import { authority } from './utils.server';
 import { defaultPermissionsByType } from './permissions';
 import { hashPassword } from '$lib/server/auth';
+import { validatePasswordStrength } from '$lib/server/password-policy';
 import { resolveUniqueUsername } from '$lib/server/usernames';
 import { mergeAccountsUnderKepalaSekolah } from '$lib/server/pengguna-merge';
 import { randomBytes } from 'node:crypto';
@@ -233,6 +234,8 @@ export async function load({ url }) {
 					passwordHash: hash,
 					passwordSalt: salt,
 					passwordUpdatedAt: timestamp,
+					// password generated automatically → require a change at first login
+					mustChangePassword: true,
 					permissions,
 					type: 'wali_kelas',
 					pegawaiId: waliPegawaiId,
@@ -379,6 +382,8 @@ export async function load({ url }) {
 				passwordHash: hash,
 				passwordSalt: salt,
 				passwordUpdatedAt: timestamp,
+				// password generated automatically → require a change at first login
+				mustChangePassword: true,
 				permissions: defaultPermissionsByType['wali_asuh'] ?? [],
 				type: 'wali_asuh',
 				pegawaiId,
@@ -554,6 +559,10 @@ export const actions = {
 			updateData.usernameNormalized = username.toLowerCase();
 		}
 		if (password) {
+			const passwordError = validatePasswordStrength(password);
+			if (passwordError) {
+				return new Response(passwordError, { status: 400 });
+			}
 			const { hash, salt } = hashPassword(password);
 			updateData.passwordHash = hash;
 			updateData.passwordSalt = salt;
@@ -622,6 +631,11 @@ export const actions = {
 
 		if (!username) return fail(400, { message: 'username required' });
 		if (!password) return fail(400, { message: 'password required' });
+
+		const passwordError = validatePasswordStrength(password);
+		if (passwordError) {
+			return fail(400, { message: passwordError });
+		}
 
 		try {
 			const { hash, salt } = hashPassword(password);

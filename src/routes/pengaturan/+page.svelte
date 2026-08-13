@@ -68,6 +68,9 @@
 		if (!appAddress && browser) {
 			appAddress = window.location.host;
 		}
+		if (data.forcePasswordChange && browser) {
+			document.getElementById('ganti-password')?.scrollIntoView({ behavior: 'smooth' });
+		}
 	});
 
 	async function copyAddress() {
@@ -113,6 +116,16 @@
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
+	{#if data.forcePasswordChange}
+		<div class="alert alert-warning mb-4" role="alert">
+			<Icon name="lock" />
+			<span>
+				Kata sandi default harus segera diganti. Perbarui kata sandi Anda di bagian
+				<strong>Ganti Password</strong> di bawah sebelum menggunakan aplikasi.
+			</span>
+		</div>
+	{/if}
+
 	<div class="space-y-4">
 		<header class="flex justify-between gap-3">
 			<div class="space-y-2">
@@ -270,7 +283,7 @@
 		</FormEnhance>
 	</section>
 
-	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
+	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md" id="ganti-password">
 		<div class="space-y-4">
 			<header class="space-y-2">
 				<h2 class="text-xl font-semibold">Ganti Password</h2>

@@ -57,6 +57,12 @@ function hashPassword(password) {
 	return { hash: derived.toString('hex'), salt };
 }
 
+async function hasAuthUserColumn(name) {
+	const res = await client.execute('PRAGMA table_info(auth_user)');
+	const cols = res.rows || [];
+	return cols.some((c) => c.name === name);
+}
+
 async function main() {
 	console.info('[seed-default-admin] Target DB:', DEFAULT_DB_URL);
 
@@ -93,21 +99,41 @@ async function main() {
 	console.info('[seed-default-admin] No admin account found. Creating default Admin user.');
 	const { hash, salt } = hashPassword(DEFAULT_ADMIN.password);
 	const ts = nowIso();
-	const insertSql = `INSERT INTO auth_user (username, username_normalized, password_hash, password_salt, password_updated_at, permissions, type, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-	await client.execute({
-		sql: insertSql,
-		args: [
-			DEFAULT_ADMIN.username,
-			DEFAULT_ADMIN.username.toLowerCase(),
-			hash,
-			salt,
-			ts,
-			JSON.stringify(DEFAULT_ADMIN.permissions),
-			'admin',
-			ts,
-			ts
-		]
-	});
+	// must_change_password=1 so the very first login forces a password change.
+	// Only set it when the column exists: on an older DB that has not been
+	// migrated yet (no server request has run the ALTER TABLE) the column is
+	// missing and including it would break the INSERT.
+	const canFlagPasswordChange = await hasAuthUserColumn('must_change_password');
+	const columns = [
+		'username',
+		'username_normalized',
+		'password_hash',
+		'password_salt',
+		'password_updated_at',
+		'permissions',
+		'type',
+		'created_at',
+		'updated_at'
+	];
+	const placeholders = columns.map(() => '?');
+	const args = [
+		DEFAULT_ADMIN.username,
+		DEFAULT_ADMIN.username.toLowerCase(),
+		hash,
+		salt,
+		ts,
+		JSON.stringify(DEFAULT_ADMIN.permissions),
+		'admin',
+		ts,
+		ts
+	];
+	if (canFlagPasswordChange) {
+		columns.push('must_change_password');
+		placeholders.push('?');
+		args.push(1);
+	}
+	const insertSql = `INSERT INTO auth_user (${columns.join(', ')}) VALUES (${placeholders.join(', ')})`;
+	await client.execute({ sql: insertSql, args });
 
 	console.info('[seed-default-admin] Created default Admin (username=Admin).');
 	await client.close();

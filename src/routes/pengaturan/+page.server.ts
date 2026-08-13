@@ -23,6 +23,7 @@ import {
 	normalizeStoragePath
 } from '$lib/server/storage-settings';
 import { dataRoot, soundsDir, uploadsDir } from '$lib/server/data-dirs';
+import { validatePasswordStrength } from '$lib/server/password-policy';
 import path from 'node:path';
 
 interface AddressEntry {
@@ -101,7 +102,17 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const isAdmin = locals.user?.type === 'admin';
 	const storage = isAdmin ? await getStorageInfo() : undefined;
 
-	return { meta, appAddresses: addresses, protocol, appVersion: getAppVersion(), storage };
+	const forcePasswordChange =
+		url.searchParams.get('force') === '1' || Boolean(locals.user?.mustChangePassword);
+
+	return {
+		meta,
+		appAddresses: addresses,
+		protocol,
+		appVersion: getAppVersion(),
+		storage,
+		forcePasswordChange
+	};
 };
 
 export const actions: Actions = {
@@ -127,9 +138,10 @@ export const actions: Actions = {
 			return fail(400, { message: 'Semua kolom kata sandi wajib diisi.' });
 		}
 
-		if (newPassword.length < 8) {
-			console.warn('[change-password] password too short', logContext);
-			return fail(400, { message: 'Kata sandi baru minimal 8 karakter.' });
+		const passwordError = validatePasswordStrength(newPassword);
+		if (passwordError) {
+			console.warn('[change-password] password rejected', { ...logContext, reason: passwordError });
+			return fail(400, { message: passwordError });
 		}
 
 		if (newPassword !== confirmPassword) {
@@ -149,6 +161,17 @@ export const actions: Actions = {
 			userAgent: request.headers.get('user-agent'),
 			ipAddress: getClientAddress()
 		});
+
+		// If the account was forced to change its password (default admin), clear
+		// the flag so normal navigation is unlocked again.
+		try {
+			await db
+				.update(tableAuthUser)
+				.set({ mustChangePassword: false, updatedAt: new Date().toISOString() })
+				.where(eq(tableAuthUser.id, locals.user.id));
+		} catch (err) {
+			console.warn('[change-password] failed to clear mustChangePassword flag', err);
+		}
 
 		console.info('[change-password] success', {
 			...logContext,

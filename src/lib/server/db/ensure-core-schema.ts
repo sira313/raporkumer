@@ -30,6 +30,7 @@ export async function ensureCoreSchema() {
 			password_hash TEXT NOT NULL,
 			password_salt TEXT NOT NULL,
 			password_updated_at TEXT,
+			must_change_password INTEGER NOT NULL DEFAULT 0,
 			permissions TEXT NOT NULL DEFAULT '[]',
 			type TEXT NOT NULL DEFAULT 'admin',
 			sekolah_id INTEGER REFERENCES sekolah(id),

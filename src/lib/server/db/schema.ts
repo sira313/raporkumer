@@ -26,6 +26,9 @@ export const tableAuthUser = sqliteTable(
 		passwordHash: text().notNull(),
 		passwordSalt: text().notNull(),
 		passwordUpdatedAt: text(),
+		// Sementara true saat akun masih memakai kata sandi default (mis. Admin/Admin123).
+		// Login dipaksa untuk mengganti sandi lewat /pengaturan sebelum akses lain.
+		mustChangePassword: int({ mode: 'boolean' }).default(false).notNull(),
 		permissions: text({ mode: 'json' }).notNull().default('[]').$type<UserPermission[]>(),
 		// tipe user: admin (penuh), kepala_sekolah (penuh, per sekolah aktif), wali_kelas (terbatas ke kelas_id), wali_asuh (terbatas ke keasramaan), atau user (default/other)
 		type: text({ enum: ['admin', 'kepala_sekolah', 'wali_kelas', 'wali_asuh', 'user'] })
@@ -297,6 +300,23 @@ export const tableAuthSessionRelations = relations(tableAuthSession, ({ one }) =
 		references: [tableAuthUser.id]
 	})
 }));
+
+export const tableLoginAttempt = sqliteTable(
+	'login_attempt',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		// username normalized (lowercase); NULL saat percobaan tanpa username
+		username: text(),
+		ipAddress: text().notNull(),
+		succeeded: int({ mode: 'boolean' }).default(false).notNull(),
+		...audit
+	},
+	(table) => [
+		index('login_attempt_username_idx').on(table.username),
+		index('login_attempt_ip_idx').on(table.ipAddress),
+		index('login_attempt_created_idx').on(table.createdAt)
+	]
+);
 
 export const tableKelasRelations = relations(tableKelas, ({ one, many }) => ({
 	sekolah: one(tableSekolah, { fields: [tableKelas.sekolahId], references: [tableSekolah.id] }),
