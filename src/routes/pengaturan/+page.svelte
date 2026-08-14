@@ -28,6 +28,11 @@
 	let storageRoot = $state(data.storage?.dataRoot ?? '');
 	let storageUploads = $state(data.storage?.uploads ?? '');
 	let storageSounds = $state(data.storage?.sounds ?? '');
+	const storageChanged = $derived(
+		storageRoot !== (data.storage?.dataRoot ?? '') ||
+			storageUploads !== (data.storage?.uploads ?? '') ||
+			storageSounds !== (data.storage?.sounds ?? '')
+	);
 
 	// Folder picker
 	import StorageFolderPicker from '$lib/components/settings/storage-folder-picker.svelte';
@@ -72,7 +77,7 @@
 			appAddress = window.location.host;
 		}
 		if (data.forcePasswordChange && browser) {
-			document.getElementById('ganti-password')?.scrollIntoView({ behavior: 'smooth' });
+			document.getElementById('default-password-warning')?.scrollIntoView({ behavior: 'smooth' });
 		}
 	});
 
@@ -119,16 +124,6 @@
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
-	{#if data.forcePasswordChange}
-		<div class="alert alert-warning mb-4" role="alert">
-			<Icon name="lock" />
-			<span>
-				Kata sandi default harus segera diganti. Perbarui kata sandi Anda di bagian
-				<strong>Ganti Password</strong> di bawah sebelum menggunakan aplikasi.
-			</span>
-		</div>
-	{/if}
-
 	<div class="space-y-4">
 		<header class="flex justify-between gap-3">
 			<div class="space-y-2">
@@ -207,6 +202,16 @@
 		</div>
 	</div>
 </section>
+
+{#if data.forcePasswordChange}
+	<div id="default-password-warning" class="alert alert-warning mt-4 scroll-mt-20" role="alert">
+		<Icon name="lock" />
+		<span>
+			Jangan gunakan sandi bawaan! Perbarui kata sandi di bagian
+			<strong>Ganti Password</strong> di bawah sebelum menggunakan aplikasi.
+		</span>
+	</div>
+{/if}
 
 <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
 	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
@@ -481,7 +486,7 @@
 					</div>
 				</fieldset>
 
-				<div role="alert" class="alert alert-info mt-4">
+				<div role="alert" class="alert alert-info mt-4 alert-soft">
 					<Icon name="info" />
 					<span
 						>File di lokasi lama akan disalin ke lokasi baru (tidak dihapus). Perlu mulai ulang
@@ -490,7 +495,13 @@
 				</div>
 
 				<div class="mt-6 flex justify-end">
-					<button class="btn btn-primary shadow-none" type="submit" disabled={submitting}>
+					<button
+						class="btn btn-primary shadow-none"
+						type="submit"
+						disabled={submitting || !storageChanged}
+						aria-disabled={!storageChanged}
+						title={storageChanged ? '' : 'Tidak ada perubahan yang disimpan'}
+					>
 						<Icon name="save" />
 						{submitting ? 'Menyimpan…' : 'Simpan Lokasi'}
 					</button>

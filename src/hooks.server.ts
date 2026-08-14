@@ -236,7 +236,11 @@ const authGuard: Handle = async ({ event, resolve }) => {
 			// The folder picker on /pengaturan ("Pilih Folder Root Data") uses
 			// this API — without it, the fetch gets redirected to the HTML page
 			// and fails to parse JSON.
-			event.url.pathname === '/api/storage/browse';
+			event.url.pathname === '/api/storage/browse' ||
+			// The "Import DB" button on /sekolah/form?init uses a fetch() with
+			// `redirect: 'error'` — a redirect here surfaces as a misleading
+			// "Failed to fetch" instead of a proper error.
+			event.url.pathname === '/api/database/import';
 		if (!allowed) {
 			throw redirect(303, '/pengaturan?force=1');
 		}
