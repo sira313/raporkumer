@@ -390,7 +390,7 @@ function defaultEmpty(
 	tipePresensi?: string
 ): AbsenLoadData {
 	return {
-		meta: { title: 'Kehadiran Murid' },
+		meta: { title: 'Presensi Murid' },
 		tableReady: true,
 		page: { search, currentPage: 1, totalPages: 1, totalItems: 0, perPage: 20 },
 		daftarMurid: [],

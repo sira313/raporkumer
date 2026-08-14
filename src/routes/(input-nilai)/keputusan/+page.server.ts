@@ -1,5 +1,6 @@
 import db from '$lib/server/db';
 import { tableKeputusanMurid, tableMurid, tableKelas } from '$lib/server/db/schema';
+import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
 import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { parseTingkat, lastGradeOfFase, isGraduatingFase, isGraduatingGrade } from '$lib/tingkat';
@@ -36,7 +37,10 @@ export async function load({ parent, locals, url, depends }) {
 
 	if (!locals.user) throw redirect(303, '/login');
 
-	const { kelasAktif } = await parent();
+	const { kelasAktif, activeSemesterTipe } = await parent();
+	if (activeSemesterTipe !== 'genap') {
+		throw redirect(303, '/');
+	}
 	const sekolahId = locals.sekolah?.id ?? null;
 
 	const searchParam = url.searchParams.get('q');
@@ -168,6 +172,13 @@ export const actions = {
 		const sekolahId = locals.sekolah?.id ?? null;
 		if (!sekolahId) {
 			return fail(401, { fail: 'Sekolah tidak ditemukan' });
+		}
+
+		const academicContext = await resolveSekolahAcademicContext(sekolahId);
+		if (academicContext?.activeSemesterTipe !== 'genap') {
+			return fail(403, {
+				fail: 'Keputusan kenaikan kelas hanya tersedia pada semester genap.'
+			});
 		}
 
 		// Permission check: only admin and wali_kelas can save keputusan

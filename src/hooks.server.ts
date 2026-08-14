@@ -15,6 +15,8 @@ import {
 } from '$lib/server/csrf-origins';
 import { ensureJadwalBellSchema } from '$lib/server/db/ensure-jadwal-bell';
 import { ensurePresensiSettingsSchema } from '$lib/server/db/ensure-presensi-settings';
+import { ensureLoginAttemptsSchema } from '$lib/server/db/ensure-login-attempts';
+import { ensureBukuTamuSettingsSchema } from '$lib/server/db/ensure-buku-tamu-settings';
 import { ensurePermissionMigration } from '$lib/server/db/ensure-permission-migration';
 import { isAuthorizedUser, resolveRoutePermission } from './routes/pengguna/permissions';
 import { startBellScheduler } from '$lib/server/bell-scheduler';
@@ -147,6 +149,8 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		await ensureCoreSchema();
 		await ensureJadwalBellSchema();
 		await ensurePresensiSettingsSchema();
+		await ensureLoginAttemptsSchema();
+		await ensureBukuTamuSettingsSchema();
 		await ensureDefaultAdmin();
 		await ensurePermissionMigration();
 		await ensureKepalaSekolahAccounts();
@@ -172,6 +176,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		const resolved = await resolveSession(sessionToken);
 		if (resolved) {
 			// Expose key user fields on locals for downstream loaders/guards.
+			// expose the flag so hooks/layouts can force a password change
 			event.locals.user = {
 				id: resolved.user.id,
 				username: resolved.user.username,
@@ -180,6 +185,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 				kelasId: resolved.user.kelasId,
 				pegawaiId: resolved.user.pegawaiId,
 				sekolahId: resolved.user.sekolahId,
+				mustChangePassword: resolved.user.mustChangePassword,
 				// preferred/assigned mata pelajaran for 'user' accounts (may be undefined)
 				mataPelajaranId:
 					(resolved.user as unknown as { mataPelajaranId?: number }).mataPelajaranId ?? null
@@ -235,6 +241,20 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	const routeId = event.route.id;
 	const isPublicRoute = !routeId || PUBLIC_ROUTE_IDS.has(routeId);
 	const isLoginPath = event.url.pathname === '/login';
+
+	// Force a password change for accounts flagged with mustChangePassword (e.g.
+	// the default Admin/Admin123 account on first login). Only /pengaturan,
+	// /sekolah/form (needed on a fresh install before any sekolah exists), and
+	// /logout are reachable until the password is replaced.
+	if (event.locals.user?.mustChangePassword) {
+		const allowed =
+			event.url.pathname === '/pengaturan' ||
+			event.url.pathname === '/sekolah/form' ||
+			event.url.pathname === '/logout';
+		if (!allowed) {
+			throw redirect(303, '/pengaturan?force=1');
+		}
+	}
 
 	if (event.locals.user && isLoginPath) {
 		const redirectTarget = resolveRedirectTarget(event.url.searchParams.get('redirect')) ?? '/';

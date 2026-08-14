@@ -13,6 +13,7 @@
 		enctype?: HTMLFormAttributes['enctype'];
 		init?: Record<string, unknown>;
 		onsuccess?: (params: { form: HTMLFormElement; data?: Record<string, unknown> }) => void;
+		onfailure?: (params: { form: HTMLFormElement; data?: Record<string, unknown> }) => void;
 		submitStateChange?: (submitting: boolean) => void;
 		showToast?: boolean;
 	}
@@ -24,6 +25,7 @@
 		enctype,
 		init,
 		onsuccess,
+		onfailure,
 		submitStateChange,
 		showToast = true
 	}: Props = $props();
@@ -159,10 +161,20 @@
 					case 'failure': {
 						const failureData =
 							actionResult && 'data' in actionResult
-								? (actionResult.data as { fail?: string; message?: string } | undefined)
+								? (actionResult.data as Record<string, unknown> | undefined)
 								: undefined;
 						if (showToast) {
-							toast(failureData?.fail || failureData?.message || 'Gagal', 'warning');
+							const message =
+								typeof failureData?.fail === 'string'
+									? failureData.fail
+									: typeof failureData?.message === 'string'
+										? failureData.message
+										: 'Gagal';
+							toast(message, 'warning');
+						}
+						const callForm = args.form ?? args.formElement;
+						if (callForm && onfailure) {
+							onfailure({ form: callForm, data: failureData });
 						}
 						break;
 					}

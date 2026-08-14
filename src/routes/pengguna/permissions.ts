@@ -57,7 +57,7 @@ export const groupedUserPermissions = {
 	},
 	administrasi: {
 		values: [
-			['absen', 'Absen'],
+			['absen', 'Presensi Murid'],
 			['jurnal_mengajar', 'Jurnal Mengajar'],
 			['catatan_wali_kelas', 'Catatan Wali Kelas'],
 			['rekap_nilai', 'Rekap Nilai'],
@@ -148,7 +148,7 @@ export const menuRoutePermissions: { path: string; permission: UserPermission }[
 	{ path: '/asesmen-kokurikuler', permission: 'input_nilai_asesmen_kokurikuler' },
 	{ path: '/nilai-ekstrakurikuler', permission: 'input_nilai_nilai_ekstrakurikuler' },
 	{ path: '/asesmen-keasramaan', permission: 'input_nilai_asesmen_keasramaan' },
-	{ path: '/absen', permission: 'administrasi_absen' },
+	{ path: '/presensi-murid', permission: 'administrasi_absen' },
 	{ path: '/jurnal-mengajar', permission: 'administrasi_jurnal_mengajar' },
 	{ path: '/catatan-wali-kelas', permission: 'administrasi_catatan_wali_kelas' },
 	{ path: '/nilai-akhir', permission: 'administrasi_rekap_nilai' },

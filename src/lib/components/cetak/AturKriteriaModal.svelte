@@ -81,7 +81,7 @@
 	<div class="mt-4 flex items-center justify-between">
 		<button
 			type="button"
-			class="btn btn-sm btn-outline"
+			class="btn btn-sm btn-soft shadow-none"
 			on:click={() => {
 				localCukup = 85;
 				localBaik = 95;

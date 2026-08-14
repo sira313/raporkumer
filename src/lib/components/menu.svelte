@@ -72,6 +72,29 @@
 		return true;
 	}
 
+	function filterMenuByCondition(items: MenuItem[], semesterTipe: string | null): MenuItem[] {
+		return items
+			.map((item) => {
+				if (item.condition && item.condition !== semesterTipe) return null;
+				if (item.subMenu) {
+					const subMenu = item.subMenu;
+					const filtered = filterMenuByCondition(subMenu, semesterTipe);
+					if (filtered.length === 0) return null;
+					// Reuse the original item reference when nothing changed so the
+					// keyed {#each} doesn't recreate <details> (preserves manual open/close).
+					if (
+						filtered.length === subMenu.length &&
+						filtered.every((child, i) => child === subMenu[i])
+					) {
+						return item;
+					}
+					return { ...item, subMenu: filtered };
+				}
+				return item;
+			})
+			.filter((item): item is MenuItem => item !== null);
+	}
+
 	function filterMenu(menu: MenuItem[], search: string): MenuItem[] {
 		const lowerSearch = search.toLowerCase();
 		return menu
@@ -103,7 +126,7 @@
 		filterMenuByUserType(
 			search
 				? filterMenu(appMenuItems, search)
-				: appMenuItems.filter((item) => filterByCondition(item, activeSemesterTipe))
+				: filterMenuByCondition(appMenuItems, activeSemesterTipe)
 		)
 	);
 

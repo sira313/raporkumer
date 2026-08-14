@@ -83,8 +83,8 @@ export const appMenuItems: MenuItem[] = [
 		icon: 'briefcase',
 		subMenu: [
 			{
-				title: 'Absen',
-				path: '/absen'
+				title: 'Presensi Murid',
+				path: '/presensi-murid'
 			},
 			{
 				title: 'Jurnal Mengajar',

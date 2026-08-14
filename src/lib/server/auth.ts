@@ -65,6 +65,16 @@ export async function ensureDefaultAdmin() {
 		where: sql`${tableAuthUser.usernameNormalized} = ${normalized} OR ${tableAuthUser.type} = ${'admin'}`
 	});
 	if (existing) {
+		// If the account still uses the well-known default password, flag it so
+		// the next login is forced to change the password.
+		const { hash } = hashPassword(defaultAdminAccount.password, existing.passwordSalt);
+		const usesDefaultPassword = hash === existing.passwordHash;
+		if (usesDefaultPassword && !existing.mustChangePassword) {
+			await db
+				.update(tableAuthUser)
+				.set({ mustChangePassword: true, updatedAt: nowIso() })
+				.where(eq(tableAuthUser.id, existing.id));
+		}
 		// Ensure default admin permissions are present on the existing admin account.
 		const existingPermissions = Array.isArray(existing.permissions) ? existing.permissions : [];
 		const missing = defaultAdminAccount.permissions.filter((p) => !existingPermissions.includes(p));
@@ -93,6 +103,7 @@ export async function ensureDefaultAdmin() {
 			passwordHash: hash,
 			passwordSalt: salt,
 			passwordUpdatedAt: timestamp,
+			mustChangePassword: true,
 			permissions: defaultAdminAccount.permissions,
 			type: 'admin',
 			createdAt: timestamp,

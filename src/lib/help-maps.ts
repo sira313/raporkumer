@@ -27,7 +27,7 @@ export const helpMaps: HelpMapEntry[] = [
 	{ matcher: '/asesmen-sumatif/formulir-asesmen', file: 'form-sumatif' },
 	{ matcher: '/nilai-akhir', file: 'nilai-akhir' },
 	{ matcher: '/nilai-akhir/daftar-nilai', file: 'daftar-nilai' },
-	{ matcher: '/absen', file: 'absen' },
+	{ matcher: '/presensi-murid', file: 'absen' },
 	{ matcher: '/nilai-ekstrakurikuler/form-asesmen', file: 'form-ekstra' },
 	{ matcher: '/nilai-ekstrakurikuler', file: 'nilai-ekstra' },
 	{ matcher: '/catatan-wali-kelas', file: 'catatan-wali' },

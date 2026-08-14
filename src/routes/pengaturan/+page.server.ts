@@ -23,6 +23,8 @@ import {
 	normalizeStoragePath
 } from '$lib/server/storage-settings';
 import { dataRoot, soundsDir, uploadsDir } from '$lib/server/data-dirs';
+import { validatePasswordStrength } from '$lib/server/password-policy';
+import { isBukuTamuPasskeySet, setBukuTamuPasskey } from '$lib/server/buku-tamu-pass';
 import path from 'node:path';
 
 interface AddressEntry {
@@ -99,9 +101,26 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	}
 
 	const isAdmin = locals.user?.type === 'admin';
+	const isAdminOrKepalaSekolah = isAdmin || locals.user?.type === 'kepala_sekolah';
 	const storage = isAdmin ? await getStorageInfo() : undefined;
 
-	return { meta, appAddresses: addresses, protocol, appVersion: getAppVersion(), storage };
+	const forcePasswordChange =
+		url.searchParams.get('force') === '1' || Boolean(locals.user?.mustChangePassword);
+
+	const bukuTamuPasskeySet =
+		isAdminOrKepalaSekolah && locals.sekolah?.id
+			? await isBukuTamuPasskeySet(locals.sekolah.id)
+			: false;
+
+	return {
+		meta,
+		appAddresses: addresses,
+		protocol,
+		appVersion: getAppVersion(),
+		storage,
+		forcePasswordChange,
+		bukuTamuPasskeySet
+	};
 };
 
 export const actions: Actions = {
@@ -127,9 +146,10 @@ export const actions: Actions = {
 			return fail(400, { message: 'Semua kolom kata sandi wajib diisi.' });
 		}
 
-		if (newPassword.length < 8) {
-			console.warn('[change-password] password too short', logContext);
-			return fail(400, { message: 'Kata sandi baru minimal 8 karakter.' });
+		const passwordError = validatePasswordStrength(newPassword);
+		if (passwordError) {
+			console.warn('[change-password] password rejected', { ...logContext, reason: passwordError });
+			return fail(400, { message: passwordError });
 		}
 
 		if (newPassword !== confirmPassword) {
@@ -149,6 +169,17 @@ export const actions: Actions = {
 			userAgent: request.headers.get('user-agent'),
 			ipAddress: getClientAddress()
 		});
+
+		// If the account was forced to change its password (default admin), clear
+		// the flag so normal navigation is unlocked again.
+		try {
+			await db
+				.update(tableAuthUser)
+				.set({ mustChangePassword: false, updatedAt: new Date().toISOString() })
+				.where(eq(tableAuthUser.id, locals.user.id));
+		} catch (err) {
+			console.warn('[change-password] failed to clear mustChangePassword flag', err);
+		}
 
 		console.info('[change-password] success', {
 			...logContext,
@@ -291,5 +322,47 @@ export const actions: Actions = {
 		return {
 			message: `Lokasi data berhasil disimpan.${movedNote} Mulai ulang server agar perubahan berlaku.`
 		};
+	},
+	'buku-tamu-passkey': async ({ request, locals }) => {
+		if (locals.user?.type !== 'admin' && locals.user?.type !== 'kepala_sekolah') {
+			return fail(403, {
+				message: 'Hanya admin/kepala sekolah yang dapat mengatur passkey buku tamu.'
+			});
+		}
+		const sekolahId = locals.sekolah?.id;
+		if (!sekolahId) {
+			return fail(400, { message: 'Belum ada data sekolah.' });
+		}
+
+		const form = await request.formData();
+		const passkey = String(form.get('passkey') ?? '');
+		const confirm = String(form.get('confirmPasskey') ?? '');
+
+		if (!passkey) {
+			return fail(400, { message: 'Passkey wajib diisi.' });
+		}
+		if (passkey !== confirm) {
+			return fail(400, { message: 'Konfirmasi passkey tidak cocok.' });
+		}
+		if (passkey.length < 4 || passkey.length > 64) {
+			return fail(400, { message: 'Passkey harus 4–64 karakter.' });
+		}
+
+		await setBukuTamuPasskey(sekolahId, passkey);
+		return { message: 'Passkey buku tamu berhasil disimpan.' };
+	},
+	'buku-tamu-passkey-clear': async ({ locals }) => {
+		if (locals.user?.type !== 'admin' && locals.user?.type !== 'kepala_sekolah') {
+			return fail(403, {
+				message: 'Hanya admin/kepala sekolah yang dapat menonaktifkan passkey buku tamu.'
+			});
+		}
+		const sekolahId = locals.sekolah?.id;
+		if (!sekolahId) {
+			return fail(400, { message: 'Belum ada data sekolah.' });
+		}
+
+		await setBukuTamuPasskey(sekolahId, null);
+		return { message: 'Passkey buku tamu berhasil dinonaktifkan.' };
 	}
 };

@@ -39,6 +39,10 @@
 	const isLoginPage = $derived(page.url.pathname === '/login');
 	const isTamuPage = $derived(page.url.pathname === '/tamu');
 	const isJadwalPublikPage = $derived(page.url.pathname === '/jadwal-pelajaran');
+	// When not authenticated, never render the drawer/navbar shell — not even for
+	// error pages (e.g. 404 on an unknown URL). This avoids exposing the app menu
+	// structure to anonymous visitors.
+	const isUnauthenticatedError = $derived(!!page.error && !data.user);
 	let isJadwalPage = $derived(page.url.pathname === '/akademik/jadwal-pelajaran');
 
 	const skipPresensiGuruPrompt = $derived(
@@ -169,7 +173,7 @@
 		'/asesmen-kokurikuler',
 		'/nilai-ekstrakurikuler',
 		'/asesmen-keasramaan',
-		'/absen',
+		'/presensi-murid',
 		'/jurnal-mengajar',
 		'/catatan-wali-kelas',
 		'/keputusan',
@@ -182,14 +186,14 @@
 	);
 
 	const userIsGuruMapel = $derived(data.user?.type === 'user' && data.hasMataPelajaran);
-	const isAbsenPage = $derived(page.url.pathname.startsWith('/absen'));
+	const isPresensiMuridPage = $derived(page.url.pathname.startsWith('/presensi-murid'));
 	const isJurnalMengajarPage = $derived(page.url.pathname.startsWith('/jurnal-mengajar'));
 	const isCetakPage = $derived(page.url.pathname.startsWith('/cetak'));
 
 	const disableInteraction = $derived(
 		data.user?.type === 'user' &&
 			isReadonlyPage &&
-			!((isAbsenPage || isJurnalMengajarPage || isCetakPage) && userIsGuruMapel)
+			!((isPresensiMuridPage || isJurnalMengajarPage || isCetakPage) && userIsGuruMapel)
 	);
 
 	async function stopServer() {
@@ -280,9 +284,15 @@
 	<title>{appName}{page.data.meta.title ? ' - ' + page.data.meta.title : ''}</title>
 </svelte:head>
 
-{#if isLoginPage || isTamuPage}
+{#if isLoginPage || isTamuPage || isUnauthenticatedError}
 	<div class="bg-base-200 flex min-h-screen flex-col items-center justify-center p-6">
-		{@render children()}
+		{#if isUnauthenticatedError}
+			<div class="w-full max-w-lg">
+				{@render children()}
+			</div>
+		{:else}
+			{@render children()}
+		{/if}
 	</div>
 {:else if isJadwalPublikPage}
 	<div class="bg-base-200 flex min-h-screen flex-col p-6">
