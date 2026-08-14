@@ -124,11 +124,22 @@ begin
 			if not DirExists(SoundDir) then
 				ForceDirectories(SoundDir);
 
+		// Preserve an existing .env across upgrades — it may hold custom
+		// photo/sounds overrides or point at a moved data root. Only a fresh
+		// install writes the initial .env here. Uploads/sounds are NOT pinned:
+		// they follow the data root automatically (default <root>/uploads and
+		// <root>/sounds), and the root itself lives in the launcher override
+		// file (%LOCALAPPDATA%\Rapkumer-data\data-root.txt), not in .env.
 		EnvPath := ExpandConstant('{app}\.env');
-		S := 'DB_URL="file:' + DbPath + '"' + #13#10 + 'BODY_SIZE_LIMIT=5M' + #13#10 + 'photo="file:' + ExpandConstant('{localappdata}\Rapkumer-data\uploads') + '"' + #13#10 + 'sounds="file:' + ExpandConstant('{localappdata}\Rapkumer-data\sounds') + '"';
-		if SaveStringToFile(EnvPath, S, False) then
-			Log(Format('Wrote .env to %s', [EnvPath]))
+		if FileExists(EnvPath) then
+			Log(Format('Menjaga .env yang sudah ada: %s', [EnvPath]))
 		else
-			Log(Format('Failed to write .env to %s', [EnvPath]));
+		begin
+			S := 'DB_URL="file:' + DbPath + '"' + #13#10 + 'BODY_SIZE_LIMIT=5M';
+			if SaveStringToFile(EnvPath, S, False) then
+				Log(Format('Wrote .env to %s', [EnvPath]))
+			else
+				Log(Format('Failed to write .env to %s', [EnvPath]));
+		end;
 	end;
 end;

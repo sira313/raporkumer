@@ -98,19 +98,54 @@ async function main() {
 	const PORT = process.env.PORT || '3000';
 	const NODE_ENV = process.env.NODE_ENV || 'production';
 
+	// Fixed launcher home: holds the DB, logs and the data-root override file.
 	const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
-	const USER_STATE_ROOT = path.join(localAppData, 'Rapkumer-data');
-	const LOG_DIR = path.join(USER_STATE_ROOT, 'logs');
+	const LAUNCHER_HOME = path.join(localAppData, 'Rapkumer-data');
+	const LOG_DIR = path.join(LAUNCHER_HOME, 'logs');
 	const LOG_FILE = path.join(LOG_DIR, 'rapkumer.log');
+
+	// User-data root (ttd, dinas-luar, uploads, sounds). Administrators can move
+	// it elsewhere (e.g. another drive) from the "Lokasi Data" page, which writes
+	// data-root.txt inside the launcher home. Resolution order:
+	//   1. RAPKUMER_DATA_DIR env (explicit override)
+	//   2. data-root.txt in LAUNCHER_HOME (written by the app UI)
+	//   3. default: LAUNCHER_HOME
+	function readDataRootOverride() {
+		const cfg = path.join(LAUNCHER_HOME, 'data-root.txt');
+		try {
+			const raw = fs.readFileSync(cfg, 'utf8').trim();
+			return raw || null;
+		} catch {
+			return null;
+		}
+	}
+
+	function resolveUserStateRoot() {
+		// NOTE: an explicit RAPKUMER_DATA_DIR env wins over data-root.txt (the
+		// file written by the app UI). This matters if a Windows user-level or
+		// system env var of that name exists: the launcher will silently ignore
+		// whatever the "Lokasi Data" page stored in data-root.txt.
+		const envOverride = (process.env.RAPKUMER_DATA_DIR || '').trim();
+		if (envOverride) return path.resolve(envOverride);
+		const fileOverride = readDataRootOverride();
+		if (fileOverride) return path.resolve(fileOverride);
+		return LAUNCHER_HOME;
+	}
+
+	const USER_STATE_ROOT = resolveUserStateRoot();
 
 	await ensureDir(LOG_DIR);
 	await ensureDir(USER_STATE_ROOT);
 
 	await appendLog(LOG_FILE, `Starting Rapkumer (app home: ${APP_HOME})`);
+	await appendLog(LOG_FILE, `User-data root: ${USER_STATE_ROOT}`);
 
-	// Ensure database exists in user folder
+	// Ensure database exists in the fixed launcher home. The DB deliberately does
+	// NOT follow a custom data root: it would be unsafe to move an open WAL-mode
+	// SQLite file from inside the running app, and the UI only manages the
+	// user-data subfolders (ttd, dinas-luar, uploads, sounds).
 	const srcDb = path.join(APP_HOME, '..', 'data', 'database.sqlite3');
-	const dstDb = path.join(USER_STATE_ROOT, 'database.sqlite3');
+	const dstDb = path.join(LAUNCHER_HOME, 'database.sqlite3');
 	try {
 		if (!fs.existsSync(dstDb)) {
 			await appendLog(LOG_FILE, 'Menyalin basis data awal ke direktori pengguna...');

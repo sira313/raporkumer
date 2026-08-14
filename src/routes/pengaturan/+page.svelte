@@ -24,42 +24,25 @@
 	let copying = $state(false);
 	let updateModalOpen = $state(false);
 
-	// Storage location form (admin only)
+	// Storage location form (admin only). Uploads/sounds follow the data root
+	// automatically, so only the root is editable here.
 	let storageRoot = $state(data.storage?.dataRoot ?? '');
-	let storageUploads = $state(data.storage?.uploads ?? '');
-	let storageSounds = $state(data.storage?.sounds ?? '');
-	const storageChanged = $derived(
-		storageRoot !== (data.storage?.dataRoot ?? '') ||
-			storageUploads !== (data.storage?.uploads ?? '') ||
-			storageSounds !== (data.storage?.sounds ?? '')
-	);
+	const storageChanged = $derived(storageRoot !== (data.storage?.dataRoot ?? ''));
 
 	// Folder picker
 	import StorageFolderPicker from '$lib/components/settings/storage-folder-picker.svelte';
-	type StorageField = 'dataRoot' | 'uploads' | 'sounds';
 	let pickerOpen = $state(false);
-	let pickerTarget = $state<StorageField>('dataRoot');
 	let pickerInitial = $state('');
 	let pickerTitle = $state('Pilih Folder');
 
-	function openPicker(target: StorageField) {
-		pickerTarget = target;
-		pickerInitial =
-			target === 'dataRoot' ? storageRoot : target === 'uploads' ? storageUploads : storageSounds;
-		pickerTitle =
-			target === 'dataRoot'
-				? 'Pilih Folder Root Data'
-				: target === 'uploads'
-					? 'Pilih Folder Upload'
-					: 'Pilih Folder Sound Bell';
+	function openPicker() {
+		pickerInitial = storageRoot;
+		pickerTitle = 'Pilih Folder Root Data';
 		pickerOpen = true;
 	}
 
 	function handlePickerSelect(event: CustomEvent<{ path: string }>) {
-		const picked = event.detail.path;
-		if (pickerTarget === 'dataRoot') storageRoot = picked;
-		else if (pickerTarget === 'uploads') storageUploads = picked;
-		else storageSounds = picked;
+		storageRoot = event.detail.path;
 		pickerOpen = false;
 	}
 
@@ -409,12 +392,13 @@
 				</header>
 
 				{#if data.storage.rootManagedByLauncher}
-					<div role="alert" class="alert alert-warning mb-4">
+					<div role="alert" class="alert alert-info mb-4">
 						<Icon name="alert" />
 						<span
-							>Pada instalasi Windows, root data ditetapkan oleh peluncur aplikasi
-							(%LOCALAPPDATA%\Rapkumer-data). Mengubah folder root di sini tidak akan berpengaruh;
-							folder upload/sounds tetap bisa diubah.</span
+							>Pada instalasi Windows, pengaturan ini disimpan ke file peluncur
+							<code>%LOCALAPPDATA%\Rapkumer-data\data-root.txt</code> dan diterapkan saat aplikasi
+							dimulai ulang. Basis data tetap berada di
+							<code>%LOCALAPPDATA%\Rapkumer-data\database.sqlite3</code>.</span
 						>
 					</div>
 				{/if}
@@ -432,7 +416,7 @@
 						<button
 							class="btn join-item btn-soft btn-info shadow-none"
 							type="button"
-							onclick={() => openPicker('dataRoot')}
+							onclick={openPicker}
 						>
 							<Icon name="folder" />
 							Jelajah
@@ -440,50 +424,8 @@
 					</div>
 					<p class="text-base-content/70 mt-1 text-xs">
 						Cukup pilih root ini saja — subfolder <code>ttd/</code>, <code>dinas-luar/</code>,
-						<code>uploads/</code>, dan <code>sounds/</code> dibuat otomatis saat disimpan.
+						<code>uploads/</code>, dan <code>sounds/</code> dibuat otomatis di dalamnya saat disimpan.
 					</p>
-				</fieldset>
-
-				<fieldset class="fieldset mt-3">
-					<legend class="fieldset-legend">Folder upload — opsional (photo)</legend>
-					<div class="join w-full">
-						<input
-							class="input bg-base-200 dark:bg-base-300 join-item w-full dark:border-none"
-							type="text"
-							name="uploads"
-							bind:value={storageUploads}
-							placeholder="Kosongkan untuk default (<root>/uploads)"
-						/>
-						<button
-							class="btn join-item btn-soft btn-info shadow-none"
-							type="button"
-							onclick={() => openPicker('uploads')}
-						>
-							<Icon name="folder" />
-							Jelajah
-						</button>
-					</div>
-				</fieldset>
-
-				<fieldset class="fieldset mt-3">
-					<legend class="fieldset-legend">Folder sound bell — opsional (sounds)</legend>
-					<div class="join w-full">
-						<input
-							class="input bg-base-200 dark:bg-base-300 join-item w-full dark:border-none"
-							type="text"
-							name="sounds"
-							bind:value={storageSounds}
-							placeholder="Kosongkan untuk default (<root>/sounds)"
-						/>
-						<button
-							class="btn join-item btn-soft btn-info shadow-none"
-							type="button"
-							onclick={() => openPicker('sounds')}
-						>
-							<Icon name="folder" />
-							Jelajah
-						</button>
-					</div>
 				</fieldset>
 
 				<div role="alert" class="alert alert-info mt-4 alert-soft">

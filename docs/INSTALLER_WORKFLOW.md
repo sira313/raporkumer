@@ -571,12 +571,12 @@ if not DirExists(DbDir) then
 
 3. **Buat folder logs**: `%LOCALAPPDATA%\Rapkumer-data\logs\`
 
-4. **Generate file `.env`** di `%LOCALAPPDATA%\Rapkumer\.env`:
+4. **Generate file `.env`** di `%LOCALAPPDATA%\Rapkumer\.env` (**hanya saat fresh install**; saat upgrade file `.env` yang sudah ada dipertahankan). `photo`/`sounds` **tidak lagi di-pin** di sini — uploads/sounds otomatis mengikuti root data (default `<root>/uploads` dan `<root>/sounds`), dan root sendiri disimpan di file launcher `%LOCALAPPDATA%\Rapkumer-data\data-root.txt` yang tidak pernah disentuh installer:
    ```env
    DB_URL="file:C:\Users\USERNAME\AppData\Local\Rapkumer-data\database.sqlite3"
    BODY_SIZE_LIMIT=5M
-   photo="file:C:\Users\USERNAME\AppData\Local\Rapkumer-data\uploads"
    ```
+   > Upgrade dari versi lama: `.env` lama (yang mungkin memuat `photo=`/`sounds=`) dipertahankan, dan akan otomatis dibersihkan saat admin menyimpan form "Lokasi Data" (handler menulis `photo=''`/`sounds=''`, lalu data dipindahkan ke root baru).
 
 ### **Fase 4: Migrasi Database (Setup [Run])**
 

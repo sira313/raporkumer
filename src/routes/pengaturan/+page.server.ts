@@ -20,7 +20,9 @@ import {
 	effectiveDataRoot,
 	ensureStorageTree,
 	getStorageInfo,
-	normalizeStoragePath
+	launcherDataRootConfigPath,
+	normalizeStoragePath,
+	writeLauncherDataRootOverride
 } from '$lib/server/storage-settings';
 import { dataRoot, soundsDir, uploadsDir } from '$lib/server/data-dirs';
 import { validatePasswordStrength } from '$lib/server/password-policy';
@@ -263,12 +265,13 @@ export const actions: Actions = {
 		const oldRoot = dataRoot();
 		const oldUploads = uploadsDir();
 		const oldSounds = soundsDir();
-		// On Windows the launcher forces the root on every start, so a typed
-		// root here would be silently overridden. Keep the launcher's root and
-		// only honor uploads/sounds overrides.
+		// On Windows the launcher (start-rapkumer.mjs) forces the root on every
+		// start, so the setting is persisted there instead of `.env`; uploads and
+		// sounds still go through `.env`. On other platforms RAPKUMER_DATA_DIR is
+		// written to `.env` directly.
 		const launcherManagedRoot =
 			process.platform === 'win32' && Boolean(process.env.RAPKUMER_DATA_DIR);
-		const newRoot = launcherManagedRoot ? oldRoot : effectiveDataRoot(rootValue);
+		const newRoot = effectiveDataRoot(rootValue);
 		const newUploads = uploadsValue ?? path.join(newRoot, 'uploads');
 		const newSounds = soundsValue ?? path.join(newRoot, 'sounds');
 
@@ -280,11 +283,24 @@ export const actions: Actions = {
 			if (!launcherManagedRoot) {
 				envUpdates.RAPKUMER_DATA_DIR = rootValue ?? '';
 			}
+			// Persist `.env` first — on launcher installs `{app}\.env` is the more
+			// likely write to fail — then the launcher override, so a failure never
+			// leaves the root pointing at a location whose data was not copied.
 			await updateEnvFile(envUpdates);
 		} catch {
 			return fail(500, {
 				message: `Gagal menulis file .env (${envFilePath()}). Periksa izin tulis lalu coba lagi.`
 			});
+		}
+
+		if (launcherManagedRoot) {
+			try {
+				await writeLauncherDataRootOverride(rootValue);
+			} catch {
+				return fail(500, {
+					message: `Gagal menulis konfigurasi peluncur (${launcherDataRootConfigPath()}). Periksa izin tulis lalu coba lagi.`
+				});
+			}
 		}
 
 		// Move existing data to the new locations (only files missing in the
@@ -314,7 +330,9 @@ export const actions: Actions = {
 			}
 		} catch (err) {
 			return fail(500, {
-				message: `Lokasi tersimpan di .env, tetapi sebagian file gagal dipindahkan: ${(err as Error).message}`
+				message: launcherManagedRoot
+					? `Lokasi tersimpan di konfigurasi peluncur, tetapi sebagian file gagal dipindahkan: ${(err as Error).message}`
+					: `Lokasi tersimpan di .env, tetapi sebagian file gagal dipindahkan: ${(err as Error).message}`
 			});
 		}
 

@@ -1,16 +1,47 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
-import { dataRoot, defaultDataRoot, soundsDir, uploadsDir } from '$lib/server/data-dirs';
+import { dataRoot, defaultDataRoot } from '$lib/server/data-dirs';
 import { envFilePath } from '$lib/server/env-file';
 
 export interface StorageInfo {
 	dataRoot: string;
-	uploads: string;
-	sounds: string;
 	envFile: string;
 	envFileExists: boolean;
 	/** True when the running process overrides RAPKUMER_DATA_DIR (Windows launcher). */
 	rootManagedByLauncher: boolean;
+}
+
+/**
+ * Fixed launcher home on Windows (`%LOCALAPPDATA%\Rapkumer-data`): holds the DB,
+ * logs and the data-root override file. Must not depend on the (movable) data
+ * root. Returns null on non-Windows platforms.
+ */
+export function launcherHome(): string | null {
+	if (process.platform !== 'win32') return null;
+	const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
+	return path.join(localAppData, 'Rapkumer-data');
+}
+
+/**
+ * Path to the Windows launcher's data-root override file (`data-root.txt`),
+ * or null on non-Windows. The launcher (start-rapkumer.mjs) reads this on every
+ * start and forces the resolved root onto RAPKUMER_DATA_DIR.
+ */
+export function launcherDataRootConfigPath(): string | null {
+	const home = launcherHome();
+	return home ? path.join(home, 'data-root.txt') : null;
+}
+
+/**
+ * Persist the data-root override for the Windows launcher. A `null`/empty value
+ * resets to the default (`%LOCALAPPDATA%\Rapkumer-data`). No-op off Windows.
+ */
+export async function writeLauncherDataRootOverride(root: string | null): Promise<void> {
+	const cfg = launcherDataRootConfigPath();
+	if (!cfg) return;
+	await fs.mkdir(path.dirname(cfg), { recursive: true });
+	await fs.writeFile(cfg, root ? root + '\n' : '', 'utf8');
 }
 
 /** Current effective storage locations, as resolved by the running process. */
@@ -25,13 +56,11 @@ export async function getStorageInfo(): Promise<StorageInfo> {
 	}
 	return {
 		dataRoot: dataRoot(),
-		uploads: uploadsDir(),
-		sounds: soundsDir(),
 		envFile,
 		envFileExists,
-		// Only the Windows launcher (start-rapkumer.mjs) forces the root on
-		// every start; on other platforms RAPKUMER_DATA_DIR comes from `.env`
-		// and remains editable through this UI.
+		// The Windows launcher (start-rapkumer.mjs) forces the root on every
+		// start; on Windows it is configured through its own `data-root.txt`
+		// file, while on other platforms RAPKUMER_DATA_DIR comes from `.env`.
 		rootManagedByLauncher: process.platform === 'win32' && Boolean(process.env.RAPKUMER_DATA_DIR)
 	};
 }

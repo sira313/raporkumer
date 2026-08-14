@@ -74,6 +74,7 @@ pnpm format                  # prettier --write . (tabs, single quotes, no trail
 - InnoSetup bundles **VC++ Redistributable 2015-2022 (x64)** for `@libsql/win32-x64-msvc`.
 - `scripts/prepare-windows.mjs` downloads `vc_redist.x64.exe` to `dist/windows/`.
 - Build on Linux via Wine: install InnoSetup 7+, then `wine ISCC.exe installer/rapkumer.iss`. Run `pnpm build` first.
+- **Data root override:** `installer/files/start-rapkumer.mjs` resolves the user-data root as `RAPKUMER_DATA_DIR` env → `%LOCALAPPDATA%\Rapkumer-data\data-root.txt` (written by the "Lokasi Data" page) → default `%LOCALAPPDATA%\Rapkumer-data`. The **database stays in the fixed launcher home** (`%LOCALAPPDATA%\Rapkumer-data\database.sqlite3`, set via `DB_URL`) and never follows the movable root — moving an open WAL SQLite file is unsafe. `storage-settings.ts` mirrors this via `launcherHome()`/`launcherDataRootConfigPath()`/`writeLauncherDataRootOverride()`. **Uploads/sounds always follow the root** (default `<root>/uploads|sounds`); the "Lokasi Data" form only edits the root and the handler clears any `photo`/`sounds` pin in `.env` on save (also consolidating legacy custom folders into the new root). The installer's fresh `.env` only contains `DB_URL` + `BODY_SIZE_LIMIT` — no photo/sounds pins.
 
 ## Gotchas
 
