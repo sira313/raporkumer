@@ -14,7 +14,7 @@ Karena E-Rapor resmi berfokus pada input nilai akhir serta penentuan Tujuan Pemb
 
 Dokumentasi lengkap aplikasi ini disusun dalam bahasa Indonesia. File README ini memberikan gambaran singkat untuk pengguna dan pengembang, sedangkan pembahasan teknis serta panduan kontribusi tersedia di folder `docs/`.
 
-## Fitur Utama
+## Daftar Fitur
 
 - Mengelola data sekolah, kelas, dan murid.
 - Input nilai intrakurikuler berdasarkan Tujuan Pembelajaran (TP), meliputi penilaian harian, STS, SAS, dan formatif.
@@ -26,8 +26,9 @@ Dokumentasi lengkap aplikasi ini disusun dalam bahasa Indonesia. File README ini
 - Mendukung penggunaan campuran huruf latin dan arab pada Capaian Pembelajaran (CP) di rapor.
 - Ekspor nilai dan Tujuan Pembelajaran (TP) ke file Excel yang dapat diimpor ke E-Rapor Kemdikdas.
 - Presensi guru beserta laporannya
-- Buku tamu digital yang dapat diakses melalui halaman [ipAddress]:3000/tamu
-- Jadwal pelajaran yang dapat diakses melalui halaman [ipAddress]:3000/jadwal-pelajaran
+- Buku tamu digital yang dapat diakses melalui halaman `ipAddress:3000/tamu`
+- Jadwal pelajaran yang dapat diakses melalui halaman `ipAddress:3000/jadwal-pelajaran`
+- Dinas luar dan SPPD otomatis
 
 ## Siapa yang Cocok Menggunakan Rapkumer?
 
