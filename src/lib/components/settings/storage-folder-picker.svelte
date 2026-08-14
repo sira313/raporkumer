@@ -29,6 +29,19 @@
 		dispatch('select', { path: current });
 	}
 
+	async function extractErrorMessage(response: Response): Promise<string> {
+		const contentType = response.headers.get('content-type') ?? '';
+		if (contentType.includes('application/json')) {
+			try {
+				const body = (await response.json()) as { message?: string } | null;
+				if (typeof body?.message === 'string' && body.message) return body.message;
+			} catch {
+				// malformed JSON — fall through to the generic message
+			}
+		}
+		return '';
+	}
+
 	async function load(target: string | null, name?: string) {
 		loading = true;
 		error = null;
@@ -42,10 +55,18 @@
 				cache: 'no-store'
 			});
 			if (!response.ok) {
-				const detail = await response.text().catch(() => '');
-				throw new Error(detail || `Gagal memuat folder (${response.status})`);
+				const message = await extractErrorMessage(response);
+				throw new Error(message || `Gagal memuat folder (${response.status}).`);
 			}
-			const payload = (await response.json()) as BrowseResponse;
+			let payload: BrowseResponse | null = null;
+			try {
+				payload = (await response.json()) as BrowseResponse;
+			} catch {
+				payload = null;
+			}
+			if (!payload) {
+				throw new Error('Respons server tidak valid. Silakan masuk kembali dan coba lagi.');
+			}
 			current = payload.current;
 			parent = payload.parent;
 			entries = payload.entries;

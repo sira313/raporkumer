@@ -250,7 +250,11 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		const allowed =
 			event.url.pathname === '/pengaturan' ||
 			event.url.pathname === '/sekolah/form' ||
-			event.url.pathname === '/logout';
+			event.url.pathname === '/logout' ||
+			// The folder picker on /pengaturan ("Pilih Folder Root Data") uses
+			// this API — without it, the fetch gets redirected to the HTML page
+			// and fails to parse JSON.
+			event.url.pathname === '/api/storage/browse';
 		if (!allowed) {
 			throw redirect(303, '/pengaturan?force=1');
 		}
@@ -262,6 +266,11 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	}
 
 	if (!event.locals.user && !isPublicRoute) {
+		// API endpoints must never redirect to the HTML login page — a client
+		// `fetch()` would follow the redirect and try to parse the page as JSON.
+		if (event.url.pathname.startsWith('/api/')) {
+			throw error(401, 'Sesi berakhir. Silakan login kembali.');
+		}
 		if (event.request.method === 'GET') {
 			const redirectTarget = resolveRedirectTarget(`${event.url.pathname}${event.url.search}`);
 			const query =

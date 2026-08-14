@@ -174,7 +174,7 @@
 					<div class="space-y-4">
 						<div class="alert alert-info">
 							<Icon name="info" />
-							<span>Halaman ini dilindungi passkey. Masukkan passkey untuk melanjutkan.</span>
+							<span>Halaman ini dilindungi passkey. Hubungi pihak sekolah untuk mendapatkan passkey.</span>
 						</div>
 						<div class="fieldset">
 							<label class="fieldset-legend" for="passkey">Passkey</label>

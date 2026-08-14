@@ -65,6 +65,7 @@
 	let showConfirmPassword = $state(false);
 	let showBukuTamuPasskey = $state(false);
 	let showBukuTamuConfirm = $state(false);
+	let clearingBukuTamuPasskey = $state(false);
 
 	onMount(() => {
 		if (!appAddress && browser) {
@@ -590,9 +591,21 @@
 					</div>
 				</div>
 
-				<div class="mt-6 flex justify-end">
+				<div class="mt-6 flex items-center gap-2">
+					{#if data.bukuTamuPasskeySet}
+						<button
+							class="btn btn-soft btn-error shadow-none"
+							type="submit"
+							form="buku-tamu-passkey-clear"
+							disabled={clearingBukuTamuPasskey}
+						>
+							<Icon name="del" />
+							{clearingBukuTamuPasskey ? 'Menonaktifkan…' : 'Nonaktifkan Passkey'}
+						</button>
+					{/if}
+
 					<button
-						class="btn btn-primary shadow-none"
+						class="btn btn-primary shadow-none ml-auto"
 						type="submit"
 						disabled={submitting || invalid}
 					>
@@ -604,15 +617,13 @@
 		</FormEnhance>
 
 		{#if data.bukuTamuPasskeySet}
-			<div class="divider"></div>
-			<FormEnhance action="?/buku-tamu-passkey-clear">
+			<FormEnhance
+				id="buku-tamu-passkey-clear"
+				action="?/buku-tamu-passkey-clear"
+				submitStateChange={(s) => (clearingBukuTamuPasskey = s)}
+			>
 				{#snippet children({ submitting })}
-					<div class="flex justify-end">
-						<button class="btn btn-soft btn-error shadow-none" type="submit" disabled={submitting}>
-							<Icon name="del" />
-							{submitting ? 'Menonaktifkan…' : 'Nonaktifkan Passkey'}
-						</button>
-					</div>
+					<button type="submit" class="hidden" disabled={submitting}>Nonaktifkan</button>
 				{/snippet}
 			</FormEnhance>
 		{/if}
