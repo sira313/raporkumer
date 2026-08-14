@@ -166,7 +166,7 @@ async function main() {
 		}
 
 		// Package installer (Inno Setup)
-		run(iscc.cmd, [...iscc.args, path.join('installer', 'raporkumer.iss')], {
+		run(iscc.cmd, [...iscc.args, path.join('installer', 'rapkumer.iss')], {
 			cwd: projectRoot
 		});
 

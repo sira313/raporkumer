@@ -37,7 +37,7 @@ async function main() {
 	}
 	const versionTag = `v${version}`;
 
-	const installerPath = resolve(rootDir, 'installer/raporkumer.iss');
+	const installerPath = resolve(rootDir, 'installer/rapkumer.iss');
 	const installerRegex = /(#define\s+AppVersion\s+")([^"]+)(")/;
 
 	const stagePackagePath = resolve(rootDir, 'dist/windows/stage/Rapkumer/package.json');
@@ -53,7 +53,7 @@ async function main() {
 			)
 		)
 	) {
-		updatedFiles.push('installer/raporkumer.iss');
+		updatedFiles.push('installer/rapkumer.iss');
 	}
 
 	if (
