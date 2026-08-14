@@ -4,6 +4,7 @@ import db from '$lib/server/db';
 import { eq, desc } from 'drizzle-orm';
 import { error, json } from '@sveltejs/kit';
 import { deleteSignatureFile, saveSignatureFile } from '$lib/server/ttd';
+import { isBukuTamuUnlocked, resolveBukuTamuSekolahId } from '$lib/server/buku-tamu-pass';
 import type { RequestHandler } from './$types';
 
 async function resolveSekolahContext(sekolahId?: number) {
@@ -35,8 +36,14 @@ async function resolveSekolahContext(sekolahId?: number) {
 	return { sekolahId: sid, tahunAjaranId, semesterId };
 }
 
-export const POST = (async ({ request, locals }) => {
+export const POST = (async ({ request, locals, cookies }) => {
 	await ensureBukuTamuSchema();
+
+	// Enforce the passkey gate (if configured) on direct API submissions too.
+	const sekolahId = await resolveBukuTamuSekolahId(locals.sekolah?.id);
+	if (sekolahId && !(await isBukuTamuUnlocked(cookies, sekolahId))) {
+		throw error(403, { message: 'Passkey buku tamu diperlukan untuk mengisi buku tamu.' });
+	}
 
 	const body = await request.json();
 	const { nama, asalInstansi, nip, keperluan, pesanKesan, tandaTangan } = body ?? {};

@@ -16,6 +16,7 @@ import {
 import { ensureJadwalBellSchema } from '$lib/server/db/ensure-jadwal-bell';
 import { ensurePresensiSettingsSchema } from '$lib/server/db/ensure-presensi-settings';
 import { ensureLoginAttemptsSchema } from '$lib/server/db/ensure-login-attempts';
+import { ensureBukuTamuSettingsSchema } from '$lib/server/db/ensure-buku-tamu-settings';
 import { ensurePermissionMigration } from '$lib/server/db/ensure-permission-migration';
 import { isAuthorizedUser, resolveRoutePermission } from './routes/pengguna/permissions';
 import { startBellScheduler } from '$lib/server/bell-scheduler';
@@ -149,6 +150,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		await ensureJadwalBellSchema();
 		await ensurePresensiSettingsSchema();
 		await ensureLoginAttemptsSchema();
+		await ensureBukuTamuSettingsSchema();
 		await ensureDefaultAdmin();
 		await ensurePermissionMigration();
 		await ensureKepalaSekolahAccounts();

@@ -2,6 +2,10 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import { onMount } from 'svelte';
+	import FormEnhance from '$lib/components/form-enhance.svelte';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	let formEl: HTMLFormElement;
 	let canvasEl: HTMLCanvasElement;
@@ -13,6 +17,8 @@
 
 	let lastX = 0;
 	let lastY = 0;
+
+	const gated = $derived(Boolean(data.passkeySet) && !data.unlocked);
 
 	onMount(() => {
 		if (!canvasEl) return;
@@ -162,7 +168,37 @@
 			</p>
 		</header>
 
-		{#if submitted}
+		{#if gated}
+			<FormEnhance action="?/unlock">
+				{#snippet children({ submitting, invalid })}
+					<div class="space-y-4">
+						<div class="alert alert-info">
+							<Icon name="info" />
+							<span>Halaman ini dilindungi passkey. Masukkan passkey untuk melanjutkan.</span>
+						</div>
+						<div class="fieldset">
+							<label class="fieldset-legend" for="passkey">Passkey</label>
+							<input
+								type="password"
+								id="passkey"
+								name="passkey"
+								required
+								minlength={4}
+								maxlength={64}
+								placeholder="Masukkan passkey"
+								class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+							/>
+						</div>
+						<button class="btn btn-primary w-full" type="submit" disabled={submitting || invalid}>
+							{#if submitting}
+								<span class="loading loading-spinner loading-sm"></span>
+							{/if}
+							Masuk
+						</button>
+					</div>
+				{/snippet}
+			</FormEnhance>
+		{:else if submitted}
 			<div class="space-y-4 text-center">
 				<div class="alert alert-success">
 					<Icon name="success" />

@@ -1349,6 +1349,21 @@ export const tableBukuTamu = sqliteTable(
 	]
 );
 
+export const tableBukuTamuSettings = sqliteTable(
+	'buku_tamu_settings',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id, { onDelete: 'cascade' })
+			.notNull(),
+		passkeyHash: text(),
+		passkeySalt: text(),
+		unlockToken: text(),
+		...audit
+	},
+	(table) => [unique().on(table.sekolahId)]
+);
+
 export const tableSppd = sqliteTable(
 	'sppd',
 	{

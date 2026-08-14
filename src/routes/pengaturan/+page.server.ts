@@ -24,6 +24,7 @@ import {
 } from '$lib/server/storage-settings';
 import { dataRoot, soundsDir, uploadsDir } from '$lib/server/data-dirs';
 import { validatePasswordStrength } from '$lib/server/password-policy';
+import { isBukuTamuPasskeySet, setBukuTamuPasskey } from '$lib/server/buku-tamu-pass';
 import path from 'node:path';
 
 interface AddressEntry {
@@ -100,10 +101,16 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	}
 
 	const isAdmin = locals.user?.type === 'admin';
+	const isAdminOrKepalaSekolah = isAdmin || locals.user?.type === 'kepala_sekolah';
 	const storage = isAdmin ? await getStorageInfo() : undefined;
 
 	const forcePasswordChange =
 		url.searchParams.get('force') === '1' || Boolean(locals.user?.mustChangePassword);
+
+	const bukuTamuPasskeySet =
+		isAdminOrKepalaSekolah && locals.sekolah?.id
+			? await isBukuTamuPasskeySet(locals.sekolah.id)
+			: false;
 
 	return {
 		meta,
@@ -111,7 +118,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		protocol,
 		appVersion: getAppVersion(),
 		storage,
-		forcePasswordChange
+		forcePasswordChange,
+		bukuTamuPasskeySet
 	};
 };
 
@@ -314,5 +322,47 @@ export const actions: Actions = {
 		return {
 			message: `Lokasi data berhasil disimpan.${movedNote} Mulai ulang server agar perubahan berlaku.`
 		};
+	},
+	'buku-tamu-passkey': async ({ request, locals }) => {
+		if (locals.user?.type !== 'admin' && locals.user?.type !== 'kepala_sekolah') {
+			return fail(403, {
+				message: 'Hanya admin/kepala sekolah yang dapat mengatur passkey buku tamu.'
+			});
+		}
+		const sekolahId = locals.sekolah?.id;
+		if (!sekolahId) {
+			return fail(400, { message: 'Belum ada data sekolah.' });
+		}
+
+		const form = await request.formData();
+		const passkey = String(form.get('passkey') ?? '');
+		const confirm = String(form.get('confirmPasskey') ?? '');
+
+		if (!passkey) {
+			return fail(400, { message: 'Passkey wajib diisi.' });
+		}
+		if (passkey !== confirm) {
+			return fail(400, { message: 'Konfirmasi passkey tidak cocok.' });
+		}
+		if (passkey.length < 4 || passkey.length > 64) {
+			return fail(400, { message: 'Passkey harus 4–64 karakter.' });
+		}
+
+		await setBukuTamuPasskey(sekolahId, passkey);
+		return { message: 'Passkey buku tamu berhasil disimpan.' };
+	},
+	'buku-tamu-passkey-clear': async ({ locals }) => {
+		if (locals.user?.type !== 'admin' && locals.user?.type !== 'kepala_sekolah') {
+			return fail(403, {
+				message: 'Hanya admin/kepala sekolah yang dapat menonaktifkan passkey buku tamu.'
+			});
+		}
+		const sekolahId = locals.sekolah?.id;
+		if (!sekolahId) {
+			return fail(400, { message: 'Belum ada data sekolah.' });
+		}
+
+		await setBukuTamuPasskey(sekolahId, null);
+		return { message: 'Passkey buku tamu berhasil dinonaktifkan.' };
 	}
 };

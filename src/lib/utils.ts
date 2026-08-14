@@ -4,7 +4,8 @@ import { appMenuItems } from './components/menu';
 export const cookieNames = {
 	ACTIVE_SEKOLAH_ID: 'active-sekolah-id',
 	ACTIVE_KELAS_ID: 'active-kelas-id',
-	AUTH_SESSION: 'rapkumer-session'
+	AUTH_SESSION: 'rapkumer-session',
+	BUKU_TAMU_PASS: 'rapkumer-buku-tamu-pass'
 };
 
 export function findTitleByPath(path: string, items = appMenuItems): string | undefined {

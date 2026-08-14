@@ -63,6 +63,8 @@
 	let showCurrentPassword = $state(false);
 	let showNewPassword = $state(false);
 	let showConfirmPassword = $state(false);
+	let showBukuTamuPasskey = $state(false);
+	let showBukuTamuConfirm = $state(false);
 
 	onMount(() => {
 		if (!appAddress && browser) {
@@ -182,7 +184,7 @@
 	<div class="mt-4 flex flex-col justify-between gap-2 sm:flex-row">
 		{#if canCheckUpdate}
 			<button
-				class="btn btn-outline btn-secondary shadow-none sm:self-start"
+				class="btn btn-soft btn-secondary shadow-none sm:self-start"
 				type="button"
 				onclick={() => (updateModalOpen = true)}
 			>
@@ -192,12 +194,12 @@
 		{/if}
 		<div class="flex flex-col gap-2 sm:flex-row">
 			{#if canManageUsers}
-				<a class="btn btn-outline btn-info shadow-none" href="/pengguna">
+				<a class="btn btn-soft btn-info shadow-none" href="/pengguna">
 					<Icon name="users" />
 					Manajemen Pengguna
 				</a>
 			{/if}
-			<a class="btn btn-outline btn-success shadow-none" href="/pengaturan/profil">
+			<a class="btn btn-soft btn-success shadow-none" href="/pengaturan/profil">
 				<Icon name="user" />
 				Edit Profil
 			</a>
@@ -502,5 +504,117 @@
 			on:select={handlePickerSelect}
 			on:close={() => (pickerOpen = false)}
 		/>
+	</section>
+{/if}
+
+{#if isAdmin}
+	<section class="card bg-base-100 mt-4 rounded-lg border border-none p-6 shadow-md">
+		<FormEnhance
+			action="?/buku-tamu-passkey"
+			onsuccess={({ form }) => {
+				form.reset();
+			}}
+		>
+			{#snippet children({ submitting, invalid })}
+				<header class="mb-4 space-y-2">
+					<h2 class="text-xl font-semibold">Passkey Buku Tamu</h2>
+					<p class="text-base-content/70 text-sm">
+						Jika diaktifkan, pengunjung harus memasukkan passkey sekali saat membuka halaman
+						<code>/tamu</code> sebelum dapat mengisi buku tamu. Kosongkan untuk menonaktifkan.
+					</p>
+					{#if data.bukuTamuPasskeySet}
+						<div class="alert alert-success">
+							<Icon name="success" />
+							<span>Passkey buku tamu aktif.</span>
+						</div>
+					{/if}
+				</header>
+
+				<div class="flex flex-col gap-2">
+					<div class="w-full">
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend">Passkey</legend>
+							<div class="form-control">
+								<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+									<span class="pl-2"><Icon name="lock" /></span>
+									<input
+										type={showBukuTamuPasskey ? 'text' : 'password'}
+										id="passkey"
+										name="passkey"
+										required
+										minlength={4}
+										maxlength={64}
+										placeholder="Masukkan passkey baru (4–64 karakter)"
+										autocomplete="new-password"
+									/>
+									<button
+										type="button"
+										class="cursor-pointer pr-2"
+										onclick={() => (showBukuTamuPasskey = !showBukuTamuPasskey)}
+										aria-label="Toggle passkey visibility"
+									>
+										<Icon name={showBukuTamuPasskey ? 'eye-off' : 'eye'} />
+									</button>
+								</label>
+							</div>
+						</fieldset>
+					</div>
+
+					<div class="w-full">
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend">Konfirmasi passkey</legend>
+							<div class="form-control">
+								<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+									<span class="pl-2"><Icon name="lock" /></span>
+									<input
+										type={showBukuTamuConfirm ? 'text' : 'password'}
+										id="confirmPasskey"
+										name="confirmPasskey"
+										required
+										minlength={4}
+										maxlength={64}
+										placeholder="Ulangi passkey baru"
+										autocomplete="new-password"
+									/>
+									<button
+										type="button"
+										class="cursor-pointer pr-2"
+										onclick={() => (showBukuTamuConfirm = !showBukuTamuConfirm)}
+										aria-label="Toggle confirm passkey visibility"
+									>
+										<Icon name={showBukuTamuConfirm ? 'eye-off' : 'eye'} />
+									</button>
+								</label>
+							</div>
+						</fieldset>
+					</div>
+				</div>
+
+				<div class="mt-6 flex justify-end">
+					<button
+						class="btn btn-primary shadow-none"
+						type="submit"
+						disabled={submitting || invalid}
+					>
+						<Icon name="save" />
+						{submitting ? 'Menyimpan…' : 'Simpan Passkey'}
+					</button>
+				</div>
+			{/snippet}
+		</FormEnhance>
+
+		{#if data.bukuTamuPasskeySet}
+			<div class="divider"></div>
+			<FormEnhance action="?/buku-tamu-passkey-clear">
+				{#snippet children({ submitting })}
+					<div class="flex justify-end">
+						<button class="btn btn-soft btn-error shadow-none" type="submit" disabled={submitting}>
+							<Icon name="del" />
+							{submitting ? 'Menonaktifkan…' : 'Nonaktifkan Passkey'}
+						</button>
+					</div>
+				{/snippet}
+			</FormEnhance>
+		{/if}
 	</section>
 {/if}
