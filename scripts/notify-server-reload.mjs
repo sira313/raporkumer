@@ -15,7 +15,8 @@ const secret = env.INTERNAL_RELOAD_SECRET;
 				res.status,
 				await res.text().catch(() => '')
 			);
-			process.exitCode = 1;
+			// Non-fatal: the reload is optional (the server can reload on its own),
+			// so don't fail the surrounding db:push / import flow.
 			return;
 		}
 		console.info('[notify-server-reload] server reload requested successfully');

@@ -1,9 +1,7 @@
 import '$lib/server/load-env';
-import { applySessionCookie, ensureDefaultAdmin, resolveSession } from '$lib/server/auth';
-import { ensureKepalaSekolahAccounts } from '$lib/server/kepala-sekolah';
+import { applySessionCookie, resolveSession } from '$lib/server/auth';
 import db from '$lib/server/db';
 import { tableSekolah } from '$lib/server/db/schema';
-import { ensureCoreSchema } from '$lib/server/db/ensure-core-schema';
 import { isSecureRequest, resolveRequestProtocol } from '$lib/server/http';
 import { cookieNames } from '$lib/utils';
 import { error, redirect, type Handle } from '@sveltejs/kit';
@@ -13,11 +11,7 @@ import {
 	readCombinedOriginsFromEnvAndFile,
 	normalizeOrigin as normalizeFileOrigin
 } from '$lib/server/csrf-origins';
-import { ensureJadwalBellSchema } from '$lib/server/db/ensure-jadwal-bell';
-import { ensurePresensiSettingsSchema } from '$lib/server/db/ensure-presensi-settings';
-import { ensureLoginAttemptsSchema } from '$lib/server/db/ensure-login-attempts';
-import { ensureBukuTamuSettingsSchema } from '$lib/server/db/ensure-buku-tamu-settings';
-import { ensurePermissionMigration } from '$lib/server/db/ensure-permission-migration';
+import { runStartupEnsures } from '$lib/server/db/ensure-bootstrap';
 import { isAuthorizedUser, resolveRoutePermission } from './routes/pengguna/permissions';
 import { startBellScheduler } from '$lib/server/bell-scheduler';
 
@@ -135,8 +129,6 @@ const PUBLIC_ROUTE_IDS = new Set([
 // routes under /sekolah. Do NOT add page routes here — only GET-only image handlers.
 const PERMISSION_EXEMPT_PREFIXES = ['/sekolah/logo', '/sekolah/logo-dinas'];
 
-let ensureDefaultAdminResolved = false;
-
 function resolveRedirectTarget(value: string | null) {
 	if (!value) return null;
 	if (!value.startsWith('/')) return null;
@@ -145,17 +137,7 @@ function resolveRedirectTarget(value: string | null) {
 }
 
 const authGuard: Handle = async ({ event, resolve }) => {
-	if (!ensureDefaultAdminResolved) {
-		await ensureCoreSchema();
-		await ensureJadwalBellSchema();
-		await ensurePresensiSettingsSchema();
-		await ensureLoginAttemptsSchema();
-		await ensureBukuTamuSettingsSchema();
-		await ensureDefaultAdmin();
-		await ensurePermissionMigration();
-		await ensureKepalaSekolahAccounts();
-		ensureDefaultAdminResolved = true;
-	}
+	await runStartupEnsures();
 
 	const sessionToken = event.cookies.get(cookieNames.AUTH_SESSION);
 	const resolvedProtocol = resolveRequestProtocol(event.request, event.url);
