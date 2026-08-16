@@ -41,6 +41,7 @@ export const helpMaps: HelpMapEntry[] = [
 	{ matcher: '/cetak', file: 'cetak' },
 	{ matcher: '/akademik/jadwal-pelajaran', file: 'jadwal-pelajaran' },
 	{ matcher: '/jurnal-mengajar', file: 'jurnal-mengajar' },
+	{ matcher: '/pengaturan/profil', file: 'profil' },
 	{ matcher: '/keputusan', file: 'absen' }
 ];
 

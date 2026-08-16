@@ -867,7 +867,7 @@
 
 {#if shouldShowBobotInfoAlert}
 	<BobotInfoAlert
-		message="Bobot belum disetel, maka pembobotan akan dilakukan dengan mengambil rata-rata dari semua nilai."
+		message="Bobot kesulitan materi belum disetel, maka pembobotan akan dilakukan dengan mengambil rata-rata dari semua nilai."
 		onDismiss={dismissBobotInfoAlert}
 	/>
 {/if}

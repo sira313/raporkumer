@@ -136,6 +136,8 @@ export async function ensureCoreSchema() {
 			wali_kelas_id INTEGER REFERENCES pegawai(id) ON DELETE SET NULL,
 			wali_asrama_id INTEGER REFERENCES pegawai(id) ON DELETE SET NULL,
 			wali_asuh_id INTEGER REFERENCES pegawai(id) ON DELETE SET NULL,
+			rapor_kriteria_cukup INTEGER,
+			rapor_kriteria_baik INTEGER,
 			created_at TEXT NOT NULL,
 			updated_at TEXT,
 			UNIQUE(sekolah_id, semester_id, nama)
@@ -221,6 +223,19 @@ export async function ensureCoreSchema() {
 		await db.$client.execute(`ALTER TABLE semester ADD COLUMN tanggal_masuk TEXT`);
 	} catch {
 		// column already exists
+	}
+
+	// Per-class rapor criteria columns (migration for existing databases)
+	const kelasRaporCriteriaColumns = [
+		['rapor_kriteria_cukup', 'INTEGER'],
+		['rapor_kriteria_baik', 'INTEGER']
+	] as const;
+	for (const [column, type] of kelasRaporCriteriaColumns) {
+		try {
+			await db.$client.execute(`ALTER TABLE kelas ADD COLUMN ${column} ${type}`);
+		} catch {
+			// column already exists
+		}
 	}
 
 	// Profile columns on auth_user (migration for existing databases)

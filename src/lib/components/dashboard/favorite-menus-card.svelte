@@ -49,7 +49,7 @@
 
 		{#if favoritesStore.items.length === 0}
 			<p class="text-base-content/70 text-sm">
-				Belum ada menu favorit. Klik bintang di navbar untuk menambahkan.
+				Belum ada menu favorit. Tambahkan dengan cara klik tombol bintang pada navbar.
 			</p>
 		{:else}
 			<div class="max-h-48 overflow-y-auto">
