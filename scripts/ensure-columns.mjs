@@ -453,6 +453,11 @@ async function main() {
 			{ table: 'kelas', column: 'wali_asrama_id', type: 'INTEGER' },
 			{ table: 'kelas', column: 'waliAsuhId', type: 'INTEGER' },
 			{ table: 'kelas', column: 'wali_asuh_id', type: 'INTEGER' },
+			// Per-class rapor criteria columns
+			{ table: 'kelas', column: 'rapor_kriteria_cukup', type: 'INTEGER' },
+			{ table: 'kelas', column: 'rapor_kriteria_baik', type: 'INTEGER' },
+			{ table: 'kelas', column: 'raporKriteriaCukup', type: 'INTEGER' },
+			{ table: 'kelas', column: 'raporKriteriaBaik', type: 'INTEGER' },
 
 			// status kepala sekolah (0027) - accept both variants
 			{

@@ -209,6 +209,9 @@ export const tableKelas = sqliteTable(
 		waliKelasId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
 		waliAsramaId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
 		waliAsuhId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
+		// Per-class rapor criteria. NULL = fall back to school-level values.
+		raporKriteriaCukup: int(),
+		raporKriteriaBaik: int(),
 		...audit
 	},
 	(table) => [unique().on(table.sekolahId, table.semesterId, table.nama)]

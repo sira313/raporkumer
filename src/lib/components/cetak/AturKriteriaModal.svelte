@@ -90,6 +90,10 @@
 		>
 			Reset ke default
 		</button>
+		<label class="label cursor-pointer justify-end gap-2">
+			<input type="checkbox" id="krit-clear" class="checkbox checkbox-sm" />
+			<span class="text-xs">Kembalikan ke setelan sekolah</span>
+		</label>
 	</div>
 	<div role="alert" class="alert alert-warning">
 		<Icon name="warning" class="text-xl" />
@@ -101,8 +105,8 @@
 	<div role="alert" class="alert alert-info">
 		<Icon name="info" class="text-xl" />
 		<span>
-			Pengaturan ini akan disimpan di server untuk sekolah aktif. Perubahan akan berlaku untuk semua
-			pengguna yang mengakses sekolah ini (tergantung izin server).</span
+			Pengaturan ini disimpan per kelas dan berlaku untuk kelas yang sedang aktif. Setiap wali kelas
+			dapat menyetel kriteria sendiri tanpa memengaruhi kelas lain.</span
 		>
 	</div>
 </div>

@@ -4,7 +4,7 @@
 	import DocumentMuridSelector from '$lib/components/cetak/DocumentMuridSelector.svelte';
 	import PdfPreviewModal from '$lib/components/cetak/PdfPreviewModal.svelte';
 	import { toast } from '$lib/components/toast.svelte';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import { DEFAULT_RAPOR_CRITERIA, type RaporPeriode } from '$lib/rapor-params';
 
 	type DocumentType =
@@ -73,20 +73,33 @@
 
 	let kritCukup = $state<number>(DEFAULT_RAPOR_CRITERIA.kritCukup);
 	let kritBaik = $state<number>(DEFAULT_RAPOR_CRITERIA.kritBaik);
+	let kriteriaVersion = $state(0);
 
-	onMount(async () => {
-		try {
-			const res = await fetch('/api/sekolah/rapor-kriteria');
-			if (res.ok) {
-				const json = await res.json();
+	const aktifKelasId = $derived(data.kelasId ? Number(data.kelasId) : null);
+
+	$effect(() => {
+		const kelasId = aktifKelasId;
+		const version = kriteriaVersion;
+		let cancelled = false;
+		fetch(`/api/sekolah/rapor-kriteria${kelasId ? `?kelas_id=${kelasId}` : ''}`)
+			.then(async (res) => {
+				if (!res.ok) return null;
+				return await res.json();
+			})
+			.then((json) => {
+				if (cancelled || !json) return;
+				if (version !== kriteriaVersion) return;
 				const lc = json?.cukup;
 				const lb = json?.baik;
 				if (lc !== undefined && !Number.isNaN(Number(lc))) kritCukup = Number(lc);
 				if (lb !== undefined && !Number.isNaN(Number(lb))) kritBaik = Number(lb);
-			}
-		} catch {
-			// ignore
-		}
+			})
+			.catch(() => {
+				// ignore
+			});
+		return () => {
+			cancelled = true;
+		};
 	});
 
 	onDestroy(() => {
@@ -512,17 +525,25 @@
 		onToggleBgLogo={(value: boolean) => {
 			showBgLogo = value;
 		}}
-		onSetKriteria={(cukup: number, baik: number) => {
-			kritCukup = cukup;
-			kritBaik = baik;
+		onSetKriteria={(cukup: number | null, baik: number | null) => {
+			if (cukup != null && baik != null) {
+				kritCukup = cukup;
+				kritBaik = baik;
+			}
 			fetch('/api/sekolah/rapor-kriteria', {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ cukup: kritCukup, baik: kritBaik })
+				body: JSON.stringify({
+					cukup: cukup ?? null,
+					baik: baik ?? null,
+					kelas_id: aktifKelasId ?? undefined
+				})
 			})
 				.then(async (res) => {
 					if (res.ok) {
-						toast('Kriteria rapor tersimpan di server.', 'success');
+						const payload = await res.json().catch(() => ({}));
+						kriteriaVersion++;
+						toast(payload?.message ?? 'Kriteria rapor tersimpan di server.', 'success');
 					} else {
 						const payload = await res.json().catch(() => ({}));
 						console.error('Gagal menyimpan kriteria rapor', payload);

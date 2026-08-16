@@ -260,7 +260,7 @@
 				<div
 					class="text-base-content/60 flex flex-1 items-center justify-center px-4 py-6 text-center text-sm"
 				>
-					Belum ada tugas aktif. Tambahkan tugas baru untuk memulai.
+					Belum ada tugas aktif.
 				</div>
 			{/if}
 		{/if}

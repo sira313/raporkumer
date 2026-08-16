@@ -90,13 +90,6 @@
 		hasSignature = false;
 	}
 
-	function undoSignature() {
-		if (!ctx || !canvasEl) return;
-		// Simple undo: clear and redraw is not feasible without history
-		// Just clear instead
-		clearSignature();
-	}
-
 	function getSignatureData(): string | null {
 		if (!canvasEl || !hasSignature) return null;
 		return canvasEl.toDataURL('image/png');
@@ -174,7 +167,9 @@
 					<div class="space-y-4">
 						<div class="alert alert-info">
 							<Icon name="info" />
-							<span>Halaman ini dilindungi passkey. Hubungi pihak sekolah untuk mendapatkan passkey.</span>
+							<span
+								>Halaman ini dilindungi passkey. Hubungi pihak sekolah untuk mendapatkan passkey.</span
+							>
 						</div>
 						<div class="fieldset">
 							<label class="fieldset-legend" for="passkey">Passkey</label>
@@ -281,9 +276,6 @@
 								onclick={clearSignature}
 							>
 								Hapus
-							</button>
-							<button type="button" class="btn btn-soft btn-xs ml-1" onclick={undoSignature}>
-								Undo
 							</button>
 						{/if}
 					</label>

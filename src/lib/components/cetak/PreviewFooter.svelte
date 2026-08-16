@@ -36,7 +36,7 @@
 		isRaporSelected: boolean;
 		tpMode: 'compact' | 'full-desc';
 		onToggleFullTP: (value: 'compact' | 'full-desc') => void;
-		onSetKriteria: (cukup: number, baik: number) => void;
+		onSetKriteria: (cukup: number | null, baik: number | null) => void;
 		kritCukup: number;
 		kritBaik: number;
 		kelasId: string | number | null;
@@ -196,6 +196,12 @@
 						onPositive: {
 							label: 'Simpan',
 							action: ({ close }: { close: () => void }) => {
+								const clearEl = document.getElementById('krit-clear') as HTMLInputElement | null;
+								if (clearEl?.checked) {
+									onSetKriteria(null, null);
+									close();
+									return;
+								}
 								// read inputs from dialog DOM
 								const cuk = document.getElementById('krit-cukup') as HTMLInputElement | null;
 								const baik = document.getElementById('krit-baik') as HTMLInputElement | null;

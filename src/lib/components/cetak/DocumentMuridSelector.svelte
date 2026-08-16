@@ -107,7 +107,7 @@
 		isKeasramaanSelected?: boolean;
 		isBiodataSelected?: boolean;
 		onBgRefresh?: () => void;
-		onSetKriteria?: (cukup: number, baik: number) => void;
+		onSetKriteria?: (cukup: number | null, baik: number | null) => void;
 		kritCukup?: number;
 		kritBaik?: number;
 		tpMode?: 'compact' | 'full-desc';

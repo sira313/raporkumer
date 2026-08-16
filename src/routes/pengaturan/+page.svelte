@@ -97,8 +97,12 @@
 		}
 	}
 
+	let wasForcePasswordChange = $state(data.forcePasswordChange);
+	let passwordChanged = $state(false);
+
 	function handlePasswordSuccess({ form }: { form: HTMLFormElement }) {
 		form.reset();
+		passwordChanged = true;
 	}
 
 	function handleAdminUsernameSuccess({ form }: { form: HTMLFormElement }) {
@@ -186,14 +190,21 @@
 	</div>
 </section>
 
-{#if data.forcePasswordChange}
-	<div id="default-password-warning" class="alert alert-warning mt-4 scroll-mt-20" role="alert">
-		<Icon name="lock" />
-		<span>
-			Jangan gunakan sandi bawaan! Perbarui kata sandi di bagian
-			<strong>Ganti Password</strong> di bawah sebelum menggunakan aplikasi.
-		</span>
-	</div>
+{#if wasForcePasswordChange}
+	{#if passwordChanged}
+		<div class="alert alert-success mt-4" role="status">
+			<Icon name="success" />
+			<span>Silahkan gunakan aplikasi…</span>
+		</div>
+	{:else}
+		<div id="default-password-warning" class="alert alert-warning mt-4 scroll-mt-20" role="alert">
+			<Icon name="lock" />
+			<span>
+				Jangan gunakan sandi bawaan! Perbarui kata sandi di bagian
+				<strong>Ganti Password</strong> di bawah sebelum menggunakan aplikasi.
+			</span>
+		</div>
+	{/if}
 {/if}
 
 <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
