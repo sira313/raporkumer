@@ -125,7 +125,7 @@
 						<td class="text-center">
 							{#if isEditing}
 								<select
-									class="select select-sm bg-base-200 dark:bg-base-300 w-full truncate text-center dark:border-none"
+									class="select select-sm bg-base-200 dark:bg-base-300 w-full truncate text-center border-base-300 dark:border-none"
 									value={editingValues.keterangan}
 									onchange={(event) =>
 										onEditValueChange({
@@ -149,7 +149,7 @@
 						<td class="text-center">
 							{#if isEditing}
 								<select
-									class="select select-sm bg-base-200 dark:bg-base-300 w-full truncate text-center dark:border-none"
+									class="select select-sm bg-base-200 dark:bg-base-300 w-full truncate text-center border-base-300 dark:border-none"
 									value={editingValues.keteranganPulang}
 									onchange={(event) =>
 										onEditValueChange({
@@ -176,7 +176,7 @@
 						<td class="text-center">
 							{#if isEditing}
 								<select
-									class="select select-sm bg-base-200 dark:bg-base-300 w-full truncate text-center dark:border-none"
+									class="select select-sm bg-base-200 dark:bg-base-300 w-full truncate text-center border-base-300 dark:border-none"
 									value={editingValues.keterangan}
 									onchange={(event) =>
 										onEditValueChange({
@@ -210,7 +210,7 @@
 						<td class="overflow-hidden text-center">
 							{#if isEditing}
 								<select
-									class="select select-sm bg-base-200 dark:bg-base-300 w-full truncate text-center dark:border-none"
+									class="select select-sm bg-base-200 dark:bg-base-300 w-full truncate text-center border-base-300 dark:border-none"
 									value={editingValues.keterangan}
 									onchange={(event) =>
 										onEditValueChange({

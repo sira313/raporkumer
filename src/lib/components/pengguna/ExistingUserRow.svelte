@@ -30,7 +30,7 @@
 <td>
 	{#if editingId === u.id}
 		<input
-			class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
+			class="input input-sm bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 			bind:value={editValues[u.id].username}
 		/>
 	{:else}
@@ -39,7 +39,9 @@
 </td>
 <td>
 	{#if editingId === u.id}
-		<label class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none">
+		<label
+			class="input input-sm bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+		>
 			<input
 				type={showPassword ? 'text' : 'password'}
 				placeholder="Buat Password"

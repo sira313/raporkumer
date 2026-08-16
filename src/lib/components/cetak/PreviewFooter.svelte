@@ -234,7 +234,7 @@
 				<label class="sr-only" for="tp-mode-select">TP mode</label>
 				<select
 					id="tp-mode-select"
-					class="select select-sm dark:bg-base-200 w-full truncate sm:w-35 dark:border-none"
+					class="select select-sm dark:bg-base-200 w-full truncate sm:w-35 border-base-300 dark:border-none"
 					value={tpMode}
 					onchange={(e) => {
 						const val = (e.target as HTMLSelectElement).value as 'compact' | 'full-desc';

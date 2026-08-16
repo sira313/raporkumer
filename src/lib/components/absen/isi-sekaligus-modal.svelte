@@ -203,7 +203,7 @@
 	<div class="flex flex-col gap-4">
 		{#if isAwalAkhir}
 			<select
-				class="select select-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
+				class="select select-sm bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 				bind:value={sessionType}
 			>
 				<option value="awal">Awal Mapel</option>
@@ -212,7 +212,7 @@
 		{/if}
 		{#if isWaliKelasMasukPulang}
 			<select
-				class="select select-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
+				class="select select-sm bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 				bind:value={presensiType}
 			>
 				<option value="masuk">Presensi Masuk</option>
@@ -232,7 +232,7 @@
 	<div class="flex flex-col gap-3">
 		<p class="text-base-content text-lg font-medium">Siapa yang tidak hadir?</p>
 
-		<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
+		<label class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none">
 			<input
 				type="search"
 				placeholder="Cari nama murid..."
@@ -275,7 +275,7 @@
 							<td class="overflow-hidden text-center">
 								{#if checked}
 									<select
-										class="select select-sm bg-base-200 dark:bg-base-300 w-full truncate text-center dark:border-none"
+										class="select select-sm bg-base-200 dark:bg-base-300 w-full truncate text-center border-base-300 dark:border-none"
 										value={keteranganMap[murid.id] || 'alfa'}
 										onchange={(e) =>
 											setKeterangan(murid.id, (e.currentTarget as HTMLSelectElement).value)}

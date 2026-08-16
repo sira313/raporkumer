@@ -33,7 +33,7 @@
 				<input
 					id="krit-cukup"
 					type="number"
-					class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+					class="input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
 					bind:value={localCukup}
 					min="0"
 					max="100"
@@ -49,7 +49,7 @@
 				<input
 					id="krit-baik"
 					type="number"
-					class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+					class="input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
 					bind:value={localBaik}
 					min="0"
 					max="100"

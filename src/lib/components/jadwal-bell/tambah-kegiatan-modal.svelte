@@ -135,7 +135,7 @@
 		<legend class="fieldset-legend">Nama Kegiatan</legend>
 		<input
 			type="text"
-			class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+			class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 			bind:value={nama}
 			placeholder="Contoh: Literasi, Senam Pagi"
 			disabled={submitting}
@@ -146,7 +146,7 @@
 			<legend class="fieldset-legend">Kode</legend>
 			<input
 				type="text"
-				class="input bg-base-200 dark:bg-base-300 w-full uppercase dark:border-none"
+				class="input bg-base-200 dark:bg-base-300 w-full uppercase border-base-300 dark:border-none"
 				bind:value={kode}
 				oninput={normalizeKode}
 				placeholder="Contoh: LIT, SP"
@@ -159,7 +159,7 @@
 			<legend class="fieldset-legend">Durasi (menit)</legend>
 			<input
 				type="number"
-				class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+				class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 				bind:value={durasi}
 				placeholder="Contoh: 20"
 				min="1"
@@ -173,7 +173,7 @@
 		<div class="flex items-center gap-2">
 			<input
 				type="file"
-				class="file-input file-input-soft bg-base-200 file-input-sm w-full dark:border-none"
+				class="file-input file-input-soft bg-base-200 file-input-sm w-full border-base-300 dark:border-none"
 				accept=".mp3,audio/mpeg"
 				onchange={handleFileSelect}
 				disabled={submitting}

@@ -34,12 +34,12 @@ function isXlsxMime(type: string | null | undefined) {
 }
 
 export async function load({ depends, params, parent }) {
-	// Check permission: admin, wali_kelas, wali_asuh, and users with rapor_manage can access
+	// Check permission: admin, kepala_sekolah, user, wali_kelas, wali_asuh can access
 	// Also allow 'user' type (guru mapel) since they're filtered server-side
 	const { user } = await parent();
 	const userType = (user as { type?: string } | null)?.type;
 
-	// Allow admin, wali_kelas, wali_asuh, and 'user' (guru mapel) to proceed
+	// Allow admin, kepala_sekolah, user, wali_kelas, wali_asuh to proceed
 	// wali_kelas/wali_asuh already validated by hooks.server.ts to access only their own kelas
 	if (
 		userType !== 'admin' &&
@@ -325,7 +325,7 @@ export async function load({ depends, params, parent }) {
 
 export const actions = {
 	async save({ params, request, locals }) {
-		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
+		// Allow admin, kepala_sekolah, user, wali_kelas, wali_asuh; others need permission
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (
 			userType !== 'admin' &&
@@ -445,8 +445,113 @@ export const actions = {
 		return { message: `Tujuan pembelajaran berhasil diperbarui` };
 	},
 
+	async aigenerate({ params, request, locals }) {
+		// Allow admin, kepala_sekolah, user, wali_kelas, wali_asuh; others need permission
+		const userType = (locals.user as { type?: string } | null)?.type;
+		if (
+			userType !== 'admin' &&
+			userType !== 'kepala_sekolah' &&
+			userType !== 'user' &&
+			userType !== 'wali_kelas' &&
+			userType !== 'wali_asuh'
+		) {
+			authority('mata_pelajaran_intrakurikuler');
+		}
+
+		const mataPelajaranId = Number(params.id);
+		if (!Number.isFinite(mataPelajaranId)) {
+			return fail(400, { fail: 'Mata pelajaran tidak valid.' });
+		}
+
+		const formData = await request.formData();
+		const payload = unflattenFormData<{
+			groups?: Record<
+				string,
+				{ lingkupMateri?: string; deskripsi?: string | Record<string, string> }
+			>;
+		}>(formData);
+
+		const rawGroups = payload.groups ? Object.values(payload.groups) : [];
+		const groups = rawGroups
+			.map((group) => {
+				const lingkupMateri = (group.lingkupMateri ?? '').trim();
+				const rawDeskripsi = group.deskripsi;
+				const deskripsi = Array.isArray(rawDeskripsi)
+					? rawDeskripsi
+					: typeof rawDeskripsi === 'string'
+						? [rawDeskripsi]
+						: Object.values(rawDeskripsi ?? {});
+				return {
+					lingkupMateri,
+					deskripsi: deskripsi
+						.map((entry) => normalizeCell(entry))
+						.filter((entry) => entry.length > 0)
+				};
+			})
+			.filter((group) => group.lingkupMateri.length > 0 && group.deskripsi.length > 0);
+
+		if (groups.length === 0) {
+			return fail(400, { fail: 'Tidak ada lingkup materi yang dapat disimpan.' });
+		}
+
+		const existingEntries = await db.query.tableTujuanPembelajaran.findMany({
+			columns: { lingkupMateri: true, deskripsi: true },
+			where: eq(tableTujuanPembelajaran.mataPelajaranId, mataPelajaranId)
+		});
+
+		const existingKeys = new Set(
+			existingEntries.map(
+				(entry) =>
+					`${normalizeCell(entry.lingkupMateri).toLowerCase()}::${normalizeCell(entry.deskripsi).toLowerCase()}`
+			)
+		);
+
+		const toInsert: Array<{ lingkupMateri: string; deskripsi: string; mataPelajaranId: number }> =
+			[];
+		let duplicateCount = 0;
+		let longEntryCount = 0;
+
+		for (const group of groups) {
+			for (const deskripsi of group.deskripsi) {
+				const key = `${group.lingkupMateri.toLowerCase()}::${deskripsi.toLowerCase()}`;
+				if (existingKeys.has(key)) {
+					duplicateCount += 1;
+					continue;
+				}
+				existingKeys.add(key);
+				if (deskripsi.length > 95) {
+					longEntryCount += 1;
+				}
+				toInsert.push({
+					lingkupMateri: group.lingkupMateri,
+					deskripsi,
+					mataPelajaranId
+				});
+			}
+		}
+
+		if (toInsert.length === 0) {
+			return {
+				message:
+					duplicateCount > 0
+						? 'Semua tujuan pembelajaran hasil generate sudah tersedia.'
+						: 'Tidak ada tujuan pembelajaran baru yang ditemukan.',
+				longEntryCount
+			};
+		}
+
+		await db.insert(tableTujuanPembelajaran).values(toInsert);
+
+		const parts = [`Berhasil menambahkan ${toInsert.length} tujuan pembelajaran.`];
+		if (duplicateCount > 0) {
+			parts.push(`${duplicateCount} data diabaikan karena sudah ada.`);
+		}
+
+		return { message: parts.join(' '), longEntryCount };
+	},
+
 	async delete({ request, locals }) {
-		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
+		// Allow admin, kepala_sekolah, user, wali_kelas, wali_asuh; others need permission
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (
 			userType !== 'admin' &&
@@ -479,7 +584,7 @@ export const actions = {
 		request: Request;
 		locals: App.Locals;
 	}) {
-		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
+		// Allow admin, kepala_sekolah, user, wali_kelas, wali_asuh; others need permission
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (
 			userType !== 'admin' &&
@@ -562,7 +667,7 @@ export const actions = {
 	},
 
 	async import({ params, request, locals }) {
-		// Allow admin, wali_kelas, wali_asuh, rapor_manage permission holders, and guru mapel
+		// Allow admin, kepala_sekolah, user, wali_kelas, wali_asuh; others need permission
 		const userType = (locals.user as { type?: string } | null)?.type;
 		if (
 			userType !== 'admin' &&

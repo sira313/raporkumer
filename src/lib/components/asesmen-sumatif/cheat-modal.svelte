@@ -37,7 +37,7 @@
 			<span class="text-wrap">Target nilai akhir untuk ditampilkan di rapor</span>
 		</div>
 		<input
-			class={`input input-bordered dark:bg-base-200 dark:border-none ${errorMessage ? 'input-error' : ''}`}
+			class={`input input-bordered dark:bg-base-200 border-base-300 dark:border-none ${errorMessage ? 'input-error' : ''}`}
 			placeholder="Contoh: 87.5"
 			type="number"
 			min="0"

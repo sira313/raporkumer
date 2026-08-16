@@ -205,7 +205,7 @@
 	<div class="join mb-4">
 		<input
 			type="date"
-			class="input bg-base-200 dark:bg-base-300 join-item w-full max-w-48 dark:border-none"
+			class="input bg-base-200 dark:bg-base-300 join-item w-full max-w-48 border-base-300 dark:border-none"
 			bind:value={selectedTanggal}
 		/>
 		<button

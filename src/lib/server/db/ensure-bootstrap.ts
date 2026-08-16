@@ -1,5 +1,6 @@
 import { ensureDefaultAdmin } from '$lib/server/auth';
 import { ensureKepalaSekolahAccounts } from '$lib/server/kepala-sekolah';
+import { ensureAiSettingsSchema } from './ensure-ai-settings';
 import { ensureBukuTamuSettingsSchema } from './ensure-buku-tamu-settings';
 import { ensureCoreSchema } from './ensure-core-schema';
 import { ensureJadwalBellSchema } from './ensure-jadwal-bell';
@@ -22,6 +23,7 @@ export async function runStartupEnsures() {
 	await ensurePresensiSettingsSchema();
 	await ensureLoginAttemptsSchema();
 	await ensureBukuTamuSettingsSchema();
+	await ensureAiSettingsSchema();
 	await ensureDefaultAdmin();
 	await ensurePermissionMigration();
 	await ensureKepalaSekolahAccounts();

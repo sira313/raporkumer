@@ -617,7 +617,7 @@
 	<div class="flex flex-col justify-between gap-2 sm:flex-row sm:flex-wrap">
 		<form class="w-full sm:max-w-80 md:max-w-80" method="get" use:autoSubmit>
 			<select
-				class="select bg-base-200 w-full truncate dark:border-none"
+				class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
 				title="Pilih mata pelajaran"
 				name="mapel_id"
 				bind:value={selectedMapelValue}
@@ -666,7 +666,7 @@
 		data-sveltekit-replacestate
 		onsubmit={submitSearch}
 	>
-		<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
+		<label class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none">
 			<Icon name="search" />
 			<input
 				type="search"

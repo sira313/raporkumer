@@ -1367,6 +1367,18 @@ export const tableBukuTamuSettings = sqliteTable(
 	(table) => [unique().on(table.sekolahId)]
 );
 
+// Global AI settings (single row, not per-sekolah). Admin/kepala_sekolah set the
+// Gemini API key via /pengaturan; the key is read server-side only, never sent to the client.
+export const tableAiSettings = sqliteTable('ai_settings', {
+	id: int().primaryKey({ autoIncrement: true }),
+	provider: text({ enum: ['gemini'] })
+		.default('gemini')
+		.notNull(),
+	apiKey: text().notNull(),
+	model: text().default('gemini-3.6-flash').notNull(),
+	...audit
+});
+
 export const tableSppd = sqliteTable(
 	'sppd',
 	{

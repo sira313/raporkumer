@@ -206,7 +206,7 @@
 					<legend class="fieldset-legend">Sekolah</legend>
 					<select
 						id="add-user-sekolah"
-						class="select dark:bg-base-200 w-full truncate dark:border-none"
+						class="select dark:bg-base-200 w-full truncate border-base-300 dark:border-none"
 						bind:value={sekolahId}
 						onchange={() => {
 							kelasIds.clear();
@@ -308,7 +308,7 @@
 					<input
 						id="add-user-nama"
 						required
-						class="input dark:bg-base-200 w-full dark:border-none"
+						class="input dark:bg-base-200 w-full border-base-300 dark:border-none"
 						bind:value={nama}
 						placeholder="Contoh: Bruce Wayne, Bat."
 					/>
@@ -318,7 +318,7 @@
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Akun</legend>
 					<div class="flex flex-col gap-2 sm:flex-row">
-						<label class="input validator dark:bg-base-200 w-full dark:border-none">
+						<label class="input validator dark:bg-base-200 w-full border-base-300 dark:border-none">
 							<Icon name="user" />
 							<input
 								id="add-user-username"
@@ -329,7 +329,7 @@
 								bind:value={username}
 							/>
 						</label>
-						<label class="input validator dark:bg-base-200 w-full dark:border-none">
+						<label class="input validator dark:bg-base-200 w-full border-base-300 dark:border-none">
 							<Icon name="lock" />
 							<input
 								id="add-user-password"

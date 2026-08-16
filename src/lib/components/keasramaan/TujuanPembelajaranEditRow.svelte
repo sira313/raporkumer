@@ -47,7 +47,7 @@
 				<input name="indikatorId" value={indikatorId} hidden />
 				<input name="id" value={item.id} hidden />
 				<textarea
-					class="textarea dark:bg-base-300 w-full dark:border-none"
+					class="textarea dark:bg-base-300 w-full border-base-300 dark:border-none"
 					placeholder="Tulis tujuan pembelajaran keasramaan"
 					name="deskripsi"
 					bind:value={localDeskripsi}

@@ -166,7 +166,7 @@
 			<legend class="fieldset-legend">Nama Mata Pelajaran</legend>
 			<input
 				type="text"
-				class="input validator bg-base-200 w-full dark:border-none"
+				class="input validator bg-base-200 w-full border-base-300 dark:border-none"
 				placeholder={namaPlaceholder}
 				name="nama"
 				required
@@ -180,7 +180,7 @@
 			<legend class="fieldset-legend">KKM</legend>
 			<input
 				type="number"
-				class="input validator bg-base-200 w-full dark:border-none"
+				class="input validator bg-base-200 w-full border-base-300 dark:border-none"
 				placeholder="Contoh: 76"
 				name="kkm"
 				required
@@ -192,7 +192,7 @@
 			<legend class="fieldset-legend">Kode</legend>
 			<input
 				type="text"
-				class="input validator bg-base-200 w-full dark:border-none"
+				class="input validator bg-base-200 w-full border-base-300 dark:border-none"
 				placeholder="Contoh: PAPB"
 				name="kode"
 				bind:value={localKode}
@@ -203,7 +203,7 @@
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Jenis Mata Pelajaran</legend>
 			<select
-				class="select bg-base-200 w-full truncate dark:border-none"
+				class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
 				name="jenis"
 				required
 				disabled={disableJenis}

@@ -54,6 +54,8 @@
 	let showBukuTamuPasskey = $state(false);
 	let showBukuTamuConfirm = $state(false);
 	let clearingBukuTamuPasskey = $state(false);
+	let showGeminiKey = $state(false);
+	let clearingGeminiKey = $state(false);
 
 	onMount(() => {
 		if (!appAddress && browser) {
@@ -116,7 +118,7 @@
 			<div class="space-y-2">
 				<h1 class="text-2xl font-bold">Pengaturan Aplikasi</h1>
 				<p class="text-base-content/70 text-sm">
-					Pengaturan tambahan untuk lingkungan server lokal Anda.
+					Pengaturan tambahan untuk lingkungan server lokal.
 				</p>
 				<p class="text-base-content/60 text-xs">Versi terpasang: v{currentVersion}</p>
 			</div>
@@ -128,7 +130,7 @@
 				<input
 					type="text"
 					disabled
-					class="input bg-base-200 join-item w-full dark:border-none"
+					class="input bg-base-200 join-item w-full border-base-300 dark:border-none"
 					placeholder={appAddress || 'Tidak ada alamat terdeteksi'}
 					value={appAddress}
 				/>
@@ -149,7 +151,7 @@
 				<div class="overflow-hidden">
 					<select
 						id="addressSelector"
-						class="select select-bordered dark:bg-base-200 w-full truncate dark:border-none"
+						class="select select-bordered dark:bg-base-200 w-full truncate border-base-300 dark:border-none"
 						bind:value={appAddress}
 					>
 						{#each detectedAddresses as address (address)}
@@ -213,17 +215,19 @@
 		<FormEnhance action="?/change-admin-username" onsuccess={handleAdminUsernameSuccess}>
 			{#snippet children({ submitting, invalid })}
 				<header class="mb-4 space-y-2">
-					<h2 class="text-xl font-semibold">Ganti Username</h2>
+					<h2 class="text-xl font-semibold">Ganti Nama Pengguna</h2>
 					<p class="text-base-content/70 text-sm">
-						Perbarui username untuk menjaga keamanan akses aplikasi.
+						Perbarui nama pengguna untuk menjaga keamanan akses aplikasi.
 					</p>
 				</header>
 				<div class="flex flex-col gap-2">
 					<div class="w-full">
 						<fieldset class="fieldset">
-							<legend class="fieldset-legend">Username</legend>
+							<legend class="fieldset-legend">Nama Pengguna</legend>
 							<div class="form-control">
-								<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+								<label
+									class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+								>
 									<span class="pl-2"><Icon name="users" /></span>
 									<input
 										type="text"
@@ -235,7 +239,7 @@
 										placeholder="contoh: laila2"
 									/>
 								</label>
-								<p class="text-base-content/70 mt-1 text-xs">Masukkan username baru.</p>
+								<p class="text-base-content/70 mt-1 text-xs">Masukkan nama pengguna baru.</p>
 							</div>
 						</fieldset>
 					</div>
@@ -244,7 +248,9 @@
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Konfirmasi Dengan Kata Sandi</legend>
 							<div class="form-control">
-								<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+								<label
+									class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+								>
 									<span class="pl-2"><Icon name="lock" /></span>
 									<input
 										type={showAdminPassword ? 'text' : 'password'}
@@ -264,7 +270,7 @@
 									</button>
 								</label>
 								<p class="text-base-content/70 mt-1 text-xs">
-									Masukkan kata sandi saat ini untuk konfirmasi perubahan username.
+									Masukkan kata sandi saat ini untuk konfirmasi perubahan nama pengguna.
 								</p>
 							</div>
 						</fieldset>
@@ -288,7 +294,7 @@
 	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md" id="ganti-password">
 		<div class="space-y-4">
 			<header class="space-y-2">
-				<h2 class="text-xl font-semibold">Ganti Password</h2>
+				<h2 class="text-xl font-semibold">Ganti Kata Sandi</h2>
 				<p class="text-base-content/70 text-sm">
 					Perbarui kata sandi untuk menjaga keamanan akses aplikasi.
 				</p>
@@ -299,7 +305,9 @@
 					<div>
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Kata sandi saat ini</legend>
-							<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+							<label
+								class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+							>
 								<span class="pl-2"><Icon name="lock" /></span>
 								<input
 									type={showCurrentPassword ? 'text' : 'password'}
@@ -322,7 +330,9 @@
 
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Kata sandi baru</legend>
-							<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+							<label
+								class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+							>
 								<span class="pl-2"><Icon name="lock" /></span>
 								<input
 									type={showNewPassword ? 'text' : 'password'}
@@ -346,7 +356,9 @@
 
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Konfirmasi kata sandi baru</legend>
-							<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+							<label
+								class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+							>
 								<span class="pl-2"><Icon name="lock" /></span>
 								<input
 									type={showConfirmPassword ? 'text' : 'password'}
@@ -418,7 +430,7 @@
 					<legend class="fieldset-legend">Root data (RAPKUMER_DATA_DIR)</legend>
 					<div class="join w-full">
 						<input
-							class="input bg-base-200 dark:bg-base-300 join-item w-full dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 join-item w-full border-base-300 dark:border-none"
 							type="text"
 							name="dataRoot"
 							bind:value={storageRoot}
@@ -500,7 +512,9 @@
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Passkey</legend>
 							<div class="form-control">
-								<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+								<label
+									class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+								>
 									<span class="pl-2"><Icon name="lock" /></span>
 									<input
 										type={showBukuTamuPasskey ? 'text' : 'password'}
@@ -529,7 +543,9 @@
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Konfirmasi passkey</legend>
 							<div class="form-control">
-								<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+								<label
+									class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+								>
 									<span class="pl-2"><Icon name="lock" /></span>
 									<input
 										type={showBukuTamuConfirm ? 'text' : 'password'}
@@ -588,6 +604,119 @@
 			>
 				{#snippet children({ submitting })}
 					<button type="submit" class="hidden" disabled={submitting}>Nonaktifkan</button>
+				{/snippet}
+			</FormEnhance>
+		{/if}
+	</section>
+{/if}
+
+{#if isAdmin}
+	<section class="card bg-base-100 mt-4 rounded-lg border border-none p-6 shadow-md">
+		<FormEnhance
+			action="?/save-gemini-key"
+			onsuccess={({ form }) => {
+				form.reset();
+			}}
+		>
+			{#snippet children({ submitting, invalid })}
+				<header class="mb-4 space-y-2">
+					<h2 class="text-xl font-semibold">Kunci API Gemini</h2>
+					<p class="text-base-content/70 text-sm">
+						Kunci API Gemini dipakai oleh fitur "Generate" Tujuan Pembelajaran di halaman
+						Intrakurikuler. Satu kunci dipakai untuk seluruh sekolah di aplikasi ini. Dapatkan kunci
+						gratis di Google AI Studio:
+						<a
+							class="link link-info"
+							href="https://aistudio.google.com/apikey"
+							target="_blank"
+							rel="noopener noreferrer">aistudio.google.com/apikey</a
+						>.
+					</p>
+					{#if data.gemini?.keySet}
+						<div class="alert alert-success">
+							<Icon name="success" />
+							<span>Kunci API Gemini aktif: {data.gemini.maskedKey}</span>
+						</div>
+					{:else if data.gemini?.envKeyPresent}
+						<div class="alert alert-info alert-soft">
+							<Icon name="info" />
+							<span
+								>Kunci API aktif dari variabel lingkungan <code>GEMINI_API_KEY</code> (file .env). Kunci
+								di atas tidak dapat diubah dari halaman ini.</span
+							>
+						</div>
+					{:else}
+						<div class="alert alert-warning alert-soft">
+							<Icon name="warning" />
+							<span>Belum ada kunci API Gemini. Fitur "Generate" belum dapat digunakan.</span>
+						</div>
+					{/if}
+				</header>
+
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">Kunci API</legend>
+					<div class="form-control">
+						<label
+							class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+						>
+							<span class="pl-2"><Icon name="key" /></span>
+							<input
+								type={showGeminiKey ? 'text' : 'password'}
+								id="geminiApiKey"
+								name="apiKey"
+								required
+								minlength={10}
+								placeholder="AIzaSy…"
+								autocomplete="off"
+							/>
+							<button
+								type="button"
+								class="cursor-pointer pr-2"
+								onclick={() => (showGeminiKey = !showGeminiKey)}
+								aria-label="Toggle API key visibility"
+							>
+								<Icon name={showGeminiKey ? 'eye-off' : 'eye'} />
+							</button>
+						</label>
+						<p class="text-base-content/70 mt-1 text-xs">
+							Masukkan kunci API baru untuk mengganti kunci yang tersimpan.
+						</p>
+					</div>
+				</fieldset>
+
+				<div class="mt-6 flex items-center gap-2">
+					{#if data.gemini?.keySet}
+						<button
+							class="btn btn-soft btn-error shadow-none"
+							type="submit"
+							form="gemini-key-clear"
+							disabled={clearingGeminiKey}
+						>
+							<Icon name="del" />
+							{clearingGeminiKey ? 'Menghapus…' : 'Hapus Kunci'}
+						</button>
+					{/if}
+
+					<button
+						class="btn btn-primary shadow-none ml-auto"
+						type="submit"
+						disabled={submitting || invalid}
+					>
+						<Icon name="save" />
+						{submitting ? 'Menyimpan…' : 'Simpan Kunci'}
+					</button>
+				</div>
+			{/snippet}
+		</FormEnhance>
+
+		{#if data.gemini?.keySet}
+			<FormEnhance
+				id="gemini-key-clear"
+				action="?/clear-gemini-key"
+				submitStateChange={(s) => (clearingGeminiKey = s)}
+			>
+				{#snippet children({ submitting })}
+					<button type="submit" class="hidden" disabled={submitting}>Hapus</button>
 				{/snippet}
 			</FormEnhance>
 		{/if}

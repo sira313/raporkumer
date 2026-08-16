@@ -6,6 +6,7 @@
 	import BulkDeleteDialog from '$lib/components/tp-rl/bulk-delete-dialog.svelte';
 	import DeleteEntryDialog from '$lib/components/tp-rl/delete-entry-dialog.svelte';
 	import DeleteGroupDialog from '$lib/components/tp-rl/delete-group-dialog.svelte';
+	import GenerateTpModal from '$lib/components/tp-rl/generate-tp-modal.svelte';
 	import ImportDialog from '$lib/components/tp-rl/import-dialog.svelte';
 	import GroupDisplayRow from '$lib/components/tp-rl/group-display-row.svelte';
 	import GroupFormRow from '$lib/components/tp-rl/group-form-row.svelte';
@@ -167,6 +168,7 @@
 	let selectAllCheckbox = $state<HTMLInputElement | null>(null);
 	let agamaSelectElement = $state<HTMLSelectElement | null>(null);
 	let importDialogOpen = $state(false);
+	let generateDialogOpen = $state(false);
 
 	// track kelas aktif id so we can react to "Pindah Kelas" and reload TP data
 	let lastKelasId = $state<number | null>(data.kelasAktif ? (data.kelasAktif.id as number) : null);
@@ -238,6 +240,24 @@
 		}
 		if (requiresAgamaSelection && !hasActiveAgamaSelection) {
 			return 'Pilih agama terlebih dahulu sebelum mengimpor tujuan pembelajaran.';
+		}
+		return undefined;
+	});
+	const isGenerateDisabled = $derived(
+		(requiresAgamaSelection && !hasActiveAgamaSelection) || isInteractionLocked
+	);
+	const generateTooltip = $derived.by(() => {
+		if (isEditingBobot) {
+			return 'Selesaikan pengaturan bobot terlebih dahulu sebelum menggunakan Generate.';
+		}
+		if (isEditModeActive) {
+			return 'Selesaikan perubahan tujuan pembelajaran terlebih dahulu sebelum menggunakan Generate.';
+		}
+		if (isCreateModeActive) {
+			return 'Batalkan form tambah tujuan pembelajaran terlebih dahulu sebelum menggunakan Generate.';
+		}
+		if (requiresAgamaSelection && !hasActiveAgamaSelection) {
+			return 'Pilih agama terlebih dahulu sebelum menggunakan Generate.';
 		}
 		return undefined;
 	});
@@ -474,6 +494,52 @@
 
 	function handleImportCancel() {
 		importDialogOpen = false;
+	}
+
+	function openGenerateDialog() {
+		if (isEditingBobot) {
+			toast('Selesaikan pengaturan bobot terlebih dahulu sebelum menggunakan Generate.', 'warning');
+			return;
+		}
+		if (isCreateModeActive) {
+			toast(
+				'Batalkan form tambah tujuan pembelajaran terlebih dahulu sebelum menggunakan Generate.',
+				'warning'
+			);
+			return;
+		}
+		if (isEditModeActive) {
+			toast(
+				'Selesaikan perubahan tujuan pembelajaran terlebih dahulu sebelum menggunakan Generate.',
+				'warning'
+			);
+			return;
+		}
+		if (requiresAgamaSelection && !hasActiveAgamaSelection) {
+			toast('Pilih agama terlebih dahulu sebelum menggunakan Generate.', 'warning');
+			agamaSelectElement?.focus();
+			return;
+		}
+		generateDialogOpen = true;
+	}
+
+	function handleGenerateCancel() {
+		generateDialogOpen = false;
+	}
+
+	async function handleGenerateSuccess(data?: Record<string, unknown>) {
+		generateDialogOpen = false;
+		await invalidate('app:mapel_tp-rl');
+
+		const longEntryCount = (data?.longEntryCount ?? 0) as number;
+		if (longEntryCount > 0) {
+			showModal({
+				title: 'Perhatian',
+				body: `Tujuan pembelajaran hasil generate melebihi 95 karakter, hal ini akan menjadi masalah jika bapak/ibu mencoba mengeksport TP ini ke E-Rapor Kemdikdas. ${longEntryCount} data terindikasi bermasalah.`,
+				onNeutral: { label: 'Mengerti' },
+				dismissible: false
+			});
+		}
 	}
 
 	async function handleImportSuccess(data?: Record<string, unknown>) {
@@ -892,6 +958,9 @@
 		{handlePrimaryActionClick}
 		{isTambahTpDisabled}
 		{tambahTpTooltip}
+		onGenerate={openGenerateDialog}
+		{isGenerateDisabled}
+		{generateTooltip}
 		{hasSelection}
 		{isInteractionLocked}
 		{isCreateModeActive}
@@ -991,6 +1060,16 @@
 
 {#if importDialogOpen}
 	<ImportDialog onCancel={handleImportCancel} onSuccess={handleImportSuccess} />
+{/if}
+
+{#if generateDialogOpen}
+	<GenerateTpModal
+		mapelId={data.mapel.id}
+		mapelName={mapelDisplayName}
+		kelasLabel={kelasAktifLabel ?? data.mapel.kelas.nama}
+		onCancel={handleGenerateCancel}
+		onSuccess={handleGenerateSuccess}
+	/>
 {/if}
 
 {#if deleteEntryDialog && groupForm}

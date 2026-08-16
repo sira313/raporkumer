@@ -20,6 +20,9 @@
 		handlePrimaryActionClick,
 		isTambahTpDisabled,
 		tambahTpTooltip,
+		onGenerate,
+		isGenerateDisabled = false,
+		generateTooltip = undefined,
 		hasSelection,
 		isInteractionLocked,
 		isCreateModeActive,
@@ -110,7 +113,7 @@
 	{#if showAgamaSelect}
 		<div class="form-control overflow-hidden sm:w-60">
 			<select
-				class="select bg-base-200 w-full truncate shadow-none dark:border-none"
+				class="select bg-base-200 w-full truncate shadow-none border-base-300 dark:border-none"
 				id={agamaSelectId}
 				bind:this={agamaEl}
 				aria-label="Pilih Agama"
@@ -127,6 +130,19 @@
 				{/each}
 			</select>
 		</div>
+	{/if}
+
+	{#if onGenerate}
+		<button
+			class="btn btn-soft btn-info shadow-none sm:max-w-40"
+			type="button"
+			onclick={() => onGenerate && onGenerate()}
+			disabled={isGenerateDisabled}
+			title={generateTooltip}
+		>
+			<Icon name="sparkles" />
+			Generate
+		</button>
 	{/if}
 
 	<button
