@@ -373,7 +373,7 @@
 					{#if data.mode === 'bulanan'}
 						<div class="min-w-0 flex-1">
 							<select
-								class="select bg-base-200 dark:bg-base-300 w-full truncate rounded-r-none max-sm:w-full dark:border-none"
+								class="select bg-base-200 dark:bg-base-300 w-full truncate rounded-r-none max-sm:w-full border-base-300 dark:border-none"
 								bind:value={selectedBulan}
 							>
 								{#each bulanList as nama, i (nama)}
@@ -383,7 +383,7 @@
 						</div>
 						<input
 							type="number"
-							class="input bg-base-200 dark:bg-base-300 w-24 rounded-none max-sm:flex-1 dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 w-24 rounded-none max-sm:flex-1 border-base-300 dark:border-none"
 							bind:value={selectedTahun}
 							min="2000"
 							max="2099"
@@ -391,7 +391,7 @@
 					{:else}
 						<input
 							type="date"
-							class="input bg-base-200 dark:bg-base-300 w-full rounded-r-none max-sm:w-full dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 w-full rounded-r-none max-sm:w-full border-base-300 dark:border-none"
 							bind:value={selectedTanggal}
 						/>
 					{/if}
@@ -426,7 +426,9 @@
 				onsubmit={submitSearch}
 			>
 				<div class="join w-full min-w-0">
-					<label class="input bg-base-200 dark:bg-base-300 join-item min-w-0 grow dark:border-none">
+					<label
+						class="input bg-base-200 dark:bg-base-300 join-item min-w-0 grow border-base-300 dark:border-none"
+					>
 						<Icon name="search" />
 						<input
 							type="search"
@@ -438,7 +440,7 @@
 						/>
 					</label>
 					<select
-						class="select bg-base-200 dark:bg-base-300 join-item w-auto shrink truncate dark:border-none"
+						class="select bg-base-200 dark:bg-base-300 join-item w-auto shrink truncate border-base-300 dark:border-none"
 						value={selectedMode}
 						title="Pilih mode presensi"
 						onchange={(e) => {

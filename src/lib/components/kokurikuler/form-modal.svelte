@@ -98,7 +98,7 @@
 					<p class="mt-4 font-semibold">Kode</p>
 					<input
 						type="text"
-						class="input bg-base-200 dark:bg-base-300 mt-2 w-full dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 mt-2 w-full border-base-300 dark:border-none"
 						placeholder="Masukkan kode (contoh: KK-BAKU)"
 						name="kode"
 						value={kodeInput}
@@ -110,7 +110,7 @@
 
 					<p class="mt-4 font-semibold">Kegiatan Kokurikuler</p>
 					<textarea
-						class="textarea bg-base-200 dark:bg-base-300 mt-2 h-28 w-full dark:border-none"
+						class="textarea bg-base-200 dark:bg-base-300 mt-2 h-28 w-full border-base-300 dark:border-none"
 						placeholder="Ketik kegiatan atau tema kegiatan kokurikuler"
 						name="kokurikuler"
 						value={tujuanInput}

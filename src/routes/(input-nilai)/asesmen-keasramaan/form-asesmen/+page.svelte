@@ -184,7 +184,7 @@
 												</td>
 												<td class="overflow-hidden align-top">
 													<select
-														class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
+														class="select bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
 														name={`nilai.${tujuan.id}`}
 														value={nilaiByTujuanState[tujuan.id] || ''}
 														onchange={(e) =>

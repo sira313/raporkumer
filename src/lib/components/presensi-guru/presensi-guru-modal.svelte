@@ -204,7 +204,7 @@
 				<label class="flex flex-col gap-1">
 					<span class="text-sm font-semibold">Status Kehadiran</span>
 					<select
-						class="select bg-base-200 w-full dark:border-none"
+						class="select bg-base-200 w-full border-base-300 dark:border-none"
 						bind:value={selectedStatus}
 						disabled={submitting}
 					>

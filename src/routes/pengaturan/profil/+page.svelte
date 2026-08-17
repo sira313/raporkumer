@@ -82,7 +82,7 @@
 						<legend class="fieldset-legend">Nama Lengkap</legend>
 						<input
 							type="text"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							placeholder="Contoh: Drs. H. Arif Rahman"
 							bind:value={namaLengkap}
 							name="namaLengkap"
@@ -96,7 +96,7 @@
 						<legend class="fieldset-legend">NIP</legend>
 						<input
 							type="text"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							placeholder="Contoh: NIP. 196508101988031001"
 							bind:value={nip}
 							name="nip"
@@ -112,7 +112,7 @@
 						<legend class="fieldset-legend">Tempat Lahir</legend>
 						<input
 							type="text"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							placeholder="Contoh: Pontianak"
 							bind:value={tempatLahir}
 							name="tempatLahir"
@@ -122,7 +122,7 @@
 						<legend class="fieldset-legend">Tanggal Lahir</legend>
 						<input
 							type="date"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							bind:value={tanggalLahir}
 							name="tanggalLahir"
 						/>
@@ -133,7 +133,7 @@
 					<fieldset class="fieldset flex-1">
 						<legend class="fieldset-legend">Jenis Kelamin</legend>
 						<select
-							class="select validator bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
+							class="select validator bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
 							bind:value={jenisKelaminValue}
 							name="jenisKelamin"
 						>
@@ -147,7 +147,7 @@
 						<legend class="fieldset-legend">Ijazah</legend>
 						<input
 							type="text"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							placeholder="Contoh: S1 PGSD"
 							bind:value={ijazah}
 							name="ijazah"
@@ -164,7 +164,7 @@
 							min="1900"
 							max="3000"
 							inputmode="numeric"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							placeholder="Contoh: 2012"
 							bind:value={tahunIjazah}
 							name="tahunIjazah"
@@ -174,7 +174,7 @@
 					<fieldset class="fieldset flex-1">
 						<legend class="fieldset-legend">Status Kepegawaian</legend>
 						<select
-							class="select validator bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
+							class="select validator bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
 							bind:value={statusKepegawaian}
 							name="statusKepegawaian"
 						>
@@ -190,7 +190,7 @@
 					<fieldset class="fieldset flex-1">
 						<legend class="fieldset-legend">Golongan</legend>
 						<select
-							class="select validator bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
+							class="select validator bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
 							bind:value={golongan}
 							name="golongan"
 							disabled={golonganOptions.length === 0}
@@ -207,7 +207,7 @@
 					<fieldset class="fieldset flex-1">
 						<legend class="fieldset-legend">Jabatan</legend>
 						<select
-							class="select validator bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
+							class="select validator bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
 							bind:value={jabatan}
 							name="jabatan"
 							disabled={jabatanOptions.length === 0}
@@ -222,7 +222,7 @@
 						<legend class="fieldset-legend">Pangkat</legend>
 						<input
 							type="text"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							value={pangkat}
 							placeholder="Otomatis dari golongan"
 							disabled
@@ -239,7 +239,7 @@
 						<legend class="fieldset-legend">Diangkat</legend>
 						<input
 							type="date"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							bind:value={tanggalDiangkat}
 							name="tanggalDiangkat"
 						/>
@@ -249,7 +249,7 @@
 						<legend class="fieldset-legend">Kerja di Sekolah Ini</legend>
 						<input
 							type="date"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							bind:value={tanggalBekerja}
 							name="tanggalBekerja"
 						/>
@@ -264,7 +264,7 @@
 						<legend class="fieldset-legend">Gaji Berkala</legend>
 						<input
 							type="date"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							bind:value={tanggalGajiBerkala}
 							name="tanggalGajiBerkala"
 							disabled={isGajiBerkalaLocked}
@@ -275,7 +275,7 @@
 						<legend class="fieldset-legend">Tanggal Pangkat Terakhir</legend>
 						<input
 							type="date"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							bind:value={tanggalPangkat}
 							name="tanggalPangkat"
 							disabled={isGajiBerkalaLocked}

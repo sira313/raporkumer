@@ -20,7 +20,7 @@
 <label class="w-full md:max-w-80">
 	<span class="sr-only">Pilih Matev Keasramaan</span>
 	<select
-		class="select bg-base-200 w-full truncate dark:border-none"
+		class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
 		title="Pilih Matev Keasramaan"
 		bind:value={selectedValue}
 		onchange={handleChange}

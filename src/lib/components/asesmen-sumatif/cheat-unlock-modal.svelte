@@ -48,7 +48,7 @@
 		<legend class="fieldset-legend"> Token Akses </legend>
 		<input
 			type="password"
-			class={`input input-bordered dark:bg-base-200 w-full dark:border-none ${errorMessage ? 'input-error' : ''}`}
+			class={`input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none ${errorMessage ? 'input-error' : ''}`}
 			placeholder="Masukkan token"
 			autocomplete="off"
 			value={tokenValue}

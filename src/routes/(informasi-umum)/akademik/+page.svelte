@@ -311,7 +311,7 @@
 						<div class="flex flex-row">
 							<div class="min-w-0 flex-1 overflow-hidden">
 								<select
-									class="select bg-base-200 dark:bg-base-300 w-full truncate rounded-r-none dark:border-none"
+									class="select bg-base-200 dark:bg-base-300 w-full truncate rounded-r-none border-base-300 dark:border-none"
 									name="sekolahId"
 									bind:value={selectedSekolahId}
 									required
@@ -383,7 +383,7 @@
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Tahun Ajaran</legend>
 							<select
-								class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
+								class="select bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
 								name="tahunAjaranId"
 								bind:value={selectedTahunAjaranId}
 								required
@@ -402,7 +402,7 @@
 						<fieldset class="fieldset">
 							<legend class="fieldset-legend">Semester</legend>
 							<select
-								class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
+								class="select bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
 								name="semesterId"
 								bind:value={selectedSemesterId}
 								required
@@ -422,7 +422,7 @@
 							<fieldset class="fieldset">
 								<legend class="fieldset-legend">Tanggal masuk semester ganjil</legend>
 								<input
-									class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+									class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 									type="date"
 									name="ganjil.tanggalMasuk"
 									bind:value={tanggalMasukGanjil}
@@ -440,7 +440,7 @@
 							<fieldset class="fieldset">
 								<legend class="fieldset-legend">Tanggal masuk semester genap</legend>
 								<input
-									class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+									class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 									type="date"
 									name="genap.tanggalMasuk"
 									bind:value={tanggalMasukGenap}
@@ -458,7 +458,7 @@
 							<fieldset class="fieldset">
 								<legend class="fieldset-legend">Tanggal bagi rapor semester ganjil</legend>
 								<input
-									class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+									class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 									type="date"
 									name="ganjil.tanggalBagiRaport"
 									bind:value={tanggalRaporGanjil}
@@ -476,7 +476,7 @@
 							<fieldset class="fieldset">
 								<legend class="fieldset-legend">Tanggal bagi rapor semester genap</legend>
 								<input
-									class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+									class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 									type="date"
 									name="genap.tanggalBagiRaport"
 									bind:value={tanggalRaporGenap}

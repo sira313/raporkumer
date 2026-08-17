@@ -119,7 +119,7 @@
 			<fieldset class="fieldset">
 				<legend class="fieldset-legend">Mata Pelajaran</legend>
 				<select
-					class="select w-full dark:border-none dark:bg-base-300 bg-base-200"
+					class="select w-full border-base-300 dark:border-none dark:bg-base-300 bg-base-200"
 					name="mataPelajaranId"
 					value={formMapelId}
 					onchange={(e) => {
@@ -137,7 +137,7 @@
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Lingkup Materi</legend>
 			<select
-				class="select w-full dark:border-none dark:bg-base-300 bg-base-200"
+				class="select w-full border-base-300 dark:border-none dark:bg-base-300 bg-base-200"
 				name="lingkupMateri"
 				value={formLingkupMateri}
 				onchange={(e) => {
@@ -155,7 +155,7 @@
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Tujuan Pembelajaran</legend>
 			<select
-				class="select w-full dark:border-none dark:bg-base-300 bg-base-200"
+				class="select w-full border-base-300 dark:border-none dark:bg-base-300 bg-base-200"
 				name="tujuanPembelajaranId"
 				value={formTujuanPembelajaranId ?? ''}
 				onchange={(e) => {
@@ -176,7 +176,7 @@
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Catatan</legend>
 			<textarea
-				class="textarea w-full dark:border-none dark:bg-base-300 bg-base-200"
+				class="textarea w-full border-base-300 dark:border-none dark:bg-base-300 bg-base-200"
 				name="catatan"
 				rows="3"
 				maxlength="300"

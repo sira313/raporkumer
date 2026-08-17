@@ -82,7 +82,7 @@
 						{#if isEditing}
 							<input
 								type="number"
-								class="input input-sm bg-base-200 dark:bg-base-300 w-16 text-center dark:border-none"
+								class="input input-sm bg-base-200 dark:bg-base-300 w-16 text-center border-base-300 dark:border-none"
 								value={editingValues.sakit}
 								onchange={(e) =>
 									onEditValueChange({
@@ -99,7 +99,7 @@
 						{#if isEditing}
 							<input
 								type="number"
-								class="input input-sm bg-base-200 dark:bg-base-300 w-16 text-center dark:border-none"
+								class="input input-sm bg-base-200 dark:bg-base-300 w-16 text-center border-base-300 dark:border-none"
 								value={editingValues.izin}
 								onchange={(e) =>
 									onEditValueChange({
@@ -116,7 +116,7 @@
 						{#if isEditing}
 							<input
 								type="number"
-								class="input input-sm bg-base-200 dark:bg-base-300 w-16 text-center dark:border-none"
+								class="input input-sm bg-base-200 dark:bg-base-300 w-16 text-center border-base-300 dark:border-none"
 								value={editingValues.alfa}
 								onchange={(e) =>
 									onEditValueChange({

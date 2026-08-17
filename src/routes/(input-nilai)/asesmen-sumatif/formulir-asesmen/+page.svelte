@@ -330,8 +330,8 @@
 
 	function getInputClass(value: string) {
 		return isScoreValid(value)
-			? 'input bg-base-200 dark:bg-base-300 dark:border-none'
-			: 'input input-error dark:bg-base-300 dark:border-none';
+			? 'input bg-base-200 dark:bg-base-300 border-base-300 dark:border-none'
+			: 'input input-error dark:bg-base-300 border-base-300 dark:border-none';
 	}
 
 	function handleEntryNilaiChange(event: CustomEvent<{ index: number; value: string }>) {

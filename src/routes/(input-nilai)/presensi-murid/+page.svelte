@@ -716,7 +716,7 @@
 				{#if data.mode === 'bulanan' || data.mode === 'persentase_bulanan'}
 					<div class="min-w-0 flex-1">
 						<select
-							class="select bg-base-200 dark:bg-base-300 w-full truncate rounded-r-none max-sm:w-full dark:border-none"
+							class="select bg-base-200 dark:bg-base-300 w-full truncate rounded-r-none max-sm:w-full border-base-300 dark:border-none"
 							bind:value={selectedBulan}
 						>
 							{#each bulanList as nama, i (nama)}
@@ -726,14 +726,14 @@
 					</div>
 					<input
 						type="number"
-						class="input bg-base-200 dark:bg-base-300 w-24 rounded-none max-sm:flex-1 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 w-24 rounded-none max-sm:flex-1 border-base-300 dark:border-none"
 						bind:value={selectedTahun}
 						min="2000"
 						max="2099"
 					/>
 				{:else if data.mode === 'rapor'}
 					<span
-						class="input bg-base-200 dark:bg-base-300 flex w-full items-center rounded-r-none text-sm dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 flex w-full items-center rounded-r-none text-sm border-base-300 dark:border-none"
 					>
 						{data.tanggalMulaiRapor && data.tanggalAkhirRapor
 							? `${formatTanggal(data.tanggalMulaiRapor)} - ${formatTanggal(data.tanggalAkhirRapor)}`
@@ -741,7 +741,7 @@
 					</span>
 				{:else if data.mode === 'persentase_semester'}
 					<span
-						class="input bg-base-200 dark:bg-base-300 flex w-full items-center rounded-r-none text-sm dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 flex w-full items-center rounded-r-none text-sm border-base-300 dark:border-none"
 					>
 						{data.tanggalMulaiRapor && data.tanggalAkhirRapor
 							? `${formatTanggal(data.tanggalMulaiRapor)} - ${formatTanggal(data.tanggalAkhirRapor)}`
@@ -750,13 +750,13 @@
 				{:else if data.mode === 'persentase_harian'}
 					<input
 						type="date"
-						class="input bg-base-200 dark:bg-base-300 w-full rounded-r-none max-sm:w-full dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 w-full rounded-r-none max-sm:w-full border-base-300 dark:border-none"
 						bind:value={selectedTanggal}
 					/>
 				{:else}
 					<input
 						type="date"
-						class="input bg-base-200 dark:bg-base-300 w-full rounded-r-none max-sm:w-full dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 w-full rounded-r-none max-sm:w-full border-base-300 dark:border-none"
 						bind:value={selectedTanggal}
 					/>
 				{/if}
@@ -838,7 +838,7 @@
 				<label class="flex flex-col gap-1 sm:flex-1">
 					<span class="text-sm font-semibold">Hari</span>
 					<select
-						class="select select-sm bg-base-100 w-full dark:border-none"
+						class="select select-sm bg-base-100 w-full border-base-300 dark:border-none"
 						bind:value={simulasiHari}
 					>
 						{#each ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'] as h (h)}
@@ -850,7 +850,7 @@
 					<span class="text-sm font-semibold">Jam</span>
 					<input
 						type="text"
-						class="input input-sm bg-base-100 w-full dark:border-none"
+						class="input input-sm bg-base-100 w-full border-base-300 dark:border-none"
 						bind:value={simulasiJam}
 						pattern="[0-9]{2}:[0-9]{2}"
 						inputmode="numeric"
@@ -886,7 +886,9 @@
 		onsubmit={submitSearch}
 	>
 		<div class="join w-full">
-			<label class="input bg-base-200 dark:bg-base-300 join-item grow dark:border-none">
+			<label
+				class="input bg-base-200 dark:bg-base-300 join-item grow border-base-300 dark:border-none"
+			>
 				<Icon name="search" />
 				<input
 					type="search"
@@ -898,7 +900,7 @@
 				/>
 			</label>
 			<select
-				class="select bg-base-200 dark:bg-base-300 join-item w-auto shrink truncate dark:border-none"
+				class="select bg-base-200 dark:bg-base-300 join-item w-auto shrink truncate border-base-300 dark:border-none"
 				value={selectedMode}
 				title="Pilih mode presensi"
 				onchange={(e) => {

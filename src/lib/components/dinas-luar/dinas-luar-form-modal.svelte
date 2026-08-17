@@ -80,7 +80,7 @@
 		<legend class="fieldset-legend">Upload file undangan kegiatan perjalanan dinas</legend>
 		<input
 			type="file"
-			class="file-input bg-base-200 w-full dark:border-none"
+			class="file-input bg-base-200 w-full border-base-300 dark:border-none"
 			accept=".pdf,application/pdf"
 			onchange={handleFileChange}
 			disabled={submitting}
@@ -94,7 +94,7 @@
 			<span class="text-error">*</span>
 		</legend>
 		<textarea
-			class="textarea bg-base-200 w-full dark:border-none"
+			class="textarea bg-base-200 w-full border-base-300 dark:border-none"
 			bind:value={maksud}
 			placeholder="Contoh: Menghadiri undangan rapat koordinasi, seminar, dsb."
 			rows={3}

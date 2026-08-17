@@ -107,7 +107,7 @@
 					<div class="fieldset">
 						<legend class="fieldset-legend">Jenjang Pendidikan</legend>
 						<select
-							class="select bg-base-200 dark:bg-base-300 validator w-full truncate border dark:border-none"
+							class="select bg-base-200 dark:bg-base-300 validator w-full truncate border border-base-300 dark:border-none"
 							name="jenjangPendidikan"
 							required
 							onchange={(e) => {
@@ -145,7 +145,7 @@
 						<input
 							required
 							type="text"
-							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							placeholder="Contoh: Periji"
 							name="lokasiTandaTangan"
 						/>
@@ -158,7 +158,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: SD Negeri 19 Periji"
 						name="nama"
 					/>
@@ -170,7 +170,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: 69856875"
 						name="npsn"
 					/>
@@ -182,7 +182,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: Bruce Wayne, Bat"
 						name="kepalaSekolah.nama"
 					/>
@@ -194,7 +194,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: NIP 19700305 199309 1 009"
 						name="kepalaSekolah.nip"
 					/>
@@ -206,7 +206,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: Desa Sungai Dangin atau Kelurahan Sungai Sengkuang"
 						name="alamat.desa"
 					/>
@@ -218,7 +218,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: Kecamatan Noyan"
 						name="alamat.kecamatan"
 					/>
@@ -230,7 +230,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: Kabupaten Sanggau"
 						name="alamat.kabupaten"
 					/>
@@ -242,7 +242,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: Kalimantan Barat"
 						name="alamat.provinsi"
 					/>
@@ -254,7 +254,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: 78554"
 						name="alamat.kodePos"
 					/>
@@ -266,7 +266,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: Jalan Raya Noyan, RT 9 / RW 3, Dusun Periji"
 						name="alamat.jalan"
 					/>
@@ -275,7 +275,9 @@
 				<div class="fieldset">
 					<!-- Website Sekolah -->
 					<legend class="fieldset-legend">Website Sekolah</legend>
-					<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
+					<label
+						class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+					>
 						<span class="label">https://</span>
 						<input type="text" placeholder="Kosongkan bila tidak ada" name="website" />
 					</label>
@@ -287,7 +289,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: cs@sdn19periji.sch.id"
 						name="email"
 					/>
@@ -297,7 +299,7 @@
 				<div class="fieldset">
 					<legend class="fieldset-legend">Pilih Naungan</legend>
 					<select
-						class="select bg-base-200 dark:bg-base-300 validator w-full truncate border dark:border-none"
+						class="select bg-base-200 dark:bg-base-300 validator w-full truncate border border-base-300 dark:border-none"
 						name="naungan"
 						required
 					>
@@ -317,7 +319,7 @@
 				<div class="fieldset">
 					<legend class="fieldset-legend">Status Kepala Sekolah</legend>
 					<select
-						class="select bg-base-200 dark:bg-base-300 validator w-full truncate border dark:border-none"
+						class="select bg-base-200 dark:bg-base-300 validator w-full truncate border border-base-300 dark:border-none"
 						name="statusKepalaSekolah"
 						required
 					>

@@ -178,7 +178,7 @@
 				<span class="fieldset-legend text-sm font-semibold">Menit per Jam Pelajaran</span>
 				<input
 					type="number"
-					class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+					class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 					bind:value={jamPelajaranMenitValue}
 					min="1"
 					max="60"
@@ -189,7 +189,7 @@
 				<span class="fieldset-legend text-sm font-semibold">Durasi Istirahat (menit)</span>
 				<input
 					type="number"
-					class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+					class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 					bind:value={durasiIstirahatValue}
 					min="1"
 					max="60"
@@ -200,7 +200,7 @@
 				<span class="fieldset-legend text-sm font-semibold">Durasi Upacara (menit)</span>
 				<input
 					type="number"
-					class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+					class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 					bind:value={durasiUpacaraValue}
 					min="1"
 					max="120"
@@ -211,7 +211,7 @@
 				<span class="fieldset-legend text-sm font-semibold">Jam Mulai Sekolah</span>
 				<input
 					type="text"
-					class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+					class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 					bind:value={jamMulaiValue}
 					disabled={submitting}
 					pattern="[0-9]{2}:[0-9]{2}"

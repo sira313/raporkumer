@@ -302,7 +302,7 @@
 			<span class="fieldset-legend text-sm font-semibold">Jam Masuk</span>
 			<input
 				type="text"
-				class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+				class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 				bind:value={jamMasukValue}
 				pattern="[0-9]{2}:[0-9]{2}"
 				inputmode="numeric"
@@ -313,7 +313,7 @@
 			<span class="fieldset-legend text-sm font-semibold">Jam Pulang</span>
 			<input
 				type="text"
-				class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+				class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 				bind:value={jamPulangValue}
 				pattern="[0-9]{2}:[0-9]{2}"
 				inputmode="numeric"
@@ -326,7 +326,7 @@
 		<label class="fieldset flex flex-col gap-1">
 			<span class="fieldset-legend text-sm font-semibold">Hari Sekolah</span>
 			<select
-				class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
+				class="select bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
 				bind:value={hariSekolahValue}
 			>
 				<option value="5">5 Hari Sekolah (Senin - Jumat)</option>
@@ -352,7 +352,7 @@
 		<label class="fieldset flex flex-col gap-1">
 			<span class="fieldset-legend text-sm font-semibold">Jenis Presensi</span>
 			<select
-				class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
+				class="select bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
 				bind:value={jenisPresensiValue}
 			>
 				<option value="wali_kelas_saja">Wali kelas saja</option>
@@ -366,7 +366,7 @@
 			<label class="fieldset flex flex-col gap-1">
 				<span class="fieldset-legend text-sm font-semibold">Tipe Presensi</span>
 				<select
-					class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
+					class="select bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
 					bind:value={tipePresensiValue}
 				>
 					<option value="masuk_pulang" disabled={jenisPresensiValue === 'tiap_mapel'}>
@@ -390,7 +390,7 @@
 			<div class="join">
 				<input
 					type="date"
-					class="input bg-base-200 dark:bg-base-300 join-item w-full dark:border-none"
+					class="input bg-base-200 dark:bg-base-300 join-item w-full border-base-300 dark:border-none"
 					bind:value={newLiburDate}
 					disabled={submitting}
 				/>
@@ -448,7 +448,7 @@
 			<div class="flex items-center gap-2">
 				<input
 					type="date"
-					class="input bg-base-200 dark:bg-base-300 w-44 dark:border-none"
+					class="input bg-base-200 dark:bg-base-300 w-44 border-base-300 dark:border-none"
 					value={range.start}
 					onchange={(e) =>
 						updateSemesterRange(i, 'start', (e.currentTarget as HTMLInputElement).value)}
@@ -456,7 +456,7 @@
 				<span class="text-sm">s.d.</span>
 				<input
 					type="date"
-					class="input bg-base-200 dark:bg-base-300 w-44 dark:border-none"
+					class="input bg-base-200 dark:bg-base-300 w-44 border-base-300 dark:border-none"
 					value={range.end}
 					onchange={(e) =>
 						updateSemesterRange(i, 'end', (e.currentTarget as HTMLInputElement).value)}

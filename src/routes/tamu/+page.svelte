@@ -181,7 +181,7 @@
 								minlength={4}
 								maxlength={64}
 								placeholder="Masukkan passkey"
-								class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+								class="input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
 							/>
 						</div>
 						<button class="btn btn-primary w-full" type="submit" disabled={submitting || invalid}>
@@ -214,7 +214,7 @@
 						name="nama"
 						required
 						placeholder="Nama lengkap"
-						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+						class="input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
 					/>
 				</div>
 
@@ -228,7 +228,7 @@
 						name="asalInstansi"
 						required
 						placeholder="Masukkan alamat atau asal instansi"
-						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+						class="input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
 					/>
 				</div>
 
@@ -239,7 +239,7 @@
 						id="nip"
 						name="nip"
 						placeholder="Masukkan NIP jika ada"
-						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
+						class="input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
 					/>
 				</div>
 
@@ -253,7 +253,8 @@
 						required
 						rows="2"
 						placeholder="Isi keperluan kunjungan"
-						class="textarea textarea-bordered dark:bg-base-200 w-full dark:border-none"></textarea>
+						class="textarea textarea-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
+					></textarea>
 				</div>
 
 				<div class="fieldset">
@@ -263,7 +264,8 @@
 						name="pesanKesan"
 						rows="2"
 						placeholder="Isi pesan atau kesan Anda"
-						class="textarea textarea-bordered dark:bg-base-200 w-full dark:border-none"></textarea>
+						class="textarea textarea-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
+					></textarea>
 				</div>
 
 				<div class="fieldset">

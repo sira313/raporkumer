@@ -126,7 +126,7 @@
 							type="number"
 							min="0"
 							max="100"
-							class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							bind:value={lingkupLocal}
 							disabled={loading || saving}
 						/>
@@ -137,7 +137,7 @@
 							type="number"
 							min="0"
 							max="100"
-							class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							bind:value={stsLocal}
 							disabled={loading || saving}
 						/>
@@ -148,7 +148,7 @@
 							type="number"
 							min="0"
 							max="100"
-							class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							bind:value={sasLocal}
 							disabled={loading || saving}
 						/>
@@ -171,7 +171,7 @@
 							type="number"
 							min="0"
 							max="100"
-							class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							bind:value={lingkupRtsLocal}
 							disabled={loading || saving}
 						/>
@@ -182,7 +182,7 @@
 							type="number"
 							min="0"
 							max="100"
-							class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 							bind:value={stsRtsLocal}
 							disabled={loading || saving}
 						/>

@@ -27,6 +27,13 @@ import {
 import { dataRoot, soundsDir, uploadsDir } from '$lib/server/data-dirs';
 import { validatePasswordStrength } from '$lib/server/password-policy';
 import { isBukuTamuPasskeySet, setBukuTamuPasskey } from '$lib/server/buku-tamu-pass';
+import {
+	clearAiSettings,
+	DEFAULT_AI_MODEL,
+	getStoredAiSettings,
+	maskApiKey,
+	saveAiSettings
+} from '$lib/server/ai';
 import path from 'node:path';
 
 interface AddressEntry {
@@ -114,6 +121,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			? await isBukuTamuPasskeySet(locals.sekolah.id)
 			: false;
 
+	const storedGemini = isAdminOrKepalaSekolah ? await getStoredAiSettings() : null;
+
 	return {
 		meta,
 		appAddresses: addresses,
@@ -121,7 +130,14 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		appVersion: getAppVersion(),
 		storage,
 		forcePasswordChange,
-		bukuTamuPasskeySet
+		bukuTamuPasskeySet,
+		gemini: {
+			keySet: Boolean(storedGemini),
+			maskedKey: storedGemini ? maskApiKey(storedGemini.apiKey) : null,
+			envKeyPresent: Boolean(process.env.GEMINI_API_KEY),
+			model: storedGemini?.model ?? DEFAULT_AI_MODEL,
+			baseUrl: storedGemini?.baseUrl ?? ''
+		}
 	};
 };
 
@@ -382,5 +398,40 @@ export const actions: Actions = {
 
 		await setBukuTamuPasskey(sekolahId, null);
 		return { message: 'Passkey buku tamu berhasil dinonaktifkan.' };
+	},
+	'save-gemini-key': async ({ request, locals }) => {
+		if (locals.user?.type !== 'admin' && locals.user?.type !== 'kepala_sekolah') {
+			return fail(403, {
+				message: 'Hanya admin/kepala sekolah yang dapat mengatur kunci API.'
+			});
+		}
+
+		const form = await request.formData();
+		const apiKey = String(form.get('apiKey') ?? '').trim();
+		if (!apiKey) {
+			return fail(400, { message: 'Kunci API wajib diisi.' });
+		}
+		if (apiKey.length < 10) {
+			return fail(400, { message: 'Kunci API tidak valid.' });
+		}
+
+		const model = String(form.get('model') ?? '').trim() || DEFAULT_AI_MODEL;
+		const baseUrl = String(form.get('baseUrl') ?? '').trim();
+		if (!baseUrl) {
+			return fail(400, { message: 'Base URL wajib diisi.' });
+		}
+
+		await saveAiSettings(apiKey, model, baseUrl);
+		return { message: 'Kunci API berhasil disimpan.' };
+	},
+	'clear-gemini-key': async ({ locals }) => {
+		if (locals.user?.type !== 'admin' && locals.user?.type !== 'kepala_sekolah') {
+			return fail(403, {
+				message: 'Hanya admin/kepala sekolah yang dapat mengatur kunci API.'
+			});
+		}
+
+		await clearAiSettings();
+		return { message: 'Kunci API berhasil dihapus.' };
 	}
 };

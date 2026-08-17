@@ -235,7 +235,7 @@
 	<div class="flex flex-col gap-2 sm:flex-row">
 		<div class="min-w-0 flex-1">
 			<select
-				class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+				class="select bg-base-200 w-full min-w-0 truncate border-base-300 dark:border-none"
 				bind:value={selectedDocument}
 				title="Pilih dokumen yang ingin dipreview"
 			>
@@ -248,7 +248,7 @@
 		{#if isPiagamSelected}
 			<div class="min-w-0 flex-1">
 				<select
-					class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+					class="select bg-base-200 w-full min-w-0 truncate border-base-300 dark:border-none"
 					bind:value={selectedTemplate}
 					title="Pilih template piagam"
 				>
@@ -260,7 +260,7 @@
 		{#if selectedDocument === 'rapor'}
 			<div class="min-w-0 flex-1">
 				<select
-					class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+					class="select bg-base-200 w-full min-w-0 truncate border-base-300 dark:border-none"
 					bind:value={selectedRaporPeriode}
 					title="Pilih periode rapor"
 				>
@@ -274,7 +274,7 @@
 			<fieldset class="fieldset min-w-0 flex-1 py-0">
 				<input
 					type="date"
-					class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+					class="input bg-base-100 dark:bg-base-200 w-full border-base-300 dark:border-none"
 					bind:value={jurnalTanggalMulai}
 				/>
 				<p class="text-wrap">Pilih tanggal mulai</p>
@@ -282,7 +282,7 @@
 			<fieldset class="fieldset min-w-0 flex-1 py-0">
 				<input
 					type="date"
-					class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+					class="input bg-base-100 dark:bg-base-200 w-full border-base-300 dark:border-none"
 					bind:value={jurnalTanggalSelesai}
 				/>
 				<p class="text-wrap">Pilih tanggal selesai</p>
@@ -292,7 +292,7 @@
 			<fieldset class="fieldset min-w-0 flex-1 py-0">
 				<input
 					type="date"
-					class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+					class="input bg-base-100 dark:bg-base-200 w-full border-base-300 dark:border-none"
 					value={bukuTamuTanggalMulai}
 					onchange={(e) => {
 						bukuTamuTanggalMulai = (e.target as HTMLInputElement).value;
@@ -303,7 +303,7 @@
 			<fieldset class="fieldset min-w-0 flex-1 py-0">
 				<input
 					type="date"
-					class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+					class="input bg-base-100 dark:bg-base-200 w-full border-base-300 dark:border-none"
 					value={bukuTamuTanggalSelesai}
 					onchange={(e) => {
 						bukuTamuTanggalSelesai = (e.target as HTMLInputElement).value;
@@ -315,7 +315,7 @@
 		{#if isPresensiGuru}
 			<div class="min-w-0 flex-1">
 				<select
-					class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+					class="select bg-base-200 w-full min-w-0 truncate border-base-300 dark:border-none"
 					bind:value={presensiBulan}
 					title="Pilih bulan"
 				>
@@ -327,7 +327,7 @@
 			<div class="min-w-0 flex-1">
 				<input
 					type="number"
-					class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+					class="input bg-base-100 dark:bg-base-200 w-full border-base-300 dark:border-none"
 					bind:value={presensiTahun}
 					min="2000"
 					max="2099"
@@ -339,7 +339,7 @@
 			<div class="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-row sm:gap-2">
 				<div class="min-w-0 sm:w-32">
 					<select
-						class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+						class="select bg-base-200 w-full min-w-0 truncate border-base-300 dark:border-none"
 						bind:value={laporanBulan}
 						title="Pilih bulan"
 					>
@@ -351,7 +351,7 @@
 				<div class="min-w-0 sm:w-24">
 					<input
 						type="number"
-						class="input bg-base-100 dark:bg-base-200 w-full dark:border-none"
+						class="input bg-base-100 dark:bg-base-200 w-full border-base-300 dark:border-none"
 						bind:value={laporanTahun}
 						min="2000"
 						max="2099"
@@ -360,7 +360,7 @@
 				</div>
 				<div class="col-span-2 min-w-0 sm:w-40">
 					<select
-						class="select bg-base-200 w-full min-w-0 truncate dark:border-none"
+						class="select bg-base-200 w-full min-w-0 truncate border-base-300 dark:border-none"
 						bind:value={statusKepegawaian}
 						title="Pilih status kepegawaian"
 					>
@@ -486,7 +486,7 @@
 			spellcheck="false"
 			onsubmit={submitSearch}
 		>
-			<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
+			<label class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none">
 				<Icon name="search" />
 				<input
 					type="search"
