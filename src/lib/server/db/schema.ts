@@ -1376,6 +1376,7 @@ export const tableAiSettings = sqliteTable('ai_settings', {
 		.notNull(),
 	apiKey: text().notNull(),
 	model: text().default('gemini-3.6-flash').notNull(),
+	baseUrl: text(),
 	...audit
 });
 

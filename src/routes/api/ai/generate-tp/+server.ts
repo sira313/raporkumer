@@ -64,7 +64,7 @@ export const POST = async ({ request, locals }) => {
 		return json(
 			{
 				message:
-					'Fitur AI belum aktif. Minta admin/kepala sekolah menyetel kunci API Gemini di halaman Pengaturan.'
+					'Fitur AI belum aktif. Minta admin/kepala sekolah menyetel kunci API di halaman Pengaturan.'
 			},
 			{ status: 400 }
 		);
@@ -89,6 +89,7 @@ export const POST = async ({ request, locals }) => {
 		const groups = await generateTujuanPembelajaran({
 			apiKey: settings.apiKey,
 			model: settings.model,
+			baseUrl: settings.baseUrl,
 			capaianPembelajaran,
 			mapelNama: mapel.nama,
 			kelasLabel,

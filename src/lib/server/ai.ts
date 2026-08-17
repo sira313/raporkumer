@@ -3,9 +3,9 @@ import { tableAiSettings } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 
 export type AiSettings = {
-	provider: 'gemini';
 	apiKey: string;
 	model: string;
+	baseUrl: string | null;
 };
 
 export type GeneratedGroup = {
@@ -13,19 +13,8 @@ export type GeneratedGroup = {
 	deskripsi: string[];
 };
 
-export const DEFAULT_GEMINI_MODEL = 'gemini-3.6-flash';
-
-// Models that are no longer served to new users. Any stored value in this set
-// is transparently replaced by DEFAULT_GEMINI_MODEL when read back.
-const DEPRECATED_GEMINI_MODELS = new Set(['gemini-2.5-flash']);
-
-const GEMINI_INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+export const DEFAULT_AI_MODEL = 'gemini-3.6-flash';
 const REQUEST_TIMEOUT_MS = 120_000;
-
-function resolveModel(model: string | null | undefined): string {
-	if (!model || DEPRECATED_GEMINI_MODELS.has(model)) return DEFAULT_GEMINI_MODEL;
-	return model;
-}
 
 /**
  * Read only the DB-stored AI settings (no env fallback). Used by /pengaturan to
@@ -35,9 +24,9 @@ export async function getStoredAiSettings(): Promise<AiSettings | null> {
 	const row = await db.query.tableAiSettings.findFirst();
 	if (!row?.apiKey) return null;
 	return {
-		provider: 'gemini',
 		apiKey: row.apiKey,
-		model: resolveModel(row.model)
+		model: row.model || DEFAULT_AI_MODEL,
+		baseUrl: row.baseUrl || null
 	};
 }
 
@@ -49,28 +38,37 @@ export async function getAiSettings(): Promise<AiSettings | null> {
 	const row = await db.query.tableAiSettings.findFirst();
 	if (row?.apiKey) {
 		return {
-			provider: 'gemini',
 			apiKey: row.apiKey,
-			model: resolveModel(row.model)
+			model: row.model || DEFAULT_AI_MODEL,
+			baseUrl: row.baseUrl || null
 		};
 	}
 	const envKey = process.env.GEMINI_API_KEY;
 	if (envKey) {
-		return { provider: 'gemini', apiKey: envKey, model: DEFAULT_GEMINI_MODEL };
+		return {
+			apiKey: envKey,
+			model: DEFAULT_AI_MODEL,
+			baseUrl: 'https://generativelanguage.googleapis.com'
+		};
 	}
 	return null;
 }
 
-export async function saveAiSettings(apiKey: string, model: string) {
+export async function saveAiSettings(apiKey: string, model: string, baseUrl?: string) {
 	const now = new Date().toISOString();
 	const existing = await db.query.tableAiSettings.findFirst({ columns: { id: true } });
 	if (existing) {
 		await db
 			.update(tableAiSettings)
-			.set({ apiKey, model, updatedAt: now })
+			.set({ apiKey, model, baseUrl: baseUrl ?? null, updatedAt: now })
 			.where(eq(tableAiSettings.id, existing.id));
 	} else {
-		await db.insert(tableAiSettings).values({ apiKey, model, createdAt: now });
+		await db.insert(tableAiSettings).values({
+			apiKey,
+			model,
+			baseUrl: baseUrl ?? null,
+			createdAt: now
+		});
 	}
 }
 
@@ -87,9 +85,7 @@ export function maskApiKey(apiKey: string): string {
 
 function normalizeGeneratedText(value: string): string {
 	let text = value.trim().replace(/\s+/g, ' ');
-	// strip a single trailing dot ("tanpa titik di akhir kalimat")
 	text = text.replace(/\.$/, '');
-	// hard cap per the prompt's 100-character limit
 	text = text.slice(0, 100).trim();
 	return text;
 }
@@ -144,6 +140,7 @@ function parseGeneratedPayload(text: string): GeneratedGroup[] {
 export type GenerateTujuanPembelajaranInput = {
 	apiKey: string;
 	model: string;
+	baseUrl: string | null;
 	capaianPembelajaran: string;
 	mapelNama: string;
 	kelasLabel: string;
@@ -158,6 +155,7 @@ export async function generateTujuanPembelajaran(
 	const {
 		apiKey,
 		model,
+		baseUrl,
 		capaianPembelajaran,
 		mapelNama,
 		kelasLabel,
@@ -191,27 +189,46 @@ Jawab HANYA dengan JSON tanpa teks lain, dengan format:
 		required: ['lingkupMateri']
 	} as const;
 
+	const base = resolveBaseUrl(baseUrl);
+	const isGeminiNative = base.includes('generativelanguage.googleapis.com');
+
 	const controller = new AbortController();
 	const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 	let response: Response;
 	try {
-		response = await fetch(GEMINI_INTERACTIONS_URL, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'x-goog-api-key': apiKey
-			},
-			signal: controller.signal,
-			body: JSON.stringify({
-				model,
-				input: userPrompt,
-				response_format: {
-					type: 'text',
-					mime_type: 'application/json',
-					schema: responseSchema
-				}
-			})
-		});
+		if (isGeminiNative) {
+			const endpoint = `${base}/v1beta/models/${model}:generateContent`;
+			response = await fetch(endpoint, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-goog-api-key': apiKey
+				},
+				signal: controller.signal,
+				body: JSON.stringify({
+					contents: [{ parts: [{ text: userPrompt }] }],
+					generationConfig: {
+						responseMimeType: 'application/json',
+						responseSchema
+					}
+				})
+			});
+		} else {
+			const endpoint = `${base}/chat/completions`;
+			response = await fetch(endpoint, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${apiKey}`
+				},
+				signal: controller.signal,
+				body: JSON.stringify({
+					model,
+					messages: [{ role: 'user', content: userPrompt }],
+					response_format: { type: 'json_object', schema: responseSchema }
+				})
+			});
+		}
 	} catch (err) {
 		clearTimeout(timeout);
 		if (err instanceof Error && err.name === 'AbortError') {
@@ -234,39 +251,42 @@ Jawab HANYA dengan JSON tanpa teks lain, dengan format:
 		}
 		if (response.status === 400 || response.status === 403) {
 			throw new Error(
-				'Kunci API Gemini tidak valid atau kuota tidak mencukupi. Periksa kembali di halaman Pengaturan.'
+				'Kunci API tidak valid atau kuota tidak mencukupi. Periksa kembali di halaman Pengaturan.'
 			);
 		}
 		throw new Error(detail || `Layanan AI merespons dengan status ${response.status}.`);
 	}
 
-	type InteractionResponse = {
-		status?: string;
-		steps?: Array<{
-			type?: string;
-			content?: Array<{ type?: string; text?: string }>;
-		}>;
-	};
-
-	let data: InteractionResponse;
+	let data: unknown;
 	try {
-		data = (await response.json()) as InteractionResponse;
+		data = await response.json();
 	} catch {
 		throw new Error('Gagal membaca respons AI.');
 	}
 
-	// The Interactions API returns a chronological `steps` timeline. Collect the
-	// final model text from every `model_output` step (a model may produce
-	// multiple outputs across steps).
-	const text = (data.steps ?? [])
-		.filter((step) => step.type === 'model_output')
-		.flatMap((step) => step.content ?? [])
-		.filter((part) => typeof part.text === 'string')
-		.map((part) => part.text ?? '')
-		.join('');
+	let text: string;
+	if (isGeminiNative) {
+		const geminiData = data as {
+			candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+		};
+		text = geminiData.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
+	} else {
+		const chatData = data as {
+			choices?: Array<{ message?: { content?: string } }>;
+		};
+		text = chatData.choices?.[0]?.message?.content ?? '';
+	}
+
 	if (!text.trim()) {
 		throw new Error('AI tidak mengembalikan hasil apapun.');
 	}
 
 	return parseGeneratedPayload(text);
+}
+
+function resolveBaseUrl(baseUrl: string | null): string {
+	const url = (baseUrl ?? '').trim();
+	if (!url)
+		throw new Error('Base URL API belum dikonfigurasi. Silakan atur di halaman Pengaturan.');
+	return url.replace(/\/+$/, '');
 }

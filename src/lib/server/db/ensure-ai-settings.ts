@@ -1,3 +1,4 @@
+import db from '$lib/server/db';
 import { ensureSchema } from './ensure-helper';
 
 const TABLE = 'ai_settings';
@@ -14,4 +15,11 @@ export async function ensureAiSettingsSchema() {
 		)`,
 		`UPDATE "${TABLE}" SET "model" = 'gemini-3.6-flash' WHERE "model" = 'gemini-2.5-flash'`
 	]);
+
+	// Migration: add base_url column for existing databases
+	try {
+		await db.$client.execute(`ALTER TABLE "${TABLE}" ADD COLUMN "base_url" text`);
+	} catch {
+		// column already exists
+	}
 }

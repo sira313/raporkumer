@@ -31,7 +31,7 @@
 	const isFormEnabled = $derived(aiStatus === 'ready');
 
 	const UNCONFIGURED_MESSAGE =
-		'Fitur AI belum aktif. Minta admin/kepala sekolah menyetel kunci API Gemini di halaman Pengaturan.';
+		'Fitur AI belum aktif. Minta admin/kepala sekolah menyetel kunci API di halaman Pengaturan.';
 
 	onMount(() => {
 		(async () => {

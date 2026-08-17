@@ -56,6 +56,8 @@
 	let clearingBukuTamuPasskey = $state(false);
 	let showGeminiKey = $state(false);
 	let clearingGeminiKey = $state(false);
+	let aiModel = $state(data.gemini?.model ?? '');
+	let aiBaseUrl = $state(data.gemini?.baseUrl ?? '');
 
 	onMount(() => {
 		if (!appAddress && browser) {
@@ -620,22 +622,17 @@
 		>
 			{#snippet children({ submitting, invalid })}
 				<header class="mb-4 space-y-2">
-					<h2 class="text-xl font-semibold">Kunci API Gemini</h2>
+					<h2 class="text-xl font-semibold">Kunci API</h2>
 					<p class="text-base-content/70 text-sm">
-						Kunci API Gemini dipakai oleh fitur "Generate" Tujuan Pembelajaran di halaman
-						Intrakurikuler. Satu kunci dipakai untuk seluruh sekolah di aplikasi ini. Dapatkan kunci
-						gratis di Google AI Studio:
-						<a
-							class="link link-info"
-							href="https://aistudio.google.com/apikey"
-							target="_blank"
-							rel="noopener noreferrer">aistudio.google.com/apikey</a
-						>.
+						Konfigurasi kunci API untuk fitur "Generate" Tujuan Pembelajaran di halaman
+						Intrakurikuler. Mendukung Google Gemini langsung (native API) dan semua penyedia yang
+						kompatibel dengan OpenAI chat completions (OpenRouter, DeepSeek, Groq, dsb). Satu kunci
+						dipakai untuk seluruh sekolah di aplikasi ini.
 					</p>
 					{#if data.gemini?.keySet}
 						<div class="alert alert-success">
 							<Icon name="success" />
-							<span>Kunci API Gemini aktif: {data.gemini.maskedKey}</span>
+							<span>Kunci API aktif: {data.gemini.maskedKey}</span>
 						</div>
 					{:else if data.gemini?.envKeyPresent}
 						<div class="alert alert-info alert-soft">
@@ -648,7 +645,7 @@
 					{:else}
 						<div class="alert alert-warning alert-soft">
 							<Icon name="warning" />
-							<span>Belum ada kunci API Gemini. Fitur "Generate" belum dapat digunakan.</span>
+							<span>Belum ada kunci API. Fitur "Generate" belum dapat digunakan.</span>
 						</div>
 					{/if}
 				</header>
@@ -666,7 +663,7 @@
 								name="apiKey"
 								required
 								minlength={10}
-								placeholder="AIzaSy…"
+								placeholder="AIzaSy… / sk-… / ds-…"
 								autocomplete="off"
 							/>
 							<button
@@ -683,6 +680,57 @@
 						</p>
 					</div>
 				</fieldset>
+
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Model</legend>
+						<input
+							class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+							type="text"
+							name="model"
+							bind:value={aiModel}
+							placeholder="gemini-3.6-flash"
+							list="ai-model-list"
+						/>
+						<datalist id="ai-model-list">
+							<option value="gemini-3.6-flash" />
+							<option value="gemini-3.1-pro" />
+							<option value="gemini-3.7-flash" />
+							<option value="claude-opus-4.8" />
+							<option value="claude-opus-5" />
+							<option value="claude-sonnet-5" />
+							<option value="gpt-5.6-sol" />
+							<option value="gpt-5.6-terra" />
+							<option value="deepseek-v4-flash" />
+							<option value="deepseek-v4-pro" />
+							<option value="glm-5.2" />
+							<option value="glm-5.3" />
+							<option value="kimi-k3" />
+							<option value="qwen3.8-max" />
+						</datalist>
+						<p class="text-base-content/70 mt-1 text-xs">
+							Nama model sesuai penyedia API yang digunakan.
+						</p>
+					</fieldset>
+
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend">Base URL</legend>
+						<input
+							class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+							type="text"
+							name="baseUrl"
+							bind:value={aiBaseUrl}
+							placeholder="https://api.kelontongai.my.id/v1"
+							autocomplete="off"
+							required
+						/>
+						<p class="text-base-content/70 mt-1 text-xs">
+							Endpoint API lengkap termasuk <code>/v1</code> jika diperlukan. Contoh:
+							<code>https://api.kelontongai.my.id/v1</code>
+							atau <code>https://generativelanguage.googleapis.com</code> (Gemini native).
+						</p>
+					</fieldset>
+				</div>
 
 				<div class="mt-6 flex items-center gap-2">
 					{#if data.gemini?.keySet}
@@ -703,7 +751,7 @@
 						disabled={submitting || invalid}
 					>
 						<Icon name="save" />
-						{submitting ? 'Menyimpan…' : 'Simpan Kunci'}
+						{submitting ? 'Menyimpan…' : 'Simpan'}
 					</button>
 				</div>
 			{/snippet}

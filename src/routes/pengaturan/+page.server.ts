@@ -29,7 +29,7 @@ import { validatePasswordStrength } from '$lib/server/password-policy';
 import { isBukuTamuPasskeySet, setBukuTamuPasskey } from '$lib/server/buku-tamu-pass';
 import {
 	clearAiSettings,
-	DEFAULT_GEMINI_MODEL,
+	DEFAULT_AI_MODEL,
 	getStoredAiSettings,
 	maskApiKey,
 	saveAiSettings
@@ -134,7 +134,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		gemini: {
 			keySet: Boolean(storedGemini),
 			maskedKey: storedGemini ? maskApiKey(storedGemini.apiKey) : null,
-			envKeyPresent: Boolean(process.env.GEMINI_API_KEY)
+			envKeyPresent: Boolean(process.env.GEMINI_API_KEY),
+			model: storedGemini?.model ?? DEFAULT_AI_MODEL,
+			baseUrl: storedGemini?.baseUrl ?? ''
 		}
 	};
 };
@@ -400,7 +402,7 @@ export const actions: Actions = {
 	'save-gemini-key': async ({ request, locals }) => {
 		if (locals.user?.type !== 'admin' && locals.user?.type !== 'kepala_sekolah') {
 			return fail(403, {
-				message: 'Hanya admin/kepala sekolah yang dapat mengatur kunci API Gemini.'
+				message: 'Hanya admin/kepala sekolah yang dapat mengatur kunci API.'
 			});
 		}
 
@@ -413,17 +415,23 @@ export const actions: Actions = {
 			return fail(400, { message: 'Kunci API tidak valid.' });
 		}
 
-		await saveAiSettings(apiKey, DEFAULT_GEMINI_MODEL);
-		return { message: 'Kunci API Gemini berhasil disimpan.' };
+		const model = String(form.get('model') ?? '').trim() || DEFAULT_AI_MODEL;
+		const baseUrl = String(form.get('baseUrl') ?? '').trim();
+		if (!baseUrl) {
+			return fail(400, { message: 'Base URL wajib diisi.' });
+		}
+
+		await saveAiSettings(apiKey, model, baseUrl);
+		return { message: 'Kunci API berhasil disimpan.' };
 	},
 	'clear-gemini-key': async ({ locals }) => {
 		if (locals.user?.type !== 'admin' && locals.user?.type !== 'kepala_sekolah') {
 			return fail(403, {
-				message: 'Hanya admin/kepala sekolah yang dapat mengatur kunci API Gemini.'
+				message: 'Hanya admin/kepala sekolah yang dapat mengatur kunci API.'
 			});
 		}
 
 		await clearAiSettings();
-		return { message: 'Kunci API Gemini berhasil dihapus.' };
+		return { message: 'Kunci API berhasil dihapus.' };
 	}
 };
