@@ -1,5 +1,5 @@
 #define AppName "Rapkumer - Aplikasi administrasi guru terpadu"
-#define AppVersion "2.0.11-ai-tester"
+#define AppVersion "2.0.11"
 #define StagePath "..\\dist\\windows\\stage\\Rapkumer"
 
 [Setup]
