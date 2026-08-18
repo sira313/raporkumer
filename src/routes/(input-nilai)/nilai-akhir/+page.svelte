@@ -9,6 +9,7 @@
 	import LegerDownload from '$lib/components/LegerDownload.svelte';
 
 	let { data } = $props();
+	// svelte-ignore state_referenced_locally
 	let searchTerm = $state(data.page.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 

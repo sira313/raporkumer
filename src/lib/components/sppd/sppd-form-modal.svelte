@@ -52,6 +52,7 @@
 	const editSppd = $state<EditSppdData | null>(untrack(() => sppd ?? null));
 	const isEdit = !!editSppd;
 
+	// svelte-ignore state_referenced_locally
 	const prefillAuthUserId = prefill?.authUserId;
 	const prefillUserIdInGuruList =
 		prefillAuthUserId != null && untrack(() => guruList).some((g) => g.id === prefillAuthUserId)
@@ -68,6 +69,7 @@
 	let nomorSuratTugas = $state(editSppd?.nomorSuratTugas ?? '');
 	let tanggalSuratTugas = $state(editSppd?.tanggalSuratTugas ?? '');
 	let dasarSuratTugas = $state(editSppd?.dasarSuratTugas ?? '');
+	// svelte-ignore state_referenced_locally
 	let maksud = $state(editSppd?.maksud ?? prefill?.maksud ?? '');
 	let alatAngkut = $state(editSppd?.alatAngkut ?? '');
 	let tempatBerangkat = $state(editSppd?.tempatBerangkat ?? '');

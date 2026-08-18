@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
-	import { onMount } from 'svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import type { PageData } from './$types';
 
@@ -20,13 +19,16 @@
 
 	const gated = $derived(Boolean(data.passkeySet) && !data.unlocked);
 
-	onMount(() => {
-		if (!canvasEl) return;
+	$effect(() => {
+		if (submitted || !canvasEl) return;
 		ctx = canvasEl.getContext('2d');
 		if (!ctx) return;
 		resizeCanvas();
-		window.addEventListener('resize', resizeCanvas);
-		return () => window.removeEventListener('resize', resizeCanvas);
+		const onResize = () => resizeCanvas();
+		window.addEventListener('resize', onResize);
+		return () => {
+			window.removeEventListener('resize', onResize);
+		};
 	});
 
 	function resizeCanvas() {

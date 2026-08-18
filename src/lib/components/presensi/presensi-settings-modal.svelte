@@ -44,13 +44,18 @@
 	}: Props = $props();
 
 	let submitting = $state(false);
+	// svelte-ignore state_referenced_locally
 	let jamMasukValue = $state(jamMasuk);
+	// svelte-ignore state_referenced_locally
 	let jamPulangValue = $state(jamPulang);
+	// svelte-ignore state_referenced_locally
 	const parsedCustom = parseHariSekolahCustom(hariSekolahCustom);
 	let hariSekolahValue = $state(
 		parsedCustom && parsedCustom.length > 0
 			? 'custom'
+			// svelte-ignore state_referenced_locally
 			: hariSekolah === 5 || hariSekolah === 6
+				// svelte-ignore state_referenced_locally
 				? String(hariSekolah)
 				: '6'
 	);
@@ -71,12 +76,16 @@
 			? customDays.filter((x) => x !== key)
 			: [...customDays, key];
 	}
+	// svelte-ignore state_referenced_locally
 	let tipePresensiValue = $state(tipePresensi);
+	// svelte-ignore state_referenced_locally
 	let jenisPresensiValue = $state(jenisPresensi);
+	// svelte-ignore state_referenced_locally
 	let presensiGuruEnabledValue = $state(presensiGuruEnabled);
 
 	let liburDates = $state<string[]>([]);
 	try {
+		// svelte-ignore state_referenced_locally
 		const parsed = JSON.parse(liburNasional);
 		if (Array.isArray(parsed)) liburDates = parsed;
 	} catch {
@@ -98,6 +107,7 @@
 
 	let semesterRanges = $state<SemesterRange[]>([]);
 	try {
+		// svelte-ignore state_referenced_locally
 		const parsed = JSON.parse(liburSemester);
 		if (Array.isArray(parsed)) semesterRanges = parsed;
 	} catch {

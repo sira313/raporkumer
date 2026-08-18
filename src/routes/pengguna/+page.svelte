@@ -18,9 +18,11 @@
 		nama?: string;
 		mataPelajaranId?: number | null;
 	}
+	// svelte-ignore state_referenced_locally
 	let users = $state<LocalUser[]>(data.users ?? []);
 
 	// mata pelajaran for inline-add select
+	// svelte-ignore state_referenced_locally
 	let mataPelajaran = $state<{ id: number; nama: string }[]>(data.mataPelajaran ?? []);
 
 	// (use global `ModalAction` from `src/lib/components/types.d.ts`)

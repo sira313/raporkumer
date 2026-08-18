@@ -51,7 +51,9 @@
 		'perlu-bimbingan': 'text-error'
 	};
 
+	// svelte-ignore state_referenced_locally
 	let selectedMapelValue = $state(data.selectedMapelValue ?? '');
+	// svelte-ignore state_referenced_locally
 	let searchTerm = $state(data.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	const currentPage = $derived.by(() => data.page?.currentPage ?? 1);

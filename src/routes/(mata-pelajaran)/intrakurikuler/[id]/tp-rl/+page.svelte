@@ -64,7 +64,9 @@
 	const agamaOptions = $derived(data.agamaOptions ?? []);
 	const showAgamaSelect = $derived(agamaOptions.length > 0 && isReligionBasedMapel);
 	const requiresAgamaSelection = $derived(isReligionBasedMapel && showAgamaSelect);
+	// svelte-ignore state_referenced_locally
 	let selectedAgamaId = $state(data.agamaSelection ?? '');
+	// svelte-ignore state_referenced_locally
 	let lastAgamaSelection = $state(data.agamaSelection ?? '');
 	const agamaSelectId = 'agama-select';
 	const activeAgamaOption = $derived.by(() => {
@@ -171,6 +173,7 @@
 	let generateDialogOpen = $state(false);
 
 	// track kelas aktif id so we can react to "Pindah Kelas" and reload TP data
+	// svelte-ignore state_referenced_locally
 	let lastKelasId = $state<number | null>(data.kelasAktif ? (data.kelasAktif.id as number) : null);
 
 	let activeFormId = $state<string | null>(null);

@@ -33,10 +33,15 @@
 	} = $props();
 
 	// Props digunakan untuk re-rendering dan reaktivitas, meskipun tidak langsung di template
+	// svelte-ignore state_referenced_locally
 	void selectedTemplate;
+	// svelte-ignore state_referenced_locally
 	void bgRefreshKey;
+	// svelte-ignore state_referenced_locally
 	void onPrintableReady;
+	// svelte-ignore state_referenced_locally
 	void onBulkPrintableReady;
+	// svelte-ignore state_referenced_locally
 	void showBgLogo;
 </script>
 

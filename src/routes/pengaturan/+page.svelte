@@ -16,7 +16,9 @@
 
 	const { data } = $props<{ data: PageData }>();
 
+	// svelte-ignore state_referenced_locally
 	const detectedAddresses = data.appAddresses ?? [];
+	// svelte-ignore state_referenced_locally
 	const protocol = data.protocol ?? 'http:';
 	const currentVersion = $derived(data.appVersion ?? '0.0.0');
 
@@ -26,6 +28,7 @@
 
 	// Storage location form (admin only). Uploads/sounds follow the data root
 	// automatically, so only the root is editable here.
+	// svelte-ignore state_referenced_locally
 	let storageRoot = $state(data.storage?.dataRoot ?? '');
 	const storageChanged = $derived(storageRoot !== (data.storage?.dataRoot ?? ''));
 
@@ -56,7 +59,9 @@
 	let clearingBukuTamuPasskey = $state(false);
 	let showGeminiKey = $state(false);
 	let clearingGeminiKey = $state(false);
+	// svelte-ignore state_referenced_locally
 	let aiModel = $state(data.gemini?.model ?? '');
+	// svelte-ignore state_referenced_locally
 	let aiBaseUrl = $state(data.gemini?.baseUrl ?? '');
 
 	onMount(() => {
@@ -101,6 +106,7 @@
 		}
 	}
 
+	// svelte-ignore state_referenced_locally
 	let wasForcePasswordChange = $state(data.forcePasswordChange);
 	let passwordChanged = $state(false);
 
@@ -693,20 +699,20 @@
 							list="ai-model-list"
 						/>
 						<datalist id="ai-model-list">
-							<option value="gemini-3.6-flash" />
-							<option value="gemini-3.1-pro" />
-							<option value="gemini-3.7-flash" />
-							<option value="claude-opus-4.8" />
-							<option value="claude-opus-5" />
-							<option value="claude-sonnet-5" />
-							<option value="gpt-5.6-sol" />
-							<option value="gpt-5.6-terra" />
-							<option value="deepseek-v4-flash" />
-							<option value="deepseek-v4-pro" />
-							<option value="glm-5.2" />
-							<option value="glm-5.3" />
-							<option value="kimi-k3" />
-							<option value="qwen3.8-max" />
+							<option value="gemini-3.6-flash"></option>
+							<option value="gemini-3.1-pro"></option>
+							<option value="gemini-3.7-flash"></option>
+							<option value="claude-opus-4.8"></option>
+							<option value="claude-opus-5"></option>
+							<option value="claude-sonnet-5"></option>
+							<option value="gpt-5.6-sol"></option>
+							<option value="gpt-5.6-terra"></option>
+							<option value="deepseek-v4-flash"></option>
+							<option value="deepseek-v4-pro"></option>
+							<option value="glm-5.2"></option>
+							<option value="glm-5.3"></option>
+							<option value="kimi-k3"></option>
+							<option value="qwen3.8-max"></option>
 						</datalist>
 						<p class="text-base-content/70 mt-1 text-xs">
 							Nama model sesuai penyedia API yang digunakan.

@@ -10,17 +10,24 @@
 	type TahunAjaranWithSemester = TahunAjaranRow & { semester: SemesterRow[] };
 
 	const { data } = $props<{ data: PageData }>();
+	// svelte-ignore state_referenced_locally
 	const sekolahList = (data.sekolahList ?? []) as Sekolah[];
+	// svelte-ignore state_referenced_locally
 	const tahunAjaranList = (data.tahunAjaranList ?? []) as TahunAjaranWithSemester[];
+	// svelte-ignore state_referenced_locally
 	let activeSekolahId = $state(data.activeSekolahId ?? null);
+	// svelte-ignore state_referenced_locally
 	const activeTahunAjaranId = data.activeTahunAjaranId ?? null;
+	// svelte-ignore state_referenced_locally
 	const activeSemesterId = data.activeSemesterId ?? null;
+	// svelte-ignore state_referenced_locally
 	const tanggalBagiRaport = data.tanggalBagiRaport as {
 		ganjilId?: number;
 		ganjil?: string | null;
 		genapId?: number;
 		genap?: string | null;
 	};
+	// svelte-ignore state_referenced_locally
 	const tanggalMasuk = data.tanggalMasuk as {
 		ganjilId?: number;
 		ganjil?: string | null;

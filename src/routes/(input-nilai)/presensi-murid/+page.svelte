@@ -326,6 +326,7 @@
 	const hasMurid = $derived.by(() => data.muridCount > 0);
 	const hasFilteredMurid = $derived.by(() => data.totalMurid > 0);
 
+	// svelte-ignore state_referenced_locally
 	let selectedTanggal = $state(data.tanggal);
 
 	$effect(() => {
@@ -346,14 +347,19 @@
 		| 'persentase_harian'
 		| 'persentase_bulanan'
 		| 'persentase_semester'
+	// svelte-ignore state_referenced_locally
 	>(data.mode);
 	let selectedBulan = $state(
+		// svelte-ignore state_referenced_locally
 		data.mode === 'bulanan' || data.mode === 'persentase_bulanan'
+			// svelte-ignore state_referenced_locally
 			? data.bulan
 			: serverTime.now.getMonth() + 1
 	);
 	let selectedTahun = $state(
+		// svelte-ignore state_referenced_locally
 		data.mode === 'bulanan' || data.mode === 'persentase_bulanan'
+			// svelte-ignore state_referenced_locally
 			? data.tahun
 			: serverTime.now.getFullYear()
 	);

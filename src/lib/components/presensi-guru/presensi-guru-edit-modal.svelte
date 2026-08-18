@@ -54,15 +54,21 @@
 		return m ? text.slice(m[0].length) : text;
 	}
 
+	// svelte-ignore state_referenced_locally
 	const initialCuti = parseCutiRange(initialKeterangan);
 
 	let selectedStatus = $state<Status>(
+		// svelte-ignore state_referenced_locally
 		initialStatus && (VALID_STATUS as string[]).includes(initialStatus)
+			// svelte-ignore state_referenced_locally
 			? (initialStatus as Status)
 			: 'hadir'
 	);
+	// svelte-ignore state_referenced_locally
 	let keterangan = $state(stripCutiLabel(initialKeterangan ?? ''));
+	// svelte-ignore state_referenced_locally
 	let cutiMulai = $state(initialCuti?.mulai ?? tanggal);
+	// svelte-ignore state_referenced_locally
 	let cutiSelesai = $state(initialCuti?.selesai ?? tanggal);
 	let redraw = $state(false);
 	let submitting = $state(false);

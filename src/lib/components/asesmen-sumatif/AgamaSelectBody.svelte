@@ -10,6 +10,7 @@
 
 	let { setGetter, options = agamaVariantOptions }: Props = $props();
 
+	// svelte-ignore state_referenced_locally
 	let selectedKey = $state(options?.[0]?.key ?? 'islam');
 	// unique id for label association
 	let selectId = $state('agama-select-' + Math.random().toString(36).slice(2, 9));

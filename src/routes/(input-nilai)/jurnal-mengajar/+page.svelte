@@ -40,6 +40,7 @@
 
 	const canEdit = $derived(userType !== 'wali_asuh');
 
+	// svelte-ignore state_referenced_locally
 	let selectedTanggal = $state(data.tanggal ?? '');
 
 	$effect(() => {
