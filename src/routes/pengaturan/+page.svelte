@@ -720,7 +720,7 @@
 							type="text"
 							name="baseUrl"
 							bind:value={aiBaseUrl}
-							placeholder="contoh: https://api.contoh-baseapi.com/v1"
+							placeholder="contoh: https://generativelanguage.googleapis.com"
 							autocomplete="off"
 							required
 						/>
