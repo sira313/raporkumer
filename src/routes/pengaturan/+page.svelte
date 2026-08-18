@@ -720,14 +720,12 @@
 							type="text"
 							name="baseUrl"
 							bind:value={aiBaseUrl}
-							placeholder="https://api.kelontongai.my.id/v1"
+							placeholder="contoh: https://api.contoh-baseapi.com/v1"
 							autocomplete="off"
 							required
 						/>
 						<p class="text-base-content/70 mt-1 text-xs">
-							Endpoint API lengkap termasuk <code>/v1</code> jika diperlukan. Contoh:
-							<code>https://api.kelontongai.my.id/v1</code>
-							atau <code>https://generativelanguage.googleapis.com</code> (Gemini native).
+							Endpoint API lengkap termasuk <code>/v1</code> jika diperlukan.
 						</p>
 					</fieldset>
 				</div>
