@@ -16,6 +16,7 @@ Dokumentasi lengkap aplikasi ini disusun dalam bahasa Indonesia. File README ini
 
 ## Daftar Fitur
 
+- AI Generator untuk membuat Lingkup Materi berserta Tujuan Pembelajarannya secara otomatis berdasarkan Capaian Pembelajaran dari BSKAP
 - Mengelola data sekolah, kelas, dan murid.
 - Input nilai intrakurikuler berdasarkan Tujuan Pembelajaran (TP), meliputi penilaian harian, STS, SAS, dan formatif.
 - Jadwal pembelajaran beserta bell sekolah yang berjalan secara otomatis.
