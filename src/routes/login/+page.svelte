@@ -142,7 +142,7 @@
 				</div>
 
 				<button
-					class="btn btn-primary mt-6 w-full"
+					class="btn btn-primary mt-6 w-full shadow-none"
 					type="submit"
 					disabled={submitting || invalid || isLocked}
 				>

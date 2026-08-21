@@ -1,23 +1,10 @@
-import { env } from '$env/dynamic/private';
 import { error } from '@sveltejs/kit';
 import { readFile, stat } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import db from '$lib/server/db';
-
-const DEFAULT_DB_URL = 'file:./data/database.sqlite3';
-
-function resolveDatabasePath(url: string) {
-	if (url.startsWith('file:')) {
-		const cleaned = url.replace(/^file:/, '');
-		return resolve(process.cwd(), cleaned);
-	}
-
-	throw error(500, 'Database URL tidak didukung untuk backup');
-}
+import { resolveDatabasePath } from '$lib/server/db-url';
 
 export async function GET() {
-	const dbUrl = env.DB_URL ?? DEFAULT_DB_URL;
-	const dbPath = resolveDatabasePath(dbUrl);
+	const dbPath = resolveDatabasePath();
 
 	try {
 		await stat(dbPath);
