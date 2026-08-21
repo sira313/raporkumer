@@ -36,6 +36,7 @@
 			}) as PageData['entries']
 	);
 
+	// svelte-ignore state_referenced_locally
 	const kembaliHref = `/asesmen-formatif?mapel_id=${data.mapel.id}`;
 
 	function toggleEntry(

@@ -257,7 +257,10 @@ export async function handleIsiSekaligus({
 	const now = new Date().toISOString();
 	const todayStart = new Date(tanggal + 'T00:00:00');
 	const todayEnd = new Date(tanggal + 'T23:59:59.999');
-	const absensiWaktu = tanggal === todayDateString() ? now : todayStart.toISOString();
+	// Backdated fills use local noon so the stored instant stays on the intended
+	// calendar date even after toISOString() shifts it to UTC (e.g. WIB = UTC+7).
+	const absensiWaktu =
+		tanggal === todayDateString() ? now : new Date(tanggal + 'T12:00:00').toISOString();
 
 	try {
 		const semuaMurid = await db.query.tableMurid.findMany({

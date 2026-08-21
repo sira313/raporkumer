@@ -20,6 +20,7 @@
 	} = $props();
 
 	let submitting = $state(false);
+	// svelte-ignore state_referenced_locally
 	let localDeskripsi = $state(deskripsiInput);
 
 	$effect(() => {

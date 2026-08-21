@@ -20,6 +20,7 @@ import {
 	buildRangeRedDays
 } from '$lib/server/absen/libur';
 import { getUniqueSubjectKodes } from '$lib/server/absen/first-mapel';
+import { waktuToLocalDate } from '$lib/server/absen/utils';
 import { isSchoolDay } from '$lib/hari-sekolah';
 import ExcelJS from 'exceljs';
 import { error } from '@sveltejs/kit';
@@ -233,8 +234,10 @@ export async function POST({ cookies, locals, request }) {
 		)
 	});
 
-	const monthStartISO = `${monthStart}T00:00:00.000Z`;
-	const monthEndISO = `${monthEnd}T23:59:59.999Z`;
+	// Local-midnight bounds so records stored as previous-day UTC instants
+	// (legacy backdated fills, early-morning entries in UTC+X zones) are included.
+	const monthStartISO = new Date(monthStart + 'T00:00:00').toISOString();
+	const monthEndISO = new Date(monthEnd + 'T23:59:59.999').toISOString();
 
 	const allAbsensi = await db.query.tableAbsensi.findMany({
 		columns: { muridId: true, waktu: true, mataPelajaranId: true },
@@ -256,7 +259,7 @@ export async function POST({ cookies, locals, request }) {
 	const bulAbsensiSet = new Set<string>();
 	for (const a of allAbsensi) {
 		if (a.mataPelajaranId !== null) continue;
-		bulAbsensiSet.add(`${a.muridId}:${a.waktu.slice(0, 10)}`);
+		bulAbsensiSet.add(`${a.muridId}:${waktuToLocalDate(a.waktu)}`);
 	}
 
 	// For tiap_mapel, build first-mapel-per-day and per-mapel khMap
@@ -388,7 +391,7 @@ export async function POST({ cookies, locals, request }) {
 	}
 
 	for (const a of allAbsensi) {
-		const date = a.waktu.slice(0, 10);
+		const date = waktuToLocalDate(a.waktu);
 		if (a.mataPelajaranId === null) {
 			persAbsNullSet.add(`${a.muridId}:${date}`);
 		} else {
@@ -1189,8 +1192,10 @@ export async function POST({ cookies, locals, request }) {
 
 		const semMpIds = [...semKodeToMpMap.values()];
 
-		const rangeStartISO = `${tanggalMulaiSem}T00:00:00.000Z`;
-		const rangeEndISO = `${tanggalAkhirSem}T23:59:59.999Z`;
+		// Local-midnight bounds so records stored as previous-day UTC instants
+		// (legacy backdated fills, early-morning entries in UTC+X zones) are included.
+		const rangeStartISO = new Date(tanggalMulaiSem + 'T00:00:00').toISOString();
+		const rangeEndISO = new Date(tanggalAkhirSem + 'T23:59:59.999').toISOString();
 
 		// Query semester attendance data with proper mpId handling
 		const [semKetidakhadiran, semKetidakhadiranNull, semAbsensi, semAbsensiNull] = isTiapMapel
@@ -1312,14 +1317,14 @@ export async function POST({ cookies, locals, request }) {
 		}
 
 		for (const a of semAbsensi) {
-			const date = a.waktu.slice(0, 10);
+			const date = waktuToLocalDate(a.waktu);
 			if (a.mataPelajaranId !== null) {
 				const key = `${a.muridId}:${date}:${a.mataPelajaranId}`;
 				semAbsMap.set(key, (semAbsMap.get(key) ?? 0) + 1);
 			}
 		}
 		for (const a of semAbsensiNull) {
-			semAbsNullSet.add(`${a.muridId}:${a.waktu.slice(0, 10)}`);
+			semAbsNullSet.add(`${a.muridId}:${waktuToLocalDate(a.waktu)}`);
 		}
 
 		const persentaseSemesterData = semuaMurid.map((murid, index) => {

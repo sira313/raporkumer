@@ -9,7 +9,9 @@
 	import { jenjangPendidikanSederajat, nauganOptions } from '$lib/statics';
 
 	let { data } = $props();
+	// svelte-ignore state_referenced_locally
 	const isNew = data.isNew as boolean;
+	// svelte-ignore state_referenced_locally
 	const initialSekolah = (isNew ? undefined : data.sekolah) as Sekolah | undefined;
 
 	// typed keys for jenjangPendidikanSederajat to avoid implicit `string` indexing errors

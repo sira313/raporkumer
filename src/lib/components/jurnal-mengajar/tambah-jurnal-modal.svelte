@@ -54,10 +54,15 @@
 	const defaultMapelId = $derived(editData?.mataPelajaranId ?? mapelId ?? 0);
 
 	// Form state
+	// svelte-ignore state_referenced_locally
 	let formKelasId = $state(defaultKelasId);
+	// svelte-ignore state_referenced_locally
 	let formMapelId = $state(defaultMapelId);
+	// svelte-ignore state_referenced_locally
 	let formLingkupMateri = $state(editData?.lingkupMateri ?? '');
+	// svelte-ignore state_referenced_locally
 	let formTujuanPembelajaranId = $state(editData?.tujuanPembelajaranId ?? null);
+	// svelte-ignore state_referenced_locally
 	let formCatatan = $state(editData?.catatan ?? '');
 
 	const formId = 'tambah-jurnal-form';

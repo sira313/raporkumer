@@ -26,6 +26,7 @@
 		const u = page.data.user as { type?: string } | null | undefined;
 		return u?.type !== 'wali_asuh' && u?.type !== 'user';
 	});
+	// svelte-ignore state_referenced_locally
 	let searchTerm = $state(data.page.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	const currentPage = $derived.by(() => data.page.currentPage ?? 1);

@@ -42,3 +42,15 @@ export function getDaysInMonth(year: number, month: number) {
 export function dateStr(year: number, month: number, day: number) {
 	return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
+
+/**
+ * Convert an ISO timestamp (absensi.waktu) to the LOCAL YYYY-MM-DD date.
+ * `waktu.slice(0, 10)` extracts the UTC date which is off by one day for
+ * timezones ahead of UTC (e.g. WIB) whenever the instant falls before local
+ * midnight offset — use this instead so records land on the intended day.
+ */
+export function waktuToLocalDate(waktu: string) {
+	const d = new Date(waktu);
+	if (Number.isNaN(d.getTime())) return waktu.slice(0, 10);
+	return dateStr(d.getFullYear(), d.getMonth() + 1, d.getDate());
+}

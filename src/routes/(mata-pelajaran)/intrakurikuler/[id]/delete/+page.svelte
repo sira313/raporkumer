@@ -15,7 +15,9 @@
 	let confirmDelete = $state(false);
 	const invalidateTargets = ['app:mapel', 'app:mapel_tp-rl', 'app:asesmen-formatif'];
 	const AGAMA_MAPEL_NAME_SET = new Set<string>(agamaMapelNames);
+	// svelte-ignore state_referenced_locally
 	const isAgamaMapel = AGAMA_MAPEL_NAME_SET.has(data.mapel.nama);
+	// svelte-ignore state_referenced_locally
 	const agamaLabel = agamaMapelLabelByName[data.mapel.nama] ?? '';
 
 	// Dapatkan jenjang varian dari sekolah (misalnya 'SMK')

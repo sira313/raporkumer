@@ -33,6 +33,7 @@
 
 	// State untuk tracking nilai per TP
 	let nilaiByTujuanState = $state<Record<number, EkstrakurikulerNilaiKategori>>(
+		// svelte-ignore state_referenced_locally
 		structuredClone(data.nilaiByTujuan)
 	);
 

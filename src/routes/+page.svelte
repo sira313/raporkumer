@@ -16,6 +16,7 @@
 	import { getHariSekolahList, isSchoolDay } from '$lib/hari-sekolah';
 
 	let { data } = $props();
+	// svelte-ignore state_referenced_locally
 	const sekolah = (data.sekolah ?? null) as Sekolah | null;
 	const statistikDashboard = $derived(
 		data.statistikDashboard ?? {

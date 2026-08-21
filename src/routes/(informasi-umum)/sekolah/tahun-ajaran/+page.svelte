@@ -9,8 +9,11 @@
 	type SekolahSelected = Pick<Sekolah, 'id' | 'nama' | 'npsn' | 'jenjangPendidikan'>;
 
 	const { data } = $props<{ data: PageData }>();
+	// svelte-ignore state_referenced_locally
 	const selectedSekolahId = data.selectedSekolahId ? String(data.selectedSekolahId) : '';
+	// svelte-ignore state_referenced_locally
 	const selectedSekolah = (data.selectedSekolah ?? null) as SekolahSelected | null;
+	// svelte-ignore state_referenced_locally
 	let tahunAjaranState = $state((data.tahunAjaran ?? []) as TahunAjaranItem[]);
 	let selectedIdsSet = $state<Set<number>>(new Set());
 	let editingId = $state<number | 'new' | null>(null);

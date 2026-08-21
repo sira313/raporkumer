@@ -11,6 +11,7 @@
 	} from '$lib/profile';
 
 	let { data } = $props();
+	// svelte-ignore state_referenced_locally
 	const profile = data.profile;
 
 	const initialNama = profile?.pegawai?.nama ?? profile?.namaLengkap ?? '';

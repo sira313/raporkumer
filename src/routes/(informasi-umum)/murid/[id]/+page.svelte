@@ -18,6 +18,7 @@
 		return u?.type !== 'wali_asuh' && u?.type !== 'user';
 	});
 
+	// svelte-ignore state_referenced_locally
 	let kelas = `${data.murid.kelas?.nama || '-'} Fase ${data.murid.kelas?.fase || '-'}`;
 	let deletingFoto = $state(false);
 	let isUploadModalOpen = $state(false);

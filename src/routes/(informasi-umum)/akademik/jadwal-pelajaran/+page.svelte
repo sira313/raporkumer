@@ -24,6 +24,7 @@
 
 	const bellSettings = $derived(data.bellSettings as BellSettingsRow | null);
 	const kegiatanCustom = $derived(data.kegiatanCustom as KegiatanCustomRow[]);
+	// svelte-ignore state_referenced_locally
 	let jadwalPelajaran = $state(data.jadwalPelajaran as JadwalPelajaranRow[]);
 	const daftarKodeMapel = $derived(data.daftarKodeMapel as string[]);
 	const kodeMapelPerKelas = $derived(
@@ -486,6 +487,7 @@
 		};
 	});
 
+	// svelte-ignore state_referenced_locally
 	let bellActive = $state(bellSettings?.isActive === 1);
 
 	function openSimulasi() {

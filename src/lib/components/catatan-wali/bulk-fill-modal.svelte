@@ -24,6 +24,7 @@
 
 	let catatanOverride = $state<string | null>(null);
 	const catatanValue = $derived.by(() => catatanOverride ?? catatan);
+	// svelte-ignore state_referenced_locally
 	let previousCatatan = catatan;
 
 	$effect(() => {

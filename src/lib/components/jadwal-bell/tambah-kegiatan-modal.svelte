@@ -19,10 +19,14 @@
 	let isEdit = $derived(existingKegiatan !== undefined);
 
 	let submitting = $state(false);
+	// svelte-ignore state_referenced_locally
 	let nama = $state(existingKegiatan?.nama ?? '');
+	// svelte-ignore state_referenced_locally
 	let kode = $state(existingKegiatan?.kode ?? '');
+	// svelte-ignore state_referenced_locally
 	let durasi = $state(existingKegiatan?.durasi?.toString() ?? '');
 	let soundFile: File | null = $state(null);
+	// svelte-ignore state_referenced_locally
 	let soundFileName = $state(existingKegiatan?.soundFileName ?? '');
 	let hapusSound = $state(false);
 

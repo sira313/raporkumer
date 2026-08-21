@@ -28,8 +28,10 @@
 	const totalPages = $derived.by(() => Math.max(1, data.page?.totalPages ?? 1));
 
 	let selectedKeasramaanValue = $state(
+		// svelte-ignore state_referenced_locally
 		data.selectedKeasramaanId ? String(data.selectedKeasramaanId) : ''
 	);
+	// svelte-ignore state_referenced_locally
 	let searchTerm = $state(data.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	let isDownloadingTemplate = $state(false);

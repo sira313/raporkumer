@@ -95,9 +95,13 @@
 		).padStart(2, '0')}`;
 	}
 
+	// svelte-ignore state_referenced_locally
 	let selectedMode = $state<'harian' | 'bulanan'>(data.mode);
+	// svelte-ignore state_referenced_locally
 	let selectedTanggal = $state(data.tanggal);
+	// svelte-ignore state_referenced_locally
 	let selectedBulan = $state(data.mode === 'bulanan' ? data.bulan : new Date().getMonth() + 1);
+	// svelte-ignore state_referenced_locally
 	let selectedTahun = $state(data.mode === 'bulanan' ? data.tahun : new Date().getFullYear());
 
 	$effect(() => {
@@ -187,6 +191,7 @@
 		return data.bulan === new Date().getMonth() + 1 && data.tahun === new Date().getFullYear();
 	});
 
+	// svelte-ignore state_referenced_locally
 	let searchTerm = $state(data.page.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 

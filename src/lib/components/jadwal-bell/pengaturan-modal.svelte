@@ -24,9 +24,13 @@
 	}: Props = $props();
 
 	let submitting = $state(false);
+	// svelte-ignore state_referenced_locally
 	let jamPelajaranMenitValue = $state(String(jamPelajaranMenit));
+	// svelte-ignore state_referenced_locally
 	let durasiIstirahatValue = $state(String(durasiIstirahat));
+	// svelte-ignore state_referenced_locally
 	let durasiUpacaraValue = $state(String(durasiUpacara));
+	// svelte-ignore state_referenced_locally
 	let jamMulaiValue = $state(jamMulai);
 
 	$effect(() => {

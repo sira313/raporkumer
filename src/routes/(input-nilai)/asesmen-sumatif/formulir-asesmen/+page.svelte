@@ -58,20 +58,26 @@
 
 	let { data }: { data: PageData } = $props();
 
+	// svelte-ignore state_referenced_locally
 	let entries = $state(data.entries.map(toDraft));
 	let sasTesText = $state(
+		// svelte-ignore state_referenced_locally
 		data.initialScores.sasTes != null ? data.initialScores.sasTes.toFixed(2) : ''
 	);
 	let sasNonTesText = $state(
+		// svelte-ignore state_referenced_locally
 		data.initialScores.sasNonTes != null ? data.initialScores.sasNonTes.toFixed(2) : ''
 	);
 	// Sumatif Tengah Semester (STS) - new inputs, initially empty (backend doesn't persist yet)
 	let stsTesText = $state(
+		// svelte-ignore state_referenced_locally
 		data.initialScores.stsTes != null ? data.initialScores.stsTes.toFixed(2) : ''
 	);
 	let stsNonTesText = $state(
+		// svelte-ignore state_referenced_locally
 		data.initialScores.stsNonTes != null ? data.initialScores.stsNonTes.toFixed(2) : ''
 	);
+	// svelte-ignore state_referenced_locally
 	let cheatUnlocked = $state(data.cheatUnlocked);
 
 	$effect(() => {
@@ -326,6 +332,7 @@
 		lingkupSummaries.reduce((sum, item) => sum + (item.bobot ?? 0), 0)
 	);
 
+	// svelte-ignore state_referenced_locally
 	const kembaliHref = `/asesmen-sumatif?mapel_id=${data.mapel.id}`;
 
 	function getInputClass(value: string) {

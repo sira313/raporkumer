@@ -79,8 +79,10 @@
 	const pages = $derived.by(() => Array.from({ length: totalPages }, (_, index) => index + 1));
 
 	let selectedKokurikulerValue = $state(
+		// svelte-ignore state_referenced_locally
 		data.selectedKokurikulerId ? String(data.selectedKokurikulerId) : ''
 	);
+	// svelte-ignore state_referenced_locally
 	let searchTerm = $state(data.search ?? '');
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
