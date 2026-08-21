@@ -7,6 +7,7 @@ import {
 	tableKetidakhadiranRapor
 } from '$lib/server/db/schema';
 import { isSchoolDay } from '$lib/hari-sekolah';
+import { waktuToLocalDate } from '$lib/server/absen/utils';
 
 function dateStr(year: number, month: number, day: number) {
 	return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -125,8 +126,10 @@ export async function computeRaporAttendance(
 		khMap.set(kh.tanggal, kh.keterangan);
 	}
 
-	const rangeStartISO = `${tanggalMulaiRapor}T00:00:00.000Z`;
-	const rangeEndISO = `${tanggalAkhirRapor}T23:59:59.999Z`;
+	// Local-midnight bounds so records stored as previous-day UTC instants
+	// (legacy backdated fills, early-morning entries in UTC+X zones) are included.
+	const rangeStartISO = new Date(tanggalMulaiRapor + 'T00:00:00').toISOString();
+	const rangeEndISO = new Date(tanggalAkhirRapor + 'T23:59:59.999').toISOString();
 
 	const allAbsensi = await db.query.tableAbsensi.findMany({
 		columns: { waktu: true },
@@ -139,7 +142,7 @@ export async function computeRaporAttendance(
 
 	const absensiSet = new Set<string>();
 	for (const a of allAbsensi) {
-		absensiSet.add(a.waktu.slice(0, 10));
+		absensiSet.add(waktuToLocalDate(a.waktu));
 	}
 
 	const override = await db.query.tableKetidakhadiranRapor.findFirst({

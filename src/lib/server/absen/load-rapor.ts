@@ -9,7 +9,7 @@ import {
 	tableJadwalPelajaran
 } from '$lib/server/db/schema';
 import { asc, eq, inArray, and, sql } from 'drizzle-orm';
-import { isValidDate } from './utils';
+import { isValidDate, waktuToLocalDate } from './utils';
 import { computePagination, PER_PAGE } from './pagination';
 import { buildRangeLiburDates, buildRangeRedDays } from './libur';
 import { getUniqueSubjectKodes } from './first-mapel';
@@ -180,8 +180,10 @@ export async function loadRapor(params: {
 	);
 
 	const totalHariBelajar = allDates.filter((tgl) => !redDaySet.has(tgl)).length;
-	const rangeStartISO = `${tanggalMulaiRapor}T00:00:00.000Z`;
-	const rangeEndISO = `${tanggalAkhirRapor}T23:59:59.999Z`;
+	// Local-midnight bounds so records stored as previous-day UTC instants
+	// (legacy backdated fills, early-morning entries in UTC+X zones) are included.
+	const rangeStartISO = new Date(tanggalMulaiRapor + 'T00:00:00').toISOString();
+	const rangeEndISO = new Date(tanggalAkhirRapor + 'T23:59:59.999').toISOString();
 
 	// For tiap_mapel, build day -> subject mapping across full range
 	const dateSubjectKodesMap = new Map<string, string[]>();
@@ -360,14 +362,14 @@ export async function loadRapor(params: {
 	const nullAbsensiSet = new Set<string>();
 	for (const a of allAbsensi) {
 		if (isTiapMapel) {
-			const key = `${a.muridId}:${a.waktu.slice(0, 10)}:${a.mataPelajaranId}`;
+			const key = `${a.muridId}:${waktuToLocalDate(a.waktu)}:${a.mataPelajaranId}`;
 			absensiPerMapel.set(key, (absensiPerMapel.get(key) ?? 0) + 1);
 		} else {
-			absensiSet.add(`${a.muridId}:${a.waktu.slice(0, 10)}`);
+			absensiSet.add(`${a.muridId}:${waktuToLocalDate(a.waktu)}`);
 		}
 	}
 	for (const a of allNullAbsensi) {
-		nullAbsensiSet.add(`${a.muridId}:${a.waktu.slice(0, 10)}`);
+		nullAbsensiSet.add(`${a.muridId}:${waktuToLocalDate(a.waktu)}`);
 	}
 
 	const allOverrides = await db.query.tableKetidakhadiranRapor.findMany({

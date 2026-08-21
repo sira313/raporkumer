@@ -7,7 +7,7 @@ import {
 	tableJadwalPelajaran
 } from '$lib/server/db/schema';
 import { asc, eq, inArray, and, sql } from 'drizzle-orm';
-import { getDaysInMonth, dateStr } from './utils';
+import { getDaysInMonth, dateStr, waktuToLocalDate } from './utils';
 import { computePagination, PER_PAGE } from './pagination';
 import { buildLiburDates, buildRedDays } from './libur';
 import { getUniqueSubjectKodes } from './first-mapel';
@@ -132,8 +132,10 @@ export async function loadBulanan(params: {
 		}
 	}
 
-	const monthStartISO = `${monthStart}T00:00:00.000Z`;
-	const monthEndISO = `${monthEnd}T23:59:59.999Z`;
+	// Local-midnight bounds so records stored as previous-day UTC instants
+	// (legacy backdated fills, early-morning entries in UTC+X zones) are included.
+	const monthStartISO = new Date(monthStart + 'T00:00:00').toISOString();
+	const monthEndISO = new Date(monthEnd + 'T23:59:59.999').toISOString();
 
 	let allKetidakhadiran: Array<{
 		muridId: number;
@@ -256,12 +258,12 @@ export async function loadBulanan(params: {
 
 	const absensiSet = new Set<string>();
 	for (const a of allAbsensi) {
-		absensiSet.add(`${a.muridId}:${a.waktu.slice(0, 10)}`);
+		absensiSet.add(`${a.muridId}:${waktuToLocalDate(a.waktu)}`);
 	}
 
 	const nullAbsensiSet = new Set<string>();
 	for (const a of allNullAbsensi) {
-		nullAbsensiSet.add(`${a.muridId}:${a.waktu.slice(0, 10)}`);
+		nullAbsensiSet.add(`${a.muridId}:${waktuToLocalDate(a.waktu)}`);
 	}
 
 	function getStatus(muridId: number, day: number): StatusPerDay {
