@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { invalidate } from '$app/navigation';
+	/* eslint-disable svelte/no-navigation-without-resolve -- small page-level navigation helper calls */
+	import { goto, refreshAll } from '$app/navigation';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { toast } from '$lib/components/toast.svelte';
 
 	let { data } = $props();
 
@@ -18,6 +20,7 @@
 	let selectedMode = $state<ModeValue>('tes-koneksi');
 	let sections = $state<SectionLog[]>([]);
 	let resultMessage = $state('');
+	let notif = $state<{ type: 'success' | 'error'; message: string } | null>(null);
 
 	const modeDescription: Record<ModeValue, string> = {
 		'tes-koneksi': 'Berfungsi untuk melakukan tes koneksi dapodik melalui bearer token.',
@@ -39,18 +42,48 @@
 		return 'opacity-60';
 	}
 
-	function handleSuccess({ data: payload }: { data?: Record<string, unknown> }) {
+	async function handleSuccess({
+		form,
+		data: payload
+	}: {
+		form?: HTMLFormElement;
+		data?: Record<string, unknown>;
+	}) {
 		resultMessage =
 			typeof payload?.message === 'string' ? payload.message : 'Sinkronisasi selesai.';
 		sections = Array.isArray(payload?.sections) ? (payload.sections as SectionLog[]) : [];
-		invalidate('app:sekolah');
+
+		const submittedMode = form ? (new FormData(form).get('mode') as ModeValue | null) : null;
+		if ((submittedMode ?? selectedMode) !== 'semua') {
+			await refreshAll();
+			notif = { type: 'success', message: resultMessage };
+			return;
+		}
+
+		toast(resultMessage, 'success');
+		await goto('/', { replaceState: true });
+	}
+
+	function handleFailure({ data }: { data?: Record<string, unknown> }) {
+		const message =
+			typeof data?.fail === 'string'
+				? data.fail
+				: typeof data?.message === 'string'
+					? data.message
+					: 'Sinkronisasi Dapodik gagal.';
+		resultMessage = '';
+		sections = [];
+		notif = { type: 'error', message };
 	}
 </script>
 
 <FormEnhance
 	action="?/sync"
 	init={{ ...(data.settings ?? {}), npsn: data.npsn ?? '' }}
+	showToast={false}
+	updateAfterSuccess={false}
 	onsuccess={handleSuccess}
+	onfailure={handleFailure}
 >
 	{#snippet children({ submitting })}
 		<h3 class="mb-1 text-xl font-bold">Sinkronisasi Dapodik</h3>
@@ -58,6 +91,16 @@
 			Ambil data dari aplikasi Dapodik desktop sekolah melalui Web Service (Bearer token). Data
 			Dapodik akan menimpa data yang sudah ada di sistem.
 		</p>
+
+		{#if notif}
+			<div
+				role="alert"
+				class="alert {notif.type === 'success' ? 'alert-success' : 'alert-error'} alert-soft mb-4"
+			>
+				<Icon name={notif.type === 'success' ? 'success' : 'error'} />
+				<span class="text-wrap">{notif.message}</span>
+			</div>
+		{/if}
 
 		<div class="grid grid-cols-1 gap-2">
 			<div class="fieldset">
@@ -140,8 +183,9 @@
 			<button class="btn btn-primary shadow-none" disabled={submitting}>
 				{#if submitting}
 					<span class="loading loading-spinner"></span>
+				{:else}
+					<Icon name="play" />
 				{/if}
-				<Icon name="play" />
 				Proses
 			</button>
 		</div>

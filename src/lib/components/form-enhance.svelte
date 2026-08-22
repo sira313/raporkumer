@@ -16,6 +16,10 @@
 		onfailure?: (params: { form: HTMLFormElement; data?: Record<string, unknown> }) => void;
 		submitStateChange?: (submitting: boolean) => void;
 		showToast?: boolean;
+		/** Skip SvelteKit's `update()` after success — `invalidateAll()` inside it resets
+		 *  `page.state`, which unmounts pushState-based modals. Callers that need the
+		 *  modal to stay open should refresh loads themselves (e.g. `refreshAll()`). */
+		updateAfterSuccess?: boolean;
 	}
 
 	let {
@@ -27,7 +31,8 @@
 		onsuccess,
 		onfailure,
 		submitStateChange,
-		showToast = true
+		showToast = true,
+		updateAfterSuccess = true
 	}: Props = $props();
 
 	let submitting = $state(false);
@@ -130,7 +135,7 @@
 						if (showToast) {
 							toast(successMessage, 'success');
 						}
-						if (update) await update({ reset: false });
+						if (updateAfterSuccess && update) await update({ reset: false });
 						const callForm = args.form ?? args.formElement;
 						if (callForm && onsuccess) {
 							onsuccess({ form: callForm, data: successData });
@@ -205,7 +210,7 @@
 						// If we couldn't determine a type, still attempt an update so any
 						// server-driven state changes are applied to the page.
 						try {
-							if (update) await update({ reset: false });
+							if (updateAfterSuccess && update) await update({ reset: false });
 						} catch (e) {
 							console.debug('[form-enhance] update() failed for unknown result type', e);
 						}
