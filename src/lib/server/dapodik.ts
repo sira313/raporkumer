@@ -1412,16 +1412,31 @@ async function syncPesertaDidik(
 // ---------------------------------------------------------------------------
 
 /**
+ * Ratakan daftar pembelajaran beserta `sub_mapel[]` nested (bentuk lama sebagian
+ * build Dapodik). Sub-mapel (mis. varian agama dengan induk_pembelajaran_id)
+ * di-upsert sama seperti mapel biasa agar ter-binding ke kode Dapodik.
+ */
+function flattenPembelajaran(items: Array<{ kelasId: number; row: Row }>) {
+	const result: Array<{ kelasId: number; row: Row }> = [];
+	for (const item of items) {
+		result.push(item);
+		const subs = Array.isArray(item.row['sub_mapel']) ? (item.row['sub_mapel'] as Row[]) : [];
+		result.push(...flattenPembelajaran(subs.map((row) => ({ kelasId: item.kelasId, row }))));
+	}
+	return result;
+}
+
+/**
  * Upsert mata pelajaran dari pembelajaran NESTED yang dikumpulkan saat
  * upsert rombel (endpoint getPembelajaran tidak tersedia → HTTP 404).
  */
 async function upsertPembelajaran(
-	items: Array<{ kelasId: number; row: Row }>,
+	allItems: Array<{ kelasId: number; row: Row }>,
 	validKelasIds: Set<number>,
 	ptkIndex: PegawaiIndex,
 	sections: DapodikSectionLog[]
 ) {
-	if (items.length === 0) {
+	if (allItems.length === 0) {
 		sections.push({
 			label: 'Pembelajaran',
 			status: 'dilewati',
@@ -1430,19 +1445,15 @@ async function upsertPembelajaran(
 		return;
 	}
 	try {
+		const items = flattenPembelajaran(allItems);
 		let created = 0;
 		let updated = 0;
-		let skippedSub = 0;
 		let failed = 0;
+		let incomplete = 0;
 
 		for (const { kelasId, row } of items) {
 			if (!validKelasIds.has(kelasId)) continue;
 
-			// Sub-mapel (induk_pembelajaran_id terisi) dilewati agar daftar mapel tetap bersih.
-			if (str(row, 'induk_pembelajaran_id')) {
-				skippedSub++;
-				continue;
-			}
 			const pembelajaranId = str(row, 'pembelajaran_id');
 			const mapelRefId = str(row, 'mata_pelajaran_id');
 			const namaMapel =
@@ -1450,7 +1461,10 @@ async function upsertPembelajaran(
 				str(row, 'mata_pelajaran_id_str') ??
 				str(row, 'nama_mata_pelajaran_mapel') ??
 				'';
-			if (!pembelajaranId || !namaMapel) continue;
+			if (!pembelajaranId || !namaMapel) {
+				incomplete++;
+				continue;
+			}
 
 			try {
 				// ptk_id pengampu tersedia langsung di row pembelajaran.
@@ -1510,7 +1524,7 @@ async function upsertPembelajaran(
 			label: 'Pembelajaran',
 			status: failed > 0 && created + updated === 0 ? 'gagal' : 'ok',
 			detail: `${updated} mapel dicocokkan, ${created} mapel baru${
-				skippedSub ? `, ${skippedSub} sub-mapel dilewati` : ''
+				incomplete ? `, ${incomplete} dilewati (data tidak lengkap)` : ''
 			}${failed ? `, ${failed} gagal` : ''}.`
 		});
 	} catch (e) {
