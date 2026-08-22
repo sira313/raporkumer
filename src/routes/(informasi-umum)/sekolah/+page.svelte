@@ -72,7 +72,7 @@
 	}
 </script>
 
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-4">
 	{#if sortedSekolahList.length}
 		{#each sortedSekolahList as sekolah (sekolah.id)}
 			<div class="card bg-base-100 rounded-box shadow-md">

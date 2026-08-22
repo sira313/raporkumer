@@ -95,6 +95,9 @@ export const tablePegawai = sqliteTable('pegawai', {
 	id: int().primaryKey({ autoIncrement: true }),
 	nama: text().notNull(),
 	nip: text().notNull(),
+	// Referensi Dapodik
+	dapodikPtkId: text(),
+	nuptk: text(),
 	...audit
 });
 
@@ -119,6 +122,8 @@ export const tableSekolah = sqliteTable('sekolah', {
 		.references(() => tablePegawai.id)
 		.notNull(),
 	lokasiTandaTangan: text(),
+	// Referensi Dapodik
+	dapodikSekolahId: text(),
 	// Naungan (organisasi pengelola sekolah)
 	naungan: text({ enum: ['kemendikbud', 'kemsos', 'kemenag'] })
 		.default('kemendikbud')
@@ -167,6 +172,8 @@ export const tableTahunAjaran = sqliteTable(
 		tanggalMulai: text(),
 		tanggalSelesai: text(),
 		isAktif: int({ mode: 'boolean' }).default(false).notNull(),
+		// Referensi Dapodik (tahun_ajaran_id, mis. '2025')
+		dapodikTahunAjaranId: text(),
 		...audit
 	},
 	(table) => [unique().on(table.sekolahId, table.nama)]
@@ -186,6 +193,8 @@ export const tableSemester = sqliteTable(
 		tanggalBagiRaport: text(),
 		tanggalMasuk: text(),
 		isAktif: int({ mode: 'boolean' }).default(false).notNull(),
+		// Referensi Dapodik (semester_id, mis. '20251')
+		dapodikSemesterId: text(),
 		...audit
 	},
 	(table) => [unique().on(table.tahunAjaranId, table.tipe)]
@@ -212,6 +221,8 @@ export const tableKelas = sqliteTable(
 		// Per-class rapor criteria. NULL = fall back to school-level values.
 		raporKriteriaCukup: int(),
 		raporKriteriaBaik: int(),
+		// Referensi Dapodik (rombongan_belajar_id jenis_rombel 1, UUID)
+		dapodikRombonganBelajarId: text(),
 		...audit
 	},
 	(table) => [unique().on(table.sekolahId, table.semesterId, table.nama)]
@@ -386,6 +397,11 @@ export const tableMurid = sqliteTable(
 		// wali asuh (nama + nip) per murid, bukan per kelas
 		waliAsuhNama: text(),
 		waliAsuhNip: text(),
+		// Referensi Dapodik
+		dapodikPesertaDidikId: text(),
+		dapodikAnggotaRombelId: text(),
+		nik: text(),
+		anakKe: int(),
 		...audit
 	},
 	(t) => [unique().on(t.sekolahId, t.semesterId, t.nis)]
@@ -530,7 +546,14 @@ export const tableMataPelajaran = sqliteTable(
 		// optional short code for subjects (e.g. PAPB for Pendidikan Agama dan Budi Pekerti)
 		kode: text(),
 		kkm: int().notNull().default(0),
-		jenis: text({ enum: ['wajib', 'pilihan', 'mulok', 'kejuruan', 'pemberdayaan'] }).notNull(),
+		jenis: text({
+			enum: ['belum_dipetakan', 'wajib', 'pilihan', 'mulok', 'kejuruan', 'pemberdayaan']
+		}).notNull(),
+		// Guru pengampu (hasil sinkronisasi pembelajaran Dapodik)
+		pengampuId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
+		// Referensi Dapodik
+		dapodikPembelajaranId: text(),
+		dapodikMataPelajaranId: text(),
 		...audit
 	},
 	(table) => [unique().on(table.kelasId, table.nama)]
@@ -626,6 +649,10 @@ export const tableMataPelajaranRelations = relations(tableMataPelajaran, ({ one,
 	asesmenSumatif: many(tableAsesmenSumatif),
 	asesmenSumatifTujuan: many(tableAsesmenSumatifTujuan),
 	kelas: one(tableKelas, { fields: [tableMataPelajaran.kelasId], references: [tableKelas.id] }),
+	pengampu: one(tablePegawai, {
+		fields: [tableMataPelajaran.pengampuId],
+		references: [tablePegawai.id]
+	}),
 	// many-to-many: mata pelajaran bisa diajar oleh multiple guru
 	authUsers: many(tableAuthUserMataPelajaran),
 	muridMataPelajaran: many(tableMuridMataPelajaran)
@@ -1544,5 +1571,47 @@ export const tableDinasLuarBuktiRelations = relations(tableDinasLuarBukti, ({ on
 export const tableAppMeta = sqliteTable('app_meta', {
 	key: text().primaryKey(),
 	value: text().notNull(),
+	...audit
+});
+
+// Kredensial WebService Dapodik desktop per sekolah (Bearer token, lihat docs/erapor.md §5.2).
+export const tableDapodikSettings = sqliteTable(
+	'dapodik_settings',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id, { onDelete: 'cascade' })
+			.notNull(),
+		// Base URL WebService Dapodik, mis. http://192.168.8.114:5774/WebService
+		url: text().notNull(),
+		token: text().notNull(),
+		npsn: text(),
+		semesterIdDapodikTerakhir: text(),
+		lastSyncAt: text(),
+		...audit
+	},
+	(table) => [unique().on(table.sekolahId)]
+);
+
+export const tableDapodikSettingsRelations = relations(tableDapodikSettings, ({ one }) => ({
+	sekolah: one(tableSekolah, {
+		fields: [tableDapodikSettings.sekolahId],
+		references: [tableSekolah.id]
+	})
+}));
+
+/**
+ * Referensi mata pelajaran nasional Dapodik (endpoint getMataPelajaran).
+ * Primary key = ID referensi Dapodik (mis. 400200000 = "Guru Kelas SD/MI/SLB") sehingga
+ * mapel lokal yang dipetakan ke ID ini bisa dirujuk saat posting nilai balik ke Dapodik.
+ */
+export const tableDapodikMataPelajaran = sqliteTable('dapodik_mata_pelajaran', {
+	mataPelajaranId: int().primaryKey(),
+	nama: text().notNull(),
+	jurusanId: text(),
+	pilihanSekolah: int({ mode: 'boolean' }).default(false).notNull(),
+	pilihanBuku: int({ mode: 'boolean' }).default(false).notNull(),
+	pilihanKepengawasan: int({ mode: 'boolean' }).default(false).notNull(),
+	pilihanEvaluasi: int({ mode: 'boolean' }).default(false).notNull(),
 	...audit
 });

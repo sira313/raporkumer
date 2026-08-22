@@ -11,12 +11,22 @@ import { eq, inArray } from 'drizzle-orm';
 
 type MataPelajaranBase = Omit<MataPelajaran, 'tujuanPembelajaran'>;
 type MataPelajaranWithTp = MataPelajaranBase & { tpCount: number; editTpMapelId?: number };
-type MataPelajaranList = MataPelajaranWithTp[];
 
 const AGAMA_VARIANT_NAME_SET = new Set<string>(agamaVariantNames);
 const PKS_VARIANT_NAME_SET = new Set<string>(pksVariantNames);
 const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
 const PKS_PARENT_NAME = 'Pendalaman Kitab Suci';
+
+// Urutan tampil jenis mapel pada tabel gabungan (belum dipetakan paling atas
+// agar segera terlihat dan dipetakan admin).
+const JENIS_URUTAN = [
+	'belum_dipetakan',
+	'wajib',
+	'pilihan',
+	'kejuruan',
+	'pemberdayaan',
+	'mulok'
+] as const;
 
 export async function load({ depends, url, parent }) {
 	depends('app:mapel');
@@ -288,27 +298,18 @@ export async function load({ depends, url, parent }) {
 		(item) => !AGAMA_VARIANT_NAME_SET.has(item.nama) && !PKS_VARIANT_NAME_SET.has(item.nama)
 	);
 
-	const { daftarWajib, daftarPilihan, daftarMulok, daftarKejuruan, daftarPemberdayaan } =
-		mapelTampil.reduce(
-			(acc, item) => {
-				if (item.jenis === 'wajib') acc.daftarWajib.push(item);
-				else if (item.jenis === 'pilihan') acc.daftarPilihan.push(item);
-				else if (item.jenis === 'mulok') acc.daftarMulok.push(item);
-				else if (item.jenis === 'kejuruan') acc.daftarKejuruan.push(item);
-				else if (item.jenis === 'pemberdayaan') acc.daftarPemberdayaan.push(item);
-				return acc;
-			},
-			{
-				daftarWajib: <MataPelajaranList>[],
-				daftarPilihan: <MataPelajaranList>[],
-				daftarMulok: <MataPelajaranList>[],
-				daftarKejuruan: <MataPelajaranList>[],
-				daftarPemberdayaan: <MataPelajaranList>[]
-			}
-		);
+	const jenisIndex = (jenis: string | null | undefined) => {
+		const idx = JENIS_URUTAN.indexOf((jenis ?? 'wajib') as (typeof JENIS_URUTAN)[number]);
+		return idx === -1 ? JENIS_URUTAN.length : idx;
+	};
+	const daftarMapel = [...mapelTampil].sort(
+		(a, b) =>
+			jenisIndex(a.jenis) - jenisIndex(b.jenis) || (a.nama ?? '').localeCompare(b.nama ?? '', 'id')
+	);
+
 	return {
 		kelasId,
-		mapel: { daftarWajib, daftarPilihan, daftarMulok, daftarKejuruan, daftarPemberdayaan }
+		mapel: { daftarMapel }
 	};
 }
 

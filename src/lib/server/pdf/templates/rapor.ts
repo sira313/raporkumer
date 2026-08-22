@@ -36,7 +36,7 @@ export interface RaporPrintData {
 		mataPelajaran: string;
 		nilaiAkhir: string;
 		deskripsi: string;
-		jenis?: 'wajib' | 'pilihan' | 'mulok' | 'kejuruan' | 'pemberdayaan';
+		jenis?: 'belum_dipetakan' | 'wajib' | 'pilihan' | 'mulok' | 'kejuruan' | 'pemberdayaan';
 	}>;
 	kokurikuler: string;
 	hasKokurikuler: boolean;
@@ -75,6 +75,9 @@ export function renderRaporHTML(data: RaporPrintData): string {
 
 	const kelompokMap: Record<string, { items: typeof data.nilaiIntrakurikuler }> = {};
 	for (const n of data.nilaiIntrakurikuler) {
+		// Mapel "Belum Dipetakan" (hasil tarikan Dapodik yang belum dipetakan admin)
+		// tidak dicetak di rapor — rapor hanya memuat mapel yang sudah dipetakan.
+		if (n.jenis === 'belum_dipetakan') continue;
 		const jenis = n.jenis || 'wajib';
 		if (!kelompokMap[jenis]) kelompokMap[jenis] = { items: [] };
 		kelompokMap[jenis].items.push(n);
@@ -82,6 +85,7 @@ export function renderRaporHTML(data: RaporPrintData): string {
 
 	const isSMK = data.sekolah.jenjangVariant === 'SMK';
 	const jenisLabelText: Record<string, string> = {
+		belum_dipetakan: 'Belum Dipetakan',
 		wajib: isSMK ? 'Mata Pelajaran Umum' : 'Mata Pelajaran Wajib',
 		pilihan: 'Mata Pelajaran Pilihan',
 		kejuruan: 'Mata Pelajaran Kejuruan',

@@ -166,9 +166,16 @@ async function tick() {
 	const currentMinutes = now.getHours() * 60 + now.getMinutes();
 	const dateStr = toDateStr(now);
 
-	const activeSettings = await db.query.tableBellSettings.findMany({
-		where: eq(tableBellSettings.isActive, 1)
-	});
+	let activeSettings;
+	try {
+		activeSettings = await db.query.tableBellSettings.findMany({
+			where: eq(tableBellSettings.isActive, 1)
+		});
+	} catch {
+		// DB client closed (shutdown/HMR) — skip this tick quietly instead of
+		// spamming uncaught-exception logs.
+		return;
+	}
 
 	for (const setting of activeSettings) {
 		try {

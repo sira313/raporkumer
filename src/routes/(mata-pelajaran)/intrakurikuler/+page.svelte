@@ -11,6 +11,7 @@
 		agamaMapelLabelByName,
 		agamaMapelNames,
 		agamaParentName,
+		jenisMapel,
 		pksMapelLabelByName,
 		pksMapelNames,
 		pksParentName
@@ -19,7 +20,7 @@
 	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
 
 	type MapelWithIndicator = MataPelajaran & { tpCount: number; editTpMapelId?: number };
-	let { data }: { data: { mapel: Record<string, MapelWithIndicator[]> } } = $props();
+	let { data }: { data: { mapel: { daftarMapel: MapelWithIndicator[] } } } = $props();
 
 	const emptyStateMessage = 'Belum ada data mata pelajaran';
 	const agamaMapelNameSet = new Set<string>(agamaMapelNames);
@@ -61,14 +62,32 @@
 		return ['PKBM', 'SKB'].includes(jenjangVariant?.toUpperCase() ?? '');
 	}
 
-	const totalMapel = $derived.by(
-		() =>
-			data.mapel.daftarWajib.length +
-			data.mapel.daftarPilihan.length +
-			data.mapel.daftarMulok.length +
-			(shouldShowKejuruan() ? data.mapel.daftarKejuruan.length : 0) +
-			(shouldShowPemberdayaan() ? data.mapel.daftarPemberdayaan.length : 0)
+	// Satu daftar gabungan seluruh jenis, sudah diurutkan server (belum dipetakan
+	// paling atas). Baris kejuruan/pemberdayaan hanya tampil sesuai jenjang sekolah
+	// (SMK / PKBM-SKB) — konsisten dengan kotak statistiknya.
+	const daftarMapel = $derived(
+		(data.mapel.daftarMapel ?? []).filter((item) => {
+			if (item.jenis === 'kejuruan') return shouldShowKejuruan();
+			if (item.jenis === 'pemberdayaan') return shouldShowPemberdayaan();
+			return true;
+		})
 	);
+	const totalMapel = $derived(daftarMapel.length);
+
+	const hitunganJenis = $derived.by(() => {
+		const acc: Record<MataPelajaran['jenis'], number> = {
+			belum_dipetakan: 0,
+			wajib: 0,
+			pilihan: 0,
+			mulok: 0,
+			kejuruan: 0,
+			pemberdayaan: 0
+		};
+		for (const item of daftarMapel) {
+			if (item.jenis && item.jenis in acc) acc[item.jenis] += 1;
+		}
+		return acc;
+	});
 
 	function formatKkm(kkm: number | null | undefined) {
 		return typeof kkm === 'number' && Number.isFinite(kkm) ? kkm : '—';
@@ -263,26 +282,32 @@
 	>
 		<div class="stat place-items-start">
 			<div class="stat-title">Mapel {getWajibLabel()}</div>
-			<div class="stat-value text-2xl">{data.mapel.daftarWajib.length}</div>
+			<div class="stat-value text-2xl">{hitunganJenis.wajib}</div>
 		</div>
+		{#if hitunganJenis.belum_dipetakan > 0}
+			<div class="stat place-items-start">
+				<div class="stat-title text-warning">Belum Dipetakan</div>
+				<div class="stat-value text-2xl">{hitunganJenis.belum_dipetakan}</div>
+			</div>
+		{/if}
 		<div class="stat place-items-start">
 			<div class="stat-title">Mapel Pilihan</div>
-			<div class="stat-value text-2xl">{data.mapel.daftarPilihan.length}</div>
+			<div class="stat-value text-2xl">{hitunganJenis.pilihan}</div>
 		</div>
 		<div class="stat place-items-start">
 			<div class="stat-title">Muatan Lokal</div>
-			<div class="stat-value text-2xl">{data.mapel.daftarMulok.length}</div>
+			<div class="stat-value text-2xl">{hitunganJenis.mulok}</div>
 		</div>
 		{#if shouldShowKejuruan()}
 			<div class="stat place-items-start">
 				<div class="stat-title">Kejuruan</div>
-				<div class="stat-value text-2xl">{data.mapel.daftarKejuruan.length}</div>
+				<div class="stat-value text-2xl">{hitunganJenis.kejuruan}</div>
 			</div>
 		{/if}
 		{#if shouldShowPemberdayaan()}
 			<div class="stat place-items-start">
 				<div class="stat-title">Pemberdayaan & Keterampilan</div>
-				<div class="stat-value text-2xl">{data.mapel.daftarPemberdayaan.length}</div>
+				<div class="stat-value text-2xl">{hitunganJenis.pemberdayaan}</div>
 			</div>
 		{/if}
 		<div class="stat place-items-start">
@@ -310,115 +335,112 @@
 		</div>
 	{/if}
 
-	{#each [{ key: 'wajib', title: `Mata Pelajaran ${getWajibLabel()}`, items: data.mapel.daftarWajib }, { key: 'pilihan', title: 'Mata Pelajaran Pilihan', items: data.mapel.daftarPilihan }, { key: 'mulok', title: 'Muatan Lokal', items: data.mapel.daftarMulok }, ...(shouldShowKejuruan() ? [{ key: 'kejuruan', title: 'Mata Pelajaran Kejuruan', items: data.mapel.daftarKejuruan }] : []), ...(shouldShowPemberdayaan() ? [{ key: 'pemberdayaan', title: 'Muatan Pemberdayaan dan Keterampilan', items: data.mapel.daftarPemberdayaan }] : [])] as section (section.key)}
-		<fieldset class="fieldset mt-8">
-			<legend class="fieldset-legend">{section.title}</legend>
-			<div
-				class="bg-base-100 dark:bg-base-200 overflow-x-auto rounded-md shadow-md dark:shadow-none"
-			>
-				<table class="border-base-200 table border dark:border-none">
-					<thead>
-						<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
-							<th style="width: 60px;">No</th>
-							<th style="min-width: 240px;">Mata Pelajaran</th>
-							<th style="width: 120px;">Kode</th>
-							<th style="width: 100px;">KKM</th>
-							<th style="width: 180px;">Tujuan Pembelajaran</th>
-							<th>Aksi</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each section.items as mapel, index (mapel.id)}
-							<tr>
-								<td>{index + 1}</td>
-								<td class="font-medium">{mapel.nama}</td>
-								<td class="font-mono text-sm"
-									>{mapel.kode ?? (mapel.nama === agamaParentName ? 'PAPB' : '—')}</td
-								>
-								<td>{formatKkm(mapel.kkm)}</td>
-								<td>
-									<div class="indicator">
-										<span
-											class="indicator-item indicator-end badge badge-xs"
-											class:badge-success={mapel.tpCount > 0}
-											class:badge-error={mapel.tpCount === 0}
-											aria-label={`Status tujuan pembelajaran: ${
-												mapel.tpCount > 0 ? 'sudah terisi' : 'belum terisi'
-											}`}
-											role="status"
-										></span>
-										{#if canManageMapel}
-											<a
-												class="btn btn-sm btn-soft shadow-none"
-												href={`/intrakurikuler/${mapel.editTpMapelId ?? mapel.id}/tp-rl`}
-											>
-												<Icon name="edit" />
-												Edit TP
-											</a>
-										{:else}
-											<button
-												type="button"
-												class="btn btn-sm btn-disabled shadow-none"
-												disabled
-												title="Anda tidak memiliki izin untuk mengedit"
-											>
-												<Icon name="edit" />
-												Edit TP
-											</button>
-										{/if}
-									</div>
-								</td>
-								<td>
-									<div class="flex flex-row">
-										{#if canManageMapel}
-											<a
-												class="btn btn-sm btn-soft rounded-r-none shadow-none"
-												href={`/intrakurikuler/${mapel.id}/edit`}
-												title="Edit data mata pelajaran"
-												use:modalRoute={'edit-mapel'}
-											>
-												<Icon name="edit" />
-											</a>
-											<a
-												class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
-												href={`/intrakurikuler/${mapel.id}/delete`}
-												title="Hapus mata pelajaran"
-												use:modalRoute={'delete-mapel'}
-												onclick={(event) => handleDeleteClick(event, mapel)}
-											>
-												<Icon name="del" />
-											</a>
-										{:else}
-											<button
-												type="button"
-												class="btn btn-sm btn-disabled rounded-r-none shadow-none"
-												disabled
-												title="Anda tidak memiliki izin untuk mengedit"
-											>
-												<Icon name="edit" />
-											</button>
-											<button
-												type="button"
-												class="btn btn-sm btn-disabled rounded-l-none shadow-none"
-												disabled
-												title="Anda tidak memiliki izin untuk menghapus"
-											>
-												<Icon name="del" />
-											</button>
-										{/if}
-									</div>
-								</td>
-							</tr>
-						{:else}
-							<tr>
-								<td class="py-6 text-center italic opacity-60" colspan="6">{emptyStateMessage}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		</fieldset>
-	{/each}
+	<div
+		class="bg-base-100 dark:bg-base-200 mt-8 overflow-x-auto rounded-md shadow-md dark:shadow-none"
+	>
+		<table class="border-base-200 table border dark:border-none">
+			<thead>
+				<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
+					<th style="width: 60px;">No</th>
+					<th style="min-width: 240px;">Mata Pelajaran</th>
+					<th style="min-width: 150px;">Jenis Mapel</th>
+					<th style="width: 120px;">Kode</th>
+					<th style="width: 100px;">KKM</th>
+					<th style="width: 180px;">Tujuan Pembelajaran</th>
+					<th>Aksi</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each daftarMapel as mapel, index (mapel.id)}
+					<tr>
+						<td>{index + 1}</td>
+						<td class="font-medium">{mapel.nama}</td>
+						<td class="whitespace-nowrap">{jenisMapel[mapel.jenis ?? 'wajib']}</td>
+						<td class="font-mono text-sm"
+							>{mapel.kode ?? (mapel.nama === agamaParentName ? 'PAPB' : '—')}</td
+						>
+						<td>{formatKkm(mapel.kkm)}</td>
+						<td>
+							<div class="indicator">
+								<span
+									class="indicator-item indicator-end badge badge-xs"
+									class:badge-success={mapel.tpCount > 0}
+									class:badge-error={mapel.tpCount === 0}
+									aria-label={`Status tujuan pembelajaran: ${
+										mapel.tpCount > 0 ? 'sudah terisi' : 'belum terisi'
+									}`}
+									role="status"
+								></span>
+								{#if canManageMapel}
+									<a
+										class="btn btn-sm btn-soft shadow-none"
+										href={`/intrakurikuler/${mapel.editTpMapelId ?? mapel.id}/tp-rl`}
+									>
+										<Icon name="edit" />
+										Edit TP
+									</a>
+								{:else}
+									<button
+										type="button"
+										class="btn btn-sm btn-disabled shadow-none"
+										disabled
+										title="Anda tidak memiliki izin untuk mengedit"
+									>
+										<Icon name="edit" />
+										Edit TP
+									</button>
+								{/if}
+							</div>
+						</td>
+						<td>
+							<div class="flex flex-row">
+								{#if canManageMapel}
+									<a
+										class="btn btn-sm btn-soft rounded-r-none shadow-none"
+										href={`/intrakurikuler/${mapel.id}/edit`}
+										title="Edit data mata pelajaran"
+										use:modalRoute={'edit-mapel'}
+									>
+										<Icon name="edit" />
+									</a>
+									<a
+										class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
+										href={`/intrakurikuler/${mapel.id}/delete`}
+										title="Hapus mata pelajaran"
+										use:modalRoute={'delete-mapel'}
+										onclick={(event) => handleDeleteClick(event, mapel)}
+									>
+										<Icon name="del" />
+									</a>
+								{:else}
+									<button
+										type="button"
+										class="btn btn-sm btn-disabled rounded-r-none shadow-none"
+										disabled
+										title="Anda tidak memiliki izin untuk mengedit"
+									>
+										<Icon name="edit" />
+									</button>
+									<button
+										type="button"
+										class="btn btn-sm btn-disabled rounded-l-none shadow-none"
+										disabled
+										title="Anda tidak memiliki izin untuk menghapus"
+									>
+										<Icon name="del" />
+									</button>
+								{/if}
+							</div>
+						</td>
+					</tr>
+				{:else}
+					<tr>
+						<td class="py-6 text-center italic opacity-60" colspan="7">{emptyStateMessage}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 </div>
 
 <IntrakurikulerModals />

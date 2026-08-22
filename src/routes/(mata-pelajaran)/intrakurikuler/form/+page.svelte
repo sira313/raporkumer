@@ -94,6 +94,10 @@
 	const displayJenisMapel = $derived.by(() => {
 		const result: Record<string, string> = {};
 		for (const key of Object.keys(jenisMapel)) {
+			// "belum_dipetakan" hanya untuk hasil tarikan Dapodik — tidak bisa dipilih manual.
+			if (key === 'belum_dipetakan') {
+				continue;
+			}
 			// Sembunyikan opsi "kejuruan" jika bukan SMK
 			if (key === 'kejuruan' && jenjangVariant?.toUpperCase() !== 'SMK') {
 				continue;

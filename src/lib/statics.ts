@@ -90,6 +90,7 @@ export const jenisKelamin: Record<Murid['jenisKelamin'], string> = {
 };
 
 export const jenisMapel: Record<MataPelajaran['jenis'], string> = {
+	belum_dipetakan: 'Belum Dipetakan',
 	wajib: 'Mata Pelajaran Wajib',
 	pilihan: 'Mata Pelajaran Pilihan',
 	mulok: 'Muatan Lokal',

@@ -6,7 +6,9 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import ImportDatabaseModal from '$lib/components/modals/import-database-modal.svelte';
+	import SekolahModals from '$lib/components/sekolah/modals.svelte';
 	import { jenjangPendidikanSederajat, nauganOptions } from '$lib/statics';
+	import { modalRoute } from '$lib/utils';
 
 	let { data } = $props();
 	// svelte-ignore state_referenced_locally
@@ -95,13 +97,23 @@
 		{/if}
 
 		<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-			<h2 class="mb-4 text-xl font-bold">
-				{#if isNew}
-					Tambah Sekolah Baru
-				{:else}
-					Formulir Isian Identitas Sekolah
-				{/if}
-			</h2>
+			<div class="mb-4 flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
+				<h2 class="text-xl font-bold">
+					{#if isNew}
+						Tambah Sekolah Baru
+					{:else}
+						Formulir Isian Identitas Sekolah
+					{/if}
+				</h2>
+				<a
+					class="btn btn-soft shadow-none"
+					href="/sekolah/form/sync-dapodik"
+					use:modalRoute={'sync-dapodik'}
+				>
+					<Icon name="dapodik" />
+					Sync Dapodik
+				</a>
+			</div>
 
 			<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-2">
 				<!-- Jenjang Pendidikan & Lokasi Tanda Tangan -->
@@ -381,3 +393,5 @@
 		</div>
 	{/snippet}
 </FormEnhance>
+
+<SekolahModals />
