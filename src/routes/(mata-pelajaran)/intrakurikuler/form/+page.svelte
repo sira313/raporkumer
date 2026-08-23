@@ -137,12 +137,17 @@
 	// Ada referensi Dapodik di DB (hasil Sinkronisasi) → mode tambah memakai select.
 	const dapodikMapelOptions = $derived(data.dapodikMapelList ?? []);
 	const pakaiSelectDapodik = $derived(mode === 'add' && dapodikMapelOptions.length > 0);
-
 	// Combobox pencarian nama mapel (input + dropdown hasil filter).
 	let namaQuery = $state('');
 	let daftarNamaTerbuka = $state(false);
 	let indeksSorot = $state(-1);
 	const MAX_OPSI_TAMPIL = 80;
+	// Semua varian mapel agama (termasuk Kepercayaan) sudah dibuat otomatis oleh
+	// ensureAgamaMapelForClasses — larang tambah manual via select Dapodik.
+	// Cakup nama resmi ber-"Budi Pekerti" maupun versi Dapodik tanpa "Budi Pekerti"
+	// (mis. "Pendidikan Agama", "Pendidikan Agama Kristen").
+	const RE_MAPEL_AGAMA = /^pendidikan (agama|kepercayaan)/i;
+	const agamaDapodikBlocked = $derived(pakaiSelectDapodik && RE_MAPEL_AGAMA.test(namaQuery.trim()));
 	const namaTersaring = $derived.by(() => {
 		const q = namaQuery.trim().toLowerCase();
 		if (!q) return dapodikMapelOptions;
@@ -295,6 +300,14 @@
 					Nama mata pelajaran jangan disingkat!
 				{/if}
 			</p>
+			{#if agamaDapodikBlocked}
+				<div class="alert alert-soft alert-warning mt-2 flex items-center gap-2" role="alert">
+					<Icon name="alert" />
+					<span
+						>Tidak dapat menambahkan mapel agama karena termasuk ke dalam PAPB dan sub mapel yang sudah ada secara otomatis di tabel</span
+					>
+				</div>
+			{/if}
 		</fieldset>
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">KKM</legend>
@@ -354,7 +367,7 @@
 			<button
 				type="submit"
 				class="btn btn-primary shadow-none"
-				disabled={submitting || invalid || !kelasAktif}
+				disabled={submitting || invalid || !kelasAktif || agamaDapodikBlocked}
 			>
 				{#if submitting}
 					<div class="loading loading-spinner"></div>

@@ -8,7 +8,6 @@ import {
 import { cookieNames, unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
 import { and, eq, isNull } from 'drizzle-orm';
-import { agamaMapelNames } from '$lib/statics';
 
 // Dapodik tidak punya katalog mapel per tingkat (getPembelajaran 404; row
 // pembelajaran rombel hanya mapel yang diinput operator — di SD umumnya cuma
@@ -111,7 +110,7 @@ export const actions = {
 		const nama = formMapel.nama?.trim();
 		const jenis = formMapel.jenis?.toLowerCase() as MataPelajaran['jenis'] | undefined;
 		const kkmValue = formMapel.kkm ? Number(formMapel.kkm) : Number.NaN;
-		let kode = formMapel.kode?.toString().trim() ?? '';
+		const kode = formMapel.kode?.toString().trim() ?? '';
 
 		if (!nama || !jenis || Number.isNaN(kkmValue)) {
 			return fail(400, { fail: 'Harap lengkapi data mata pelajaran.' });
@@ -125,10 +124,12 @@ export const actions = {
 
 		const kkm = Math.max(0, Math.round(kkmValue));
 
-		// If this is a Pendidikan Agama and Budi Pekerti (parent or variant), enforce code PAPB
-		const AGAMA_SET = new Set<string>(agamaMapelNames);
-		if (AGAMA_SET.has(nama)) {
-			kode = 'PAPB';
+		// Mapel agama (semua varian, termasuk versi Dapodik tanpa "Budi Pekerti") dibuat
+		// otomatis oleh ensureAgamaMapelForClasses — larang tambah manual.
+		if (/^pendidikan (agama|kepercayaan)/i.test(nama)) {
+			return fail(400, {
+				fail: 'Tidak dapat menambahkan mapel agama karena PAPB dan sub mapel sudah ada di tabel'
+			});
 		}
 
 		// Validasi duplikat: cek apakah sudah ada mapel dengan nama sama di kelas ini
