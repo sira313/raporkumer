@@ -4,10 +4,17 @@
 		"9router": {
 			"npm": "@ai-sdk/openai-compatible",
 			"options": {
-				"baseURL": "http://127.0.0.1:20128/v1",
-				"apiKey": "sk-2abad8d898a00581-haz5xs-169e86a2"
+				"baseURL": "http://your-server:20128/v1",
+				"apiKey": "sk-your-api-key"
 			},
 			"models": {
+				"oc/deepseek-v4-flash-free": {
+					"name": "oc/deepseek-v4-flash-free",
+					"modalities": {
+						"input": ["text", "image"],
+						"output": ["text"]
+					}
+				},
 				"oc/big-pickle": {
 					"name": "oc/big-pickle",
 					"modalities": {
@@ -15,8 +22,8 @@
 						"output": ["text"]
 					}
 				},
-				"oc/deepseek-v4-flash-free": {
-					"name": "oc/deepseek-v4-flash-free",
+				"oc/mimo-v2.5-free": {
+					"name": "oc/mimo-v2.5-free",
 					"modalities": {
 						"input": ["text", "image"],
 						"output": ["text"]
@@ -30,7 +37,7 @@
 		"explorer": {
 			"description": "Fast explorer subagent for codebase exploration",
 			"mode": "subagent",
-			"model": "9router/oc/big-pickle"
+			"model": "9router/oc/deepseek-v4-flash-free"
 		}
 	}
 }
