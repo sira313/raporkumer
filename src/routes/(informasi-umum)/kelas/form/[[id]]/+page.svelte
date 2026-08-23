@@ -43,6 +43,9 @@
 							<span class="font-semibold">Semester aktif:</span>
 							{semesterLabel}
 						</p>
+						<p>
+							NIP harus ditulis lengkap apakah NIP, NIPPPK, NIY, atau NIPY. Misalnya: "NIPPPK. 199004052020212001"
+						</p>
 					</div>
 				</div>
 			{/if}
