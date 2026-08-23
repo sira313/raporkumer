@@ -409,6 +409,11 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			};
 		})
 		.sort((a, b) => {
+			// Urutan manual mapel (kolom `urutan`) menang; sisanya pakai urutan lama
+			// (jenis → prioritas wajib → nama). Template tetap mengelompokkan per jenis.
+			const urutanA = a.mapel.urutan ?? Number.POSITIVE_INFINITY;
+			const urutanB = b.mapel.urutan ?? Number.POSITIVE_INFINITY;
+			if (urutanA !== urutanB) return urutanA - urutanB;
 			const orderA = mapelJenisOrder[a.mapel.jenis] ?? Number.POSITIVE_INFINITY;
 			const orderB = mapelJenisOrder[b.mapel.jenis] ?? Number.POSITIVE_INFINITY;
 			if (orderA !== orderB) return orderA - orderB;

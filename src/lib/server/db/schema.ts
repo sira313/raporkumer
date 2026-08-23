@@ -551,6 +551,8 @@ export const tableMataPelajaran = sqliteTable(
 		}).notNull(),
 		// Guru pengampu (hasil sinkronisasi pembelajaran Dapodik)
 		pengampuId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
+		// Nomor urut tampil mapel (tabel intrakurikuler & cetak rapor). NULL = belum diatur → tampil terakhir.
+		urutan: int(),
 		// Referensi Dapodik
 		dapodikPembelajaranId: text(),
 		dapodikMataPelajaranId: text(),

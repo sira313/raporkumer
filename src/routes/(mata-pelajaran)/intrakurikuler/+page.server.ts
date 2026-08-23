@@ -7,7 +7,7 @@ import {
 	tableAuthUserMataPelajaran
 } from '$lib/server/db/schema';
 import { agamaVariantNames, pksVariantNames } from '$lib/statics';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 type MataPelajaranBase = Omit<MataPelajaran, 'tujuanPembelajaran'>;
 type MataPelajaranWithTp = MataPelajaranBase & { tpCount: number; editTpMapelId?: number };
@@ -302,10 +302,15 @@ export async function load({ depends, url, parent }) {
 		const idx = JENIS_URUTAN.indexOf((jenis ?? 'wajib') as (typeof JENIS_URUTAN)[number]);
 		return idx === -1 ? JENIS_URUTAN.length : idx;
 	};
-	const daftarMapel = [...mapelTampil].sort(
-		(a, b) =>
+	// Urutan manual (kolom `urutan`) menang; mapel tanpa nomor jatuh ke urutan lama (jenis → nama).
+	const daftarMapel = [...mapelTampil].sort((a, b) => {
+		const ua = a.urutan ?? Number.POSITIVE_INFINITY;
+		const ub = b.urutan ?? Number.POSITIVE_INFINITY;
+		if (ua !== ub) return ua - ub;
+		return (
 			jenisIndex(a.jenis) - jenisIndex(b.jenis) || (a.nama ?? '').localeCompare(b.nama ?? '', 'id')
-	);
+		);
+	});
 
 	return {
 		kelasId,
@@ -694,6 +699,55 @@ export const actions = {
 				'Content-Disposition': `attachment; filename="${filename}"`
 			}
 		});
+	},
+
+	async simpan_urutan({ request, cookies, locals }) {
+		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID) || null;
+		const kelasId = kelasIdCookie ? Number(kelasIdCookie) : null;
+		if (!kelasId || !Number.isFinite(kelasId)) {
+			return fail(400, { fail: 'Pilih kelas aktif terlebih dahulu.' });
+		}
+
+		const sekolahId = locals.sekolah?.id;
+		if (!sekolahId) return fail(400, { fail: 'Pilih sekolah aktif terlebih dahulu.' });
+
+		const formData = await request.formData();
+		let ids: unknown;
+		try {
+			ids = JSON.parse(String(formData.get('urutan') ?? ''));
+		} catch {
+			return fail(400, { fail: 'Data urutan tidak valid.' });
+		}
+		if (!Array.isArray(ids) || !ids.every((id) => Number.isFinite(Number(id)))) {
+			return fail(400, { fail: 'Data urutan tidak valid.' });
+		}
+
+		// Pastikan kelas milik sekolah aktif (cookie bisa dimanipulasi klien).
+		const kelas = await db.query.tableKelas.findFirst({
+			columns: { id: true },
+			where: and(eq(tableKelas.id, kelasId), eq(tableKelas.sekolahId, sekolahId))
+		});
+		if (!kelas) return fail(404, { fail: 'Kelas tidak ditemukan.' });
+
+		const existing = await db.query.tableMataPelajaran.findMany({
+			columns: { id: true },
+			where: eq(tableMataPelajaran.kelasId, kelasId)
+		});
+		const knownIds = new Set(existing.map((m) => m.id));
+		// Buang ID asing di luar kelas ini; mapel yang tidak ikut di-drag tetap diberi urutan di belakang.
+		const idList = [...new Set(ids.map(Number))].filter((id) => knownIds.has(id));
+		for (const m of existing) if (!idList.includes(m.id)) idList.push(m.id);
+
+		await db.transaction(async (tx) => {
+			for (let i = 0; i < idList.length; i++) {
+				await tx
+					.update(tableMataPelajaran)
+					.set({ urutan: i + 1 })
+					.where(eq(tableMataPelajaran.id, idList[i]));
+			}
+		});
+
+		return { success: 'Urutan mata pelajaran berhasil disimpan.' };
 	},
 
 	async tambah_pks({ cookies, locals }) {
