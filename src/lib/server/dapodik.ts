@@ -410,7 +410,8 @@ export async function runDapodikSync(options: {
 		base,
 		token,
 		npsn,
-		sections
+		sections,
+		sekolahPayload
 	);
 
 	// Refresh indeks murid (kelasId sudah terisi saat insert/update murid).
@@ -1293,17 +1294,20 @@ async function findMuridByNisn(sekolahId: number, semesterId: number, nisn: stri
 }
 
 async function upsertWaliMurid(
+	tx: typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0],
 	waliId: number | null,
 	data: { nama: string; pekerjaan: string; kontak?: string | null; alamat?: string | null }
 ): Promise<number | null> {
+	// Harus lewat `tx` — menulis via koneksi lain di luar transaksi akan
+	// mengunci diri sendiri (SQLITE_BUSY) karena txn memegang write lock.
 	if (waliId) {
-		await db
+		await tx
 			.update(tableWaliMurid)
 			.set({ nama: data.nama, pekerjaan: data.pekerjaan, kontak: data.kontak ?? undefined })
 			.where(eq(tableWaliMurid.id, waliId));
 		return waliId;
 	}
-	const inserted = await db
+	const inserted = await tx
 		.insert(tableWaliMurid)
 		.values({
 			nama: data.nama,
@@ -1323,9 +1327,22 @@ async function syncPesertaDidik(
 	base: string,
 	token: string,
 	npsn: string | null,
-	sections: DapodikSectionLog[]
+	sections: DapodikSectionLog[],
+	/** Profil getSekolah — fallback wilayah alamat murid (PD rows hanya punya alamat_jalan). */
+	sekolahPayload: Row | null
 ): Promise<MuridIndex> {
 	const index = await buildMuridIndex(sekolahId, target.id);
+	// Beberapa build Dapodik menamai ibu `nama_ibu`, bukan `nama_ibu_kandung`.
+	const namaIbuRow = (row: Row) => str(row, 'nama_ibu_kandung') ?? str(row, 'nama_ibu');
+	const wilayahFallback = (() => {
+		const src = sekolahPayload ?? {};
+		return {
+			desa: str(src, 'desa_kelurahan') ?? str(src, 'dusun'),
+			kecamatan: str(src, 'kecamatan'),
+			kabupaten: str(src, 'kabupaten_kota'),
+			provinsi: str(src, 'provinsi')
+		};
+	})();
 	try {
 		const call = await dapodikGet(base, token, 'getPesertaDidik', {
 			npsn,
@@ -1406,44 +1423,80 @@ async function syncPesertaDidik(
 							.where(eq(tableMurid.id, current.id));
 
 						const alamatJalan = str(row, 'alamat_jalan');
-						if (current.alamatId && (alamatJalan || str(row, 'desa_kelurahan'))) {
+						const desaRow = str(row, 'desa_kelurahan') ?? str(row, 'dusun');
+						// Fallback wilayah dari profil sekolah — hanya isi bila lokal masih kosong.
+						const alamatSet: Partial<typeof tableAlamat.$inferInsert> = {};
+						if (alamatJalan) alamatSet.jalan = alamatJalan;
+						if (desaRow) alamatSet.desa = desaRow;
+						else if (
+							(!current.alamat?.desa || current.alamat.desa === '-') &&
+							wilayahFallback.desa
+						) {
+							alamatSet.desa = wilayahFallback.desa;
+						}
+						if (
+							(!current.alamat?.kecamatan || current.alamat.kecamatan === '-') &&
+							wilayahFallback.kecamatan
+						) {
+							alamatSet.kecamatan = wilayahFallback.kecamatan;
+						}
+						if (
+							(!current.alamat?.kabupaten || current.alamat.kabupaten === '-') &&
+							wilayahFallback.kabupaten
+						) {
+							alamatSet.kabupaten = wilayahFallback.kabupaten;
+						}
+						if (
+							(!current.alamat?.provinsi || current.alamat.provinsi === '-') &&
+							wilayahFallback.provinsi
+						) {
+							alamatSet.provinsi = wilayahFallback.provinsi;
+						}
+						if (current.alamatId && Object.keys(alamatSet).length > 0) {
 							await tx
 								.update(tableAlamat)
-								.set({
-									...(alamatJalan ? { jalan: alamatJalan } : {}),
-									...(str(row, 'desa_kelurahan') ? { desa: str(row, 'desa_kelurahan')! } : {})
-								})
+								.set(alamatSet)
 								.where(eq(tableAlamat.id, current.alamatId));
 						}
 
 						// Orang tua / wali (hanya perbarui bila data Dapodik tersedia).
+						// Bila relasi murid→wali belum ada, tautkan id hasil insert.
 						const namaAyah = str(row, 'nama_ayah');
 						if (namaAyah) {
 							const pekerjaanAyah = refLabel(row, 'pekerjaan_ayah_id') ?? '-';
-							await upsertWaliMurid(current.ayahId, {
+							const ayahId = await upsertWaliMurid(tx, current.ayahId, {
 								nama: namaAyah,
 								pekerjaan: pekerjaanAyah,
 								kontak: str(row, 'nomor_telepon_seluler_ayah') ?? null
 							});
+							if (ayahId && !current.ayahId) {
+								await tx.update(tableMurid).set({ ayahId }).where(eq(tableMurid.id, current.id));
+							}
 						}
-						const namaIbu = str(row, 'nama_ibu_kandung');
+						const namaIbu = namaIbuRow(row);
 						if (namaIbu) {
 							const pekerjaanIbu = refLabel(row, 'pekerjaan_ibu_id') ?? '-';
-							await upsertWaliMurid(current.ibuId, {
+							const ibuId = await upsertWaliMurid(tx, current.ibuId, {
 								nama: namaIbu,
 								pekerjaan: pekerjaanIbu,
 								kontak: str(row, 'nomor_telepon_seluler_ibu') ?? null
 							});
+							if (ibuId && !current.ibuId) {
+								await tx.update(tableMurid).set({ ibuId }).where(eq(tableMurid.id, current.id));
+							}
 						}
 						const namaWali = str(row, 'nama_wali');
 						if (namaWali) {
 							const pekerjaanWali = refLabel(row, 'pekerjaan_wali_id') ?? '-';
-							await upsertWaliMurid(current.waliId, {
+							const waliId = await upsertWaliMurid(tx, current.waliId, {
 								nama: namaWali,
 								pekerjaan: pekerjaanWali,
 								kontak: str(row, 'nomor_telepon_seluler_wali') ?? null,
 								alamat: str(row, 'alamat_jalan_wali') ?? null
 							});
+							if (waliId && !current.waliId) {
+								await tx.update(tableMurid).set({ waliId }).where(eq(tableMurid.id, current.id));
+							}
 						}
 					});
 					index.byDapodik.set(pdId, {
@@ -1484,9 +1537,11 @@ async function syncPesertaDidik(
 							.insert(tableAlamat)
 							.values({
 								jalan: str(row, 'alamat_jalan') ?? '-',
-								desa: str(row, 'desa_kelurahan') ?? '-',
-								kecamatan: '-',
-								kabupaten: '-'
+								desa:
+									str(row, 'desa_kelurahan') ?? str(row, 'dusun') ?? wilayahFallback.desa ?? '-',
+								kecamatan: wilayahFallback.kecamatan ?? '-',
+								kabupaten: wilayahFallback.kabupaten ?? '-',
+								provinsi: wilayahFallback.provinsi ?? '-'
 							})
 							.returning({ id: tableAlamat.id });
 
@@ -1515,7 +1570,7 @@ async function syncPesertaDidik(
 							kontak: str(row, 'nomor_telepon_seluler_ayah')
 						});
 						const ibuId = await insertWali({
-							nama: str(row, 'nama_ibu_kandung'),
+							nama: namaIbuRow(row),
 							pekerjaan: refLabel(row, 'pekerjaan_ibu_id'),
 							kontak: str(row, 'nomor_telepon_seluler_ibu')
 						});

@@ -2,6 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import Icon from '$lib/components/icon.svelte';
 	import { toast } from '$lib/components/toast.svelte';
+	import { validatePasswordStrength } from '$lib/password-policy';
 
 	let {
 		open = $bindable(false),
@@ -134,6 +135,11 @@
 	}
 
 	async function save() {
+		const passwordError = validatePasswordStrength(password.trim());
+		if (passwordError) {
+			toast({ message: passwordError, type: 'error' });
+			return;
+		}
 		const form = new FormData();
 		form.set('username', username || '');
 		form.set('password', password || '');
@@ -178,9 +184,14 @@
 				try {
 					const parsed = await res.json().catch(() => null);
 					if (parsed) {
-						if (typeof parsed.message === 'string' && parsed.message.trim()) msg = parsed.message;
-						else if (parsed.error && typeof parsed.error.message === 'string')
-							msg = parsed.error.message;
+						const flat = parsed as Record<string, unknown>;
+						const data = (flat.data ?? flat) as Record<string, unknown>;
+						if (typeof data.message === 'string' && data.message.trim()) msg = data.message;
+						else if (
+							flat.error &&
+							typeof (flat.error as Record<string, unknown>).message === 'string'
+						)
+							msg = (flat.error as Record<string, unknown>).message as string;
 						else msg = JSON.stringify(parsed);
 					} else {
 						msg = await res.text().catch(() => msg);

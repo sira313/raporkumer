@@ -5,6 +5,7 @@
 	import UsersHeader from '$lib/components/pengguna/UsersHeader.svelte';
 	import AddUserModal from '$lib/components/pengguna/AddUserModal.svelte';
 	import ExistingUserRow from '$lib/components/pengguna/ExistingUserRow.svelte';
+	import { validatePasswordStrength } from '$lib/password-policy';
 
 	let { data } = $props();
 
@@ -242,13 +243,22 @@
 									}
 								}}
 								onSaveEdit={async (user: LocalUser) => {
+									const password = editValues[user.id].password.trim();
+									if (password) {
+										const passwordError = validatePasswordStrength(password);
+										if (passwordError) {
+											toast({ message: passwordError, type: 'error' });
+											return;
+										}
+									}
 									const form = new FormData();
 									form.set('id', String(user.id));
 									form.set('username', editValues[user.id].username);
-									form.set('password', editValues[user.id].password);
+									form.set('password', password);
 									const res = await fetch('?/update_credentials', { method: 'POST', body: form });
 									if (res.ok) {
-										const body = await res.json().catch(() => ({}));
+										const envelope = await res.json().catch(() => ({}));
+										const body = envelope?.data ?? {};
 										toast({ message: 'Perubahan tersimpan', type: 'success' });
 										if (body.user) {
 											const idx = users.findIndex((x) => x.id === body.user.id);
@@ -274,8 +284,9 @@
 										}
 										editingId = null;
 									} else {
-										const text = await res.text().catch(() => 'Gagal');
-										toast({ message: `Gagal menyimpan: ${text}`, type: 'error' });
+										const body = await res.json().catch(() => null);
+										const message = body?.data?.message ?? 'Gagal';
+										toast({ message: `Gagal menyimpan: ${message}`, type: 'error' });
 									}
 								}}
 								onOpenUser={(user: LocalUser) => {
@@ -297,11 +308,20 @@
 			on:saved={(e: CustomEvent) => {
 				const body = e.detail?.body ?? {};
 				const serverUser = body.user ?? null;
+				const newType: string = serverUser?.type ?? 'user';
+				const typeLabels: Record<string, string> = {
+					admin: 'Admin',
+					kepala_sekolah: 'Kepala Sekolah',
+					wali_kelas: 'Wali Kelas',
+					wali_asuh: 'Wali Asuh',
+					user: 'Guru'
+				};
 				const newUser = {
 					id: serverUser?.id ?? Date.now(),
 					username: serverUser?.username ?? body.username ?? 'user',
 					createdAt: serverUser?.createdAt ?? new Date().toISOString(),
-					type: serverUser?.type ?? 'user',
+					type: newType,
+					roles: [typeLabels[newType] ?? newType],
 					pegawaiName: body.displayName || serverUser?.username || (body.username ?? 'user'),
 					pegawaiId: null,
 					kelasId: null,

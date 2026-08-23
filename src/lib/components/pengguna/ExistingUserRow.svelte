@@ -14,19 +14,7 @@
 </script>
 
 <td>{u.pegawaiName ?? u.username}</td>
-<td>
-	{#if u.type === 'wali_kelas'}
-		Wali {u.kelasName ?? (u.kelasId ? `Kelas ${u.kelasId}` : '-')}
-	{:else if u.type === 'wali_asuh'}
-		Wali Asuh {u.kelasName ?? (u.kelasId ? `Kelas ${u.kelasId}` : '-')}
-	{:else if u.type === 'kepala_sekolah'}
-		Kepala Sekolah
-	{:else if u.type === 'admin'}
-		Admin
-	{:else}
-		{u.type}
-	{/if}
-</td>
+<td>{(u.roles ?? []).join(', ')}</td>
 <td>
 	{#if editingId === u.id}
 		<input
