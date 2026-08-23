@@ -79,8 +79,20 @@
 	</div>
 
 	<div class="flex justify-end gap-2 pt-2">
-		<button type="button" class="btn shadow-none btn-soft" onclick={hideModal} disabled={submitting}> Batal </button>
-		<button type="button" class="btn btn-primary shadow-none" onclick={handleSubmit} disabled={submitting}>
+		<button
+			type="button"
+			class="btn shadow-none btn-soft"
+			onclick={hideModal}
+			disabled={submitting}
+		>
+			Batal
+		</button>
+		<button
+			type="button"
+			class="btn btn-primary shadow-none"
+			onclick={handleSubmit}
+			disabled={submitting}
+		>
 			{submitting ? 'Mengunggah…' : 'Import'}
 		</button>
 	</div>

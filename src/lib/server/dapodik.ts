@@ -1,9 +1,10 @@
 import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import db from '$lib/server/db';
 import { triggerSchemaSync } from '$lib/server/schema-sync';
 import {
 	tableAlamat,
+	tableAsesmenSumatif,
 	tableAuthUser,
 	tableAuthUserMataPelajaran,
 	tableDapodikMataPelajaran,
@@ -23,6 +24,10 @@ import {
 import { hashPassword } from './auth';
 import { resolveUniqueUsername } from './usernames';
 import { defaultPermissionsByType } from '../../routes/pengguna/permissions';
+import { agamaMapelOptions } from '$lib/statics';
+
+/** Nama mapel agama → key opsi (islam/kristen/katolik/buddha/hindu/konghuchu/kepercayaan/umum). */
+const keyByName = new Map<string, string>(agamaMapelOptions.map((o) => [o.name, o.key]));
 
 /**
  * Klien GET WebService Dapodik desktop (docs/erapor.md §4.1a / §7.3).
@@ -1954,4 +1959,806 @@ async function syncEkskul(
 			detail: `${(e as Error).message} — isi ekstrakurikuler secara manual.`
 		});
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Outbound posting — kirim matev & nilai akhir ke Dapodik (docs/erapor.md §4.1a)
+// ---------------------------------------------------------------------------
+
+export type DapodikKirimMode = 'tes-koneksi' | 'kirim-matev' | 'kirim-nilai';
+
+/** POST JSON ke WebService Dapodik (Bearer token, kontrak sama dengan dapodikGet). */
+async function dapodikPost(
+	base: string,
+	token: string,
+	endpoint: string,
+	params: Record<string, string | null | undefined>,
+	body: Record<string, unknown>
+): Promise<DapodikCall> {
+	const qs = new URLSearchParams();
+	for (const [key, value] of Object.entries(params)) {
+		if (value != null && value !== '') qs.set(key, value);
+	}
+	const url = `${base}/${endpoint}?${qs.toString()}`;
+
+	let response: Response;
+	try {
+		response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: 'application/json',
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(body),
+			signal: AbortSignal.timeout(20000)
+		});
+	} catch (e) {
+		return {
+			ok: false,
+			status: 0,
+			error: `Tidak dapat menghubungi ${url}: ${(e as Error).message}`
+		};
+	}
+
+	let text: string;
+	try {
+		text = await response.text();
+	} catch {
+		return { ok: false, status: response.status, error: 'Gagal membaca respons Dapodik.' };
+	}
+
+	try {
+		const data = extractJsonBody(text);
+		if ((data as Row)?.['success'] === false) {
+			const message = (data as Row)?.['message'];
+			return {
+				ok: false,
+				status: response.status,
+				error: typeof message === 'string' ? message : 'Permintaan ditolak Dapodik.'
+			};
+		}
+		return { ok: response.ok, status: response.status, data };
+	} catch (e) {
+		return { ok: false, status: response.status, error: (e as Error).message };
+	}
+}
+
+/** Timestamp payload Dapodik dalam offset menit dari sekarang (docs/erapor.md §4.1a). */
+function dapodikTimestamp(offsetMinutes = 0): string {
+	return new Date(Date.now() + offsetMinutes * 60_000).toISOString();
+}
+
+/**
+ * Resolusi updater_id via GET getPengguna — cari baris pengguna Dapodik yang
+ * username-nya cocok dengan kandidat (email sekolah / username pengguna aplikasi).
+ * Gagal ditelan → null; proses tetap jalan tanpa updater (docs/erapor.md §4.1a §2).
+ */
+async function resolveUpdaterId(
+	base: string,
+	token: string,
+	npsn: string | null,
+	semesterId: string,
+	candidates: string[]
+): Promise<string | null> {
+	try {
+		const call = await dapodikGet(base, token, 'getPengguna', { npsn, semester_id: semesterId });
+		if (!call.ok) return null;
+		const wanted = candidates.map((c) => c.trim().toLowerCase()).filter(Boolean);
+		for (const row of rowsOf(call.data)) {
+			const username = str(row, 'username')?.toLowerCase();
+			const penggunaId = str(row, 'pengguna_id');
+			if (username && penggunaId && wanted.includes(username)) return penggunaId;
+		}
+	} catch {
+		// exception ditelan — updater boleh null
+	}
+	return null;
+}
+
+interface MatevCandidate {
+	mapelId: number;
+	pembelajaranId: string;
+	mataPelajaranId: string;
+	namaMapel: string;
+	kkm: number;
+	/** Diisi ulang saat renumber: posisi 1..N kandidat per rombel. */
+	noUrut?: number;
+}
+
+// Urutan tampil jenis mapel — sama dengan halaman /intrakurikuler agar
+// no_urut matev mengikuti urutan tabel di sana.
+const JENIS_URUTAN_MATEV = [
+	'belum_dipetakan',
+	'wajib',
+	'pilihan',
+	'mulok',
+	'kejuruan',
+	'pemberdayaan'
+];
+function jenisUrutanIndex(jenis: string | null | undefined): number {
+	const idx = JENIS_URUTAN_MATEV.indexOf((jenis ?? 'wajib') as (typeof JENIS_URUTAN_MATEV)[number]);
+	return idx === -1 ? JENIS_URUTAN_MATEV.length : idx;
+}
+
+/** Normalisasi nama mapel untuk pencocokan: huruf kecil, buang bagian dalam kurung, rapatkan spasi, samakan ejaan Katolik/Katholik. */
+export function normMapelName(name: string): string {
+	return name
+		.toLowerCase()
+		.replace(/\(.*?\)/g, '')
+		.replace(/\bkatholik\b/g, 'katolik')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+
+interface PbRow {
+	pembelajaranId: string;
+	mataPelajaranId: string | null;
+	nama: string;
+}
+
+/**
+ * Daftar pembelajaran satu rombel: GET getRombonganBelajar (nested, terkini)
+ * dengan fallback cermin tabel dapodik_pembelajaran hasil sinkronisasi.
+ */
+async function fetchPembelajaranRombel(
+	base: string,
+	token: string,
+	npsn: string | null,
+	semesterId: string,
+	kelasDapodikId: string,
+	kelasId: number
+): Promise<PbRow[]> {
+	try {
+		const call = await dapodikGet(base, token, 'getRombonganBelajar', {
+			npsn,
+			semester_id: semesterId
+		});
+		if (call.ok) {
+			const rombelRow = rowsOf(call.data).find(
+				(r) => str(r, 'rombongan_belajar_id') === kelasDapodikId
+			);
+			if (rombelRow) {
+				return flattenPembelajaran(
+					(Array.isArray(rombelRow['pembelajaran']) ? rombelRow['pembelajaran'] : []).map(
+						(row: Row) => ({ kelasId, row })
+					)
+				).map(({ row }) => ({
+					pembelajaranId: str(row, 'pembelajaran_id') ?? '',
+					mataPelajaranId: str(row, 'mata_pelajaran_id') ?? null,
+					nama:
+						str(row, 'nama_mata_pelajaran') ??
+						str(row, 'mata_pelajaran_id_str') ??
+						str(row, 'nama') ??
+						''
+				}));
+			}
+		}
+	} catch {
+		// fallback ke cermin lokal di bawah
+	}
+	const mirror = await db.query.tableDapodikPembelajaran.findMany({
+		where: eq(tableDapodikPembelajaran.kelasId, kelasId)
+	});
+	return mirror.map((m) => ({
+		pembelajaranId: m.pembelajaranId,
+		mataPelajaranId: m.mataPelajaranId,
+		nama: m.nama
+	}));
+}
+
+/**
+ * Bind ulang kode Dapodik (pembelajaran_id + mata_pelajaran_id) ke mapel lokal
+ * yang belum memilikinya, dicocokkan per nama yang dinormalisasi. Hasil disimpan
+ * permanen agar kirim berikutnya tidak perlu binding ulang.
+ */
+async function bindKodePembelajaran(
+	kelasId: number,
+	mapelRows: Array<{
+		id: number;
+		nama: string;
+		dapodikPembelajaranId: string | null;
+		dapodikMataPelajaranId: string | null;
+	}>,
+	pbRows: PbRow[],
+	sections: DapodikSectionLog[]
+): Promise<number> {
+	const needing = mapelRows.filter((m) => !m.dapodikPembelajaranId || !m.dapodikMataPelajaranId);
+	if (needing.length === 0) return 0;
+
+	// Nama → kode (baris tanpa nama/pembelajaran_id dilewati).
+	const byName = new Map<string, PbRow>();
+	for (const pb of pbRows) {
+		if (!pb.pembelajaranId || !pb.nama) continue;
+		const key = normMapelName(pb.nama);
+		if (key === '') continue;
+		if (!byName.has(key)) byName.set(key, pb);
+	}
+
+	let bound = 0;
+	for (const mapel of needing) {
+		const pb = byName.get(normMapelName(mapel.nama));
+		if (!pb || !pb.mataPelajaranId) continue;
+		await db
+			.update(tableMataPelajaran)
+			.set({
+				dapodikPembelajaranId: pb.pembelajaranId,
+				dapodikMataPelajaranId: pb.mataPelajaranId,
+				updatedAt: new Date().toISOString()
+			})
+			.where(eq(tableMataPelajaran.id, mapel.id));
+		mapel.dapodikPembelajaranId = pb.pembelajaranId;
+		mapel.dapodikMataPelajaranId = pb.mataPelajaranId;
+		bound++;
+	}
+
+	if (needing.length > 0) {
+		sections.push({
+			label: 'Pemetaan Kode',
+			status: bound > 0 ? 'ok' : 'dilewati',
+			detail:
+				bound > 0
+					? `${bound} mapel ter-binding ke pembelajaran Dapodik berdasarkan nama.`
+					: `${needing.length} mapel tidak ditemukan padanannya di pembelajaran Dapodik (nama berbeda / belum ada di Dapodik).`
+		});
+	}
+	return bound;
+}
+
+/** UUID deterministik bergaya UUIDv5 (sha1 + format RFC 4122) — id_evaluasi tetap stabil antar-run. */
+function uuidDeterministic(seed: string): string {
+	const h = createHash('sha1').update(seed).digest();
+	h[6] = (h[6] & 0x0f) | 0x50; // versi 5
+	h[8] = (h[8] & 0x3f) | 0x80; // varian RFC 4122
+	const s = h.toString('hex');
+	return `${s.slice(0, 8)}-${s.slice(8, 12)}-${s.slice(12, 16)}-${s.slice(16, 20)}-${s.slice(20, 32)}`;
+}
+
+/**
+ * Pilih pembelajaran induk (wadah Sub Pembelajaran) dari daftar pembelajaran
+ * rombel. Urutan fallback: nama "guru kelas*" → satu-satunya pembelajaran →
+ * pembelajaran pertama yang memiliki ID referensi mapel. Dipakai bersama oleh
+ * alur kirim matev dan keterangan kolom mapel di /intrakurikuler.
+ */
+export function pilihIndukPembelajaran<
+	T extends { nama?: string | null; mataPelajaranId?: string | null }
+>(pbRows: T[]): T | null {
+	return (
+		pbRows.find((p) => normMapelName(p.nama ?? '').startsWith('guru kelas')) ??
+		(pbRows.length === 1 ? pbRows[0] : null) ??
+		pbRows.find((p) => p.mataPelajaranId) ??
+		null
+	);
+}
+
+/**
+ * Cari ID referensi mata pelajaran nasional berdasarkan nama (persis dulu,
+ * lalu ternormalisasi). Null bila tidak ditemukan di katalog hasil sinkronisasi.
+ */
+export async function resolveReferensiMapelId(nama: string): Promise<string | null> {
+	const exact = await db.query.tableDapodikMataPelajaran.findFirst({
+		where: eq(tableDapodikMataPelajaran.nama, nama)
+	});
+	if (exact) return String(exact.mataPelajaranId);
+	return (
+		referensiIndexFromRows(
+			await db
+				.select({
+					id: tableDapodikMataPelajaran.mataPelajaranId,
+					nama: tableDapodikMataPelajaran.nama
+				})
+				.from(tableDapodikMataPelajaran)
+		).get(normMapelName(nama)) ?? null
+	);
+}
+
+/** Index nama-ternormalisasi → ID referensi dari baris katalog mapel nasional. */
+function referensiIndexFromRows(rows: Array<{ id: number; nama: string }>): Map<string, string> {
+	const index = new Map<string, string>();
+	for (const r of rows) {
+		const key = normMapelName(r.nama);
+		if (key && !index.has(key)) index.set(key, String(r.id));
+	}
+	return index;
+}
+
+interface MatevRunResult {
+	sent: number;
+	failed: number;
+	/** mapelId → id_evaluasi yang SUKSES di-post. */
+	idEvaluasiByMapel: Map<number, string>;
+}
+
+/**
+ * Ambil daftar mata evaluasi existing (getMatevNilai), lalu post postMatevRapor
+ * untuk setiap mapel kelas yang memiliki kode Dapodik (pembelajaran + mapel ref).
+ * Matev yang belum ada di Dapodik digenerate lokal (satu per pembelajaran).
+ * Urutan state machine mengikuti docs/erapor.md §4.1a: wajib sukses dulu sebelum
+ * nilai siswanya boleh dikirim.
+ */
+async function runMatev(
+	base: string,
+	token: string,
+	npsn: string | null,
+	semesterId: string,
+	updaterId: string | null,
+	kelasDapodikId: string,
+	candidates: MatevCandidate[],
+	sections: DapodikSectionLog[]
+): Promise<MatevRunResult> {
+	const result: MatevRunResult = {
+		sent: 0,
+		failed: 0,
+		idEvaluasiByMapel: new Map()
+	};
+	if (candidates.length === 0) {
+		sections.push({
+			label: 'Mata Evaluasi',
+			status: 'dilewati',
+			detail:
+				'Tidak ada mapel pada kelas ini yang memiliki kode Dapodik (pembelajaran & mapel referensi).'
+		});
+		return result;
+	}
+
+	// GET getMatevNilai — matev yang sudah ada dipakai ulang id_evaluasi-nya.
+	// Kunci komposit pembelajaran|mata pelajaran: beberapa sub pembelajaran
+	// berbagi pembelajaran_id induk yang sama, jadi pencocokan pb-saja tidak aman
+	// (akan menggabungkan mapel berbeda ke satu matev).
+	const existingByPbMp = new Map<string, string>();
+	try {
+		const call = await dapodikGet(base, token, 'getMatevNilai', {
+			npsn,
+			semester_id: semesterId,
+			a_dari_template: '1'
+		});
+		if (call.ok) {
+			for (const row of rowsOf(call.data)) {
+				const pbId = str(row, 'pembelajaran_id');
+				const mpId = str(row, 'mata_pelajaran_id');
+				const idEvaluasi = str(row, 'id_evaluasi');
+				if (!pbId || !idEvaluasi || !mpId) continue;
+				existingByPbMp.set(`${pbId}|${mpId}`, idEvaluasi);
+			}
+		}
+	} catch {
+		// Tidak kritis — matev tetap digenerate lokal bila endpoint gagal dibaca.
+	}
+
+	const nowIso = dapodikTimestamp();
+	const failedMessages: string[] = [];
+	for (const candidate of candidates) {
+		// Seed memakai mapelId agar dua mapel lokal yang menunjuk referensi sama
+		// (mis. "Matematika" vs "Matematika (Kurmer)") tidak berbagi id_evaluasi.
+		const idEvaluasi =
+			existingByPbMp.get(`${candidate.pembelajaranId}|${candidate.mataPelajaranId}`) ??
+			uuidDeterministic(
+				`rapkumer-matev:${kelasDapodikId}:${candidate.mapelId}:${candidate.pembelajaranId}:${candidate.mataPelajaranId}`
+			);
+		const call = await dapodikPost(
+			base,
+			token,
+			'postMatevRapor',
+			{ npsn, semester_id: semesterId },
+			{
+				id_evaluasi: idEvaluasi,
+				rombongan_belajar_id: kelasDapodikId,
+				mata_pelajaran_id: candidate.mataPelajaranId,
+				pembelajaran_id: candidate.pembelajaranId,
+				nm_mata_evaluasi: candidate.namaMapel.slice(0, 40),
+				a_dari_template: 1,
+				no_urut: candidate.noUrut,
+				// KKM tunggal rapkumer dipakai untuk kognitif & psikomotorik.
+				kkm_kognitif: candidate.kkm,
+				kkm_psikomotorik: candidate.kkm,
+				create_date: nowIso,
+				last_update: dapodikTimestamp(6 * 60), // offset disengaja, meniru klien resmi Dapodik
+				soft_delete: 0,
+				last_sync: dapodikTimestamp(330),
+				updater_id: updaterId
+			}
+		);
+		if (call.ok) {
+			result.sent++;
+			result.idEvaluasiByMapel.set(candidate.mapelId, idEvaluasi);
+		} else {
+			result.failed++;
+			if (failedMessages.length < 3) failedMessages.push(call.error ?? `HTTP ${call.status}`);
+		}
+	}
+
+	sections.push({
+		label: 'Mata Evaluasi',
+		status: result.failed > 0 && result.sent === 0 ? 'gagal' : 'ok',
+		detail:
+			`${result.sent} matev terkirim` +
+			(result.failed ? `, ${result.failed} gagal (${failedMessages.join('; ')})` : '') +
+			'.'
+	});
+	return result;
+}
+
+/**
+ * Kirim nilai / matev ke WebService Dapodik desktop (docs/erapor.md Bagian 4.1a):
+ * getSekolah → getPengguna → getMatevNilai → postMatevRapor → postNilai(table=rapor).
+ * Scope = satu kelas aktif (rombongan belajar). Hanya mapel berkode Dapodik dan
+ * murid ber-UUID anggota rombel yang dikirim; sisanya dilaporkan sebagai dilewati.
+ */
+export async function runDapodikKirim(options: {
+	sekolahId: number | null;
+	mode: DapodikKirimMode;
+	urlInput?: string | null;
+	tokenInput?: string | null;
+	npsn: string | null;
+	kelasId?: number | null;
+	/** Kandidat username/email pembanding getPengguna (email sekolah, username user aktif). */
+	updaterCandidates?: string[];
+}): Promise<DapodikSyncResult> {
+	const { mode, npsn } = options;
+	const sections: DapodikSectionLog[] = [];
+	const sekolahId = options.sekolahId ?? (await firstExistingSekolahId());
+
+	const saved = sekolahId ? await getDapodikSettings(sekolahId) : null;
+	const base = normalizeWebServiceUrl(options.urlInput?.trim() || saved?.url || '');
+	const token = options.tokenInput?.trim() || saved?.token || '';
+	if (!token) throw new DapodikError('Token web service Dapodik wajib diisi.');
+
+	// Simpan isian form sebelum probe (pola sama dengan runDapodikSync).
+	if (sekolahId) {
+		await saveDapodikSettings(sekolahId, { url: base, token, npsn });
+	}
+
+	// 1. Probe getSekolah — validasi pasangan URL+token (docs/erapor.md §5.2).
+	const probeSemesterId = sekolahId ? await guessSemesterId(sekolahId) : undefined;
+	const probe = await dapodikGet(base, token, 'getSekolah', {
+		npsn: npsn ?? undefined,
+		semester_id: probeSemesterId
+	});
+	if (!probe.ok) {
+		throw new DapodikError(probe.error ?? `Tes koneksi gagal (HTTP ${probe.status}).`);
+	}
+	const namaDapodik = (() => {
+		const rows = rowsOf(probe.data);
+		return rows[0] ? str(rows[0], 'nama') : undefined;
+	})();
+
+	if (mode === 'tes-koneksi') {
+		return {
+			message: `Koneksi berhasil${namaDapodik ? ` ke ${namaDapodik}` : ''}. Token Dapodik valid.`,
+			sections,
+			sekolahId: sekolahId ?? undefined
+		};
+	}
+
+	// ---- Mode kirim-matev / kirim-nilai ----
+	if (!sekolahId) throw new DapodikError('Data sekolah belum tersedia.');
+	if (!options.kelasId) throw new DapodikError('Pilih kelas aktif terlebih dahulu.');
+
+	const kelas = await db.query.tableKelas.findFirst({
+		where: and(eq(tableKelas.id, options.kelasId), eq(tableKelas.sekolahId, sekolahId)),
+		with: { semester: true }
+	});
+	if (!kelas) throw new DapodikError('Kelas aktif tidak ditemukan.');
+	const kelasDapodikId = kelas.dapodikRombonganBelajarId;
+	if (!kelasDapodikId) {
+		throw new DapodikError(
+			`Kelas ${kelas.nama} belum memiliki UUID rombongan belajar Dapodik — jalankan "Sinkronisasi Dapodik" terlebih dahulu.`
+		);
+	}
+	const semesterId = kelas.semester?.dapodikSemesterId ?? (await guessSemesterId(sekolahId));
+
+	// 2. Updater id (boleh null — proses tetap lanjut).
+	const updaterId = await resolveUpdaterId(base, token, npsn, semesterId, [
+		...(options.updaterCandidates ?? [])
+	]);
+	sections.push({
+		label: 'Updater',
+		status: updaterId ? 'ok' : 'dilewati',
+		detail: updaterId
+			? `Pengguna Dapodik ditemukan (${updaterId}).`
+			: 'Akun pengguna tidak ditemukan di Dapodik — dikirim tanpa updater.'
+	});
+
+	// 3. Kandidat matev: hanya mapel yang memiliki kode Dapodik lengkap.
+	const mapelRows = await db.query.tableMataPelajaran.findMany({
+		where: eq(tableMataPelajaran.kelasId, kelas.id)
+	});
+	mapelRows.sort((a, b) => {
+		// Urutan identik dengan tabel /intrakurikuler: urutan manual menang,
+		// lalu jenis (urutan baku), lalu nama.
+		const urutanA = a.urutan ?? Number.MAX_SAFE_INTEGER;
+		const urutanB = b.urutan ?? Number.MAX_SAFE_INTEGER;
+		if (urutanA !== urutanB) return urutanA - urutanB;
+		const jenisDiff = jenisUrutanIndex(a.jenis) - jenisUrutanIndex(b.jenis);
+		if (jenisDiff !== 0) return jenisDiff;
+		return a.nama.localeCompare(b.nama, 'id');
+	});
+
+	// 3b. Self-healing binding — mapel bisa ditambah setelah sinkron terakhir,
+	//     sehingga kode Dapodik di-bind ulang saat kirim: tarik pembelajaran
+	//     terkini untuk rombel ini, cocokkan nama, lalu simpan kodenya permanen.
+	const pbRows = await fetchPembelajaranRombel(
+		base,
+		token,
+		npsn,
+		semesterId,
+		kelasDapodikId,
+		kelas.id
+	);
+	await bindKodePembelajaran(kelas.id, mapelRows, pbRows, sections);
+
+	// Pembelajaran induk (mis. "Guru Kelas SD/MI/SLB") — wadah sub pembelajaran
+	// untuk mapel yang tidak memiliki pembelajaran sendiri di Dapodik.
+	const indukPembelajaran = pilihIndukPembelajaran(pbRows);
+	if (
+		!indukPembelajaran &&
+		mapelRows.some((m) => !m.dapodikPembelajaranId || !m.dapodikMataPelajaranId)
+	) {
+		sections.push({
+			label: 'Sub Pembelajaran',
+			status: 'dilewati',
+			detail:
+				'Tidak ada pembelajaran terdaftar di Dapodik untuk kelas ini — mapel tanpa pembelajaran sendiri tidak dapat dikirim.'
+		});
+	}
+
+	const allCandidates: MatevCandidate[] = [];
+	let referensiIndex: Map<string, string> | null = null;
+	let skippedMapel = 0;
+	let subCount = 0;
+	let subDefault = 0;
+	// Varian agama (PAPB & sub mapelnya) auto-dibuat per kelas — hanya kirim
+	// varian yang dipakai: ada murid ber-agama terkait di kelas ini. Resolusi
+	// sama dengan lock nilai rapor: varian spesifik → induk umum → varian pertama.
+	const RE_MAPEL_AGAMA = /^pendidikan (agama|kepercayaan)/i;
+	const agamaFamily = mapelRows.filter((m) => RE_MAPEL_AGAMA.test(m.nama));
+	const muridAgamaRows = await db
+		.select({ agama: tableMurid.agama })
+		.from(tableMurid)
+		.where(eq(tableMurid.kelasId, kelas.id));
+	const agamaUsedIds = new Set<number>();
+	for (const { agama } of muridAgamaRows) {
+		const v = (agama ?? '').toLowerCase();
+		const key = /islam/.test(v)
+			? 'islam'
+			: /katolik|katholik/.test(v)
+				? 'katolik'
+				: /kristen|protestan/.test(v)
+					? 'kristen'
+					: /buddh|budha/.test(v)
+						? 'buddha'
+						: /hindu/.test(v)
+							? 'hindu'
+							: /khong|konghu/.test(v)
+								? 'konghuchu'
+								: /percaya|penghayat/.test(v)
+									? 'kepercayaan'
+									: 'umum';
+		const chosen =
+			(key === 'umum' ? undefined : agamaFamily.find((f) => keyByName.get(f.nama) === key)) ??
+			agamaFamily.find((f) => keyByName.get(f.nama) === 'umum') ??
+			agamaFamily[0];
+		if (chosen) agamaUsedIds.add(chosen.id);
+	}
+	let skippedAgama = 0;
+	for (const mapel of mapelRows) {
+		if (RE_MAPEL_AGAMA.test(mapel.nama) && !agamaUsedIds.has(mapel.id)) {
+			skippedAgama++;
+			continue;
+		}
+		if (mapel.dapodikPembelajaranId && mapel.dapodikMataPelajaranId) {
+			allCandidates.push({
+				mapelId: mapel.id,
+				pembelajaranId: mapel.dapodikPembelajaranId,
+				mataPelajaranId: mapel.dapodikMataPelajaranId,
+				namaMapel: mapel.nama,
+				kkm: mapel.kkm
+			});
+			continue;
+		}
+		// Fallback Sub Pembelajaran: mapel tanpa pembelajaran sendiri dikirim
+		// lewat pembelajaran induk, dengan ID referensi mapel dari katalog nasional.
+		// Induk pilihan pengguna (kolom dapodik_induk_pembelajaran_id) menang
+		// di atas induk bawaan (heuristik "Guru Kelas" dst).
+		const indukEksplisit = mapel.dapodikIndukPembelajaranId
+			? pbRows.find((p) => p.pembelajaranId === mapel.dapodikIndukPembelajaranId)
+			: undefined;
+		const indukMapel = indukEksplisit ?? indukPembelajaran;
+		if (!indukMapel) {
+			skippedMapel++;
+			continue;
+		}
+		let refId = mapel.dapodikMataPelajaranId;
+		if (!refId) {
+			// Katalog dimuat sekali per operasi (ribuan baris) — jangan scan per mapel.
+			referensiIndex ??= referensiIndexFromRows(
+				await db
+					.select({
+						id: tableDapodikMataPelajaran.mataPelajaranId,
+						nama: tableDapodikMataPelajaran.nama
+					})
+					.from(tableDapodikMataPelajaran)
+			);
+			refId = referensiIndex.get(normMapelName(mapel.nama)) ?? null;
+			if (!refId) {
+				skippedMapel++;
+				continue;
+			}
+			// Simpan ID referensi agar pencarian ulang tidak diperlukan.
+			await db
+				.update(tableMataPelajaran)
+				.set({ dapodikMataPelajaranId: refId, updatedAt: new Date().toISOString() })
+				.where(eq(tableMataPelajaran.id, mapel.id));
+			mapel.dapodikMataPelajaranId = refId;
+		}
+		allCandidates.push({
+			mapelId: mapel.id,
+			pembelajaranId: indukMapel.pembelajaranId,
+			mataPelajaranId: refId,
+			namaMapel: mapel.nama,
+			kkm: mapel.kkm
+		});
+		subCount++;
+		if (!indukEksplisit) subDefault++;
+	}
+
+	// Nomor urut reset tiap rombel: posisi 1..N kandidat operasi ini
+	// (urutan tetap mengikuti sort urutan/nama mapel).
+	for (let i = 0; i < allCandidates.length; i++) allCandidates[i]!.noUrut = i + 1;
+
+	if (skippedAgama > 0) {
+		sections.push({
+			label: 'Agama',
+			status: 'dilewati',
+			detail: `${skippedAgama} varian agama dilewati — tidak ada murid ber-agama tersebut yang memiliki nilai akhir di kelas ini.`
+		});
+	}
+	if (subCount > 0) {
+		sections.push({
+			label: 'Sub Pembelajaran',
+			status: 'ok',
+			detail:
+				`${subCount} mapel dikirim sebagai Sub Pembelajaran` +
+				(subDefault > 0 && indukPembelajaran ? ` — induk bawaan "${indukPembelajaran.nama}"` : '') +
+				'.'
+		});
+	}
+
+	// 4. postMatevRapor per mapel — nilai hanya boleh dikirim untuk matev sukses.
+	const matev = await runMatev(
+		base,
+		token,
+		npsn,
+		semesterId,
+		updaterId,
+		kelasDapodikId,
+		allCandidates,
+		sections
+	);
+
+	await saveDapodikSettings(sekolahId, { semesterIdDapodik: semesterId, markSyncedAt: true });
+
+	if (mode === 'kirim-matev') {
+		if (matev.sent === 0 && matev.failed === 0 && skippedMapel >= mapelRows.length) {
+			return {
+				message: 'Tidak ada mata evaluasi yang dapat dikirim — mapel belum memiliki kode Dapodik.',
+				sections,
+				sekolahId
+			};
+		}
+		return {
+			message: `Kirim mata evaluasi selesai: ${matev.sent} terkirim${matev.failed ? `, ${matev.failed} gagal` : ''}.`,
+			sections,
+			sekolahId
+		};
+	}
+
+	// ---- Mode kirim-nilai ----
+	// 5. Murid dengan UUID anggota rombel + nilai akhir yang sudah diisi.
+	const muridRows = await db.query.tableMurid.findMany({
+		columns: { id: true, nama: true, dapodikAnggotaRombelId: true },
+		where: eq(tableMurid.kelasId, kelas.id)
+	});
+	const muridWithUuid = muridRows.filter((m) => Boolean(m.dapodikAnggotaRombelId));
+	const muridIds = muridWithUuid.map((m) => m.id);
+	const mapelIds = allCandidates.map((c) => c.mapelId);
+
+	const nilaiRows =
+		muridIds.length && mapelIds.length
+			? await db
+					.select({
+						muridId: tableAsesmenSumatif.muridId,
+						mataPelajaranId: tableAsesmenSumatif.mataPelajaranId,
+						nilaiAkhir: tableAsesmenSumatif.nilaiAkhir
+					})
+					.from(tableAsesmenSumatif)
+					.where(
+						and(
+							inArray(tableAsesmenSumatif.muridId, muridIds),
+							inArray(tableAsesmenSumatif.mataPelajaranId, mapelIds),
+							isNotNull(tableAsesmenSumatif.nilaiAkhir)
+						)
+					)
+			: [];
+
+	const anggotaByMurid = new Map(muridWithUuid.map((m) => [m.id, m.dapodikAnggotaRombelId!]));
+	const candidateByMapel = new Map(allCandidates.map((c) => [c.mapelId, c]));
+
+	let sentNilai = 0;
+	let failedNilai = 0;
+	// Murid tanpa UUID dilewati seluruhnya (validasi: hanya murid ber-UUID Dapodik).
+	const tanpaUuid = muridRows.length - muridWithUuid.length;
+	let tanpaNilai = muridWithUuid.length; // dikurangi per murid yang punya ≥1 nilai terkirim/dicoba
+	let tanpaMatev = 0;
+
+	const nilaiByMurid = new Map<number, typeof nilaiRows>();
+	for (const nilai of nilaiRows) {
+		const list = nilaiByMurid.get(nilai.muridId) ?? [];
+		list.push(nilai);
+		nilaiByMurid.set(nilai.muridId, list);
+	}
+
+	for (const [muridId, rows] of nilaiByMurid) {
+		const anggotaRombelId = anggotaByMurid.get(muridId);
+		if (!anggotaRombelId) continue;
+		let adaPercobaan = false;
+		for (const nilai of rows) {
+			const candidate = candidateByMapel.get(nilai.mataPelajaranId);
+			const idEvaluasi = candidate ? matev.idEvaluasiByMapel.get(candidate.mapelId) : undefined;
+			if (!candidate || !idEvaluasi) {
+				tanpaMatev++;
+				continue;
+			}
+			adaPercobaan = true;
+
+			const call = await dapodikPost(
+				base,
+				token,
+				'postNilai',
+				{ npsn, semester_id: semesterId, table: 'rapor' },
+				{
+					nilai_id: `RK-${candidate.mapelId}-${muridId}`,
+					id_evaluasi: idEvaluasi,
+					anggota_rombel_id: anggotaRombelId,
+					nilai_kognitif_angka: Number(nilai.nilaiAkhir!.toFixed(2)),
+					create_date: dapodikTimestamp(-60), // now UTC − 1 jam
+					last_update: dapodikTimestamp(0), // now UTC
+					soft_delete: 0,
+					last_sync: dapodikTimestamp(-30), // now UTC − 30 menit
+					updater_id: updaterId
+				}
+			);
+			if (call.ok) sentNilai++;
+			else failedNilai++;
+		}
+		// Murid dihitung "punya nilai" hanya bila minimal satu nilai benar-benar dicoba.
+		if (adaPercobaan) tanpaNilai--;
+	}
+	if (tanpaNilai < 0) tanpaNilai = 0;
+
+	sections.push({
+		label: 'Nilai Akhir',
+		status: failedNilai > 0 && sentNilai === 0 ? 'gagal' : 'ok',
+		detail:
+			`${sentNilai} nilai terkirim` +
+			(failedNilai ? `, ${failedNilai} gagal` : '') +
+			(tanpaUuid ? `, ${tanpaUuid} murid dilewati (tanpa UUID Dapodik)` : '') +
+			(tanpaNilai ? `, ${tanpaNilai} murid tanpa nilai akhir` : '') +
+			(tanpaMatev ? `, ${tanpaMatev} nilai dilewati (matev gagal/tidak ada)` : '') +
+			'.'
+	});
+
+	if (sentNilai === 0 && failedNilai === 0) {
+		return {
+			message:
+				'Tidak ada nilai yang terkirim — pastikan mapel memiliki kode Dapodik, murid memiliki UUID, dan nilai akhir sudah diisi.',
+			sections,
+			sekolahId
+		};
+	}
+	return {
+		message: `Kirim nilai selesai: ${sentNilai} nilai terkirim${failedNilai ? `, ${failedNilai} gagal` : ''}.`,
+		sections,
+		sekolahId
+	};
 }

@@ -35,6 +35,7 @@
 		mapel?: FormMapel | null;
 		kelasAktif?: KelasLite | null;
 		dapodikMapelList?: Array<{ nama: string; kode: string | null }>;
+		indukList?: Array<{ nama: string; pembelajaranId: string }>;
 	} & Record<string, unknown>;
 
 	let { data }: { data: FormData } = $props();
@@ -137,10 +138,29 @@
 	// Ada referensi Dapodik di DB (hasil Sinkronisasi) → mode tambah memakai select.
 	const dapodikMapelOptions = $derived(data.dapodikMapelList ?? []);
 	const pakaiSelectDapodik = $derived(mode === 'add' && dapodikMapelOptions.length > 0);
+	// Kandidat pembelajaran induk (terdaftar di Dapodik) untuk Sub Pembelajaran.
+	const indukList = $derived(data.indukList ?? []);
 	// Combobox pencarian nama mapel (input + dropdown hasil filter).
 	let namaQuery = $state('');
 	let daftarNamaTerbuka = $state(false);
 	let indeksSorot = $state(-1);
+	function normNamaMapel(nama: string): string {
+		// Harus sinkron dengan normMapelName ($lib/server/dapodik).
+		return nama
+			.toLowerCase()
+			.replace(/\(.*?\)/g, '')
+			.replace(/\bkatholik\b/g, 'katolik')
+			.replace(/\s+/g, ' ')
+			.trim();
+	}
+	const indukTerdaftarSet = $derived(new Set(indukList.map((i) => normNamaMapel(i.nama))));
+	// Nama efektif: hasil combobox pada mode tambah, nama mapel pada mode edit.
+	const namaEfektif = $derived(mode === 'add' ? namaQuery.trim() : (mapel?.nama ?? ''));
+	// Logika konsisten tambah & edit: nama tidak terdaftar sebagai pembelajaran
+	// Dapodik → wajib pilih Mata Pelajaran Induk (Sub Pembelajaran).
+	const tampilkanInduk = $derived(
+		indukList.length > 0 && namaEfektif !== '' && !indukTerdaftarSet.has(normNamaMapel(namaEfektif))
+	);
 	const MAX_OPSI_TAMPIL = 80;
 	// Semua varian mapel agama (termasuk Kepercayaan) sudah dibuat otomatis oleh
 	// ensureAgamaMapelForClasses — larang tambah manual via select Dapodik.
@@ -304,11 +324,40 @@
 				<div class="alert alert-soft alert-warning mt-2 flex items-center gap-2" role="alert">
 					<Icon name="alert" />
 					<span
-						>Tidak dapat menambahkan mapel agama karena termasuk ke dalam PAPB dan sub mapel yang sudah ada secara otomatis di tabel</span
+						>Tidak dapat menambahkan mapel agama karena termasuk ke dalam PAPB dan sub mapel yang
+						sudah ada secara otomatis di tabel</span
 					>
 				</div>
 			{/if}
 		</fieldset>
+		{#if tampilkanInduk}
+			<fieldset class="fieldset">
+				<legend class="fieldset-legend">Mata Pelajaran Induk</legend>
+				<select
+					name="induk_pembelajaran_id"
+					required
+					class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
+				>
+					<option disabled selected={mode === 'add' || !mapel?.dapodikIndukPembelajaranId}>
+						Pilih Pembelajaran Induk (terdaftar di Dapodik)
+					</option>
+					{#each indukList as induk (induk.pembelajaranId)}
+						<option
+							value={induk.pembelajaranId}
+							selected={mode === 'edit' &&
+								mapel?.dapodikIndukPembelajaranId === induk.pembelajaranId}
+						>
+							{induk.nama}
+						</option>
+					{/each}
+				</select>
+				<p class="label text-wrap">
+					"{namaEfektif}" belum terdaftar sebagai pembelajaran Dapodik — akan dikirim sebagai Sub
+					Pembelajaran dari mata pelajaran induk yang dipilih.{#if mode === 'edit' && isAgamaGroup}
+						Pilihan berlaku untuk semua varian agama di kelas ini.{/if}
+				</p>
+			</fieldset>
+		{/if}
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">KKM</legend>
 			<input

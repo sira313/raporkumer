@@ -347,20 +347,20 @@
 		| 'persentase_harian'
 		| 'persentase_bulanan'
 		| 'persentase_semester'
-	// svelte-ignore state_referenced_locally
+		// svelte-ignore state_referenced_locally
 	>(data.mode);
 	let selectedBulan = $state(
 		// svelte-ignore state_referenced_locally
 		data.mode === 'bulanan' || data.mode === 'persentase_bulanan'
-			// svelte-ignore state_referenced_locally
-			? data.bulan
+			? // svelte-ignore state_referenced_locally
+				data.bulan
 			: serverTime.now.getMonth() + 1
 	);
 	let selectedTahun = $state(
 		// svelte-ignore state_referenced_locally
 		data.mode === 'bulanan' || data.mode === 'persentase_bulanan'
-			// svelte-ignore state_referenced_locally
-			? data.tahun
+			? // svelte-ignore state_referenced_locally
+				data.tahun
 			: serverTime.now.getFullYear()
 	);
 

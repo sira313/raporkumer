@@ -1,4 +1,5 @@
 import db from '$lib/server/db/index.js';
+import { normMapelName, resolveReferensiMapelId } from '$lib/server/dapodik';
 import {
 	tableDapodikMataPelajaran,
 	tableDapodikPembelajaran,
@@ -30,6 +31,7 @@ export type OpsiMapelDapodik = { nama: string; kode: string | null };
 export async function load({ parent, locals }) {
 	const { kelasAktif } = await parent();
 	let dapodikMapelList: OpsiMapelDapodik[] = [];
+	let indukList: Array<{ nama: string; pembelajaranId: string }> = [];
 	if (kelasAktif?.id) {
 		const referensiPromise = grupJenjangDasarMenengah(locals.sekolah)
 			? db
@@ -50,6 +52,15 @@ export async function load({ parent, locals }) {
 				.where(eq(tableDapodikPembelajaran.kelasId, kelasAktif.id)),
 			referensiPromise
 		]);
+		// Kandidat pembelajaran induk (untuk Sub Pembelajaran): pembelajaran rombel
+		// yang terdaftar di Dapodik — opsi select "Mata Pelajaran Induk".
+		indukList = await db
+			.select({
+				nama: tableDapodikPembelajaran.nama,
+				pembelajaranId: tableDapodikPembelajaran.pembelajaranId
+			})
+			.from(tableDapodikPembelajaran)
+			.where(eq(tableDapodikPembelajaran.kelasId, kelasAktif.id));
 		// Kunci gabungan nama+kode: nama sama dengan kode referensi berbeda
 		// tetap tampil sebagai opsi terpisah.
 		const opsiMap = new Map<string, OpsiMapelDapodik>();
@@ -71,7 +82,8 @@ export async function load({ parent, locals }) {
 	return {
 		meta: { title: `Form Mata Pelajaran` },
 		kelasAktif,
-		dapodikMapelList
+		dapodikMapelList,
+		indukList: indukList.sort((a, b) => a.nama.localeCompare(b.nama, 'id'))
 	};
 }
 
@@ -82,6 +94,7 @@ export const actions = {
 			jenis?: string;
 			kkm?: string;
 			kode?: string;
+			induk_pembelajaran_id?: string;
 		}>(await request.formData());
 
 		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID);
@@ -143,13 +156,55 @@ export const actions = {
 			});
 		}
 
+		// Opsi bind-at-create: bila nama terdaftar sebagai pembelajaran rombel
+		// Dapodik (mirror hasil sinkronisasi), simpan kode Dapodiknya langsung agar
+		// mapel bisa dikirim balik tanpa menunggu sinkron ulang. Bila tidak ada
+		// padanannya, mapel dibuat sebagai Sub Pembelajaran — wajib memilih
+		// pembelajaran induk yang terdaftar di Dapodik.
+		const mirrorRows = await db
+			.select()
+			.from(tableDapodikPembelajaran)
+			.where(eq(tableDapodikPembelajaran.kelasId, kelasId));
+		const namaKunci = normMapelName(nama);
+		const mirror =
+			mirrorRows.find((m) => m.mataPelajaranId && m.nama === nama) ??
+			mirrorRows.find((m) => m.mataPelajaranId && normMapelName(m.nama) === namaKunci);
+
+		let indukRow: (typeof mirrorRows)[number] | null = null;
+		const indukIdRaw = formMapel.induk_pembelajaran_id?.toString().trim() ?? '';
+		if (!mirror && indukIdRaw) {
+			indukRow = mirrorRows.find((m) => m.pembelajaranId === indukIdRaw) ?? null;
+			if (!indukRow) {
+				return fail(400, { fail: 'Pembelajaran induk tidak valid untuk kelas ini.' });
+			}
+		}
+		if (!mirror && !indukRow && mirrorRows.length > 0) {
+			return fail(400, {
+				fail: `"${nama}" belum terdaftar sebagai pembelajaran Dapodik — pilih "Mata Pelajaran Induk" agar dapat dikirim sebagai Sub Pembelajaran.`
+			});
+		}
+
+		const dapodikMatpelId = mirror?.mataPelajaranId ?? (await resolveReferensiMapelId(nama));
+
 		await db.insert(tableMataPelajaran).values({
 			nama,
 			jenis,
 			kkm,
 			kelasId,
-			kode: kode || null
+			kode: kode || null,
+			...(mirror ? { dapodikPembelajaranId: mirror.pembelajaranId } : {}),
+			...(!mirror && indukRow ? { dapodikIndukPembelajaranId: indukRow.pembelajaranId } : {}),
+			...(dapodikMatpelId ? { dapodikMataPelajaranId: dapodikMatpelId } : {})
 		});
-		return { message: `Data mata pelajaran berhasil ditambah` };
+		const suffix = mirror
+			? ' dan ter-binding ke pembelajaran Dapodik'
+			: indukRow
+				? ` sebagai Sub Pembelajaran dari "${indukRow.nama}"${
+						dapodikMatpelId
+							? ''
+							: ' — ID referensi mapel belum ditemukan, akan dilengkapi saat kirim'
+					}`
+				: '';
+		return { message: `Data mata pelajaran berhasil ditambah${suffix}` };
 	}
 };

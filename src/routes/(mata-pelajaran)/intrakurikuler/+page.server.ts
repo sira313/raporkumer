@@ -1,16 +1,23 @@
 import db from '$lib/server/db';
+import { normMapelName, pilihIndukPembelajaran } from '$lib/server/dapodik';
 import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama';
 import {
 	tableMataPelajaran,
 	tableTujuanPembelajaran,
 	tableKelas,
-	tableAuthUserMataPelajaran
+	tableAuthUserMataPelajaran,
+	tableDapodikPembelajaran
 } from '$lib/server/db/schema';
 import { agamaVariantNames, pksVariantNames } from '$lib/statics';
 import { and, eq, inArray } from 'drizzle-orm';
 
 type MataPelajaranBase = Omit<MataPelajaran, 'tujuanPembelajaran'>;
-type MataPelajaranWithTp = MataPelajaranBase & { tpCount: number; editTpMapelId?: number };
+type MataPelajaranWithTp = MataPelajaranBase & {
+	tpCount: number;
+	editTpMapelId?: number;
+	/** Keterangan posisi Dapodik: "Mapel Induk" / "Sub-mapel induk: X". Null bila tak ada data Dapodik. */
+	keteranganDapodik?: string | null;
+};
 
 const AGAMA_VARIANT_NAME_SET = new Set<string>(agamaVariantNames);
 const PKS_VARIANT_NAME_SET = new Set<string>(pksVariantNames);
@@ -294,6 +301,37 @@ export async function load({ depends, url, parent }) {
 				: item.id
 	}));
 
+	// Keterangan posisi Dapodik per mapel (kolom mata pelajaran):
+	// terdaftar sebagai pembelajaran → "Mapel Induk"; selain itu → sub dengan induknya.
+	const indukMirrorRows = kelasId
+		? await db
+				.select({
+					nama: tableDapodikPembelajaran.nama,
+					pembelajaranId: tableDapodikPembelajaran.pembelajaranId
+				})
+				.from(tableDapodikPembelajaran)
+				.where(eq(tableDapodikPembelajaran.kelasId, kelasId))
+		: [];
+	const defaultIndukNama = pilihIndukPembelajaran(indukMirrorRows)?.nama ?? null;
+	for (const item of mapelWithIndicator) {
+		if (indukMirrorRows.length === 0) {
+			item.keteranganDapodik = null;
+			continue;
+		}
+		const terdaftar = indukMirrorRows.some(
+			(r) => r.nama === item.nama || normMapelName(r.nama) === normMapelName(item.nama)
+		);
+		if (terdaftar) {
+			item.keteranganDapodik = 'Mapel Induk';
+			continue;
+		}
+		const eksplisitNama = item.dapodikIndukPembelajaranId
+			? indukMirrorRows.find((r) => r.pembelajaranId === item.dapodikIndukPembelajaranId)?.nama
+			: null;
+		const indukNama = eksplisitNama ?? defaultIndukNama;
+		item.keteranganDapodik = indukNama ? `Sub-mapel induk: ${indukNama}` : null;
+	}
+
 	const mapelTampil = mapelWithIndicator.filter(
 		(item) => !AGAMA_VARIANT_NAME_SET.has(item.nama) && !PKS_VARIANT_NAME_SET.has(item.nama)
 	);
@@ -312,9 +350,16 @@ export async function load({ depends, url, parent }) {
 		);
 	});
 
+	const [referensiDapodik, pembelajaranDapodik] = await Promise.all([
+		db.query.tableDapodikMataPelajaran.findFirst({ columns: { mataPelajaranId: true } }),
+		db.query.tableDapodikPembelajaran.findFirst({ columns: { id: true } })
+	]);
+	const adaDataDapodik = Boolean(referensiDapodik || pembelajaranDapodik);
+
 	return {
 		kelasId,
-		mapel: { daftarMapel }
+		mapel: { daftarMapel },
+		adaDataDapodik
 	};
 }
 

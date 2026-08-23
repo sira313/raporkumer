@@ -60,8 +60,8 @@
 	let selectedStatus = $state<Status>(
 		// svelte-ignore state_referenced_locally
 		initialStatus && (VALID_STATUS as string[]).includes(initialStatus)
-			// svelte-ignore state_referenced_locally
-			? (initialStatus as Status)
+			? // svelte-ignore state_referenced_locally
+				(initialStatus as Status)
 			: 'hadir'
 	);
 	// svelte-ignore state_referenced_locally

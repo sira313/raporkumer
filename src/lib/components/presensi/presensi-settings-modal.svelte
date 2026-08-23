@@ -53,10 +53,10 @@
 	let hariSekolahValue = $state(
 		parsedCustom && parsedCustom.length > 0
 			? 'custom'
-			// svelte-ignore state_referenced_locally
-			: hariSekolah === 5 || hariSekolah === 6
-				// svelte-ignore state_referenced_locally
-				? String(hariSekolah)
+			: // svelte-ignore state_referenced_locally
+				hariSekolah === 5 || hariSekolah === 6
+				? // svelte-ignore state_referenced_locally
+					String(hariSekolah)
 				: '6'
 	);
 	let customDays = $state<HariSekolahKey[]>(parsedCustom ?? []);

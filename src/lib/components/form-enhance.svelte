@@ -92,7 +92,7 @@
 		submitting = true;
 		return async (args: {
 			result?: SubmitOutcome;
-			update?: (() => Promise<void>) | undefined;
+			update?: ((opts?: { reset?: boolean }) => Promise<void>) | undefined;
 			form?: HTMLFormElement | undefined;
 			formElement?: HTMLFormElement | undefined;
 		}) => {

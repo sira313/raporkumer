@@ -19,8 +19,15 @@
 	import { modalRoute } from '$lib/utils';
 	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
 
-	type MapelWithIndicator = MataPelajaran & { tpCount: number; editTpMapelId?: number };
-	let { data }: { data: { mapel: { daftarMapel: MapelWithIndicator[] } } } = $props();
+	type MapelWithIndicator = MataPelajaran & {
+		tpCount: number;
+		editTpMapelId?: number;
+		keteranganDapodik?: string | null;
+	};
+	let {
+		data
+	}: { data: { mapel: { daftarMapel: MapelWithIndicator[] }; adaDataDapodik?: boolean } } =
+		$props();
 
 	const emptyStateMessage = 'Belum ada data mata pelajaran';
 	const agamaMapelNameSet = new Set<string>(agamaMapelNames);
@@ -319,6 +326,7 @@
 									showModal({
 										title: 'Impor Mata Pelajaran',
 										body: ImportMapelDialog,
+										bodyProps: { adaDataDapodik: data.adaDataDapodik },
 										dismissible: true
 									})}
 							>
@@ -484,7 +492,12 @@
 							</td>
 						{/if}
 						<td>{index + 1}</td>
-						<td class="font-medium">{mapel.nama}</td>
+						<td class="font-medium">
+							{mapel.nama}
+							{#if mapel.keteranganDapodik}
+								<p class="text-sm font-normal opacity-70">{mapel.keteranganDapodik}</p>
+							{/if}
+						</td>
 						<td class="whitespace-nowrap">{jenisMapel[mapel.jenis ?? 'wajib']}</td>
 						<td class="font-mono text-sm"
 							>{mapel.kode ?? (mapel.nama === agamaParentName ? 'PAPB' : '—')}</td

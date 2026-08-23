@@ -556,6 +556,8 @@ export const tableMataPelajaran = sqliteTable(
 		// Referensi Dapodik
 		dapodikPembelajaranId: text(),
 		dapodikMataPelajaranId: text(),
+		// Pembelajaran induk pilihan (Sub Pembelajaran) saat kirim matev ke Dapodik.
+		dapodikIndukPembelajaranId: text(),
 		...audit
 	},
 	(table) => [unique().on(table.kelasId, table.nama)]
