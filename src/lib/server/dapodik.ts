@@ -423,8 +423,9 @@ export async function runDapodikSync(options: {
 	// 9b. Akun pengguna guru + penugasan mapel (halaman /pengguna).
 	await ensureGuruAccounts(sekolahId, sections);
 
-	// 10. Ekstrakurikuler (best-effort; endpoint tidak tersedia di banyak build).
-	await syncEkskul(semesterTarget, muridIndex, base, token, npsn, sections);
+	// 10. Ekstrakurikuler — rombel jenis 51 di getRombonganBelajar (endpoint
+	//     getEkskul tidak tersedia / 404 pada build Dapodik desktop).
+	await syncEkskul(muridIndex, rombelLoad.rows, sections);
 
 	// 11. Referensi mata pelajaran nasional (getMataPelajaran) — cache lokal untuk
 	//     pemetaan mapel buatan sekolah ke ID Dapodik saat posting nilai.
@@ -1865,58 +1866,37 @@ async function syncMapelReferensi(
 // ---------------------------------------------------------------------------
 
 async function syncEkskul(
-	target: TargetSemester,
 	muridIndex: MuridIndex,
-	base: string,
-	token: string,
-	npsn: string | null,
+	rombelRows: Row[],
 	sections: DapodikSectionLog[]
 ) {
 	try {
-		const call = await dapodikGet(base, token, 'getEkskul', {
-			npsn,
-			semester_id: target.dapodikSemesterId
-		});
-		if (!call.ok) {
-			// Endpoint getEkskul tidak tersedia pada banyak build Dapodik desktop (404).
-			sections.push({
-				label: 'Ekstrakurikuler',
-				status: 'dilewati',
-				detail: `Endpoint getEkskul tidak tersedia pada WebService Dapodik ini (${
-					call.error ?? `HTTP ${call.status}`
-				}) — isi ekstrakurikuler secara manual.`
-			});
-			return;
-		}
-
-		const ekskulRombels = rowsOf(call.data);
+		// Ekskul datang sebagai rombongan belajar jenis_rombel 51 dengan
+		// anggota_rombel nested — endpoint getEkskul 404 pada build Dapodik desktop.
+		const ekskulRombels = rombelRows.filter((row) => intOrNull(row['jenis_rombel']) === 51);
 		if (ekskulRombels.length === 0) {
 			sections.push({
 				label: 'Ekstrakurikuler',
 				status: 'dilewati',
-				detail: 'Tidak ada data ekskul.'
+				detail: 'Tidak ada data ekskul pada Dapodik.'
 			});
 			return;
 		}
 
 		let created = 0;
 		let membersLinked = 0;
+		let skipped = 0;
 
 		for (const row of ekskulRombels) {
-			const rombelId = str(row, 'rombongan_belajar_id') ?? str(row, 'id_kelas_ekskul');
 			const namaEkskul = str(row, 'nm_ekskul') ?? str(row, 'nama');
-			if (!rombelId || !namaEkskul) continue;
-
-			const membersCall = await dapodikGet(base, token, 'getAnggotaRombel', {
-				npsn,
-				semester_id: target.dapodikSemesterId,
-				rombongan_belajar_id: rombelId
-			});
-			if (!membersCall.ok) continue;
+			if (!namaEkskul) {
+				skipped++;
+				continue;
+			}
 
 			// Kelompokkan anggota per kelas asal murid (ekskul di app ini milik kelas).
 			const perKelas = new Map<number, number[]>();
-			for (const member of rowsOf(membersCall.data)) {
+			for (const member of rowsOf(row['anggota_rombel'])) {
 				const pdId = str(member, 'peserta_didik_id');
 				const murid = pdId ? muridIndex.byDapodik.get(pdId) : null;
 				if (!murid?.kelasId) continue;
@@ -1962,8 +1942,10 @@ async function syncEkskul(
 
 		sections.push({
 			label: 'Ekstrakurikuler',
-			status: 'ok',
-			detail: `${created} ekskul baru, ${membersLinked} keanggotaan ditautkan.`
+			status: created + membersLinked > 0 || skipped === 0 ? 'ok' : 'dilewati',
+			detail:
+				`${created} ekskul baru, ${membersLinked} keanggotaan ditautkan.` +
+				(skipped > 0 ? ` ${skipped} baris ekskul dilewati (nama tidak terbaca).` : '')
 		});
 	} catch (e) {
 		sections.push({
