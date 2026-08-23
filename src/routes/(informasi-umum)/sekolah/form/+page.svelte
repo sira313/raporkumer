@@ -316,13 +316,6 @@
 								</ul>
 							{/if}
 						</div>
-						<span>
-							{#if kunciKepalaSekolah}
-								Otomatis dari Dapodik. Menambahkan gelar dilakukan melalui menu Pengaturan - Edit profil.
-							{:else}
-								Masukkan nama Kepala Sekolah lengkap dengan gelar.
-							{/if}
-						</span>
 					{:else}
 						<input
 							required
@@ -332,6 +325,14 @@
 							name="kepalaSekolah.nama"
 						/>
 					{/if}
+					<span>
+						{#if kunciKepalaSekolah}
+							Otomatis dari Dapodik. Menambahkan gelar dilakukan melalui menu Pengaturan - Edit
+							profil.
+						{:else}
+							Masukkan nama Kepala Sekolah lengkap dengan gelar.
+						{/if}
+					</span>
 				</div>
 
 				<div class="fieldset">
