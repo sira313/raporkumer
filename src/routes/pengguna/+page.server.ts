@@ -429,7 +429,8 @@ export async function load({ url }) {
 				q ? sql` lower(${u.username}) like ${'%' + q.toLowerCase() + '%'}` : sql` true`
 			)
 		)
-		.limit(100);
+		.orderBy(u.id)
+		.limit(1000);
 
 	// Debug: log raw results
 	console.debug('[pengguna] usersRaw count:', usersRaw.length);

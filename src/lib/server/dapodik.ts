@@ -1,8 +1,11 @@
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { randomBytes } from 'node:crypto';
 import db from '$lib/server/db';
 import { triggerSchemaSync } from '$lib/server/schema-sync';
 import {
 	tableAlamat,
+	tableAuthUser,
+	tableAuthUserMataPelajaran,
 	tableDapodikMataPelajaran,
 	tableDapodikPembelajaran,
 	tableDapodikSettings,
@@ -17,6 +20,9 @@ import {
 	tableTahunAjaran,
 	tableWaliMurid
 } from './db/schema';
+import { hashPassword } from './auth';
+import { resolveUniqueUsername } from './usernames';
+import { defaultPermissionsByType } from '../../routes/pengguna/permissions';
 
 /**
  * Klien GET WebService Dapodik desktop (docs/erapor.md §4.1a / §7.3).
@@ -412,6 +418,9 @@ export async function runDapodikSync(options: {
 
 	// 9. Pembelajaran nested → mata pelajaran per kelas + guru pengampu.
 	await upsertPembelajaran(rombel.pembelajaranItems, muridIndex.kelasIdsSet(), ptkIndex, sections);
+
+	// 9b. Akun pengguna guru + penugasan mapel (halaman /pengguna).
+	await ensureGuruAccounts(sekolahId, sections);
 
 	// 10. Ekstrakurikuler (best-effort; endpoint tidak tersedia di banyak build).
 	await syncEkskul(semesterTarget, muridIndex, base, token, npsn, sections);
@@ -927,6 +936,172 @@ async function syncPtk(
 		});
 	}
 	return index;
+}
+
+// ---------------------------------------------------------------------------
+// Section: akun pengguna guru (auth_user) + penugasan mapel
+// ---------------------------------------------------------------------------
+
+/**
+ * GTK hasil sinkron hanya mengisi tabel pegawai — halaman /pengguna menampilkan
+ * auth_user. Fungsi ini membuat akun untuk pegawai ber-dapodikPtkId yang belum
+ * punya: wali kelas → type 'wali_kelas' (konsisten dengan alur lazy /pengguna),
+ * sisanya → type 'user'. Lalu menautkan mata pelajaran pengampu ke akun guru.
+ */
+async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog[]) {
+	try {
+		const pegawaiRows = await db.select().from(tablePegawai);
+		const accounts = await db.query.tableAuthUser.findMany({
+			columns: { id: true, pegawaiId: true }
+		});
+		const accountByPegawai = new Map<number, number>();
+		for (const acc of accounts) {
+			if (acc.pegawaiId != null && !accountByPegawai.has(acc.pegawaiId)) {
+				accountByPegawai.set(acc.pegawaiId, acc.id);
+			}
+		}
+
+		// Kelas per wali → tipe akun + kelas_pindah bila multi-kelas.
+		// Hanya kelas milik sekolah yang sedang sinkron.
+		const kelasRows = await db.query.tableKelas.findMany({
+			columns: { id: true, waliKelasId: true },
+			where: and(eq(tableKelas.sekolahId, sekolahId), sql`${tableKelas.waliKelasId} IS NOT NULL`)
+		});
+		const kelasIdsByWali = new Map<number, number[]>();
+		for (const k of kelasRows) {
+			if (!k.waliKelasId) continue;
+			const arr = kelasIdsByWali.get(k.waliKelasId) ?? [];
+			arr.push(k.id);
+			kelasIdsByWali.set(k.waliKelasId, arr);
+		}
+
+		// Multi-sekolah safety: pegawai yang dirujuk struktur sekolah LAIN
+		// (wali/asrama/pengampu) jangan diberi akun berasal sekolah ini.
+		// ponytail: pegawai sekolah lain yang belum tertaut apa pun tetap lolos;
+		// perketat bila ada laporan salah-sekolah pada instalasi multi-sekolah.
+		const claimedByOthers = new Set<number>();
+		const otherKelas = await db.query.tableKelas.findMany({
+			columns: { waliKelasId: true, waliAsramaId: true },
+			where: sql`${tableKelas.sekolahId} != ${sekolahId}`
+		});
+		for (const k of otherKelas) {
+			if (k.waliKelasId) claimedByOthers.add(k.waliKelasId);
+			if (k.waliAsramaId) claimedByOthers.add(k.waliAsramaId);
+		}
+		const otherPengampu = await db
+			.select({ pengampuId: tableMataPelajaran.pengampuId })
+			.from(tableMataPelajaran)
+			.innerJoin(tableKelas, eq(tableMataPelajaran.kelasId, tableKelas.id))
+			.where(
+				and(sql`${tableKelas.sekolahId} != ${sekolahId}`, isNotNull(tableMataPelajaran.pengampuId))
+			);
+		for (const m of otherPengampu) {
+			if (m.pengampuId) claimedByOthers.add(m.pengampuId);
+		}
+
+		let created = 0;
+		for (const peg of pegawaiRows) {
+			if (!peg.dapodikPtkId || !peg.nama.trim() || accountByPegawai.has(peg.id)) continue;
+			if (claimedByOthers.has(peg.id)) continue;
+			const kelasIds = kelasIdsByWali.get(peg.id) ?? [];
+			const type = kelasIds.length > 0 ? 'wali_kelas' : 'user';
+			const permissions: UserPermission[] = [
+				...(defaultPermissionsByType[type] ?? []),
+				...(kelasIds.length > 1 ? (['kelas_pindah'] as UserPermission[]) : [])
+			];
+			const username = await resolveUniqueUsername(peg.nama);
+			const password = randomBytes(6).toString('base64url');
+			const { hash, salt } = hashPassword(password);
+			const timestamp = new Date().toISOString();
+			const inserted = await db
+				.insert(tableAuthUser)
+				.values({
+					username,
+					usernameNormalized: username.toLowerCase(),
+					passwordHash: hash,
+					passwordSalt: salt,
+					passwordUpdatedAt: timestamp,
+					mustChangePassword: true,
+					permissions,
+					type,
+					sekolahId,
+					pegawaiId: peg.id,
+					kelasId: kelasIds[0],
+					createdAt: timestamp,
+					updatedAt: timestamp
+				})
+				.returning({ id: tableAuthUser.id });
+			if (inserted[0]) {
+				accountByPegawai.set(peg.id, inserted[0].id);
+				created++;
+			}
+		}
+
+		// Tautkan mapel pengampu → akun guru (many-to-many + legacy kolom tunggal).
+		// Hanya mapel milik sekolah yang sedang sinkron.
+		const mapelRows = await db
+			.select({ id: tableMataPelajaran.id, pengampuId: tableMataPelajaran.pengampuId })
+			.from(tableMataPelajaran)
+			.innerJoin(tableKelas, eq(tableMataPelajaran.kelasId, tableKelas.id))
+			.where(and(eq(tableKelas.sekolahId, sekolahId), isNotNull(tableMataPelajaran.pengampuId)));
+		const linkRows = await db
+			.select({
+				authUserId: tableAuthUserMataPelajaran.authUserId,
+				mataPelajaranId: tableAuthUserMataPelajaran.mataPelajaranId
+			})
+			.from(tableAuthUserMataPelajaran);
+		const existingLinks = new Set(linkRows.map((l) => `${l.authUserId}:${l.mataPelajaranId}`));
+		const linkCount = new Map<number, number>();
+		let linked = 0;
+		for (const m of mapelRows) {
+			if (!m.pengampuId) continue;
+			const userId = accountByPegawai.get(m.pengampuId);
+			if (!userId) continue;
+			const key = `${userId}:${m.id}`;
+			linkCount.set(userId, (linkCount.get(userId) ?? 0) + 1);
+			if (existingLinks.has(key)) continue;
+			await db
+				.insert(tableAuthUserMataPelajaran)
+				.values({ authUserId: userId, mataPelajaranId: m.id });
+			existingLinks.add(key);
+			linked++;
+		}
+
+		// Backward compat: akun dengan tepat satu mapel → isi kolom tunggal.
+		for (const [userId, count] of linkCount) {
+			if (count !== 1) continue;
+			const full = await db.query.tableAuthUser.findFirst({
+				columns: { mataPelajaranId: true },
+				where: eq(tableAuthUser.id, userId)
+			});
+			if (full && !full.mataPelajaranId) {
+				const single = mapelRows.find(
+					(m) => m.pengampuId && accountByPegawai.get(m.pengampuId) === userId
+				);
+				if (single) {
+					await db
+						.update(tableAuthUser)
+						.set({ mataPelajaranId: single.id })
+						.where(eq(tableAuthUser.id, userId));
+				}
+			}
+		}
+
+		sections.push({
+			label: 'Akun Guru',
+			status: 'ok',
+			detail:
+				created > 0 || linked > 0
+					? `${created} akun dibuat${linked ? `, ${linked} penugasan mapel ditautkan` : ''}.`
+					: 'Semua guru sudah memiliki akun.'
+		});
+	} catch (e) {
+		sections.push({
+			label: 'Akun Guru',
+			status: 'gagal',
+			detail: (e as Error).message
+		});
+	}
 }
 
 // ---------------------------------------------------------------------------

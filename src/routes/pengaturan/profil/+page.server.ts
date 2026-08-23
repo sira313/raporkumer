@@ -1,5 +1,5 @@
 import db from '$lib/server/db';
-import { tableAuthUser, tablePegawai } from '$lib/server/db/schema';
+import { tableAuthUser, tableMurid, tablePegawai } from '$lib/server/db/schema';
 import { resolveProfileFields } from '$lib/profile';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import { fail, redirect } from '@sveltejs/kit';
@@ -151,6 +151,10 @@ export const actions: Actions = {
 				}
 
 				if (pegawaiId) {
+					const old = await tx.query.tablePegawai.findFirst({
+						columns: { nama: true, nip: true },
+						where: eq(tablePegawai.id, pegawaiId)
+					});
 					await tx
 						.update(tablePegawai)
 						.set({
@@ -159,6 +163,36 @@ export const actions: Actions = {
 							updatedAt: timestamp
 						})
 						.where(eq(tablePegawai.id, pegawaiId));
+
+					// Propagasi nama/NIP ke salinan denormalisasi wali asuh pada murid
+					// (pencocokan wali asuh di seluruh aplikasi memakai teks nama ini).
+					// Dibatasi ke sekolah aktif agar tidak menyentuh sekolah lain.
+					// ponytail: baris dengan salinan yang sudah menyimpang dari nama
+					// pegawai lama tidak ikut; perbaiki bila ada laporan drift data.
+					const newKey = nama.trim().toLowerCase();
+					const oldKey = (old?.nama ?? '').trim().toLowerCase();
+					const sekolahId = locals.sekolah?.id ?? null;
+					if (sekolahId && oldKey && oldKey !== newKey) {
+						await tx
+							.update(tableMurid)
+							.set({ waliAsuhNama: nama, waliAsuhNip: pegawaiNip || null })
+							.where(
+								and(
+									sql`LOWER(trim(${tableMurid.waliAsuhNama})) = ${oldKey}`,
+									eq(tableMurid.sekolahId, sekolahId)
+								)
+							);
+					} else if (sekolahId && (old?.nip ?? '') !== pegawaiNip) {
+						await tx
+							.update(tableMurid)
+							.set({ waliAsuhNip: pegawaiNip || null })
+							.where(
+								and(
+									sql`LOWER(trim(${tableMurid.waliAsuhNama})) = ${newKey}`,
+									eq(tableMurid.sekolahId, sekolahId)
+								)
+							);
+					}
 				}
 
 				await tx

@@ -16,6 +16,65 @@
 	// svelte-ignore state_referenced_locally
 	const initialSekolah = (isNew ? undefined : data.sekolah) as Sekolah | undefined;
 
+	// Combobox "Nama Kepala Sekolah" — aktif hanya bila data pendidik & tenaga
+	// pendidik sudah ada di DB (hasil Sinkron Dapodik), logika sama dengan
+	// "Nama Mata Pelajaran" pada Tambah Mata Pelajaran.
+	type PegawaiOpsi = { id: number; nama: string; nip: string | null };
+	const pegawaiOptions = $derived((data.pegawaiList ?? []) as PegawaiOpsi[]);
+	const pakaiSelectPegawai = $derived(pegawaiOptions.length > 0);
+	// Data Dapodik tersedia (mode edit) → kepala sekolah hanya bisa DIPILIH dari
+	// daftar, tidak bisa diketik/direname; ubah nama/NIP via /pengaturan/profil.
+	const kunciKepalaSekolah = $derived(Boolean(data.dapodikAktif) && Boolean(initialSekolah?.id));
+	let kepalaQuery = $state(initialSekolah?.kepalaSekolah?.nama ?? '');
+	let kepalaNip = $state(initialSekolah?.kepalaSekolah?.nip ?? '');
+	let kepalaTerpilihId = $state<number | null>(initialSekolah?.kepalaSekolah?.id ?? null);
+	let daftarKepalaTerbuka = $state(false);
+	let indeksSorotKepala = $state(-1);
+	const MAX_OPSI_TAMPIL = 80;
+	const kepalaTersaring = $derived.by(() => {
+		const q = kepalaQuery.trim().toLowerCase();
+		if (!q) return pegawaiOptions;
+		return pegawaiOptions.filter(
+			(o) => o.nama.toLowerCase().includes(q) || (o.nip ?? '').includes(q)
+		);
+	});
+	function pilihKepala(opsi: PegawaiOpsi) {
+		kepalaQuery = opsi.nama;
+		kepalaNip = opsi.nip ?? '';
+		kepalaTerpilihId = opsi.id;
+		daftarKepalaTerbuka = false;
+		indeksSorotKepala = -1;
+	}
+	// Mode terkunci: teks terisi tapi belum memilih orang → blokir simpan.
+	const kepalaBelumDipilih = $derived(
+		kunciKepalaSekolah && kepalaQuery.trim() !== '' && kepalaTerpilihId === null
+	);
+	function sorotKepalaGeser(delta: number) {
+		const total = Math.min(kepalaTersaring.length, MAX_OPSI_TAMPIL);
+		if (total === 0) return;
+		indeksSorotKepala = (indeksSorotKepala + delta + total) % total;
+		document
+			.getElementById(`kepala-opsi-${indeksSorotKepala}`)
+			?.scrollIntoView({ block: 'nearest' });
+	}
+	function onKepalaKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			daftarKepalaTerbuka = false;
+			return;
+		}
+		if (!daftarKepalaTerbuka || kepalaTersaring.length === 0) return;
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			sorotKepalaGeser(1);
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			sorotKepalaGeser(-1);
+		} else if (e.key === 'Enter' && indeksSorotKepala >= 0) {
+			e.preventDefault();
+			pilihKepala(kepalaTersaring[Math.min(indeksSorotKepala, kepalaTersaring.length - 1)]);
+		}
+	}
+
 	// typed keys for jenjangPendidikanSederajat to avoid implicit `string` indexing errors
 	const jenjangKeys = Object.keys(jenjangPendidikanSederajat) as Array<
 		keyof typeof jenjangPendidikanSederajat
@@ -193,13 +252,86 @@
 				<div class="fieldset">
 					<!-- Nama Kepala Sekolah -->
 					<legend class="fieldset-legend">Nama Kepala Sekolah</legend>
-					<input
-						required
-						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
-						placeholder="Contoh: Bruce Wayne, Bat"
-						name="kepalaSekolah.nama"
-					/>
+					{#if pakaiSelectPegawai}
+						<div class="relative">
+							<input
+								type="text"
+								class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+								placeholder="Pilih Kepala Sekolah"
+								name="kepalaSekolah.nama"
+								required
+								autocomplete="off"
+								role="combobox"
+								aria-expanded={daftarKepalaTerbuka}
+								aria-controls="daftar-nama-kepala"
+								aria-activedescendant={daftarKepalaTerbuka && indeksSorotKepala >= 0
+									? `kepala-opsi-${indeksSorotKepala}`
+									: undefined}
+								bind:value={kepalaQuery}
+								onfocus={() => {
+									daftarKepalaTerbuka = true;
+									indeksSorotKepala = 0;
+								}}
+								oninput={() => {
+									daftarKepalaTerbuka = true;
+									indeksSorotKepala = 0;
+									kepalaTerpilihId = null;
+								}}
+								onblur={() => (daftarKepalaTerbuka = false)}
+								onkeydown={onKepalaKeydown}
+							/>
+							{#if daftarKepalaTerbuka && kepalaTersaring.length > 0}
+								<ul
+									id="daftar-nama-kepala"
+									role="listbox"
+									class="bg-base-200 absolute z-50 mt-1 max-h-60 w-full list-none overflow-y-auto rounded-box p-1 shadow-lg"
+								>
+									{#each kepalaTersaring.slice(0, MAX_OPSI_TAMPIL) as opsi, i (`${opsi.id}|${opsi.nama}`)}
+										<li
+											id={`kepala-opsi-${i}`}
+											role="option"
+											aria-selected={i === indeksSorotKepala}
+										>
+											<button
+												type="button"
+												class="w-full truncate rounded px-2 py-1.5 text-left text-sm transition-colors duration-200 hover:bg-base-content/10 {i ===
+												indeksSorotKepala
+													? 'bg-base-content/10'
+													: ''}"
+												onmousedown={(e) => e.preventDefault()}
+												onclick={() => pilihKepala(opsi)}
+											>
+												{#if opsi.nip}
+													<span class="mr-1.5 font-mono text-xs opacity-60">{opsi.nip}</span>
+												{/if}
+												{opsi.nama}
+											</button>
+										</li>
+									{/each}
+									{#if kepalaTersaring.length > MAX_OPSI_TAMPIL}
+										<li class="px-2 py-1 text-sm opacity-60">
+											{kepalaTersaring.length - MAX_OPSI_TAMPIL} lainnya — ketik untuk mempersempit.
+										</li>
+									{/if}
+								</ul>
+							{/if}
+						</div>
+						<span>
+							{#if kunciKepalaSekolah}
+								Otomatis dari Dapodik. Menambahkan gelar dilakukan melalui menu Pengaturan - Edit profil.
+							{:else}
+								Masukkan nama Kepala Sekolah lengkap dengan gelar.
+							{/if}
+						</span>
+					{:else}
+						<input
+							required
+							type="text"
+							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+							placeholder="Contoh: Bruce Wayne, Bat"
+							name="kepalaSekolah.nama"
+						/>
+					{/if}
 				</div>
 
 				<div class="fieldset">
@@ -211,8 +343,22 @@
 						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
 						placeholder="Contoh: NIP 19700305 199309 1 009"
 						name="kepalaSekolah.nip"
+						value={pakaiSelectPegawai ? kepalaNip : undefined}
+						disabled={kunciKepalaSekolah}
+						title={kunciKepalaSekolah
+							? 'Mengikuti data Dapodik — ubah melalui menu Pengaturan Profil akun yang bersangkutan'
+							: undefined}
 					/>
+					{#if !pakaiSelectPegawai}
+						<span>Biarkan kosong jika kepala sekolah tidak memiliki NIP.</span>
+					{:else if kunciKepalaSekolah}
+						<span>
+							Otomatis berdasarkan pegawai yang dipilih. Edit melalui menu Pengaturan - Edit profil.
+						</span>
+					{/if}
 				</div>
+
+				<input type="hidden" name="kepalaSekolahId" value={kepalaTerpilihId ?? ''} />
 
 				<div class="fieldset">
 					<!-- Nama desa atau kelurahan -->
@@ -382,7 +528,10 @@
 					<Icon name="import" />
 					Import DB
 				</button>
-				<button class="btn btn-primary shadow-none sm:w-auto" disabled={submitting}>
+				<button
+					class="btn btn-primary shadow-none sm:w-auto"
+					disabled={submitting || kepalaBelumDipilih}
+				>
 					{#if submitting}
 						<span class="loading loading-spinner"></span>
 					{/if}
