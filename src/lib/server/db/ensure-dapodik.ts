@@ -55,6 +55,18 @@ export async function ensureDapodikSchema() {
 			"pilihan_evaluasi" integer DEFAULT 0 NOT NULL,
 			"created_at" text NOT NULL,
 			"updated_at" text
+		)`,
+		// Cermin pembelajaran Dapodik per rombel — sumber daftar nama mapel
+		// pada form "Tambah Mata Pelajaran", difilter per kelas aktif.
+		`CREATE TABLE IF NOT EXISTS "dapodik_pembelajaran" (
+			"id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+			"kelas_id" integer NOT NULL REFERENCES kelas(id) ON DELETE CASCADE,
+			"pembelajaran_id" text NOT NULL,
+			"mata_pelajaran_id" text,
+			"nama" text NOT NULL,
+			"created_at" text NOT NULL,
+			"updated_at" text,
+			UNIQUE(pembelajaran_id)
 		)`
 	]);
 

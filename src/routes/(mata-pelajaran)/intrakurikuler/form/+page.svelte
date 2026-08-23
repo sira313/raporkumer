@@ -34,6 +34,7 @@
 		mode?: 'add' | 'edit';
 		mapel?: FormMapel | null;
 		kelasAktif?: KelasLite | null;
+		dapodikMapelList?: Array<{ nama: string; kode: string | null }>;
 	} & Record<string, unknown>;
 
 	let { data }: { data: FormData } = $props();
@@ -114,8 +115,7 @@
 		return result;
 	});
 
-	function onNamaInput(e: Event) {
-		const v = ((e.target as HTMLInputElement)?.value ?? '').trim();
+	function applyNamaRules(v: string) {
 		if (AGAMA_MAPEL_NAME_SET.has(v)) {
 			localKode = 'PAPB';
 		} else if (PKS_MAPEL_NAME_SET.has(v)) {
@@ -124,12 +124,59 @@
 			if (localKode === 'PAPB' || localKode === 'PKS') localKode = '';
 		}
 	}
+
+	function onNamaInput(e: Event) {
+		applyNamaRules(((e.target as HTMLInputElement)?.value ?? '').trim());
+	}
 	const heading = $derived(mode === 'edit' ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran');
 	const namaPlaceholder = $derived(
 		mode === 'edit' && isAgamaParent
 			? 'Pendidikan Agama dan Budi Pekerti'
 			: 'Contoh: Ilmu Pengetahuan Alam dan Sosial'
 	);
+	// Ada referensi Dapodik di DB (hasil Sinkronisasi) → mode tambah memakai select.
+	const dapodikMapelOptions = $derived(data.dapodikMapelList ?? []);
+	const pakaiSelectDapodik = $derived(mode === 'add' && dapodikMapelOptions.length > 0);
+
+	// Combobox pencarian nama mapel (input + dropdown hasil filter).
+	let namaQuery = $state('');
+	let daftarNamaTerbuka = $state(false);
+	let indeksSorot = $state(-1);
+	const MAX_OPSI_TAMPIL = 80;
+	const namaTersaring = $derived.by(() => {
+		const q = namaQuery.trim().toLowerCase();
+		if (!q) return dapodikMapelOptions;
+		return dapodikMapelOptions.filter((o) => o.nama.toLowerCase().includes(q));
+	});
+	function pilihNama(nama: string) {
+		namaQuery = nama;
+		daftarNamaTerbuka = false;
+		indeksSorot = -1;
+		applyNamaRules(nama);
+	}
+	function sorotGeser(delta: number) {
+		const total = Math.min(namaTersaring.length, MAX_OPSI_TAMPIL);
+		if (total === 0) return;
+		indeksSorot = (indeksSorot + delta + total) % total;
+		document.getElementById(`nama-opsi-${indeksSorot}`)?.scrollIntoView({ block: 'nearest' });
+	}
+	function onNamaKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			daftarNamaTerbuka = false;
+			return;
+		}
+		if (!daftarNamaTerbuka || namaTersaring.length === 0) return;
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			sorotGeser(1);
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			sorotGeser(-1);
+		} else if (e.key === 'Enter' && indeksSorot >= 0) {
+			e.preventDefault();
+			pilihNama(namaTersaring[Math.min(indeksSorot, namaTersaring.length - 1)].nama);
+		}
+	}
 </script>
 
 <FormEnhance
@@ -168,17 +215,86 @@
 		<p class="text-base-content/70 mb-4 text-sm">Kelas aktif: {kelasAktifLabel}</p>
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Nama Mata Pelajaran</legend>
-			<input
-				type="text"
-				class="input validator bg-base-200 w-full border-base-300 dark:border-none"
-				placeholder={namaPlaceholder}
-				name="nama"
-				required
-				disabled={disableNama}
-				value={mapel?.nama ?? ''}
-				oninput={onNamaInput}
-			/>
-			<p class="label text-wrap">Nama mata pelajaran jangan disingkat!</p>
+			{#if pakaiSelectDapodik}
+				<div class="relative">
+					<input
+						type="text"
+						class="input validator bg-base-200 w-full border-base-300 dark:border-none"
+						placeholder="Pilih Mata Pelajaran"
+						name="nama"
+						required
+						disabled={disableNama}
+						autocomplete="off"
+						role="combobox"
+						aria-expanded={daftarNamaTerbuka}
+						aria-controls="daftar-nama-mapel"
+						aria-activedescendant={daftarNamaTerbuka && indeksSorot >= 0
+							? `nama-opsi-${indeksSorot}`
+							: undefined}
+						bind:value={namaQuery}
+						onfocus={() => {
+							daftarNamaTerbuka = true;
+							indeksSorot = 0;
+						}}
+						oninput={() => {
+							daftarNamaTerbuka = true;
+							indeksSorot = 0;
+							applyNamaRules(namaQuery.trim());
+						}}
+						onblur={() => (daftarNamaTerbuka = false)}
+						onkeydown={onNamaKeydown}
+					/>
+					{#if daftarNamaTerbuka && namaTersaring.length > 0}
+						<ul
+							id="daftar-nama-mapel"
+							role="listbox"
+							class="bg-base-200 absolute z-50 mt-1 max-h-60 w-full list-none overflow-y-auto rounded-box p-1 shadow-lg"
+						>
+							{#each namaTersaring.slice(0, MAX_OPSI_TAMPIL) as opsi, i (`${opsi.kode ?? ''}|${opsi.nama}`)}
+								<li id={`nama-opsi-${i}`} role="option" aria-selected={i === indeksSorot}>
+									<button
+										type="button"
+										class="w-full truncate rounded px-2 py-1.5 text-left text-sm transition-colors duration-200 hover:bg-base-content/10 {i ===
+										indeksSorot
+											? 'bg-base-content/10'
+											: ''}"
+										onmousedown={(e) => e.preventDefault()}
+										onclick={() => pilihNama(opsi.nama)}
+									>
+										{#if opsi.kode}
+											<span class="mr-1.5 font-mono text-xs opacity-60">{opsi.kode}</span>
+										{/if}
+										{opsi.nama}
+									</button>
+								</li>
+							{/each}
+							{#if namaTersaring.length > MAX_OPSI_TAMPIL}
+								<li class="px-2 py-1 text-sm opacity-60">
+									{namaTersaring.length - MAX_OPSI_TAMPIL} lainnya — ketik untuk mempersempit.
+								</li>
+							{/if}
+						</ul>
+					{/if}
+				</div>
+			{:else}
+				<input
+					type="text"
+					class="input validator bg-base-200 w-full border-base-300 dark:border-none"
+					placeholder={namaPlaceholder}
+					name="nama"
+					required
+					disabled={disableNama}
+					value={mapel?.nama ?? ''}
+					oninput={onNamaInput}
+				/>
+			{/if}
+			<p class="label text-wrap">
+				{#if pakaiSelectDapodik}
+					Ketik untuk mencari, lalu pilih dari daftar. Nama mata pelajaran jangan disingkat!
+				{:else}
+					Nama mata pelajaran jangan disingkat!
+				{/if}
+			</p>
 		</fieldset>
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">KKM</legend>

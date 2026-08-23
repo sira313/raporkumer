@@ -4,6 +4,7 @@ import { triggerSchemaSync } from '$lib/server/schema-sync';
 import {
 	tableAlamat,
 	tableDapodikMataPelajaran,
+	tableDapodikPembelajaran,
 	tableDapodikSettings,
 	tableEkstrakurikuler,
 	tableKelas,
@@ -1450,6 +1451,7 @@ async function upsertPembelajaran(
 		let updated = 0;
 		let failed = 0;
 		let incomplete = 0;
+		let skipped = 0;
 
 		for (const { kelasId, row } of items) {
 			if (!validKelasIds.has(kelasId)) continue;
@@ -1467,6 +1469,25 @@ async function upsertPembelajaran(
 			}
 
 			try {
+				// Cermin pembelajaran per rombel — sumber daftar nama mapel pada form
+				// tambah (difilter per kelas), tanpa membuat baris mata_pelajaran.
+				await db
+					.insert(tableDapodikPembelajaran)
+					.values({
+						kelasId,
+						pembelajaranId,
+						mataPelajaranId: mapelRefId ?? null,
+						nama: namaMapel
+					})
+					.onConflictDoUpdate({
+						target: tableDapodikPembelajaran.pembelajaranId,
+						set: {
+							kelasId: sql`excluded.kelas_id`,
+							mataPelajaranId: sql`excluded.mata_pelajaran_id`,
+							nama: sql`excluded.nama`
+						}
+					});
+
 				// ptk_id pengampu tersedia langsung di row pembelajaran.
 				const pengampuId = ptkIndex.resolve(str(row, 'ptk_id'));
 
@@ -1495,15 +1516,20 @@ async function upsertPembelajaran(
 						})
 						.where(eq(tableMataPelajaran.id, existing.id));
 					updated++;
+				} else if (
+					!namaMapel.toLowerCase().startsWith('pendidikan agama') &&
+					!namaMapel.toLowerCase().startsWith('pendidikan kepercayaan')
+				) {
+					// Mapel hasil tarikan Dapodik TIDAK dibuat otomatis — admin menambahkannya
+					// sendiri lewat "Tambah Mata Pelajaran" (nama dipilih dari referensi Dapodik).
+					skipped++;
 				} else {
+					// Pengecualian Pendidikan Agama: langsung dibuat dan ter-binding ke kode PAPB.
 					await db.insert(tableMataPelajaran).values({
 						kelasId,
 						nama: namaMapel,
-						// Mapel hasil tarikan Dapodik belum tentu sesuai taksonomi aplikasi
-						// (wajib/mulok/dll.) — tandai "Belum Dipetakan" agar admin memetakan
-						// manual. Update path di atas sengaja TIDAK menyentuh jenis sehingga
-						// pemetaan admin bertahan saat sinkronisasi diulang.
-						jenis: 'belum_dipetakan',
+						jenis: 'wajib',
+						kode: 'PAPB',
 						dapodikPembelajaranId: pembelajaranId,
 						dapodikMataPelajaranId: mapelRefId,
 						...(pengampuId ? { pengampuId } : {})
@@ -1524,8 +1550,10 @@ async function upsertPembelajaran(
 			label: 'Pembelajaran',
 			status: failed > 0 && created + updated === 0 ? 'gagal' : 'ok',
 			detail: `${updated} mapel dicocokkan, ${created} mapel baru${
-				incomplete ? `, ${incomplete} dilewati (data tidak lengkap)` : ''
-			}${failed ? `, ${failed} gagal` : ''}.`
+				skipped ? `, ${skipped} tidak dibuat otomatis (tambah manual)` : ''
+			}${incomplete ? `, ${incomplete} dilewati (data tidak lengkap)` : ''}${
+				failed ? `, ${failed} gagal` : ''
+			}.`
 		});
 	} catch (e) {
 		sections.push({

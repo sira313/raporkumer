@@ -12,6 +12,7 @@ import {
 	tableSekolah
 } from '$lib/server/db/schema';
 import { cookieNames } from '$lib/utils';
+import { agamaMapelNames } from '$lib/statics';
 import { desc, eq, inArray } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 
@@ -95,15 +96,6 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 			: Promise.resolve([])
 	]);
 
-	const agamaMapelNames = [
-		'Pendidikan Agama dan Budi Pekerti',
-		'Pendidikan Agama Islam dan Budi Pekerti',
-		'Pendidikan Agama Kristen dan Budi Pekerti',
-		'Pendidikan Agama Katolik dan Budi Pekerti',
-		'Pendidikan Agama Buddha dan Budi Pekerti',
-		'Pendidikan Agama Hindu dan Budi Pekerti',
-		'Pendidikan Agama Konghuchu dan Budi Pekerti'
-	];
 	const agamaNameSet = new Set(agamaMapelNames);
 	const mapelByKelas = new Map<number, { namaKelas: string; kodes: Set<string> }>();
 	const kodeSet = new Set<string>();

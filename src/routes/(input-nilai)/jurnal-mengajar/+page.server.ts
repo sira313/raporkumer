@@ -11,6 +11,7 @@ import {
 import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { buildKelasContext } from '$lib/server/route-utils';
+import { agamaMapelNames } from '$lib/statics';
 
 const PER_PAGE = 20;
 
@@ -127,15 +128,6 @@ export async function load({ locals, url, depends, parent }) {
 			}
 
 			if (uniqueKode.includes('PAPB') && !kodeToMpMap.has('PAPB')) {
-				const agamaMapelNames = [
-					'Pendidikan Agama dan Budi Pekerti',
-					'Pendidikan Agama Islam dan Budi Pekerti',
-					'Pendidikan Agama Kristen dan Budi Pekerti',
-					'Pendidikan Agama Katolik dan Budi Pekerti',
-					'Pendidikan Agama Buddha dan Budi Pekerti',
-					'Pendidikan Agama Hindu dan Budi Pekerti',
-					'Pendidikan Agama Konghuchu dan Budi Pekerti'
-				];
 				const agamaMp = await db.query.tableMataPelajaran.findMany({
 					columns: { id: true, nama: true },
 					where: and(
@@ -221,15 +213,6 @@ export async function load({ locals, url, depends, parent }) {
 				// even if a matchingMp entry with kode='PAPB' already exists, since
 				// a single 'PAPB' key in kodeToMpMap can only hold one subject.
 				if (uniqueKode.includes('PAPB')) {
-					const agamaMapelNames = [
-						'Pendidikan Agama dan Budi Pekerti',
-						'Pendidikan Agama Islam dan Budi Pekerti',
-						'Pendidikan Agama Kristen dan Budi Pekerti',
-						'Pendidikan Agama Katolik dan Budi Pekerti',
-						'Pendidikan Agama Buddha dan Budi Pekerti',
-						'Pendidikan Agama Hindu dan Budi Pekerti',
-						'Pendidikan Agama Konghuchu dan Budi Pekerti'
-					];
 					const agamaMp = await db.query.tableMataPelajaran.findMany({
 						columns: { id: true, nama: true },
 						where: and(
@@ -509,15 +492,6 @@ export const actions = {
 			});
 
 			if (jadwalEntries.length === 0) {
-				const agamaMapelNames = [
-					'Pendidikan Agama dan Budi Pekerti',
-					'Pendidikan Agama Islam dan Budi Pekerti',
-					'Pendidikan Agama Kristen dan Budi Pekerti',
-					'Pendidikan Agama Katolik dan Budi Pekerti',
-					'Pendidikan Agama Buddha dan Budi Pekerti',
-					'Pendidikan Agama Hindu dan Budi Pekerti',
-					'Pendidikan Agama Konghuchu dan Budi Pekerti'
-				];
 				if (mpRow.nama && agamaMapelNames.includes(mpRow.nama)) {
 					jadwalEntries = await db.query.tableJadwalPelajaran.findMany({
 						columns: { jamKe: true },

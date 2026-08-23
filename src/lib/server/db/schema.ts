@@ -1615,3 +1615,24 @@ export const tableDapodikMataPelajaran = sqliteTable('dapodik_mata_pelajaran', {
 	pilihanEvaluasi: int({ mode: 'boolean' }).default(false).notNull(),
 	...audit
 });
+
+/**
+ * Cermin pembelajaran Dapodik per rombel (nested pada getRombonganBelajar).
+ * Tidak otomatis menjadi baris mata_pelajaran — dipakai sebagai daftar pilihan
+ * nama mapel (sesuai rombel kelasnya) pada form "Tambah Mata Pelajaran".
+ */
+export const tableDapodikPembelajaran = sqliteTable(
+	'dapodik_pembelajaran',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		kelasId: int()
+			.references(() => tableKelas.id, { onDelete: 'cascade' })
+			.notNull(),
+		pembelajaranId: text().notNull(),
+		// ID referensi dapodik_mata_pelajaran (bila ada).
+		mataPelajaranId: text(),
+		nama: text().notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.pembelajaranId)]
+);

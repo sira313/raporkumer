@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fail } from '@sveltejs/kit';
 import { and, desc, eq, inArray } from 'drizzle-orm';
+import { agamaMapelNames } from '$lib/statics';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, depends }) => {
@@ -99,15 +100,6 @@ export const load: PageServerLoad = async ({ locals, depends }) => {
 				})
 			: Promise.resolve([])
 	]);
-	const agamaMapelNames = [
-		'Pendidikan Agama dan Budi Pekerti',
-		'Pendidikan Agama Islam dan Budi Pekerti',
-		'Pendidikan Agama Kristen dan Budi Pekerti',
-		'Pendidikan Agama Katolik dan Budi Pekerti',
-		'Pendidikan Agama Buddha dan Budi Pekerti',
-		'Pendidikan Agama Hindu dan Budi Pekerti',
-		'Pendidikan Agama Konghuchu dan Budi Pekerti'
-	];
 	const agamaNameSet = new Set(agamaMapelNames);
 	const mapelByKelas = new Map<number, { namaKelas: string; kodes: Set<string> }>();
 	const kodeSet = new Set<string>();
