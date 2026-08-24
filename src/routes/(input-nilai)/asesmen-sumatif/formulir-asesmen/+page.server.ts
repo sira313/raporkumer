@@ -324,6 +324,7 @@ export async function load({ url, locals, depends }) {
 	return {
 		meta,
 		murid: { id: murid.id, nama: murid.nama },
+		kelasId: murid.kelasId,
 		mapel: { id: mapel.id, nama: mapel.nama, kkm: mapel.kkm ?? 0 },
 		hasTujuan: entries.length > 0,
 		hasLingkupComplete,

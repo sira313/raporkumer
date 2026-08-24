@@ -1,6 +1,6 @@
 <script lang="ts">
 	/* eslint-disable svelte/no-navigation-without-resolve -- small Map and URLSearchParams usage and navigation helpers */
-	import { invalidate } from '$app/navigation';
+	import { invalidate, goto } from '$app/navigation';
 	import CheatControls from '$lib/components/asesmen-sumatif/cheat-controls.svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
@@ -25,6 +25,7 @@
 
 	type PageData = {
 		murid: { id: number; nama: string };
+		kelasId: number;
 		mapel: { id: number; kkm: number };
 		sumatifWeights: { lingkup: number; sts: number; sas: number };
 		sumatifWeightsRts: { lingkup: number; sts: number };
@@ -90,6 +91,90 @@
 			data.initialScores.stsNonTes != null ? data.initialScores.stsNonTes.toFixed(2) : '';
 		cheatUnlocked = data.cheatUnlocked;
 	});
+
+	// Combobox pindah murid: daftar diambil dari /api/murid/daftar (kelas sama),
+	// difilter lokal seperti combobox "Nama Mata Pelajaran".
+	type MuridOption = { id: number; nama: string };
+	const MAX_OPSI_MURID = 80;
+	let muridQuery = $state('');
+	let daftarMuridTerbuka = $state(false);
+	let indeksSorotMurid = $state(-1);
+	let muridOptions = $state<MuridOption[]>([]);
+	let muridLoading = $state(false);
+
+	const isDirty = $derived.by(() => {
+		if (
+			normalizeScoreText(sasTesText) !== data.initialScores.sasTes ||
+			normalizeScoreText(sasNonTesText) !== data.initialScores.sasNonTes ||
+			normalizeScoreText(stsTesText) !== data.initialScores.stsTes ||
+			normalizeScoreText(stsNonTesText) !== data.initialScores.stsNonTes
+		) {
+			return true;
+		}
+		return entries.some(
+			(entry, i) => normalizeScoreText(entry.nilaiText) !== (data.entries[i]?.nilai ?? null)
+		);
+	});
+
+	async function loadMuridOptions() {
+		if (muridOptions.length || muridLoading) return;
+		muridLoading = true;
+		try {
+			const res = await fetch(`/api/murid/daftar?kelas_id=${data.kelasId}`);
+			if (res.ok) muridOptions = await res.json();
+		} finally {
+			muridLoading = false;
+		}
+	}
+
+	const muridTersaring = $derived.by(() => {
+		const q = muridQuery.trim().toLowerCase();
+		if (!q) return muridOptions;
+		return muridOptions.filter((o) => o.nama.toLowerCase().includes(q));
+	});
+
+	function sorotMuridGeser(delta: number) {
+		const total = Math.min(muridTersaring.length, MAX_OPSI_MURID);
+		if (total === 0) return;
+		indeksSorotMurid = (indeksSorotMurid + delta + total) % total;
+		document.getElementById(`murid-opsi-${indeksSorotMurid}`)?.scrollIntoView({ block: 'nearest' });
+	}
+
+	function onMuridKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter') e.preventDefault();
+		if (e.key === 'Escape') {
+			daftarMuridTerbuka = false;
+			return;
+		}
+		if (!daftarMuridTerbuka || muridTersaring.length === 0) return;
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			sorotMuridGeser(1);
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			sorotMuridGeser(-1);
+		} else if (e.key === 'Enter' && indeksSorotMurid >= 0) {
+			pilihMurid(muridTersaring[Math.min(indeksSorotMurid, muridTersaring.length - 1)]);
+		}
+	}
+
+	async function pilihMurid(murid: MuridOption) {
+		daftarMuridTerbuka = false;
+		indeksSorotMurid = -1;
+		muridQuery = '';
+		if (murid.id === data.murid.id) return;
+		if (
+			isDirty &&
+			!confirm(
+				'Masih ada perubahan nilai yang belum disimpan. Pindah murid akan membuangnya. Lanjutkan?'
+			)
+		) {
+			return;
+		}
+		await goto(`/asesmen-sumatif/formulir-asesmen?murid_id=${murid.id}&mapel_id=${data.mapel.id}`, {
+			keepFocus: true
+		});
+	}
 
 	const lingkupSummaries = $derived.by((): LingkupSummary[] => {
 		const grouped = new Map<
@@ -451,6 +536,81 @@
 				</button>
 			</div>
 
+			<div class="relative mt-3 w-full">
+				<label class="input bg-base-200 w-full border-base-300 dark:border-none">
+					<Icon name="search" />
+					<input
+						type="search"
+						class="w-full grow bg-transparent outline-none"
+						placeholder="Ketik nama murid atau pilih di sini"
+						autocomplete="off"
+						role="combobox"
+						aria-expanded={daftarMuridTerbuka}
+						aria-controls="daftar-murid-formulir"
+						aria-activedescendant={daftarMuridTerbuka && indeksSorotMurid >= 0
+							? `murid-opsi-${indeksSorotMurid}`
+							: undefined}
+						bind:value={muridQuery}
+						onfocus={() => {
+							void loadMuridOptions();
+							daftarMuridTerbuka = true;
+							indeksSorotMurid = -1;
+						}}
+						oninput={() => {
+							daftarMuridTerbuka = true;
+							indeksSorotMurid = -1;
+						}}
+						onblur={() => (daftarMuridTerbuka = false)}
+						onkeydown={onMuridKeydown}
+					/>
+				</label>
+				{#if daftarMuridTerbuka && muridTersaring.length > 0}
+					<ul
+						id="daftar-murid-formulir"
+						role="listbox"
+						class="bg-base-200 absolute z-50 mt-1 max-h-60 w-full list-none overflow-y-auto rounded-box p-1 shadow-lg"
+					>
+						{#each muridTersaring.slice(0, MAX_OPSI_MURID) as opsi, i (opsi.id)}
+							<li id={`murid-opsi-${i}`} role="option" aria-selected={i === indeksSorotMurid}>
+								<button
+									type="button"
+									class="w-full truncate rounded px-2 py-1.5 text-left text-sm transition-colors duration-200 hover:bg-base-content/10 {i ===
+									indeksSorotMurid
+										? 'bg-base-content/10'
+										: ''}"
+									onmousedown={(e) => e.preventDefault()}
+									onclick={() => pilihMurid(opsi)}
+								>
+									{#if opsi.id === data.murid.id}
+										<Icon name="check" class="mr-1.5 inline size-4" />
+									{/if}
+									{opsi.nama}
+								</button>
+							</li>
+						{/each}
+						{#if muridTersaring.length > MAX_OPSI_MURID}
+							<li class="px-2 py-1 text-sm opacity-60">
+								{muridTersaring.length - MAX_OPSI_MURID} lainnya — ketik untuk mempersempit.
+							</li>
+						{/if}
+					</ul>
+				{:else if daftarMuridTerbuka && muridLoading}
+					<ul
+						role="listbox"
+						class="bg-base-200 absolute z-50 mt-1 w-full list-none rounded-box p-2 shadow-lg"
+					>
+						<li class="text-sm opacity-60">Memuat...</li>
+					</ul>
+				{:else if daftarMuridTerbuka}
+					<ul
+						role="listbox"
+						class="bg-base-200 absolute z-50 mt-1 w-full list-none rounded-box p-2 shadow-lg"
+					>
+						<li class="text-sm opacity-60">Murid tidak ditemukan.</li>
+					</ul>
+				{/if}
+			</div>
+
 			<h3 class="mt-4 pb-2 text-lg font-bold">
 				Isi nilai harian tiap tujuan pembelajaran untuk {data.murid.nama}.
 			</h3>
@@ -484,44 +644,37 @@
 
 			<LingkupSummaryCard {naSumatifLingkup} {lingkupSummaries} {totalBobot} {formatScore} />
 
-			<details class="collapse-arrow bg-base-200 rounded-box collapse mt-6">
-				<summary class="collapse-title text-lg font-bold">
-					Isi Sumatif Tengah Semester & Akhir Semester (opsional)
-				</summary>
-				<div class="collapse-content space-y-4">
-					<h3 class="pb-2 text-lg font-bold">
-						Isi Sumatif Tengah Semester di bawah ini untuk {data.murid.nama}.
-					</h3>
-					<SasInputTable
-						tesText={stsTesText}
-						nonTesText={stsNonTesText}
-						namePrefix="sts"
-						tesLabel="Nilai Tes Sumatif Tengah Semester (STS)"
-						nonTesLabel="Nilai Non Tes Sumatif Tengah Semester (STS)"
-						{getInputClass}
-						on:sasChange={handleSasChange}
-					/>
+			<h3 class="mt-6 pb-2 text-lg font-bold">
+				Isi Sumatif Tengah Semester di bawah ini untuk {data.murid.nama} (opsional).
+			</h3>
+			<SasInputTable
+				tesText={stsTesText}
+				nonTesText={stsNonTesText}
+				namePrefix="sts"
+				tesLabel="Nilai Tes Sumatif Tengah Semester (STS)"
+				nonTesLabel="Nilai Non Tes Sumatif Tengah Semester (STS)"
+				{getInputClass}
+				on:sasChange={handleSasChange}
+			/>
 
-					<SasSummaryCard
-						nilaiSas={nilaiSts}
-						{formatScore}
-						title="NA Sumatif Tengah Semester"
-						subtitle="Rata-rata dari nilai Tes dan Non Tes STS"
-					/>
+			<SasSummaryCard
+				nilaiSas={nilaiSts}
+				{formatScore}
+				title="NA Sumatif Tengah Semester"
+				subtitle="Rata-rata dari nilai Tes dan Non Tes STS"
+			/>
 
-					<h3 class="pb-2 text-lg font-bold">
-						Isi Sumatif Akhir Semester di bawah ini untuk {data.murid.nama}.
-					</h3>
-					<SasInputTable
-						tesText={sasTesText}
-						nonTesText={sasNonTesText}
-						{getInputClass}
-						on:sasChange={handleSasChange}
-					/>
+			<h3 class="mt-6 pb-2 text-lg font-bold">
+				Isi Sumatif Akhir Semester di bawah ini untuk {data.murid.nama}.
+			</h3>
+			<SasInputTable
+				tesText={sasTesText}
+				nonTesText={sasNonTesText}
+				{getInputClass}
+				on:sasChange={handleSasChange}
+			/>
 
-					<SasSummaryCard {nilaiSas} {formatScore} />
-				</div>
-			</details>
+			<SasSummaryCard {nilaiSas} {formatScore} />
 
 			<NilaiAkhirCard
 				title="Nilai Rapor Tengah Semester"
