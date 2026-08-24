@@ -15,6 +15,7 @@ import { ensurePresensiGuruSchema } from './ensure-presensi-guru';
 import { ensureSppdSchema } from './ensure-sppd';
 import { ensureKepalaSekolahAccounts } from '$lib/server/kepala-sekolah';
 import { ensureAiSettingsSchema } from './ensure-ai-settings';
+import { ensureUserAiSettingsSchema } from './ensure-user-ai-settings';
 import { ensureBukuTamuSettingsSchema } from './ensure-buku-tamu-settings';
 import { ensureCoreSchema } from './ensure-core-schema';
 import { ensureDapodikSchema } from './ensure-dapodik';
@@ -40,6 +41,7 @@ export async function runStartupEnsures() {
 	await ensureLoginAttemptsSchema();
 	await ensureBukuTamuSettingsSchema();
 	await ensureAiSettingsSchema();
+	await ensureUserAiSettingsSchema();
 	await ensureDapodikSchema();
 	// Tabel fitur akademik yang sebelumnya hanya di-ensure per-route — daftarkan di
 	// sini agar DB segar/reset selalu punya skema lengkap tanpa perlu `pnpm db:push`.

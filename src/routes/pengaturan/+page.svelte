@@ -16,6 +16,7 @@
 
 	let user = $derived(page.data.user);
 	const isAdmin = $derived(user?.type === 'admin' || user?.type === 'kepala_sekolah');
+	const isGuru = $derived(user?.type === 'wali_kelas' || user?.type === 'wali_asuh');
 
 	// svelte-ignore state_referenced_locally
 	let wasForcePasswordChange = $state(data.forcePasswordChange);
@@ -83,6 +84,24 @@
 
 {#if isAdmin}
 	<div class="mt-4">
-		<AiKeyCard gemini={data.gemini} />
+		<AiKeyCard
+			variant="sekolah"
+			title="Kunci API"
+			description="Konfigurasi kunci API untuk fitur &quot;Generate&quot; Tujuan Pembelajaran di halaman Intrakurikuler. Mendukung Google Gemini langsung (native API) dan semua penyedia yang kompatibel dengan OpenAI chat completions (OpenRouter, DeepSeek, Groq, dsb). Satu kunci dipakai untuk seluruh sekolah di aplikasi ini."
+			idPrefix="gemini"
+			data={data.gemini}
+		/>
+	</div>
+{/if}
+
+{#if isGuru}
+	<div class="mt-4">
+		<AiKeyCard
+			variant="pribadi"
+			title="Kunci API Pribadi"
+			description="Kunci API milik Anda sendiri untuk fitur &quot;Generate&quot; Tujuan Pembelajaran. Jika disetel, kunci ini yang dipakai (bukan kunci sekolah) sehingga kuota Anda terpisah dan tidak berebut dengan pengguna lain."
+			idPrefix="personal-ai"
+			data={data.personalAi}
+		/>
 	</div>
 {/if}

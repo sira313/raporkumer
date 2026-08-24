@@ -3,48 +3,75 @@
 	import Icon from '$lib/components/icon.svelte';
 
 	let {
-		gemini
+		variant,
+		title,
+		description,
+		idPrefix,
+		data
 	}: {
-		gemini: {
+		variant: 'sekolah' | 'pribadi';
+		title: string;
+		description: string;
+		idPrefix: string;
+		data: {
 			keySet: boolean;
 			maskedKey: string | null;
 			envKeyPresent: boolean;
 			model: string;
 			baseUrl: string;
+			schoolKeySet?: boolean;
 		};
 	} = $props();
 
-	// Password visibility toggles
-	let showGeminiKey = $state(false);
-	let clearingGeminiKey = $state(false);
+	const isPersonal = variant === 'pribadi';
+	const saveAction = isPersonal ? '?/save-my-ai-key' : '?/save-gemini-key';
+	const clearAction = isPersonal ? '?/clear-my-ai-key' : '?/clear-gemini-key';
+
+	// Password visibility toggle
+	let showKey = $state(false);
+	let clearingKey = $state(false);
 	// svelte-ignore state_referenced_locally
-	let aiModel = $state(gemini.model);
+	let aiModel = $state(data.model);
 	// svelte-ignore state_referenced_locally
-	let aiBaseUrl = $state(gemini.baseUrl);
+	let aiBaseUrl = $state(data.baseUrl);
 </script>
 
 <section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
 	<FormEnhance
-		action="?/save-gemini-key"
+		action={saveAction}
 		onsuccess={({ form }) => {
 			form.reset();
 		}}
 	>
 		{#snippet children({ submitting, invalid })}
 			<header class="mb-4 space-y-2">
-				<h2 class="text-xl font-semibold">Kunci API</h2>
+				<h2 class="text-xl font-semibold">{title}</h2>
 				<p class="text-base-content/70 text-sm">
-					Konfigurasi kunci API untuk fitur "Generate" Tujuan Pembelajaran di halaman
-					Intrakurikuler. Mendukung Google Gemini langsung (native API) dan semua penyedia yang
-					kompatibel dengan OpenAI chat completions (OpenRouter, DeepSeek, Groq, dsb). Satu kunci
-					dipakai untuk seluruh sekolah di aplikasi ini.
+					{description}
 				</p>
-				{#if gemini.keySet}
+				{#if data.keySet}
 					<div class="alert alert-success">
 						<Icon name="success" />
-						<span>Kunci API aktif: {gemini.maskedKey}</span>
+						<span>Kunci API {isPersonal ? 'pribadi ' : ''}aktif: {data.maskedKey}</span>
 					</div>
-				{:else if gemini.envKeyPresent}
+				{:else if isPersonal}
+					{#if data.schoolKeySet || data.envKeyPresent}
+						<div class="alert alert-info alert-soft">
+							<Icon name="info" />
+							<span>
+								Saat ini Anda memakai kunci API sekolah. Setel kunci pribadi agar memiliki kuota
+								sendiri dan tidak berebut dengan pengguna lain.
+							</span>
+						</div>
+					{:else}
+						<div class="alert alert-warning alert-soft">
+							<Icon name="warning" />
+							<span
+								>Belum ada kunci API sekolah maupun pribadi. Fitur "Generate" belum dapat digunakan.</span
+							>
+						</div>
+					{/if}
+				{:else if data.envKeyPresent}
 					<div class="alert alert-info alert-soft">
 						<Icon name="info" />
 						<span
@@ -68,8 +95,8 @@
 					>
 						<span class="pl-2"><Icon name="key" /></span>
 						<input
-							type={showGeminiKey ? 'text' : 'password'}
-							id="geminiApiKey"
+							type={showKey ? 'text' : 'password'}
+							id="{idPrefix}ApiKey"
 							name="apiKey"
 							required
 							minlength={10}
@@ -79,10 +106,10 @@
 						<button
 							type="button"
 							class="cursor-pointer pr-2"
-							onclick={() => (showGeminiKey = !showGeminiKey)}
+							onclick={() => (showKey = !showKey)}
 							aria-label="Toggle API key visibility"
 						>
-							<Icon name={showGeminiKey ? 'eye-off' : 'eye'} />
+							<Icon name={showKey ? 'eye-off' : 'eye'} />
 						</button>
 					</label>
 					<p class="text-base-content/70 mt-1 text-xs">
@@ -99,10 +126,10 @@
 						type="text"
 						name="model"
 						bind:value={aiModel}
-						placeholder="gemini-3.6-flash"
-						list="ai-model-list"
+						placeholder={isPersonal ? 'ikut setelan sekolah' : 'gemini-3.6-flash'}
+						list="{idPrefix}-model-list"
 					/>
-					<datalist id="ai-model-list">
+					<datalist id="{idPrefix}-model-list">
 						<option value="gemini-3.6-flash"></option>
 						<option value="gemini-3.1-pro"></option>
 						<option value="gemini-3.7-flash"></option>
@@ -119,7 +146,9 @@
 						<option value="qwen3.8-max"></option>
 					</datalist>
 					<p class="text-base-content/70 mt-1 text-xs">
-						Nama model sesuai penyedia API yang digunakan.
+						{isPersonal
+							? 'Kosongkan untuk mengikuti model setelan sekolah.'
+							: 'Nama model sesuai penyedia API yang digunakan.'}
 					</p>
 				</fieldset>
 
@@ -130,26 +159,32 @@
 						type="text"
 						name="baseUrl"
 						bind:value={aiBaseUrl}
-						placeholder="contoh: https://generativelanguage.googleapis.com"
+						placeholder={isPersonal
+							? 'ikut setelan sekolah'
+							: 'contoh: https://generativelanguage.googleapis.com'}
 						autocomplete="off"
-						required
+						required={!isPersonal}
 					/>
 					<p class="text-base-content/70 mt-1 text-xs">
-						Endpoint API lengkap termasuk <code>/v1</code> jika diperlukan.
+						{#if isPersonal}
+							Kosongkan untuk mengikuti base URL sekolah.
+						{:else}
+							Endpoint API lengkap termasuk <code>/v1</code> jika diperlukan.
+						{/if}
 					</p>
 				</fieldset>
 			</div>
 
 			<div class="mt-6 flex items-center gap-2">
-				{#if gemini.keySet}
+				{#if data.keySet}
 					<button
 						class="btn btn-soft btn-error shadow-none"
 						type="submit"
-						form="gemini-key-clear"
-						disabled={clearingGeminiKey}
+						form="{idPrefix}-key-clear"
+						disabled={clearingKey}
 					>
 						<Icon name="del" />
-						{clearingGeminiKey ? 'Menghapus…' : 'Hapus Kunci'}
+						{clearingKey ? 'Menghapus…' : 'Hapus Kunci'}
 					</button>
 				{/if}
 
@@ -165,11 +200,11 @@
 		{/snippet}
 	</FormEnhance>
 
-	{#if gemini.keySet}
+	{#if data.keySet}
 		<FormEnhance
-			id="gemini-key-clear"
-			action="?/clear-gemini-key"
-			submitStateChange={(s) => (clearingGeminiKey = s)}
+			id="{idPrefix}-key-clear"
+			action={clearAction}
+			submitStateChange={(s) => (clearingKey = s)}
 		>
 			{#snippet children({ submitting })}
 				<button type="submit" class="hidden" disabled={submitting}>Hapus</button>

@@ -1,5 +1,5 @@
 import db from '$lib/server/db';
-import { tableAiSettings } from '$lib/server/db/schema';
+import { tableAiSettings, tableAuthUser } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 
 export type AiSettings = {
@@ -31,10 +31,30 @@ export async function getStoredAiSettings(): Promise<AiSettings | null> {
 }
 
 /**
- * Resolve the active AI settings. Prefers the key stored in the DB (set via
- * /pengaturan), falling back to the GEMINI_API_KEY env var for development.
+ * Resolve the active AI settings for a user. Priority: the user's personal key
+ * (set via /pengaturan by wali_kelas/wali_asuh) → the school-wide key stored in
+ * the DB → the GEMINI_API_KEY env var for development. Blank model/baseUrl on
+ * the personal key fall back to the school-wide values, then defaults.
  */
-export async function getAiSettings(): Promise<AiSettings | null> {
+export async function getAiSettings(userId?: number): Promise<AiSettings | null> {
+	const fallback = await getGlobalAiSettings();
+	if (userId != null) {
+		const user = await db.query.tableAuthUser.findFirst({
+			where: eq(tableAuthUser.id, userId),
+			columns: { aiApiKey: true, aiModel: true, aiBaseUrl: true }
+		});
+		if (user?.aiApiKey) {
+			return {
+				apiKey: user.aiApiKey,
+				model: user.aiModel || fallback?.model || DEFAULT_AI_MODEL,
+				baseUrl: user.aiBaseUrl || fallback?.baseUrl || 'https://generativelanguage.googleapis.com'
+			};
+		}
+	}
+	return fallback;
+}
+
+async function getGlobalAiSettings(): Promise<AiSettings | null> {
 	const row = await db.query.tableAiSettings.findFirst();
 	if (row?.apiKey) {
 		return {
@@ -52,6 +72,46 @@ export async function getAiSettings(): Promise<AiSettings | null> {
 		};
 	}
 	return null;
+}
+
+/** Read the raw per-user AI settings (no resolution/fallback). Used by /pengaturan. */
+export async function getStoredUserAiSettings(
+	userId: number
+): Promise<{ apiKey: string; model: string; baseUrl: string } | null> {
+	const user = await db.query.tableAuthUser.findFirst({
+		where: eq(tableAuthUser.id, userId),
+		columns: { aiApiKey: true, aiModel: true, aiBaseUrl: true }
+	});
+	if (!user?.aiApiKey) return null;
+	return {
+		apiKey: user.aiApiKey,
+		model: user.aiModel ?? '',
+		baseUrl: user.aiBaseUrl ?? ''
+	};
+}
+
+export async function saveUserAiSettings(
+	userId: number,
+	apiKey: string,
+	model: string,
+	baseUrl: string
+) {
+	await db
+		.update(tableAuthUser)
+		.set({
+			aiApiKey: apiKey,
+			aiModel: model.trim() || null,
+			aiBaseUrl: baseUrl.trim() || null,
+			updatedAt: new Date().toISOString()
+		})
+		.where(eq(tableAuthUser.id, userId));
+}
+
+export async function clearUserAiSettings(userId: number) {
+	await db
+		.update(tableAuthUser)
+		.set({ aiApiKey: null, aiModel: null, aiBaseUrl: null, updatedAt: new Date().toISOString() })
+		.where(eq(tableAuthUser.id, userId));
 }
 
 export async function saveAiSettings(apiKey: string, model: string, baseUrl?: string) {
@@ -137,6 +197,32 @@ function parseGeneratedPayload(text: string): GeneratedGroup[] {
 	return groups;
 }
 
+/** Delays between automatic retries when the provider responds with 429. */
+const RETRY_DELAYS_MS = [5_000, 12_000];
+
+function sleep(ms: number) {
+	return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Run `task`, retrying up to 2 times (with backoff) when the provider signals
+ * rate limiting (HTTP 429). Intended to run inside an `enqueueAi` lane so the
+ * backoff also holds the lane's spacing for other waiters.
+ */
+export async function withAi429Retry<T>(task: () => Promise<T>): Promise<T> {
+	let lastErr: unknown;
+	for (let attempt = 0; ; attempt++) {
+		try {
+			return await task();
+		} catch (err) {
+			lastErr = err;
+			if ((err as { status?: number }).status !== 429 || attempt >= RETRY_DELAYS_MS.length) break;
+			await sleep(RETRY_DELAYS_MS[attempt]);
+		}
+	}
+	throw lastErr;
+}
+
 export type GenerateTujuanPembelajaranInput = {
 	apiKey: string;
 	model: string;
@@ -166,7 +252,7 @@ export async function generateTujuanPembelajaran(
 
 	const userPrompt = `${capaianPembelajaran}
 
-Berdasarkan capaian pembelajaran untuk ${mapelNama} ${kelasLabel} ${semesterAktif} di atas, generate maksimal ${maxLingkupMateri} Lingkup Materi, tiap lingkup materi maksimal terdiri atas ${maxTujuanPembelajaran} Tujuan Pembelajaran. Tujuan Pembelajaran gunakan huruf kecil di awal kalimat, tanpa titik di akhir kalimat, limit 100 karakter.
+Berdasarkan capaian pembelajaran untuk ${mapelNama} ${kelasLabel} ${semesterAktif} di atas, generate maksimal ${maxLingkupMateri} Lingkup Materi, tiap lingkup materi maksimal terdiri atas ${maxTujuanPembelajaran} Tujuan Pembelajaran. Tujuan Pembelajaran harus terstruktur menggunakan Taksonomi SOLO yang akan digunakan pada pendekatan pembelajaran mendalam. Tujuan Pembelajaran gunakan huruf kecil di awal kalimat, tanpa titik di akhir kalimat, limit 100 karakter.
 
 Jawab HANYA dengan JSON tanpa teks lain, dengan format:
 {"lingkupMateri":[{"nama":"nama lingkup materi","tujuanPembelajaran":["tujuan pembelajaran 1","tujuan pembelajaran 2"]}]}`;
@@ -254,7 +340,20 @@ Jawab HANYA dengan JSON tanpa teks lain, dengan format:
 				'Kunci API tidak valid atau kuota tidak mencukupi. Periksa kembali di halaman Pengaturan.'
 			);
 		}
-		throw new Error(detail || `Layanan AI merespons dengan status ${response.status}.`);
+		if (response.status === 429) {
+			throw Object.assign(
+				new Error(
+					'Kuota API sedang habis atau terlalu banyak permintaan. Coba lagi beberapa saat.'
+				),
+				{ status: 429 }
+			);
+		}
+		throw Object.assign(
+			new Error(detail || `Layanan AI merespons dengan status ${response.status}.`),
+			{
+				status: response.status
+			}
+		);
 	}
 
 	let data: unknown;

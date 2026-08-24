@@ -42,6 +42,11 @@ export const tableAuthUser = sqliteTable(
 		kelasId: int().references(() => tableKelas.id),
 		// untuk akun tipe 'user' kita simpan pilihan mata pelajaran yang diassign saat pembuatan akun
 		mataPelajaranId: int().references(() => tableMataPelajaran.id),
+		// Kunci API AI pribadi (wali_kelas/wali_asuh). Server-side only — jangan
+		// pernah ikut payload locals.user; klien hanya melihat versi ter-mask.
+		aiApiKey: text(),
+		aiModel: text(),
+		aiBaseUrl: text(),
 		// Profil pribadi pengguna (diisi via /pengaturan/profil)
 		namaLengkap: text(),
 		tempatLahir: text(),
