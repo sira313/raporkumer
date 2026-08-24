@@ -334,7 +334,7 @@
 		}}
 		open
 	>
-		<div class="modal-box p-4 sm:w-full sm:max-w-xl">
+		<div class="modal-box flex max-h-[90vh] flex-col p-4 sm:w-full sm:max-w-xl">
 			<KirimDapodikPage data={page.state.modal?.data} />
 		</div>
 		<form method="dialog" class="modal-backdrop">

@@ -10,6 +10,7 @@
 		children: Snippet<[{ submitting: boolean; invalid: boolean }]>;
 		action: string;
 		id?: string;
+		class?: string;
 		enctype?: HTMLFormAttributes['enctype'];
 		init?: Record<string, unknown>;
 		onsuccess?: (params: { form: HTMLFormElement; data?: Record<string, unknown> }) => void;
@@ -26,6 +27,7 @@
 		children,
 		action,
 		id,
+		class: className = '',
 		enctype,
 		init,
 		onsuccess,
@@ -261,6 +263,7 @@
 	bind:this={formEl}
 	{id}
 	{action}
+	class={className}
 	method="POST"
 	{enctype}
 	use:enhance={enhancedSubmit}

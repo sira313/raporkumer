@@ -1,84 +1,16 @@
 import db from '$lib/server/db/index.js';
 import { normMapelName, resolveReferensiMapelId } from '$lib/server/dapodik';
-import {
-	tableDapodikMataPelajaran,
-	tableDapodikPembelajaran,
-	tableKelas,
-	tableMataPelajaran
-} from '$lib/server/db/schema';
+import { opsiMapelDapodik } from '$lib/server/dapodik-mapel-options';
+import { tableDapodikPembelajaran, tableKelas, tableMataPelajaran } from '$lib/server/db/schema';
 import { cookieNames, unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
-import { and, eq, isNull } from 'drizzle-orm';
-
-// Dapodik tidak punya katalog mapel per tingkat (getPembelajaran 404; row
-// pembelajaran rombel hanya mapel yang diinput operator — di SD umumnya cuma
-// Guru Kelas + PJOK karena mapel lain diajar wali kelas). Untuk jenjang
-// dasar/menengah, daftar pilihan = pembelajaran rombel DIGABUNG subset
-// referensi nasional ber-nama umum. Jenjang lanjutan (SMA/SMK/MA/PKBM) =
-// mirror rombel saja agar tidak "unlock" mapel umum yang tidak relevan.
-const RE_MAPEL_UMUM_DASAR =
-	/^(guru kelas sd|pendidikan agama|pendidikan kepercayaan|pendidikan pancasila|pendidikan kewarganegaraan|bahasa indonesia|bahasa inggris|matematika|ilmu pengetahuan alam|ilmu pengetahuan sosial|ipas|seni budaya|seni rupa|sbdp|prakarya|pendidikan jasmani|pjok|muatan lokal|mulok|bahasa daerah|informatika|koding|pembelajaran berbasis proje[ky])/;
-const RE_NOISE = /(tingkat lanjut|peminatan|maritim|perikanan|bimp)/i;
-
-function grupJenjangDasarMenengah(sekolah: App.Locals['sekolah']): boolean {
-	const jenjang = (sekolah?.jenjangPendidikan ?? '').toLowerCase();
-	const variant = (sekolah?.jenjangVariant ?? '').toLowerCase();
-	return ['sd', 'slb', 'smp'].includes(jenjang) || ['mi', 'mts', 'slb-dasar'].includes(variant);
-}
-
-export type OpsiMapelDapodik = { nama: string; kode: string | null };
+import { and, eq } from 'drizzle-orm';
 
 export async function load({ parent, locals }) {
 	const { kelasAktif } = await parent();
-	let dapodikMapelList: OpsiMapelDapodik[] = [];
-	let indukList: Array<{ nama: string; pembelajaranId: string }> = [];
-	if (kelasAktif?.id) {
-		const referensiPromise = grupJenjangDasarMenengah(locals.sekolah)
-			? db
-					.select({
-						nama: tableDapodikMataPelajaran.nama,
-						kode: tableDapodikMataPelajaran.mataPelajaranId
-					})
-					.from(tableDapodikMataPelajaran)
-					.where(isNull(tableDapodikMataPelajaran.jurusanId))
-			: Promise.resolve<Array<{ nama: string; kode: number }>>([]);
-		const [pembelajaranRows, referensiRows] = await Promise.all([
-			db
-				.selectDistinct({
-					nama: tableDapodikPembelajaran.nama,
-					kode: tableDapodikPembelajaran.mataPelajaranId
-				})
-				.from(tableDapodikPembelajaran)
-				.where(eq(tableDapodikPembelajaran.kelasId, kelasAktif.id)),
-			referensiPromise
-		]);
-		// Kandidat pembelajaran induk (untuk Sub Pembelajaran): pembelajaran rombel
-		// yang terdaftar di Dapodik — opsi select "Mata Pelajaran Induk".
-		indukList = await db
-			.select({
-				nama: tableDapodikPembelajaran.nama,
-				pembelajaranId: tableDapodikPembelajaran.pembelajaranId
-			})
-			.from(tableDapodikPembelajaran)
-			.where(eq(tableDapodikPembelajaran.kelasId, kelasAktif.id));
-		// Kunci gabungan nama+kode: nama sama dengan kode referensi berbeda
-		// tetap tampil sebagai opsi terpisah.
-		const opsiMap = new Map<string, OpsiMapelDapodik>();
-		for (const row of pembelajaranRows) {
-			opsiMap.set(`${row.nama}|${row.kode ?? ''}`, {
-				nama: row.nama,
-				kode: row.kode ?? null
-			});
-		}
-		for (const row of referensiRows ?? []) {
-			const nama = row.nama.trim();
-			if (!nama || RE_NOISE.test(nama)) continue;
-			if (!RE_MAPEL_UMUM_DASAR.test(nama.toLowerCase())) continue;
-			const kode = String(row.kode);
-			opsiMap.set(`${nama}|${kode}`, { nama, kode });
-		}
-		dapodikMapelList = [...opsiMap.values()].sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
-	}
+	const { dapodikMapelList, indukList } = kelasAktif?.id
+		? await opsiMapelDapodik(kelasAktif.id, locals.sekolah)
+		: { dapodikMapelList: [], indukList: [] };
 	return {
 		meta: { title: `Form Mata Pelajaran` },
 		kelasAktif,
@@ -89,13 +21,14 @@ export async function load({ parent, locals }) {
 
 export const actions = {
 	async add({ request, cookies, locals }) {
-		const formMapel = unflattenFormData<{
-			nama?: string;
-			jenis?: string;
-			kkm?: string;
-			kode?: string;
-			induk_pembelajaran_id?: string;
-		}>(await request.formData());
+	const formMapel = unflattenFormData<{
+		nama?: string;
+		nama_lokal?: string;
+		jenis?: string;
+		kkm?: string;
+		kode?: string;
+		induk_pembelajaran_id?: string;
+	}>(await request.formData());
 
 		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID);
 		if (!kelasIdCookie) {
@@ -121,6 +54,7 @@ export const actions = {
 		}
 
 		const nama = formMapel.nama?.trim();
+		const namaLokal = formMapel.nama_lokal?.toString().trim() ?? '';
 		const jenis = formMapel.jenis?.toLowerCase() as MataPelajaran['jenis'] | undefined;
 		const kkmValue = formMapel.kkm ? Number(formMapel.kkm) : Number.NaN;
 		const kode = formMapel.kode?.toString().trim() ?? '';
@@ -188,6 +122,7 @@ export const actions = {
 
 		await db.insert(tableMataPelajaran).values({
 			nama,
+			namaLokal: namaLokal || null,
 			jenis,
 			kkm,
 			kelasId,

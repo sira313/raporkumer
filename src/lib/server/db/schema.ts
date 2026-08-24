@@ -543,6 +543,8 @@ export const tableMataPelajaran = sqliteTable(
 			.references(() => tableKelas.id)
 			.notNull(),
 		nama: text().notNull(),
+		// Nama lokal tampilan (mis. nama mapel lokal Dapodik). NULL = pakai `nama`.
+		namaLokal: text(),
 		// optional short code for subjects (e.g. PAPB for Pendidikan Agama dan Budi Pekerti)
 		kode: text(),
 		kkm: int().notNull().default(0),

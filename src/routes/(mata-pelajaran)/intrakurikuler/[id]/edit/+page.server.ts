@@ -1,5 +1,6 @@
 import db from '$lib/server/db/index.js';
 import { normMapelName } from '$lib/server/dapodik';
+import { opsiMapelDapodik } from '$lib/server/dapodik-mapel-options';
 import { tableDapodikPembelajaran, tableMataPelajaran } from '$lib/server/db/schema.js';
 import { agamaMapelNames, pksMapelNames } from '$lib/statics';
 import { unflattenFormData } from '$lib/utils';
@@ -20,19 +21,14 @@ function isValidJenis(value: string): value is (typeof JENIS_VALUES)[number] {
 	return (JENIS_VALUES as readonly string[]).includes(value);
 }
 
-export async function load({ parent }) {
+export async function load({ parent, locals }) {
 	const { mapel } = await parent();
-	const indukList = await db
-		.select({
-			nama: tableDapodikPembelajaran.nama,
-			pembelajaranId: tableDapodikPembelajaran.pembelajaranId
-		})
-		.from(tableDapodikPembelajaran)
-		.where(eq(tableDapodikPembelajaran.kelasId, mapel.kelasId));
+	const { dapodikMapelList, indukList } = await opsiMapelDapodik(mapel.kelasId, locals.sekolah);
 	return {
 		meta: { title: `Edit Mata Pelajaran - ${mapel.nama}` },
 		kelasAktif: mapel.kelas,
-		indukList: indukList.sort((a, b) => a.nama.localeCompare(b.nama, 'id'))
+		dapodikMapelList,
+		indukList
 	};
 }
 
@@ -45,6 +41,7 @@ export const actions = {
 
 		const formMapel = unflattenFormData<{
 			nama?: string;
+			nama_lokal?: string;
 			jenis?: string;
 			kkm?: string;
 			kode?: string;
@@ -81,7 +78,8 @@ export const actions = {
 		const indukRows = await db
 			.select({
 				nama: tableDapodikPembelajaran.nama,
-				pembelajaranId: tableDapodikPembelajaran.pembelajaranId
+				pembelajaranId: tableDapodikPembelajaran.pembelajaranId,
+				mataPelajaranId: tableDapodikPembelajaran.mataPelajaranId
 			})
 			.from(tableDapodikPembelajaran)
 			.where(eq(tableDapodikPembelajaran.kelasId, existing.kelasId));
@@ -173,9 +171,33 @@ export const actions = {
 		}
 
 		// For non-agama subjects update kode if provided
-		const updates: Record<string, unknown> = { nama, jenis: jenisRaw, kkm, updatedAt: now };
+		const updates: Record<string, unknown> = {
+			nama,
+			namaLokal: formMapel.nama_lokal?.toString().trim() || null,
+			jenis: jenisRaw,
+			kkm,
+			updatedAt: now
+		};
 		if (kode) updates.kode = kode;
 		if (indukBaru !== undefined) updates.dapodikIndukPembelajaranId = indukBaru;
+		// Nama diganti → sinkronkan kode Dapodik:
+		// - nama baru terdaftar sebagai pembelajaran → rebind ke kode baru;
+		// - nama baru tidak terdaftar → hapus kode lama agar kirim nilai jatuh
+		//   ke jalur Sub Pembelajaran (induk wajib dipilih saat nama tak terdaftar).
+		if (nama !== existing.nama) {
+			const mirrorBaru = indukRows.find(
+				(m) =>
+					m.mataPelajaranId && (m.nama === nama || normMapelName(m.nama) === normMapelName(nama))
+			);
+			if (mirrorBaru) {
+				updates.dapodikPembelajaranId = mirrorBaru.pembelajaranId;
+				updates.dapodikMataPelajaranId = mirrorBaru.mataPelajaranId;
+				updates.dapodikIndukPembelajaranId = null;
+			} else {
+				updates.dapodikPembelajaranId = null;
+				updates.dapodikMataPelajaranId = null;
+			}
+		}
 
 		await db.update(tableMataPelajaran).set(updates).where(eq(tableMataPelajaran.id, id));
 

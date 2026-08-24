@@ -329,7 +329,7 @@ export async function load({ depends, url, parent }) {
 			? indukMirrorRows.find((r) => r.pembelajaranId === item.dapodikIndukPembelajaranId)?.nama
 			: null;
 		const indukNama = eksplisitNama ?? defaultIndukNama;
-		item.keteranganDapodik = indukNama ? `Sub-mapel induk: ${indukNama}` : null;
+		item.keteranganDapodik = indukNama ? `Sub - ${indukNama}` : null;
 	}
 
 	const mapelTampil = mapelWithIndicator.filter(

@@ -5,7 +5,8 @@ export const appMenuItems: MenuItem[] = [
 		subMenu: [
 			{
 				title: 'Sekolah',
-				path: '/sekolah'
+				path: '/sekolah',
+				tags: ['dapodik', 'ambil data', 'tarik', 'sinkron']
 			},
 			{
 				title: 'Akademik',
@@ -96,7 +97,8 @@ export const appMenuItems: MenuItem[] = [
 			},
 			{
 				title: 'Rekap Nilai',
-				path: '/nilai-akhir'
+				path: '/nilai-akhir',
+				tags: ['kirim', 'matev', 'nilai', 'dapodik']
 			},
 			{
 				title: 'Keputusan',

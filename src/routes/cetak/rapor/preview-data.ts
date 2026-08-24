@@ -377,8 +377,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			const isAgamaCore = priority?.core === 'pendidikan agama dan budi pekerti';
 			const tujuanScores = tujuanScoresByMapel.get(mapel.id) ?? [];
 
-			// Determine display name
-			let displayName = mapel.nama;
+			// Determine display name (nama lokal menang bila diisi)
+			let displayName = mapel.namaLokal || mapel.nama;
 
 			// Handle PAPB: if parent, show variant name; if variant, show as is
 			if (isAgamaCore && normalizedName === agamaParentNameNormalized) {

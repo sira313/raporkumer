@@ -2551,7 +2551,8 @@ export async function runDapodikKirim(options: {
 				mapelId: mapel.id,
 				pembelajaranId: mapel.dapodikPembelajaranId,
 				mataPelajaranId: mapel.dapodikMataPelajaranId,
-				namaMapel: mapel.nama,
+				// Nama lokal menang bila diisi; kosong = sama dengan Dapodik (nama utama).
+				namaMapel: mapel.namaLokal || mapel.nama,
 				kkm: mapel.kkm
 			});
 			continue;
@@ -2595,15 +2596,23 @@ export async function runDapodikKirim(options: {
 			mapelId: mapel.id,
 			pembelajaranId: indukMapel.pembelajaranId,
 			mataPelajaranId: refId,
-			namaMapel: mapel.nama,
+			// Nama lokal menang bila diisi; kosong = sama dengan Dapodik (nama utama).
+			namaMapel: mapel.namaLokal || mapel.nama,
 			kkm: mapel.kkm
 		});
 		subCount++;
 		if (!indukEksplisit) subDefault++;
 	}
 
-	// Nomor urut reset tiap rombel: posisi 1..N kandidat operasi ini
-	// (urutan tetap mengikuti sort urutan/nama mapel).
+	// PAPB (varian agama yang dipakai di kelas ini) selalu menempati posisi
+	// teratas saat dikirim ke Dapodik (no_urut = 1). Sort stabil — mapel lain
+	// tetap mengikuti nomor urut rapkumer tanpa perubahan urutan relatif.
+	const agamaMapelIds = new Set(agamaFamily.map((f) => f.id));
+	allCandidates.sort(
+		(a, b) => Number(agamaMapelIds.has(b.mapelId)) - Number(agamaMapelIds.has(a.mapelId))
+	);
+
+	// Nomor urut reset tiap rombel: posisi 1..N kandidat operasi ini.
 	for (let i = 0; i < allCandidates.length; i++) allCandidates[i]!.noUrut = i + 1;
 
 	if (skippedAgama > 0) {

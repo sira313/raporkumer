@@ -493,9 +493,9 @@
 						{/if}
 						<td>{index + 1}</td>
 						<td class="font-medium">
-							{mapel.nama}
+							{mapel.namaLokal || mapel.nama}
 							{#if mapel.keteranganDapodik}
-								<p class="text-sm font-normal opacity-70">{mapel.keteranganDapodik}</p>
+								<p class="text-[11px] font-normal opacity-70">{mapel.keteranganDapodik}</p>
 							{/if}
 						</td>
 						<td class="whitespace-nowrap">{jenisMapel[mapel.jenis ?? 'wajib']}</td>
