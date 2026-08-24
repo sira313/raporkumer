@@ -22,6 +22,7 @@
 		daftarMurid: Array<{
 			id: number;
 			nama: string;
+			agamaLabel?: string | null;
 			no: number;
 			progressText: string | null;
 			progressSummaryParts: Array<{
@@ -39,7 +40,7 @@
 		selectedMapel?: { id: number | null; nama: string } | null;
 		search: string | null;
 		page: PaginationState;
-		allowedAgamaForUser?: string | null;
+		allowedAgamaForUser?: string[];
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -288,7 +289,12 @@
 					{#each data.daftarMurid as murid (murid.id)}
 						<tr>
 							<td class="align-top">{murid.no}</td>
-							<td class="align-top">{@html searchQueryMarker(data.search, murid.nama)}</td>
+							<td class="align-top">
+								{@html searchQueryMarker(data.search, murid.nama)}
+								{#if murid.agamaLabel}
+									<div class="text-[11px] font-normal opacity-70">{murid.agamaLabel}</div>
+								{/if}
+							</td>
 							<td class="align-top">
 								{#if murid.nilaiHref && canEdit}
 									<a class="btn btn-sm btn-soft shadow-none" href={murid.nilaiHref}>
@@ -303,7 +309,7 @@
 										title={!canEdit
 											? 'Anda tidak memiliki izin untuk menilai'
 											: data.allowedAgamaForUser
-												? `Hanya untuk murid beragama ${data.allowedAgamaForUser}`
+												? `Hanya untuk murid beragama ${data.allowedAgamaForUser.join(' / ')}`
 												: 'Pilih mata pelajaran'}
 									>
 										<Icon name="edit" />

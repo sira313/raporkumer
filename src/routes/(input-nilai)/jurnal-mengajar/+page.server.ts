@@ -1,7 +1,6 @@
 import db from '$lib/server/db';
 import { ensureJurnalMengajarSchema } from '$lib/server/db/ensure-jurnal-mengajar';
 import {
-	tableAuthUserMataPelajaran,
 	tableJadwalPelajaran,
 	tableJurnalMengajar,
 	tableKelas,
@@ -12,6 +11,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { buildKelasContext } from '$lib/server/route-utils';
 import { agamaMapelNames } from '$lib/statics';
+import { getAksesMapelUser } from '$lib/server/mapel-access';
 
 const PER_PAGE = 20;
 
@@ -147,17 +147,11 @@ export async function load({ locals, url, depends, parent }) {
 			mapelIds = mataPelajaranList.map((mp) => mp.id);
 		}
 	} else if (userType === 'user') {
-		let userMpIds: number[] = [];
-		if (user?.mataPelajaranId) userMpIds.push(user.mataPelajaranId);
-		if (user?.id) {
-			const extra = await db.query.tableAuthUserMataPelajaran.findMany({
-				columns: { mataPelajaranId: true },
-				where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
-			});
-			for (const e of extra) {
-				if (!userMpIds.includes(e.mataPelajaranId)) userMpIds.push(e.mataPelajaranId);
-			}
-		}
+		const akses = await getAksesMapelUser({
+			id: user?.id ?? 0,
+			mataPelajaranId: user?.mataPelajaranId
+		});
+		const userMpIds: number[] = Array.from(akses.ids);
 
 		const userMapels =
 			userMpIds.length > 0
@@ -240,8 +234,8 @@ export async function load({ locals, url, depends, parent }) {
 						return mp ? [mp] : [];
 					})
 					.filter((mp) => {
-						if (userMpIds.includes(mp.id)) return true;
-						return userMapels.some((u) => u.nama === mp.nama);
+						if (akses.ids.has(mp.id)) return true;
+						return akses.names.has(mp.nama?.trim().toLowerCase() ?? '');
 					})
 					.map((mp) => ({ ...mp, kode: null }));
 

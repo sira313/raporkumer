@@ -1,6 +1,7 @@
 import db from '$lib/server/db';
 import { normMapelName, pilihIndukPembelajaran } from '$lib/server/dapodik';
 import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama';
+import { getAksesMapelUser } from '$lib/server/mapel-access';
 import {
 	tableMataPelajaran,
 	tableTujuanPembelajaran,
@@ -56,119 +57,22 @@ export async function load({ depends, url, parent }) {
 			})
 		: [];
 
-	// If the current user is a 'user' role, filter to show only assigned mata pelajaran.
-	// First check join table auth_user_mata_pelajaran for multi-mapel support,
-	// then fallback to legacy mataPelajaranId field if join table is empty.
-	// IMPORTANT: We match by mapel ID AND by mapel name (since same subject can exist in different classes)
+	// If the current user is a 'user' role, filter to show only assigned mata pelajaran
+	// (ID, nama lintas kelas, keluarga agama/PKS, dan sub pembelajaran induknya).
 	if (
 		user &&
 		(user as unknown as { id?: number; type?: string; mataPelajaranId?: number }).type === 'user'
 	) {
-		const userId = (user as unknown as { id?: number }).id;
-		if (userId) {
+		const u = user as unknown as { id?: number; mataPelajaranId?: number };
+		if (u.id) {
 			try {
-				// Try to fetch from join table (multi-mapel)
-				const assignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({
-					columns: { mataPelajaranId: true },
-					where: eq(tableAuthUserMataPelajaran.authUserId, userId)
-				});
-
-				if (assignedMapels.length > 0) {
-					// User has multi-mapel assignments
-					// Fetch the actual mapel records to get their names
-					const assignedMapelRecords = await db.query.tableMataPelajaran.findMany({
-						columns: { id: true, nama: true },
-						where: inArray(
-							tableMataPelajaran.id,
-							assignedMapels.map((m) => m.mataPelajaranId)
-						)
-					});
-
-					// Build a set of allowed mapel names (normalize for comparison)
-					const allowedNames = new Set(
-						assignedMapelRecords.map((m) => (m.nama || '').trim().toLowerCase())
-					);
-
-					// Check if any assigned mapel is an agama variant
-					let hasAgamaVariant = false;
-					let hasPksVariant = false;
-					for (const record of assignedMapelRecords) {
-						const norm = (record.nama || '').trim().toLowerCase();
-						if (norm.startsWith('pendidikan agama') && norm !== AGAMA_PARENT_NAME.toLowerCase()) {
-							hasAgamaVariant = true;
-						}
-						if (
-							norm.startsWith('pendalaman kitab suci') &&
-							norm !== PKS_PARENT_NAME.toLowerCase()
-						) {
-							hasPksVariant = true;
-						}
-					}
-
-					// If has agama variant, also add the parent agama mapel name
-					if (hasAgamaVariant) {
-						allowedNames.add(AGAMA_PARENT_NAME.toLowerCase());
-					}
-					// If has PKS variant, also add the parent PKS mapel name
-					if (hasPksVariant) {
-						allowedNames.add(PKS_PARENT_NAME.toLowerCase());
-					}
-
-					// Filter current kelas' mapel by name match
-					mapel = mapel.filter((m) => {
-						const mNorm = (m.nama || '').trim().toLowerCase();
-						return allowedNames.has(mNorm);
-					});
-				} else {
-					// Fallback: check legacy single mataPelajaranId
-					const assignedId = (user as unknown as { mataPelajaranId?: number }).mataPelajaranId;
-					if (assignedId) {
-						try {
-							// fetch the assigned mapel to obtain its name
-							const assigned = await db.query.tableMataPelajaran.findFirst({
-								columns: { id: true, nama: true, kelasId: true },
-								where: eq(tableMataPelajaran.id, Number(assignedId))
-							});
-							if (assigned && assigned.nama) {
-								const norm = (assigned.nama || '').trim().toLowerCase();
-								// If the assigned subject is a variant of agama (eg. Pendidikan Agama Islam ...),
-								// allow showing the parent mapel as well so the teacher can access the parent
-								// intrakurikuler page which contains agama-select.
-								const assignedIsAgamaVariant =
-									norm.startsWith('pendidikan agama') && norm !== AGAMA_PARENT_NAME.toLowerCase();
-								const assignedIsPksVariant =
-									norm.startsWith('pendalaman kitab suci') &&
-									norm !== PKS_PARENT_NAME.toLowerCase();
-
-								if (assignedIsAgamaVariant) {
-									mapel = mapel.filter((m) => {
-										const n = (m.nama || '').trim().toLowerCase();
-										return n === norm || n === AGAMA_PARENT_NAME.toLowerCase();
-									});
-								} else if (assignedIsPksVariant) {
-									mapel = mapel.filter((m) => {
-										const n = (m.nama || '').trim().toLowerCase();
-										return n === norm || n === PKS_PARENT_NAME.toLowerCase();
-									});
-								} else {
-									mapel = mapel.filter((m) => (m.nama || '').trim().toLowerCase() === norm);
-								}
-							} else {
-								// fallback: if assigned mapel not found, keep original restrictive id-match
-								const allowedId = Number(assignedId);
-								if (Number.isInteger(allowedId)) {
-									mapel = mapel.filter((m) => m.id === allowedId);
-								}
-							}
-						} catch (err) {
-							// on error, don't block page — fallback to existing mapel list
-							console.warn('[intrakurikuler] Failed to resolve assigned mapel name', err);
-						}
-					}
-				}
+				const akses = await getAksesMapelUser({ id: u.id, mataPelajaranId: u.mataPelajaranId });
+				mapel = mapel.filter(
+					(m) => akses.ids.has(m.id) || akses.names.has((m.nama || '').trim().toLowerCase())
+				);
 			} catch (err) {
 				// on error, don't block page — fallback to existing mapel list
-				console.warn('[intrakurikuler] Failed to fetch assigned mapel from join table', err);
+				console.warn('[intrakurikuler] Failed to resolve assigned mapel', err);
 			}
 		}
 	}

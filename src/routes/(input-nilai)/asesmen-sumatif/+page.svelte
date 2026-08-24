@@ -21,6 +21,7 @@
 		id: number;
 		no: number;
 		nama: string;
+		agamaLabel?: string | null;
 		nilaiAkhir: number | null;
 		nilaiAkhirRts: number | null;
 		naLingkup: number | null;
@@ -43,7 +44,7 @@
 		selectedMapel: { id: number | null; nama: string } | null;
 		kelasAktif?: { nama?: string; fase?: string } | null;
 		daftarMurid: MuridRow[];
-		allowedAgamaForUser?: string | null;
+		allowedAgamaForUser?: string[];
 		page: PageState;
 	};
 
@@ -725,7 +726,12 @@
 					{#each data.daftarMurid as murid (murid.id)}
 						<tr>
 							<td>{murid.no}</td>
-							<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
+							<td>
+								{@html searchQueryMarker(data.page.search, murid.nama)}
+								{#if murid.agamaLabel}
+									<div class="text-[11px] font-normal opacity-70">{murid.agamaLabel}</div>
+								{/if}
+							</td>
 							<td>
 								{#if murid.nilaiAkhirRts != null}
 									<p class="font-semibold">{formatScore(murid.nilaiAkhirRts)}</p>
@@ -778,7 +784,7 @@
 											: murid.canNilai
 												? 'Pilih mata pelajaran'
 												: data.allowedAgamaForUser
-													? `Hanya untuk murid beragama ${data.allowedAgamaForUser}`
+													? `Hanya untuk murid beragama ${data.allowedAgamaForUser.join(' / ')}`
 													: 'Anda tidak memiliki izin untuk menilai murid ini'}
 									>
 										<Icon name="edit" />
