@@ -117,6 +117,8 @@ type MuridRow = {
 	sas: number | null;
 	nilaiHref: string | null;
 	canNilai: boolean;
+	/** True bila data milik guru lain (murid di luar varian/mapel guru). */
+	diisiUserLain?: boolean;
 };
 
 type PageState = {
@@ -159,7 +161,7 @@ export async function load({ parent, url, depends, locals }) {
 	}
 
 	let mapelRecords = await db.query.tableMataPelajaran.findMany({
-		columns: { id: true, nama: true },
+		columns: { id: true, nama: true, namaLokal: true },
 		where: eq(tableMataPelajaran.kelasId, kelasAktif.id),
 		orderBy: asc(tableMataPelajaran.nama)
 	});
@@ -355,7 +357,10 @@ export async function load({ parent, url, depends, locals }) {
 				pksVariantRecords.push(record);
 			}
 		} else {
-			regularOptions.push({ value: String(record.id), nama: record.nama });
+			regularOptions.push({
+				value: String(record.id),
+				nama: record.namaLokal?.trim() || record.nama
+			});
 		}
 	}
 
@@ -427,7 +432,10 @@ export async function load({ parent, url, depends, locals }) {
 				? { id: pksBaseMapel.id, nama: pksBaseMapel.nama }
 				: { id: null, nama: PKS_BASE_SUBJECT }
 			: selectedMapelRecord
-				? { id: selectedMapelRecord.id, nama: selectedMapelRecord.nama }
+				? {
+						id: selectedMapelRecord.id,
+						nama: selectedMapelRecord.namaLokal?.trim() || selectedMapelRecord.nama
+					}
 				: null;
 
 	const muridFilter = and(
@@ -566,7 +574,6 @@ export async function load({ parent, url, depends, locals }) {
 			return pksBaseMapel?.id ?? null;
 		}
 		return selectedMapelRecord?.id ?? null;
-		return agamaVariantRecords[0]?.id ?? null;
 	};
 
 	const daftarMurid: MuridRow[] = muridRecords.map((murid, index) => {
@@ -593,6 +600,24 @@ export async function load({ parent, url, depends, locals }) {
 			if (!assignedLocalMapelId) return false;
 			return targetMapelId === assignedLocalMapelId;
 		})();
+
+		// Murid di luar varian/mapel guru: jangan bocorkan nilai milik guru lain.
+		if (!canAccess) {
+			return {
+				id: murid.id,
+				no: offset + index + 1,
+				nama: murid.nama,
+				agamaLabel,
+				nilaiAkhirRts: null,
+				nilaiAkhir: null,
+				naLingkup: null,
+				sts: null,
+				sas: null,
+				nilaiHref: null,
+				canNilai: false,
+				diisiUserLain: true
+			};
+		}
 
 		const bobotLingkup = Number(locals.sekolah?.sumatifBobotLingkup ?? 60);
 		const bobotSts = Number(locals.sekolah?.sumatifBobotSts ?? 20);

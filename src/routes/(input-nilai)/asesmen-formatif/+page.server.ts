@@ -127,7 +127,7 @@ export async function load({ parent, url, depends }) {
 	}
 
 	let mapelRecords = await db.query.tableMataPelajaran.findMany({
-		columns: { id: true, nama: true },
+		columns: { id: true, nama: true, namaLokal: true },
 		where: eq(tableMataPelajaran.kelasId, kelasAktif.id),
 		orderBy: asc(tableMataPelajaran.nama)
 	});
@@ -308,7 +308,10 @@ export async function load({ parent, url, depends }) {
 				pksVariantRecords.push(record);
 			}
 		} else {
-			regularOptions.push({ value: String(record.id), nama: record.nama });
+			regularOptions.push({
+				value: String(record.id),
+				nama: record.namaLokal?.trim() || record.nama
+			});
 		}
 	}
 
@@ -491,7 +494,12 @@ export async function load({ parent, url, depends }) {
 			? pksBaseMapel
 				? { id: pksBaseMapel.id, nama: pksBaseMapel.nama }
 				: { id: null, nama: PKS_BASE_SUBJECT }
-			: selectedMapelRecord;
+			: selectedMapelRecord
+				? {
+						id: selectedMapelRecord.id,
+						nama: selectedMapelRecord.namaLokal?.trim() || selectedMapelRecord.nama
+					}
+				: null;
 
 	const muridRecords = await db.query.tableMurid.findMany({
 		columns: { id: true, nama: true, agama: true },
@@ -670,6 +678,37 @@ export async function load({ parent, url, depends }) {
 			isAgamaSelected || isPksSelected
 				? labelVarianUntukMurid(selectedMapel?.nama ?? '', murid.agama)
 				: null;
+
+		const canAccess = (() => {
+			if (!maybeUser || maybeUser.type !== 'user') return true;
+
+			if ((isAgamaSelected || isPksSelected) && allowedAgamaVariants.size > 0) {
+				// Hanya murid dengan agama varian yang diajar guru (termasuk sub-nya).
+				const label = labelVarianUntukMurid(selectedMapel?.nama ?? '', murid.agama);
+				return !!label && allowedAgamaVariants.has(label);
+			}
+
+			// For non-agama and non-PKS mapel, check standard assignment
+			if (!assignedIsAgamaVariant) return true;
+			if (!assignedLocalMapelId) return false;
+			return targetMapelId === assignedLocalMapelId;
+		})();
+
+		// Murid di luar varian/mapel guru: jangan bocorkan progres milik guru lain.
+		if (!canAccess) {
+			return {
+				id: murid.id,
+				nama: murid.nama,
+				agamaLabel,
+				no: offset + index + 1,
+				progressText: 'Data diisi oleh user lain.',
+				progressSummaryParts: [] as ProgressSummaryPart[],
+				hasPenilaian: false,
+				nilaiHref: null,
+				canNilai: false
+			};
+		}
+
 		const asesmen = asesmenByMurid.get(murid.id) ?? new Map();
 		const tujuanList = targetMapelId ? (tujuanByMapel.get(targetMapelId) ?? []) : [];
 		const groupedTujuan = targetMapelId
@@ -710,21 +749,6 @@ export async function load({ parent, url, depends }) {
 		if (!progressText && progressSummaryParts.length) {
 			progressText = buildSummarySentence(progressSummaryParts) ?? 'Belum ada nilai.';
 		}
-
-		const canAccess = (() => {
-			if (!maybeUser || maybeUser.type !== 'user') return true;
-
-			if ((isAgamaSelected || isPksSelected) && allowedAgamaVariants.size > 0) {
-				// Hanya murid dengan agama varian yang diajar guru (termasuk sub-nya).
-				const label = labelVarianUntukMurid(selectedMapel?.nama ?? '', murid.agama);
-				return !!label && allowedAgamaVariants.has(label);
-			}
-
-			// For non-agama and non-PKS mapel, check standard assignment
-			if (!assignedIsAgamaVariant) return true;
-			if (!assignedLocalMapelId) return false;
-			return targetMapelId === assignedLocalMapelId;
-		})();
 
 		return {
 			id: murid.id,

@@ -29,6 +29,7 @@
 		sas: number | null;
 		nilaiHref: string | null;
 		canNilai: boolean;
+		diisiUserLain?: boolean;
 	};
 
 	type PageState = {
@@ -733,7 +734,9 @@
 								{/if}
 							</td>
 							<td>
-								{#if murid.nilaiAkhirRts != null}
+								{#if murid.diisiUserLain}
+									<span class="text-base-content/60 text-sm italic">Data diisi oleh user lain</span>
+								{:else if murid.nilaiAkhirRts != null}
 									<p class="font-semibold">{formatScore(murid.nilaiAkhirRts)}</p>
 									<div class="text-base-content/70 mt-1 text-xs">
 										{#if murid.naLingkup != null}
@@ -748,7 +751,9 @@
 								{/if}
 							</td>
 							<td>
-								{#if murid.nilaiAkhir != null}
+								{#if murid.diisiUserLain}
+									<span class="text-base-content/60 text-sm italic">Data diisi oleh user lain</span>
+								{:else if murid.nilaiAkhir != null}
 									<p class="font-semibold">{formatScore(murid.nilaiAkhir)}</p>
 									<div class="text-base-content/70 mt-1 text-xs">
 										{#if murid.naLingkup != null}

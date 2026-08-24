@@ -31,14 +31,14 @@ function norm(value: string | null | undefined) {
 	return (value ?? '').trim().toLowerCase();
 }
 
-/** Key varian dari nama mapel keluarga; null bila mapel bukan anggota atau induk. */
-export function keyVarianDariNama(nama: string | null | undefined): string | null {
-	const n = norm(nama);
-	for (const option of [...agamaMapelOptions, ...pksMapelOptions]) {
-		if (option.key === 'umum') continue;
-		if (norm(option.name) === n) return option.key;
-	}
-	return null;
+/** Keluarga mapel agama (termasuk varian "Pendidikan Kepercayaan ...")? */
+export function isKeluargaAgama(nama: string | null | undefined) {
+	return /^pendidikan (agama|kepercayaan)/i.test((nama ?? '').trim());
+}
+
+/** Keluarga mapel Pendalaman Kitab Suci? */
+export function isKeluargaPks(nama: string | null | undefined) {
+	return /^pendalaman kitab suci/i.test((nama ?? '').trim());
 }
 
 /** Nama varian untuk key agama tertentu pada keluarga mapel. */
@@ -149,4 +149,26 @@ export function buildMapelPicker(
 		: currentMapelId;
 
 	return { mapelList, pickerMapelId };
+}
+
+/**
+ * Picker datar untuk guru mapel ('user'): hanya mapel yang di-assign (ID atau
+ * nama), tanpa penggabungan keluarga agama/PKS agar beberapa varian milik guru
+ * tetap tampil terpisah.
+ */
+export function buildGuruMapelPicker(
+	rows: MapelPickerRow[],
+	aksesIds: Set<number>,
+	aksesNames: Set<string>,
+	currentMapelId: number
+): { mapelList: MapelPickerOption[]; pickerMapelId: number } {
+	const mapelList = rows
+		.filter((row) => aksesIds.has(row.id) || aksesNames.has((row.nama ?? '').trim().toLowerCase()))
+		.map((row) => ({ id: row.id, nama: row.namaLokal?.trim() || row.nama || '' }));
+	mapelList.sort((a, b) => a.nama.localeCompare(b.nama));
+	const adaCurrent = mapelList.some((opsi) => opsi.id === currentMapelId);
+	return {
+		mapelList,
+		pickerMapelId: adaCurrent ? currentMapelId : (mapelList[0]?.id ?? currentMapelId)
+	};
 }

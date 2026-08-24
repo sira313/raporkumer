@@ -1,6 +1,6 @@
 import db from '$lib/server/db';
 import { getAksesMapelUser } from '$lib/server/mapel-access';
-import { keyVarianDariNama, muridAgamaKey } from '$lib/server/mapel-picker';
+import { isKeluargaAgama, isKeluargaPks, muridAgamaKey } from '$lib/server/mapel-picker';
 import { agamaMapelOptions, pksMapelOptions } from '$lib/statics';
 import { tableKelas, tableMataPelajaran, tableMurid } from '$lib/server/db/schema';
 import { error, json } from '@sveltejs/kit';
@@ -36,8 +36,8 @@ export async function GET({ url, locals }) {
 		orderBy: asc(tableMurid.nama)
 	});
 
-	// Guru mapel ('user'): pada mapel keluarga agama/PKS, hanya murid dengan
-	// agama varian yang diajarnya (union, termasuk sub pembelajaran induknya).
+	// Guru mapel ('user'): pada mapel keluarga agama/PKS (varian maupun induk),
+	// hanya murid dengan agama varian yang diajarnya.
 	const user = locals.user as
 		{ id?: number; type?: string; mataPelajaranId?: number | null } | undefined;
 	const mapelIdParam = url.searchParams.get('mapel_id');
@@ -54,30 +54,36 @@ export async function GET({ url, locals }) {
 		if (!mapel || mapel.kelasId !== kelasId) {
 			throw error(400, 'Invalid mapel_id');
 		}
-		const currentKey = keyVarianDariNama(mapel.nama);
-		if (currentKey) {
+		if (isKeluargaAgama(mapel.nama) || isKeluargaPks(mapel.nama)) {
 			const akses = await getAksesMapelUser({
 				id: user.id,
 				mataPelajaranId: user.mataPelajaranId
 			});
-			const options = currentKeyIsPks(mapel.nama) ? pksMapelOptions : agamaMapelOptions;
+			const options = isKeluargaPks(mapel.nama) ? pksMapelOptions : agamaMapelOptions;
 			const keys = new Set<string>(
 				options
 					.filter((o) => o.key !== 'umum' && akses.names.has(o.name.trim().toLowerCase()))
 					.map((o) => o.key)
 			);
-			return json(
-				muridRows.filter((m) => {
-					const k = muridAgamaKey(m.agama);
-					return k !== null && keys.has(k);
-				})
+			const punyaVarianKeluarga = [...agamaMapelOptions, ...pksMapelOptions].some(
+				(o) => o.key !== 'umum' && akses.names.has(o.name.trim().toLowerCase())
 			);
+			// Varian cocok → hanya murid seagama. Guru terikat varian keluarga lain
+			// (lintas agama/PKS) → tanpa daftar murid. Guru umum/tanpa varian →
+			// perilaku lama: seluruh murid kelas.
+			if (keys.size) {
+				return json(
+					muridRows.filter((m) => {
+						const k = muridAgamaKey(m.agama);
+						return k !== null && keys.has(k);
+					})
+				);
+			}
+			if (punyaVarianKeluarga) {
+				return json([]);
+			}
 		}
 	}
 
 	return json(muridRows);
-}
-
-function currentKeyIsPks(nama: string | null | undefined) {
-	return /^pendalaman kitab suci/i.test((nama ?? '').trim());
 }

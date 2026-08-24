@@ -12,8 +12,12 @@ import { unflattenFormData } from '$lib/utils';
 import { fail, error, redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { authority } from '../../../pengguna/utils.server';
-import { buildMapelPicker, namaVarianUntukMurid } from '$lib/server/mapel-picker';
-import { bolehAksesMapel } from '$lib/server/mapel-access';
+import {
+	buildGuruMapelPicker,
+	buildMapelPicker,
+	namaVarianUntukMurid
+} from '$lib/server/mapel-picker';
+import { bolehAksesMapel, getAksesMapelUser } from '$lib/server/mapel-access';
 
 const CHEAT_FEATURE_KEY = 'cheat-asesmen-sumatif';
 
@@ -184,12 +188,26 @@ export async function load({ url, locals, depends }) {
 
 	// Daftar mapel kelas untuk select pindah mapel di form (pola halaman daftar).
 	// Varian agama/PKS digabung; label memakai namaLokal fallback nama.
+	// Guru mapel ('user') hanya melihat mapel yang di-assign kepadanya.
 	const mapelRows = await db.query.tableMataPelajaran.findMany({
 		columns: { id: true, nama: true, namaLokal: true },
 		where: eq(tableMataPelajaran.kelasId, murid.kelasId),
 		orderBy: asc(tableMataPelajaran.nama)
 	});
-	const picker = buildMapelPicker(mapelRows, mapel.id);
+	const guruUser =
+		smUserType === 'user'
+			? (locals.user as { id?: number; mataPelajaranId?: number | null } | null)
+			: null;
+	let picker;
+	if (guruUser?.id) {
+		const akses = await getAksesMapelUser({
+			id: guruUser.id,
+			mataPelajaranId: guruUser.mataPelajaranId
+		});
+		picker = buildGuruMapelPicker(mapelRows, akses.ids, akses.names, mapel.id);
+	} else {
+		picker = buildMapelPicker(mapelRows, mapel.id);
+	}
 
 	const featureUnlock = await db.query.tableFeatureUnlock.findFirst({
 		columns: { id: true },
