@@ -21,7 +21,8 @@ function normalizeText(value: string | null | undefined) {
 }
 
 function isAgamaSubject(name: string) {
-	return normalizeText(name).startsWith('pendidikan agama');
+	// Mencakup varian "Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti".
+	return /^pendidikan (agama|kepercayaan)/i.test(normalizeText(name));
 }
 
 export const GET: RequestHandler = async ({ url, locals }) => {

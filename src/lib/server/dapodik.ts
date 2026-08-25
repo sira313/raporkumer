@@ -5,6 +5,7 @@ import { triggerSchemaSync } from '$lib/server/schema-sync';
 import {
 	tableAlamat,
 	tableAsesmenSumatif,
+	tableAsesmenSumatifTujuan,
 	tableAuthUser,
 	tableAuthUserKelas,
 	tableAuthUserMataPelajaran,
@@ -20,12 +21,14 @@ import {
 	tableSemester,
 	tableSekolah,
 	tableTahunAjaran,
+	tableTujuanPembelajaran,
 	tableWaliMurid
 } from './db/schema';
 import { hashPassword } from './auth';
 import { resolveUniqueUsername } from './usernames';
 import { defaultPermissionsByType } from '../../routes/pengguna/permissions';
 import { agamaMapelOptions } from '$lib/statics';
+import { buildCapaianKompetensi, type TujuanScoreEntry } from '$lib/rapor-modes';
 
 /** Nama mapel agama → key opsi (islam/kristen/katolik/buddha/hindu/konghuchu/kepercayaan/umum). */
 const keyByName = new Map<string, string>(agamaMapelOptions.map((o) => [o.name, o.key]));
@@ -2856,7 +2859,43 @@ export async function runDapodikKirim(options: {
 			: [];
 
 	const anggotaByMurid = new Map(muridWithUuid.map((m) => [m.id, m.dapodikAnggotaRombelId!]));
+	const muridNamaById = new Map(muridWithUuid.map((m) => [m.id, m.nama.trim() || m.nama]));
 	const candidateByMapel = new Map(allCandidates.map((c) => [c.mapelId, c]));
+
+	// Batch query tujuan scores untuk build deskripsi capaian kompetensi (compact mode).
+	// Hasil: "muridId|mapelId" → TujuanScoreEntry[] (untuk buildCapaianKompetensi).
+	const tujuanScoreMap = new Map<string, TujuanScoreEntry[]>();
+	if (muridIds.length && mapelIds.length) {
+		const tujuanRows = await db
+			.select({
+				muridId: tableAsesmenSumatifTujuan.muridId,
+				mataPelajaranId: tableAsesmenSumatifTujuan.mataPelajaranId,
+				tujuanPembelajaranId: tableAsesmenSumatifTujuan.tujuanPembelajaranId,
+				nilai: tableAsesmenSumatifTujuan.nilai,
+				deskripsi: tableTujuanPembelajaran.deskripsi
+			})
+			.from(tableAsesmenSumatifTujuan)
+			.innerJoin(
+				tableTujuanPembelajaran,
+				eq(tableAsesmenSumatifTujuan.tujuanPembelajaranId, tableTujuanPembelajaran.id)
+			)
+			.where(
+				and(
+					inArray(tableAsesmenSumatifTujuan.muridId, muridIds),
+					inArray(tableAsesmenSumatifTujuan.mataPelajaranId, mapelIds)
+				)
+			);
+		for (const row of tujuanRows) {
+			const deskripsi = row.deskripsi?.trim();
+			if (!deskripsi) continue;
+			const nilai = typeof row.nilai === 'number' && Number.isFinite(row.nilai) ? row.nilai : null;
+			if (nilai == null) continue;
+			const key = `${row.muridId}|${row.mataPelajaranId}`;
+			const list = tujuanScoreMap.get(key) ?? [];
+			list.push({ tujuanPembelajaranId: row.tujuanPembelajaranId, deskripsi, nilai });
+			tujuanScoreMap.set(key, list);
+		}
+	}
 
 	let sentNilai = 0;
 	let failedNilai = 0;
@@ -2885,16 +2924,34 @@ export async function runDapodikKirim(options: {
 			}
 			adaPercobaan = true;
 
+			// Bangun deskripsi capaian kompetensi (compact mode, max 300 char).
+			const muridNama = muridNamaById.get(muridId) ?? '';
+			const tujuanScores = tujuanScoreMap.get(`${muridId}|${nilai.mataPelajaranId}`);
+			let ketKognitif: string | undefined;
+			if (muridNama && tujuanScores?.length) {
+				let deskripsi = buildCapaianKompetensi(muridNama, tujuanScores, candidate.kkm, 'compact');
+				// PDF pakai \n sebagai separator antar baris, tapi Dapodik field
+				// ket_kognitif tidak render newline — ganti dengan ". ".
+				deskripsi = deskripsi.replace(/\n/g, '. ');
+				if (deskripsi.length > 300) {
+					const prefix = `Ananda ${muridNama} `;
+					if (deskripsi.startsWith(prefix)) deskripsi = deskripsi.slice(prefix.length);
+					if (deskripsi.length > 300) deskripsi = deskripsi.slice(0, 300);
+				}
+				ketKognitif = deskripsi;
+			}
+
 			const call = await dapodikPost(
 				base,
 				token,
 				'postNilai',
 				{ npsn, semester_id: semesterId, table: 'rapor' },
 				{
-					nilai_id: `RK-${candidate.mapelId}-${muridId}`,
+					nilai_id: uuidDeterministic(`rapkumer-nilai:${candidate.mapelId}:${muridId}`),
 					id_evaluasi: idEvaluasi,
 					anggota_rombel_id: anggotaRombelId,
 					nilai_kognitif_angka: Number(nilai.nilaiAkhir!.toFixed(2)),
+					...(ketKognitif ? { ket_kognitif: ketKognitif } : {}),
 					create_date: dapodikTimestamp(-60), // now UTC − 1 jam
 					last_update: dapodikTimestamp(0), // now UTC
 					soft_delete: 0,

@@ -35,7 +35,7 @@ const normalizeText = (value: string | null | undefined) =>
 		.trim();
 
 const isAgamaSubject = (name: string | null | undefined) =>
-	normalizeText(name).startsWith('pendidikan agama');
+	/^pendidikan (agama|kepercayaan)/i.test(normalizeText(name));
 
 const calculatePercentage = (completed: number, total: number) =>
 	total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;

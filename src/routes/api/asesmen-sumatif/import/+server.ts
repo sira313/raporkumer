@@ -23,8 +23,10 @@ const AGAMA_VARIANT_MAP: Record<string, string> = {
 	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
 	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
 	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	'khong hu cu': 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
+	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
+	kepercayaan: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
+	penghayat: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
+	'penghayat kepercayaan': 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti'
 };
 
 const PKS_VARIANT_MAP: Record<string, string> = {
