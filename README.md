@@ -30,6 +30,8 @@ Dokumentasi lengkap aplikasi ini disusun dalam bahasa Indonesia. File README ini
 - Buku tamu digital yang dapat diakses melalui halaman `ipAddress:3000/tamu`
 - Jadwal pelajaran yang dapat diakses melalui halaman `ipAddress:3000/jadwal-pelajaran`
 - Dinas luar dan SPPD otomatis
+- Tarik data dari Dapodik (sinkronisasi sekolah, guru, kelas, murid, dan jadwal pembelajaran secara otomatis dari aplikasi Dapodik Desktop)
+- Kirim nilai akhir dan mata evaluasi (matev) langsung ke Dapodik
 
 ## Siapa yang Cocok Menggunakan Rapkumer?
 
