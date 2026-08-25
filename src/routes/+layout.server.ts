@@ -331,6 +331,9 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 		// - Other account types retain full access
 		const userType = (user as { type?: string }).type;
 		const canManageMapel = userType !== 'wali_asuh';
+		const canEditUrutan =
+			userType === 'admin' || userType === 'kepala_sekolah' || userType === 'wali_kelas';
+		const canAddImportMapel = canEditUrutan;
 
 		if (user.pegawaiId) {
 			const pegawaiRecord = await db.query.tablePegawai.findFirst({
@@ -340,10 +343,12 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 			// avoid `any` cast by using Object.assign to create a shallow clone
 			userForClient = Object.assign({}, user, {
 				pegawaiName: pegawaiRecord?.nama ?? null,
-				canManageMapel
+				canManageMapel,
+				canEditUrutan,
+				canAddImportMapel
 			});
 		} else {
-			userForClient = Object.assign({}, user, { canManageMapel });
+			userForClient = Object.assign({}, user, { canManageMapel, canEditUrutan, canAddImportMapel });
 		}
 	}
 

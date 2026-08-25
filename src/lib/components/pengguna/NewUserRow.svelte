@@ -7,7 +7,7 @@
 
 <td>
 	<input
-		class="input input-sm bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+		class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
 		bind:value={newValues[id].nama}
 		placeholder="Nama"
 	/>
@@ -32,14 +32,14 @@
 </td>
 <td>
 	<input
-		class="input input-sm bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+		class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
 		bind:value={newValues[id].username}
 		placeholder="Username"
 	/>
 </td>
 <td>
 	<label
-		class="input input-sm bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+		class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
 	>
 		<input
 			type={showPassword ? 'text' : 'password'}

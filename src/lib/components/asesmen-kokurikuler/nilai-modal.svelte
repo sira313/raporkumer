@@ -78,7 +78,7 @@
 					Kegiatan Kokurikuler
 				</span>
 				<select
-					class="select bg-base-200 dark:bg-base-300 mt-2 w-full truncate border-base-300 dark:border-none"
+					class="select bg-base-200 dark:bg-base-300 mt-2 w-full truncate dark:border-none"
 					disabled
 				>
 					<option>{capitalizeSentence(kokurikuler.tujuan)}</option>
@@ -103,7 +103,7 @@
 									{dim.label}
 								</legend>
 								<select
-									class="select bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
+									class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
 									name={`nilai.${dim.key}`}
 									aria-label={`Nilai ${dim.label}`}
 								>

@@ -112,7 +112,7 @@
 						type="text"
 						name="token"
 						placeholder="Masukkan token web service dapodik"
-						class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 					/>
 					<p class="label text-wrap">
 						Token didapat dari menu Web Service pada aplikasi Dapodik desktop sekolah.
@@ -126,7 +126,7 @@
 						type="text"
 						name="url"
 						placeholder="Contoh: 192.168.8.114:5774"
-						class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 					/>
 				</div>
 
@@ -137,7 +137,7 @@
 						type="text"
 						name="npsn"
 						placeholder="Contoh: 69856875"
-						class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 					/>
 				</div>
 
@@ -146,7 +146,7 @@
 					<select
 						bind:value={selectedMode}
 						name="mode"
-						class="select w-full truncate bg-base-200 dark:bg-base-300 validator border-base-300 dark:border-none"
+						class="select w-full truncate bg-base-200 dark:bg-base-300 validator dark:border-none"
 					>
 						{#each modes as item (item.value)}
 							<option value={item.value}>{item.label}</option>

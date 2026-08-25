@@ -81,7 +81,7 @@
 				<input
 					type="text"
 					disabled
-					class="input bg-base-200 join-item w-full border-base-300 dark:border-none"
+					class="input bg-base-200 join-item w-full dark:border-none"
 					placeholder={appAddress || 'Tidak ada alamat terdeteksi'}
 					value={appAddress}
 				/>
@@ -102,7 +102,7 @@
 				<div class="overflow-hidden">
 					<select
 						id="addressSelector"
-						class="select select-bordered dark:bg-base-200 w-full truncate border-base-300 dark:border-none"
+						class="select select-bordered dark:bg-base-200 w-full truncate dark:border-none"
 						bind:value={appAddress}
 					>
 						{#each addresses as address (address)}

@@ -56,7 +56,7 @@
 				<legend class="fieldset-legend">Root data (RAPKUMER_DATA_DIR)</legend>
 				<div class="join w-full">
 					<input
-						class="input bg-base-200 dark:bg-base-300 join-item w-full border-base-300 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 join-item w-full dark:border-none"
 						type="text"
 						name="dataRoot"
 						bind:value={storageRoot}

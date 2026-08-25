@@ -23,6 +23,8 @@ import { fail } from '@sveltejs/kit';
 
 const u = tableAuthUser;
 
+const ALLOWED_USER_TYPES = ['admin', 'kepala_sekolah', 'wali_kelas', 'wali_asuh', 'user'] as const;
+
 export async function load({ url, locals }) {
 	authority('user_list');
 
@@ -457,7 +459,8 @@ export async function load({ url, locals }) {
 			pegawaiName: tablePegawai.nama,
 			kelasId: u.kelasId,
 			kelasName: tableKelas.nama,
-			passwordUpdatedAt: u.passwordUpdatedAt
+			passwordUpdatedAt: u.passwordUpdatedAt,
+			sekolahId: u.sekolahId
 		})
 		.from(u)
 		.leftJoin(tablePegawai, eq(u.pegawaiId, tablePegawai.id))
@@ -561,6 +564,49 @@ export async function load({ url, locals }) {
 		.from(tableMataPelajaran)
 		.limit(1000);
 
+	// Fetch many-to-many mapel & kelas assignments for each user (for edit modal pre-fill)
+	const allUserIds = users.map((r) => r.id).filter((id): id is number => typeof id === 'number' && id > 0);
+	const [userMapelRows, userKelasRows] = allUserIds.length
+		? await Promise.all([
+				db
+					.select({
+						userId: tableAuthUserMataPelajaran.authUserId,
+						mataPelajaranId: tableAuthUserMataPelajaran.mataPelajaranId
+					})
+					.from(tableAuthUserMataPelajaran)
+					.where(inArray(tableAuthUserMataPelajaran.authUserId, allUserIds)),
+				db
+					.select({
+						userId: tableAuthUserKelas.authUserId,
+						kelasId: tableAuthUserKelas.kelasId
+					})
+					.from(tableAuthUserKelas)
+					.where(inArray(tableAuthUserKelas.authUserId, allUserIds))
+			])
+		: [[], []];
+
+	const userMapelMap = new Map<number, number[]>();
+	for (const row of userMapelRows) {
+		const arr = userMapelMap.get(row.userId) ?? [];
+		arr.push(row.mataPelajaranId);
+		userMapelMap.set(row.userId, arr);
+	}
+	const userKelasMap = new Map<number, number[]>();
+	for (const row of userKelasRows) {
+		const arr = userKelasMap.get(row.userId) ?? [];
+		arr.push(row.kelasId);
+		userKelasMap.set(row.userId, arr);
+	}
+
+	// Attach mapelIds/kelasIds to each user for edit modal
+	for (const user of users) {
+		const uid = user.id as number;
+		if (uid > 0) {
+			(user as Record<string, unknown>).mataPelajaranIds = userMapelMap.get(uid) ?? [];
+			(user as Record<string, unknown>).kelasIds = userKelasMap.get(uid) ?? [];
+		}
+	}
+
 	// fetch sekolah list so the Add User modal can offer a sekolah selection
 	const sekolahList = await db
 		.select({ id: tableSekolah.id, nama: tableSekolah.nama })
@@ -660,6 +706,9 @@ export const actions = {
 		const password = String(form.get('password') ?? '').trim();
 		const nama = String(form.get('nama') ?? '').trim();
 		const roleValue = String(form.get('type') ?? 'user');
+		if (!(ALLOWED_USER_TYPES as readonly string[]).includes(roleValue)) {
+			return fail(400, { message: 'Tipe pengguna tidak valid.' });
+		}
 
 		// Parse multi-mapel: mataPelajaranIds adalah JSON array string
 		let mataPelajaranIds: number[] = [];
@@ -865,6 +914,174 @@ export const actions = {
 			return fail(500, { message: 'Internal Error' });
 		}
 	},
+
+	update_user: async ({ request }) => {
+		authority('user_set_permissions');
+		const form = await request.formData();
+		const id = Number(form.get('id'));
+		if (!id) return fail(400, { message: 'ID pengguna tidak valid.' });
+
+		const username = String(form.get('username') ?? '').trim();
+		const password = String(form.get('password') ?? '').trim();
+		const nama = String(form.get('nama') ?? '').trim();
+		const roleValue = String(form.get('type') ?? 'user');
+		if (!(ALLOWED_USER_TYPES as readonly string[]).includes(roleValue)) {
+			return fail(400, { message: 'Tipe pengguna tidak valid.' });
+		}
+
+		if (!username) return fail(400, { message: 'Username wajib diisi.' });
+
+		let mataPelajaranIds: number[] = [];
+		const mpRaw = form.get('mataPelajaranIds');
+		if (mpRaw) {
+			try {
+				const parsed = JSON.parse(String(mpRaw));
+				if (Array.isArray(parsed)) mataPelajaranIds = parsed.map(Number).filter((n) => !isNaN(n));
+			} catch { /* ignore */ }
+		}
+
+		let kelasIds: number[] = [];
+		const kelasRaw = form.get('kelasIds');
+		if (kelasRaw) {
+			try {
+				const parsed = JSON.parse(String(kelasRaw));
+				if (Array.isArray(parsed)) kelasIds = parsed.map(Number).filter((n) => !isNaN(n));
+			} catch { /* ignore */ }
+		}
+
+		const sekolahId = form.get('sekolahId') ? Number(form.get('sekolahId')) : null;
+		if (sekolahId) {
+			const exists = await db.query.tableSekolah.findFirst({
+				columns: { id: true },
+				where: eq(tableSekolah.id, sekolahId)
+			});
+			if (!exists) return fail(400, { message: 'Sekolah tidak valid.' });
+		}
+
+		try {
+			// Fetch existing user to diff
+			const existing = await db.query.tableAuthUser.findFirst({
+				columns: { id: true, pegawaiId: true, username: true, usernameNormalized: true },
+				where: eq(u.id, id)
+			});
+			if (!existing) return fail(404, { message: 'Pengguna tidak ditemukan.' });
+
+			// Validate password before transaction (return fail() inside tx callback is dead code)
+			let hashedPassword: { hash: string; salt: string } | null = null;
+			if (password) {
+				const passwordError = validatePasswordStrength(password);
+				if (passwordError) return fail(400, { message: passwordError });
+				hashedPassword = hashPassword(password);
+			}
+
+			// Transactional: update auth_user + pegawai + many-to-many
+			await db.transaction(async (tx) => {
+				// Update auth_user fields
+				const updateData: Record<string, unknown> = {};
+				if (username !== existing.username) {
+					updateData.username = username;
+					updateData.usernameNormalized = username.toLowerCase();
+				}
+				if (hashedPassword) {
+					updateData.passwordHash = hashedPassword.hash;
+					updateData.passwordSalt = hashedPassword.salt;
+					updateData.passwordUpdatedAt = new Date().toISOString();
+				}
+				updateData.type = roleValue;
+				updateData.sekolahId = sekolahId ?? null;
+				updateData.updatedAt = new Date().toISOString();
+				if (mataPelajaranIds.length === 1) {
+					updateData.mataPelajaranId = mataPelajaranIds[0];
+				} else {
+					updateData.mataPelajaranId = undefined;
+				}
+				if (kelasIds.length > 0) {
+					updateData.kelasId = kelasIds[0];
+				}
+
+				if (Object.keys(updateData).length > 0) {
+					await tx.update(u).set(updateData).where(eq(u.id, id));
+				}
+
+				// Update pegawai nama if provided
+				if (nama && existing.pegawaiId) {
+					await tx.update(tablePegawai).set({ nama }).where(eq(tablePegawai.id, existing.pegawaiId));
+				} else if (nama && !existing.pegawaiId) {
+					const [p] = await tx
+						.insert(tablePegawai)
+						.values({ nama, nip: '' })
+						.returning({ id: tablePegawai.id });
+					if (p) await tx.update(u).set({ pegawaiId: p.id }).where(eq(u.id, id));
+				}
+
+				// Sync many-to-many: delete existing then re-insert
+				await tx.delete(tableAuthUserMataPelajaran).where(eq(tableAuthUserMataPelajaran.authUserId, id));
+				const ts = new Date().toISOString();
+				for (const mpId of mataPelajaranIds) {
+					try {
+						await tx.insert(tableAuthUserMataPelajaran).values({
+							authUserId: id,
+							mataPelajaranId: mpId,
+							createdAt: ts,
+							updatedAt: ts
+						});
+					} catch (err) {
+						if (!String(err).includes('UNIQUE')) throw err;
+					}
+				}
+
+				await tx.delete(tableAuthUserKelas).where(eq(tableAuthUserKelas.authUserId, id));
+				for (const kId of kelasIds) {
+					try {
+						await tx.insert(tableAuthUserKelas).values({
+							authUserId: id,
+							kelasId: kId,
+							createdAt: ts,
+							updatedAt: ts
+						});
+					} catch (err) {
+						if (!String(err).includes('UNIQUE')) throw err;
+					}
+				}
+			});
+
+			// Return updated user
+			const [updated] = await db
+				.select({
+					id: u.id,
+					username: u.username,
+					type: u.type,
+					passwordUpdatedAt: u.passwordUpdatedAt
+				})
+				.from(u)
+				.where(eq(u.id, id));
+
+			return {
+				success: true,
+				user: updated,
+				displayName: nama,
+				mataPelajaranIds,
+				kelasIds
+			};
+		} catch (err) {
+			console.error('Failed to update user', err);
+			const e = err as Record<string, unknown>;
+			const cause = (e.cause as Record<string, unknown> | undefined) ?? undefined;
+			const causeMsg = (
+				(cause && String(cause.message)) ||
+				(e.message && String(e.message)) ||
+				String(err)
+			).toString();
+			if (
+				causeMsg.includes('UNIQUE constraint failed') &&
+				causeMsg.includes('auth_user.username_normalized')
+			) {
+				return fail(400, { message: 'Username sudah digunakan' });
+			}
+			return fail(500, { message: 'Gagal memperbarui pengguna' });
+		}
+	},
+
 	delete_users: async ({ request }) => {
 		authority('user_delete');
 		let ids: number[] = [];

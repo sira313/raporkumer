@@ -30,7 +30,7 @@
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Kata sandi saat ini</legend>
 						<label
-							class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 						>
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
@@ -55,7 +55,7 @@
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Kata sandi baru</legend>
 						<label
-							class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 						>
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
@@ -81,7 +81,7 @@
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Konfirmasi kata sandi baru</legend>
 						<label
-							class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 						>
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input

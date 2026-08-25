@@ -2,102 +2,44 @@
 	import Icon from '$lib/components/icon.svelte';
 	let {
 		u,
-		editingId,
-		editValues,
-		onToggleEdit,
-		onSaveEdit,
+		onEdit,
 		onOpenUser,
 		onDelete = undefined
 	} = $props();
-
-	let showPassword = $state(false);
 </script>
 
 <td>{u.pegawaiName ?? u.username}</td>
 <td>{(u.roles ?? []).join(', ')}</td>
-<td>
-	{#if editingId === u.id}
-		<input
-			class="input input-sm bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
-			bind:value={editValues[u.id].username}
-		/>
-	{:else}
-		{u.username ? u.username : '-'}
-	{/if}
-</td>
-<td>
-	{#if editingId === u.id}
-		<label
-			class="input input-sm bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
-		>
-			<input
-				type={showPassword ? 'text' : 'password'}
-				placeholder="Buat Password"
-				bind:value={editValues[u.id].password}
-			/>
-			<button
-				type="button"
-				class="cursor-pointer"
-				onclick={() => (showPassword = !showPassword)}
-				aria-label="Toggle password visibility"
-			>
-				<Icon name={showPassword ? 'eye-off' : 'eye'} />
-			</button>
-		</label>
-	{:else}
-		{u.passwordUpdatedAt ? '*****' : '-'}
-	{/if}
-</td>
+<td>{u.username ? u.username : '-'}</td>
 <td>
 	<div class="flex flex-row">
-		{#if editingId === null}
-			<button
-				type="button"
-				class="btn btn-sm btn-error btn-soft rounded-r-none shadow-none"
-				title="Hapus pengguna"
-				onclick={() => onDelete?.(u)}
-			>
-				<Icon name="del" />
-			</button>
-		{/if}
 		<button
-			class={'btn btn-sm btn-soft ' +
-				(editingId === u.id || (editingId !== null && editingId !== u.id)
-					? 'rounded-r-none'
-					: 'rounded-none') +
-				' shadow-none'}
-			title={editingId === u.id ? 'Batal' : 'Ubah username dan password'}
-			onclick={() => onToggleEdit?.(u)}
-			disabled={editingId !== null && editingId !== u.id}
+			class="btn btn-sm btn-soft rounded-r-none shadow-none"
+			title="Edit pengguna"
+			onclick={() => onEdit?.(u)}
 		>
-			{#if editingId === u.id}
-				<Icon name="close" />
-			{:else}
-				<Icon name="edit" />
-			{/if}
+			<Icon name="edit" />
 		</button>
-
-		{#if editingId === u.id}
-			<button
-				class="btn btn-primary btn-sm btn-soft rounded-l-none shadow-none"
-				title="Simpan perubahan"
-				onclick={() => onSaveEdit?.(u)}
-			>
-				<Icon name="save" />
-			</button>
-		{:else}
-			<button
-				class="btn btn-primary btn-sm btn-soft rounded-l-none shadow-none"
-				title={editingId !== u.id ? 'Disabled while mengubah pengguna lain' : 'Atur hak akses'}
-				type="button"
-				onclick={(e) => {
-					e.preventDefault();
-					if (!(editingId !== null && editingId !== u.id) && !u.isNew) onOpenUser?.(u);
-				}}
-				disabled={(editingId !== null && editingId !== u.id) || u.isNew}
-			>
-				<Icon name="key" />
-			</button>
-		{/if}
+		<button
+			class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
+			title="Hapus pengguna"
+			onclick={() => onDelete?.(u)}
+		>
+			<Icon name="del" />
+		</button>
 	</div>
+</td>
+<td>
+	<button
+		class="btn btn-sm btn-soft shadow-none"
+		title="Atur hak akses"
+		type="button"
+		onclick={(e) => {
+			e.preventDefault();
+			if (!u.isNew) onOpenUser?.(u);
+		}}
+		disabled={!!u.isNew}
+	>
+		<Icon name="key" />
+	</button>
 </td>

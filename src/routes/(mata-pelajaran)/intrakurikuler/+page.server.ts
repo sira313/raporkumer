@@ -25,6 +25,10 @@ const PKS_VARIANT_NAME_SET = new Set<string>(pksVariantNames);
 const AGAMA_PARENT_NAME = 'Pendidikan Agama dan Budi Pekerti';
 const PKS_PARENT_NAME = 'Pendalaman Kitab Suci';
 
+function canManageImportUrutan(userType?: string) {
+	return userType === 'admin' || userType === 'kepala_sekolah' || userType === 'wali_kelas';
+}
+
 // Urutan tampil jenis mapel pada tabel gabungan (belum dipetakan paling atas
 // agar segera terlihat dan dipetakan admin).
 const JENIS_URUTAN = [
@@ -286,6 +290,12 @@ function isXlsxMime(type: string | null | undefined) {
 
 export const actions = {
 	async import_mapel({ request, cookies, locals }) {
+		const user = locals.user as { type?: string } | null;
+		const userType = user?.type;
+		if (!canManageImportUrutan(userType)) {
+			return fail(403, { fail: 'Anda tidak memiliki akses untuk mengimpor mata pelajaran.' });
+		}
+
 		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID) || null;
 		const kelasId = kelasIdCookie ? Number(kelasIdCookie) : null;
 		if (!kelasId || !Number.isFinite(kelasId)) {
@@ -649,6 +659,12 @@ export const actions = {
 	},
 
 	async simpan_urutan({ request, cookies, locals }) {
+		const user = locals.user as { type?: string } | null;
+		const userType = user?.type;
+		if (!canManageImportUrutan(userType)) {
+			return fail(403, { fail: 'Anda tidak memiliki akses untuk mengubah urutan.' });
+		}
+
 		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID) || null;
 		const kelasId = kelasIdCookie ? Number(kelasIdCookie) : null;
 		if (!kelasId || !Number.isFinite(kelasId)) {
@@ -698,6 +714,12 @@ export const actions = {
 	},
 
 	async tambah_pks({ cookies, locals }) {
+		const user = locals.user as { type?: string } | null;
+		const userType = user?.type;
+		if (!canManageImportUrutan(userType)) {
+			return fail(403, { fail: 'Anda tidak memiliki akses untuk menambahkan PKS.' });
+		}
+
 		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID) || null;
 		const kelasId = kelasIdCookie ? Number(kelasIdCookie) : null;
 		if (!kelasId || !Number.isFinite(kelasId)) {

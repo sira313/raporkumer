@@ -18,7 +18,7 @@
 	<td class="text-primary animate-pulse align-top font-semibold">{rowIndex + 1}</td>
 	<td class="align-top">
 		<textarea
-			class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 h-24 w-full"
+			class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 h-24 w-full"
 			value={group.nama}
 			oninput={(e) => onUpdateNama(e.currentTarget.value)}
 			placeholder="Tuliskan mata evaluasi"
@@ -30,7 +30,7 @@
 			{#each group.indikator as indicator, indicatorIdx (indicatorIdx)}
 				<div class="flex flex-col gap-2 sm:flex-row">
 					<textarea
-						class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 w-full dark:border-none"
+						class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						value={indicator.deskripsi}
 						oninput={(e) => onUpdateIndicator(indicatorIdx, e.currentTarget.value)}
 						placeholder="Tuliskan indikator"

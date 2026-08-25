@@ -68,7 +68,7 @@
 			<legend class="fieldset-legend">Konfirmasi kata sandi</legend>
 			<div class="form-control">
 				<label
-					class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+					class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 				>
 					<span class="pl-2"><Icon name="lock" /></span>
 					<input

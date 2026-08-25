@@ -230,7 +230,7 @@
 	<label class="flex flex-col gap-1">
 		<span class="text-sm font-semibold">Status Kehadiran</span>
 		<select
-			class="select bg-base-200 w-full border-base-300 dark:border-none"
+			class="select bg-base-200 w-full dark:border-none"
 			bind:value={selectedStatus}
 			disabled={submitting}
 		>
@@ -258,7 +258,7 @@
 		{:else}
 			<div class="space-y-2">
 				<span class="text-sm font-semibold">Paraf</span>
-				<div class="border-base-300 overflow-hidden rounded-md border">
+				<div class="border-base-300 overflow-hidden rounded-md border bg-base-300">
 					<canvas
 						use:initCanvas
 						width={CANVAS_W}
@@ -315,7 +315,7 @@
 					<span class="text-xs font-semibold">Tanggal Mulai</span>
 					<input
 						type="date"
-						class="input bg-base-200 w-full border-base-300 dark:border-none"
+						class="input bg-base-200 w-full dark:border-none"
 						bind:value={cutiMulai}
 						disabled={submitting}
 					/>
@@ -324,7 +324,7 @@
 					<span class="text-xs font-semibold">Tanggal Selesai</span>
 					<input
 						type="date"
-						class="input bg-base-200 w-full border-base-300 dark:border-none"
+						class="input bg-base-200 w-full dark:border-none"
 						bind:value={cutiSelesai}
 						disabled={submitting}
 					/>
@@ -341,7 +341,7 @@
 			>Keterangan <span class="text-base-content/50 font-normal">(opsional)</span></span
 		>
 		<textarea
-			class="textarea bg-base-200 w-full border-base-300 dark:border-none"
+			class="textarea bg-base-200 w-full dark:border-none"
 			rows="2"
 			bind:value={keterangan}
 			placeholder="Catatan tambahan..."

@@ -133,7 +133,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: VI (Kelas 6)"
 						name="rombel"
 					/>
@@ -143,7 +143,7 @@
 				<div class="fieldset">
 					<legend class="fieldset-legend">Fase</legend>
 					<select
-						class="select bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
+						class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
 						title="Pilih tingkat pendidikan"
 						name="fase"
 						disabled={!data.tingkatOptions?.length}
@@ -166,7 +166,7 @@
 						<div class="relative">
 							<input
 								type="text"
-								class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								placeholder="Pilih Wali Kelas"
 								name="waliKelas.nama"
 								autocomplete="off"
@@ -225,7 +225,7 @@
 					{:else}
 						<input
 							type="text"
-							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 							placeholder="Contoh: Damian Wayne, Bat"
 							name="waliKelas.nama"
 						/>
@@ -237,7 +237,7 @@
 					<legend class="fieldset-legend">NIP Wali Kelas</legend>
 					<input
 						type="text"
-						class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: NIP 19940505 201803 1 008"
 						name="waliKelas.nip"
 						value={pakaiSelectWalas ? walasNip : undefined}
@@ -263,7 +263,7 @@
 					>
 					<input
 						type="text"
-						class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: Ahmad Rahman"
 						name="waliAsrama.nama"
 					/>
@@ -277,7 +277,7 @@
 					>
 					<input
 						type="text"
-						class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: NIP 19940505 201803 1 008"
 						name="waliAsrama.nip"
 					/>

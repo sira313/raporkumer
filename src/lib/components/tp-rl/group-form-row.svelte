@@ -80,7 +80,7 @@
 	<td class="align-top" colspan="2">
 		<textarea
 			form={formId}
-			class="textarea validator bg-base-200 dark:bg-base-300 border-base-300 h-30 w-full"
+			class="textarea validator bg-base-200 dark:bg-base-300 h-30 w-full"
 			value={form.lingkupMateri}
 			name="lingkupMateri"
 			aria-label="Lingkup materi"
@@ -104,7 +104,7 @@
 					<div class="flex flex-col gap-2 sm:flex-row">
 						<textarea
 							form={formId}
-							class="textarea validator bg-base-200 border-base-300 dark:bg-base-300 w-full dark:border-none"
+							class="textarea validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 							value={entry.deskripsi}
 							name={`entries.${entryIndex}.deskripsi`}
 							aria-label={`Tujuan pembelajaran ${entryIndex + 1}`}

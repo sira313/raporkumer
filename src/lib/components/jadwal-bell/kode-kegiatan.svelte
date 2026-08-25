@@ -88,7 +88,7 @@
 </script>
 
 <select
-	class="select select-sm dark:bg-base-300 border-base-300 dark:border-none mb-3 w-full"
+	class="select select-sm bg-base-200 dark:bg-base-300 dark:border-none mb-3 w-full"
 	bind:value={activeTab}
 >
 	<option value="umum">Umum</option>

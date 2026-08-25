@@ -113,14 +113,14 @@
 						required
 						autocomplete="username"
 						placeholder="Contoh: Admin"
-						class="input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
+						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
 					/>
 				</div>
 
 				<div class="fieldset">
 					<label class="fieldset-legend" for="password"> Kata Sandi </label>
 					<label
-						class="input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
+						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
 					>
 						<input
 							type={showPassword ? 'text' : 'password'}

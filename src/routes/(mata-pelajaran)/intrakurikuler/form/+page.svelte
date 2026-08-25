@@ -265,7 +265,7 @@
 					<div class="relative">
 						<input
 							type="text"
-							class="input validator bg-base-200 w-full border-base-300 dark:border-none"
+							class="input validator bg-base-200 w-full dark:border-none"
 							placeholder="Pilih Mata Pelajaran"
 							name="nama"
 							required={!disableNama}
@@ -325,7 +325,7 @@
 				{:else}
 					<input
 						type="text"
-						class="input validator bg-base-200 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 w-full dark:border-none"
 						placeholder={namaPlaceholder}
 						name="nama"
 						required={!disableNama}
@@ -356,7 +356,7 @@
 					<legend class="fieldset-legend">Nama Mata Pelajaran Lokal</legend>
 					<input
 						type="text"
-						class="input validator bg-base-200 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 w-full dark:border-none"
 						placeholder="Kosongkan bila sama dengan Dapodik"
 						name="nama_lokal"
 						maxlength="100"
@@ -374,7 +374,7 @@
 					<select
 						name="induk_pembelajaran_id"
 						required={!isAgamaParent && !isPksParent}
-						class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
+						class="select bg-base-200 w-full truncate dark:border-none"
 					>
 						<option disabled selected={mode === 'add' || !mapel?.dapodikIndukPembelajaranId}>
 							Pilih Pembelajaran Induk (terdaftar di Dapodik)
@@ -401,7 +401,7 @@
 				<legend class="fieldset-legend">KKM</legend>
 				<input
 					type="number"
-					class="input validator bg-base-200 w-full border-base-300 dark:border-none"
+					class="input validator bg-base-200 w-full dark:border-none"
 					placeholder="Contoh: 76"
 					name="kkm"
 					required
@@ -413,7 +413,7 @@
 				<legend class="fieldset-legend">Singkatan/kode</legend>
 				<input
 					type="text"
-					class="input validator bg-base-200 w-full border-base-300 dark:border-none"
+					class="input validator bg-base-200 w-full dark:border-none"
 					placeholder="Contoh: PAPB"
 					name="kode"
 					bind:value={localKode}
@@ -425,7 +425,7 @@
 			<fieldset class="fieldset">
 				<legend class="fieldset-legend">Jenis Mata Pelajaran</legend>
 				<select
-					class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
+					class="select bg-base-200 w-full truncate dark:border-none"
 					name="jenis"
 					required={!disableJenis}
 					disabled={disableJenis}

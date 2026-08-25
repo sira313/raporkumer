@@ -315,7 +315,7 @@
 		<label class="w-full md:max-w-80">
 			<span class="sr-only">Pilih ekstrakurikuler</span>
 			<select
-				class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
+				class="select bg-base-200 w-full truncate dark:border-none"
 				title={!canEdit ? 'Anda tidak memiliki izin untuk mengubah' : 'Pilih ekstrakurikuler'}
 				bind:value={selectedEkstrakValue}
 				onchange={(event) => handleEkstrakChange((event.currentTarget as HTMLSelectElement).value)}
@@ -340,7 +340,7 @@
 			data-sveltekit-replacestate
 			onsubmit={submitSearch}
 		>
-			<label class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none">
+			<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
 				<Icon name="search" />
 				<input
 					type="search"

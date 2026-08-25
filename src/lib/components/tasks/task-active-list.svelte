@@ -61,7 +61,7 @@
 									bind:this={newTaskInput}
 									value={newTaskTitle}
 									placeholder="Nama tugas"
-									class="input input-sm join-item input-bordered dark:bg-base-300 flex-1 border-base-300 dark:border-none"
+									class="input input-sm join-item bg-base-200 dark:bg-base-300 flex-1 dark:border-none"
 									oninput={handleInput}
 									onkeydown={handleKeydown}
 									autocomplete="off"

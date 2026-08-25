@@ -226,7 +226,7 @@
 			<legend class="fieldset-legend">Nomor Surat Tugas</legend>
 			<input
 				type="text"
-				class="input bg-base-200 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 w-full dark:border-none"
 				bind:value={nomorSuratTugas}
 				placeholder="contoh: 422/12/SD.19/Adm/2026"
 				disabled={submitting}
@@ -237,7 +237,7 @@
 			<legend class="fieldset-legend">Tanggal Surat Tugas</legend>
 			<input
 				type="date"
-				class="input bg-base-200 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 w-full dark:border-none"
 				bind:value={tanggalSuratTugas}
 				disabled={submitting}
 			/>
@@ -247,7 +247,7 @@
 	<fieldset class="fieldset">
 		<legend class="fieldset-legend">Dasar Surat Tugas</legend>
 		<textarea
-			class="textarea bg-base-200 w-full border-base-300 dark:border-none"
+			class="textarea bg-base-200 w-full dark:border-none"
 			bind:value={dasarSuratTugas}
 			placeholder="Contoh: berdasarkan undangan dari Dinas nomor xxx tanggal xxx"
 			rows={3}
@@ -288,7 +288,7 @@
 			<span class="text-error">*</span>
 		</legend>
 		<textarea
-			class="textarea bg-base-200 w-full border-base-300 dark:border-none"
+			class="textarea bg-base-200 w-full dark:border-none"
 			bind:value={maksud}
 			placeholder="Contoh: Menghadiri seminar, rapat, dsb."
 			rows={3}
@@ -300,7 +300,7 @@
 			<legend class="fieldset-legend">Alat angkut yang digunakan</legend>
 			<input
 				type="text"
-				class="input bg-base-200 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 w-full dark:border-none"
 				bind:value={alatAngkut}
 				placeholder="Contoh: Mobil, Motor, Sepeda, dsb."
 				disabled={submitting}
@@ -311,7 +311,7 @@
 			<legend class="fieldset-legend">Lamanya Perjalanan Dinas</legend>
 			<input
 				type="text"
-				class="input bg-base-200 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 w-full dark:border-none"
 				bind:value={lamanya}
 				placeholder="Contoh: 1 hari, 2 hari, dsb."
 				disabled={submitting}
@@ -324,7 +324,7 @@
 			<legend class="fieldset-legend">Tempat Berangkat</legend>
 			<input
 				type="text"
-				class="input bg-base-200 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 w-full dark:border-none"
 				bind:value={tempatBerangkat}
 				placeholder="Contoh: Kantor, Rumah, dsb."
 				disabled={submitting}
@@ -335,7 +335,7 @@
 			<legend class="fieldset-legend">Tempat Tujuan</legend>
 			<input
 				type="text"
-				class="input bg-base-200 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 w-full dark:border-none"
 				bind:value={tempatTujuan}
 				placeholder="Contoh: Kantor BKPSDM, Kantor Bupati, dsb."
 				disabled={submitting}
@@ -351,7 +351,7 @@
 			</legend>
 			<input
 				type="date"
-				class="input bg-base-200 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 w-full dark:border-none"
 				bind:value={tanggalBerangkat}
 				disabled={submitting}
 			/>
@@ -364,7 +364,7 @@
 			</legend>
 			<input
 				type="date"
-				class="input bg-base-200 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 w-full dark:border-none"
 				bind:value={tanggalKembali}
 				disabled={submitting}
 			/>
@@ -407,7 +407,7 @@
 							<legend class="fieldset-legend">Nama Pengikut</legend>
 							<input
 								type="text"
-								class="input bg-base-200 w-full border-base-300 dark:border-none"
+								class="input bg-base-200 w-full dark:border-none"
 								bind:value={p.nama}
 								placeholder="Contoh: Budi Santoso, Siti Aminah, dsb."
 								disabled={submitting}
@@ -418,7 +418,7 @@
 								<legend class="fieldset-legend">Tempat Lahir Pengikut</legend>
 								<input
 									type="text"
-									class="input bg-base-200 w-full border-base-300 dark:border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									bind:value={p.tempatLahir}
 									placeholder="Contoh: Jakarta, Bandung, dsb."
 									disabled={submitting}
@@ -428,7 +428,7 @@
 								<legend class="fieldset-legend">Tanggal Lahir Pengikut</legend>
 								<input
 									type="date"
-									class="input bg-base-200 w-full border-base-300 dark:border-none"
+									class="input bg-base-200 w-full dark:border-none"
 									bind:value={p.tanggalLahir}
 									disabled={submitting}
 								/>
@@ -443,7 +443,7 @@
 			<legend class="fieldset-legend">Keterangan Pengikut</legend>
 			<input
 				type="text"
-				class="input bg-base-200 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 w-full dark:border-none"
 				bind:value={keteranganPengikut}
 				placeholder="Contoh: Keluarga, Sopir, dsb."
 				disabled={submitting}
@@ -455,7 +455,7 @@
 		<legend class="fieldset-legend">Kode rekening pembebanan anggaran</legend>
 		<input
 			type="text"
-			class="input bg-base-200 w-full border-base-300 dark:border-none"
+			class="input bg-base-200 w-full dark:border-none"
 			bind:value={kodeRekening}
 			placeholder="Masukkan kode rekening di arkas jika ada"
 			disabled={submitting}
@@ -466,7 +466,7 @@
 		<legend class="fieldset-legend">Tingkat biaya perjalanan dinas</legend>
 		<input
 			type="text"
-			class="input bg-base-200 w-full border-base-300 dark:border-none"
+			class="input bg-base-200 w-full dark:border-none"
 			bind:value={tingkatBiaya}
 			placeholder="Contoh: Perjalanan dinas dalam kota/daerah"
 			disabled={submitting}
@@ -476,7 +476,7 @@
 	<fieldset class="fieldset">
 		<legend class="fieldset-legend">Keterangan lain-lain</legend>
 		<textarea
-			class="textarea bg-base-200 w-full border-base-300 dark:border-none"
+			class="textarea bg-base-200 w-full dark:border-none"
 			rows="3"
 			bind:value={keteranganLain}
 			placeholder="Masukkan keterangan yang diperlukan"

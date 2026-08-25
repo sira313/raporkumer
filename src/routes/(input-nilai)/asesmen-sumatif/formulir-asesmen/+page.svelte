@@ -375,8 +375,8 @@
 
 	function getInputClass(value: string) {
 		return isScoreValid(value)
-			? 'input bg-base-200 dark:bg-base-300 border-base-300 dark:border-none'
-			: 'input input-error dark:bg-base-300 border-base-300 dark:border-none';
+			? 'input bg-base-200 dark:bg-base-300 dark:border-none'
+			: 'input input-error dark:bg-base-300 dark:border-none';
 	}
 
 	function handleEntryNilaiChange(event: CustomEvent<{ index: number; value: string }>) {
@@ -491,7 +491,7 @@
 
 			<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
 				<select
-					class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
+					class="select bg-base-200 w-full truncate dark:border-none"
 					title="Pilih mata pelajaran"
 					aria-label="Pilih mata pelajaran"
 					value={data.pickerMapelId}

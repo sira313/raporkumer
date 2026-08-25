@@ -8,12 +8,22 @@
 		open = $bindable(false),
 		mataPelajaran = [],
 		sekolahList = [],
-		kelasList = []
+		kelasList = [],
+		editUser = null
 	} = $props<{
 		open?: boolean;
 		mataPelajaran?: { id: number; nama: string }[];
 		sekolahList?: { id: number; nama: string }[];
 		kelasList?: { id: number; nama: string; fase?: string | null; sekolahId: number }[];
+		editUser?: {
+			id: number;
+			username: string;
+			pegawaiName?: string | null;
+			type?: string;
+			sekolahId?: number | null;
+			mataPelajaranIds?: number[];
+			kelasIds?: number[];
+		} | null;
 	}>();
 
 	const dispatch = createEventDispatcher();
@@ -30,6 +40,10 @@
 	let initialized = $state(false);
 	let showPassword = $state(false);
 	let selectAllKelas = $state(false);
+	let saving = $state(false);
+
+	const isEditMode = $derived(editUser !== null);
+	const modalTitle = $derived(isEditMode ? 'Edit Pengguna' : 'Tambah Pengguna');
 
 	// Derived state
 	let uniqueMataPelajaran = $derived.by(() => uniqueByNama(mataPelajaran ?? []));
@@ -50,11 +64,11 @@
 		return (kelasList ?? []).filter((k: { sekolahId?: number | null }) => k.sekolahId === sId);
 	});
 
-	// Validasi: semua field wajib terisi
+	// Validasi: semua field wajib terisi (password optional saat edit)
 	let isValid = $derived.by(() => {
 		const hasNama = nama.trim().length > 0;
 		const hasUsername = username.trim().length > 0;
-		const hasPassword = password.trim().length > 0;
+		const hasPassword = isEditMode ? true : password.trim().length > 0;
 		const hasMapel = mataPelajaranIds.size > 0;
 		return hasNama && hasUsername && hasPassword && hasMapel;
 	});
@@ -71,15 +85,22 @@
 	// initialize defaults only once when the modal opens (prevent clearing while open)
 	$effect(() => {
 		if (open && !initialized) {
-			nama = '';
-			username = '';
+			if (editUser) {
+				nama = editUser.pegawaiName ?? '';
+				username = editUser.username ?? '';
+				type = editUser.type ?? 'user';
+				sekolahId = editUser.sekolahId ?? '';
+				mataPelajaranIds = new Set(editUser.mataPelajaranIds ?? []);
+				kelasIds = new Set(editUser.kelasIds ?? []);
+			} else {
+				nama = '';
+				username = '';
+				type = 'user';
+				mataPelajaranIds = new Set<number>();
+				kelasIds = new Set<number>();
+				sekolahId = '';
+			}
 			password = '';
-			type = 'user';
-			// Clear multi-mapel selection
-			mataPelajaranIds = new Set<number>();
-			// Clear multi-kelas selection
-			kelasIds = new Set<number>();
-			sekolahId = '';
 			initialized = true;
 		}
 	});
@@ -89,6 +110,7 @@
 		if (!open) {
 			initialized = false;
 			selectAllKelas = false;
+			saving = false;
 			kelasIds.clear();
 		}
 	});
@@ -121,7 +143,7 @@
 			mataPelajaranIds.add(id);
 		}
 		// Trigger reactivity
-		mataPelajaranIds = mataPelajaranIds;
+		mataPelajaranIds = new Set(mataPelajaranIds);
 	}
 
 	function toggleKelas(id: number) {
@@ -131,15 +153,19 @@
 			kelasIds.add(id);
 		}
 		// Trigger reactivity
-		kelasIds = kelasIds;
+		kelasIds = new Set(kelasIds);
 	}
 
 	async function save() {
-		const passwordError = validatePasswordStrength(password.trim());
-		if (passwordError) {
-			toast({ message: passwordError, type: 'error' });
-			return;
+		if (saving) return;
+		if (password.trim()) {
+			const passwordError = validatePasswordStrength(password.trim());
+			if (passwordError) {
+				toast({ message: passwordError, type: 'error' });
+				return;
+			}
 		}
+		saving = true;
 		const form = new FormData();
 		form.set('username', username || '');
 		form.set('password', password || '');
@@ -149,38 +175,39 @@
 		form.set('mataPelajaranIds', JSON.stringify(Array.from(mataPelajaranIds)));
 		// Send multiple kelas as JSON array
 		form.set('kelasIds', JSON.stringify(Array.from(kelasIds)));
-		// include sekolahId when provided. Server may use this to resolve a default
-		// mataPelajaran within the chosen sekolah so users are linked to a sekolah.
+		// include sekolahId when provided
 		form.set('sekolahId', String(sekolahId ?? ''));
+
+		const endpoint = isEditMode ? '?/update_user' : '?/create_user';
+		if (isEditMode) form.set('id', String(editUser!.id));
+
 		try {
-			const res = await fetch('?/create_user', { method: 'POST', body: form });
+			const res = await fetch(endpoint, { method: 'POST', body: form });
 			if (res.ok) {
 				const body = await res.json().catch(() => ({}));
-				// merge local form values so the UI can update immediately even if server
-				// response omits some fields. Do NOT include the raw password in the event.
 				const mergedBody = {
 					...body,
 					username: body.user?.username ?? username,
 					displayName: body.displayName ?? nama,
 					mataPelajaranIds: body.mataPelajaranIds ?? Array.from(mataPelajaranIds),
 					kelasIds: body.kelasIds ?? Array.from(kelasIds),
-					// ensure there's a `user` object for the parent to consume
 					user: body.user ?? {
-						id: Date.now(),
+						id: isEditMode ? editUser!.id : Date.now(),
 						username: body.user?.username ?? username,
-						createdAt: new Date().toISOString(),
+						createdAt: isEditMode ? undefined : new Date().toISOString(),
 						type: body.user?.type ?? type,
 						passwordUpdatedAt: body.user?.passwordUpdatedAt ?? new Date().toISOString()
 					},
-					// indicate whether server actually returned the user object (so parent can detect fallback)
 					__server_user_returned: Boolean(body.user && typeof body.user.id !== 'undefined')
 				};
-				toast({ message: 'Pengguna dibuat', type: 'success' });
+				toast({
+					message: isEditMode ? 'Pengguna diperbarui' : 'Pengguna dibuat',
+					type: 'success'
+				});
 				dispatch('saved', { body: mergedBody });
 				open = false;
 			} else {
-				// try to parse a JSON error payload from the action
-				let msg = 'Gagal membuat pengguna';
+				let msg = isEditMode ? 'Gagal memperbarui pengguna' : 'Gagal membuat pengguna';
 				try {
 					const parsed = await res.json().catch(() => null);
 					if (parsed) {
@@ -199,10 +226,15 @@
 				} catch {
 					msg = (await res.text().catch(() => msg)) as string;
 				}
-				toast({ message: `Gagal membuat: ${msg}`, type: 'error' });
+				toast({ message: `${isEditMode ? 'Gagal memperbarui' : 'Gagal membuat'}: ${msg}`, type: 'error' });
 			}
 		} catch {
-			toast({ message: 'Gagal membuat pengguna', type: 'error' });
+			toast({
+				message: isEditMode ? 'Gagal memperbarui pengguna' : 'Gagal membuat pengguna',
+				type: 'error'
+			});
+		} finally {
+			saving = false;
 		}
 	}
 </script>
@@ -210,14 +242,14 @@
 {#if open}
 	<div class="modal modal-open">
 		<div class="modal-box flex max-h-[90vh] max-w-lg flex-col p-4">
-			<h3 class="mb-3 text-lg font-bold">Tambah Pengguna</h3>
+			<h3 class="mb-3 text-lg font-bold">{modalTitle}</h3>
 			<div class="flex-1 space-y-3 overflow-y-auto px-1">
 				<!-- Sekolah -->
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Sekolah</legend>
 					<select
 						id="add-user-sekolah"
-						class="select dark:bg-base-200 w-full truncate border-base-300 dark:border-none"
+						class="select dark:bg-base-200 w-full truncate dark:border-none"
 						bind:value={sekolahId}
 						onchange={() => {
 							kelasIds.clear();
@@ -319,17 +351,34 @@
 					<input
 						id="add-user-nama"
 						required
-						class="input dark:bg-base-200 w-full border-base-300 dark:border-none"
+						class="input dark:bg-base-200 w-full dark:border-none"
 						bind:value={nama}
 						placeholder="Contoh: Bruce Wayne, Bat."
 					/>
 					<p class="label text-wrap">Nama lengkap pengguna dan gelar (tampil pada daftar)</p>
 				</fieldset>
 
+				<!-- Role -->
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">Role</legend>
+					<select
+						id="add-user-role"
+						class="select dark:bg-base-200 w-full dark:border-none"
+						bind:value={type}
+					>
+						<option value="admin">Admin</option>
+						<option value="kepala_sekolah">Kepala Sekolah</option>
+						<option value="wali_kelas">Wali Kelas</option>
+						<option value="wali_asuh">Wali Asuh</option>
+						<option value="user">Guru</option>
+					</select>
+					<p class="label text-wrap">Tentukan peran pengguna dalam sistem</p>
+				</fieldset>
+
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Akun</legend>
 					<div class="flex flex-col gap-2 sm:flex-row">
-						<label class="input validator dark:bg-base-200 w-full border-base-300 dark:border-none">
+						<label class="input validator dark:bg-base-200 w-full dark:border-none">
 							<Icon name="user" />
 							<input
 								id="add-user-username"
@@ -340,13 +389,12 @@
 								bind:value={username}
 							/>
 						</label>
-						<label class="input validator dark:bg-base-200 w-full border-base-300 dark:border-none">
+						<label class="input validator dark:bg-base-200 w-full dark:border-none">
 							<Icon name="lock" />
 							<input
 								id="add-user-password"
 								type={showPassword ? 'text' : 'password'}
-								required
-								placeholder="Password"
+								placeholder={isEditMode ? 'Password baru (kosongkan jika tidak ubah)' : 'Password'}
 								bind:value={password}
 							/>
 							<button
@@ -360,16 +408,16 @@
 						</label>
 					</div>
 					<p class="validator-hint hidden">Isi username dan password dulu!</p>
-					<p class="label">Username dan password untuk login</p>
+					<p class="label">{isEditMode ? 'Username wajib diisi. Password opsional (kosongkan jika tidak diubah).' : 'Username dan password untuk login'}</p>
 				</fieldset>
 			</div>
 
 			<div class="modal-action sticky bottom-0 z-10">
-				<button class="btn btn-soft shadow-none" type="button" onclick={close}
+				<button class="btn btn-soft shadow-none" type="button" onclick={close} disabled={saving}
 					><Icon name="close" /> Batal</button
 				>
-				<button class="btn btn-primary shadow-none" type="button" onclick={save} disabled={!isValid}
-					><Icon name="save" /> Simpan</button
+				<button class="btn btn-primary shadow-none" type="button" onclick={save} disabled={!isValid || saving}
+					><Icon name="save" /> {saving ? 'Menyimpan...' : 'Simpan'}</button
 				>
 			</div>
 		</div>

@@ -91,7 +91,7 @@
 				<legend class="fieldset-legend">Kunci API</legend>
 				<div class="form-control">
 					<label
-						class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 					>
 						<span class="pl-2"><Icon name="key" /></span>
 						<input
@@ -122,7 +122,7 @@
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Model</legend>
 					<input
-						class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						type="text"
 						name="model"
 						bind:value={aiModel}
@@ -155,7 +155,7 @@
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend">Base URL</legend>
 					<input
-						class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						type="text"
 						name="baseUrl"
 						bind:value={aiBaseUrl}

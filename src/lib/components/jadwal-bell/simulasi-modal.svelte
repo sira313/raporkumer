@@ -249,7 +249,7 @@
 		<label class="flex flex-1 flex-col gap-1">
 			<span class="fieldset-legend text-sm font-semibold">Hari</span>
 			<select
-				class="select bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
+				class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
 				bind:value={simulasiHari}
 				disabled={simulasiRunning}
 			>
@@ -262,7 +262,7 @@
 			<span class="fieldset-legend text-sm font-semibold">Mulai Jam</span>
 			<input
 				type="text"
-				class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 				bind:value={simulasiJam}
 				disabled={simulasiRunning}
 				pattern="[0-9]{2}:[0-9]{2}"

@@ -48,6 +48,14 @@
 		// default to true for backwards compatibility
 		return u?.canManageMapel ?? true;
 	});
+	const canEditUrutan = $derived.by(() => {
+		const u = page.data.user as { canEditUrutan?: boolean } | null | undefined;
+		return u?.canEditUrutan ?? false;
+	});
+	const canAddImportMapel = $derived.by(() => {
+		const u = page.data.user as { canAddImportMapel?: boolean } | null | undefined;
+		return u?.canAddImportMapel ?? false;
+	});
 
 	// Dapatkan jenjang varian dari sekolah (misalnya 'SMK')
 	const jenjangVariant = $derived.by(() => {
@@ -226,7 +234,7 @@
 	</div>
 
 	<div class="mt-4 flex flex-wrap items-start justify-between gap-2">
-		{#if canManageMapel && hasKelasAktif && !editUrutan}
+		{#if canEditUrutan && hasKelasAktif && !editUrutan}
 			<button
 				type="button"
 				class="btn btn-soft shadow-none order-2 w-full sm:order-1 sm:w-auto"
@@ -289,10 +297,10 @@
 		<div class="order-1 max-sm:w-full sm:order-2 sm:ml-auto">
 			<div class="flex">
 				<a
-					class={`btn btn-soft rounded-r-none shadow-none max-sm:flex-1 ${!canManageMapel ? 'pointer-events-none opacity-50' : ''}`}
-					href={canManageMapel ? '/intrakurikuler/form' : '#'}
-					use:modalRoute={canManageMapel ? 'add-mapel' : ''}
-					aria-disabled={!canManageMapel}
+					class={`btn btn-soft rounded-r-none shadow-none max-sm:flex-1 ${!canAddImportMapel ? 'pointer-events-none opacity-50' : ''}`}
+					href={canAddImportMapel ? '/intrakurikuler/form' : '#'}
+					use:modalRoute={canAddImportMapel ? 'add-mapel' : ''}
+					aria-disabled={!canAddImportMapel}
 				>
 					<Icon name="plus" />
 					Tambah Mapel
@@ -305,9 +313,9 @@
 						title="Export dan Import mata pelajaran"
 						type="button"
 						tabindex="0"
-						class={`btn btn-soft rounded-l-none shadow-none ${!canManageMapel ? 'opacity-50' : ''}`}
-						disabled={!canManageMapel}
-						aria-disabled={!canManageMapel}
+						class={`btn btn-soft rounded-l-none shadow-none ${!canAddImportMapel ? 'opacity-50' : ''}`}
+						disabled={!canAddImportMapel}
+						aria-disabled={!canAddImportMapel}
 					>
 						<Icon name="down" />
 					</button>
@@ -320,9 +328,9 @@
 						<li>
 							<button
 								type="button"
-								class={`w-full text-left ${!canManageMapel ? 'pointer-events-none opacity-50' : ''}`}
-								disabled={!canManageMapel}
-								aria-disabled={!canManageMapel}
+								class={`w-full text-left ${!canAddImportMapel ? 'pointer-events-none opacity-50' : ''}`}
+								disabled={!canAddImportMapel}
+								aria-disabled={!canAddImportMapel}
 								onclick={() =>
 									showModal({
 										title: 'Impor Mata Pelajaran',
@@ -338,9 +346,9 @@
 						<li>
 							<button
 								type="button"
-								class={`w-full text-left ${!canManageMapel ? 'pointer-events-none opacity-50' : ''}`}
-								disabled={!canManageMapel}
-								aria-disabled={!canManageMapel}
+								class={`w-full text-left ${!canAddImportMapel ? 'pointer-events-none opacity-50' : ''}`}
+								disabled={!canAddImportMapel}
+								aria-disabled={!canAddImportMapel}
 								onclick={async () => {
 									try {
 										const resp = await fetch('/intrakurikuler/export_mapel', { method: 'GET' });
@@ -416,9 +424,9 @@
 							>
 								<button
 									type="submit"
-									class={`flex w-full items-center gap-2 ${!canManageMapel || !hasKelasAktif ? 'pointer-events-none opacity-50' : ''}`}
-									disabled={!canManageMapel || !hasKelasAktif}
-									aria-disabled={!canManageMapel || !hasKelasAktif}
+									class={`flex w-full items-center gap-2 ${!canAddImportMapel || !hasKelasAktif ? 'pointer-events-none opacity-50' : ''}`}
+									disabled={!canAddImportMapel || !hasKelasAktif}
+									aria-disabled={!canAddImportMapel || !hasKelasAktif}
 								>
 									<Icon name="plus" />
 									<span>Tambah PKS</span>

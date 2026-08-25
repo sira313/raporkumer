@@ -138,7 +138,7 @@
 
 			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 				<select
-					class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
+					class="select bg-base-200 w-full truncate dark:border-none"
 					title="Pilih mata pelajaran"
 					aria-label="Pilih mata pelajaran"
 					value={data.pickerMapelId}
@@ -158,7 +158,7 @@
 				/>
 			</div>
 
-			<h3 class="pb-2 text-lg font-bold">
+			<h3 class="py-2 text-lg font-bold">
 				Apakah {data.murid.nama} telah memenuhi setiap tujuan pembelajaran {data.mapel.nama}?
 			</h3>
 

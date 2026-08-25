@@ -93,7 +93,7 @@
 </script>
 
 <div class="relative">
-	<label class="input bg-base-200 w-full border-base-300 dark:border-none">
+	<label class="input bg-base-200 w-full dark:border-none">
 		<Icon name="search" />
 		<input
 			type="search"

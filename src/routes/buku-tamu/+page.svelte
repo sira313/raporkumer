@@ -205,7 +205,7 @@
 		spellcheck="false"
 		onsubmit={submitSearch}
 	>
-		<label class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none">
+		<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
 			<Icon name="search" />
 			<input
 				type="search"
@@ -221,7 +221,7 @@
 	{#if !hasTamu}
 		<div class="alert alert-soft alert-warning mt-6">
 			<Icon name="alert" />
-			<span>Belum ada data tamu.</span>
+			<span>Belum ada data tamu. Arahkan tamu untuk membuka halaman <code class="bg-warning p-1 rounded-sm text-base-content">ip:3000/tamu</code> atau <code class="bg-warning p-1 rounded-sm text-base-content">domain-sekolah.sch.id/tamu</code> untuk mengisi buku tamu.</span>
 		</div>
 	{:else if !hasFilteredTamu}
 		<div class="alert alert-soft alert-info mt-6">
