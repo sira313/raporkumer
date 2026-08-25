@@ -1,7 +1,7 @@
 import db from '$lib/server/db';
 import { normMapelName, pilihIndukPembelajaran } from '$lib/server/dapodik';
 import { ensureAgamaMapelForClasses } from '$lib/server/mapel-agama';
-import { getAksesMapelUser } from '$lib/server/mapel-access';
+import { getAksesMapelUser, needsMapelFilter } from '$lib/server/mapel-access';
 import {
 	tableMataPelajaran,
 	tableTujuanPembelajaran,
@@ -57,13 +57,11 @@ export async function load({ depends, url, parent }) {
 			})
 		: [];
 
-	// If the current user is a 'user' role, filter to show only assigned mata pelajaran
-	// (ID, nama lintas kelas, keluarga agama/PKS, dan sub pembelajaran induknya).
-	if (
-		user &&
-		(user as unknown as { id?: number; type?: string; mataPelajaranId?: number }).type === 'user'
-	) {
-		const u = user as unknown as { id?: number; mataPelajaranId?: number };
+	// If the current user is a 'user' role OR a 'wali_kelas' accessing a non-owned kelas,
+	// filter to show only assigned mata pelajaran (ID, nama lintas kelas,
+	// keluarga agama/PKS, dan sub pembelajaran induknya).
+	const u = user as unknown as { id?: number; type?: string; mataPelajaranId?: number; kelasId?: number | null };
+	if (needsMapelFilter(u, kelasId)) {
 		if (u.id) {
 			try {
 				const akses = await getAksesMapelUser({ id: u.id, mataPelajaranId: u.mataPelajaranId });

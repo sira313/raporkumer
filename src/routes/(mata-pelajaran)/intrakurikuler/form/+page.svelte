@@ -177,7 +177,9 @@
 	// Cakup nama resmi ber-"Budi Pekerti" maupun versi Dapodik tanpa "Budi Pekerti"
 	// (mis. "Pendidikan Agama", "Pendidikan Agama Kristen").
 	const RE_MAPEL_AGAMA = /^pendidikan (agama|kepercayaan)/i;
-	const agamaDapodikBlocked = $derived(pakaiSelectDapodik && RE_MAPEL_AGAMA.test(namaQuery.trim()));
+	const agamaDapodikBlocked = $derived(
+		pakaiSelectDapodik && mode === 'add' && RE_MAPEL_AGAMA.test(namaQuery.trim())
+	);
 	// PAPB & varian agama wajib sama dengan Dapodik → input "Nama Mata Pelajaran Lokal"
 	// disembunyikan; input itu sendiri juga hanya tampil bila DB punya data Dapodik.
 	const tampilNamaLokal = $derived(
@@ -266,7 +268,7 @@
 							class="input validator bg-base-200 w-full border-base-300 dark:border-none"
 							placeholder="Pilih Mata Pelajaran"
 							name="nama"
-							required
+							required={!disableNama}
 							disabled={disableNama}
 							autocomplete="off"
 							role="combobox"
@@ -326,7 +328,7 @@
 						class="input validator bg-base-200 w-full border-base-300 dark:border-none"
 						placeholder={namaPlaceholder}
 						name="nama"
-						required
+						required={!disableNama}
 						disabled={disableNama}
 						value={mapel?.nama ?? ''}
 						oninput={onNamaInput}
@@ -371,7 +373,7 @@
 					<legend class="fieldset-legend">Mata Pelajaran Induk</legend>
 					<select
 						name="induk_pembelajaran_id"
-						required
+						required={!isAgamaParent && !isPksParent}
 						class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
 					>
 						<option disabled selected={mode === 'add' || !mapel?.dapodikIndukPembelajaranId}>
@@ -394,6 +396,7 @@
 					</p>
 				</fieldset>
 			{/if}
+			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
 			<fieldset class="fieldset">
 				<legend class="fieldset-legend">KKM</legend>
 				<input
@@ -418,12 +421,13 @@
 				/>
 				<p class="label text-wrap">Singkatan/kode singkat untuk mata pelajaran (opsional).</p>
 			</fieldset>
+		</div>
 			<fieldset class="fieldset">
 				<legend class="fieldset-legend">Jenis Mata Pelajaran</legend>
 				<select
 					class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
 					name="jenis"
-					required
+					required={!disableJenis}
 					disabled={disableJenis}
 				>
 					<option disabled selected>Pilih Jenis Mata Pelajaran</option>
@@ -453,7 +457,7 @@
 			<button
 				type="submit"
 				class="btn btn-primary shadow-none"
-				disabled={submitting || invalid || !kelasAktif || agamaDapodikBlocked}
+				disabled={submitting || (invalid && !isAgamaParent && !isPksParent) || !kelasAktif || agamaDapodikBlocked}
 			>
 				{#if submitting}
 					<div class="loading loading-spinner"></div>

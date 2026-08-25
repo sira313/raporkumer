@@ -12,6 +12,20 @@ import { and, eq, inArray, or, type SQL } from 'drizzle-orm';
 //    pembelajaran induk milik guru (kelas sama) otomatis ikut diakses —
 //    ID dan namanya (nama ikut agar pindah kelas tetap jalan).
 
+/** Cek apakah user perlu difilter hanya ke mapel yang di-assign.
+ *  - tipe 'user' → selalu filter.
+ *  - tipe 'wali_kelas' → filter di kelas BUKAN miliknya, bebas di kelasnya sendiri. */
+export function needsMapelFilter(
+	user: { type?: string; id?: number; kelasId?: number | null } | null | undefined,
+	selectedKelasId: number | null | undefined
+): boolean {
+	if (!user?.id) return false;
+	if (user.type === 'user') return true;
+	if (user.type === 'wali_kelas' && selectedKelasId != null && user.kelasId !== selectedKelasId)
+		return true;
+	return false;
+}
+
 type MapelInti = { id: number; kelasId: number; nama: string | null };
 
 function norm(value: string | null | undefined) {

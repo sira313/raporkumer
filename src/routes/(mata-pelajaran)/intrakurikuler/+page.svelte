@@ -23,6 +23,7 @@
 		tpCount: number;
 		editTpMapelId?: number;
 		keteranganDapodik?: string | null;
+		dapodikIndukPembelajaranId?: string | null;
 	};
 	let {
 		data
@@ -506,7 +507,7 @@
 						<td>
 							<div class="indicator">
 								<span
-									class="indicator-item indicator-end badge badge-xs"
+									class="indicator-item indicator-start indicator-top badge badge-xs"
 									class:badge-success={mapel.tpCount > 0}
 									class:badge-error={mapel.tpCount === 0}
 									aria-label={`Status tujuan pembelajaran: ${
@@ -538,14 +539,26 @@
 						<td>
 							<div class="flex flex-row">
 								{#if canManageMapel}
-									<a
-										class="btn btn-sm btn-soft rounded-r-none shadow-none"
-										href={`/intrakurikuler/${mapel.id}/edit`}
-										title="Edit data mata pelajaran"
-										use:modalRoute={'edit-mapel'}
-									>
-										<Icon name="edit" />
-									</a>
+									<div class="indicator">
+										{#if data.adaDataDapodik && agamaMapelNameSet.has(mapel.nama)}
+											<span
+												class="indicator-item indicator-start indicator-top badge badge-xs"
+												class:badge-success={!!mapel.dapodikIndukPembelajaranId}
+												class:badge-error={!mapel.dapodikIndukPembelajaranId}
+												title={mapel.dapodikIndukPembelajaranId
+													? 'Mata Pelajaran Induk sudah disetel'
+													: 'Mata Pelajaran Induk belum disetel'}
+											></span>
+										{/if}
+										<a
+											class="btn btn-sm btn-soft rounded-r-none shadow-none"
+											href={`/intrakurikuler/${mapel.id}/edit`}
+											title="Edit data mata pelajaran"
+											use:modalRoute={'edit-mapel'}
+										>
+											<Icon name="edit" />
+										</a>
+									</div>
 									<a
 										class="btn btn-sm btn-error btn-soft rounded-l-none shadow-none"
 										href={`/intrakurikuler/${mapel.id}/delete`}

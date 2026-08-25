@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, or, sql } from 'drizzle-orm';
 import { createHash, randomBytes } from 'node:crypto';
 import db from '$lib/server/db';
 import { triggerSchemaSync } from '$lib/server/schema-sync';
@@ -6,6 +6,7 @@ import {
 	tableAlamat,
 	tableAsesmenSumatif,
 	tableAuthUser,
+	tableAuthUserKelas,
 	tableAuthUserMataPelajaran,
 	tableDapodikMataPelajaran,
 	tableDapodikPembelajaran,
@@ -1044,33 +1045,105 @@ async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog
 			}
 		}
 
-		// Tautkan mapel pengampu → akun guru (many-to-many + legacy kolom tunggal).
-		// Hanya mapel milik sekolah yang sedang sinkron.
-		const mapelRows = await db
+		// --- Mapel + kelas + permission linking ---
+		// Build lookup: pegawai.id → auth_user.id
+		const allAccounts = await db.query.tableAuthUser.findMany({
+			columns: { id: true, pegawaiId: true, permissions: true }
+		});
+		const accountByPegawaiAll = new Map<number, number>();
+		for (const acc of allAccounts) {
+			if (acc.pegawaiId != null && !accountByPegawaiAll.has(acc.pegawaiId)) {
+				accountByPegawaiAll.set(acc.pegawaiId, acc.id);
+			}
+		}
+
+		// Semua mapel di sekolah ini + mapping id → kelasId.
+		const allMapelRows = await db
+			.select({
+				id: tableMataPelajaran.id,
+				kelasId: tableMataPelajaran.kelasId,
+				nama: tableMataPelajaran.nama
+			})
+			.from(tableMataPelajaran)
+			.innerJoin(tableKelas, eq(tableMataPelajaran.kelasId, tableKelas.id))
+			.where(eq(tableKelas.sekolahId, sekolahId));
+		const mapelIdToKelas = new Map<number, number>();
+		for (const m of allMapelRows) {
+			mapelIdToKelas.set(m.id, m.kelasId);
+		}
+
+		// Existing links (avoid duplicates).
+		const existingMapelLinks = new Set(
+			(await db.select().from(tableAuthUserMataPelajaran)).map(
+				(l) => `${l.authUserId}:${l.mataPelajaranId}`
+			)
+		);
+		const existingKelasLinks = new Set(
+			(await db.select().from(tableAuthUserKelas)).map(
+				(l) => `${l.authUserId}:${l.kelasId}`
+			)
+		);
+		const linkCount = new Map<number, number>();
+		let linked = 0;
+
+		// Bersihkan link mapel wali kelas yang salah (Phase B lama).
+		// Wali kelas hanya perlu di-link ke mapel yang memang diajar (pengampu_id),
+		// bukan semua mapel di kelasnya. Akses lihat semua mapel ditangani
+		// oleh needsMapelFilter di sisi halaman.
+		const staleWaliLinks = await db
+			.select({
+				id: tableAuthUserMataPelajaran.id,
+				authUserId: tableAuthUserMataPelajaran.authUserId,
+				mataPelajaranId: tableAuthUserMataPelajaran.mataPelajaranId
+			})
+			.from(tableAuthUserMataPelajaran)
+			.innerJoin(tableAuthUser, eq(tableAuthUserMataPelajaran.authUserId, tableAuthUser.id))
+			.innerJoin(
+				tableMataPelajaran,
+				eq(tableAuthUserMataPelajaran.mataPelajaranId, tableMataPelajaran.id)
+			)
+			.innerJoin(tableKelas, eq(tableMataPelajaran.kelasId, tableKelas.id))
+			.where(
+				and(
+					eq(tableKelas.sekolahId, sekolahId),
+					eq(tableAuthUser.type, 'wali_kelas'),
+					isNotNull(tableAuthUser.pegawaiId),
+					or(
+						sql`${tableMataPelajaran.pengampuId} IS NULL`,
+						sql`${tableAuthUser.pegawaiId} != ${tableMataPelajaran.pengampuId}`
+					)
+				)
+			);
+		if (staleWaliLinks.length) {
+			await db
+				.delete(tableAuthUserMataPelajaran)
+				.where(
+					inArray(
+						tableAuthUserMataPelajaran.id,
+						staleWaliLinks.map((l) => l.id)
+					)
+				);
+			// Refresh existingMapelLinks after cleanup.
+			for (const l of staleWaliLinks) existingMapelLinks.delete(`${l.authUserId}:${l.mataPelajaranId}`);
+		}
+
+		// --- A. Mapel pengampu (via pengampu_id) ---
+		const pengampuRows = await db
 			.select({ id: tableMataPelajaran.id, pengampuId: tableMataPelajaran.pengampuId })
 			.from(tableMataPelajaran)
 			.innerJoin(tableKelas, eq(tableMataPelajaran.kelasId, tableKelas.id))
 			.where(and(eq(tableKelas.sekolahId, sekolahId), isNotNull(tableMataPelajaran.pengampuId)));
-		const linkRows = await db
-			.select({
-				authUserId: tableAuthUserMataPelajaran.authUserId,
-				mataPelajaranId: tableAuthUserMataPelajaran.mataPelajaranId
-			})
-			.from(tableAuthUserMataPelajaran);
-		const existingLinks = new Set(linkRows.map((l) => `${l.authUserId}:${l.mataPelajaranId}`));
-		const linkCount = new Map<number, number>();
-		let linked = 0;
-		for (const m of mapelRows) {
+		for (const m of pengampuRows) {
 			if (!m.pengampuId) continue;
-			const userId = accountByPegawai.get(m.pengampuId);
+			const userId = accountByPegawaiAll.get(m.pengampuId);
 			if (!userId) continue;
 			const key = `${userId}:${m.id}`;
 			linkCount.set(userId, (linkCount.get(userId) ?? 0) + 1);
-			if (existingLinks.has(key)) continue;
+			if (existingMapelLinks.has(key)) continue;
 			await db
 				.insert(tableAuthUserMataPelajaran)
 				.values({ authUserId: userId, mataPelajaranId: m.id });
-			existingLinks.add(key);
+			existingMapelLinks.add(key);
 			linked++;
 		}
 
@@ -1082,8 +1155,8 @@ async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog
 				where: eq(tableAuthUser.id, userId)
 			});
 			if (full && !full.mataPelajaranId) {
-				const single = mapelRows.find(
-					(m) => m.pengampuId && accountByPegawai.get(m.pengampuId) === userId
+				const single = pengampuRows.find(
+					(m) => m.pengampuId && accountByPegawaiAll.get(m.pengampuId) === userId
 				);
 				if (single) {
 					await db
@@ -1094,12 +1167,102 @@ async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog
 			}
 		}
 
+		// --- C. Pengampu Dapodik (nama match) → link mapel berdasarkan nama di kelas ---
+		// Dapodik hanya mengembalikan "Guru Kelas" dan "PJOK". Mapel lokal
+		// (Matematika, B.Indonesia, dll) tidak ada di Dapodik pembelajaran.
+		// Tautkan mapel yang namanya cocok dengan dapodik_pembelajaran ke pengampu.
+		const dapPembelajaran = await db.select().from(tableDapodikPembelajaran);
+		const pbByKelas = new Map<number, typeof dapPembelajaran>();
+		for (const dp of dapPembelajaran) {
+			const arr = pbByKelas.get(dp.kelasId) ?? [];
+			arr.push(dp);
+			pbByKelas.set(dp.kelasId, arr);
+		}
+		let dapNameLinked = 0;
+		for (const peg of pegawaiRows) {
+			const userId = accountByPegawaiAll.get(peg.id);
+			if (!userId) continue;
+			const pegKelasIds = kelasIdsByWali.get(peg.id) ?? [];
+			const pengampuKelasIds = new Set<number>();
+			for (const m of pengampuRows) {
+				if (m.pengampuId === peg.id) {
+					const kelasId = mapelIdToKelas.get(m.id);
+					if (kelasId) pengampuKelasIds.add(kelasId);
+				}
+			}
+			const relevantKelasIds = new Set([...pegKelasIds, ...pengampuKelasIds]);
+			for (const kelasId of relevantKelasIds) {
+				const pbs = pbByKelas.get(kelasId) ?? [];
+				for (const dp of pbs) {
+					const dpNama = (dp.nama ?? '').trim().toLowerCase();
+					if (!dpNama) continue;
+					const match = allMapelRows.find(
+						(m) =>
+							m.kelasId === kelasId &&
+							(m.nama ?? '').trim().toLowerCase() === dpNama
+					);
+					if (!match) continue;
+					const key = `${userId}:${match.id}`;
+					if (existingMapelLinks.has(key)) continue;
+					await db
+						.insert(tableAuthUserMataPelajaran)
+						.values({ authUserId: userId, mataPelajaranId: match.id });
+					existingMapelLinks.add(key);
+					dapNameLinked++;
+					linkCount.set(userId, (linkCount.get(userId) ?? 0) + 1);
+				}
+			}
+		}
+
+		// --- D. Auth_user_kelas + kelas_pindah permission ---
+		const allLinkedUserIds = new Set<number>();
+		for (const uid of linkCount.keys()) allLinkedUserIds.add(uid);
+		const priorLinks = await db
+			.select({ authUserId: tableAuthUserMataPelajaran.authUserId })
+			.from(tableAuthUserMataPelajaran);
+		for (const pl of priorLinks) allLinkedUserIds.add(pl.authUserId);
+
+		let kelasLinked = 0;
+		for (const userId of allLinkedUserIds) {
+			const userKelas = new Set<number>();
+			const userLinks = await db
+				.select({ mataPelajaranId: tableAuthUserMataPelajaran.mataPelajaranId })
+				.from(tableAuthUserMataPelajaran)
+				.where(eq(tableAuthUserMataPelajaran.authUserId, userId));
+			for (const ul of userLinks) {
+				const kelasId = mapelIdToKelas.get(ul.mataPelajaranId);
+				if (kelasId) userKelas.add(kelasId);
+			}
+			for (const kelasId of userKelas) {
+				const key = `${userId}:${kelasId}`;
+				if (existingKelasLinks.has(key)) continue;
+				await db
+					.insert(tableAuthUserKelas)
+					.values({ authUserId: userId, kelasId });
+				existingKelasLinks.add(key);
+				kelasLinked++;
+			}
+			if (userKelas.size > 1) {
+				const user = allAccounts.find((a) => a.id === userId);
+				if (user && !(user.permissions as string[]).includes('kelas_pindah')) {
+					const updated = [
+						...(user.permissions as string[]),
+						'kelas_pindah'
+					] as UserPermission[];
+					await db
+						.update(tableAuthUser)
+						.set({ permissions: updated })
+						.where(eq(tableAuthUser.id, userId));
+				}
+			}
+		}
+
 		sections.push({
 			label: 'Akun Guru',
 			status: 'ok',
 			detail:
-				created > 0 || linked > 0
-					? `${created} akun dibuat${linked ? `, ${linked} penugasan mapel ditautkan` : ''}.`
+				created > 0 || linked > 0 || dapNameLinked > 0 || kelasLinked > 0
+					? `${created} akun dibuat, ${linked + dapNameLinked} mapel ditautkan, ${kelasLinked} tautan kelas.`
 					: 'Semua guru sudah memiliki akun.'
 		});
 	} catch (e) {
@@ -1753,19 +1916,21 @@ async function upsertPembelajaran(
 						.where(eq(tableMataPelajaran.id, existing.id));
 					updated++;
 				} else if (
-					!namaMapel.toLowerCase().startsWith('pendidikan agama') &&
-					!namaMapel.toLowerCase().startsWith('pendidikan kepercayaan')
+					namaMapel.toLowerCase().startsWith('guru kelas')
 				) {
-					// Mapel hasil tarikan Dapodik TIDAK dibuat otomatis — admin menambahkannya
-					// sendiri lewat "Tambah Mata Pelajaran" (nama dipilih dari referensi Dapodik).
+					// Entry "Guru Kelas SD/MI/SLB" = wali kelas, bukan mapel terpisah.
 					skipped++;
 				} else {
-					// Pengecualian Pendidikan Agama: langsung dibuat dan ter-binding ke kode PAPB.
+					// Buat mapel baru dari Dapodik (termasuk PJOK, Matematika, dll).
+					// Pendidikan Agama mendapat kode 'PAPB'; lainnya kode kosong.
+					const isAgama =
+						namaMapel.toLowerCase().startsWith('pendidikan agama') ||
+						namaMapel.toLowerCase().startsWith('pendidikan kepercayaan');
 					await db.insert(tableMataPelajaran).values({
 						kelasId,
 						nama: namaMapel,
 						jenis: 'wajib',
-						kode: 'PAPB',
+						kode: isAgama ? 'PAPB' : '',
 						dapodikPembelajaranId: pembelajaranId,
 						dapodikMataPelajaranId: mapelRefId,
 						...(pengampuId ? { pengampuId } : {})

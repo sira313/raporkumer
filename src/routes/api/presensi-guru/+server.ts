@@ -4,6 +4,7 @@ import {
 	getPresensiGuruStatus,
 	parseSimulatedNow,
 	savePresensiGuru,
+	type PresensiGuruStatus,
 	type PresensiGuruStatusValue
 } from '$lib/server/presensi-guru';
 import { ensurePresensiGuruSchema } from '$lib/server/db/ensure-presensi-guru';
@@ -17,6 +18,23 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	await ensurePresensiGuruSchema();
 
+	if (locals.user.type === 'admin') {
+		return json({
+			ready: true,
+			enabled: false,
+			message: 'Akun admin tidak dapat melakukan presensi guru.',
+			shouldPrompt: false,
+			tanggal: '',
+			isSchoolDay: false,
+			inWindow: false,
+			hasDoneToday: false,
+			jamMasuk: null,
+			jamPulang: null,
+			hariSekolah: null,
+			status: null
+		} satisfies PresensiGuruStatus);
+	}
+
 	const now = parseSimulatedNow(url.searchParams.get('tanggal-jam'));
 	const status = await getPresensiGuruStatus(locals.sekolah?.id ?? null, locals.user.id, now);
 	return json(status);
@@ -24,6 +42,10 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) throw redirect(303, '/login');
+
+	if (locals.user.type === 'admin') {
+		throw error(400, { message: 'Akun admin tidak dapat melakukan presensi guru.' });
+	}
 
 	await ensurePresensiGuruSchema();
 
