@@ -31,6 +31,10 @@
 		};
 	});
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const isAdmin = $derived(
+		(page.data.user as { type?: string } | null | undefined)?.type === 'admin' ||
+			(page.data.user as { type?: string } | null | undefined)?.type === 'kepala_sekolah'
+	);
 	const kelasAktifLabel = $derived.by(() => {
 		if (!kelasAktif) return null;
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
@@ -155,7 +159,7 @@
 		</div>
 		<div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 			<LegerDownload kelasId={kelasAktif?.id ?? null} />
-			{#if kelasAktif}
+			{#if kelasAktif && isAdmin}
 				<a
 					class="btn btn-primary shadow-none max-sm:w-full"
 					href="/nilai-akhir/kirim-dapodik"

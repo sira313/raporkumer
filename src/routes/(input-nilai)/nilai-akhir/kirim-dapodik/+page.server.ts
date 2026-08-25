@@ -1,9 +1,9 @@
 import { fail } from '@sveltejs/kit';
 import { getDapodikSettings, runDapodikKirim, type DapodikKirimMode } from '$lib/server/dapodik';
-import { authority } from '../../../pengguna/utils.server';
+import { adminOnly } from '../../../pengguna/utils.server';
 
 export async function load({ locals, parent }) {
-	authority('administrasi_rekap_nilai');
+	adminOnly();
 
 	const sekolahId = locals.sekolah?.id ?? null;
 	const settings = sekolahId ? await getDapodikSettings(sekolahId) : null;
@@ -22,7 +22,7 @@ const MODES: DapodikKirimMode[] = ['tes-koneksi', 'kirim-matev', 'kirim-nilai'];
 
 export const actions = {
 	async kirim({ request, locals }) {
-		authority('administrasi_rekap_nilai');
+		adminOnly();
 
 		const formData = await request.formData();
 		const mode = ((formData.get('mode') as string | null) ?? '').trim();

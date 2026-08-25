@@ -49,6 +49,8 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 		fase: string | null;
 		waliKelas: { id: number; nama: string } | null;
 	}> = [];
+	// Resolved wali kelas IDs for the active semester
+	let resolvedWaliOwnKelasIds: number[] = [];
 	if (sekolah?.id) {
 		const userWithType = user as { type?: string; id?: number; pegawaiId?: number } | null;
 		if (userWithType?.type === 'wali_kelas' && userWithType.pegawaiId) {
@@ -68,6 +70,7 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 						)
 			});
 			const ownKelasIds = new Set(ownKelasRows.map((r) => r.id));
+			resolvedWaliOwnKelasIds = [...ownKelasIds];
 			const additionalKelasRows = await db.query.tableAuthUserKelas.findMany({
 				columns: { kelasId: true },
 				where: eq(tableAuthUserKelas.authUserId, userWithType.id!)
@@ -202,8 +205,11 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 					pegawaiId?: number;
 				};
 				if (userWithType.type === 'wali_kelas' && Number.isInteger(Number(userWithType.kelasId))) {
-					const allowed = Number(userWithType.kelasId);
-					if (kelasIdNumber !== allowed) {
+					const ownIds =
+						resolvedWaliOwnKelasIds.length > 0
+							? resolvedWaliOwnKelasIds
+							: [Number(userWithType.kelasId)];
+					if (!ownIds.includes(kelasIdNumber)) {
 						// Check permission to access other kelas (via 'kelas_pindah')
 						const authUser = user as AuthUser;
 						const hasAccessOther = Array.isArray(authUser.permissions)
@@ -260,16 +266,19 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 	if (!kelasAktif && user) {
 		const userWithType = user as { type?: string; kelasId?: number };
 		if (userWithType.type === 'wali_kelas' && userWithType.kelasId) {
-			const waliKelasId = Number(userWithType.kelasId);
-			if (Number.isInteger(waliKelasId)) {
+			const resolvedId =
+				resolvedWaliOwnKelasIds.length > 0
+					? resolvedWaliOwnKelasIds[0]
+					: Number(userWithType.kelasId);
+			if (Number.isInteger(resolvedId)) {
 				// prefer kelas from daftarKelas (active semester), otherwise find same-named class
-				kelasAktif = daftarKelas.find((kelas) => kelas.id === waliKelasId) ?? null;
+				kelasAktif = daftarKelas.find((kelas) => kelas.id === resolvedId) ?? null;
 				if (!kelasAktif) {
 					// user's kelasId points to a different semester's record; try to find the
 					// equivalent class name in the current active semester
 					const kelasRecord = await db.query.tableKelas.findFirst({
 						columns: { id: true, nama: true, fase: true },
-						where: eq(tableKelas.id, waliKelasId)
+						where: eq(tableKelas.id, resolvedId)
 					});
 					if (kelasRecord) {
 						kelasAktif = daftarKelas.find((k) => k.nama === kelasRecord.nama) ?? null;
@@ -335,6 +344,11 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 			userType === 'admin' || userType === 'kepala_sekolah' || userType === 'wali_kelas';
 		const canAddImportMapel = canEditUrutan;
 
+		const resolvedKelasId =
+			userType === 'wali_kelas' && resolvedWaliOwnKelasIds.length > 0
+				? resolvedWaliOwnKelasIds[0]
+				: user.kelasId;
+
 		if (user.pegawaiId) {
 			const pegawaiRecord = await db.query.tablePegawai.findFirst({
 				columns: { id: true, nama: true },
@@ -342,13 +356,19 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 			});
 			// avoid `any` cast by using Object.assign to create a shallow clone
 			userForClient = Object.assign({}, user, {
+				kelasId: resolvedKelasId,
 				pegawaiName: pegawaiRecord?.nama ?? null,
 				canManageMapel,
 				canEditUrutan,
 				canAddImportMapel
 			});
 		} else {
-			userForClient = Object.assign({}, user, { canManageMapel, canEditUrutan, canAddImportMapel });
+			userForClient = Object.assign({}, user, {
+				kelasId: resolvedKelasId,
+				canManageMapel,
+				canEditUrutan,
+				canAddImportMapel
+			});
 		}
 	}
 
