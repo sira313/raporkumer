@@ -4,8 +4,10 @@
 	import DeleteSekolahModal, {
 		type DeleteSekolahModalHandle
 	} from '$lib/components/sekolah/delete-sekolah-modal.svelte';
+	import SekolahModals from '$lib/components/sekolah/modals.svelte';
 	import type { SekolahCard } from '$lib/components/sekolah/types';
 	import { jenjangPendidikanSederajat, nauganLabelByKey } from '$lib/statics.js';
+	import { modalRoute } from '$lib/utils';
 
 	import { page } from '$app/state';
 
@@ -197,7 +199,7 @@
 							</div>
 						</div>
 
-						<div class="mt-8 flex flex-col justify-end gap-2 md:flex-row">
+						<div class="mt-8 flex flex-col justify-between gap-2 md:flex-row">
 							<button
 								type="button"
 								class="btn btn-error btn-soft shadow-none"
@@ -210,34 +212,51 @@
 								<Icon name="del" />
 								Hapus Sekolah
 							</button>
-							<a
-								href={`/sekolah/tahun-ajaran?sekolahId=${sekolah.id}`}
-								class="btn btn-soft shadow-none {!canSekolahManage
-									? 'pointer-events-none opacity-50'
-									: ''}"
-								aria-label="Lihat tahun ajaran"
-								aria-disabled={!canSekolahManage}
-								title={!canSekolahManage
-									? 'Anda tidak memiliki izin untuk melihat Tahun Ajaran'
-									: ''}
-							>
-								<Icon name="calendar" />
-								Tahun Ajaran
-							</a>
-							<a
-								href={`/sekolah/form?sekolahId=${sekolah.id}`}
-								class="btn btn-soft shadow-none {!canSekolahManage
-									? 'pointer-events-none opacity-50'
-									: ''}"
-								aria-label="Edit data sekolah"
-								aria-disabled={!canSekolahManage}
-								title={!canSekolahManage
-									? 'Anda tidak memiliki izin untuk mengedit data sekolah'
-									: ''}
-							>
-								<Icon name="edit" />
-								Edit Sekolah
-							</a>
+							<div class="flex flex-col gap-2 md:flex-row">
+								<a
+									href="/sekolah/form/sync-dapodik"
+									use:modalRoute={'sync-dapodik'}
+									class="btn btn-soft shadow-none {!canSekolahManage
+										? 'pointer-events-none opacity-50'
+										: ''}"
+									aria-label="Sync Dapodik"
+									aria-disabled={!canSekolahManage}
+									title={!canSekolahManage
+										? 'Anda tidak memiliki izin untuk sinkronisasi Dapodik'
+										: ''}
+								>
+									<Icon name="dapodik" />
+									Sync Dapodik
+								</a>
+								<a
+									href={`/sekolah/tahun-ajaran?sekolahId=${sekolah.id}`}
+									class="btn btn-soft shadow-none {!canSekolahManage
+										? 'pointer-events-none opacity-50'
+										: ''}"
+									aria-label="Lihat tahun ajaran"
+									aria-disabled={!canSekolahManage}
+									title={!canSekolahManage
+										? 'Anda tidak memiliki izin untuk melihat Tahun Ajaran'
+										: ''}
+								>
+									<Icon name="calendar" />
+									Tahun Ajaran
+								</a>
+								<a
+									href={`/sekolah/form?sekolahId=${sekolah.id}`}
+									class="btn btn-soft shadow-none {!canSekolahManage
+										? 'pointer-events-none opacity-50'
+										: ''}"
+									aria-label="Edit data sekolah"
+									aria-disabled={!canSekolahManage}
+									title={!canSekolahManage
+										? 'Anda tidak memiliki izin untuk mengedit data sekolah'
+										: ''}
+								>
+									<Icon name="edit" />
+									Edit Sekolah
+								</a>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -268,3 +287,4 @@
 </div>
 
 <DeleteSekolahModal bind:this={deleteModalRef} />
+<SekolahModals />
