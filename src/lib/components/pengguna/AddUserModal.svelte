@@ -64,12 +64,12 @@
 		return (kelasList ?? []).filter((k: { sekolahId?: number | null }) => k.sekolahId === sId);
 	});
 
-	// Validasi: semua field wajib terisi (password optional saat edit)
+	// Validasi: semua field wajib terisi (password optional saat edit, mapel optional untuk non-guru)
 	let isValid = $derived.by(() => {
 		const hasNama = nama.trim().length > 0;
 		const hasUsername = username.trim().length > 0;
 		const hasPassword = isEditMode ? true : password.trim().length > 0;
-		const hasMapel = mataPelajaranIds.size > 0;
+		const hasMapel = type !== 'user' || mataPelajaranIds.size > 0;
 		return hasNama && hasUsername && hasPassword && hasMapel;
 	});
 
@@ -102,6 +102,7 @@
 			}
 			password = '';
 			initialized = true;
+			if (type === 'wali_kelas') selectAllMapelAndKelas();
 		}
 	});
 
@@ -114,6 +115,15 @@
 			kelasIds.clear();
 		}
 	});
+
+	function selectAllMapelAndKelas() {
+		mataPelajaranIds = new Set(filteredMataPelajaran.map((m) => m.id));
+		for (const k of filteredKelasList) {
+			kelasIds.add(k.id);
+		}
+		kelasIds = new Set(kelasIds);
+		selectAllKelas = filteredKelasList.length > 0;
+	}
 
 	function toggleSelectAllKelas() {
 		selectAllKelas = !selectAllKelas;
@@ -368,6 +378,9 @@
 						id="add-user-role"
 						class="select dark:bg-base-200 w-full dark:border-none"
 						bind:value={type}
+						onchange={() => {
+							if (type === 'wali_kelas') selectAllMapelAndKelas();
+						}}
 					>
 						<option value="admin">Admin</option>
 						<option value="kepala_sekolah">Kepala Sekolah</option>

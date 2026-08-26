@@ -36,6 +36,11 @@
 	// selected ids for bulk actions
 	let selectedIds = $state<number[]>([]);
 
+	// selectable ids derived once per render (positive existing user ids)
+	let selectableIds = $derived(
+		users.map((u) => Number(u.id)).filter((n) => Number.isFinite(n) && n > 0)
+	);
+
 	function toggleSelect(id: number) {
 		const idx = selectedIds.indexOf(id);
 		if (idx === -1) selectedIds = [...selectedIds, id];
@@ -163,20 +168,14 @@
 			dismissible: true
 		});
 	}
-	function getSelectableIds() {
-		// only real existing users (positive ids) are selectable for bulk actions
-		return users.map((u) => Number(u.id)).filter((n) => Number.isFinite(n) && n > 0);
-	}
-
 	function toggleSelectAll() {
-		const selectable = getSelectableIds();
-		if (selectable.length === 0) {
+		if (selectableIds.length === 0) {
 			selectedIds = [];
 			return;
 		}
-		const allSelected = selectable.every((id) => selectedIds.indexOf(id) !== -1);
+		const allSelected = selectableIds.every((id) => selectedIds.indexOf(id) !== -1);
 		if (allSelected) selectedIds = [];
-		else selectedIds = [...selectable];
+		else selectedIds = [...selectableIds];
 	}
 
 	// handle add/new row
@@ -206,8 +205,8 @@
 							<input
 								type="checkbox"
 								class="checkbox"
-								checked={getSelectableIds().length > 0 &&
-									getSelectableIds().every((id) => selectedIds.indexOf(id) !== -1)}
+								checked={selectableIds.length > 0 &&
+									selectableIds.every((id) => selectedIds.indexOf(id) !== -1)}
 								onclick={() => toggleSelectAll()}
 							/>
 						</th>

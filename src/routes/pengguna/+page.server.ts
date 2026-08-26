@@ -25,6 +25,10 @@ const u = tableAuthUser;
 
 const ALLOWED_USER_TYPES = ['admin', 'kepala_sekolah', 'wali_kelas', 'wali_asuh', 'user'] as const;
 
+// Run consolidation once per process, not on every page load.
+// Handles pegawai dedup, wali_kelas/wali_asuh account creation, and cross-type merge.
+let consolidationDone = false;
+
 export async function load({ url, locals }) {
 	authority('user_list');
 
@@ -34,7 +38,7 @@ export async function load({ url, locals }) {
 	// Also support multi-kelas wali by auto-assigning 'kelas_pindah' permission.
 	// CONSOLIDATION LOGIC: If multiple accounts exist for same pegawaiId, keep oldest and delete others
 	// ALSO: Consolidate duplicate pegawai (same nama), keep oldest, merge auth_user references
-	try {
+	if (!consolidationDone) try {
 		// STEP 0: Consolidate PEGAWAI duplicates (same nama) → keep oldest, merge auth_user
 		const allPegawai = await db.query.tablePegawai.findMany({
 			columns: { id: true, nama: true, createdAt: true }
@@ -440,6 +444,7 @@ export async function load({ url, locals }) {
 		// (wali_kelas / user, e.g. a PLT kepala sekolah who must keep teaching
 		// hours), keep the kepala_sekolah account and merge the rest.
 		await mergeAccountsUnderKepalaSekolah();
+		consolidationDone = true;
 	} catch (err) {
 		console.warn('[pengguna] Failed to ensure wali_kelas/wali_asuh users:', err);
 	}
@@ -474,13 +479,6 @@ export async function load({ url, locals }) {
 		)
 		.orderBy(u.id)
 		.limit(1000);
-
-	// Debug: log raw results
-	console.debug('[pengguna] usersRaw count:', usersRaw.length);
-	const nilawatiRows = usersRaw.filter((r) => r.pegawaiName?.includes('Nilawati'));
-	if (nilawatiRows.length > 0) {
-		console.debug('[pengguna] Nilawati entries:', JSON.stringify(nilawatiRows, null, 2));
-	}
 
 	// Deduplicate by user ID
 	const dedupedUsers = (() => {
@@ -539,7 +537,6 @@ export async function load({ url, locals }) {
 		user: 'Guru'
 	};
 
-	console.debug('[pengguna] after dedup, users count:', dedupedUsers.length);
 	const users = dedupedUsers.map((row) => {
 		const roles: string[] = [];
 		if (row.pegawaiId && kepalaPegawaiIds.has(row.pegawaiId)) roles.push('Kepala Sekolah');
