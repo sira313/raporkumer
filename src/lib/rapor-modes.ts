@@ -78,12 +78,13 @@ export function compareDescriptorAscending(a: CapaianDescriptor, b: CapaianDescr
 function buildDeskripsiLine(muridNama: string, descriptor: CapaianDescriptor): string {
 	const nama = muridNama.trim().length > 0 ? muridNama.trim() : muridNama;
 	const narrative = descriptor.predikat.narrative;
+	const cleanDesc = descriptor.deskripsi.replace(/[.!?]+$/gu, '').trim();
 
 	if (descriptor.predikat.key === 'cukup') {
-		return `Ananda ${nama} cukup mampu ${descriptor.deskripsi}`;
+		return `Ananda ${nama} cukup mampu ${cleanDesc}.`;
 	}
 
-	return `Ananda ${nama} ${narrative} dalam ${descriptor.deskripsi}`;
+	return `Ananda ${nama} ${narrative} dalam ${cleanDesc}.`;
 }
 
 // Build a combined line for multiple achieved descriptors (tercapai)
