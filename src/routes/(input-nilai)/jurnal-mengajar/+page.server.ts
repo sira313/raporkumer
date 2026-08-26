@@ -147,10 +147,10 @@ export async function load({ locals, url, depends, parent }) {
 			mapelIds = mataPelajaranList.map((mp) => mp.id);
 		}
 	} else if (userType === 'user') {
-		const akses = await getAksesMapelUser({
-			id: user?.id ?? 0,
-			mataPelajaranId: user?.mataPelajaranId
-		});
+		const akses = await getAksesMapelUser(
+			{ id: user?.id ?? 0, mataPelajaranId: user?.mataPelajaranId },
+			kelasIdNum
+		);
 		const userMpIds: number[] = Array.from(akses.ids);
 
 		const userMapels =

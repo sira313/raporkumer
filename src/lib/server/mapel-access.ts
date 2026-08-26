@@ -60,10 +60,13 @@ export type AksesMapel = {
 	rawNames: Set<string>;
 };
 
-export async function getAksesMapelUser(user: {
-	id: number;
-	mataPelajaranId?: number | null;
-}): Promise<AksesMapel> {
+export async function getAksesMapelUser(
+	user: {
+		id: number;
+		mataPelajaranId?: number | null;
+	},
+	targetKelasId?: number | null
+): Promise<AksesMapel> {
 	const assigned = await db.query.tableAuthUserMataPelajaran.findMany({
 		columns: { mataPelajaranId: true },
 		where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
@@ -87,15 +90,18 @@ export async function getAksesMapelUser(user: {
 		if (parent) names.add(parent);
 	}
 
-	// Sub pembelajaran: child terikat ke pembelajaran induk milik guru (kelas sama).
-	const pasangan = intiRows
-		.filter((row) => row.dapodikPembelajaranId)
-		.map((row): SQL =>
-			and(
-				eq(tableMataPelajaran.kelasId, row.kelasId),
-				eq(tableMataPelajaran.dapodikIndukPembelajaranId, row.dapodikPembelajaranId!)
-			)!
-		);
+	// Sub pembelajaran: child terikat ke pembelajaran induk milik guru.
+	// When targetKelasId is given, only expand sub-mapel for that kelas so
+	// names from other kelas don't leak into the filter.
+	const subParents = targetKelasId
+		? intiRows.filter((row) => row.dapodikPembelajaranId && row.kelasId === targetKelasId)
+		: intiRows.filter((row) => row.dapodikPembelajaranId);
+	const pasangan = subParents.map((row): SQL =>
+		and(
+			eq(tableMataPelajaran.kelasId, row.kelasId),
+			eq(tableMataPelajaran.dapodikIndukPembelajaranId, row.dapodikPembelajaranId!)
+		)!
+	);
 	if (pasangan.length) {
 		const subs = await db.query.tableMataPelajaran.findMany({
 			columns: { id: true, nama: true },

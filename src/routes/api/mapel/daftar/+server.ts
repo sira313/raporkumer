@@ -35,7 +35,10 @@ export async function GET({ url, locals }) {
 	const user = locals.user as
 		{ id?: number; type?: string; mataPelajaranId?: number | null } | undefined;
 	if (user?.type === 'user' && typeof user.id === 'number') {
-		const akses = await getAksesMapelUser({ id: user.id, mataPelajaranId: user.mataPelajaranId });
+		const akses = await getAksesMapelUser(
+			{ id: user.id, mataPelajaranId: user.mataPelajaranId },
+			kelasId
+		);
 		const ids = Array.from(akses.ids);
 		if (!ids.length) {
 			return json([]);

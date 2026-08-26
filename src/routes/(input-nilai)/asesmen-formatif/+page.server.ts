@@ -145,10 +145,13 @@ export async function load({ parent, url, depends }) {
 	let userAkses: Awaited<ReturnType<typeof getAksesMapelUser>> | null = null;
 	if (needsMapelFilter(maybeUser, kelasAktif?.id ?? null) && maybeUser?.id) {
 		try {
-			userAkses = await getAksesMapelUser({
-				id: maybeUser.id,
-				mataPelajaranId: maybeUser.mataPelajaranId
-			});
+			userAkses = await getAksesMapelUser(
+				{
+					id: maybeUser.id,
+					mataPelajaranId: maybeUser.mataPelajaranId
+				},
+				kelasAktif?.id ?? null
+			);
 			mapelRecords = mapelRecords.filter(
 				(r) => userAkses!.ids.has(r.id) || userAkses!.names.has(normalizeText(r.nama))
 			);

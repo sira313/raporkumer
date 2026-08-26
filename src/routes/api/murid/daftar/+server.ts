@@ -55,10 +55,13 @@ export async function GET({ url, locals }) {
 			throw error(400, 'Invalid mapel_id');
 		}
 		if (isKeluargaAgama(mapel.nama) || isKeluargaPks(mapel.nama)) {
-			const akses = await getAksesMapelUser({
-				id: user.id,
-				mataPelajaranId: user.mataPelajaranId
-			});
+			const akses = await getAksesMapelUser(
+				{
+					id: user.id,
+					mataPelajaranId: user.mataPelajaranId
+				},
+				kelasId
+			);
 			const options = isKeluargaPks(mapel.nama) ? pksMapelOptions : agamaMapelOptions;
 			const keys = new Set<string>(
 				options

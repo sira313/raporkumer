@@ -43,6 +43,9 @@ export const GET = (async ({ locals, url }) => {
 	// (ID assign, nama lintas kelas, keluarga agama/PKS, dan sub pembelajarannya).
 	let mataPelajaranFilter: SQL | undefined;
 	if (user?.type === 'user' && typeof user.id === 'number') {
+	// ponytail: targetKelasId tidak di-pass karena endpoint ini tidak punya
+	// konteks kelas aktif. rawNames bisa bocor lintas kelas untuk akun guru
+	// mapel yang di-assign di beberapa kelas — add when caller mulai pass kelas_id.
 		const akses = await getAksesMapelUser({ id: user.id, mataPelajaranId: user.mataPelajaranId });
 		const idList = Array.from(akses.ids);
 		const rawNama = Array.from(akses.rawNames);

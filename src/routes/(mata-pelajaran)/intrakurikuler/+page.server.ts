@@ -73,7 +73,10 @@ export async function load({ depends, url, parent }) {
 	if (needsMapelFilter(u, kelasId)) {
 		if (u.id) {
 			try {
-				const akses = await getAksesMapelUser({ id: u.id, mataPelajaranId: u.mataPelajaranId });
+				const akses = await getAksesMapelUser(
+					{ id: u.id, mataPelajaranId: u.mataPelajaranId },
+					kelasId
+				);
 				mapel = mapel.filter(
 					(m) => akses.ids.has(m.id) || akses.names.has((m.nama || '').trim().toLowerCase())
 				);

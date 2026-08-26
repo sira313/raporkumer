@@ -145,10 +145,13 @@ export async function load({ url, locals, depends, parent }) {
 		: null;
 	let picker;
 	if (guruUser?.id) {
-		const akses = await getAksesMapelUser({
-			id: guruUser.id,
-			mataPelajaranId: guruUser.mataPelajaranId
-		});
+		const akses = await getAksesMapelUser(
+			{
+				id: guruUser.id,
+				mataPelajaranId: guruUser.mataPelajaranId
+			},
+			murid.kelasId
+		);
 		picker = buildGuruMapelPicker(mapelRows, akses.ids, akses.names, mapel.id);
 	} else {
 		picker = buildMapelPicker(mapelRows, mapel.id);
