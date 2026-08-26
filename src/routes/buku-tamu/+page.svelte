@@ -221,7 +221,14 @@
 	{#if !hasTamu}
 		<div class="alert alert-soft alert-warning mt-6">
 			<Icon name="alert" />
-			<span>Belum ada data tamu. Arahkan tamu untuk membuka halaman <code class="bg-warning p-1 rounded-sm text-base-content">ip:3000/tamu</code> atau <code class="bg-warning p-1 rounded-sm text-base-content">domain-sekolah.sch.id/tamu</code> untuk mengisi buku tamu.</span>
+			<span
+				>Belum ada data tamu. Arahkan tamu untuk membuka halaman <code
+					class="bg-warning p-1 rounded-sm text-base-content">ip:3000/tamu</code
+				>
+				atau
+				<code class="bg-warning p-1 rounded-sm text-base-content">domain-sekolah.sch.id/tamu</code> untuk
+				mengisi buku tamu.</span
+			>
 		</div>
 	{:else if !hasFilteredTamu}
 		<div class="alert alert-soft alert-info mt-6">

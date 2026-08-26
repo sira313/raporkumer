@@ -21,14 +21,14 @@ export async function load({ parent, locals }) {
 
 export const actions = {
 	async add({ request, cookies, locals }) {
-	const formMapel = unflattenFormData<{
-		nama?: string;
-		nama_lokal?: string;
-		jenis?: string;
-		kkm?: string;
-		kode?: string;
-		induk_pembelajaran_id?: string;
-	}>(await request.formData());
+		const formMapel = unflattenFormData<{
+			nama?: string;
+			nama_lokal?: string;
+			jenis?: string;
+			kkm?: string;
+			kode?: string;
+			induk_pembelajaran_id?: string;
+		}>(await request.formData());
 
 		const kelasIdCookie = cookies.get(cookieNames.ACTIVE_KELAS_ID);
 		if (!kelasIdCookie) {

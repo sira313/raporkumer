@@ -226,7 +226,10 @@
 				} catch {
 					msg = (await res.text().catch(() => msg)) as string;
 				}
-				toast({ message: `${isEditMode ? 'Gagal memperbarui' : 'Gagal membuat'}: ${msg}`, type: 'error' });
+				toast({
+					message: `${isEditMode ? 'Gagal memperbarui' : 'Gagal membuat'}: ${msg}`,
+					type: 'error'
+				});
 			}
 		} catch {
 			toast({
@@ -408,7 +411,11 @@
 						</label>
 					</div>
 					<p class="validator-hint hidden">Isi username dan password dulu!</p>
-					<p class="label">{isEditMode ? 'Username wajib diisi. Password opsional (kosongkan jika tidak diubah).' : 'Username dan password untuk login'}</p>
+					<p class="label">
+						{isEditMode
+							? 'Username wajib diisi. Password opsional (kosongkan jika tidak diubah).'
+							: 'Username dan password untuk login'}
+					</p>
 				</fieldset>
 			</div>
 
@@ -416,7 +423,11 @@
 				<button class="btn btn-soft shadow-none" type="button" onclick={close} disabled={saving}
 					><Icon name="close" /> Batal</button
 				>
-				<button class="btn btn-primary shadow-none" type="button" onclick={save} disabled={!isValid || saving}
+				<button
+					class="btn btn-primary shadow-none"
+					type="button"
+					onclick={save}
+					disabled={!isValid || saving}
 					><Icon name="save" /> {saving ? 'Menyimpan...' : 'Simpan'}</button
 				>
 			</div>

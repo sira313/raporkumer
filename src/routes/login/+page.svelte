@@ -119,9 +119,7 @@
 
 				<div class="fieldset">
 					<label class="fieldset-legend" for="password"> Kata Sandi </label>
-					<label
-						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
-					>
+					<label class="input input-bordered dark:bg-base-200 w-full dark:border-none">
 						<input
 							type={showPassword ? 'text' : 'password'}
 							id="password"

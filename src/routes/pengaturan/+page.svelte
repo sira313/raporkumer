@@ -68,14 +68,6 @@
 	</div>
 {/if}
 
-<!-- Hidden during forced password change: the auth guard redirects the database
-	API calls in that state, so the buttons would silently fail. -->
-{#if isAdmin && !wasForcePasswordChange}
-	<div class="mt-4">
-		<DatabaseCard />
-	</div>
-{/if}
-
 {#if isAdmin}
 	<div class="mt-4">
 		<BukuTamuPasskeyCard passkeySet={data.bukuTamuPasskeySet} />
@@ -103,5 +95,13 @@
 			idPrefix="personal-ai"
 			data={data.personalAi}
 		/>
+	</div>
+{/if}
+
+<!-- Hidden during forced password change: the auth guard redirects the database
+	API calls in that state, so the buttons would silently fail. -->
+{#if isAdmin && !wasForcePasswordChange}
+	<div class="mt-4">
+		<DatabaseCard />
 	</div>
 {/if}

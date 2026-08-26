@@ -4,6 +4,7 @@ import {
 	tableAsesmenSumatif,
 	tableAsesmenSumatifTujuan,
 	tableFeatureUnlock,
+	tableKelas,
 	tableMataPelajaran,
 	tableMurid,
 	tableTujuanPembelajaran
@@ -17,7 +18,7 @@ import {
 	buildMapelPicker,
 	namaVarianUntukMurid
 } from '$lib/server/mapel-picker';
-import { bolehAksesMapel, getAksesMapelUser } from '$lib/server/mapel-access';
+import { bolehAksesMapel, getAksesMapelUser, needsMapelFilter } from '$lib/server/mapel-access';
 
 const CHEAT_FEATURE_KEY = 'cheat-asesmen-sumatif';
 
@@ -114,8 +115,9 @@ function deriveLingkupBobot(
 	return result;
 }
 
-export async function load({ url, locals, depends }) {
+export async function load({ url, locals, depends, parent }) {
 	depends('app:asesmen-sumatif/formulir');
+	const { user: enrichedUser, kelasAktif } = await parent();
 	const muridIdParam = url.searchParams.get('murid_id');
 	const mapelIdParam = url.searchParams.get('mapel_id');
 
@@ -168,20 +170,17 @@ export async function load({ url, locals, depends }) {
 		}
 	}
 
-	// Permission check: Allow admin, wali_kelas, wali_asuh, and user (guru mapel) assigned to this subject
+	// Permission check: Allow admin, kepala_sekolah, wali_asuh unconditionally.
+	// wali_kelas on own class gets full access; on non-own class and user (guru mapel),
+	// restrict to assigned mata pelajaran only.
 	const smUserType = (locals.user as { type?: string } | null)?.type;
-	if (
-		smUserType !== 'admin' &&
-		smUserType !== 'kepala_sekolah' &&
-		smUserType !== 'wali_kelas' &&
-		smUserType !== 'wali_asuh'
-	) {
-		if (smUserType === 'user' && locals.user?.id) {
+	if (smUserType !== 'admin' && smUserType !== 'kepala_sekolah' && smUserType !== 'wali_asuh') {
+		if (needsMapelFilter(enrichedUser, kelasAktif?.id ?? null) && locals.user?.id) {
 			const boleh = await bolehAksesMapel(locals.user, mapel);
 			if (!boleh) {
 				throw redirect(303, '/forbidden?required=mapel_id');
 			}
-		} else {
+		} else if (smUserType !== 'wali_kelas') {
 			authority('input_nilai_asesmen_sumatif');
 		}
 	}
@@ -194,10 +193,9 @@ export async function load({ url, locals, depends }) {
 		where: eq(tableMataPelajaran.kelasId, murid.kelasId),
 		orderBy: asc(tableMataPelajaran.nama)
 	});
-	const guruUser =
-		smUserType === 'user'
-			? (locals.user as { id?: number; mataPelajaranId?: number | null } | null)
-			: null;
+	const guruUser = needsMapelFilter(enrichedUser, kelasAktif?.id ?? null)
+		? (locals.user as { id?: number; mataPelajaranId?: number | null } | null)
+		: null;
 	let picker;
 	if (guruUser?.id) {
 		const akses = await getAksesMapelUser({
@@ -353,20 +351,33 @@ export const actions = {
 			return fail(404, { fail: 'Mata pelajaran tidak ditemukan.' });
 		}
 
-		// Permission check: Allow admin, wali_kelas, wali_asuh, and user (guru mapel) assigned to this subject
+		// Permission check: Allow admin, kepala_sekolah, wali_asuh unconditionally.
+		// wali_kelas on own class gets full access; on non-own class and user (guru mapel),
+		// restrict to assigned mata pelajaran only.
 		const saveSmUserType = (locals.user as { type?: string } | null)?.type;
 		if (
 			saveSmUserType !== 'admin' &&
 			saveSmUserType !== 'kepala_sekolah' &&
-			saveSmUserType !== 'wali_kelas' &&
 			saveSmUserType !== 'wali_asuh'
 		) {
-			if (saveSmUserType === 'user' && locals.user?.id) {
+			let needsMapelCheck = saveSmUserType === 'user';
+			if (saveSmUserType === 'wali_kelas' && locals.user) {
+				const pegawaiId = (locals.user as { pegawaiId?: number | null }).pegawaiId;
+				if (!pegawaiId) {
+					return fail(403, { fail: 'Anda tidak memiliki akses ke mata pelajaran ini.' });
+				}
+				const ownKelas = await db.query.tableKelas.findFirst({
+					columns: { id: true },
+					where: and(eq(tableKelas.id, mapel.kelasId), eq(tableKelas.waliKelasId, pegawaiId))
+				});
+				if (!ownKelas) needsMapelCheck = true;
+			}
+			if (needsMapelCheck && locals.user?.id) {
 				const boleh = await bolehAksesMapel(locals.user, mapel);
 				if (!boleh) {
 					return fail(403, { fail: 'Anda tidak memiliki akses ke mata pelajaran ini.' });
 				}
-			} else {
+			} else if (saveSmUserType !== 'wali_kelas') {
 				authority('input_nilai_asesmen_sumatif');
 			}
 		}

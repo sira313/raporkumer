@@ -565,7 +565,9 @@ export async function load({ url, locals }) {
 		.limit(1000);
 
 	// Fetch many-to-many mapel & kelas assignments for each user (for edit modal pre-fill)
-	const allUserIds = users.map((r) => r.id).filter((id): id is number => typeof id === 'number' && id > 0);
+	const allUserIds = users
+		.map((r) => r.id)
+		.filter((id): id is number => typeof id === 'number' && id > 0);
 	const [userMapelRows, userKelasRows] = allUserIds.length
 		? await Promise.all([
 				db
@@ -937,7 +939,9 @@ export const actions = {
 			try {
 				const parsed = JSON.parse(String(mpRaw));
 				if (Array.isArray(parsed)) mataPelajaranIds = parsed.map(Number).filter((n) => !isNaN(n));
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 		}
 
 		let kelasIds: number[] = [];
@@ -946,7 +950,9 @@ export const actions = {
 			try {
 				const parsed = JSON.parse(String(kelasRaw));
 				if (Array.isArray(parsed)) kelasIds = parsed.map(Number).filter((n) => !isNaN(n));
-			} catch { /* ignore */ }
+			} catch {
+				/* ignore */
+			}
 		}
 
 		const sekolahId = form.get('sekolahId') ? Number(form.get('sekolahId')) : null;
@@ -1005,7 +1011,10 @@ export const actions = {
 
 				// Update pegawai nama if provided
 				if (nama && existing.pegawaiId) {
-					await tx.update(tablePegawai).set({ nama }).where(eq(tablePegawai.id, existing.pegawaiId));
+					await tx
+						.update(tablePegawai)
+						.set({ nama })
+						.where(eq(tablePegawai.id, existing.pegawaiId));
 				} else if (nama && !existing.pegawaiId) {
 					const [p] = await tx
 						.insert(tablePegawai)
@@ -1015,7 +1024,9 @@ export const actions = {
 				}
 
 				// Sync many-to-many: delete existing then re-insert
-				await tx.delete(tableAuthUserMataPelajaran).where(eq(tableAuthUserMataPelajaran.authUserId, id));
+				await tx
+					.delete(tableAuthUserMataPelajaran)
+					.where(eq(tableAuthUserMataPelajaran.authUserId, id));
 				const ts = new Date().toISOString();
 				for (const mpId of mataPelajaranIds) {
 					try {

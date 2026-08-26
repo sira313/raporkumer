@@ -159,30 +159,27 @@ export const actions: Actions = {
 			console.warn('[login action] failed to set sekolah from user record', err);
 		}
 
-		// If the authenticated user is a wali_kelas, set the active-kelas-id cookie
-		// so the UI will select their assigned class immediately after login.
+		// If the authenticated user is a wali_kelas, resolve their actual wali kelas
+		// via tableKelas.waliKelasId (the auth_user.kelasId may be stale) and set
+		// the active-kelas-id cookie so the UI selects their class immediately.
 		try {
 			const authUser = user as AuthUser;
-			if (authUser.type === 'wali_kelas' && authUser.kelasId) {
-				cookies.set(cookieNames.ACTIVE_KELAS_ID, String(authUser.kelasId), {
-					path: '/',
-					secure
+			if (authUser.type === 'wali_kelas' && authUser.pegawaiId) {
+				const waliKelas = await db.query.tableKelas.findFirst({
+					columns: { id: true, sekolahId: true },
+					where: eq(tableKelas.waliKelasId, authUser.pegawaiId)
 				});
-
-				// Also set the active sekolah cookie to the sekolah that owns the kelas
-				try {
-					const kelas = await db.query.tableKelas.findFirst({
-						columns: { sekolahId: true },
-						where: eq(tableKelas.id, authUser.kelasId)
+				if (waliKelas) {
+					cookies.set(cookieNames.ACTIVE_KELAS_ID, String(waliKelas.id), {
+						path: '/',
+						secure
 					});
-					if (kelas && kelas.sekolahId) {
-						cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(kelas.sekolahId), {
+					if (waliKelas.sekolahId) {
+						cookies.set(cookieNames.ACTIVE_SEKOLAH_ID, String(waliKelas.sekolahId), {
 							path: '/',
 							secure
 						});
 					}
-				} catch (err) {
-					console.warn('[login action] failed to resolve kelas->sekolah mapping', err);
 				}
 			} else if (authUser.type === 'user') {
 				// For users assigned to a mata pelajaran: if the system has multiple

@@ -16,13 +16,18 @@ import { and, eq, inArray, or, type SQL } from 'drizzle-orm';
  *  - tipe 'user' → selalu filter.
  *  - tipe 'wali_kelas' → filter di kelas BUKAN miliknya, bebas di kelasnya sendiri. */
 export function needsMapelFilter(
-	user: { type?: string; id?: number; kelasId?: number | null } | null | undefined,
+	user:
+		| { type?: string; id?: number; kelasId?: number | null; ownKelasIds?: number[] | null }
+		| null
+		| undefined,
 	selectedKelasId: number | null | undefined
 ): boolean {
 	if (!user?.id) return false;
 	if (user.type === 'user') return true;
-	if (user.type === 'wali_kelas' && selectedKelasId != null && user.kelasId !== selectedKelasId)
-		return true;
+	if (user.type === 'wali_kelas' && selectedKelasId != null) {
+		const ownIds = user.ownKelasIds?.length ? user.ownKelasIds : [user.kelasId];
+		if (!ownIds.includes(selectedKelasId)) return true;
+	}
 	return false;
 }
 

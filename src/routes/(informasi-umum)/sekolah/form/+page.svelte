@@ -436,9 +436,7 @@
 				<div class="fieldset">
 					<!-- Website Sekolah -->
 					<legend class="fieldset-legend">Website Sekolah</legend>
-					<label
-						class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
-					>
+					<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 						<span class="label">https://</span>
 						<input type="text" placeholder="Kosongkan bila tidak ada" name="website" />
 					</label>

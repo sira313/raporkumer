@@ -90,9 +90,7 @@
 			<fieldset class="fieldset">
 				<legend class="fieldset-legend">Kunci API</legend>
 				<div class="form-control">
-					<label
-						class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
-					>
+					<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 						<span class="pl-2"><Icon name="key" /></span>
 						<input
 							type={showKey ? 'text' : 'password'}

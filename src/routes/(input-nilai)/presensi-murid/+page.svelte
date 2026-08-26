@@ -892,9 +892,7 @@
 		onsubmit={submitSearch}
 	>
 		<div class="join w-full">
-			<label
-				class="input bg-base-200 dark:bg-base-300 join-item grow dark:border-none"
-			>
+			<label class="input bg-base-200 dark:bg-base-300 join-item grow dark:border-none">
 				<Icon name="search" />
 				<input
 					type="search"

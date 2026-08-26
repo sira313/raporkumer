@@ -29,9 +29,7 @@
 				<div>
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Kata sandi saat ini</legend>
-						<label
-							class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
-						>
+						<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
 								type={showCurrentPassword ? 'text' : 'password'}
@@ -54,9 +52,7 @@
 
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Kata sandi baru</legend>
-						<label
-							class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
-						>
+						<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
 								type={showNewPassword ? 'text' : 'password'}
@@ -80,9 +76,7 @@
 
 					<fieldset class="fieldset">
 						<legend class="fieldset-legend">Konfirmasi kata sandi baru</legend>
-						<label
-							class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
-						>
+						<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 							<span class="pl-2"><Icon name="lock" /></span>
 							<input
 								type={showConfirmPassword ? 'text' : 'password'}

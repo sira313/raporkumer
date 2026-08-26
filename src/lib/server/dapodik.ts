@@ -1082,9 +1082,7 @@ async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog
 			)
 		);
 		const existingKelasLinks = new Set(
-			(await db.select().from(tableAuthUserKelas)).map(
-				(l) => `${l.authUserId}:${l.kelasId}`
-			)
+			(await db.select().from(tableAuthUserKelas)).map((l) => `${l.authUserId}:${l.kelasId}`)
 		);
 		const linkCount = new Map<number, number>();
 		let linked = 0;
@@ -1118,16 +1116,15 @@ async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog
 				)
 			);
 		if (staleWaliLinks.length) {
-			await db
-				.delete(tableAuthUserMataPelajaran)
-				.where(
-					inArray(
-						tableAuthUserMataPelajaran.id,
-						staleWaliLinks.map((l) => l.id)
-					)
-				);
+			await db.delete(tableAuthUserMataPelajaran).where(
+				inArray(
+					tableAuthUserMataPelajaran.id,
+					staleWaliLinks.map((l) => l.id)
+				)
+			);
 			// Refresh existingMapelLinks after cleanup.
-			for (const l of staleWaliLinks) existingMapelLinks.delete(`${l.authUserId}:${l.mataPelajaranId}`);
+			for (const l of staleWaliLinks)
+				existingMapelLinks.delete(`${l.authUserId}:${l.mataPelajaranId}`);
 		}
 
 		// --- A. Mapel pengampu (via pengampu_id) ---
@@ -1200,9 +1197,7 @@ async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog
 					const dpNama = (dp.nama ?? '').trim().toLowerCase();
 					if (!dpNama) continue;
 					const match = allMapelRows.find(
-						(m) =>
-							m.kelasId === kelasId &&
-							(m.nama ?? '').trim().toLowerCase() === dpNama
+						(m) => m.kelasId === kelasId && (m.nama ?? '').trim().toLowerCase() === dpNama
 					);
 					if (!match) continue;
 					const key = `${userId}:${match.id}`;
@@ -1239,19 +1234,14 @@ async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog
 			for (const kelasId of userKelas) {
 				const key = `${userId}:${kelasId}`;
 				if (existingKelasLinks.has(key)) continue;
-				await db
-					.insert(tableAuthUserKelas)
-					.values({ authUserId: userId, kelasId });
+				await db.insert(tableAuthUserKelas).values({ authUserId: userId, kelasId });
 				existingKelasLinks.add(key);
 				kelasLinked++;
 			}
 			if (userKelas.size > 1) {
 				const user = allAccounts.find((a) => a.id === userId);
 				if (user && !(user.permissions as string[]).includes('kelas_pindah')) {
-					const updated = [
-						...(user.permissions as string[]),
-						'kelas_pindah'
-					] as UserPermission[];
+					const updated = [...(user.permissions as string[]), 'kelas_pindah'] as UserPermission[];
 					await db
 						.update(tableAuthUser)
 						.set({ permissions: updated })
@@ -1918,9 +1908,7 @@ async function upsertPembelajaran(
 						})
 						.where(eq(tableMataPelajaran.id, existing.id));
 					updated++;
-				} else if (
-					namaMapel.toLowerCase().startsWith('guru kelas')
-				) {
+				} else if (namaMapel.toLowerCase().startsWith('guru kelas')) {
 					// Entry "Guru Kelas SD/MI/SLB" = wali kelas, bukan mapel terpisah.
 					skipped++;
 				} else {

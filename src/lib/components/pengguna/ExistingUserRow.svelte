@@ -1,11 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
-	let {
-		u,
-		onEdit,
-		onOpenUser,
-		onDelete = undefined
-	} = $props();
+	let { u, onEdit, onOpenUser, onDelete = undefined } = $props();
 </script>
 
 <td>{u.pegawaiName ?? u.username}</td>

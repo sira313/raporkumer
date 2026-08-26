@@ -1,13 +1,8 @@
 import db from '$lib/server/db';
 import { ensureAsesmenSumatifSchema } from '$lib/server/db/ensure-asesmen-sumatif';
-import {
-	tableAsesmenSumatif,
-	tableMataPelajaran,
-	tableMurid,
-	tableAuthUserMataPelajaran
-} from '$lib/server/db/schema';
+import { tableAsesmenSumatif, tableMataPelajaran, tableMurid } from '$lib/server/db/schema';
 import { redirect } from '@sveltejs/kit';
-import { getAksesMapelUser } from '$lib/server/mapel-access';
+import { getAksesMapelUser, needsMapelFilter } from '$lib/server/mapel-access';
 import { labelVarianUntukMurid, muridAgamaKey } from '$lib/server/mapel-picker';
 import { agamaMapelOptions, pksMapelOptions } from '$lib/statics';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
@@ -173,101 +168,20 @@ export async function load({ parent, url, depends, locals }) {
 	const maybeUser = user as unknown as
 		{ id?: number; type?: string; mataPelajaranId?: number } | undefined;
 	const assignedMapelIds = new Set<number>();
+	let userAkses: Awaited<ReturnType<typeof getAksesMapelUser>> | null = null;
 
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.id) {
+	if (needsMapelFilter(maybeUser, kelasAktif?.id ?? null) && maybeUser?.id) {
 		try {
-			// Try to fetch from join table (multi-mapel)
-			const multiMapels = await db.query.tableAuthUserMataPelajaran.findMany({
-				columns: { mataPelajaranId: true },
-				where: eq(tableAuthUserMataPelajaran.authUserId, maybeUser.id)
+			userAkses = await getAksesMapelUser({
+				id: maybeUser.id,
+				mataPelajaranId: maybeUser.mataPelajaranId
 			});
-
-			if (multiMapels.length > 0) {
-				// User has multi-mapel assignments
-				// Fetch the actual mapel records to get their names
-				const assignedMapelRecords = await db.query.tableMataPelajaran.findMany({
-					columns: { id: true, nama: true },
-					where: inArray(
-						tableMataPelajaran.id,
-						multiMapels.map((m) => m.mataPelajaranId)
-					)
-				});
-
-				// Build a set of allowed mapel names (normalize for comparison)
-				const allowedNames = new Set(assignedMapelRecords.map((m) => normalizeText(m.nama)));
-
-				// Check if any assigned mapel is an agama variant
-				let hasAgamaVariant = false;
-				for (const record of assignedMapelRecords) {
-					const norm = normalizeText(record.nama);
-					if (
-						norm.startsWith('pendidikan agama') &&
-						!norm.includes(normalizeText(AGAMA_BASE_SUBJECT))
-					) {
-						hasAgamaVariant = true;
-						break;
-					}
-				}
-
-				// Check for PKS variants
-				const pksVariantValues = new Set(PKS_VARIANT_NAMES);
-				let hasPksVariant = false;
-				for (const record of assignedMapelRecords) {
-					const norm = normalizeText(record.nama);
-					if (pksVariantValues.has(norm)) {
-						hasPksVariant = true;
-						break;
-					}
-				}
-
-				// If has agama variant, also add the parent agama mapel name
-				if (hasAgamaVariant) {
-					allowedNames.add(normalizeText(AGAMA_BASE_SUBJECT));
-				}
-
-				// If has PKS variant, also add the parent PKS mapel name
-				if (hasPksVariant) {
-					allowedNames.add(normalizeText(PKS_BASE_SUBJECT));
-				}
-
-				// Filter current kelas' mapel by name match
-				mapelRecords = mapelRecords.filter((r) => {
-					const rNorm = normalizeText(r.nama);
-					const allowed = allowedNames.has(rNorm);
-					return allowed;
-				});
-			} else if (maybeUser.mataPelajaranId) {
-				// Fallback: check legacy single mataPelajaranId
-				const assignedId = Number(maybeUser.mataPelajaranId);
-				assignedMapelIds.add(assignedId);
-				const assigned = await db.query.tableMataPelajaran.findFirst({
-					columns: { id: true, nama: true },
-					where: eq(tableMataPelajaran.id, assignedId)
-				});
-				if (assigned && assigned.nama) {
-					const norm = normalizeText(assigned.nama);
-					// If the assigned mapel matches any known agama variant name,
-					// show all agama variants (special case for agama teachers)
-					const agamaVariantValues = new Set(AGAMA_VARIANT_NAMES);
-					const pksVariantValues = new Set(PKS_VARIANT_NAMES);
-					if (agamaVariantValues.has(norm)) {
-						// Allow all agama variants
-						mapelRecords = mapelRecords.filter((r) => {
-							const rNorm = normalizeText(r.nama);
-							return rNorm === normalizeText(AGAMA_BASE_SUBJECT) || agamaVariantValues.has(rNorm);
-						});
-					} else if (pksVariantValues.has(norm)) {
-						// Allow all PKS variants
-						mapelRecords = mapelRecords.filter((r) => {
-							const rNorm = normalizeText(r.nama);
-							return rNorm === normalizeText(PKS_BASE_SUBJECT) || pksVariantValues.has(rNorm);
-						});
-					} else {
-						mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
-					}
-				} else {
-					mapelRecords = mapelRecords.filter((r) => r.id === assignedId);
-				}
+			mapelRecords = mapelRecords.filter(
+				(r) => userAkses!.ids.has(r.id) || userAkses!.names.has(normalizeText(r.nama))
+			);
+			// Populate assignedMapelIds for assignedLocalMapelId detection below
+			for (const id of userAkses.ids) {
+				assignedMapelIds.add(id);
 			}
 		} catch {
 			// Silently handle error
@@ -281,7 +195,7 @@ export async function load({ parent, url, depends, locals }) {
 	// assignedIsAgamaVariant is set if any of the assigned mapel is agama variant.
 	let assignedLocalMapelId: number | null = null;
 	let assignedIsAgamaVariant = false;
-	if (maybeUser && maybeUser.type === 'user') {
+	if (needsMapelFilter(maybeUser, kelasAktif?.id ?? null)) {
 		// Check multi-mapel first
 		if (assignedMapelIds.size > 0) {
 			// Pick first assigned mapel from the filtered list
@@ -319,19 +233,11 @@ export async function load({ parent, url, depends, locals }) {
 	}
 
 	const allowedAgamaVariants = new Set<string>();
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.id) {
-		try {
-			const akses = await getAksesMapelUser({
-				id: maybeUser.id,
-				mataPelajaranId: maybeUser.mataPelajaranId
-			});
-			for (const option of [...agamaMapelOptions, ...pksMapelOptions]) {
-				if (option.key !== 'umum' && akses.names.has(normalizeText(option.name))) {
-					allowedAgamaVariants.add(option.label);
-				}
+	if (userAkses) {
+		for (const option of [...agamaMapelOptions, ...pksMapelOptions]) {
+			if (option.key !== 'umum' && userAkses.names.has(normalizeText(option.name))) {
+				allowedAgamaVariants.add(option.label);
 			}
-		} catch (err) {
-			console.warn('[asesmen-sumatif] Failed to resolve accessible agama variants', err);
 		}
 	}
 

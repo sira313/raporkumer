@@ -38,9 +38,7 @@
 	/>
 </td>
 <td>
-	<label
-		class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
-	>
+	<label class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none">
 		<input
 			type={showPassword ? 'text' : 'password'}
 			bind:value={newValues[id].password}

@@ -255,8 +255,7 @@
 						required
 						rows="2"
 						placeholder="Isi keperluan kunjungan"
-						class="textarea textarea-bordered dark:bg-base-200 w-full dark:border-none"
-					></textarea>
+						class="textarea textarea-bordered dark:bg-base-200 w-full dark:border-none"></textarea>
 				</div>
 
 				<div class="fieldset">
@@ -266,8 +265,7 @@
 						name="pesanKesan"
 						rows="2"
 						placeholder="Isi pesan atau kesan Anda"
-						class="textarea textarea-bordered dark:bg-base-200 w-full dark:border-none"
-					></textarea>
+						class="textarea textarea-bordered dark:bg-base-200 w-full dark:border-none"></textarea>
 				</div>
 
 				<div class="fieldset">

@@ -48,6 +48,13 @@
 		return (user as UserLike)?.pegawaiName ?? (user as UserLike)?.username ?? null;
 	});
 
+	const isNonOwnClass = $derived.by(() => {
+		if (!user || user.type !== 'wali_kelas' || !kelasAktif?.id) return false;
+		const u = user as { kelasId?: number | null; ownKelasIds?: number[] | null };
+		const ownIds = u.ownKelasIds?.length ? u.ownKelasIds : u.kelasId != null ? [u.kelasId] : [];
+		return ownIds.length > 0 && !ownIds.includes(kelasAktif.id);
+	});
+
 	// Whether current user can stop the server (client-side guard)
 	// Allow users who explicitly have the `server_stop` permission, or
 	// any user of type 'admin' (administrators can stop the server by default).
@@ -277,6 +284,13 @@
 								</span>
 							</div>
 						{:else if user?.type === 'user'}
+							<div role="alert" class="alert alert-info mb-4">
+								<Icon name="info" />
+								<span>
+									<strong>{displayUserName}</strong> - Guru Mapel
+								</span>
+							</div>
+						{:else if user?.type === 'wali_kelas' && isNonOwnClass}
 							<div role="alert" class="alert alert-info mb-4">
 								<Icon name="info" />
 								<span>

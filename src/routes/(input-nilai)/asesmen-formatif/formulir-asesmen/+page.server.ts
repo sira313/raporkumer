@@ -1,6 +1,7 @@
 import db from '$lib/server/db';
 import {
 	tableAsesmenFormatif,
+	tableKelas,
 	tableMataPelajaran,
 	tableMurid,
 	tableTujuanPembelajaran
@@ -15,12 +16,13 @@ import {
 	buildMapelPicker,
 	namaVarianUntukMurid
 } from '$lib/server/mapel-picker';
-import { bolehAksesMapel, getAksesMapelUser } from '$lib/server/mapel-access';
+import { bolehAksesMapel, getAksesMapelUser, needsMapelFilter } from '$lib/server/mapel-access';
 
 const DEFAULT_LINGKUP = 'Tanpa lingkup materi';
 
-export async function load({ url, locals, depends }) {
+export async function load({ url, locals, depends, parent }) {
 	depends('app:asesmen-formatif/formulir');
+	const { user: enrichedUser, kelasAktif } = await parent();
 	const muridIdParam = url.searchParams.get('murid_id');
 	const mapelIdParam = url.searchParams.get('mapel_id');
 
@@ -78,20 +80,17 @@ export async function load({ url, locals, depends }) {
 		}
 	}
 
-	// Permission check: Allow admin, wali_kelas, wali_asuh, and user (guru mapel) assigned to this subject
+	// Permission check: Allow admin, kepala_sekolah, wali_asuh unconditionally.
+	// wali_kelas on own class gets full access; on non-own class and user (guru mapel),
+	// restrict to assigned mata pelajaran only.
 	const userType = (locals.user as { type?: string } | null)?.type;
-	if (
-		userType !== 'admin' &&
-		userType !== 'kepala_sekolah' &&
-		userType !== 'wali_kelas' &&
-		userType !== 'wali_asuh'
-	) {
-		if (userType === 'user' && locals.user?.id) {
+	if (userType !== 'admin' && userType !== 'kepala_sekolah' && userType !== 'wali_asuh') {
+		if (needsMapelFilter(enrichedUser, kelasAktif?.id ?? null) && locals.user?.id) {
 			const boleh = await bolehAksesMapel(locals.user, mapel);
 			if (!boleh) {
 				throw redirect(303, '/forbidden?required=mapel_id');
 			}
-		} else {
+		} else if (userType !== 'wali_kelas') {
 			authority('input_nilai_asesmen_formatif');
 		}
 	}
@@ -141,10 +140,9 @@ export async function load({ url, locals, depends }) {
 		where: eq(tableMataPelajaran.kelasId, murid.kelasId),
 		orderBy: asc(tableMataPelajaran.nama)
 	});
-	const guruUser =
-		userType === 'user'
-			? (locals.user as { id?: number; mataPelajaranId?: number | null } | null)
-			: null;
+	const guruUser = needsMapelFilter(enrichedUser, kelasAktif?.id ?? null)
+		? (locals.user as { id?: number; mataPelajaranId?: number | null } | null)
+		: null;
 	let picker;
 	if (guruUser?.id) {
 		const akses = await getAksesMapelUser({
@@ -206,15 +204,33 @@ export const actions = {
 			return fail(404, { fail: 'Mata pelajaran tidak ditemukan.' });
 		}
 
-		// Permission check: Allow admin, wali_kelas, wali_asuh, and user (guru mapel) assigned to this subject
+		// Permission check: Allow admin, kepala_sekolah, wali_asuh unconditionally.
+		// wali_kelas on own class gets full access; on non-own class and user (guru mapel),
+		// restrict to assigned mata pelajaran only.
 		const saveUserType = (locals.user as { type?: string } | null)?.type;
-		if (saveUserType !== 'admin' && saveUserType !== 'wali_kelas' && saveUserType !== 'wali_asuh') {
-			if (saveUserType === 'user' && locals.user?.id) {
+		if (
+			saveUserType !== 'admin' &&
+			saveUserType !== 'kepala_sekolah' &&
+			saveUserType !== 'wali_asuh'
+		) {
+			let needsMapelCheck = saveUserType === 'user';
+			if (saveUserType === 'wali_kelas' && locals.user) {
+				const pegawaiId = (locals.user as { pegawaiId?: number | null }).pegawaiId;
+				if (!pegawaiId) {
+					return fail(403, { fail: 'Anda tidak memiliki akses ke mata pelajaran ini.' });
+				}
+				const ownKelas = await db.query.tableKelas.findFirst({
+					columns: { id: true },
+					where: and(eq(tableKelas.id, mapel.kelasId), eq(tableKelas.waliKelasId, pegawaiId))
+				});
+				if (!ownKelas) needsMapelCheck = true;
+			}
+			if (needsMapelCheck && locals.user?.id) {
 				const boleh = await bolehAksesMapel(locals.user, mapel);
 				if (!boleh) {
 					return fail(403, { fail: 'Anda tidak memiliki akses ke mata pelajaran ini.' });
 				}
-			} else {
+			} else if (saveUserType !== 'wali_kelas') {
 				authority('input_nilai_asesmen_formatif');
 			}
 		}

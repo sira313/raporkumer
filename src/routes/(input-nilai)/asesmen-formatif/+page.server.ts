@@ -3,11 +3,10 @@ import {
 	tableAsesmenFormatif,
 	tableMataPelajaran,
 	tableMurid,
-	tableTujuanPembelajaran,
-	tableAuthUserMataPelajaran
+	tableTujuanPembelajaran
 } from '$lib/server/db/schema';
 import { ensureAsesmenFormatifSchema } from '$lib/server/db/ensure-asesmen-formatif';
-import { getAksesMapelUser } from '$lib/server/mapel-access';
+import { getAksesMapelUser, needsMapelFilter } from '$lib/server/mapel-access';
 import { labelVarianUntukMurid, muridAgamaKey } from '$lib/server/mapel-picker';
 import { asc, and, eq, inArray } from 'drizzle-orm';
 import { redirect } from '@sveltejs/kit';
@@ -143,89 +142,35 @@ export async function load({ parent, url, depends }) {
 	// default to it in the UI. This does NOT grant them wider grading
 	// access; that remains restricted to their assigned variant.
 	let treatAssignedAgamaVariantAsBase = false;
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.id) {
+	let userAkses: Awaited<ReturnType<typeof getAksesMapelUser>> | null = null;
+	if (needsMapelFilter(maybeUser, kelasAktif?.id ?? null) && maybeUser?.id) {
 		try {
-			// First check join table auth_user_mata_pelajaran for multi-mapel support
-			const multiMapels = await db.query.tableAuthUserMataPelajaran.findMany({
-				columns: { mataPelajaranId: true },
-				where: eq(tableAuthUserMataPelajaran.authUserId, maybeUser.id)
+			userAkses = await getAksesMapelUser({
+				id: maybeUser.id,
+				mataPelajaranId: maybeUser.mataPelajaranId
 			});
+			mapelRecords = mapelRecords.filter(
+				(r) => userAkses!.ids.has(r.id) || userAkses!.names.has(normalizeText(r.nama))
+			);
 
-			if (multiMapels.length > 0) {
-				// Get mapel names from join table assignments
-				const assignedMapels = await db.query.tableMataPelajaran.findMany({
-					columns: { id: true, nama: true },
-					where: inArray(
-						tableMataPelajaran.id,
-						multiMapels.map((m) => m.mataPelajaranId)
-					)
-				});
-
-				// Build a set of allowed mapel names (normalize for comparison)
-				const allowedNames = new Set(assignedMapels.map((m) => normalizeText(m.nama)));
-
-				// Check if any assigned mapel is an agama variant
-				let hasAgamaVariant = false;
-				for (const record of assignedMapels) {
-					const norm = normalizeText(record.nama);
-					if (norm.startsWith('pendidikan agama') && norm !== normalizeText(AGAMA_BASE_SUBJECT)) {
-						hasAgamaVariant = true;
-						break;
-					}
+			// Detect agama/PKS variants for default selection behaviour
+			for (const name of userAkses.names) {
+				if (name.startsWith('pendidikan agama') && name !== normalizeText(AGAMA_BASE_SUBJECT)) {
+					treatAssignedAgamaVariantAsBase = true;
+					break;
 				}
-
-				// Check for PKS variants
+			}
+			if (!treatAssignedAgamaVariantAsBase) {
 				const pksVariantValues = new Set(PKS_VARIANT_NAMES);
-				let hasPksVariant = false;
-				for (const record of assignedMapels) {
-					const norm = normalizeText(record.nama);
-					if (pksVariantValues.has(norm)) {
-						hasPksVariant = true;
+				for (const name of userAkses.names) {
+					if (pksVariantValues.has(name)) {
+						treatAssignedAgamaVariantAsBase = true;
 						break;
 					}
-				}
-
-				// If has agama variant, also add the parent agama mapel name
-				if (hasAgamaVariant) {
-					allowedNames.add(normalizeText(AGAMA_BASE_SUBJECT));
-					treatAssignedAgamaVariantAsBase = true;
-				}
-
-				// If has PKS variant, also add the parent PKS mapel name
-				if (hasPksVariant) {
-					allowedNames.add(normalizeText(PKS_BASE_SUBJECT));
-					treatAssignedAgamaVariantAsBase = true;
-				}
-
-				// Filter current kelas' mapel by name match
-				mapelRecords = mapelRecords.filter((r) => {
-					const rNorm = normalizeText(r.nama);
-					return allowedNames.has(rNorm);
-				});
-			} else if (maybeUser.mataPelajaranId) {
-				// Fallback: check legacy single mataPelajaranId column
-				const assigned = await db.query.tableMataPelajaran.findFirst({
-					columns: { id: true, nama: true },
-					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
-				});
-				if (assigned && assigned.nama) {
-					const norm = normalizeText(assigned.nama);
-					const agamaVariantValues = new Set(AGAMA_VARIANT_NAMES);
-					const pksVariantValues = new Set(PKS_VARIANT_NAMES);
-					// If assigned to a known agama or PKS variant, do NOT lock mapelRecords to the
-					// variant. Instead show the base subject and let the select
-					// default to the base (handled further down).
-					if (agamaVariantValues.has(norm) || pksVariantValues.has(norm)) {
-						treatAssignedAgamaVariantAsBase = true;
-					} else {
-						mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
-					}
-				} else {
-					mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
 				}
 			}
 		} catch (err) {
-			console.warn('[asesmen-formatif] Failed to resolve assigned mapel name', err);
+			console.warn('[asesmen-formatif] Failed to resolve assigned mapel', err);
 		}
 	}
 
@@ -235,7 +180,7 @@ export async function load({ parent, url, depends }) {
 	// grades students of their agama.
 	let assignedLocalMapelId: number | null = null;
 	let assignedIsAgamaVariant = false;
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+	if (needsMapelFilter(maybeUser, kelasAktif?.id ?? null) && maybeUser?.mataPelajaranId) {
 		try {
 			const assigned = await db.query.tableMataPelajaran.findFirst({
 				columns: { id: true, nama: true },
@@ -270,19 +215,11 @@ export async function load({ parent, url, depends }) {
 	}
 
 	const allowedAgamaVariants = new Set<string>();
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.id) {
-		try {
-			const akses = await getAksesMapelUser({
-				id: maybeUser.id,
-				mataPelajaranId: maybeUser.mataPelajaranId
-			});
-			for (const option of [...agamaMapelOptions, ...pksMapelOptions]) {
-				if (option.key !== 'umum' && akses.names.has(normalizeText(option.name))) {
-					allowedAgamaVariants.add(option.label);
-				}
+	if (userAkses) {
+		for (const option of [...agamaMapelOptions, ...pksMapelOptions]) {
+			if (option.key !== 'umum' && userAkses.names.has(normalizeText(option.name))) {
+				allowedAgamaVariants.add(option.label);
 			}
-		} catch (err) {
-			console.warn('[asesmen-formatif] Failed to resolve accessible agama variants', err);
 		}
 	}
 

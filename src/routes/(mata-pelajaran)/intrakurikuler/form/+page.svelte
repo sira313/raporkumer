@@ -397,31 +397,31 @@
 				</fieldset>
 			{/if}
 			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-			<fieldset class="fieldset">
-				<legend class="fieldset-legend">KKM</legend>
-				<input
-					type="number"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: 76"
-					name="kkm"
-					required
-					disabled={!kelasAktif}
-					min="0"
-				/>
-			</fieldset>
-			<fieldset class="fieldset">
-				<legend class="fieldset-legend">Singkatan/kode</legend>
-				<input
-					type="text"
-					class="input validator bg-base-200 w-full dark:border-none"
-					placeholder="Contoh: PAPB"
-					name="kode"
-					bind:value={localKode}
-					disabled={isAgamaGroup || isPksGroup ? true : !kelasAktif}
-				/>
-				<p class="label text-wrap">Singkatan/kode singkat untuk mata pelajaran (opsional).</p>
-			</fieldset>
-		</div>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">KKM</legend>
+					<input
+						type="number"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: 76"
+						name="kkm"
+						required
+						disabled={!kelasAktif}
+						min="0"
+					/>
+				</fieldset>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">Singkatan/kode</legend>
+					<input
+						type="text"
+						class="input validator bg-base-200 w-full dark:border-none"
+						placeholder="Contoh: PAPB"
+						name="kode"
+						bind:value={localKode}
+						disabled={isAgamaGroup || isPksGroup ? true : !kelasAktif}
+					/>
+					<p class="label text-wrap">Singkatan/kode singkat untuk mata pelajaran (opsional).</p>
+				</fieldset>
+			</div>
 			<fieldset class="fieldset">
 				<legend class="fieldset-legend">Jenis Mata Pelajaran</legend>
 				<select
@@ -457,7 +457,10 @@
 			<button
 				type="submit"
 				class="btn btn-primary shadow-none"
-				disabled={submitting || (invalid && !isAgamaParent && !isPksParent) || !kelasAktif || agamaDapodikBlocked}
+				disabled={submitting ||
+					(invalid && !isAgamaParent && !isPksParent) ||
+					!kelasAktif ||
+					agamaDapodikBlocked}
 			>
 				{#if submitting}
 					<div class="loading loading-spinner"></div>

@@ -64,7 +64,12 @@ export async function load({ depends, url, parent }) {
 	// If the current user is a 'user' role OR a 'wali_kelas' accessing a non-owned kelas,
 	// filter to show only assigned mata pelajaran (ID, nama lintas kelas,
 	// keluarga agama/PKS, dan sub pembelajaran induknya).
-	const u = user as unknown as { id?: number; type?: string; mataPelajaranId?: number; kelasId?: number | null };
+	const u = user as unknown as {
+		id?: number;
+		type?: string;
+		mataPelajaranId?: number;
+		kelasId?: number | null;
+	};
 	if (needsMapelFilter(u, kelasId)) {
 		if (u.id) {
 			try {
