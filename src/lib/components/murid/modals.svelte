@@ -51,19 +51,16 @@
 {/if}
 
 {#if page.state.modal?.name === 'detail-murid'}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<dialog
 		class="modal"
 		onclose={() => history.back()}
 		onclick={(e) => {
-			const rect = e.currentTarget.querySelector('.modal-box')?.getBoundingClientRect();
-			if (
-				rect &&
-				(e.clientX < rect.left ||
-					e.clientX > rect.right ||
-					e.clientY < rect.top ||
-					e.clientY > rect.bottom)
-			) {
+			// Close only when the actual hit target is outside the modal box.
+			// Coordinate checks break here: checking a tab swaps the tab-content
+			// before this handler runs, the box shrinks/re-centers, and stale
+			// click coordinates can land outside the new rect (falsely closing).
+			const box = e.currentTarget.querySelector('.modal-box');
+			if (box && e.target instanceof Node && !box.contains(e.target)) {
 				e.currentTarget.close();
 			}
 		}}

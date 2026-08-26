@@ -10,6 +10,7 @@ pnpm start                   # run built app (scripts/start-build.mjs)
 pnpm db:push                 # custom migration script, not raw drizzle-kit push
 pnpm db:studio               # drizzle-kit studio
 pnpm db:cleanup              # cleanup orphan records
+pnpm db:purge                # delete sqlite db files (main + wal/shm); asks confirmation, -y skips
 pnpm seed:walis              # seed wali asuh users
 pnpm package:win             # stage windows installer artifacts
 pnpm prepare                 # svelte-kit sync (auto-runs on install)

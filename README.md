@@ -30,6 +30,8 @@ Dokumentasi lengkap aplikasi ini disusun dalam bahasa Indonesia. File README ini
 - Buku tamu digital yang dapat diakses melalui halaman `ipAddress:3000/tamu`
 - Jadwal pelajaran yang dapat diakses melalui halaman `ipAddress:3000/jadwal-pelajaran`
 - Dinas luar dan SPPD otomatis
+- Tarik data dari Dapodik (sinkronisasi sekolah, guru, kelas, murid, dan jadwal pembelajaran secara otomatis dari aplikasi Dapodik Desktop)
+- Kirim nilai akhir dan mata evaluasi (matev) langsung ke Dapodik
 
 ## Siapa yang Cocok Menggunakan Rapkumer?
 
@@ -150,7 +152,7 @@ Informasi lisensi dan kredit selengkapnya tersedia di:
 
 `docs/ICON-CREDITS.md`
 
-## Kontribusi
+## Kontribusi dan Donasi
 
 Terima kasih atas minat Anda untuk berkontribusi pada Rapkumer.
 
@@ -165,8 +167,12 @@ Panduan lengkap alur pengembangan tersedia pada:
 
 `docs/DEVELOPMENT.md`
 
+Bila ingin berdonasi untuk project ini silahkan scan QRIS gambar di bawah:
+
+<a href='https://pay.apoxi.cam' target="_blank"><img alt='Scan QRIS' src='https://img.shields.io/badge/Apoxicam-QRIS-red?style=for-the-badge'/></a>
+
 ## Bantuan
 
-Apabila menemukan bug, mengalami kendala, atau memiliki pertanyaan, silakan buat Issue pada repository GitHub atau hubungi pemilik maupun kontributor yang tercantum pada halaman rilis atau di dalam folder:
+Apabila menemukan bug, mengalami kendala, atau memiliki pertanyaan, silakan buat Issue pada repository GitHub atau join ke grup telegram Rapkumer melalui tombol di bawah:
 
-`docs/`
+<a href='https://t.me/rapkumer' target="_blank"><img alt='telegram' src='https://img.shields.io/badge/telegram-100000?style=for-the-badge&logo=telegram&logoColor=0088CC&labelColor=000000&color=0088CC'/></a>

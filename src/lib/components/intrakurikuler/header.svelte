@@ -113,7 +113,7 @@
 	{#if showAgamaSelect}
 		<div class="form-control overflow-hidden sm:w-60">
 			<select
-				class="select bg-base-200 w-full truncate shadow-none border-base-300 dark:border-none"
+				class="select bg-base-200 w-full truncate shadow-none dark:border-none"
 				id={agamaSelectId}
 				bind:this={agamaEl}
 				aria-label="Pilih Agama"

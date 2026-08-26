@@ -19,6 +19,7 @@ import {
 } from '$lib/server/absen-utils';
 import { simGetKetidakhadiran, simGetAbsensi } from '$lib/server/simulasi-cache';
 import { getFirstMapelForDay } from './first-mapel';
+import { agamaMapelNames } from '$lib/statics';
 import type {
 	KehadiranRow,
 	PersentaseHarianRow,
@@ -28,15 +29,6 @@ import type {
 } from './types';
 import type { PresensiCheckResult } from './presensi';
 
-const agamaMapelNames = [
-	'Pendidikan Agama dan Budi Pekerti',
-	'Pendidikan Agama Islam dan Budi Pekerti',
-	'Pendidikan Agama Kristen dan Budi Pekerti',
-	'Pendidikan Agama Katolik dan Budi Pekerti',
-	'Pendidikan Agama Buddha dan Budi Pekerti',
-	'Pendidikan Agama Hindu dan Budi Pekerti',
-	'Pendidikan Agama Konghuchu dan Budi Pekerti'
-];
 const agamaNameSet = new Set(agamaMapelNames);
 
 async function computePersentaseHarian(params: {

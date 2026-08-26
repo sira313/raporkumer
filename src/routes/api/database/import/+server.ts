@@ -1,23 +1,12 @@
-import { env } from '$env/dynamic/private';
 import { error, json } from '@sveltejs/kit';
 import { copyFile, mkdir, stat, writeFile, unlink } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { closeDbClient, reloadDbClient } from '$lib/server/db';
+import { resolveDatabasePath } from '$lib/server/db-url';
 import { runStartupEnsures, resetStartupEnsures } from '$lib/server/db/ensure-bootstrap';
 import { execFile } from 'node:child_process';
 import { cookieNames } from '$lib/utils';
 import { resolveSession } from '$lib/server/auth';
-
-const DEFAULT_DB_URL = 'file:./data/database.sqlite3';
-
-function resolveDatabasePath(url: string) {
-	if (url.startsWith('file:')) {
-		const cleaned = url.replace(/^file:/, '');
-		return resolve(process.cwd(), cleaned);
-	}
-
-	throw error(500, 'Database URL tidak didukung untuk import');
-}
 
 function runScript(script: string, options: { env?: NodeJS.ProcessEnv; maxBuffer?: number } = {}) {
 	const scriptPath = resolve(process.cwd(), 'scripts', script);
@@ -83,8 +72,7 @@ export async function POST({ request, cookies }) {
 
 	console.log('[database-import] ukuran berkas', file.size, 'byte');
 
-	const dbUrl = env.DB_URL ?? DEFAULT_DB_URL;
-	const dbPath = resolveDatabasePath(dbUrl);
+	const dbPath = resolveDatabasePath();
 	const dbDir = dirname(dbPath);
 
 	await mkdir(dbDir, { recursive: true });

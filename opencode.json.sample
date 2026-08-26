@@ -1,0 +1,43 @@
+{
+	"$schema": "https://opencode.ai/config.json",
+	"provider": {
+		"9router": {
+			"npm": "@ai-sdk/openai-compatible",
+			"options": {
+				"baseURL": "http://your-server:20128/v1",
+				"apiKey": "sk-your-api-key"
+			},
+			"models": {
+				"oc/deepseek-v4-flash-free": {
+					"name": "oc/deepseek-v4-flash-free",
+					"modalities": {
+						"input": ["text", "image"],
+						"output": ["text"]
+					}
+				},
+				"oc/big-pickle": {
+					"name": "oc/big-pickle",
+					"modalities": {
+						"input": ["text", "image"],
+						"output": ["text"]
+					}
+				},
+				"oc/mimo-v2.5-free": {
+					"name": "oc/mimo-v2.5-free",
+					"modalities": {
+						"input": ["text", "image"],
+						"output": ["text"]
+					}
+				}
+			}
+		}
+	},
+	"model": "9router/oc/big-pickle",
+	"agent": {
+		"explorer": {
+			"description": "Fast explorer subagent for codebase exploration",
+			"mode": "subagent",
+			"model": "9router/oc/deepseek-v4-flash-free"
+		}
+	}
+}

@@ -80,7 +80,7 @@
 							<td class="text-primary animate-pulse align-top font-semibold">{idx + 1}</td>
 							<td class="align-top">
 								<textarea
-									class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 h-24 w-full"
+									class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 h-24 w-full"
 									value={editingGroupData.nama}
 									oninput={(e) => {
 										editingGroupData.nama = e.currentTarget.value;

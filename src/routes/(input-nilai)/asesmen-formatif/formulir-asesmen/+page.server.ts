@@ -1,21 +1,28 @@
 import db from '$lib/server/db';
 import {
 	tableAsesmenFormatif,
+	tableKelas,
 	tableMataPelajaran,
 	tableMurid,
-	tableTujuanPembelajaran,
-	tableAuthUserMataPelajaran
+	tableTujuanPembelajaran
 } from '$lib/server/db/schema';
 import { ensureAsesmenFormatifSchema } from '$lib/server/db/ensure-asesmen-formatif';
 import { unflattenFormData } from '$lib/utils';
 import { fail, error, redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { authority } from '../../../pengguna/utils.server';
+import {
+	buildGuruMapelPicker,
+	buildMapelPicker,
+	namaVarianUntukMurid
+} from '$lib/server/mapel-picker';
+import { bolehAksesMapel, getAksesMapelUser, needsMapelFilter } from '$lib/server/mapel-access';
 
 const DEFAULT_LINGKUP = 'Tanpa lingkup materi';
 
-export async function load({ url, locals, depends }) {
+export async function load({ url, locals, depends, parent }) {
 	depends('app:asesmen-formatif/formulir');
+	const { user: enrichedUser, kelasAktif } = await parent();
 	const muridIdParam = url.searchParams.get('murid_id');
 	const mapelIdParam = url.searchParams.get('mapel_id');
 
@@ -32,7 +39,7 @@ export async function load({ url, locals, depends }) {
 	}
 
 	const murid = await db.query.tableMurid.findFirst({
-		columns: { id: true, nama: true, kelasId: true },
+		columns: { id: true, nama: true, kelasId: true, agama: true },
 		where: and(eq(tableMurid.id, muridId), eq(tableMurid.sekolahId, sekolahId))
 	});
 
@@ -49,40 +56,41 @@ export async function load({ url, locals, depends }) {
 		throw error(404, 'Mata pelajaran tidak ditemukan untuk murid ini.');
 	}
 
-	// Permission check: Allow admin, wali_kelas, wali_asuh, and user (guru mapel) assigned to this subject
-	const userType = (locals.user as { type?: string } | null)?.type;
-	if (
-		userType !== 'admin' &&
-		userType !== 'kepala_sekolah' &&
-		userType !== 'wali_kelas' &&
-		userType !== 'wali_asuh'
-	) {
-		if (userType === 'user' && locals.user?.id) {
-			const userId = locals.user.id;
-			const assignedMapels = await db.query.tableAuthUserMataPelajaran.findMany({
-				columns: { mataPelajaranId: true },
-				where: eq(tableAuthUserMataPelajaran.authUserId, userId)
+	// Backstop varian agama/PKS: varian yang tidak sesuai agama murid dialihkan
+	// ke varian yang benar (induk diarahkan ke varian milik murid).
+	{
+		const targetVariant = namaVarianUntukMurid(mapel.nama, murid.agama);
+		if (
+			targetVariant &&
+			targetVariant.trim().toLowerCase() !== (mapel.nama ?? '').trim().toLowerCase()
+		) {
+			const kelasMapels = await db.query.tableMataPelajaran.findMany({
+				columns: { id: true, nama: true, kelasId: true },
+				where: eq(tableMataPelajaran.kelasId, murid.kelasId)
 			});
-			const assignedIds = new Set(assignedMapels.map((m) => m.mataPelajaranId));
-			const legacyId = (locals.user as { mataPelajaranId?: number | null }).mataPelajaranId;
-			if (legacyId) assignedIds.add(legacyId);
-
-			// Check by ID first, then by name (cross-semester resolution)
-			const accessById = assignedIds.has(mapel.id);
-			if (!accessById) {
-				const assignedMapelRecords = await db.query.tableMataPelajaran.findMany({
-					columns: { nama: true },
-					where: inArray(tableMataPelajaran.id, Array.from(assignedIds))
-				});
-				const allowedNames = new Set(
-					assignedMapelRecords.map((m) => m.nama?.trim().toLowerCase() ?? '')
-				);
-				const mapelNorm = mapel.nama?.trim().toLowerCase() ?? '';
-				if (!allowedNames.has(mapelNorm)) {
-					throw redirect(303, '/forbidden?required=mapel_id');
-				}
+			const variantRecord = kelasMapels.find(
+				(r) => (r.nama ?? '').trim().toLowerCase() === targetVariant.trim().toLowerCase()
+			);
+			if (variantRecord) {
+				const params = new URLSearchParams();
+				params.set('murid_id', String(murid.id));
+				params.set('mapel_id', String(variantRecord.id));
+				throw redirect(303, `${url.pathname}?${params.toString()}`);
 			}
-		} else {
+		}
+	}
+
+	// Permission check: Allow admin, kepala_sekolah, wali_asuh unconditionally.
+	// wali_kelas on own class gets full access; on non-own class and user (guru mapel),
+	// restrict to assigned mata pelajaran only.
+	const userType = (locals.user as { type?: string } | null)?.type;
+	if (userType !== 'admin' && userType !== 'kepala_sekolah' && userType !== 'wali_asuh') {
+		if (needsMapelFilter(enrichedUser, kelasAktif?.id ?? null) && locals.user?.id) {
+			const boleh = await bolehAksesMapel(locals.user, mapel);
+			if (!boleh) {
+				throw redirect(303, '/forbidden?required=mapel_id');
+			}
+		} else if (userType !== 'wali_kelas') {
 			authority('input_nilai_asesmen_formatif');
 		}
 	}
@@ -124,9 +132,37 @@ export async function load({ url, locals, depends }) {
 
 	const meta: PageMeta = { title: `Form Asesmen Formatif - ${mapel.nama}` };
 
+	// Daftar mapel kelas untuk select pindah mapel di form (pola halaman daftar).
+	// Varian agama/PKS digabung; label memakai namaLokal fallback nama.
+	// Guru mapel ('user') hanya melihat mapel yang di-assign kepadanya.
+	const mapelRows = await db.query.tableMataPelajaran.findMany({
+		columns: { id: true, nama: true, namaLokal: true },
+		where: eq(tableMataPelajaran.kelasId, murid.kelasId),
+		orderBy: asc(tableMataPelajaran.nama)
+	});
+	const guruUser = needsMapelFilter(enrichedUser, kelasAktif?.id ?? null)
+		? (locals.user as { id?: number; mataPelajaranId?: number | null } | null)
+		: null;
+	let picker;
+	if (guruUser?.id) {
+		const akses = await getAksesMapelUser(
+			{
+				id: guruUser.id,
+				mataPelajaranId: guruUser.mataPelajaranId
+			},
+			murid.kelasId
+		);
+		picker = buildGuruMapelPicker(mapelRows, akses.ids, akses.names, mapel.id);
+	} else {
+		picker = buildMapelPicker(mapelRows, mapel.id);
+	}
+
 	return {
 		meta,
 		murid: { id: murid.id, nama: murid.nama },
+		kelasId: murid.kelasId,
+		mapelList: picker.mapelList,
+		pickerMapelId: picker.pickerMapelId,
 		mapel: { id: mapel.id, nama: mapel.nama },
 		hasTujuan: entries.length > 0,
 		entries
@@ -171,35 +207,33 @@ export const actions = {
 			return fail(404, { fail: 'Mata pelajaran tidak ditemukan.' });
 		}
 
-		// Permission check: Allow admin, wali_kelas, wali_asuh, and user (guru mapel) assigned to this subject
+		// Permission check: Allow admin, kepala_sekolah, wali_asuh unconditionally.
+		// wali_kelas on own class gets full access; on non-own class and user (guru mapel),
+		// restrict to assigned mata pelajaran only.
 		const saveUserType = (locals.user as { type?: string } | null)?.type;
-		if (saveUserType !== 'admin' && saveUserType !== 'wali_kelas' && saveUserType !== 'wali_asuh') {
-			if (saveUserType === 'user' && locals.user?.id) {
-				const saveUserId = locals.user.id;
-				const saveAssigned = await db.query.tableAuthUserMataPelajaran.findMany({
-					columns: { mataPelajaranId: true },
-					where: eq(tableAuthUserMataPelajaran.authUserId, saveUserId)
-				});
-				const saveAssignedIds = new Set(saveAssigned.map((m) => m.mataPelajaranId));
-				const saveLegacyId = (locals.user as { mataPelajaranId?: number | null }).mataPelajaranId;
-				if (saveLegacyId) saveAssignedIds.add(saveLegacyId);
-
-				// Check by ID first, then by name (cross-semester resolution)
-				const saveAccessById = saveAssignedIds.has(mapel.id);
-				if (!saveAccessById) {
-					const saveAssignedMapels = await db.query.tableMataPelajaran.findMany({
-						columns: { nama: true },
-						where: inArray(tableMataPelajaran.id, Array.from(saveAssignedIds))
-					});
-					const saveAllowedNames = new Set(
-						saveAssignedMapels.map((m) => m.nama?.trim().toLowerCase() ?? '')
-					);
-					const saveMapelNorm = mapel.nama?.trim().toLowerCase() ?? '';
-					if (!saveAllowedNames.has(saveMapelNorm)) {
-						return fail(403, { fail: 'Anda tidak memiliki akses ke mata pelajaran ini.' });
-					}
+		if (
+			saveUserType !== 'admin' &&
+			saveUserType !== 'kepala_sekolah' &&
+			saveUserType !== 'wali_asuh'
+		) {
+			let needsMapelCheck = saveUserType === 'user';
+			if (saveUserType === 'wali_kelas' && locals.user) {
+				const pegawaiId = (locals.user as { pegawaiId?: number | null }).pegawaiId;
+				if (!pegawaiId) {
+					return fail(403, { fail: 'Anda tidak memiliki akses ke mata pelajaran ini.' });
 				}
-			} else {
+				const ownKelas = await db.query.tableKelas.findFirst({
+					columns: { id: true },
+					where: and(eq(tableKelas.id, mapel.kelasId), eq(tableKelas.waliKelasId, pegawaiId))
+				});
+				if (!ownKelas) needsMapelCheck = true;
+			}
+			if (needsMapelCheck && locals.user?.id) {
+				const boleh = await bolehAksesMapel(locals.user, mapel);
+				if (!boleh) {
+					return fail(403, { fail: 'Anda tidak memiliki akses ke mata pelajaran ini.' });
+				}
+			} else if (saveUserType !== 'wali_kelas') {
 				authority('input_nilai_asesmen_formatif');
 			}
 		}

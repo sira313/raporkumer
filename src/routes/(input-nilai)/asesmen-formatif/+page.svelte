@@ -22,6 +22,7 @@
 		daftarMurid: Array<{
 			id: number;
 			nama: string;
+			agamaLabel?: string | null;
 			no: number;
 			progressText: string | null;
 			progressSummaryParts: Array<{
@@ -39,7 +40,7 @@
 		selectedMapel?: { id: number | null; nama: string } | null;
 		search: string | null;
 		page: PaginationState;
-		allowedAgamaForUser?: string | null;
+		allowedAgamaForUser?: string[];
 	};
 
 	let { data }: { data: PageData } = $props();
@@ -214,7 +215,7 @@
 	<div class="flex flex-col items-center gap-2 sm:flex-row">
 		<form class="w-full md:max-w-80" method="get" use:autoSubmit>
 			<select
-				class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
+				class="select bg-base-200 w-full truncate dark:border-none"
 				title="Pilih mata pelajaran"
 				name="mapel_id"
 				bind:value={selectedMapelValue}
@@ -241,7 +242,7 @@
 			onsubmit={submitSearch}
 		>
 			<!-- Cari nama murid -->
-			<label class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none">
+			<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
 				<Icon name="search" />
 				<input
 					type="search"
@@ -288,7 +289,12 @@
 					{#each data.daftarMurid as murid (murid.id)}
 						<tr>
 							<td class="align-top">{murid.no}</td>
-							<td class="align-top">{@html searchQueryMarker(data.search, murid.nama)}</td>
+							<td class="align-top">
+								{@html searchQueryMarker(data.search, murid.nama)}
+								{#if murid.agamaLabel}
+									<div class="text-[11px] font-normal opacity-70">{murid.agamaLabel}</div>
+								{/if}
+							</td>
 							<td class="align-top">
 								{#if murid.nilaiHref && canEdit}
 									<a class="btn btn-sm btn-soft shadow-none" href={murid.nilaiHref}>
@@ -303,7 +309,7 @@
 										title={!canEdit
 											? 'Anda tidak memiliki izin untuk menilai'
 											: data.allowedAgamaForUser
-												? `Hanya untuk murid beragama ${data.allowedAgamaForUser}`
+												? `Hanya untuk murid beragama ${data.allowedAgamaForUser.join(' / ')}`
 												: 'Pilih mata pelajaran'}
 									>
 										<Icon name="edit" />

@@ -122,6 +122,17 @@ export const defaultPermissionsByType: Partial<Record<AuthUser['type'], UserPerm
 };
 
 /**
+ * Permissions exclusive to wali_kelas — present in wali_kelas's default set but
+ * absent from the user (guru) default set. Used to downgrade menu visibility and
+ * block direct URL access when a wali_kelas views a non-own class.
+ */
+export const WALI_KELAS_ONLY_PERMISSIONS = new Set(
+	(defaultPermissionsByType.wali_kelas ?? []).filter(
+		(p) => !(defaultPermissionsByType.user ?? []).includes(p)
+	)
+);
+
+/**
  * Key permission lama yang tidak lagi valid di model baru. Diperbaiki saat migrasi.
  */
 export const removedLegacyPermissionKeys = new Set([

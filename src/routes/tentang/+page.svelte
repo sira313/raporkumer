@@ -72,7 +72,7 @@
 					Aplikasi Rapkumer ini kami kembangkan sebagai aplikasi terpadu untuk membantu tugas-tugas
 					administrasi guru seperti: presensi harian murid, jurnal mengajar, nilai harian, nilai
 					STS, dan nilai SAS yang dihitung otomatis untuk dijadikan nilai rapor yang bisa langsung
-					dicetak maupun di-export menjadi file excel yang bisa di-import ke e-rapor kemdikdas.
+					dicetak maupun dikirim langsung ke Dapodik.
 				</p>
 				<p class="text-base-content/90">
 					Selain itu, Rapkumer juga memiliki fitur tambahan seperti jadwal pembelajaran dan bell

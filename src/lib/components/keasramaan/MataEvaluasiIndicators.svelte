@@ -34,7 +34,7 @@
 		{#each indicators as indicator, indicatorIdx (indicatorIdx)}
 			<div class="flex flex-col gap-2 sm:flex-row">
 				<textarea
-					class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 border-base-300 w-full dark:border-none"
+					class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 					value={indicator.deskripsi}
 					oninput={(e) => onUpdate(indicatorIdx, e.currentTarget.value)}
 					placeholder="Tuliskan indikator"

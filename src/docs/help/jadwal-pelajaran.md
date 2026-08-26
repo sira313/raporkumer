@@ -2,7 +2,7 @@
 title: Petunjuk
 ---
 
-- Tombol <kbd class="kbd">Pengaturan</kbd> digunakan untuk mengatur durasi jp dan suara bell. 
+- Tombol <kbd class="kbd">Pengaturan</kbd> digunakan untuk mengatur durasi jp dan suara bell.
 - Tombol <kbd class="kbd">Tambah Kegiatan</kbd> digunakan untuk menambahkan kegiatan di luar jam pelajaran. Misalnya: senam pagi, berdoa bersama, atau yang lainnya.
 - Gunakan tombol <kbd class="kbd">Edit</kbd> untuk mengatur jam pelajaran dengan melakukan drag and drop dari widget **Daftar Kode Kegiatan** yang ada di sebelah kanan layar.
 - Aktifkan bell dengan menggunakan tombol <kbd class="kbd">Play bell</kbd>

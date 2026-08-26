@@ -90,6 +90,7 @@ export const jenisKelamin: Record<Murid['jenisKelamin'], string> = {
 };
 
 export const jenisMapel: Record<MataPelajaran['jenis'], string> = {
+	belum_dipetakan: 'Belum Dipetakan',
 	wajib: 'Mata Pelajaran Wajib',
 	pilihan: 'Mata Pelajaran Pilihan',
 	mulok: 'Muatan Lokal',
@@ -104,7 +105,12 @@ export const agamaMapelOptions = [
 	{ key: 'katolik', label: 'Katolik', name: 'Pendidikan Agama Katolik dan Budi Pekerti' },
 	{ key: 'buddha', label: 'Buddha', name: 'Pendidikan Agama Buddha dan Budi Pekerti' },
 	{ key: 'hindu', label: 'Hindu', name: 'Pendidikan Agama Hindu dan Budi Pekerti' },
-	{ key: 'konghuchu', label: 'Konghuchu', name: 'Pendidikan Agama Konghuchu dan Budi Pekerti' }
+	{ key: 'konghuchu', label: 'Konghuchu', name: 'Pendidikan Agama Konghuchu dan Budi Pekerti' },
+	{
+		key: 'kepercayaan',
+		label: 'Kepercayaan',
+		name: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti'
+	}
 ] as const;
 
 export type AgamaMapelKey = (typeof agamaMapelOptions)[number]['key'];
@@ -112,9 +118,10 @@ export type AgamaMapelKey = (typeof agamaMapelOptions)[number]['key'];
 export const agamaParentOption = agamaMapelOptions[0];
 export const agamaVariantOptions = agamaMapelOptions.filter((option) => option.key !== 'umum');
 export const agamaParentName = agamaParentOption.name;
-export const agamaVariantNames = agamaVariantOptions.map((option) => option.name);
+// Widened to string[] so list membership checks (includes/inArray) accept plain strings.
+export const agamaVariantNames: string[] = agamaVariantOptions.map((option) => option.name);
 
-export const agamaMapelNames = agamaMapelOptions.map((option) => option.name);
+export const agamaMapelNames: string[] = agamaMapelOptions.map((option) => option.name);
 
 export const agamaMapelLabelByName = agamaMapelOptions.reduce<Record<string, string>>(
 	(acc, option) => {

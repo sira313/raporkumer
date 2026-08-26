@@ -29,10 +29,13 @@ import { validatePasswordStrength } from '$lib/server/password-policy';
 import { isBukuTamuPasskeySet, setBukuTamuPasskey } from '$lib/server/buku-tamu-pass';
 import {
 	clearAiSettings,
+	clearUserAiSettings,
 	DEFAULT_AI_MODEL,
 	getStoredAiSettings,
+	getStoredUserAiSettings,
 	maskApiKey,
-	saveAiSettings
+	saveAiSettings,
+	saveUserAiSettings
 } from '$lib/server/ai';
 import path from 'node:path';
 
@@ -123,6 +126,11 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	const storedGemini = isAdminOrKepalaSekolah ? await getStoredAiSettings() : null;
 
+	// Personal AI key card is only offered to guru accounts (wali_kelas/wali_asuh).
+	const isGuru = locals.user?.type === 'wali_kelas' || locals.user?.type === 'wali_asuh';
+	const storedPersonalAi =
+		isGuru && locals.user ? await getStoredUserAiSettings(locals.user.id) : null;
+
 	return {
 		meta,
 		appAddresses: addresses,
@@ -137,6 +145,14 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			envKeyPresent: Boolean(process.env.GEMINI_API_KEY),
 			model: storedGemini?.model ?? DEFAULT_AI_MODEL,
 			baseUrl: storedGemini?.baseUrl ?? ''
+		},
+		personalAi: {
+			keySet: Boolean(storedPersonalAi),
+			maskedKey: storedPersonalAi ? maskApiKey(storedPersonalAi.apiKey) : null,
+			model: storedPersonalAi?.model ?? '',
+			baseUrl: storedPersonalAi?.baseUrl ?? '',
+			schoolKeySet: Boolean(storedGemini ?? (await getStoredAiSettings())),
+			envKeyPresent: Boolean(process.env.GEMINI_API_KEY)
 		}
 	};
 };
@@ -433,5 +449,38 @@ export const actions: Actions = {
 
 		await clearAiSettings();
 		return { message: 'Kunci API berhasil dihapus.' };
+	},
+	'save-my-ai-key': async ({ request, locals }) => {
+		if (locals.user?.type !== 'wali_kelas' && locals.user?.type !== 'wali_asuh') {
+			return fail(403, {
+				message: 'Hanya guru (wali kelas/wali asuh) yang dapat mengatur kunci API pribadi.'
+			});
+		}
+		const userId = locals.user.id;
+
+		const form = await request.formData();
+		const apiKey = String(form.get('apiKey') ?? '').trim();
+		if (!apiKey) {
+			return fail(400, { message: 'Kunci API wajib diisi.' });
+		}
+		if (apiKey.length < 10) {
+			return fail(400, { message: 'Kunci API tidak valid.' });
+		}
+
+		const model = String(form.get('model') ?? '').trim();
+		const baseUrl = String(form.get('baseUrl') ?? '').trim();
+
+		await saveUserAiSettings(userId, apiKey, model, baseUrl);
+		return { message: 'Kunci API pribadi berhasil disimpan.' };
+	},
+	'clear-my-ai-key': async ({ locals }) => {
+		if (locals.user?.type !== 'wali_kelas' && locals.user?.type !== 'wali_asuh') {
+			return fail(403, {
+				message: 'Hanya guru (wali kelas/wali asuh) yang dapat mengatur kunci API pribadi.'
+			});
+		}
+
+		await clearUserAiSettings(locals.user.id);
+		return { message: 'Kunci API pribadi berhasil dihapus.' };
 	}
 };

@@ -17,6 +17,8 @@
 		isNew?: boolean;
 		nama?: string;
 		mataPelajaranId?: number | null;
+		mataPelajaranIds?: number[];
+		kelasIds?: number[];
 	}
 	// svelte-ignore state_referenced_locally
 	let users = $state<LocalUser[]>(data.users ?? []);
@@ -29,9 +31,15 @@
 
 	// next temporary id for new rows (negative numbers)
 	let showAddModal = $state<boolean>(false);
+	let editingUser = $state<LocalUser | null>(null);
 
 	// selected ids for bulk actions
 	let selectedIds = $state<number[]>([]);
+
+	// selectable ids derived once per render (positive existing user ids)
+	let selectableIds = $derived(
+		users.map((u) => Number(u.id)).filter((n) => Number.isFinite(n) && n > 0)
+	);
 
 	function toggleSelect(id: number) {
 		const idx = selectedIds.indexOf(id);
@@ -160,27 +168,23 @@
 			dismissible: true
 		});
 	}
-	function getSelectableIds() {
-		// only real existing users (positive ids) are selectable for bulk actions
-		return users.map((u) => Number(u.id)).filter((n) => Number.isFinite(n) && n > 0);
-	}
-
 	function toggleSelectAll() {
-		const selectable = getSelectableIds();
-		if (selectable.length === 0) {
+		if (selectableIds.length === 0) {
 			selectedIds = [];
 			return;
 		}
-		const allSelected = selectable.every((id) => selectedIds.indexOf(id) !== -1);
+		const allSelected = selectableIds.every((id) => selectedIds.indexOf(id) !== -1);
 		if (allSelected) selectedIds = [];
-		else selectedIds = [...selectable];
+		else selectedIds = [...selectableIds];
 	}
-
-	let editingId = $state<number | null>(null);
-	let editValues = $state<Record<number, { username: string; password: string }>>({});
 
 	// handle add/new row
 	function handleAdd() {
+		showAddModal = true;
+	}
+
+	function handleEdit(user: LocalUser) {
+		editingUser = user;
 		showAddModal = true;
 	}
 </script>
@@ -191,93 +195,43 @@
 			<div class="space-y-2">
 				<h1 class="text-2xl font-bold">Daftar pengguna</h1>
 			</div>
-			<UsersHeader {selectedIds} {editingId} onDelete={handleDelete} onAdd={handleAdd} />
+			<UsersHeader {selectedIds} onDelete={handleDelete} onAdd={handleAdd} />
 		</header>
 		<div class="overflow-x-auto">
 			<table class="table">
 				<thead>
 					<tr>
-						{#if !editingId}
-							<th>
-								<input
-									type="checkbox"
-									class="checkbox"
-									checked={getSelectableIds().length > 0 &&
-										getSelectableIds().every((id) => selectedIds.indexOf(id) !== -1)}
-									onclick={() => toggleSelectAll()}
-								/>
-							</th>
-						{/if}
+						<th>
+							<input
+								type="checkbox"
+								class="checkbox"
+								checked={selectableIds.length > 0 &&
+									selectableIds.every((id) => selectedIds.indexOf(id) !== -1)}
+								onclick={() => toggleSelectAll()}
+							/>
+						</th>
 						<th>Nama</th>
 						<th>Role</th>
 						<th>Username</th>
-						<th>Password</th>
-						<td>Aksi</td>
+						<th>Aksi</th>
+						<th>Hak Akses</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each users as u (u.id)}
 						<tr>
-							{#if !editingId}
-								<td>
-									<input
-										type="checkbox"
-										class="checkbox"
-										checked={selectedIds.indexOf(u.id) !== -1}
-										onclick={() => toggleSelect(u.id)}
-									/>
-								</td>
-							{/if}
+							<td>
+								<input
+									type="checkbox"
+									class="checkbox"
+									checked={selectedIds.indexOf(u.id) !== -1}
+									onclick={() => toggleSelect(u.id)}
+								/>
+							</td>
 
 							<ExistingUserRow
 								{u}
-								{editingId}
-								{editValues}
-								onToggleEdit={(user: LocalUser) => {
-									if (editingId === user.id) {
-										editingId = null;
-									} else {
-										editingId = user.id;
-										editValues[user.id] = { username: user.username ?? '', password: '' };
-									}
-								}}
-								onSaveEdit={async (user: LocalUser) => {
-									const form = new FormData();
-									form.set('id', String(user.id));
-									form.set('username', editValues[user.id].username);
-									form.set('password', editValues[user.id].password);
-									const res = await fetch('?/update_credentials', { method: 'POST', body: form });
-									if (res.ok) {
-										const body = await res.json().catch(() => ({}));
-										toast({ message: 'Perubahan tersimpan', type: 'success' });
-										if (body.user) {
-											const idx = users.findIndex((x) => x.id === body.user.id);
-											if (idx !== -1) {
-												users[idx] = {
-													...users[idx],
-													username: body.user.username ?? users[idx].username,
-													passwordUpdatedAt:
-														body.user.passwordUpdatedAt ?? users[idx].passwordUpdatedAt
-												};
-											}
-										} else {
-											const idx = users.findIndex((x) => x.id === user.id);
-											if (idx !== -1) {
-												users[idx] = {
-													...users[idx],
-													username: editValues[user.id].username || users[idx].username,
-													passwordUpdatedAt: editValues[user.id].password
-														? new Date().toISOString()
-														: users[idx].passwordUpdatedAt
-												};
-											}
-										}
-										editingId = null;
-									} else {
-										const text = await res.text().catch(() => 'Gagal');
-										toast({ message: `Gagal menyimpan: ${text}`, type: 'error' });
-									}
-								}}
+								onEdit={handleEdit}
 								onOpenUser={(user: LocalUser) => {
 									window.location.href = '/pengguna/' + user.id;
 								}}
@@ -291,56 +245,100 @@
 
 		<AddUserModal
 			bind:open={showAddModal}
+			editUser={editingUser}
 			{mataPelajaran}
 			sekolahList={data.sekolahList ?? []}
 			kelasList={data.kelasList ?? []}
 			on:saved={(e: CustomEvent) => {
 				const body = e.detail?.body ?? {};
 				const serverUser = body.user ?? null;
-				const newUser = {
-					id: serverUser?.id ?? Date.now(),
-					username: serverUser?.username ?? body.username ?? 'user',
-					createdAt: serverUser?.createdAt ?? new Date().toISOString(),
-					type: serverUser?.type ?? 'user',
-					pegawaiName: body.displayName || serverUser?.username || (body.username ?? 'user'),
-					pegawaiId: null,
-					kelasId: null,
-					kelasName: null,
-					passwordUpdatedAt: serverUser?.passwordUpdatedAt ?? new Date().toISOString(),
-					// determine isNew based on whether server actually returned a real id
-					isNew: body.__server_user_returned ? false : true
-				} as LocalUser;
-				users = [newUser, ...users];
+				const isEdit = editingUser !== null;
 
-				// if server did not return an id (or returned a local fallback), start polling to resolve the created user by username
-				if (!body.__server_user_returned) {
-					const usernameToFind = newUser.username;
-					let attempts = 0;
-					const maxAttempts = 10;
-					const interval = 500; // ms
-					const poll = setInterval(async () => {
-						attempts += 1;
-						try {
-							const resp = await fetch(
-								`/api/pengguna/find?username=${encodeURIComponent(usernameToFind)}`
-							);
-							if (!resp.ok) return;
-							const data = await resp.json().catch(() => null);
-							if (data && data.found && data.user && data.user.id) {
-								// replace temporary id with real id and clear isNew
-								users = users.map((u) =>
-									u.username === usernameToFind && u.isNew
-										? { ...u, id: data.user.id, isNew: false }
-										: u
+				if (isEdit && editingUser) {
+					// Update existing user in list
+					const idx = users.findIndex((x) => x.id === editingUser!.id);
+					if (idx !== -1) {
+						const newType = serverUser?.type ?? users[idx].type;
+						const typeLabels: Record<string, string> = {
+							admin: 'Admin',
+							kepala_sekolah: 'Kepala Sekolah',
+							wali_kelas: 'Wali Kelas',
+							wali_asuh: 'Wali Asuh',
+							user: 'Guru'
+						};
+						users[idx] = {
+							...users[idx],
+							username: body.user?.username ?? body.username ?? users[idx].username,
+							pegawaiName: body.displayName ?? users[idx].pegawaiName,
+							type: newType,
+							roles: [typeLabels[newType] ?? newType],
+							mataPelajaranIds: body.mataPelajaranIds ?? users[idx].mataPelajaranIds,
+							kelasIds: body.kelasIds ?? users[idx].kelasIds,
+							passwordUpdatedAt: serverUser?.passwordUpdatedAt ?? users[idx].passwordUpdatedAt
+						};
+					}
+					editingUser = null;
+				} else {
+					// Add new user
+					const newType: string = serverUser?.type ?? 'user';
+					const typeLabels: Record<string, string> = {
+						admin: 'Admin',
+						kepala_sekolah: 'Kepala Sekolah',
+						wali_kelas: 'Wali Kelas',
+						wali_asuh: 'Wali Asuh',
+						user: 'Guru'
+					};
+					const newUser = {
+						id: serverUser?.id ?? Date.now(),
+						username: serverUser?.username ?? body.username ?? 'user',
+						createdAt: serverUser?.createdAt ?? new Date().toISOString(),
+						type: newType,
+						roles: [typeLabels[newType] ?? newType],
+						pegawaiName: body.displayName || serverUser?.username || (body.username ?? 'user'),
+						pegawaiId: null,
+						kelasId: null,
+						kelasName: null,
+						passwordUpdatedAt: serverUser?.passwordUpdatedAt ?? new Date().toISOString(),
+						mataPelajaranIds: body.mataPelajaranIds ?? [],
+						kelasIds: body.kelasIds ?? [],
+						// determine isNew based on whether server actually returned a real id
+						isNew: body.__server_user_returned ? false : true
+					} as LocalUser;
+					users = [newUser, ...users];
+
+					// if server did not return an id (or returned a local fallback), start polling to resolve the created user by username
+					if (!body.__server_user_returned) {
+						const usernameToFind = newUser.username;
+						let attempts = 0;
+						const maxAttempts = 10;
+						const interval = 500; // ms
+						const poll = setInterval(async () => {
+							attempts += 1;
+							try {
+								const resp = await fetch(
+									`/api/pengguna/find?username=${encodeURIComponent(usernameToFind)}`
 								);
-								clearInterval(poll);
+								if (!resp.ok) return;
+								const data = await resp.json().catch(() => null);
+								if (data && data.found && data.user && data.user.id) {
+									// replace temporary id with real id and clear isNew
+									users = users.map((u) =>
+										u.username === usernameToFind && u.isNew
+											? { ...u, id: data.user.id, isNew: false }
+											: u
+									);
+									clearInterval(poll);
+								}
+							} catch {
+								// ignore transient errors
 							}
-						} catch {
-							// ignore transient errors
-						}
-						if (attempts >= maxAttempts) clearInterval(poll);
-					}, interval);
+							if (attempts >= maxAttempts) clearInterval(poll);
+						}, interval);
+					}
 				}
+			}}
+			on:cancel={() => {
+				editingUser = null;
 			}}
 		/>
 	</div>

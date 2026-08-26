@@ -42,6 +42,11 @@ export const tableAuthUser = sqliteTable(
 		kelasId: int().references(() => tableKelas.id),
 		// untuk akun tipe 'user' kita simpan pilihan mata pelajaran yang diassign saat pembuatan akun
 		mataPelajaranId: int().references(() => tableMataPelajaran.id),
+		// Kunci API AI pribadi (wali_kelas/wali_asuh). Server-side only — jangan
+		// pernah ikut payload locals.user; klien hanya melihat versi ter-mask.
+		aiApiKey: text(),
+		aiModel: text(),
+		aiBaseUrl: text(),
 		// Profil pribadi pengguna (diisi via /pengaturan/profil)
 		namaLengkap: text(),
 		tempatLahir: text(),
@@ -95,6 +100,9 @@ export const tablePegawai = sqliteTable('pegawai', {
 	id: int().primaryKey({ autoIncrement: true }),
 	nama: text().notNull(),
 	nip: text().notNull(),
+	// Referensi Dapodik
+	dapodikPtkId: text(),
+	nuptk: text(),
 	...audit
 });
 
@@ -119,6 +127,8 @@ export const tableSekolah = sqliteTable('sekolah', {
 		.references(() => tablePegawai.id)
 		.notNull(),
 	lokasiTandaTangan: text(),
+	// Referensi Dapodik
+	dapodikSekolahId: text(),
 	// Naungan (organisasi pengelola sekolah)
 	naungan: text({ enum: ['kemendikbud', 'kemsos', 'kemenag'] })
 		.default('kemendikbud')
@@ -167,6 +177,8 @@ export const tableTahunAjaran = sqliteTable(
 		tanggalMulai: text(),
 		tanggalSelesai: text(),
 		isAktif: int({ mode: 'boolean' }).default(false).notNull(),
+		// Referensi Dapodik (tahun_ajaran_id, mis. '2025')
+		dapodikTahunAjaranId: text(),
 		...audit
 	},
 	(table) => [unique().on(table.sekolahId, table.nama)]
@@ -186,6 +198,8 @@ export const tableSemester = sqliteTable(
 		tanggalBagiRaport: text(),
 		tanggalMasuk: text(),
 		isAktif: int({ mode: 'boolean' }).default(false).notNull(),
+		// Referensi Dapodik (semester_id, mis. '20251')
+		dapodikSemesterId: text(),
 		...audit
 	},
 	(table) => [unique().on(table.tahunAjaranId, table.tipe)]
@@ -212,6 +226,8 @@ export const tableKelas = sqliteTable(
 		// Per-class rapor criteria. NULL = fall back to school-level values.
 		raporKriteriaCukup: int(),
 		raporKriteriaBaik: int(),
+		// Referensi Dapodik (rombongan_belajar_id jenis_rombel 1, UUID)
+		dapodikRombonganBelajarId: text(),
 		...audit
 	},
 	(table) => [unique().on(table.sekolahId, table.semesterId, table.nama)]
@@ -386,6 +402,11 @@ export const tableMurid = sqliteTable(
 		// wali asuh (nama + nip) per murid, bukan per kelas
 		waliAsuhNama: text(),
 		waliAsuhNip: text(),
+		// Referensi Dapodik
+		dapodikPesertaDidikId: text(),
+		dapodikAnggotaRombelId: text(),
+		nik: text(),
+		anakKe: int(),
 		...audit
 	},
 	(t) => [unique().on(t.sekolahId, t.semesterId, t.nis)]
@@ -527,10 +548,23 @@ export const tableMataPelajaran = sqliteTable(
 			.references(() => tableKelas.id)
 			.notNull(),
 		nama: text().notNull(),
+		// Nama lokal tampilan (mis. nama mapel lokal Dapodik). NULL = pakai `nama`.
+		namaLokal: text(),
 		// optional short code for subjects (e.g. PAPB for Pendidikan Agama dan Budi Pekerti)
 		kode: text(),
 		kkm: int().notNull().default(0),
-		jenis: text({ enum: ['wajib', 'pilihan', 'mulok', 'kejuruan', 'pemberdayaan'] }).notNull(),
+		jenis: text({
+			enum: ['belum_dipetakan', 'wajib', 'pilihan', 'mulok', 'kejuruan', 'pemberdayaan']
+		}).notNull(),
+		// Guru pengampu (hasil sinkronisasi pembelajaran Dapodik)
+		pengampuId: int().references(() => tablePegawai.id, { onDelete: 'set null' }),
+		// Nomor urut tampil mapel (tabel intrakurikuler & cetak rapor). NULL = belum diatur → tampil terakhir.
+		urutan: int(),
+		// Referensi Dapodik
+		dapodikPembelajaranId: text(),
+		dapodikMataPelajaranId: text(),
+		// Pembelajaran induk pilihan (Sub Pembelajaran) saat kirim matev ke Dapodik.
+		dapodikIndukPembelajaranId: text(),
 		...audit
 	},
 	(table) => [unique().on(table.kelasId, table.nama)]
@@ -626,6 +660,10 @@ export const tableMataPelajaranRelations = relations(tableMataPelajaran, ({ one,
 	asesmenSumatif: many(tableAsesmenSumatif),
 	asesmenSumatifTujuan: many(tableAsesmenSumatifTujuan),
 	kelas: one(tableKelas, { fields: [tableMataPelajaran.kelasId], references: [tableKelas.id] }),
+	pengampu: one(tablePegawai, {
+		fields: [tableMataPelajaran.pengampuId],
+		references: [tablePegawai.id]
+	}),
 	// many-to-many: mata pelajaran bisa diajar oleh multiple guru
 	authUsers: many(tableAuthUserMataPelajaran),
 	muridMataPelajaran: many(tableMuridMataPelajaran)
@@ -1546,3 +1584,66 @@ export const tableAppMeta = sqliteTable('app_meta', {
 	value: text().notNull(),
 	...audit
 });
+
+// Kredensial WebService Dapodik desktop per sekolah (Bearer token, lihat docs/erapor.md §5.2).
+export const tableDapodikSettings = sqliteTable(
+	'dapodik_settings',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		sekolahId: int()
+			.references(() => tableSekolah.id, { onDelete: 'cascade' })
+			.notNull(),
+		// Base URL WebService Dapodik, mis. http://192.168.8.114:5774/WebService
+		url: text().notNull(),
+		token: text().notNull(),
+		npsn: text(),
+		semesterIdDapodikTerakhir: text(),
+		lastSyncAt: text(),
+		...audit
+	},
+	(table) => [unique().on(table.sekolahId)]
+);
+
+export const tableDapodikSettingsRelations = relations(tableDapodikSettings, ({ one }) => ({
+	sekolah: one(tableSekolah, {
+		fields: [tableDapodikSettings.sekolahId],
+		references: [tableSekolah.id]
+	})
+}));
+
+/**
+ * Referensi mata pelajaran nasional Dapodik (endpoint getMataPelajaran).
+ * Primary key = ID referensi Dapodik (mis. 400200000 = "Guru Kelas SD/MI/SLB") sehingga
+ * mapel lokal yang dipetakan ke ID ini bisa dirujuk saat posting nilai balik ke Dapodik.
+ */
+export const tableDapodikMataPelajaran = sqliteTable('dapodik_mata_pelajaran', {
+	mataPelajaranId: int().primaryKey(),
+	nama: text().notNull(),
+	jurusanId: text(),
+	pilihanSekolah: int({ mode: 'boolean' }).default(false).notNull(),
+	pilihanBuku: int({ mode: 'boolean' }).default(false).notNull(),
+	pilihanKepengawasan: int({ mode: 'boolean' }).default(false).notNull(),
+	pilihanEvaluasi: int({ mode: 'boolean' }).default(false).notNull(),
+	...audit
+});
+
+/**
+ * Cermin pembelajaran Dapodik per rombel (nested pada getRombonganBelajar).
+ * Tidak otomatis menjadi baris mata_pelajaran — dipakai sebagai daftar pilihan
+ * nama mapel (sesuai rombel kelasnya) pada form "Tambah Mata Pelajaran".
+ */
+export const tableDapodikPembelajaran = sqliteTable(
+	'dapodik_pembelajaran',
+	{
+		id: int().primaryKey({ autoIncrement: true }),
+		kelasId: int()
+			.references(() => tableKelas.id, { onDelete: 'cascade' })
+			.notNull(),
+		pembelajaranId: text().notNull(),
+		// ID referensi dapodik_mata_pelajaran (bila ada).
+		mataPelajaranId: text(),
+		nama: text().notNull(),
+		...audit
+	},
+	(table) => [unique().on(table.pembelajaranId)]
+);

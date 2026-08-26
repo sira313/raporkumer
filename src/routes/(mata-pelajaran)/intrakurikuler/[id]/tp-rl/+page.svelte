@@ -538,7 +538,7 @@
 		if (longEntryCount > 0) {
 			showModal({
 				title: 'Perhatian',
-				body: `Tujuan pembelajaran hasil generate melebihi 95 karakter, hal ini akan menjadi masalah jika bapak/ibu mencoba mengeksport TP ini ke E-Rapor Kemdikdas. ${longEntryCount} data terindikasi bermasalah.`,
+				body: `Tujuan pembelajaran hasil generate melebihi 95 karakter, hal ini akan menjadi masalah jika bapak/ibu mencoba mengirim nilai ke dapodik. ${longEntryCount} data terindikasi bermasalah.`,
 				onNeutral: { label: 'Mengerti' },
 				dismissible: false
 			});
@@ -553,7 +553,7 @@
 		if (longEntryCount > 0) {
 			showModal({
 				title: 'Perhatian',
-				body: `Tujuan pembelajaran yang diimpor melebihi 95 karakter, hal ini akan menjadi masalah jika bapak/ibu mencoba mengeksport TP ini ke E-Rapor Kemdikdas. ${longEntryCount} data terindikasi bermasalah.`,
+				body: `Tujuan pembelajaran yang diimpor melebihi 95 karakter, hal ini akan menjadi masalah jika bapak/ibu mencoba mengirim nilai ke dapodik. ${longEntryCount} data terindikasi bermasalah.`,
 				onNeutral: { label: 'Mengerti' },
 				dismissible: false
 			});
@@ -639,7 +639,7 @@
 
 			showModal({
 				title: 'Perhatian',
-				body: 'Tujuan pembelajaran yang bapak/ibu input melebihi 95 karakter, hal ini akan menjadi masalah jika bapak/ibu mencoba mengeksport TP ini ke E-Rapor Kemdikdas. Lanjutkan?',
+				body: 'Tujuan pembelajaran yang bapak/ibu input melebihi 95 karakter, hal ini akan menjadi masalah jika bapak/ibu mencoba mengirim nilai ke dapodik. Lanjutkan?',
 				onPositive: {
 					label: 'Lanjutkan',
 					action: ({ close }) => {

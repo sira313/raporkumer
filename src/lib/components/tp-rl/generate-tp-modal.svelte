@@ -220,7 +220,7 @@
 				<fieldset class="fieldset">
 					<legend class="fieldset-legend font-semibold">Capaian Pembelajaran</legend>
 					<textarea
-						class="textarea validator bg-base-200 dark:bg-base-300 h-40 w-full border-base-300 dark:border-none"
+						class="textarea validator bg-base-200 dark:bg-base-300 h-40 w-full dark:border-none"
 						bind:value={capaianPembelajaran}
 						placeholder="Tempel atau tulis Capaian Pembelajaran mata pelajaran ini"
 						disabled={!isFormEnabled}></textarea>
@@ -231,7 +231,7 @@
 						<legend class="fieldset-legend font-semibold">Maksimal Lingkup Materi</legend>
 						<input
 							type="number"
-							class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 							bind:value={maxLingkupMateri}
 							min="1"
 							max="20"
@@ -244,7 +244,7 @@
 						<legend class="fieldset-legend font-semibold">Maksimal Tujuan Pembelajaran</legend>
 						<input
 							type="number"
-							class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
+							class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 							bind:value={maxTujuanPembelajaran}
 							min="1"
 							max="20"
@@ -264,7 +264,7 @@
 							</span>
 							<input
 								type="text"
-								class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+								class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 								value={group.lingkupMateri}
 								oninput={(event) =>
 									updateLingkupMateri(groupIndex, (event.currentTarget as HTMLInputElement).value)}
@@ -283,7 +283,7 @@
 							{#each group.deskripsi as tp, tpIndex (tpIndex)}
 								<div class="flex items-start gap-2">
 									<textarea
-										class="textarea validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+										class="textarea validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 										value={tp}
 										maxlength="100"
 										oninput={(event) =>

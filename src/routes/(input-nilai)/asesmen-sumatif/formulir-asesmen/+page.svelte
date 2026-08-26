@@ -1,6 +1,7 @@
 <script lang="ts">
 	/* eslint-disable svelte/no-navigation-without-resolve -- small Map and URLSearchParams usage and navigation helpers */
-	import { invalidate } from '$app/navigation';
+	import { invalidate, goto } from '$app/navigation';
+	import MuridPicker from '$lib/components/asesmen-sumatif/murid-picker.svelte';
 	import CheatControls from '$lib/components/asesmen-sumatif/cheat-controls.svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
 	import Icon from '$lib/components/icon.svelte';
@@ -25,6 +26,9 @@
 
 	type PageData = {
 		murid: { id: number; nama: string };
+		kelasId: number;
+		mapelList: { id: number; nama: string }[];
+		pickerMapelId: number;
 		mapel: { id: number; kkm: number };
 		sumatifWeights: { lingkup: number; sts: number; sas: number };
 		sumatifWeightsRts: { lingkup: number; sts: number };
@@ -89,6 +93,22 @@
 		stsNonTesText =
 			data.initialScores.stsNonTes != null ? data.initialScores.stsNonTes.toFixed(2) : '';
 		cheatUnlocked = data.cheatUnlocked;
+	});
+
+	// Pemilih murid & mapel — isDirty dipakai untuk konfirmasi sebelum pindah
+	// agar nilai yang belum tersimpan tidak hilang.
+	const isDirty = $derived.by(() => {
+		if (
+			normalizeScoreText(sasTesText) !== data.initialScores.sasTes ||
+			normalizeScoreText(sasNonTesText) !== data.initialScores.sasNonTes ||
+			normalizeScoreText(stsTesText) !== data.initialScores.stsTes ||
+			normalizeScoreText(stsNonTesText) !== data.initialScores.stsNonTes
+		) {
+			return true;
+		}
+		return entries.some(
+			(entry, i) => normalizeScoreText(entry.nilaiText) !== (data.entries[i]?.nilai ?? null)
+		);
 	});
 
 	const lingkupSummaries = $derived.by((): LingkupSummary[] => {
@@ -225,6 +245,24 @@
 	});
 	const kkm = $derived.by(() => Math.max(0, data.mapel.kkm ?? 0));
 
+	async function pilihMapel(event: Event) {
+		const select = event.currentTarget as HTMLSelectElement;
+		const mapelId = Number(select.value);
+		if (!Number.isInteger(mapelId) || mapelId === data.pickerMapelId) return;
+		if (
+			isDirty &&
+			!confirm(
+				'Masih ada perubahan nilai yang belum disimpan. Pindah mapel akan membuangnya. Lanjutkan?'
+			)
+		) {
+			select.value = String(data.pickerMapelId);
+			return;
+		}
+		await goto(`/asesmen-sumatif/formulir-asesmen?murid_id=${data.murid.id}&mapel_id=${mapelId}`, {
+			keepFocus: true
+		});
+	}
+
 	const nilaiAkhirRts = $derived.by(() => {
 		const bobot = {
 			lingkup: data.sumatifWeightsRts?.lingkup ?? 70,
@@ -337,8 +375,8 @@
 
 	function getInputClass(value: string) {
 		return isScoreValid(value)
-			? 'input bg-base-200 dark:bg-base-300 border-base-300 dark:border-none'
-			: 'input input-error dark:bg-base-300 border-base-300 dark:border-none';
+			? 'input bg-base-200 dark:bg-base-300 dark:border-none'
+			: 'input input-error dark:bg-base-300 dark:border-none';
 	}
 
 	function handleEntryNilaiChange(event: CustomEvent<{ index: number; value: string }>) {
@@ -451,6 +489,28 @@
 				</button>
 			</div>
 
+			<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+				<select
+					class="select bg-base-200 w-full truncate dark:border-none"
+					title="Pilih mata pelajaran"
+					aria-label="Pilih mata pelajaran"
+					value={data.pickerMapelId}
+					onchange={pilihMapel}
+				>
+					{#each data.mapelList as opsi (opsi.id)}
+						<option value={opsi.id}>{opsi.nama}</option>
+					{/each}
+				</select>
+				<MuridPicker
+					basePath="/asesmen-sumatif/formulir-asesmen"
+					kelasId={data.kelasId}
+					muridId={data.murid.id}
+					mapelId={data.pickerMapelId}
+					getDirty={() => isDirty}
+					confirmMessage="Masih ada perubahan nilai yang belum disimpan. Pindah murid akan membuangnya. Lanjutkan?"
+				/>
+			</div>
+
 			<h3 class="mt-4 pb-2 text-lg font-bold">
 				Isi nilai harian tiap tujuan pembelajaran untuk {data.murid.nama}.
 			</h3>
@@ -484,44 +544,37 @@
 
 			<LingkupSummaryCard {naSumatifLingkup} {lingkupSummaries} {totalBobot} {formatScore} />
 
-			<details class="collapse-arrow bg-base-200 rounded-box collapse mt-6">
-				<summary class="collapse-title text-lg font-bold">
-					Isi Sumatif Tengah Semester & Akhir Semester (opsional)
-				</summary>
-				<div class="collapse-content space-y-4">
-					<h3 class="pb-2 text-lg font-bold">
-						Isi Sumatif Tengah Semester di bawah ini untuk {data.murid.nama}.
-					</h3>
-					<SasInputTable
-						tesText={stsTesText}
-						nonTesText={stsNonTesText}
-						namePrefix="sts"
-						tesLabel="Nilai Tes Sumatif Tengah Semester (STS)"
-						nonTesLabel="Nilai Non Tes Sumatif Tengah Semester (STS)"
-						{getInputClass}
-						on:sasChange={handleSasChange}
-					/>
+			<h3 class="mt-6 pb-2 text-lg font-bold">
+				Isi Sumatif Tengah Semester di bawah ini untuk {data.murid.nama} (opsional).
+			</h3>
+			<SasInputTable
+				tesText={stsTesText}
+				nonTesText={stsNonTesText}
+				namePrefix="sts"
+				tesLabel="Nilai Tes Sumatif Tengah Semester (STS)"
+				nonTesLabel="Nilai Non Tes Sumatif Tengah Semester (STS)"
+				{getInputClass}
+				on:sasChange={handleSasChange}
+			/>
 
-					<SasSummaryCard
-						nilaiSas={nilaiSts}
-						{formatScore}
-						title="NA Sumatif Tengah Semester"
-						subtitle="Rata-rata dari nilai Tes dan Non Tes STS"
-					/>
+			<SasSummaryCard
+				nilaiSas={nilaiSts}
+				{formatScore}
+				title="NA Sumatif Tengah Semester"
+				subtitle="Rata-rata dari nilai Tes dan Non Tes STS"
+			/>
 
-					<h3 class="pb-2 text-lg font-bold">
-						Isi Sumatif Akhir Semester di bawah ini untuk {data.murid.nama}.
-					</h3>
-					<SasInputTable
-						tesText={sasTesText}
-						nonTesText={sasNonTesText}
-						{getInputClass}
-						on:sasChange={handleSasChange}
-					/>
+			<h3 class="mt-6 pb-2 text-lg font-bold">
+				Isi Sumatif Akhir Semester di bawah ini untuk {data.murid.nama}.
+			</h3>
+			<SasInputTable
+				tesText={sasTesText}
+				nonTesText={sasNonTesText}
+				{getInputClass}
+				on:sasChange={handleSasChange}
+			/>
 
-					<SasSummaryCard {nilaiSas} {formatScore} />
-				</div>
-			</details>
+			<SasSummaryCard {nilaiSas} {formatScore} />
 
 			<NilaiAkhirCard
 				title="Nilai Rapor Tengah Semester"

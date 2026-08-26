@@ -1,18 +1,9 @@
 import db from '$lib/server/db';
 import { tableJadwalPelajaran, tableMataPelajaran } from '$lib/server/db/schema';
+import { agamaMapelNames } from '$lib/statics';
 import { and, eq, asc, inArray } from 'drizzle-orm';
 
 const skipKode = new Set(['IST', 'PLG']);
-
-const agamaMapelNames = [
-	'Pendidikan Agama dan Budi Pekerti',
-	'Pendidikan Agama Islam dan Budi Pekerti',
-	'Pendidikan Agama Kristen dan Budi Pekerti',
-	'Pendidikan Agama Katolik dan Budi Pekerti',
-	'Pendidikan Agama Buddha dan Budi Pekerti',
-	'Pendidikan Agama Hindu dan Budi Pekerti',
-	'Pendidikan Agama Konghuchu dan Budi Pekerti'
-];
 
 export async function getFirstMapelForDay(
 	sekolahId: number,

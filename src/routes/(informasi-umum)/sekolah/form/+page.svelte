@@ -6,13 +6,74 @@
 	import Icon from '$lib/components/icon.svelte';
 	import { showModal } from '$lib/components/global-modal.svelte';
 	import ImportDatabaseModal from '$lib/components/modals/import-database-modal.svelte';
+	import SekolahModals from '$lib/components/sekolah/modals.svelte';
 	import { jenjangPendidikanSederajat, nauganOptions } from '$lib/statics';
+	import { modalRoute } from '$lib/utils';
 
 	let { data } = $props();
 	// svelte-ignore state_referenced_locally
 	const isNew = data.isNew as boolean;
 	// svelte-ignore state_referenced_locally
 	const initialSekolah = (isNew ? undefined : data.sekolah) as Sekolah | undefined;
+
+	// Combobox "Nama Kepala Sekolah" — aktif hanya bila data pendidik & tenaga
+	// pendidik sudah ada di DB (hasil Sinkron Dapodik), logika sama dengan
+	// "Nama Mata Pelajaran" pada Tambah Mata Pelajaran.
+	type PegawaiOpsi = { id: number; nama: string; nip: string | null };
+	const pegawaiOptions = $derived((data.pegawaiList ?? []) as PegawaiOpsi[]);
+	const pakaiSelectPegawai = $derived(pegawaiOptions.length > 0);
+	// Data Dapodik tersedia (mode edit) → kepala sekolah hanya bisa DIPILIH dari
+	// daftar, tidak bisa diketik/direname; ubah nama/NIP via /pengaturan/profil.
+	const kunciKepalaSekolah = $derived(Boolean(data.dapodikAktif) && Boolean(initialSekolah?.id));
+	let kepalaQuery = $state(initialSekolah?.kepalaSekolah?.nama ?? '');
+	let kepalaNip = $state(initialSekolah?.kepalaSekolah?.nip ?? '');
+	let kepalaTerpilihId = $state<number | null>(initialSekolah?.kepalaSekolah?.id ?? null);
+	let daftarKepalaTerbuka = $state(false);
+	let indeksSorotKepala = $state(-1);
+	const MAX_OPSI_TAMPIL = 80;
+	const kepalaTersaring = $derived.by(() => {
+		const q = kepalaQuery.trim().toLowerCase();
+		if (!q) return pegawaiOptions;
+		return pegawaiOptions.filter(
+			(o) => o.nama.toLowerCase().includes(q) || (o.nip ?? '').includes(q)
+		);
+	});
+	function pilihKepala(opsi: PegawaiOpsi) {
+		kepalaQuery = opsi.nama;
+		kepalaNip = opsi.nip ?? '';
+		kepalaTerpilihId = opsi.id;
+		daftarKepalaTerbuka = false;
+		indeksSorotKepala = -1;
+	}
+	// Mode terkunci: teks terisi tapi belum memilih orang → blokir simpan.
+	const kepalaBelumDipilih = $derived(
+		kunciKepalaSekolah && kepalaQuery.trim() !== '' && kepalaTerpilihId === null
+	);
+	function sorotKepalaGeser(delta: number) {
+		const total = Math.min(kepalaTersaring.length, MAX_OPSI_TAMPIL);
+		if (total === 0) return;
+		indeksSorotKepala = (indeksSorotKepala + delta + total) % total;
+		document
+			.getElementById(`kepala-opsi-${indeksSorotKepala}`)
+			?.scrollIntoView({ block: 'nearest' });
+	}
+	function onKepalaKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') {
+			daftarKepalaTerbuka = false;
+			return;
+		}
+		if (!daftarKepalaTerbuka || kepalaTersaring.length === 0) return;
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			sorotKepalaGeser(1);
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			sorotKepalaGeser(-1);
+		} else if (e.key === 'Enter' && indeksSorotKepala >= 0) {
+			e.preventDefault();
+			pilihKepala(kepalaTersaring[Math.min(indeksSorotKepala, kepalaTersaring.length - 1)]);
+		}
+	}
 
 	// typed keys for jenjangPendidikanSederajat to avoid implicit `string` indexing errors
 	const jenjangKeys = Object.keys(jenjangPendidikanSederajat) as Array<
@@ -95,13 +156,23 @@
 		{/if}
 
 		<div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-			<h2 class="mb-4 text-xl font-bold">
-				{#if isNew}
-					Tambah Sekolah Baru
-				{:else}
-					Formulir Isian Identitas Sekolah
-				{/if}
-			</h2>
+			<div class="mb-4 flex flex-col items-start justify-between gap-2 md:flex-row md:items-center">
+				<h2 class="text-xl font-bold">
+					{#if isNew}
+						Tambah Sekolah Baru
+					{:else}
+						Formulir Isian Identitas Sekolah
+					{/if}
+				</h2>
+				<a
+					class="btn btn-soft shadow-none"
+					href="/sekolah/form/sync-dapodik"
+					use:modalRoute={'sync-dapodik'}
+				>
+					<Icon name="dapodik" />
+					Sync Dapodik
+				</a>
+			</div>
 
 			<div class="grid grid-cols-1 items-center gap-2 md:grid-cols-2">
 				<!-- Jenjang Pendidikan & Lokasi Tanda Tangan -->
@@ -109,7 +180,7 @@
 					<div class="fieldset">
 						<legend class="fieldset-legend">Jenjang Pendidikan</legend>
 						<select
-							class="select bg-base-200 dark:bg-base-300 validator w-full truncate border border-base-300 dark:border-none"
+							class="select bg-base-200 dark:bg-base-300 validator w-full truncate dark:border-none"
 							name="jenjangPendidikan"
 							required
 							onchange={(e) => {
@@ -147,7 +218,7 @@
 						<input
 							required
 							type="text"
-							class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 							placeholder="Contoh: Periji"
 							name="lokasiTandaTangan"
 						/>
@@ -160,7 +231,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: SD Negeri 19 Periji"
 						name="nama"
 					/>
@@ -172,7 +243,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: 69856875"
 						name="npsn"
 					/>
@@ -181,13 +252,87 @@
 				<div class="fieldset">
 					<!-- Nama Kepala Sekolah -->
 					<legend class="fieldset-legend">Nama Kepala Sekolah</legend>
-					<input
-						required
-						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
-						placeholder="Contoh: Bruce Wayne, Bat"
-						name="kepalaSekolah.nama"
-					/>
+					{#if pakaiSelectPegawai}
+						<div class="relative">
+							<input
+								type="text"
+								class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+								placeholder="Pilih Kepala Sekolah"
+								name="kepalaSekolah.nama"
+								required
+								autocomplete="off"
+								role="combobox"
+								aria-expanded={daftarKepalaTerbuka}
+								aria-controls="daftar-nama-kepala"
+								aria-activedescendant={daftarKepalaTerbuka && indeksSorotKepala >= 0
+									? `kepala-opsi-${indeksSorotKepala}`
+									: undefined}
+								bind:value={kepalaQuery}
+								onfocus={() => {
+									daftarKepalaTerbuka = true;
+									indeksSorotKepala = 0;
+								}}
+								oninput={() => {
+									daftarKepalaTerbuka = true;
+									indeksSorotKepala = 0;
+									kepalaTerpilihId = null;
+								}}
+								onblur={() => (daftarKepalaTerbuka = false)}
+								onkeydown={onKepalaKeydown}
+							/>
+							{#if daftarKepalaTerbuka && kepalaTersaring.length > 0}
+								<ul
+									id="daftar-nama-kepala"
+									role="listbox"
+									class="bg-base-200 absolute z-50 mt-1 max-h-60 w-full list-none overflow-y-auto rounded-box p-1 shadow-lg"
+								>
+									{#each kepalaTersaring.slice(0, MAX_OPSI_TAMPIL) as opsi, i (`${opsi.id}|${opsi.nama}`)}
+										<li
+											id={`kepala-opsi-${i}`}
+											role="option"
+											aria-selected={i === indeksSorotKepala}
+										>
+											<button
+												type="button"
+												class="w-full truncate rounded px-2 py-1.5 text-left text-sm transition-colors duration-200 hover:bg-base-content/10 {i ===
+												indeksSorotKepala
+													? 'bg-base-content/10'
+													: ''}"
+												onmousedown={(e) => e.preventDefault()}
+												onclick={() => pilihKepala(opsi)}
+											>
+												{#if opsi.nip}
+													<span class="mr-1.5 font-mono text-xs opacity-60">{opsi.nip}</span>
+												{/if}
+												{opsi.nama}
+											</button>
+										</li>
+									{/each}
+									{#if kepalaTersaring.length > MAX_OPSI_TAMPIL}
+										<li class="px-2 py-1 text-sm opacity-60">
+											{kepalaTersaring.length - MAX_OPSI_TAMPIL} lainnya — ketik untuk mempersempit.
+										</li>
+									{/if}
+								</ul>
+							{/if}
+						</div>
+					{:else}
+						<input
+							required
+							type="text"
+							class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+							placeholder="Contoh: Bruce Wayne, Bat"
+							name="kepalaSekolah.nama"
+						/>
+					{/if}
+					<span>
+						{#if kunciKepalaSekolah}
+							Otomatis dari Dapodik. Menambahkan gelar dilakukan melalui menu Pengaturan - Edit
+							profil.
+						{:else}
+							Masukkan nama Kepala Sekolah lengkap dengan gelar.
+						{/if}
+					</span>
 				</div>
 
 				<div class="fieldset">
@@ -196,11 +341,25 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: NIP 19700305 199309 1 009"
 						name="kepalaSekolah.nip"
+						value={pakaiSelectPegawai ? kepalaNip : undefined}
+						disabled={kunciKepalaSekolah}
+						title={kunciKepalaSekolah
+							? 'Mengikuti data Dapodik — ubah melalui menu Pengaturan Profil akun yang bersangkutan'
+							: undefined}
 					/>
+					{#if !pakaiSelectPegawai}
+						<span>Biarkan kosong jika kepala sekolah tidak memiliki NIP.</span>
+					{:else if kunciKepalaSekolah}
+						<span>
+							Otomatis berdasarkan pegawai yang dipilih. Edit melalui menu Pengaturan - Edit profil.
+						</span>
+					{/if}
 				</div>
+
+				<input type="hidden" name="kepalaSekolahId" value={kepalaTerpilihId ?? ''} />
 
 				<div class="fieldset">
 					<!-- Nama desa atau kelurahan -->
@@ -208,7 +367,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: Desa Sungai Dangin atau Kelurahan Sungai Sengkuang"
 						name="alamat.desa"
 					/>
@@ -220,7 +379,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: Kecamatan Noyan"
 						name="alamat.kecamatan"
 					/>
@@ -232,7 +391,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: Kabupaten Sanggau"
 						name="alamat.kabupaten"
 					/>
@@ -244,7 +403,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: Kalimantan Barat"
 						name="alamat.provinsi"
 					/>
@@ -256,7 +415,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: 78554"
 						name="alamat.kodePos"
 					/>
@@ -268,7 +427,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: Jalan Raya Noyan, RT 9 / RW 3, Dusun Periji"
 						name="alamat.jalan"
 					/>
@@ -277,9 +436,7 @@
 				<div class="fieldset">
 					<!-- Website Sekolah -->
 					<legend class="fieldset-legend">Website Sekolah</legend>
-					<label
-						class="input bg-base-200 dark:bg-base-300 validator w-full border-base-300 dark:border-none"
-					>
+					<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 						<span class="label">https://</span>
 						<input type="text" placeholder="Kosongkan bila tidak ada" name="website" />
 					</label>
@@ -291,7 +448,7 @@
 					<input
 						required
 						type="text"
-						class="input validator bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+						class="input validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
 						placeholder="Contoh: cs@sdn19periji.sch.id"
 						name="email"
 					/>
@@ -301,7 +458,7 @@
 				<div class="fieldset">
 					<legend class="fieldset-legend">Pilih Naungan</legend>
 					<select
-						class="select bg-base-200 dark:bg-base-300 validator w-full truncate border border-base-300 dark:border-none"
+						class="select bg-base-200 dark:bg-base-300 validator w-full truncate dark:border-none"
 						name="naungan"
 						required
 					>
@@ -321,7 +478,7 @@
 				<div class="fieldset">
 					<legend class="fieldset-legend">Status Kepala Sekolah</legend>
 					<select
-						class="select bg-base-200 dark:bg-base-300 validator w-full truncate border border-base-300 dark:border-none"
+						class="select bg-base-200 dark:bg-base-300 validator w-full truncate dark:border-none"
 						name="statusKepalaSekolah"
 						required
 					>
@@ -370,7 +527,10 @@
 					<Icon name="import" />
 					Import DB
 				</button>
-				<button class="btn btn-primary shadow-none sm:w-auto" disabled={submitting}>
+				<button
+					class="btn btn-primary shadow-none sm:w-auto"
+					disabled={submitting || kepalaBelumDipilih}
+				>
 					{#if submitting}
 						<span class="loading loading-spinner"></span>
 					{/if}
@@ -381,3 +541,5 @@
 		</div>
 	{/snippet}
 </FormEnhance>
+
+<SekolahModals />

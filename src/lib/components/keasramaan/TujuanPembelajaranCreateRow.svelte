@@ -35,7 +35,7 @@
 			{#snippet children({ submitting: formSubmitting, invalid })}
 				<input name="indikatorId" value={indikatorId} hidden />
 				<textarea
-					class="textarea bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+					class="textarea bg-base-200 dark:bg-base-300 w-full dark:border-none"
 					placeholder="Tulis tujuan pembelajaran keasramaan"
 					name="deskripsi"
 					bind:value={deskripsiInput}

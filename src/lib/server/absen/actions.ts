@@ -12,6 +12,7 @@ import {
 } from '$lib/server/db/schema';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
+import { agamaMapelNames } from '$lib/statics';
 import {
 	canUserEditAbsen,
 	isTableMissingError,
@@ -203,15 +204,6 @@ export async function handleIsiSekaligus({
 			// No time restriction for tiap_mapel — guru mapel can fill attendance anytime
 
 			if (mataPelajaranId) {
-				const agamaMapelNames = [
-					'Pendidikan Agama dan Budi Pekerti',
-					'Pendidikan Agama Islam dan Budi Pekerti',
-					'Pendidikan Agama Kristen dan Budi Pekerti',
-					'Pendidikan Agama Katolik dan Budi Pekerti',
-					'Pendidikan Agama Buddha dan Budi Pekerti',
-					'Pendidikan Agama Hindu dan Budi Pekerti',
-					'Pendidikan Agama Konghuchu dan Budi Pekerti'
-				];
 				const agamaNameSet = new Set(agamaMapelNames);
 				const mpRecord = await db.query.tableMataPelajaran.findFirst({
 					columns: { kode: true, nama: true },

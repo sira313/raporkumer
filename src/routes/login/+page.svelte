@@ -113,15 +113,13 @@
 						required
 						autocomplete="username"
 						placeholder="Contoh: Admin"
-						class="input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
+						class="input input-bordered dark:bg-base-200 w-full dark:border-none"
 					/>
 				</div>
 
 				<div class="fieldset">
 					<label class="fieldset-legend" for="password"> Kata Sandi </label>
-					<label
-						class="input input-bordered dark:bg-base-200 w-full border-base-300 dark:border-none"
-					>
+					<label class="input input-bordered dark:bg-base-200 w-full dark:border-none">
 						<input
 							type={showPassword ? 'text' : 'password'}
 							id="password"
@@ -142,7 +140,7 @@
 				</div>
 
 				<button
-					class="btn btn-primary mt-6 w-full"
+					class="btn btn-primary mt-6 w-full shadow-none"
 					type="submit"
 					disabled={submitting || invalid || isLocked}
 				>

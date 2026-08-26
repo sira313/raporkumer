@@ -6,9 +6,10 @@
 
 	interface Props {
 		onSuccess?: () => void;
+		adaDataDapodik?: boolean;
 	}
 
-	let { onSuccess }: Props = $props();
+	let { onSuccess, adaDataDapodik = false }: Props = $props();
 
 	const fileInputId = 'import-mapel-file';
 	let fileInput: HTMLInputElement | null = null;
@@ -36,6 +37,15 @@
 </script>
 
 <div>
+	{#if adaDataDapodik}
+		<div role="alert" class="alert alert-warning alert-soft mb-4">
+			<Icon name="alert" />
+			<span class="text-sm">
+				Terdeteksi mata pelajaran dari dapodik. Hati-hati dalam mengimpor mapel, jika ditemukan
+				mapel yang tidak sesuai dengan kriteria dapodik akan menyebabkan gagal kirim ke dapodik
+			</span>
+		</div>
+	{/if}
 	<p class="text-base-content/70 mb-4 text-sm">
 		Unggah file Excel (.xlsx) sesuai format di bawah. Baris kosong akan diabaikan. <br />Jenis
 		terdiri atas: wajib, pilihan, dan mulok.
@@ -131,7 +141,7 @@
 				</label>
 			</fieldset>
 
-			<div class="mt-6 flex justify-end gap-2">
+			<div class="sticky bottom-0 z-10 -mx-1 mt-6 flex justify-end gap-2 bg-base-100 px-1 pt-2">
 				<button
 					type="button"
 					class="btn btn-soft shadow-none"

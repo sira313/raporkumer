@@ -5,7 +5,11 @@
 	import { searchQueryMarker } from '$lib/utils';
 	import Icon from './icon.svelte';
 	import { appMenuItems } from './menu';
-	import { isAuthorizedUser, resolveRoutePermission } from '../../routes/pengguna/permissions';
+	import {
+		isAuthorizedUser,
+		resolveRoutePermission,
+		WALI_KELAS_ONLY_PERMISSIONS
+	} from '../../routes/pengguna/permissions';
 
 	const expanded = new StorageState<boolean>('menu-expanded');
 
@@ -15,11 +19,24 @@
 	);
 
 	const user = $derived(
-		(page.data as { user?: Pick<AuthUser, 'permissions' | 'type'> | null } | null)?.user ?? null
+		(
+			page.data as {
+				user?:
+					| (Pick<AuthUser, 'permissions' | 'type'> & {
+							kelasId?: number | null;
+							ownKelasIds?: number[] | null;
+					  })
+					| null;
+			} | null
+		)?.user ?? null
 	);
 
 	const presensiGuruEnabled = $derived(
 		(page.data as { presensiGuruEnabled?: boolean } | null)?.presensiGuruEnabled ?? true
+	);
+
+	const kelasAktif = $derived(
+		(page.data as { kelasAktif?: { id: number } | null } | null)?.kelasAktif ?? null
 	);
 
 	function isHiddenForUser(path?: string): boolean {
@@ -34,6 +51,20 @@
 			(user.type === 'admin' || user.type === 'kepala_sekolah')
 		) {
 			return true;
+		}
+		// Wali kelas on non-own class: downgrade to guru-level permissions
+		if (user?.type === 'wali_kelas' && kelasAktif?.id != null) {
+			const ownIds = user.ownKelasIds?.length
+				? user.ownKelasIds
+				: user.kelasId != null
+					? [user.kelasId]
+					: [];
+			if (ownIds.length > 0 && !ownIds.includes(kelasAktif.id)) {
+				const required = resolveRoutePermission(path);
+				if (required && WALI_KELAS_ONLY_PERMISSIONS.has(required)) {
+					return true;
+				}
+			}
 		}
 		const required = resolveRoutePermission(path);
 		if (!required) return false;
@@ -177,7 +208,7 @@
 
 <div class="flex-1">
 	<div class="mb-3 flex gap-1">
-		<label class="input bg-base-200 dark:bg-base-300 border-base-300 rounded-box dark:border-none">
+		<label class="input bg-base-200 dark:bg-base-300 rounded-box dark:border-none">
 			<Icon name="search" />
 			<input type="search" class="grow" bind:value={search} placeholder="Cari menu" />
 		</label>

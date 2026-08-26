@@ -1,6 +1,7 @@
 import db from '$lib/server/db';
 import { tableMataPelajaran } from '$lib/server/db/schema';
-import { generateTujuanPembelajaran, getAiSettings } from '$lib/server/ai';
+import { generateTujuanPembelajaran, getAiSettings, withAi429Retry } from '$lib/server/ai';
+import { enqueueAi } from '$lib/server/ai-queue';
 import { json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 
@@ -59,12 +60,12 @@ export const POST = async ({ request, locals }) => {
 		);
 	}
 
-	const settings = await getAiSettings();
+	const settings = await getAiSettings(user.id);
 	if (!settings) {
 		return json(
 			{
 				message:
-					'Fitur AI belum aktif. Minta admin/kepala sekolah menyetel kunci API di halaman Pengaturan.'
+					'Fitur AI belum aktif. Minta admin/kepala sekolah menyetel kunci API di halaman Pengaturan, atau setel kunci API pribadi Anda di sana.'
 			},
 			{ status: 400 }
 		);
@@ -86,17 +87,23 @@ export const POST = async ({ request, locals }) => {
 	const semesterAktif = kelas.semester?.nama?.trim() || '';
 
 	try {
-		const groups = await generateTujuanPembelajaran({
-			apiKey: settings.apiKey,
-			model: settings.model,
-			baseUrl: settings.baseUrl,
-			capaianPembelajaran,
-			mapelNama: mapel.nama,
-			kelasLabel,
-			semesterAktif,
-			maxLingkupMateri,
-			maxTujuanPembelajaran
-		});
+		// Serialize per API key with spacing so shared school-key traffic stays
+		// under the provider's rate limit; personal keys get their own lane.
+		const groups = await enqueueAi(settings.apiKey, () =>
+			withAi429Retry(() =>
+				generateTujuanPembelajaran({
+					apiKey: settings.apiKey,
+					model: settings.model,
+					baseUrl: settings.baseUrl,
+					capaianPembelajaran,
+					mapelNama: mapel.nama,
+					kelasLabel,
+					semesterAktif,
+					maxLingkupMateri,
+					maxTujuanPembelajaran
+				})
+			)
+		);
 		return json({ data: { groups }, message: 'Tujuan pembelajaran berhasil digenerate.' });
 	} catch (err) {
 		const message = (err as Error).message || 'Gagal generate tujuan pembelajaran.';

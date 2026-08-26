@@ -23,7 +23,13 @@ import { fail } from '@sveltejs/kit';
 
 const u = tableAuthUser;
 
-export async function load({ url }) {
+const ALLOWED_USER_TYPES = ['admin', 'kepala_sekolah', 'wali_kelas', 'wali_asuh', 'user'] as const;
+
+// Run consolidation once per process, not on every page load.
+// Handles pegawai dedup, wali_kelas/wali_asuh account creation, and cross-type merge.
+let consolidationDone = false;
+
+export async function load({ url, locals }) {
 	authority('user_list');
 
 	// Ensure there are auth_user entries for any kelas that has a wali_kelas assigned.
@@ -32,201 +38,390 @@ export async function load({ url }) {
 	// Also support multi-kelas wali by auto-assigning 'kelas_pindah' permission.
 	// CONSOLIDATION LOGIC: If multiple accounts exist for same pegawaiId, keep oldest and delete others
 	// ALSO: Consolidate duplicate pegawai (same nama), keep oldest, merge auth_user references
-	try {
-		// STEP 0: Consolidate PEGAWAI duplicates (same nama) → keep oldest, merge auth_user
-		const allPegawai = await db.query.tablePegawai.findMany({
-			columns: { id: true, nama: true, createdAt: true }
-		});
-
-		// Group pegawai by (nama normalized) to find duplicates
-		type PegawaiArray = { id: number; nama: string; createdAt: string }[];
-		const pegawaiByName = new Map<string, PegawaiArray>();
-		for (const peg of allPegawai) {
-			const nameKey = (peg.nama || '').trim().toLowerCase();
-			if (!nameKey) continue;
-			const arr = pegawaiByName.get(nameKey) ?? [];
-			arr.push(peg);
-			pegawaiByName.set(nameKey, arr);
-		}
-
-		// For each pegawai name with duplicates
-		for (const [nameKey, pegawaiGroup] of pegawaiByName.entries()) {
-			if (pegawaiGroup.length > 1) {
-				console.log(
-					`[pengguna:consolidate] Found ${pegawaiGroup.length} pegawai with name "${nameKey}"`
-				);
-				// Sort by createdAt to find oldest
-				const sorted = pegawaiGroup.sort((a, b) => {
-					const aTime = new Date(a.createdAt || 0).getTime();
-					const bTime = new Date(b.createdAt || 0).getTime();
-					return aTime - bTime;
-				});
-
-				const keepPegawai = sorted[0];
-				const deletePegawai = sorted.slice(1);
-
-				// For each pegawai to delete
-				for (const dup of deletePegawai) {
-					console.log(
-						`[pengguna:consolidate] Consolidating pegawai: keeping ID=${keepPegawai.id}, deleting ID=${dup.id}`
-					);
-
-					// Update all auth_user pointing to dup pegawai → point to keep pegawai instead
-					const dupAuthUsers = await db.query.tableAuthUser.findMany({
-						where: eq(tableAuthUser.pegawaiId, dup.id),
-						columns: { id: true }
-					});
-
-					for (const au of dupAuthUsers) {
-						await db
-							.update(tableAuthUser)
-							.set({ pegawaiId: keepPegawai.id })
-							.where(eq(tableAuthUser.id, au.id));
-						console.log(
-							`[pengguna:consolidate] Updated auth_user ID=${au.id}: pegawaiId ${dup.id} → ${keepPegawai.id}`
-						);
-					}
-
-					// Update all kelas pointing to dup pegawai → point to keep pegawai instead
-					const dupKelas = await db.query.tableKelas.findMany({
-						where: eq(tableKelas.waliKelasId, dup.id),
-						columns: { id: true }
-					});
-
-					for (const k of dupKelas) {
-						await db
-							.update(tableKelas)
-							.set({ waliKelasId: keepPegawai.id })
-							.where(eq(tableKelas.id, k.id));
-						console.log(
-							`[pengguna:consolidate] Updated kelas ID=${k.id}: waliKelasId ${dup.id} → ${keepPegawai.id}`
-						);
-					}
-
-					// Update any sekolah whose kepalaSekolahId points to the dup pegawai
-					// → point to keep pegawai instead (prevents a dangling FK and keeps
-					// the kepala sekolah account tied to the merged pegawai).
-					const dupSekolah = await db.query.tableSekolah.findMany({
-						where: eq(tableSekolah.kepalaSekolahId, dup.id),
-						columns: { id: true }
-					});
-					for (const s of dupSekolah) {
-						await db
-							.update(tableSekolah)
-							.set({ kepalaSekolahId: keepPegawai.id })
-							.where(eq(tableSekolah.id, s.id));
-						console.log(
-							`[pengguna:consolidate] Updated sekolah ID=${s.id}: kepalaSekolahId ${dup.id} → ${keepPegawai.id}`
-						);
-					}
-
-					// Now safe to delete duplicate pegawai
-					await db.delete(tablePegawai).where(eq(tablePegawai.id, dup.id));
-					console.warn(
-						`[pengguna:consolidate] ✓ Deleted duplicate pegawai: ID=${dup.id}, nama="${nameKey}"`
-					);
-				}
-			}
-		}
-
-		// FIRST: Global consolidation - find ALL pegawaiId that have multiple wali_kelas accounts, consolidate them
-		const allWaliAccounts = await db.query.tableAuthUser.findMany({
-			where: eq(tableAuthUser.type, 'wali_kelas'),
-			columns: { id: true, pegawaiId: true, createdAt: true, username: true }
-		});
-		console.log('[pengguna:consolidate] Found wali_kelas accounts:', allWaliAccounts.length);
-
-		// Group by pegawaiId
-		type AuthUserArray = {
-			id: number;
-			username: string;
-			createdAt: string;
-			pegawaiId: number | null;
-		}[];
-		const accountsByPegawai = new Map<number, AuthUserArray>();
-		for (const acc of allWaliAccounts) {
-			if (!acc.pegawaiId) continue;
-			const arr = accountsByPegawai.get(acc.pegawaiId) ?? [];
-			arr.push(acc);
-			accountsByPegawai.set(acc.pegawaiId, arr);
-		}
-
-		// For each pegawaiId with multiple accounts, keep oldest and delete rest
-		for (const [pegawaiId, accounts] of accountsByPegawai.entries()) {
-			if (accounts.length > 1) {
-				console.log(
-					`[pengguna:consolidate] Found ${accounts.length} accounts for pegawaiId=${pegawaiId}`
-				);
-				// Sort by createdAt
-				const sorted = accounts.sort((a, b) => {
-					const aTime = new Date(a.createdAt || 0).getTime();
-					const bTime = new Date(b.createdAt || 0).getTime();
-					return aTime - bTime;
-				});
-
-				// Keep first, delete rest
-				const toDelete = sorted.slice(1);
-				for (const dup of toDelete) {
-					console.log(
-						`[pengguna:consolidate] Deleting auth_user ID=${dup.id}, username="${dup.username}"`
-					);
-					await db.delete(tableAuthUser).where(eq(tableAuthUser.id, dup.id));
-					console.warn(
-						`[pengguna:consolidate] ✓ Deleted duplicate wali_kelas account: ID=${dup.id}, username="${dup.username}", pegawaiId=${pegawaiId}`
-					);
-				}
-			}
-		}
-
-		// SECOND: Process current kelas and ensure accounts exist / permissions correct
-		const kelasWithWali = await db.query.tableKelas.findMany({
-			where: sql`${tableKelas.waliKelasId} IS NOT NULL`,
-			columns: { id: true, waliKelasId: true }
-		});
-
-		// Group kelas by waliKelasId to detect multi-kelas scenarios
-		const kelasGroupedByWali = new Map<number, typeof kelasWithWali>();
-		for (const k of kelasWithWali) {
-			if (!k.waliKelasId) continue;
-			const arr = kelasGroupedByWali.get(k.waliKelasId) ?? [];
-			arr.push(k);
-			kelasGroupedByWali.set(k.waliKelasId, arr);
-		}
-
-		// Process each wali_kelas
-		for (const [waliPegawaiId, kelasArr] of kelasGroupedByWali) {
-			if (!waliPegawaiId || kelasArr.length === 0) continue;
-
-			// Now consolidation already happened above, so find the kept account
-			const exists = await db.query.tableAuthUser.findFirst({
-				where: eq(tableAuthUser.pegawaiId, waliPegawaiId),
-				columns: { id: true, permissions: true }
+	if (!consolidationDone)
+		try {
+			// STEP 0: Consolidate PEGAWAI duplicates (same nama) → keep oldest, merge auth_user
+			const allPegawai = await db.query.tablePegawai.findMany({
+				columns: { id: true, nama: true, createdAt: true }
 			});
 
-			if (!exists) {
-				// Need to create new account for this wali
-				// Use first kelas as the primary kelasId
-				const firstKelas = kelasArr[0];
+			// Group pegawai by (nama normalized) to find duplicates
+			type PegawaiArray = { id: number; nama: string; createdAt: string }[];
+			const pegawaiByName = new Map<string, PegawaiArray>();
+			for (const peg of allPegawai) {
+				const nameKey = (peg.nama || '').trim().toLowerCase();
+				if (!nameKey) continue;
+				const arr = pegawaiByName.get(nameKey) ?? [];
+				arr.push(peg);
+				pegawaiByName.set(nameKey, arr);
+			}
 
-				// Fetch pegawai name
-				const peg = await db.query.tablePegawai.findFirst({
-					where: eq(tablePegawai.id, waliPegawaiId),
-					columns: { nama: true }
+			// For each pegawai name with duplicates
+			for (const [nameKey, pegawaiGroup] of pegawaiByName.entries()) {
+				if (pegawaiGroup.length > 1) {
+					console.log(
+						`[pengguna:consolidate] Found ${pegawaiGroup.length} pegawai with name "${nameKey}"`
+					);
+					// Sort by createdAt to find oldest
+					const sorted = pegawaiGroup.sort((a, b) => {
+						const aTime = new Date(a.createdAt || 0).getTime();
+						const bTime = new Date(b.createdAt || 0).getTime();
+						return aTime - bTime;
+					});
+
+					const keepPegawai = sorted[0];
+					const deletePegawai = sorted.slice(1);
+
+					// For each pegawai to delete
+					for (const dup of deletePegawai) {
+						console.log(
+							`[pengguna:consolidate] Consolidating pegawai: keeping ID=${keepPegawai.id}, deleting ID=${dup.id}`
+						);
+
+						// Update all auth_user pointing to dup pegawai → point to keep pegawai instead
+						const dupAuthUsers = await db.query.tableAuthUser.findMany({
+							where: eq(tableAuthUser.pegawaiId, dup.id),
+							columns: { id: true }
+						});
+
+						for (const au of dupAuthUsers) {
+							await db
+								.update(tableAuthUser)
+								.set({ pegawaiId: keepPegawai.id })
+								.where(eq(tableAuthUser.id, au.id));
+							console.log(
+								`[pengguna:consolidate] Updated auth_user ID=${au.id}: pegawaiId ${dup.id} → ${keepPegawai.id}`
+							);
+						}
+
+						// Update all kelas pointing to dup pegawai → point to keep pegawai instead
+						const dupKelas = await db.query.tableKelas.findMany({
+							where: eq(tableKelas.waliKelasId, dup.id),
+							columns: { id: true }
+						});
+
+						for (const k of dupKelas) {
+							await db
+								.update(tableKelas)
+								.set({ waliKelasId: keepPegawai.id })
+								.where(eq(tableKelas.id, k.id));
+							console.log(
+								`[pengguna:consolidate] Updated kelas ID=${k.id}: waliKelasId ${dup.id} → ${keepPegawai.id}`
+							);
+						}
+
+						// Update any sekolah whose kepalaSekolahId points to the dup pegawai
+						// → point to keep pegawai instead (prevents a dangling FK and keeps
+						// the kepala sekolah account tied to the merged pegawai).
+						const dupSekolah = await db.query.tableSekolah.findMany({
+							where: eq(tableSekolah.kepalaSekolahId, dup.id),
+							columns: { id: true }
+						});
+						for (const s of dupSekolah) {
+							await db
+								.update(tableSekolah)
+								.set({ kepalaSekolahId: keepPegawai.id })
+								.where(eq(tableSekolah.id, s.id));
+							console.log(
+								`[pengguna:consolidate] Updated sekolah ID=${s.id}: kepalaSekolahId ${dup.id} → ${keepPegawai.id}`
+							);
+						}
+
+						// Now safe to delete duplicate pegawai
+						await db.delete(tablePegawai).where(eq(tablePegawai.id, dup.id));
+						console.warn(
+							`[pengguna:consolidate] ✓ Deleted duplicate pegawai: ID=${dup.id}, nama="${nameKey}"`
+						);
+					}
+				}
+			}
+
+			// FIRST: Global consolidation - find ALL pegawaiId that have multiple wali_kelas accounts, consolidate them
+			const allWaliAccounts = await db.query.tableAuthUser.findMany({
+				where: eq(tableAuthUser.type, 'wali_kelas'),
+				columns: { id: true, pegawaiId: true, createdAt: true, username: true }
+			});
+			console.log('[pengguna:consolidate] Found wali_kelas accounts:', allWaliAccounts.length);
+
+			// Group by pegawaiId
+			type AuthUserArray = {
+				id: number;
+				username: string;
+				createdAt: string;
+				pegawaiId: number | null;
+			}[];
+			const accountsByPegawai = new Map<number, AuthUserArray>();
+			for (const acc of allWaliAccounts) {
+				if (!acc.pegawaiId) continue;
+				const arr = accountsByPegawai.get(acc.pegawaiId) ?? [];
+				arr.push(acc);
+				accountsByPegawai.set(acc.pegawaiId, arr);
+			}
+
+			// For each pegawaiId with multiple accounts, keep oldest and delete rest
+			for (const [pegawaiId, accounts] of accountsByPegawai.entries()) {
+				if (accounts.length > 1) {
+					console.log(
+						`[pengguna:consolidate] Found ${accounts.length} accounts for pegawaiId=${pegawaiId}`
+					);
+					// Sort by createdAt
+					const sorted = accounts.sort((a, b) => {
+						const aTime = new Date(a.createdAt || 0).getTime();
+						const bTime = new Date(b.createdAt || 0).getTime();
+						return aTime - bTime;
+					});
+
+					// Keep first, delete rest
+					const toDelete = sorted.slice(1);
+					for (const dup of toDelete) {
+						console.log(
+							`[pengguna:consolidate] Deleting auth_user ID=${dup.id}, username="${dup.username}"`
+						);
+						await db.delete(tableAuthUser).where(eq(tableAuthUser.id, dup.id));
+						console.warn(
+							`[pengguna:consolidate] ✓ Deleted duplicate wali_kelas account: ID=${dup.id}, username="${dup.username}", pegawaiId=${pegawaiId}`
+						);
+					}
+				}
+			}
+
+			// SECOND: Process current kelas and ensure accounts exist / permissions correct
+			const kelasWithWali = await db.query.tableKelas.findMany({
+				where: sql`${tableKelas.waliKelasId} IS NOT NULL`,
+				columns: { id: true, waliKelasId: true }
+			});
+
+			// Group kelas by waliKelasId to detect multi-kelas scenarios
+			const kelasGroupedByWali = new Map<number, typeof kelasWithWali>();
+			for (const k of kelasWithWali) {
+				if (!k.waliKelasId) continue;
+				const arr = kelasGroupedByWali.get(k.waliKelasId) ?? [];
+				arr.push(k);
+				kelasGroupedByWali.set(k.waliKelasId, arr);
+			}
+
+			// Process each wali_kelas
+			for (const [waliPegawaiId, kelasArr] of kelasGroupedByWali) {
+				if (!waliPegawaiId || kelasArr.length === 0) continue;
+
+				// Now consolidation already happened above, so find the kept account.
+				// Prefer an existing wali_kelas account (never create duplicates); fall
+				// back to a plain guru account for promotion below.
+				const exists = await db.query.tableAuthUser.findFirst({
+					where: eq(tableAuthUser.pegawaiId, waliPegawaiId),
+					columns: { id: true, type: true, permissions: true },
+					orderBy: sql`CASE ${tableAuthUser.type} WHEN 'wali_kelas' THEN 0 WHEN 'user' THEN 1 ELSE 2 END, ${tableAuthUser.id}`
 				});
-				const nama = (peg?.nama || '').trim();
-				if (!nama) continue;
 
+				if (!exists) {
+					// Need to create new account for this wali
+					// Use first kelas as the primary kelasId
+					const firstKelas = kelasArr[0];
+
+					// Fetch pegawai name
+					const peg = await db.query.tablePegawai.findFirst({
+						where: eq(tablePegawai.id, waliPegawaiId),
+						columns: { nama: true }
+					});
+					const nama = (peg?.nama || '').trim();
+					if (!nama) continue;
+
+					const username = await resolveUniqueUsername(nama);
+					const usernameNormalized = username.toLowerCase();
+					const password = randomBytes(6).toString('base64url');
+					const { hash, salt } = hashPassword(password);
+					const timestamp = new Date().toISOString();
+
+					// If wali has >1 kelas, include 'kelas_pindah' permission
+					const permissions: UserPermission[] = [
+						...(defaultPermissionsByType['wali_kelas'] ?? []),
+						...(kelasArr.length > 1 ? (['kelas_pindah'] as UserPermission[]) : [])
+					];
+
+					await db.insert(tableAuthUser).values({
+						username,
+						usernameNormalized,
+						passwordHash: hash,
+						passwordSalt: salt,
+						passwordUpdatedAt: timestamp,
+						// password generated automatically → require a change at first login
+						mustChangePassword: true,
+						permissions,
+						type: 'wali_kelas',
+						pegawaiId: waliPegawaiId,
+						kelasId: firstKelas.id,
+						createdAt: timestamp,
+						updatedAt: timestamp
+					});
+
+					const kelasLog = kelasArr.map((k) => k.id).join(', ');
+					console.info(
+						`[pengguna] Created user for wali_kelas ${nama} (kelas: ${kelasLog})${kelasArr.length > 1 ? ' [multi-kelas]' : ''}`
+					);
+				} else {
+					// Account exists for this pegawai but may predate the wali assignment
+					// (e.g. dapodik import created it as type='user'). Promote plain guru
+					// accounts so login actually gains wali access.
+					const currentPerms = Array.isArray(exists.permissions) ? exists.permissions : [];
+					// Kepala sekolah: mergeAccountsUnderKepalaSekolah() keeps the KS
+					// account and deletes guru accounts — promoting here is wasted work.
+					const isKepalaSekolah =
+						exists.type === 'kepala_sekolah' ||
+						Boolean(
+							await db.query.tableSekolah.findFirst({
+								columns: { id: true },
+								where: eq(tableSekolah.kepalaSekolahId, waliPegawaiId)
+							})
+						);
+					if (!isKepalaSekolah && exists.type === 'user') {
+						const permissions: UserPermission[] = [
+							...new Set([
+								...(currentPerms as UserPermission[]),
+								...(defaultPermissionsByType['wali_kelas'] ?? []),
+								...(kelasArr.length > 1 ? (['kelas_pindah'] as UserPermission[]) : [])
+							])
+						];
+						await db
+							.update(tableAuthUser)
+							.set({
+								type: 'wali_kelas',
+								kelasId: kelasArr[0].id,
+								permissions,
+								updatedAt: new Date().toISOString()
+							})
+							.where(eq(tableAuthUser.id, exists.id));
+						console.info(
+							`[pengguna] Promoted account ID=${exists.id} from 'user' to wali_kelas (kelas: ${kelasArr
+								.map((k) => k.id)
+								.join(', ')})`
+						);
+					} else if (kelasArr.length > 1) {
+						// Account exists, wali has >1 kelas: ensure 'kelas_pindah' permission
+						if (!currentPerms.includes('kelas_pindah')) {
+							const updatedPerms: UserPermission[] = [
+								...(currentPerms as UserPermission[]),
+								'kelas_pindah' as UserPermission
+							];
+							await db
+								.update(tableAuthUser)
+								.set({
+									permissions: updatedPerms,
+									updatedAt: new Date().toISOString()
+								})
+								.where(eq(tableAuthUser.id, exists.id));
+
+							const peg = await db.query.tablePegawai.findFirst({
+								where: eq(tablePegawai.id, waliPegawaiId),
+								columns: { nama: true }
+							});
+							const kelasLog = kelasArr.map((k) => k.id).join(', ');
+							console.info(
+								`[pengguna] Updated wali_kelas ${peg?.nama ?? 'unknown'} with kelas_pindah permission (kelas: ${kelasLog})`
+							);
+						}
+					}
+				}
+			}
+
+			// ========== WALI ASUH AUTO-DETECTION ==========
+			// Same logic as wali_kelas but for wali_asuh
+			// STEP 1: Consolidate duplicate wali_asuh accounts
+			const allWaliAsuhAccounts = await db.query.tableAuthUser.findMany({
+				where: eq(tableAuthUser.type, 'wali_asuh'),
+				columns: { id: true, pegawaiId: true, createdAt: true, username: true }
+			});
+			console.log('[pengguna:consolidate] Found wali_asuh accounts:', allWaliAsuhAccounts.length);
+
+			// Group by pegawaiId
+			const asuhAccountsByPegawai = new Map<number, AuthUserArray>();
+			for (const acc of allWaliAsuhAccounts) {
+				if (!acc.pegawaiId) continue;
+				const arr = asuhAccountsByPegawai.get(acc.pegawaiId) ?? [];
+				arr.push(acc);
+				asuhAccountsByPegawai.set(acc.pegawaiId, arr);
+			}
+
+			// For each pegawaiId with multiple accounts, keep oldest and delete rest
+			for (const [pegawaiId, accounts] of asuhAccountsByPegawai.entries()) {
+				if (accounts.length > 1) {
+					console.log(
+						`[pengguna:consolidate] Found ${accounts.length} wali_asuh accounts for pegawaiId=${pegawaiId}`
+					);
+					const sorted = accounts.sort((a, b) => {
+						const aTime = new Date(a.createdAt || 0).getTime();
+						const bTime = new Date(b.createdAt || 0).getTime();
+						return aTime - bTime;
+					});
+
+					const toDelete = sorted.slice(1);
+					for (const dup of toDelete) {
+						console.log(
+							`[pengguna:consolidate] Deleting wali_asuh auth_user ID=${dup.id}, username="${dup.username}"`
+						);
+						await db.delete(tableAuthUser).where(eq(tableAuthUser.id, dup.id));
+						console.warn(
+							`[pengguna:consolidate] ✓ Deleted duplicate wali_asuh account: ID=${dup.id}, username="${dup.username}", pegawaiId=${pegawaiId}`
+						);
+					}
+				}
+			}
+
+			// STEP 2: Detect wali_asuh from per-student assignments on tableMurid
+			const muridWaliRows = await db.query.tableMurid.findMany({
+				columns: { waliAsuhNama: true, waliAsuhNip: true },
+				where: sql`${tableMurid.waliAsuhNama} IS NOT NULL AND trim(${tableMurid.waliAsuhNama}) != ''`
+			});
+
+			// Deduplicate by normalized name
+			const waliAsuhByName = new Map<string, { nama: string; nip: string | null }>();
+			for (const row of muridWaliRows) {
+				const nama = (row.waliAsuhNama ?? '').trim();
+				if (!nama) continue;
+				const key = nama.toLowerCase();
+				if (!waliAsuhByName.has(key)) {
+					waliAsuhByName.set(key, { nama, nip: row.waliAsuhNip ?? null });
+				}
+			}
+
+			for (const { nama, nip } of waliAsuhByName.values()) {
+				// Find or create pegawai record by name
+				let pegawaiId: number | null = null;
+				const existingPegawai = await db.query.tablePegawai.findFirst({
+					columns: { id: true },
+					where: sql`LOWER(trim(${tablePegawai.nama})) = ${nama.toLowerCase()}`
+				});
+
+				if (existingPegawai) {
+					pegawaiId = existingPegawai.id;
+				} else {
+					// Auto-create pegawai for this wali_asuh
+					const timestamp = new Date().toISOString();
+					const insertPeg = await db
+						.insert(tablePegawai)
+						.values({ nama, nip: nip ?? '', createdAt: timestamp, updatedAt: timestamp })
+						.returning({ id: tablePegawai.id });
+					pegawaiId = insertPeg?.[0]?.id ?? null;
+					if (pegawaiId) {
+						console.info(`[pengguna] Created pegawai for wali_asuh "${nama}" (ID=${pegawaiId})`);
+					}
+				}
+
+				if (!pegawaiId) continue;
+
+				// Check if auth_user already exists for this pegawai
+				const exists = await db.query.tableAuthUser.findFirst({
+					where: and(eq(tableAuthUser.pegawaiId, pegawaiId), eq(tableAuthUser.type, 'wali_asuh')),
+					columns: { id: true }
+				});
+
+				if (exists) continue;
+
+				// Create auth_user — no kelasId since wali_asuh is per-student, not per-class
 				const username = await resolveUniqueUsername(nama);
 				const usernameNormalized = username.toLowerCase();
 				const password = randomBytes(6).toString('base64url');
 				const { hash, salt } = hashPassword(password);
 				const timestamp = new Date().toISOString();
-
-				// If wali has >1 kelas, include 'kelas_pindah' permission
-				const permissions: UserPermission[] = [
-					...(defaultPermissionsByType['wali_kelas'] ?? []),
-					...(kelasArr.length > 1 ? (['kelas_pindah'] as UserPermission[]) : [])
-				];
 
 				await db.insert(tableAuthUser).values({
 					username,
@@ -236,171 +431,24 @@ export async function load({ url }) {
 					passwordUpdatedAt: timestamp,
 					// password generated automatically → require a change at first login
 					mustChangePassword: true,
-					permissions,
-					type: 'wali_kelas',
-					pegawaiId: waliPegawaiId,
-					kelasId: firstKelas.id,
+					permissions: defaultPermissionsByType['wali_asuh'] ?? [],
+					type: 'wali_asuh',
+					pegawaiId,
 					createdAt: timestamp,
 					updatedAt: timestamp
 				});
 
-				const kelasLog = kelasArr.map((k) => k.id).join(', ');
-				console.info(
-					`[pengguna] Created user for wali_kelas ${nama} (kelas: ${kelasLog})${kelasArr.length > 1 ? ' [multi-kelas]' : ''}`
-				);
-			} else if (kelasArr.length > 1) {
-				// Account exists, wali has >1 kelas: ensure 'kelas_pindah' permission
-				const currentPerms = Array.isArray(exists.permissions) ? exists.permissions : [];
-				if (!currentPerms.includes('kelas_pindah')) {
-					const updatedPerms: UserPermission[] = [
-						...(currentPerms as UserPermission[]),
-						'kelas_pindah' as UserPermission
-					];
-					await db
-						.update(tableAuthUser)
-						.set({
-							permissions: updatedPerms,
-							updatedAt: new Date().toISOString()
-						})
-						.where(eq(tableAuthUser.id, exists.id));
-
-					const peg = await db.query.tablePegawai.findFirst({
-						where: eq(tablePegawai.id, waliPegawaiId),
-						columns: { nama: true }
-					});
-					const kelasLog = kelasArr.map((k) => k.id).join(', ');
-					console.info(
-						`[pengguna] Updated wali_kelas ${peg?.nama ?? 'unknown'} with kelas_pindah permission (kelas: ${kelasLog})`
-					);
-				}
-			}
-		}
-
-		// ========== WALI ASUH AUTO-DETECTION ==========
-		// Same logic as wali_kelas but for wali_asuh
-		// STEP 1: Consolidate duplicate wali_asuh accounts
-		const allWaliAsuhAccounts = await db.query.tableAuthUser.findMany({
-			where: eq(tableAuthUser.type, 'wali_asuh'),
-			columns: { id: true, pegawaiId: true, createdAt: true, username: true }
-		});
-		console.log('[pengguna:consolidate] Found wali_asuh accounts:', allWaliAsuhAccounts.length);
-
-		// Group by pegawaiId
-		const asuhAccountsByPegawai = new Map<number, AuthUserArray>();
-		for (const acc of allWaliAsuhAccounts) {
-			if (!acc.pegawaiId) continue;
-			const arr = asuhAccountsByPegawai.get(acc.pegawaiId) ?? [];
-			arr.push(acc);
-			asuhAccountsByPegawai.set(acc.pegawaiId, arr);
-		}
-
-		// For each pegawaiId with multiple accounts, keep oldest and delete rest
-		for (const [pegawaiId, accounts] of asuhAccountsByPegawai.entries()) {
-			if (accounts.length > 1) {
-				console.log(
-					`[pengguna:consolidate] Found ${accounts.length} wali_asuh accounts for pegawaiId=${pegawaiId}`
-				);
-				const sorted = accounts.sort((a, b) => {
-					const aTime = new Date(a.createdAt || 0).getTime();
-					const bTime = new Date(b.createdAt || 0).getTime();
-					return aTime - bTime;
-				});
-
-				const toDelete = sorted.slice(1);
-				for (const dup of toDelete) {
-					console.log(
-						`[pengguna:consolidate] Deleting wali_asuh auth_user ID=${dup.id}, username="${dup.username}"`
-					);
-					await db.delete(tableAuthUser).where(eq(tableAuthUser.id, dup.id));
-					console.warn(
-						`[pengguna:consolidate] ✓ Deleted duplicate wali_asuh account: ID=${dup.id}, username="${dup.username}", pegawaiId=${pegawaiId}`
-					);
-				}
-			}
-		}
-
-		// STEP 2: Detect wali_asuh from per-student assignments on tableMurid
-		const muridWaliRows = await db.query.tableMurid.findMany({
-			columns: { waliAsuhNama: true, waliAsuhNip: true },
-			where: sql`${tableMurid.waliAsuhNama} IS NOT NULL AND trim(${tableMurid.waliAsuhNama}) != ''`
-		});
-
-		// Deduplicate by normalized name
-		const waliAsuhByName = new Map<string, { nama: string; nip: string | null }>();
-		for (const row of muridWaliRows) {
-			const nama = (row.waliAsuhNama ?? '').trim();
-			if (!nama) continue;
-			const key = nama.toLowerCase();
-			if (!waliAsuhByName.has(key)) {
-				waliAsuhByName.set(key, { nama, nip: row.waliAsuhNip ?? null });
-			}
-		}
-
-		for (const { nama, nip } of waliAsuhByName.values()) {
-			// Find or create pegawai record by name
-			let pegawaiId: number | null = null;
-			const existingPegawai = await db.query.tablePegawai.findFirst({
-				columns: { id: true },
-				where: sql`LOWER(trim(${tablePegawai.nama})) = ${nama.toLowerCase()}`
-			});
-
-			if (existingPegawai) {
-				pegawaiId = existingPegawai.id;
-			} else {
-				// Auto-create pegawai for this wali_asuh
-				const timestamp = new Date().toISOString();
-				const insertPeg = await db
-					.insert(tablePegawai)
-					.values({ nama, nip: nip ?? '', createdAt: timestamp, updatedAt: timestamp })
-					.returning({ id: tablePegawai.id });
-				pegawaiId = insertPeg?.[0]?.id ?? null;
-				if (pegawaiId) {
-					console.info(`[pengguna] Created pegawai for wali_asuh "${nama}" (ID=${pegawaiId})`);
-				}
+				console.info(`[pengguna] Created user for wali_asuh "${nama}" (pegawaiId=${pegawaiId})`);
 			}
 
-			if (!pegawaiId) continue;
-
-			// Check if auth_user already exists for this pegawai
-			const exists = await db.query.tableAuthUser.findFirst({
-				where: and(eq(tableAuthUser.pegawaiId, pegawaiId), eq(tableAuthUser.type, 'wali_asuh')),
-				columns: { id: true }
-			});
-
-			if (exists) continue;
-
-			// Create auth_user — no kelasId since wali_asuh is per-student, not per-class
-			const username = await resolveUniqueUsername(nama);
-			const usernameNormalized = username.toLowerCase();
-			const password = randomBytes(6).toString('base64url');
-			const { hash, salt } = hashPassword(password);
-			const timestamp = new Date().toISOString();
-
-			await db.insert(tableAuthUser).values({
-				username,
-				usernameNormalized,
-				passwordHash: hash,
-				passwordSalt: salt,
-				passwordUpdatedAt: timestamp,
-				// password generated automatically → require a change at first login
-				mustChangePassword: true,
-				permissions: defaultPermissionsByType['wali_asuh'] ?? [],
-				type: 'wali_asuh',
-				pegawaiId,
-				createdAt: timestamp,
-				updatedAt: timestamp
-			});
-
-			console.info(`[pengguna] Created user for wali_asuh "${nama}" (pegawaiId=${pegawaiId})`);
+			// Cross-type merge: if the same person is both kepala_sekolah and a guru
+			// (wali_kelas / user, e.g. a PLT kepala sekolah who must keep teaching
+			// hours), keep the kepala_sekolah account and merge the rest.
+			await mergeAccountsUnderKepalaSekolah();
+			consolidationDone = true;
+		} catch (err) {
+			console.warn('[pengguna] Failed to ensure wali_kelas/wali_asuh users:', err);
 		}
-
-		// Cross-type merge: if the same person is both kepala_sekolah and a guru
-		// (wali_kelas / user, e.g. a PLT kepala sekolah who must keep teaching
-		// hours), keep the kepala_sekolah account and merge the rest.
-		await mergeAccountsUnderKepalaSekolah();
-	} catch (err) {
-		console.warn('[pengguna] Failed to ensure wali_kelas/wali_asuh users:', err);
-	}
 
 	// TODO: implement pagination
 	const q = url.searchParams.get('q');
@@ -417,7 +465,8 @@ export async function load({ url }) {
 			pegawaiName: tablePegawai.nama,
 			kelasId: u.kelasId,
 			kelasName: tableKelas.nama,
-			passwordUpdatedAt: u.passwordUpdatedAt
+			passwordUpdatedAt: u.passwordUpdatedAt,
+			sekolahId: u.sekolahId
 		})
 		.from(u)
 		.leftJoin(tablePegawai, eq(u.pegawaiId, tablePegawai.id))
@@ -429,64 +478,79 @@ export async function load({ url }) {
 				q ? sql` lower(${u.username}) like ${'%' + q.toLowerCase() + '%'}` : sql` true`
 			)
 		)
-		.limit(100);
+		.orderBy(u.id)
+		.limit(1000);
 
-	// Debug: log raw results
-	console.debug('[pengguna] usersRaw count:', usersRaw.length);
-	const nilawatiRows = usersRaw.filter((r) => r.pegawaiName?.includes('Nilawati'));
-	if (nilawatiRows.length > 0) {
-		console.debug('[pengguna] Nilawati entries:', JSON.stringify(nilawatiRows, null, 2));
-	}
-
-	// Deduplicate & aggregate kelas: for wali_kelas with multi-kelas,
-	// fetch ALL kelas they manage and aggregate into display
-	const users = await (async () => {
+	// Deduplicate by user ID
+	const dedupedUsers = (() => {
 		const map = new Map<number, (typeof usersRaw)[0]>();
-
-		// First pass: deduplicate by user ID
 		for (const row of usersRaw) {
-			const key = row.id;
-			if (!map.has(key)) {
-				map.set(key, row);
-			}
+			if (!map.has(row.id)) map.set(row.id, row);
 		}
-
-		// Second pass: for wali_kelas and wali_asuh users, fetch ALL kelas they manage
-		for (const [, userRow] of map.entries()) {
-			if (userRow.type === 'wali_kelas' && userRow.pegawaiId) {
-				// Query ALL kelas where waliKelasId = pegawaiId
-				const allKelas = await db.query.tableKelas.findMany({
-					columns: { id: true, nama: true },
-					where: eq(tableKelas.waliKelasId, userRow.pegawaiId)
-				});
-
-				// Aggregate kelas names
-				if (allKelas.length > 0) {
-					const kelasNames = allKelas.map((k) => k.nama).join(', ');
-					userRow.kelasName = kelasNames;
-				}
-			} else if (userRow.type === 'wali_asuh' && userRow.pegawaiId) {
-				// Wali_asuh is per-student, not per-class
-				// Show count of assigned students instead
-				const peg = await db.query.tablePegawai.findFirst({
-					columns: { nama: true },
-					where: eq(tablePegawai.id, userRow.pegawaiId)
-				});
-				if (peg?.nama) {
-					const [{ count }] = await db
-						.select({ count: sql<number>`count(*)` })
-						.from(tableMurid)
-						.where(
-							sql`LOWER(trim(${tableMurid.waliAsuhNama})) = ${peg.nama.toLowerCase()} AND trim(${tableMurid.waliAsuhNama}) != ''`
-						);
-					userRow.kelasName = `${count} murid`;
-				}
-			}
-		}
-
-		console.debug('[pengguna] after dedup, users count:', map.size);
 		return Array.from(map.values());
 	})();
+
+	// Derive every role a pegawai holds from relations, so rangkap accounts
+	// (e.g. Kepala Sekolah + Wali Kelas A + Wali Kelas B) display all labels.
+	const sekolahFilter = locals.sekolah?.id ? sql` AND sekolah_id = ${locals.sekolah.id}` : sql``;
+	const [kelasBerwali, sekolahBerkepala, asuhCounts] = await Promise.all([
+		db.query.tableKelas.findMany({
+			columns: { nama: true, waliKelasId: true },
+			where: sql`${tableKelas.waliKelasId} IS NOT NULL${sekolahFilter}`
+		}),
+		db
+			.select({ pegawaiId: tableSekolah.kepalaSekolahId })
+			.from(tableSekolah)
+			.where(
+				sql`${tableSekolah.kepalaSekolahId} IS NOT NULL${locals.sekolah?.id ? sql` AND ${tableSekolah.id} = ${locals.sekolah.id}` : sql``}`
+			),
+		db
+			.select({ nama: tableMurid.waliAsuhNama, count: sql<number>`count(*)` })
+			.from(tableMurid)
+			.where(
+				sql`${tableMurid.waliAsuhNama} IS NOT NULL AND trim(${tableMurid.waliAsuhNama}) != ''${sekolahFilter}`
+			)
+			.groupBy(tableMurid.waliAsuhNama)
+	]);
+
+	const waliKelasByPegawai = new Map<number, string[]>();
+	for (const k of kelasBerwali) {
+		if (!k.waliKelasId) continue;
+		const arr = waliKelasByPegawai.get(k.waliKelasId) ?? [];
+		arr.push(k.nama);
+		waliKelasByPegawai.set(k.waliKelasId, arr);
+	}
+	const kepalaPegawaiIds = new Set(
+		sekolahBerkepala.map((s) => s.pegawaiId).filter((id): id is number => id != null)
+	);
+	const asuhCountByName = new Map<string, number>();
+	for (const r of asuhCounts) {
+		const key = (r.nama ?? '').trim().toLowerCase();
+		if (!key) continue;
+		asuhCountByName.set(key, (asuhCountByName.get(key) ?? 0) + Number(r.count));
+	}
+
+	const typeLabel: Record<string, string> = {
+		admin: 'Admin',
+		kepala_sekolah: 'Kepala Sekolah',
+		wali_kelas: 'Wali Kelas',
+		wali_asuh: 'Wali Asuh',
+		user: 'Guru'
+	};
+
+	const users = dedupedUsers.map((row) => {
+		const roles: string[] = [];
+		if (row.pegawaiId && kepalaPegawaiIds.has(row.pegawaiId)) roles.push('Kepala Sekolah');
+		if (row.pegawaiId) {
+			for (const nama of waliKelasByPegawai.get(row.pegawaiId) ?? []) roles.push(`Wali ${nama}`);
+		}
+		const asuhCount = asuhCountByName.get((row.pegawaiName ?? '').trim().toLowerCase()) ?? 0;
+		if (asuhCount > 0 || row.type === 'wali_asuh') {
+			roles.push(asuhCount > 0 ? `Wali Asuh (${asuhCount} murid)` : 'Wali Asuh');
+		}
+		if (!roles.length) roles.push(typeLabel[row.type] ?? row.type);
+		return { ...row, roles };
+	});
 
 	// fetch mata pelajaran to populate select in the inline-add row
 	const mataPelajaran = await db
@@ -497,6 +561,51 @@ export async function load({ url }) {
 		})
 		.from(tableMataPelajaran)
 		.limit(1000);
+
+	// Fetch many-to-many mapel & kelas assignments for each user (for edit modal pre-fill)
+	const allUserIds = users
+		.map((r) => r.id)
+		.filter((id): id is number => typeof id === 'number' && id > 0);
+	const [userMapelRows, userKelasRows] = allUserIds.length
+		? await Promise.all([
+				db
+					.select({
+						userId: tableAuthUserMataPelajaran.authUserId,
+						mataPelajaranId: tableAuthUserMataPelajaran.mataPelajaranId
+					})
+					.from(tableAuthUserMataPelajaran)
+					.where(inArray(tableAuthUserMataPelajaran.authUserId, allUserIds)),
+				db
+					.select({
+						userId: tableAuthUserKelas.authUserId,
+						kelasId: tableAuthUserKelas.kelasId
+					})
+					.from(tableAuthUserKelas)
+					.where(inArray(tableAuthUserKelas.authUserId, allUserIds))
+			])
+		: [[], []];
+
+	const userMapelMap = new Map<number, number[]>();
+	for (const row of userMapelRows) {
+		const arr = userMapelMap.get(row.userId) ?? [];
+		arr.push(row.mataPelajaranId);
+		userMapelMap.set(row.userId, arr);
+	}
+	const userKelasMap = new Map<number, number[]>();
+	for (const row of userKelasRows) {
+		const arr = userKelasMap.get(row.userId) ?? [];
+		arr.push(row.kelasId);
+		userKelasMap.set(row.userId, arr);
+	}
+
+	// Attach mapelIds/kelasIds to each user for edit modal
+	for (const user of users) {
+		const uid = user.id as number;
+		if (uid > 0) {
+			(user as Record<string, unknown>).mataPelajaranIds = userMapelMap.get(uid) ?? [];
+			(user as Record<string, unknown>).kelasIds = userKelasMap.get(uid) ?? [];
+		}
+	}
 
 	// fetch sekolah list so the Add User modal can offer a sekolah selection
 	const sekolahList = await db
@@ -561,7 +670,7 @@ export const actions = {
 		if (password) {
 			const passwordError = validatePasswordStrength(password);
 			if (passwordError) {
-				return new Response(passwordError, { status: 400 });
+				return fail(400, { message: passwordError });
 			}
 			const { hash, salt } = hashPassword(password);
 			updateData.passwordHash = hash;
@@ -570,7 +679,7 @@ export const actions = {
 		}
 
 		if (Object.keys(updateData).length === 0) {
-			return new Response('No changes provided', { status: 400 });
+			return fail(400, { message: 'Tidak ada perubahan' });
 		}
 
 		try {
@@ -587,7 +696,7 @@ export const actions = {
 			return { success: true, user: updated };
 		} catch (err) {
 			console.error('Failed to update user credentials', err);
-			return new Response(String(err), { status: 500 });
+			return fail(500, { message: 'Internal Error' });
 		}
 	},
 	create_user: async ({ request }) => {
@@ -597,6 +706,9 @@ export const actions = {
 		const password = String(form.get('password') ?? '').trim();
 		const nama = String(form.get('nama') ?? '').trim();
 		const roleValue = String(form.get('type') ?? 'user');
+		if (!(ALLOWED_USER_TYPES as readonly string[]).includes(roleValue)) {
+			return fail(400, { message: 'Tipe pengguna tidak valid.' });
+		}
 
 		// Parse multi-mapel: mataPelajaranIds adalah JSON array string
 		let mataPelajaranIds: number[] = [];
@@ -802,6 +914,183 @@ export const actions = {
 			return fail(500, { message: 'Internal Error' });
 		}
 	},
+
+	update_user: async ({ request }) => {
+		authority('user_set_permissions');
+		const form = await request.formData();
+		const id = Number(form.get('id'));
+		if (!id) return fail(400, { message: 'ID pengguna tidak valid.' });
+
+		const username = String(form.get('username') ?? '').trim();
+		const password = String(form.get('password') ?? '').trim();
+		const nama = String(form.get('nama') ?? '').trim();
+		const roleValue = String(form.get('type') ?? 'user');
+		if (!(ALLOWED_USER_TYPES as readonly string[]).includes(roleValue)) {
+			return fail(400, { message: 'Tipe pengguna tidak valid.' });
+		}
+
+		if (!username) return fail(400, { message: 'Username wajib diisi.' });
+
+		let mataPelajaranIds: number[] = [];
+		const mpRaw = form.get('mataPelajaranIds');
+		if (mpRaw) {
+			try {
+				const parsed = JSON.parse(String(mpRaw));
+				if (Array.isArray(parsed)) mataPelajaranIds = parsed.map(Number).filter((n) => !isNaN(n));
+			} catch {
+				/* ignore */
+			}
+		}
+
+		let kelasIds: number[] = [];
+		const kelasRaw = form.get('kelasIds');
+		if (kelasRaw) {
+			try {
+				const parsed = JSON.parse(String(kelasRaw));
+				if (Array.isArray(parsed)) kelasIds = parsed.map(Number).filter((n) => !isNaN(n));
+			} catch {
+				/* ignore */
+			}
+		}
+
+		const sekolahId = form.get('sekolahId') ? Number(form.get('sekolahId')) : null;
+		if (sekolahId) {
+			const exists = await db.query.tableSekolah.findFirst({
+				columns: { id: true },
+				where: eq(tableSekolah.id, sekolahId)
+			});
+			if (!exists) return fail(400, { message: 'Sekolah tidak valid.' });
+		}
+
+		try {
+			// Fetch existing user to diff
+			const existing = await db.query.tableAuthUser.findFirst({
+				columns: { id: true, pegawaiId: true, username: true, usernameNormalized: true },
+				where: eq(u.id, id)
+			});
+			if (!existing) return fail(404, { message: 'Pengguna tidak ditemukan.' });
+
+			// Validate password before transaction (return fail() inside tx callback is dead code)
+			let hashedPassword: { hash: string; salt: string } | null = null;
+			if (password) {
+				const passwordError = validatePasswordStrength(password);
+				if (passwordError) return fail(400, { message: passwordError });
+				hashedPassword = hashPassword(password);
+			}
+
+			// Transactional: update auth_user + pegawai + many-to-many
+			await db.transaction(async (tx) => {
+				// Update auth_user fields
+				const updateData: Record<string, unknown> = {};
+				if (username !== existing.username) {
+					updateData.username = username;
+					updateData.usernameNormalized = username.toLowerCase();
+				}
+				if (hashedPassword) {
+					updateData.passwordHash = hashedPassword.hash;
+					updateData.passwordSalt = hashedPassword.salt;
+					updateData.passwordUpdatedAt = new Date().toISOString();
+				}
+				updateData.type = roleValue;
+				updateData.sekolahId = sekolahId ?? null;
+				updateData.updatedAt = new Date().toISOString();
+				if (mataPelajaranIds.length === 1) {
+					updateData.mataPelajaranId = mataPelajaranIds[0];
+				} else {
+					updateData.mataPelajaranId = undefined;
+				}
+				if (kelasIds.length > 0) {
+					updateData.kelasId = kelasIds[0];
+				}
+
+				if (Object.keys(updateData).length > 0) {
+					await tx.update(u).set(updateData).where(eq(u.id, id));
+				}
+
+				// Update pegawai nama if provided
+				if (nama && existing.pegawaiId) {
+					await tx
+						.update(tablePegawai)
+						.set({ nama })
+						.where(eq(tablePegawai.id, existing.pegawaiId));
+				} else if (nama && !existing.pegawaiId) {
+					const [p] = await tx
+						.insert(tablePegawai)
+						.values({ nama, nip: '' })
+						.returning({ id: tablePegawai.id });
+					if (p) await tx.update(u).set({ pegawaiId: p.id }).where(eq(u.id, id));
+				}
+
+				// Sync many-to-many: delete existing then re-insert
+				await tx
+					.delete(tableAuthUserMataPelajaran)
+					.where(eq(tableAuthUserMataPelajaran.authUserId, id));
+				const ts = new Date().toISOString();
+				for (const mpId of mataPelajaranIds) {
+					try {
+						await tx.insert(tableAuthUserMataPelajaran).values({
+							authUserId: id,
+							mataPelajaranId: mpId,
+							createdAt: ts,
+							updatedAt: ts
+						});
+					} catch (err) {
+						if (!String(err).includes('UNIQUE')) throw err;
+					}
+				}
+
+				await tx.delete(tableAuthUserKelas).where(eq(tableAuthUserKelas.authUserId, id));
+				for (const kId of kelasIds) {
+					try {
+						await tx.insert(tableAuthUserKelas).values({
+							authUserId: id,
+							kelasId: kId,
+							createdAt: ts,
+							updatedAt: ts
+						});
+					} catch (err) {
+						if (!String(err).includes('UNIQUE')) throw err;
+					}
+				}
+			});
+
+			// Return updated user
+			const [updated] = await db
+				.select({
+					id: u.id,
+					username: u.username,
+					type: u.type,
+					passwordUpdatedAt: u.passwordUpdatedAt
+				})
+				.from(u)
+				.where(eq(u.id, id));
+
+			return {
+				success: true,
+				user: updated,
+				displayName: nama,
+				mataPelajaranIds,
+				kelasIds
+			};
+		} catch (err) {
+			console.error('Failed to update user', err);
+			const e = err as Record<string, unknown>;
+			const cause = (e.cause as Record<string, unknown> | undefined) ?? undefined;
+			const causeMsg = (
+				(cause && String(cause.message)) ||
+				(e.message && String(e.message)) ||
+				String(err)
+			).toString();
+			if (
+				causeMsg.includes('UNIQUE constraint failed') &&
+				causeMsg.includes('auth_user.username_normalized')
+			) {
+				return fail(400, { message: 'Username sudah digunakan' });
+			}
+			return fail(500, { message: 'Gagal memperbarui pengguna' });
+		}
+	},
+
 	delete_users: async ({ request }) => {
 		authority('user_delete');
 		let ids: number[] = [];

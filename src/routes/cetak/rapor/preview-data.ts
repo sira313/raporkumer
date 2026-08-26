@@ -56,8 +56,10 @@ const AGAMA_VARIANT_MAP: Record<string, string> = {
 	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
 	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
 	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	'khong hu cu': 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
+	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
+	kepercayaan: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
+	penghayat: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
+	'penghayat kepercayaan': 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti'
 };
 
 const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
@@ -272,11 +274,12 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 	const muridNama = muridNamaTrimmed.length > 0 ? muridNamaTrimmed : murid.nama;
 
 	const mapelJenisOrder: Record<string, number> = {
-		wajib: 0,
-		pilihan: 1,
-		kejuruan: 2,
-		pemberdayaan: 3,
-		mulok: 4
+		belum_dipetakan: 0,
+		wajib: 1,
+		pilihan: 2,
+		kejuruan: 3,
+		pemberdayaan: 4,
+		mulok: 5
 	};
 
 	const normalizeSubjectName = (value: string) => value.trim().toLocaleLowerCase(LOCALE_ID);
@@ -294,7 +297,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 		resolvePksVariantDisplayName(murid.agama) ?? PKS_BASE_SUBJECT;
 
 	function isAgamaSubject(name: string): boolean {
-		return normalizeText(name).startsWith('pendidikan agama');
+		// Mencakup varian "Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti".
+		return /^pendidikan (agama|kepercayaan)/i.test(normalizeText(name));
 	}
 
 	function isPksSubject(name: string): boolean {
@@ -376,8 +380,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			const isAgamaCore = priority?.core === 'pendidikan agama dan budi pekerti';
 			const tujuanScores = tujuanScoresByMapel.get(mapel.id) ?? [];
 
-			// Determine display name
-			let displayName = mapel.nama;
+			// Determine display name (nama lokal menang bila diisi)
+			let displayName = mapel.namaLokal || mapel.nama;
 
 			// Handle PAPB: if parent, show variant name; if variant, show as is
 			if (isAgamaCore && normalizedName === agamaParentNameNormalized) {
@@ -408,6 +412,11 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			};
 		})
 		.sort((a, b) => {
+			// Urutan manual mapel (kolom `urutan`) menang; sisanya pakai urutan lama
+			// (jenis → prioritas wajib → nama). Template tetap mengelompokkan per jenis.
+			const urutanA = a.mapel.urutan ?? Number.POSITIVE_INFINITY;
+			const urutanB = b.mapel.urutan ?? Number.POSITIVE_INFINITY;
+			if (urutanA !== urutanB) return urutanA - urutanB;
 			const orderA = mapelJenisOrder[a.mapel.jenis] ?? Number.POSITIVE_INFINITY;
 			const orderB = mapelJenisOrder[b.mapel.jenis] ?? Number.POSITIVE_INFINITY;
 			if (orderA !== orderB) return orderA - orderB;
@@ -435,7 +444,8 @@ export async function getRaporPreviewPayload({ locals, url }: RaporContext) {
 			mataPelajaran: entry.displayName,
 			nilaiAkhir: entry.nilaiAkhir,
 			deskripsi: entry.deskripsi,
-			jenis: entry.mapel.jenis as 'wajib' | 'pilihan' | 'mulok' | 'kejuruan' | 'pemberdayaan'
+			jenis: entry.mapel.jenis as
+				'belum_dipetakan' | 'wajib' | 'pilihan' | 'mulok' | 'kejuruan' | 'pemberdayaan'
 		}));
 
 	const ekstrakurikulerGrouped = new Map<

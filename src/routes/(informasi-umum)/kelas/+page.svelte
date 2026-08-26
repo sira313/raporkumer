@@ -34,7 +34,7 @@
 
 {#if academicContext}
 	{#if academicContext.activeSemesterId}
-		<div class="alert alert-info alert-soft mb-6 flex items-center gap-3">
+		<div class="alert alert-info alert-soft mb-4 flex items-center gap-3">
 			<Icon name="info" />
 			<span>
 				Menampilkan kelas untuk
@@ -54,7 +54,7 @@
 	{/if}
 {/if}
 
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
 	{#each daftarKelas as kelas (kelas.id)}
 		<div class="card bg-base-100 rounded-box shadow-md">
 			<div class="p-4">

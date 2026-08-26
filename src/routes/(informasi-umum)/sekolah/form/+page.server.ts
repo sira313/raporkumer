@@ -6,8 +6,8 @@ import {
 	deletePegawaiIfOrphaned,
 	findGuruPegawaiForKepalaSekolah
 } from '$lib/server/pengguna-merge.js';
-import { error } from '@sveltejs/kit';
-import { eq } from 'drizzle-orm';
+import { error, fail } from '@sveltejs/kit';
+import { eq, isNotNull } from 'drizzle-orm';
 import { authority } from '../../../pengguna/utils.server';
 
 export async function load({ url, locals }) {
@@ -47,10 +47,35 @@ export async function load({ url, locals }) {
 		sekolahToEdit = locals.sekolah;
 	}
 
+	// Daftar pendidik & tenaga pendidik untuk combobox "Nama Kepala Sekolah"
+	// (mirip logika "Nama Mata Pelajaran" pada Tambah Mata Pelajaran: bila data
+	// GTK hasil Sinkron Dapodik tersedia → pilih dari daftar, selain itu teks bebas).
+	const pegawaiRaw = await db
+		.select({
+			id: tablePegawai.id,
+			nama: tablePegawai.nama,
+			nip: tablePegawai.nip,
+			dapodikPtkId: tablePegawai.dapodikPtkId
+		})
+		.from(tablePegawai);
+	const seenNama = new Set<string>();
+	const pegawaiList = pegawaiRaw.filter((p) => {
+		const key = (p.nama || '').trim().toLowerCase();
+		if (!key || key === '-' || seenNama.has(key)) return false;
+		seenNama.add(key);
+		return true;
+	});
+
+	// Data Dapodik tersedia → nama & NIP kepala sekolah terkunci (ubah hanya
+	// lewat /pengaturan/profil masing-masing akun).
+	const dapodikAktif = pegawaiRaw.some((p) => Boolean(p.dapodikPtkId));
+
 	return {
 		isInit,
 		isNew,
 		sekolah: sekolahToEdit,
+		pegawaiList,
+		dapodikAktif,
 		meta: { title: isNew ? 'Tambah Sekolah' : 'Form Sekolah' }
 	};
 }
@@ -103,16 +128,67 @@ export const actions = {
 		// teaching hours). Reuse that existing guru pegawai instead of keeping a
 		// separate person record — otherwise the same name produces two accounts
 		// in /pengguna and two rows in presensi guru.
-		const kpNama = formSekolah.kepalaSekolah?.nama?.trim();
-		const kpNip = formSekolah.kepalaSekolah?.nip?.trim();
+		const dapodikAktif = await db
+			.select({ id: tablePegawai.id })
+			.from(tablePegawai)
+			.where(isNotNull(tablePegawai.dapodikPtkId))
+			.limit(1);
+		const lockKepalaSekolah = dapodikAktif.length > 0;
+		let kpNama = formSekolah.kepalaSekolah?.nama?.trim();
+		let kpNip = formSekolah.kepalaSekolah?.nip?.trim();
+		// Nilai nama/NIP yang ditulis ke pegawai kepala sekolah.
+		const kpValues: { nama: string; nip: string } = formSekolah.kepalaSekolah ?? {
+			nama: kpNama ?? '',
+			nip: kpNip ?? ''
+		};
+		const kepalaPegawaiIdRaw = Number(formData.get('kepalaSekolahId') ?? 0);
+		const kepalaPegawaiId =
+			Number.isInteger(kepalaPegawaiIdRaw) && kepalaPegawaiIdRaw > 0 ? kepalaPegawaiIdRaw : null;
 		const currentSekolah = formSekolah.id
 			? await db.query.tableSekolah.findFirst({
 					columns: { id: true, kepalaSekolahId: true },
 					where: eq(tableSekolah.id, +formSekolah.id)
 				})
 			: null;
+
+		// Mode terkunci (data Dapodik ada): kepala sekolah hanya bisa DIGANTI
+		// orangnya via pilihan daftar — identitas pegawai tidak pernah ditimpa.
+		let lockedKepalaTargetId: number | null = null;
+		if (currentSekolah && lockKepalaSekolah) {
+			let targetId: number | null = null;
+			if (kepalaPegawaiId && kepalaPegawaiId !== currentSekolah.kepalaSekolahId) {
+				const exists = await db.query.tablePegawai.findFirst({
+					columns: { id: true },
+					where: eq(tablePegawai.id, kepalaPegawaiId)
+				});
+				targetId = exists?.id ?? null;
+			}
+			if (!targetId && kpNama) {
+				// Nama persis sama dengan kepala sekolah tersimpan → tetap orang itu.
+				const stored = await db.query.tablePegawai.findFirst({
+					columns: { id: true, nama: true },
+					where: eq(tablePegawai.id, currentSekolah.kepalaSekolahId)
+				});
+				if (stored && stored.nama.trim().toLowerCase() === kpNama.toLowerCase()) {
+					targetId = currentSekolah.kepalaSekolahId;
+				}
+			}
+			if (!targetId) {
+				return fail(400, { fail: `Pilih Kepala Sekolah dari daftar.` });
+			}
+			lockedKepalaTargetId = targetId;
+			if (targetId === currentSekolah.kepalaSekolahId) {
+				const stored = await db.query.tablePegawai.findFirst({
+					columns: { nama: true, nip: true },
+					where: eq(tablePegawai.id, targetId)
+				});
+				kpNama = stored?.nama ?? kpNama;
+				kpNip = stored?.nip ?? kpNip;
+			}
+		}
+
 		const matchedKepalaPegawai =
-			currentSekolah && kpNama
+			!lockedKepalaTargetId && currentSekolah && kpNama
 				? await findGuruPegawaiForKepalaSekolah(
 						currentSekolah.id,
 						currentSekolah.kepalaSekolahId,
@@ -130,19 +206,25 @@ export const actions = {
 				if (!sekolah) error(404, `Data sekolah tidak ditemukan`);
 
 				let resolvedKepalaSekolahId = sekolah.kepalaSekolahId;
-				if (matchedKepalaPegawai) {
+				if (lockedKepalaTargetId) {
+					// Ganti orang tanpa rename — cukup tautkan sekolah ke pegawai lain.
+					resolvedKepalaSekolahId = lockedKepalaTargetId;
+					if (lockedKepalaTargetId !== sekolah.kepalaSekolahId) {
+						orphanedKepalaSekolahPegawaiId = sekolah.kepalaSekolahId;
+					}
+				} else if (matchedKepalaPegawai) {
 					// Link the kepala sekolah to the existing guru pegawai (the
 					// match already excludes the current kepala sekolah pegawai).
 					await db
 						.update(tablePegawai)
-						.set(formSekolah.kepalaSekolah)
+						.set(kpValues)
 						.where(eq(tablePegawai.id, matchedKepalaPegawai.id));
 					resolvedKepalaSekolahId = matchedKepalaPegawai.id;
 					orphanedKepalaSekolahPegawaiId = sekolah.kepalaSekolahId;
 				} else {
 					await db
 						.update(tablePegawai)
-						.set(formSekolah.kepalaSekolah)
+						.set(kpValues)
 						.where(eq(tablePegawai.id, sekolah.kepalaSekolahId));
 				}
 
@@ -175,12 +257,27 @@ export const actions = {
 				}
 
 				if (formSekolah.kepalaSekolah) {
-					const [pegawai] = await db
-						.insert(tablePegawai)
-						.values(formSekolah.kepalaSekolah)
-						.returning({ id: tablePegawai.id });
-					formSekolah.kepalaSekolahId = pegawai?.id;
-					formSekolahFinal.kepalaSekolahId = pegawai?.id;
+					// Combobox mengirim ID pegawai — reuse orang yang sudah ada
+					// (jangan buat duplikat) kecuali benar-benar teks baru.
+					const pickId = Number(formData.get('kepalaSekolahId') ?? 0);
+					const existingPegawai =
+						Number.isInteger(pickId) && pickId > 0
+							? await db.query.tablePegawai.findFirst({
+									columns: { id: true },
+									where: eq(tablePegawai.id, pickId)
+								})
+							: null;
+					if (existingPegawai) {
+						formSekolah.kepalaSekolahId = existingPegawai.id;
+						formSekolahFinal.kepalaSekolahId = existingPegawai.id;
+					} else {
+						const [pegawai] = await db
+							.insert(tablePegawai)
+							.values(formSekolah.kepalaSekolah)
+							.returning({ id: tablePegawai.id });
+						formSekolah.kepalaSekolahId = pegawai?.id;
+						formSekolahFinal.kepalaSekolahId = pegawai?.id;
+					}
 				}
 
 				const [newSekolah] = await db

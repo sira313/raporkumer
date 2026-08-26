@@ -12,6 +12,52 @@ import { cookieNames, findTitleByPath } from '$lib/utils.js';
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { resolveRoutePermission, WALI_KELAS_ONLY_PERMISSIONS } from './pengguna/permissions';
+
+type WaliKelasUser = {
+	type?: string;
+	id?: number;
+	kelasId?: number;
+	pegawaiId?: number;
+	permissions?: string[];
+};
+
+/**
+ * Verify whether a wali_kelas user is allowed to access the given kelas.
+ * Returns true if the kelas is their own, or if they have kelas_pindah
+ * permission AND the kelas is linked to them via waliKelasId or auth_user_kelas.
+ */
+async function verifyWaliKelasAccess(
+	user: WaliKelasUser,
+	targetKelasId: number,
+	ownKelasIds: number[],
+	sekolahId: number
+): Promise<boolean> {
+	const ownIds = ownKelasIds.length > 0 ? ownKelasIds : [Number(user.kelasId)];
+	if (ownIds.includes(targetKelasId)) return true;
+
+	const hasPindah = Array.isArray(user.permissions)
+		? user.permissions.includes('kelas_pindah')
+		: false;
+	if (!hasPindah) return false;
+
+	const requestedKelas = await db.query.tableKelas.findFirst({
+		columns: { id: true, waliKelasId: true },
+		where: and(eq(tableKelas.id, targetKelasId), eq(tableKelas.sekolahId, sekolahId))
+	});
+	if (!requestedKelas) return false;
+
+	if (requestedKelas.waliKelasId === user.pegawaiId) return true;
+
+	const hasKelasLink = await db.query.tableAuthUserKelas.findFirst({
+		columns: { id: true },
+		where: and(
+			eq(tableAuthUserKelas.authUserId, user.id!),
+			eq(tableAuthUserKelas.kelasId, targetKelasId)
+		)
+	});
+	return !!hasKelasLink;
+}
 
 export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) => {
 	depends('app:presensi-guru-enabled');
@@ -49,12 +95,15 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 		fase: string | null;
 		waliKelas: { id: number; nama: string } | null;
 	}> = [];
+	// Resolved wali kelas IDs for the active semester
+	let resolvedWaliOwnKelasIds: number[] = [];
 	if (sekolah?.id) {
 		const userWithType = user as { type?: string; id?: number; pegawaiId?: number } | null;
 		if (userWithType?.type === 'wali_kelas' && userWithType.pegawaiId) {
-			daftarKelas = await db.query.tableKelas.findMany({
-				columns: { id: true, nama: true, fase: true },
-				with: { waliKelas: { columns: { id: true, nama: true } } },
+			// Wali kelas: kelas sendiri (via waliKelasId) + kelas lain via auth_user_kelas
+			// (kelas_pindah permission) — guru mapel lintas kelas juga masuk sini.
+			const ownKelasRows = await db.query.tableKelas.findMany({
+				columns: { id: true },
 				where: academicContext?.activeSemesterId
 					? and(
 							eq(tableKelas.sekolahId, sekolah.id),
@@ -64,9 +113,29 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 					: and(
 							eq(tableKelas.sekolahId, sekolah.id),
 							eq(tableKelas.waliKelasId, userWithType.pegawaiId)
-						),
-				orderBy: asc(tableKelas.nama)
+						)
 			});
+			const ownKelasIds = new Set(ownKelasRows.map((r) => r.id));
+			resolvedWaliOwnKelasIds = [...ownKelasIds];
+			const additionalKelasRows = await db.query.tableAuthUserKelas.findMany({
+				columns: { kelasId: true },
+				where: eq(tableAuthUserKelas.authUserId, userWithType.id!)
+			});
+			const allKelasIds = new Set([...ownKelasIds, ...additionalKelasRows.map((r) => r.kelasId)]);
+			if (allKelasIds.size > 0) {
+				daftarKelas = await db.query.tableKelas.findMany({
+					columns: { id: true, nama: true, fase: true },
+					with: { waliKelas: { columns: { id: true, nama: true } } },
+					where: academicContext?.activeSemesterId
+						? and(
+								eq(tableKelas.sekolahId, sekolah.id),
+								inArray(tableKelas.id, [...allKelasIds]),
+								eq(tableKelas.semesterId, academicContext.activeSemesterId)
+							)
+						: and(eq(tableKelas.sekolahId, sekolah.id), inArray(tableKelas.id, [...allKelasIds])),
+					orderBy: asc(tableKelas.nama)
+				});
+			}
 		} else if (userWithType?.type === 'wali_asuh' && userWithType.pegawaiId) {
 			// Wali_asuh: only show classes that have their assigned students
 			const peg = await db.query.tablePegawai.findFirst({
@@ -169,82 +238,71 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 	if (kelasIdParam != null) {
 		const kelasIdNumber = Number(kelasIdParam);
 		if (Number.isInteger(kelasIdNumber)) {
-			// If the current user is a wali_kelas, they may only access their own kelas
-			// unless they have explicit permission `kelas_pindah` AND they own that kelas
 			if (user) {
-				const userWithType = user as {
-					type?: string;
-					id?: number;
-					kelasId?: number;
-					pegawaiId?: number;
-				};
+				const userWithType = user as WaliKelasUser;
 				if (userWithType.type === 'wali_kelas' && Number.isInteger(Number(userWithType.kelasId))) {
-					const allowed = Number(userWithType.kelasId);
-					if (kelasIdNumber !== allowed) {
-						// Check permission to access other kelas (via 'kelas_pindah')
-						const authUser = user as AuthUser;
-						const hasAccessOther = Array.isArray(authUser.permissions)
-							? authUser.permissions.includes('kelas_pindah')
-							: false;
-						if (!hasAccessOther) {
-							// Deny access when a wali_kelas tries to switch to another kelas via URL param
-							throw redirect(303, `/forbidden?required=kelas_id`);
-						}
-
-						// ADDED: Verify bahwa kelas yang diminta benar-benar milik wali ini
-						// (prevent user dari hacking URL ke kelas orang lain)
-						try {
-							const requestedKelas = await db.query.tableKelas.findFirst({
-								columns: { id: true, waliKelasId: true },
-								where: eq(tableKelas.id, kelasIdNumber)
-							});
-
-							// Wali hanya bisa akses kelas yang waliKelasId = pegawaiId mereka
-							if (!requestedKelas || requestedKelas.waliKelasId !== userWithType.pegawaiId) {
-								throw redirect(303, `/forbidden?required=kelas_id`);
-							}
-						} catch (err) {
-							if (err instanceof Error && err.message.includes('redirect')) throw err;
-							console.warn('[layout] failed to verify kelas ownership', err);
-							throw redirect(303, `/forbidden?required=kelas_id`);
-						}
+					const isAllowed = await verifyWaliKelasAccess(
+						userWithType,
+						kelasIdNumber,
+						resolvedWaliOwnKelasIds,
+						sekolah!.id
+					);
+					if (!isAllowed) {
+						throw redirect(303, `/forbidden?required=kelas_id`);
 					}
-				} else if (userWithType.type === 'user' && userWithType.id) {
-					// User type (guru): line 183 checks daftarKelas and skips if not found
 				}
 			}
 			kelasAktif = daftarKelas.find((kelas) => kelas.id === kelasIdNumber) ?? null;
 		}
 	}
 
-	// 2) If no explicit param, and the user is a wali_kelas, prefer their assigned kelas
-	if (!kelasAktif && user) {
-		const userWithType = user as { type?: string; kelasId?: number };
-		if (userWithType.type === 'wali_kelas' && userWithType.kelasId) {
-			const waliKelasId = Number(userWithType.kelasId);
-			if (Number.isInteger(waliKelasId)) {
-				// prefer kelas from daftarKelas (active semester), otherwise find same-named class
-				kelasAktif = daftarKelas.find((kelas) => kelas.id === waliKelasId) ?? null;
-				if (!kelasAktif) {
-					// user's kelasId points to a different semester's record; try to find the
-					// equivalent class name in the current active semester
-					const kelasRecord = await db.query.tableKelas.findFirst({
-						columns: { id: true, nama: true, fase: true },
-						where: eq(tableKelas.id, waliKelasId)
-					});
-					if (kelasRecord) {
-						kelasAktif = daftarKelas.find((k) => k.nama === kelasRecord.nama) ?? null;
+	// 2) Fall back to cookie candidate
+	if (!kelasAktif && kelasCookie) {
+		const kelasCookieNumber = Number(kelasCookie);
+		if (Number.isInteger(kelasCookieNumber)) {
+			kelasAktif = daftarKelas.find((kelas) => kelas.id === kelasCookieNumber) ?? null;
+
+			// For wali_kelas: verify cookie kelas is allowed (same rules as param)
+			if (kelasAktif && user) {
+				const userWithType = user as WaliKelasUser;
+				if (userWithType.type === 'wali_kelas' && Number.isInteger(Number(userWithType.kelasId))) {
+					try {
+						const isAllowed = await verifyWaliKelasAccess(
+							userWithType,
+							kelasCookieNumber,
+							resolvedWaliOwnKelasIds,
+							sekolah!.id
+						);
+						if (!isAllowed) kelasAktif = null;
+					} catch (err) {
+						console.warn('[layout] cookie kelas verification failed', err);
+						kelasAktif = null;
 					}
 				}
 			}
 		}
 	}
 
-	// 3) Next, fall back to cookie candidate
-	if (!kelasAktif && kelasCookie) {
-		const kelasCookieNumber = Number(kelasCookie);
-		if (Number.isInteger(kelasCookieNumber)) {
-			kelasAktif = daftarKelas.find((kelas) => kelas.id === kelasCookieNumber) ?? null;
+	// 3) If no cookie match, and the user is a wali_kelas/kepala_sekolah, prefer their assigned kelas
+	if (!kelasAktif && user) {
+		const userWithType = user as { type?: string; kelasId?: number };
+		if (userWithType.type === 'wali_kelas' && userWithType.kelasId) {
+			const resolvedId =
+				resolvedWaliOwnKelasIds.length > 0
+					? resolvedWaliOwnKelasIds[0]
+					: Number(userWithType.kelasId);
+			if (Number.isInteger(resolvedId)) {
+				kelasAktif = daftarKelas.find((kelas) => kelas.id === resolvedId) ?? null;
+				if (!kelasAktif) {
+					const kelasRecord = await db.query.tableKelas.findFirst({
+						columns: { id: true, nama: true, fase: true },
+						where: eq(tableKelas.id, resolvedId)
+					});
+					if (kelasRecord) {
+						kelasAktif = daftarKelas.find((k) => k.nama === kelasRecord.nama) ?? null;
+					}
+				}
+			}
 		}
 	}
 
@@ -280,6 +338,20 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 		kelasAktif = daftarKelas[0];
 	}
 
+	// Server-side guard: wali_kelas on non-own class cannot access wali-kelas-only pages.
+	if (user?.type === 'wali_kelas' && kelasAktif) {
+		const isOwnClass =
+			resolvedWaliOwnKelasIds.length > 0
+				? resolvedWaliOwnKelasIds.includes(kelasAktif.id)
+				: kelasAktif.id === Number(user.kelasId);
+		if (!isOwnClass) {
+			const required = resolveRoutePermission(url.pathname);
+			if (required && WALI_KELAS_ONLY_PERMISSIONS.has(required)) {
+				throw redirect(303, `/forbidden?required=${required}`);
+			}
+		}
+	}
+
 	// Enrich user with pegawai name when possible so client can display the
 	// human-readable name (e.g. in navbar alerts). Keep original shape
 	// otherwise. Also attach a small permission flag so client can easily
@@ -292,6 +364,14 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 		// - Other account types retain full access
 		const userType = (user as { type?: string }).type;
 		const canManageMapel = userType !== 'wali_asuh';
+		const canEditUrutan =
+			userType === 'admin' || userType === 'kepala_sekolah' || userType === 'wali_kelas';
+		const canAddImportMapel = canEditUrutan;
+
+		const resolvedKelasId =
+			userType === 'wali_kelas' && resolvedWaliOwnKelasIds.length > 0
+				? resolvedWaliOwnKelasIds[0]
+				: user.kelasId;
 
 		if (user.pegawaiId) {
 			const pegawaiRecord = await db.query.tablePegawai.findFirst({
@@ -300,11 +380,21 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 			});
 			// avoid `any` cast by using Object.assign to create a shallow clone
 			userForClient = Object.assign({}, user, {
+				kelasId: resolvedKelasId,
+				ownKelasIds: resolvedWaliOwnKelasIds,
 				pegawaiName: pegawaiRecord?.nama ?? null,
-				canManageMapel
+				canManageMapel,
+				canEditUrutan,
+				canAddImportMapel
 			});
 		} else {
-			userForClient = Object.assign({}, user, { canManageMapel });
+			userForClient = Object.assign({}, user, {
+				kelasId: resolvedKelasId,
+				ownKelasIds: resolvedWaliOwnKelasIds,
+				canManageMapel,
+				canEditUrutan,
+				canAddImportMapel
+			});
 		}
 	}
 

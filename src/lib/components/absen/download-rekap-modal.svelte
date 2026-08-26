@@ -73,7 +73,7 @@
 		<label class="fieldset flex flex-col gap-1">
 			<span class="fieldset-legend text-sm font-semibold">Bulan</span>
 			<select
-				class="select bg-base-200 dark:bg-base-300 w-full truncate border-base-300 dark:border-none"
+				class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
 				bind:value={bulan}
 			>
 				{#each bulanList as nama, i (nama)}
@@ -85,7 +85,7 @@
 			<span class="fieldset-legend text-sm font-semibold">Tahun</span>
 			<input
 				type="number"
-				class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+				class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
 				bind:value={tahun}
 				min="2000"
 				max="2099"

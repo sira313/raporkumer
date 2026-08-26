@@ -56,7 +56,7 @@
 		{#if isEditingBobot}
 			<input
 				type="number"
-				class="input input-bordered input-sm w-full shadow-none"
+				class="input bg-base-200 dark:bg-base-300 input-bordered input-sm w-full shadow-none"
 				min="0"
 				max="100"
 				step="0.01"

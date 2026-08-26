@@ -204,7 +204,7 @@
 				<label class="flex flex-col gap-1">
 					<span class="text-sm font-semibold">Status Kehadiran</span>
 					<select
-						class="select bg-base-200 w-full border-base-300 dark:border-none"
+						class="select bg-base-200 w-full dark:border-none"
 						bind:value={selectedStatus}
 						disabled={submitting}
 					>
@@ -227,7 +227,7 @@
 	{:else}
 		<div class="space-y-3">
 			<p class="text-base-content/80 text-sm">Buat paraf Bapak/Ibu pada kotak di bawah ini.</p>
-			<div class="border-base-300 overflow-hidden rounded-md border">
+			<div class="border-base-300 overflow-hidden rounded-md border bg-base-300">
 				<canvas
 					use:initCanvas
 					width={CANVAS_W}

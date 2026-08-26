@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, or, sql, type SQL } from 'drizzle-orm';
 import db from '$lib/server/db';
+import { getAksesMapelUser } from '$lib/server/mapel-access';
 import { ensureJurnalMengajarSchema } from '$lib/server/db/ensure-jurnal-mengajar';
 import {
 	tableJurnalMengajar,
@@ -38,11 +39,27 @@ export const GET = (async ({ locals, url }) => {
 	const tanggalMulai = url.searchParams.get('tanggal_mulai');
 	const tanggalSelesai = url.searchParams.get('tanggal_selesai');
 
-	// For guru mapel ('user' type), scope to their assigned subject only
-	const mataPelajaranFilter =
-		user?.type === 'user' && user?.mataPelajaranId
-			? eq(tableJurnalMengajar.mataPelajaranId, user.mataPelajaranId)
-			: undefined;
+	// For guru mapel ('user' type), scope to their assigned subjects only
+	// (ID assign, nama lintas kelas, keluarga agama/PKS, dan sub pembelajarannya).
+	let mataPelajaranFilter: SQL | undefined;
+	if (user?.type === 'user' && typeof user.id === 'number') {
+		// ponytail: targetKelasId tidak di-pass karena endpoint ini tidak punya
+		// konteks kelas aktif. rawNames bisa bocor lintas kelas untuk akun guru
+		// mapel yang di-assign di beberapa kelas — add when caller mulai pass kelas_id.
+		const akses = await getAksesMapelUser({ id: user.id, mataPelajaranId: user.mataPelajaranId });
+		const idList = Array.from(akses.ids);
+		const rawNama = Array.from(akses.rawNames);
+		mataPelajaranFilter =
+			idList.length || rawNama.length
+				? or(
+						idList.length ? inArray(tableJurnalMengajar.mataPelajaranId, idList) : undefined,
+						rawNama.length ? inArray(tableMataPelajaran.nama, rawNama) : undefined
+					)
+				: undefined;
+		if (!mataPelajaranFilter) {
+			throw error(403, 'Tidak ada mata pelajaran yang diizinkan');
+		}
+	}
 
 	if (!tanggalMulai || !tanggalSelesai) {
 		throw error(400, 'Parameter tanggal_mulai dan tanggal_selesai wajib diisi');

@@ -21,6 +21,7 @@
 		id: number;
 		no: number;
 		nama: string;
+		agamaLabel?: string | null;
 		nilaiAkhir: number | null;
 		nilaiAkhirRts: number | null;
 		naLingkup: number | null;
@@ -28,6 +29,7 @@
 		sas: number | null;
 		nilaiHref: string | null;
 		canNilai: boolean;
+		diisiUserLain?: boolean;
 	};
 
 	type PageState = {
@@ -43,7 +45,7 @@
 		selectedMapel: { id: number | null; nama: string } | null;
 		kelasAktif?: { nama?: string; fase?: string } | null;
 		daftarMurid: MuridRow[];
-		allowedAgamaForUser?: string | null;
+		allowedAgamaForUser?: string[];
 		page: PageState;
 	};
 
@@ -619,7 +621,7 @@
 	<div class="flex flex-col justify-between gap-2 sm:flex-row sm:flex-wrap">
 		<form class="w-full sm:max-w-80 md:max-w-80" method="get" use:autoSubmit>
 			<select
-				class="select bg-base-200 w-full truncate border-base-300 dark:border-none"
+				class="select bg-base-200 w-full truncate dark:border-none"
 				title="Pilih mata pelajaran"
 				name="mapel_id"
 				bind:value={selectedMapelValue}
@@ -668,7 +670,7 @@
 		data-sveltekit-replacestate
 		onsubmit={submitSearch}
 	>
-		<label class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none">
+		<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
 			<Icon name="search" />
 			<input
 				type="search"
@@ -725,9 +727,16 @@
 					{#each data.daftarMurid as murid (murid.id)}
 						<tr>
 							<td>{murid.no}</td>
-							<td>{@html searchQueryMarker(data.page.search, murid.nama)}</td>
 							<td>
-								{#if murid.nilaiAkhirRts != null}
+								{@html searchQueryMarker(data.page.search, murid.nama)}
+								{#if murid.agamaLabel}
+									<div class="text-[11px] font-normal opacity-70">{murid.agamaLabel}</div>
+								{/if}
+							</td>
+							<td>
+								{#if murid.diisiUserLain}
+									<span class="text-base-content/60 text-sm italic">Data diisi oleh user lain</span>
+								{:else if murid.nilaiAkhirRts != null}
 									<p class="font-semibold">{formatScore(murid.nilaiAkhirRts)}</p>
 									<div class="text-base-content/70 mt-1 text-xs">
 										{#if murid.naLingkup != null}
@@ -742,7 +751,9 @@
 								{/if}
 							</td>
 							<td>
-								{#if murid.nilaiAkhir != null}
+								{#if murid.diisiUserLain}
+									<span class="text-base-content/60 text-sm italic">Data diisi oleh user lain</span>
+								{:else if murid.nilaiAkhir != null}
 									<p class="font-semibold">{formatScore(murid.nilaiAkhir)}</p>
 									<div class="text-base-content/70 mt-1 text-xs">
 										{#if murid.naLingkup != null}
@@ -778,7 +789,7 @@
 											: murid.canNilai
 												? 'Pilih mata pelajaran'
 												: data.allowedAgamaForUser
-													? `Hanya untuk murid beragama ${data.allowedAgamaForUser}`
+													? `Hanya untuk murid beragama ${data.allowedAgamaForUser.join(' / ')}`
 													: 'Anda tidak memiliki izin untuk menilai murid ini'}
 									>
 										<Icon name="edit" />

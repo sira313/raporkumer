@@ -232,6 +232,8 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		const allowed =
 			event.url.pathname === '/pengaturan' ||
 			event.url.pathname === '/sekolah/form' ||
+			// Modal sync Dapodik dirender di atas /sekolah/form (init) — ikut diizinkan.
+			event.url.pathname === '/sekolah/form/sync-dapodik' ||
 			event.url.pathname === '/logout' ||
 			// The folder picker on /pengaturan ("Pilih Folder Root Data") uses
 			// this API — without it, the fetch gets redirected to the HTML page
@@ -341,6 +343,9 @@ const cookieParser: Handle = async ({ event, resolve }) => {
 	if (
 		!sekolah?.id &&
 		event.route.id != '/(informasi-umum)/sekolah/form' &&
+		// Modal sinkronisasi Dapodik dirender di atas /sekolah/form; tetap harus
+		// bisa dimuat saat init agar tombolnya berfungsi sebelum sekolah disimpan.
+		event.route.id != '/(informasi-umum)/sekolah/form/sync-dapodik' &&
 		event.route.id != '/api/database/import'
 	) {
 		throw redirect(303, `/sekolah/form?init`);

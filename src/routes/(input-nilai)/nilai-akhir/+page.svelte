@@ -4,9 +4,10 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
-	import { searchQueryMarker } from '$lib/utils';
+	import { modalRoute, searchQueryMarker } from '$lib/utils';
 	import { onDestroy } from 'svelte';
 	import LegerDownload from '$lib/components/LegerDownload.svelte';
+	import KirimDapodikPage from './kirim-dapodik/+page.svelte';
 
 	let { data } = $props();
 	// svelte-ignore state_referenced_locally
@@ -30,6 +31,10 @@
 		};
 	});
 	const kelasAktif = $derived(page.data.kelasAktif ?? null);
+	const isAdmin = $derived(
+		(page.data.user as { type?: string } | null | undefined)?.type === 'admin' ||
+			(page.data.user as { type?: string } | null | undefined)?.type === 'kepala_sekolah'
+	);
 	const kelasAktifLabel = $derived.by(() => {
 		if (!kelasAktif) return null;
 		return kelasAktif.fase ? `${kelasAktif.nama} - ${kelasAktif.fase}` : kelasAktif.nama;
@@ -145,14 +150,26 @@
 {/if}
 
 <div class="card bg-base-100 rounded-lg border border-none p-4 shadow-md">
-	<div class="mb-4 flex flex-col gap-2 sm:flex-row sm:justify-between">
+	<div class="mb-4">
 		<div>
 			<h2 class="text-xl font-bold">Rekapitulasi Nilai Akhir</h2>
 			{#if kelasAktifLabel}
 				<p class="text-base-content/80 block text-sm">{kelasAktifLabel}</p>
 			{/if}
 		</div>
-		<LegerDownload kelasId={kelasAktif?.id ?? null} />
+		<div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+			<LegerDownload kelasId={kelasAktif?.id ?? null} />
+			{#if kelasAktif && isAdmin}
+				<a
+					class="btn btn-primary shadow-none max-sm:w-full"
+					href="/nilai-akhir/kirim-dapodik"
+					use:modalRoute={'kirim-dapodik'}
+				>
+					<Icon name="dapodik" />
+					Kirim ke Dapodik
+				</a>
+			{/if}
+		</div>
 	</div>
 
 	<div class="stats dark:bg-base-200 shadow-md">
@@ -187,7 +204,7 @@
 		onsubmit={submitSearch}
 	>
 		<!-- Cari nama murid -->
-		<label class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none">
+		<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
 			<Icon name="search" />
 			<input
 				type="search"
@@ -302,3 +319,30 @@
 		{/each}
 	</div>
 </div>
+
+{#if page.state.modal?.name === 'kirim-dapodik'}
+	<dialog
+		class="modal"
+		onclose={() => history.back()}
+		onclick={(e) => {
+			const rect = e.currentTarget.querySelector('.modal-box')?.getBoundingClientRect();
+			if (
+				rect &&
+				(e.clientX < rect.left ||
+					e.clientX > rect.right ||
+					e.clientY < rect.top ||
+					e.clientY > rect.bottom)
+			) {
+				e.currentTarget.close();
+			}
+		}}
+		open
+	>
+		<div class="modal-box flex max-h-[90vh] flex-col p-4 sm:w-full sm:max-w-xl">
+			<KirimDapodikPage data={page.state.modal?.data} />
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
+	</dialog>
+{/if}

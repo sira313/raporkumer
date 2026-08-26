@@ -250,7 +250,7 @@
 		data-sveltekit-replacestate
 		onsubmit={submitSearch}
 	>
-		<label class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none">
+		<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
 			<Icon name="search" />
 			<input
 				type="search"
@@ -297,7 +297,7 @@
 										<label class="flex flex-col gap-2" aria-busy={submitting}>
 											<textarea
 												bind:this={editingTextarea}
-												class="textarea textarea-bordered bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none"
+												class="textarea textarea-bordered bg-base-200 dark:bg-base-300 w-full dark:border-none"
 												name="catatan"
 												rows="4"
 												bind:value={editingCatatan}

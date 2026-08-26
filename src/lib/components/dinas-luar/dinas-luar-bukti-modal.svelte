@@ -230,7 +230,7 @@
 		</legend>
 		<input
 			type="file"
-			class="file-input bg-base-200 w-full border-base-300 dark:border-none"
+			class="file-input bg-base-200 w-full dark:border-none"
 			accept=".pdf,application/pdf"
 			onchange={handlePdfChange}
 			disabled={submitting}
@@ -246,7 +246,7 @@
 		</legend>
 		<input
 			type="file"
-			class="file-input bg-base-200 w-full border-base-300 dark:border-none"
+			class="file-input bg-base-200 w-full dark:border-none"
 			accept="image/jpeg,image/png,image/webp"
 			multiple
 			onchange={handleFotoChange}

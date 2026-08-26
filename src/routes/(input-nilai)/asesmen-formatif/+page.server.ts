@@ -3,12 +3,14 @@ import {
 	tableAsesmenFormatif,
 	tableMataPelajaran,
 	tableMurid,
-	tableTujuanPembelajaran,
-	tableAuthUserMataPelajaran
+	tableTujuanPembelajaran
 } from '$lib/server/db/schema';
 import { ensureAsesmenFormatifSchema } from '$lib/server/db/ensure-asesmen-formatif';
+import { getAksesMapelUser, needsMapelFilter } from '$lib/server/mapel-access';
+import { labelVarianUntukMurid, muridAgamaKey } from '$lib/server/mapel-picker';
 import { asc, and, eq, inArray } from 'drizzle-orm';
 import { redirect } from '@sveltejs/kit';
+import { agamaMapelOptions, pksMapelOptions } from '$lib/statics';
 
 const CATEGORY_LABEL: Record<ProgressCategory, string> = {
 	'sangat-baik': 'Sangat baik',
@@ -22,45 +24,22 @@ const DEFAULT_LINGKUP = 'Tanpa lingkup materi';
 const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
 const AGAMA_MAPEL_VALUE = 'agama';
 
-const AGAMA_VARIANT_MAP: Record<string, string> = {
-	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
-	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
-	protestan: 'Pendidikan Agama Kristen dan Budi Pekerti',
-	katolik: 'Pendidikan Agama Katolik dan Budi Pekerti',
-	katholik: 'Pendidikan Agama Katolik dan Budi Pekerti',
-	hindu: 'Pendidikan Agama Hindu dan Budi Pekerti',
-	budha: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	'khong hu cu': 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti'
-};
-
 const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
+const AGAMA_VARIANT_NAMES = agamaMapelOptions
+	.filter((option) => option.key !== 'umum')
+	.map((option) => normalizeText(option.name));
+const PKS_VARIANT_NAMES = pksMapelOptions
+	.filter((option) => option.key !== 'umum')
+	.map((option) => normalizeText(option.name));
 const PKS_MAPEL_VALUE = 'pks';
-
-const PKS_VARIANT_MAP: Record<string, string> = {
-	islam: 'Pendalaman Kitab Suci Islam',
-	kristen: 'Pendalaman Kitab Suci Kristen',
-	protestan: 'Pendalaman Kitab Suci Kristen',
-	katolik: 'Pendalaman Kitab Suci Katolik',
-	katholik: 'Pendalaman Kitab Suci Katolik',
-	hindu: 'Pendalaman Kitab Suci Hindu',
-	budha: 'Pendalaman Kitab Suci Buddha',
-	buddha: 'Pendalaman Kitab Suci Buddha',
-	buddhist: 'Pendalaman Kitab Suci Buddha',
-	khonghucu: 'Pendalaman Kitab Suci Khonghucu',
-	'khong hu cu': 'Pendalaman Kitab Suci Khonghucu',
-	konghucu: 'Pendalaman Kitab Suci Khonghucu'
-};
 
 function normalizeText(value: string | null | undefined) {
 	return value?.trim().toLowerCase() ?? '';
 }
 
 function isAgamaSubject(name: string) {
-	return normalizeText(name).startsWith('pendidikan agama');
+	// Mencakup varian "Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti".
+	return /^pendidikan (agama|kepercayaan)/i.test(normalizeText(name));
 }
 
 function isPksSubject(name: string) {
@@ -68,13 +47,15 @@ function isPksSubject(name: string) {
 }
 
 function resolveAgamaVariantName(agama: string | null | undefined) {
-	const normalized = normalizeText(agama);
-	return AGAMA_VARIANT_MAP[normalized] ?? null;
+	// Ejaan mengikuti $lib/statics (sumber nama baris DB) agar pencocokan
+	// mapelByName selalu cocok — termasuk varian Konghuchu & Kepercayaan.
+	const key = muridAgamaKey(agama);
+	return agamaMapelOptions.find((option) => option.key === key)?.name ?? null;
 }
 
 function resolvePksVariantName(agama: string | null | undefined) {
-	const normalized = normalizeText(agama);
-	return PKS_VARIANT_MAP[normalized] ?? null;
+	const key = muridAgamaKey(agama);
+	return pksMapelOptions.find((option) => option.key === key)?.name ?? null;
 }
 
 type ProgressCategory = 'sangat-baik' | 'baik' | 'perlu-pendalaman' | 'perlu-bimbingan';
@@ -145,7 +126,7 @@ export async function load({ parent, url, depends }) {
 	}
 
 	let mapelRecords = await db.query.tableMataPelajaran.findMany({
-		columns: { id: true, nama: true },
+		columns: { id: true, nama: true, namaLokal: true },
 		where: eq(tableMataPelajaran.kelasId, kelasAktif.id),
 		orderBy: asc(tableMataPelajaran.nama)
 	});
@@ -161,95 +142,38 @@ export async function load({ parent, url, depends }) {
 	// default to it in the UI. This does NOT grant them wider grading
 	// access; that remains restricted to their assigned variant.
 	let treatAssignedAgamaVariantAsBase = false;
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.id) {
+	let userAkses: Awaited<ReturnType<typeof getAksesMapelUser>> | null = null;
+	if (needsMapelFilter(maybeUser, kelasAktif?.id ?? null) && maybeUser?.id) {
 		try {
-			// First check join table auth_user_mata_pelajaran for multi-mapel support
-			const multiMapels = await db.query.tableAuthUserMataPelajaran.findMany({
-				columns: { mataPelajaranId: true },
-				where: eq(tableAuthUserMataPelajaran.authUserId, maybeUser.id)
-			});
+			userAkses = await getAksesMapelUser(
+				{
+					id: maybeUser.id,
+					mataPelajaranId: maybeUser.mataPelajaranId
+				},
+				kelasAktif?.id ?? null
+			);
+			mapelRecords = mapelRecords.filter(
+				(r) => userAkses!.ids.has(r.id) || userAkses!.names.has(normalizeText(r.nama))
+			);
 
-			if (multiMapels.length > 0) {
-				// Get mapel names from join table assignments
-				const assignedMapels = await db.query.tableMataPelajaran.findMany({
-					columns: { id: true, nama: true },
-					where: inArray(
-						tableMataPelajaran.id,
-						multiMapels.map((m) => m.mataPelajaranId)
-					)
-				});
-
-				// Build a set of allowed mapel names (normalize for comparison)
-				const allowedNames = new Set(assignedMapels.map((m) => normalizeText(m.nama)));
-
-				// Check if any assigned mapel is an agama variant
-				let hasAgamaVariant = false;
-				for (const record of assignedMapels) {
-					const norm = normalizeText(record.nama);
-					if (norm.startsWith('pendidikan agama') && norm !== normalizeText(AGAMA_BASE_SUBJECT)) {
-						hasAgamaVariant = true;
-						break;
-					}
-				}
-
-				// Check for PKS variants
-				const pksVariantValues = new Set(
-					Object.values(PKS_VARIANT_MAP).map((v) => normalizeText(v))
-				);
-				let hasPksVariant = false;
-				for (const record of assignedMapels) {
-					const norm = normalizeText(record.nama);
-					if (pksVariantValues.has(norm)) {
-						hasPksVariant = true;
-						break;
-					}
-				}
-
-				// If has agama variant, also add the parent agama mapel name
-				if (hasAgamaVariant) {
-					allowedNames.add(normalizeText(AGAMA_BASE_SUBJECT));
+			// Detect agama/PKS variants for default selection behaviour
+			for (const name of userAkses.names) {
+				if (name.startsWith('pendidikan agama') && name !== normalizeText(AGAMA_BASE_SUBJECT)) {
 					treatAssignedAgamaVariantAsBase = true;
+					break;
 				}
-
-				// If has PKS variant, also add the parent PKS mapel name
-				if (hasPksVariant) {
-					allowedNames.add(normalizeText(PKS_BASE_SUBJECT));
-					treatAssignedAgamaVariantAsBase = true;
-				}
-
-				// Filter current kelas' mapel by name match
-				mapelRecords = mapelRecords.filter((r) => {
-					const rNorm = normalizeText(r.nama);
-					return allowedNames.has(rNorm);
-				});
-			} else if (maybeUser.mataPelajaranId) {
-				// Fallback: check legacy single mataPelajaranId column
-				const assigned = await db.query.tableMataPelajaran.findFirst({
-					columns: { id: true, nama: true },
-					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
-				});
-				if (assigned && assigned.nama) {
-					const norm = normalizeText(assigned.nama);
-					const agamaVariantValues = new Set(
-						Object.values(AGAMA_VARIANT_MAP).map((v) => normalizeText(v))
-					);
-					const pksVariantValues = new Set(
-						Object.values(PKS_VARIANT_MAP).map((v) => normalizeText(v))
-					);
-					// If assigned to a known agama or PKS variant, do NOT lock mapelRecords to the
-					// variant. Instead show the base subject and let the select
-					// default to the base (handled further down).
-					if (agamaVariantValues.has(norm) || pksVariantValues.has(norm)) {
+			}
+			if (!treatAssignedAgamaVariantAsBase) {
+				const pksVariantValues = new Set(PKS_VARIANT_NAMES);
+				for (const name of userAkses.names) {
+					if (pksVariantValues.has(name)) {
 						treatAssignedAgamaVariantAsBase = true;
-					} else {
-						mapelRecords = mapelRecords.filter((r) => normalizeText(r.nama) === norm);
+						break;
 					}
-				} else {
-					mapelRecords = mapelRecords.filter((r) => r.id === Number(maybeUser.mataPelajaranId));
 				}
 			}
 		} catch (err) {
-			console.warn('[asesmen-formatif] Failed to resolve assigned mapel name', err);
+			console.warn('[asesmen-formatif] Failed to resolve assigned mapel', err);
 		}
 	}
 
@@ -259,7 +183,7 @@ export async function load({ parent, url, depends }) {
 	// grades students of their agama.
 	let assignedLocalMapelId: number | null = null;
 	let assignedIsAgamaVariant = false;
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.mataPelajaranId) {
+	if (needsMapelFilter(maybeUser, kelasAktif?.id ?? null) && maybeUser?.mataPelajaranId) {
 		try {
 			const assigned = await db.query.tableMataPelajaran.findFirst({
 				columns: { id: true, nama: true },
@@ -293,79 +217,16 @@ export async function load({ parent, url, depends }) {
 		// keep assignedIsAgamaVariant as detected above
 	}
 
-	// Derive human readable agama labels for the assigned agama/PKS variant(s).
-	// Support both multi-mapel (join table) and legacy single-mapel.
 	const allowedAgamaVariants = new Set<string>();
-	if (maybeUser && maybeUser.type === 'user' && maybeUser.id) {
-		try {
-			// First try multi-mapel from join table
-			const multiMapels = await db.query.tableAuthUserMataPelajaran.findMany({
-				columns: { mataPelajaranId: true },
-				where: eq(tableAuthUserMataPelajaran.authUserId, maybeUser.id)
-			});
-
-			if (multiMapels.length > 0) {
-				// Get mapel names from join table assignments
-				const assignedMapels = await db.query.tableMataPelajaran.findMany({
-					columns: { id: true, nama: true },
-					where: inArray(
-						tableMataPelajaran.id,
-						multiMapels.map((m) => m.mataPelajaranId)
-					)
-				});
-
-				for (const mapel of assignedMapels) {
-					const nm = normalizeText(mapel.nama);
-					// Check both agama and PKS variants
-					if (nm.startsWith('pendidikan agama') || nm.startsWith('pendalaman kitab suci')) {
-						if (nm.includes('katolik')) allowedAgamaVariants.add('Katolik');
-						else if (nm.includes('kristen') || nm.includes('protestan'))
-							allowedAgamaVariants.add('Kristen');
-						else if (nm.includes('islam')) allowedAgamaVariants.add('Islam');
-						else if (nm.includes('hindu')) allowedAgamaVariants.add('Hindu');
-						else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
-							allowedAgamaVariants.add('Buddha');
-						else if (
-							nm.includes('khonghucu') ||
-							nm.includes('konghucu') ||
-							nm.includes('khong hu cu')
-						)
-							allowedAgamaVariants.add('Khonghucu');
-					}
-				}
-			} else if (maybeUser.mataPelajaranId) {
-				// Fallback: check legacy single mataPelajaranId
-				const assignedRec = await db.query.tableMataPelajaran.findFirst({
-					columns: { id: true, nama: true },
-					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
-				});
-				if (assignedRec && assignedRec.nama) {
-					const nm = normalizeText(assignedRec.nama);
-					// Check both agama and PKS variants
-					if (nm.startsWith('pendidikan agama') || nm.startsWith('pendalaman kitab suci')) {
-						if (nm.includes('katolik')) allowedAgamaVariants.add('Katolik');
-						else if (nm.includes('kristen') || nm.includes('protestan'))
-							allowedAgamaVariants.add('Kristen');
-						else if (nm.includes('islam')) allowedAgamaVariants.add('Islam');
-						else if (nm.includes('hindu')) allowedAgamaVariants.add('Hindu');
-						else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
-							allowedAgamaVariants.add('Buddha');
-						else if (
-							nm.includes('khonghucu') ||
-							nm.includes('konghucu') ||
-							nm.includes('khong hu cu')
-						)
-							allowedAgamaVariants.add('Khonghucu');
-					}
-				}
+	if (userAkses) {
+		for (const option of [...agamaMapelOptions, ...pksMapelOptions]) {
+			if (option.key !== 'umum' && userAkses.names.has(normalizeText(option.name))) {
+				allowedAgamaVariants.add(option.label);
 			}
-		} catch (err) {
-			console.warn('[asesmen-formatif] Failed to resolve assigned agama/PKS variants', err);
 		}
 	}
 
-	const allowedAgamaForUser =
-		allowedAgamaVariants.size > 0 ? Array.from(allowedAgamaVariants)[0] : null;
+	const allowedAgamaForUser: string[] = Array.from(allowedAgamaVariants);
 
 	let agamaBaseMapel: (typeof mapelRecords)[number] | null = null;
 	const agamaVariantRecords: typeof mapelRecords = [];
@@ -387,7 +248,10 @@ export async function load({ parent, url, depends }) {
 				pksVariantRecords.push(record);
 			}
 		} else {
-			regularOptions.push({ value: String(record.id), nama: record.nama });
+			regularOptions.push({
+				value: String(record.id),
+				nama: record.namaLokal?.trim() || record.nama
+			});
 		}
 	}
 
@@ -570,7 +434,12 @@ export async function load({ parent, url, depends }) {
 			? pksBaseMapel
 				? { id: pksBaseMapel.id, nama: pksBaseMapel.nama }
 				: { id: null, nama: PKS_BASE_SUBJECT }
-			: selectedMapelRecord;
+			: selectedMapelRecord
+				? {
+						id: selectedMapelRecord.id,
+						nama: selectedMapelRecord.namaLokal?.trim() || selectedMapelRecord.nama
+					}
+				: null;
 
 	const muridRecords = await db.query.tableMurid.findMany({
 		columns: { id: true, nama: true, agama: true },
@@ -745,6 +614,41 @@ export async function load({ parent, url, depends }) {
 
 	const daftarMurid = paginatedMuridRecords.map((murid, index) => {
 		const targetMapelId = pickMapelIdForMurid(murid.agama);
+		const agamaLabel =
+			isAgamaSelected || isPksSelected
+				? labelVarianUntukMurid(selectedMapel?.nama ?? '', murid.agama)
+				: null;
+
+		const canAccess = (() => {
+			if (!maybeUser || maybeUser.type !== 'user') return true;
+
+			if ((isAgamaSelected || isPksSelected) && allowedAgamaVariants.size > 0) {
+				// Hanya murid dengan agama varian yang diajar guru (termasuk sub-nya).
+				const label = labelVarianUntukMurid(selectedMapel?.nama ?? '', murid.agama);
+				return !!label && allowedAgamaVariants.has(label);
+			}
+
+			// For non-agama and non-PKS mapel, check standard assignment
+			if (!assignedIsAgamaVariant) return true;
+			if (!assignedLocalMapelId) return false;
+			return targetMapelId === assignedLocalMapelId;
+		})();
+
+		// Murid di luar varian/mapel guru: jangan bocorkan progres milik guru lain.
+		if (!canAccess) {
+			return {
+				id: murid.id,
+				nama: murid.nama,
+				agamaLabel,
+				no: offset + index + 1,
+				progressText: 'Data diisi oleh user lain.',
+				progressSummaryParts: [] as ProgressSummaryPart[],
+				hasPenilaian: false,
+				nilaiHref: null,
+				canNilai: false
+			};
+		}
+
 		const asesmen = asesmenByMurid.get(murid.id) ?? new Map();
 		const tujuanList = targetMapelId ? (tujuanByMapel.get(targetMapelId) ?? []) : [];
 		const groupedTujuan = targetMapelId
@@ -786,74 +690,10 @@ export async function load({ parent, url, depends }) {
 			progressText = buildSummarySentence(progressSummaryParts) ?? 'Belum ada nilai.';
 		}
 
-		const canAccess = (() => {
-			if (!maybeUser || maybeUser.type !== 'user') return true;
-
-			// If agama is selected and user has assigned agama variants, restrict by agama
-			if (isAgamaSelected && allowedAgamaVariants.size > 0) {
-				const muridVariant = resolveAgamaVariantName(murid.agama);
-				const muridAgamaDisplay = muridVariant
-					? (() => {
-							const nm = normalizeText(muridVariant);
-							if (nm.includes('katolik')) return 'Katolik';
-							else if (nm.includes('kristen') || nm.includes('protestan')) return 'Kristen';
-							else if (nm.includes('islam')) return 'Islam';
-							else if (nm.includes('hindu')) return 'Hindu';
-							else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
-								return 'Buddha';
-							else if (
-								nm.includes('khonghucu') ||
-								nm.includes('konghucu') ||
-								nm.includes('khong hu cu')
-							)
-								return 'Khonghucu';
-							return null;
-						})()
-					: null;
-
-				// Allow access only if murid's agama is in user's assigned agama variants
-				const allowed = muridAgamaDisplay && allowedAgamaVariants.has(muridAgamaDisplay);
-
-				return allowed ?? false;
-			}
-
-			// If PKS is selected and user has assigned agama variants, restrict by agama (PKS follows same logic)
-			if (isPksSelected && allowedAgamaVariants.size > 0) {
-				const muridVariant = resolvePksVariantName(murid.agama);
-				const muridAgamaDisplay = muridVariant
-					? (() => {
-							const nm = normalizeText(muridVariant);
-							if (nm.includes('katolik')) return 'Katolik';
-							else if (nm.includes('kristen') || nm.includes('protestan')) return 'Kristen';
-							else if (nm.includes('islam')) return 'Islam';
-							else if (nm.includes('hindu')) return 'Hindu';
-							else if (nm.includes('buddha') || nm.includes('budha') || nm.includes('buddhist'))
-								return 'Buddha';
-							else if (
-								nm.includes('khonghucu') ||
-								nm.includes('konghucu') ||
-								nm.includes('khong hu cu')
-							)
-								return 'Khonghucu';
-							return null;
-						})()
-					: null;
-
-				// Allow access only if murid's agama is in user's assigned PKS variants
-				const allowed = muridAgamaDisplay && allowedAgamaVariants.has(muridAgamaDisplay);
-
-				return allowed ?? false;
-			}
-
-			// For non-agama and non-PKS mapel, check standard assignment
-			if (!assignedIsAgamaVariant) return true;
-			if (!assignedLocalMapelId) return false;
-			return targetMapelId === assignedLocalMapelId;
-		})();
-
 		return {
 			id: murid.id,
 			nama: murid.nama,
+			agamaLabel,
 			no: offset + index + 1,
 			progressText,
 			progressSummaryParts,

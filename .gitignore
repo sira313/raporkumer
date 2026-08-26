@@ -52,3 +52,8 @@ vite.config.ts.timestamp-*
 
 # csrf
 /data/csrf-origins.txt
+/data/csrf-origins.txt.sample
+
+# ai local config
+opencode.json
+openclaw.json

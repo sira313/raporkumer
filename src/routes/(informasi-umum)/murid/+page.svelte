@@ -266,7 +266,7 @@
 
 {#if academicContext}
 	{#if academicContext.activeSemesterId}
-		<div class="alert alert-info alert-soft mb-6 flex items-center gap-3">
+		<div class="alert alert-info alert-soft mb-4 flex items-center gap-3">
 			<Icon name="info" />
 			<span>
 				Menampilkan data murid untuk
@@ -371,7 +371,7 @@
 		onsubmit={submitSearch}
 	>
 		<!-- Cari nama murid -->
-		<label class="input bg-base-200 dark:bg-base-300 w-full border-base-300 dark:border-none">
+		<label class="input bg-base-200 dark:bg-base-300 w-full dark:border-none">
 			<Icon name="search" />
 			<input
 				type="search"

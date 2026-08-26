@@ -2,12 +2,16 @@
 	/* eslint-disable svelte/no-navigation-without-resolve -- small helper link/button uses are intentional here */
 	import Icon from '$lib/components/icon.svelte';
 	import FormEnhance from '$lib/components/form-enhance.svelte';
-	import { invalidate } from '$app/navigation';
+	import { invalidate, goto } from '$app/navigation';
+	import MuridPicker from '$lib/components/asesmen-sumatif/murid-picker.svelte';
 	import { checkboxArrowNavigation } from '$lib/utils/checkbox-navigation';
 
 	type EntryStatus = 'ya' | 'tidak' | null;
 	type PageData = {
 		murid: { id: number; nama: string };
+		kelasId: number;
+		mapelList: { id: number; nama: string }[];
+		pickerMapelId: number;
 		mapel: { id: number; nama: string };
 		entries: Array<{
 			index: number;
@@ -38,6 +42,18 @@
 
 	// svelte-ignore state_referenced_locally
 	const kembaliHref = `/asesmen-formatif?mapel_id=${data.mapel.id}`;
+
+	// Navigasi antar murid/mapel memakai route yang sama (komponen tidak remount) —
+	// bersihkan override agar status murid/mapel baru terbaca dari data server.
+	$effect(() => {
+		void data.murid.id;
+		void data.mapel.id;
+		overrides = {};
+	});
+
+	// Pemilih murid & mapel (komponen bersama) — isDirty dipakai untuk
+	// konfirmasi sebelum pindah agar penilaian yang belum tersimpan tidak hilang.
+	const isDirty = $derived(Object.keys(overrides).length > 0);
 
 	function toggleEntry(
 		index: number,
@@ -79,6 +95,24 @@
 		await invalidate('app:asesmen-formatif/formulir');
 		overrides = {};
 	}
+
+	async function pilihMapel(event: Event) {
+		const select = event.currentTarget as HTMLSelectElement;
+		const mapelId = Number(select.value);
+		if (!Number.isInteger(mapelId) || mapelId === data.pickerMapelId) return;
+		if (
+			isDirty &&
+			!confirm(
+				'Masih ada perubahan penilaian yang belum disimpan. Pindah mapel akan membuangnya. Lanjutkan?'
+			)
+		) {
+			select.value = String(data.pickerMapelId);
+			return;
+		}
+		await goto(`/asesmen-formatif/formulir-asesmen?murid_id=${data.murid.id}&mapel_id=${mapelId}`, {
+			keepFocus: true
+		});
+	}
 </script>
 
 <div class="bg-base-100 rounded-lg border border-none p-4 shadow-md">
@@ -102,7 +136,29 @@
 				</button>
 			</div>
 
-			<h3 class="pb-2 text-lg font-bold">
+			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+				<select
+					class="select bg-base-200 w-full truncate dark:border-none"
+					title="Pilih mata pelajaran"
+					aria-label="Pilih mata pelajaran"
+					value={data.pickerMapelId}
+					onchange={pilihMapel}
+				>
+					{#each data.mapelList as opsi (opsi.id)}
+						<option value={opsi.id}>{opsi.nama}</option>
+					{/each}
+				</select>
+				<MuridPicker
+					basePath="/asesmen-formatif/formulir-asesmen"
+					kelasId={data.kelasId}
+					muridId={data.murid.id}
+					mapelId={data.pickerMapelId}
+					getDirty={() => isDirty}
+					confirmMessage="Masih ada perubahan penilaian yang belum disimpan. Pindah murid akan membuangnya. Lanjutkan?"
+				/>
+			</div>
+
+			<h3 class="py-2 text-lg font-bold">
 				Apakah {data.murid.nama} telah memenuhi setiap tujuan pembelajaran {data.mapel.nama}?
 			</h3>
 
