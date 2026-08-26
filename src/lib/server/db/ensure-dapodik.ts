@@ -1,5 +1,9 @@
 import db from '$lib/server/db';
+import { normMapelName } from '$lib/server/dapodik';
+import { agamaMapelNames } from '$lib/statics';
 import { ensureSchema } from './ensure-helper';
+import { eq, sql } from 'drizzle-orm';
+import { tableMataPelajaran } from './schema';
 
 const TABLE = 'dapodik_settings';
 
@@ -81,4 +85,80 @@ export async function ensureDapodikSchema() {
 			// column already exists
 		}
 	}
+
+	await mergeDuplicateAgamaMapel();
+}
+
+/**
+ * Gabungkan duplikat agama yang tercipta karena ejaan berbeda (mis. "Katholik"
+ * dari Dapodik vs "Katolik" buatan ensureAgamaMapelForClasses). Baris "canonical"
+ * (yang cocok dengan agamaMapelNames) dipertahankan; baris duplikat dihapus
+ * setelah kolom Dapodik dipindahkan.
+ */
+let mergedAgamaDupes = false;
+async function mergeDuplicateAgamaMapel() {
+	if (mergedAgamaDupes) return;
+	mergedAgamaDupes = true;
+
+	const canonicalSet = new Set(agamaMapelNames);
+	const allAgama = await db.query.tableMataPelajaran.findMany({
+		columns: { id: true, kelasId: true, nama: true },
+		where: sql`lower(nama) LIKE 'pendidikan agama%' OR lower(nama) LIKE 'pendidikan kepercayaan%'`
+	});
+
+	type Row = (typeof allAgama)[number];
+	const groups = new Map<string, Row[]>();
+	for (const r of allAgama) {
+		const key = normAgama(r.nama);
+		if (!groups.has(key)) groups.set(key, []);
+		groups.get(key)!.push(r);
+	}
+
+	for (const [, rows] of groups) {
+		if (rows.length <= 1) continue;
+		const canonical = rows.find((r) => canonicalSet.has(r.nama));
+		if (!canonical) continue;
+		for (const dup of rows) {
+			if (dup.id === canonical.id) continue;
+			const dupData = await db.query.tableMataPelajaran.findFirst({
+				columns: {
+					dapodikPembelajaranId: true,
+					dapodikMataPelajaranId: true,
+					dapodikIndukPembelajaranId: true,
+					pengampuId: true
+				},
+				where: eq(tableMataPelajaran.id, dup.id)
+			});
+			if (!dupData) continue;
+			const hasDapodikBinding = dupData.dapodikPembelajaranId || dupData.dapodikMataPelajaranId;
+			const canonicalData = await db.query.tableMataPelajaran.findFirst({
+				columns: {
+					dapodikPembelajaranId: true,
+					pengampuId: true
+				},
+				where: eq(tableMataPelajaran.id, canonical.id)
+			});
+			const needsBinding = !canonicalData?.dapodikPembelajaranId && hasDapodikBinding;
+			const needsPengampu = !canonicalData?.pengampuId && dupData.pengampuId;
+			if (needsBinding || needsPengampu) {
+				await db
+					.update(tableMataPelajaran)
+					.set({
+						...(needsBinding
+							? {
+									dapodikPembelajaranId: dupData.dapodikPembelajaranId,
+									dapodikMataPelajaranId: dupData.dapodikMataPelajaranId
+								}
+							: {}),
+						...(needsPengampu ? { pengampuId: dupData.pengampuId } : {})
+					})
+					.where(eq(tableMataPelajaran.id, canonical.id));
+			}
+			await db.delete(tableMataPelajaran).where(eq(tableMataPelajaran.id, dup.id));
+		}
+	}
+}
+
+function normAgama(name: string): string {
+	return normMapelName(name);
 }

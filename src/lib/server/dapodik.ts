@@ -33,6 +33,14 @@ import { buildCapaianKompetensi, type TujuanScoreEntry } from '$lib/rapor-modes'
 /** Nama mapel agama → key opsi (islam/kristen/katolik/buddha/hindu/konghuchu/kepercayaan/umum). */
 const keyByName = new Map<string, string>(agamaMapelOptions.map((o) => [o.name, o.key]));
 
+/** Normalisasi nama → nama canonical agama. Cocok "Katholik" → "Katolik", dll. */
+const canonicalAgamaByNorm = new Map(
+	agamaMapelOptions.map((o) => [normMapelName(o.name), o.name])
+);
+function resolveCanonicalAgamaName(dapodikName: string): string | null {
+	return canonicalAgamaByNorm.get(normMapelName(dapodikName)) ?? null;
+}
+
 /**
  * Klien GET WebService Dapodik desktop (docs/erapor.md §4.1a / §7.3).
  * Semua call memakai header `Authorization: Bearer {token}` dengan query
@@ -1060,12 +1068,13 @@ async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog
 			}
 		}
 
-		// Semua mapel di sekolah ini + mapping id → kelasId.
+		// Semua mapel di sekolah ini + mapping id → kelasId + pengampuId.
 		const allMapelRows = await db
 			.select({
 				id: tableMataPelajaran.id,
 				kelasId: tableMataPelajaran.kelasId,
-				nama: tableMataPelajaran.nama
+				nama: tableMataPelajaran.nama,
+				pengampuId: tableMataPelajaran.pengampuId
 			})
 			.from(tableMataPelajaran)
 			.innerJoin(tableKelas, eq(tableMataPelajaran.kelasId, tableKelas.id))
@@ -1171,6 +1180,8 @@ async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog
 		// Dapodik hanya mengembalikan "Guru Kelas" dan "PJOK". Mapel lokal
 		// (Matematika, B.Indonesia, dll) tidak ada di Dapodik pembelajaran.
 		// Tautkan mapel yang namanya cocok dengan dapodik_pembelajaran ke pengampu.
+		// Hanya link mapel yang memang diampu pegawai ini (pengampu_id match)
+		// atau belum punya pengampu (agar mapel tanpa pengampu tetap bisa di-link).
 		const dapPembelajaran = await db.select().from(tableDapodikPembelajaran);
 		const pbByKelas = new Map<number, typeof dapPembelajaran>();
 		for (const dp of dapPembelajaran) {
@@ -1197,7 +1208,10 @@ async function ensureGuruAccounts(sekolahId: number, sections: DapodikSectionLog
 					const dpNama = (dp.nama ?? '').trim().toLowerCase();
 					if (!dpNama) continue;
 					const match = allMapelRows.find(
-						(m) => m.kelasId === kelasId && (m.nama ?? '').trim().toLowerCase() === dpNama
+						(m) =>
+							m.kelasId === kelasId &&
+							(m.nama ?? '').trim().toLowerCase() === dpNama &&
+							(m.pengampuId === peg.id || m.pengampuId == null)
 					);
 					if (!match) continue;
 					const key = `${userId}:${match.id}`;
@@ -1883,7 +1897,14 @@ async function upsertPembelajaran(
 				// ptk_id pengampu tersedia langsung di row pembelajaran.
 				const pengampuId = ptkIndex.resolve(str(row, 'ptk_id'));
 
-				const existing =
+				// --- Lookup existing mapel ---
+				// 1) Bind eksplisit (pembelajaran_id sudah ter-binding).
+				// 2) Nama persis.
+				// 3) Nama ternormalisasi (Dapodik ejaan berbeda, mis. "Katholik" vs "Katolik").
+				// 4) Agama canonical: Dapodik mungkin nama beda ejaan, tapi canonical
+				//    (agamaMapelNames) harus yang dipakai agar tidak duplikat.
+				const canonicalAgama = resolveCanonicalAgamaName(namaMapel);
+				let existing =
 					(await db.query.tableMataPelajaran.findFirst({
 						where: and(
 							eq(tableMataPelajaran.kelasId, kelasId),
@@ -1897,11 +1918,65 @@ async function upsertPembelajaran(
 						)
 					}));
 
+				// Fallback: cari baris canonical agama yang sudah ada (nama mungkin
+				// beda ejaan dari Dapodik). Jika ditemukan, bind ke situ DAN hapus
+				// baris non-canonical (jika ada) agar tidak duplikat.
+				if (!existing && canonicalAgama && canonicalAgama !== namaMapel) {
+					const canonicalRow = await db.query.tableMataPelajaran.findFirst({
+						where: and(
+							eq(tableMataPelajaran.kelasId, kelasId),
+							eq(tableMataPelajaran.nama, canonicalAgama)
+						)
+					});
+					if (canonicalRow) existing = canonicalRow;
+				}
+
+				// Jika existing ditemukan tapi NAMAnya beda dari canonical (mis.
+				// "Katholik" sudah ada dari sync lama), cek apakah canonical juga
+				// sudah ada. Jika canonical ada → pindahkan bind ke canonical, hapus
+				// baris non-canonical. Jika canonical belum ada → rename saja.
+				if (existing && canonicalAgama && existing.nama !== canonicalAgama) {
+					const canonicalRow = await db.query.tableMataPelajaran.findFirst({
+						where: and(
+							eq(tableMataPelajaran.kelasId, kelasId),
+							eq(tableMataPelajaran.nama, canonicalAgama)
+						)
+					});
+					if (canonicalRow) {
+						// Canonical sudah ada — pindahkan bind, hapus non-canonical.
+						await db
+							.update(tableMataPelajaran)
+							.set({
+								dapodikPembelajaranId: pembelajaranId,
+								dapodikMataPelajaranId: mapelRefId,
+								...(pengampuId ? { pengampuId } : {})
+							})
+							.where(eq(tableMataPelajaran.id, canonicalRow.id));
+						await db
+							.delete(tableMataPelajaran)
+							.where(eq(tableMataPelajaran.id, existing.id));
+						updated++;
+						continue;
+					}
+					// Canonical belum ada — rename baris ini ke canonical.
+					await db
+						.update(tableMataPelajaran)
+						.set({
+							nama: canonicalAgama,
+							dapodikPembelajaranId: pembelajaranId,
+							dapodikMataPelajaranId: mapelRefId,
+							...(pengampuId ? { pengampuId } : {})
+						})
+						.where(eq(tableMataPelajaran.id, existing.id));
+					updated++;
+					continue;
+				}
+
 				if (existing) {
 					await db
 						.update(tableMataPelajaran)
 						.set({
-							nama: namaMapel,
+							nama: existing.nama,
 							dapodikPembelajaranId: pembelajaranId,
 							dapodikMataPelajaranId: mapelRefId,
 							...(pengampuId ? { pengampuId } : {})
@@ -1914,12 +1989,14 @@ async function upsertPembelajaran(
 				} else {
 					// Buat mapel baru dari Dapodik (termasuk PJOK, Matematika, dll).
 					// Pendidikan Agama mendapat kode 'PAPB'; lainnya kode kosong.
+					// Pakai nama canonical agar tidak duplikat dengan ensureAgamaMapelForClasses.
 					const isAgama =
 						namaMapel.toLowerCase().startsWith('pendidikan agama') ||
 						namaMapel.toLowerCase().startsWith('pendidikan kepercayaan');
+					const namaInsert = canonicalAgama ?? namaMapel;
 					await db.insert(tableMataPelajaran).values({
 						kelasId,
-						nama: namaMapel,
+						nama: namaInsert,
 						jenis: 'wajib',
 						kode: isAgama ? 'PAPB' : '',
 						dapodikPembelajaranId: pembelajaranId,

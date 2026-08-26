@@ -168,8 +168,12 @@
 	);
 	// Logika konsisten tambah & edit: nama tidak terdaftar sebagai pembelajaran
 	// Dapodik → wajib pilih Mata Pelajaran Induk (Sub Pembelajaran).
+	// Untuk varian agama pada mode edit, selalu tampilkan induk agar user bisa
+	// mengatur sub-pembelajaran meskipun nama terdaftar di Dapodik.
 	const tampilkanInduk = $derived(
-		indukList.length > 0 && namaEfektif !== '' && !indukTerdaftarSet.has(normNamaMapel(namaEfektif))
+		indukList.length > 0 &&
+			namaEfektif !== '' &&
+			(mode === 'edit' && isAgamaGroup ? true : !indukTerdaftarSet.has(normNamaMapel(namaEfektif)))
 	);
 	const MAX_OPSI_TAMPIL = 80;
 	// Semua varian mapel agama (termasuk Kepercayaan) sudah dibuat otomatis oleh
@@ -373,7 +377,7 @@
 					<legend class="fieldset-legend">Mata Pelajaran Induk</legend>
 					<select
 						name="induk_pembelajaran_id"
-						required={!isAgamaParent && !isPksParent}
+						required={!isAgamaGroup && !isPksGroup}
 						class="select bg-base-200 w-full truncate dark:border-none"
 					>
 						<option disabled selected={mode === 'add' || !mapel?.dapodikIndukPembelajaranId}>
@@ -390,9 +394,14 @@
 						{/each}
 					</select>
 					<p class="label text-wrap">
-						"{namaEfektif}" belum terdaftar sebagai pembelajaran Dapodik — akan dikirim sebagai Sub
-						Pembelajaran dari mata pelajaran induk yang dipilih. {#if mode === 'edit' && isAgamaGroup}
-							Pilihan berlaku untuk semua varian agama di kelas ini.{/if}
+						{#if mode === 'edit' && isAgamaGroup}
+							Jika salah satu varian agama sudah terdaftar di Dapodik, ia akan menjadi mapel induk.
+							Varian tanpa padanan Dapodik akan dikirim sebagai Sub Pembelajaran. Pilihan berlaku
+							untuk semua varian agama di kelas ini.
+						{:else}
+							"{namaEfektif}" belum terdaftar sebagai pembelajaran Dapodik — akan dikirim sebagai
+							Sub Pembelajaran dari mata pelajaran induk yang dipilih.
+						{/if}
 					</p>
 				</fieldset>
 			{/if}

@@ -518,10 +518,10 @@
 									class="indicator-item indicator-start indicator-top badge badge-xs"
 									class:badge-success={mapel.tpCount > 0}
 									class:badge-error={mapel.tpCount === 0}
-								title={mapel.tpCount > 0 ? 'TP sudah diisi' : 'Masih ada TP yang belum diisi'}
-								aria-label={`Status tujuan pembelajaran: ${
-									mapel.tpCount > 0 ? 'sudah terisi' : 'belum terisi'
-								}`}
+									title={mapel.tpCount > 0 ? 'TP sudah diisi' : 'Masih ada TP yang belum diisi'}
+									aria-label={`Status tujuan pembelajaran: ${
+										mapel.tpCount > 0 ? 'sudah terisi' : 'belum terisi'
+									}`}
 									role="status"
 								></span>
 								{#if canManageMapel}

@@ -152,9 +152,8 @@ export function buildMapelPicker(
 }
 
 /**
- * Picker datar untuk guru mapel ('user'): hanya mapel yang di-assign (ID atau
- * nama), tanpa penggabungan keluarga agama/PKS agar beberapa varian milik guru
- * tetap tampil terpisah.
+ * Picker untuk guru mapel ('user'): filter berdasarkan akses, lalu gabungkan
+ * varian agama/PKS jadi satu entri (label dasar) seperti buildMapelPicker.
  */
 export function buildGuruMapelPicker(
 	rows: MapelPickerRow[],
@@ -162,13 +161,37 @@ export function buildGuruMapelPicker(
 	aksesNames: Set<string>,
 	currentMapelId: number
 ): { mapelList: MapelPickerOption[]; pickerMapelId: number } {
-	const mapelList = rows
-		.filter((row) => aksesIds.has(row.id) || aksesNames.has((row.nama ?? '').trim().toLowerCase()))
-		.map((row) => ({ id: row.id, nama: row.namaLokal?.trim() || row.nama || '' }));
+	const label = (row: MapelPickerRow) => row.namaLokal?.trim() || row.nama || '';
+	const filtered = rows.filter(
+		(row) => aksesIds.has(row.id) || aksesNames.has((row.nama ?? '').trim().toLowerCase())
+	);
+
+	const familyOfRow = new Map<number, string>();
+	const representative = new Map<string, MapelPickerRow>();
+
+	for (const row of filtered) {
+		const family = FAMILIES.find((f) => f.re.test(norm(row.nama)));
+		if (!family) continue;
+		familyOfRow.set(row.id, family.label);
+		const current = representative.get(family.label);
+		if (!current || (norm(current.nama) !== family.base && norm(row.nama) === family.base)) {
+			representative.set(family.label, row);
+		}
+	}
+
+	const mapelList: MapelPickerOption[] = filtered
+		.filter((row) => !familyOfRow.has(row.id))
+		.map((row) => ({ id: row.id, nama: label(row) }));
+
+	for (const rep of representative.values()) {
+		mapelList.push({ id: rep.id, nama: label(rep) });
+	}
 	mapelList.sort((a, b) => a.nama.localeCompare(b.nama));
-	const adaCurrent = mapelList.some((opsi) => opsi.id === currentMapelId);
-	return {
-		mapelList,
-		pickerMapelId: adaCurrent ? currentMapelId : (mapelList[0]?.id ?? currentMapelId)
-	};
+
+	const currentFamily = familyOfRow.get(currentMapelId);
+	const pickerMapelId = currentFamily
+		? (representative.get(currentFamily)?.id ?? currentMapelId)
+		: currentMapelId;
+
+	return { mapelList, pickerMapelId };
 }
