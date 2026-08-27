@@ -17,7 +17,7 @@
 	// (logika sama dengan "Nama Mata Pelajaran" pada Tambah Mata Pelajaran).
 	type PtkOpsi = { id: number; nama: string; nip: string | null };
 	const ptkOptions = $derived((data.ptkList ?? []) as PtkOpsi[]);
-	const pakaiSelectWalas = $derived(ptkOptions.length > 0);
+	const pakaiSelectWalas = $derived(Boolean(data.dapodikAktif));
 	// svelte-ignore state_referenced_locally
 	const initialWalas = (data.formInit?.waliKelas ?? null) as { nama?: string; nip?: string } | null;
 	let walasQuery = $state(initialWalas?.nama ?? '');
@@ -304,7 +304,7 @@
 							Tambah
 						{/if}
 					</button>
-					{#if data.canResetWalas && data.kelas?.id}
+					{#if data.canResetWalas && data.kelas?.id && pakaiSelectWalas}
 						<button
 							type="button"
 							class="btn btn-soft btn-warning shadow-none"
