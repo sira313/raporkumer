@@ -3,7 +3,7 @@ import { normMapelName } from '$lib/server/dapodik';
 import { agamaMapelNames } from '$lib/statics';
 import { ensureSchema } from './ensure-helper';
 import { eq, sql } from 'drizzle-orm';
-import { tableMataPelajaran } from './schema';
+import { tableAuthUser, tableMataPelajaran, tableTujuanPembelajaran } from './schema';
 
 const TABLE = 'dapodik_settings';
 
@@ -154,6 +154,15 @@ async function mergeDuplicateAgamaMapel() {
 					})
 					.where(eq(tableMataPelajaran.id, canonical.id));
 			}
+			// Reassign FK refs that lack ON DELETE CASCADE/SET NULL before deleting
+			await db
+				.update(tableAuthUser)
+				.set({ mataPelajaranId: canonical.id })
+				.where(eq(tableAuthUser.mataPelajaranId, dup.id));
+			await db
+				.update(tableTujuanPembelajaran)
+				.set({ mataPelajaranId: canonical.id })
+				.where(eq(tableTujuanPembelajaran.mataPelajaranId, dup.id));
 			await db.delete(tableMataPelajaran).where(eq(tableMataPelajaran.id, dup.id));
 		}
 	}
