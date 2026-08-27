@@ -5,6 +5,7 @@
 	import { toast } from '$lib/components/toast.svelte';
 
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 
 	// single permission to manage dashboard quick actions
 	let canDashboardManage = $derived.by(() => {
@@ -13,18 +14,6 @@
 	});
 
 	let downloadingBackup = $state(false);
-
-	const handleExportInfo = () => {
-		showModal({
-			title: 'Export Dapodik',
-			body: 'Fitur belum tersedia, masih dalam tahap pengembangan.',
-			dismissible: true,
-			onPositive: {
-				label: 'Mengerti',
-				action: ({ close }) => close()
-			}
-		});
-	};
 
 	const handleBackupDownload = async () => {
 		if (typeof window === 'undefined' || downloadingBackup) return;
@@ -84,17 +73,21 @@
 			Tindakan Cepat
 		</h2>
 		<div class="grid grid-cols-1 gap-2">
-			<button
-				type="button"
-				onclick={() => (canDashboardManage ? handleExportInfo() : undefined)}
+			<a
+				href={resolve('/pengaturan')}
+				onclick={(e) => {
+					if (!canDashboardManage) {
+						e.preventDefault();
+					}
+				}}
 				class="btn btn-primary w-full shadow-none"
-				disabled={!canDashboardManage}
+				class:btn-disabled={!canDashboardManage}
 				aria-disabled={!canDashboardManage}
 				title={!canDashboardManage ? 'Anda tidak memiliki izin untuk melakukan tindakan cepat' : ''}
 			>
-				<Icon name="export" />
-				Export Dapodik
-			</button>
+				<Icon name="gear" />
+				Pengaturan
+			</a>
 			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2">
 				<button
 					type="button"
@@ -129,8 +122,5 @@
 				</button>
 			</div>
 		</div>
-		<p class="mt-4 text-xs text-gray-400">
-			Pastikan semua data sudah terisi lengkap sebelum melakukan export.
-		</p>
 	</div>
 </div>

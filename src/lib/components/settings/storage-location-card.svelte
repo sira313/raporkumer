@@ -44,7 +44,7 @@
 				<div role="alert" class="alert alert-info mb-4">
 					<Icon name="alert" />
 					<span
-						>Pada instalasi Windows, pengaturan ini disimpan ke file peluncur
+						>Pada instalasi Windows, pengaturan ini disimpan ke file Installer
 						<code>%LOCALAPPDATA%\Rapkumer-data\data-root.txt</code> dan diterapkan saat aplikasi
 						dimulai ulang. Basis data tetap berada di
 						<code>%LOCALAPPDATA%\Rapkumer-data\database.sqlite3</code>.</span

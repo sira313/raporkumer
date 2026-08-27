@@ -26,7 +26,12 @@ function run(cmd, args, opts = {}) {
 	const isWin = process.platform === 'win32';
 	const cmdExt = path.extname(cmd || '').toLowerCase();
 	const useShell = opts.shell ?? (isWin && cmdExt === '.cmd');
-	const res = spawnSync(cmd, args || [], { stdio: 'inherit', shell: useShell, ...opts });
+	const res = spawnSync(cmd, args || [], {
+		stdio: 'inherit',
+		shell: useShell,
+		windowsHide: true,
+		...opts
+	});
 	if (res.error) {
 		console.error('Failed to run:', res.error);
 		throw res.error;
@@ -48,6 +53,7 @@ function runCapture(cmd, args, opts = {}) {
 	const res = spawnSync(cmd, args || [], {
 		stdio: ['ignore', 'pipe', 'pipe'],
 		shell: useShell,
+		windowsHide: true,
 		...opts
 	});
 	// Write child's stdout/stderr to parent so we keep the same visible logs

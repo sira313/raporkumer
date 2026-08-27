@@ -58,7 +58,8 @@ export function triggerSchemaSync(): void {
 		const child = spawn(process.execPath, [script], {
 			detached: true,
 			stdio: 'ignore',
-			env: process.env
+			env: process.env,
+			windowsHide: true
 		});
 		child.on('exit', (code) => {
 			inFlight = false;

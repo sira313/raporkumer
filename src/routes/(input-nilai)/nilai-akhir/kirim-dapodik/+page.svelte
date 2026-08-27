@@ -79,7 +79,7 @@
 		<div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-1">
 			<p class="text-sm opacity-70">
 				Mengirim nilai akhir kelas {data.kelasNama ?? '-'} ke aplikasi Dapodik desktop sekolah melalui
-				Web Service (Bearer token), sesuai alur matev rapor e-Rapor.
+				Web Service (Bearer token).
 			</p>
 
 			{#if notif}
