@@ -1,4 +1,4 @@
-import { sharedStyles, formatValue, FALLBACK } from './shared';
+import { sharedStyles, formatValue, FALLBACK, escHtml } from './shared';
 import { compareKepegawaian } from '$lib/server/kepegawaian-order';
 
 export type PresensiGuruStatusPerDay =
@@ -237,8 +237,8 @@ export function renderPresensiGuruHTML(data: PresensiGuruPrintData): string {
 
 	const kepalaSekolah = data.kepalaSekolah ?? null;
 	const kepalaTitle = kepalaSekolah?.statusKepalaSekolah === 'plt' ? 'Plt. Kepala' : 'Kepala';
-	const kepalaNama = kepalaSekolah?.nama ?? '';
-	const kepalaNip = (kepalaSekolah?.nip ?? '').trim();
+	const kepalaNama = formatValue(kepalaSekolah?.nama ?? '');
+	const kepalaNip = escHtml((kepalaSekolah?.nip ?? '').trim());
 	const kepalaNipLabel = kepalaNip
 		? kepalaNip.toLowerCase().startsWith('nip')
 			? kepalaNip

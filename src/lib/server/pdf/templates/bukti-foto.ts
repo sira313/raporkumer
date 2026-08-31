@@ -1,4 +1,4 @@
-import { sharedStyles } from './shared';
+import { sharedStyles, escHtml } from './shared';
 
 export interface BuktiFotoData {
 	kegiatan: string;
@@ -14,8 +14,8 @@ export function renderBuktiFotoHTML(data: BuktiFotoData): string {
 		.map(
 			(foto) => `
 			<div class="foto-card">
-				<img src="${foto.src}" alt="${foto.nama}" />
-				<div class="foto-name">${foto.nama}</div>
+				<img src="${foto.src}" alt="${escHtml(foto.nama)}" />
+				<div class="foto-name">${escHtml(foto.nama)}</div>
 			</div>`
 		)
 		.join('\n');
@@ -87,7 +87,7 @@ body {
 <body>
 	<div class="header">
 		<h2>Bukti Perjalanan Dinas</h2>
-		<p>${data.kegiatan}</p>
+		<p>${escHtml(data.kegiatan)}</p>
 	</div>
 	<div class="fotos">
 		${fotoCards}

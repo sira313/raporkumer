@@ -76,12 +76,27 @@ table {
 
 export const FALLBACK = '\u2014';
 
+// Escape a string for safe interpolation into an HTML template. Used before any
+// user-supplied text is placed into a template's text node or a double-quoted
+// attribute, preventing stored-HTML injection.
+export function escHtml(val: string | number | null | undefined): string {
+	if (val === null || val === undefined) return '';
+	return String(val)
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+
 export function formatValue(val: string | number | null | undefined): string {
 	if (val === null || val === undefined || val === '') return FALLBACK;
-	return String(val);
+	return escHtml(val);
 }
 
 export function formatUpper(val: string | null | undefined): string {
-	const f = formatValue(val);
-	return f === FALLBACK ? f : f.toUpperCase();
+	if (val === null || val === undefined || val === '') return FALLBACK;
+	// Uppercase the raw value first, then escape, so HTML entities like ``&amp;``
+	// are not uppercased into ``&AMP;``.
+	return escHtml(String(val).toUpperCase());
 }

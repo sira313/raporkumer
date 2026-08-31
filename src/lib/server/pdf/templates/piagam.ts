@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { uploadsDir } from '$lib/server/data-dirs';
 import { getKopSuratLines } from '$lib/statics';
-import { sharedStyles, formatUpper, formatValue } from './shared';
+import { sharedStyles, formatUpper, formatValue, escHtml } from './shared';
 
 export interface PiagamPrintData {
 	sekolah: {
@@ -371,29 +371,31 @@ export function renderPiagamHTML(data: PiagamPrintData, template: '1' | '2'): st
 		data.sekolah.alamat.kecamatan,
 		data.sekolah.alamat.kabupaten
 	].filter(Boolean);
-	const alamatLine = alamatParts.join(', ');
+	const alamatLine = escHtml(alamatParts.join(', '));
 
 	const contactParts: string[] = [];
 	contactParts.push(`NPSN: ${data.sekolah.npsn}`);
 	if (data.sekolah.website) contactParts.push(`Website: ${data.sekolah.website}`);
 	if (data.sekolah.email) contactParts.push(`Email: ${data.sekolah.email}`);
-	const contactLine = contactParts.join(' | ');
+	const contactLine = escHtml(contactParts.join(' | '));
 
-	const schoolHeadingText = schoolHeading(data.sekolah.jenjang, data.sekolah.nama);
+	const schoolHeadingText = escHtml(schoolHeading(data.sekolah.jenjang, data.sekolah.nama));
 
 	const kopLines = getKopSuratLines({
 		jenjangVariant: data.sekolah.jenjangVariant,
 		naungan: data.sekolah.naungan,
 		kabupaten: data.sekolah.alamat.kabupaten,
 		provinsi: data.sekolah.alamat.provinsi
-	});
+	}).map((line) => escHtml(line));
 
 	const penghargaan = data.penghargaan;
 	const periode = data.periode;
 	const ttd = data.ttd;
 	const sekolahId = data.sekolah.id;
 
-	const achievementText = `Dengan total nilai rata-rata ${penghargaan.rataRataFormatted}${periode.namaKelas ? ` di ${periode.namaKelas}` : ''} pada ${periode.semester} tahun ajaran ${periode.tahunAjaran}.`;
+	const achievementText = escHtml(
+		`Dengan total nilai rata-rata ${penghargaan.rataRataFormatted}${periode.namaKelas ? ` di ${periode.namaKelas}` : ''} pada ${periode.semester} tahun ajaran ${periode.tahunAjaran}.`
+	);
 
 	function footerHTML(): string {
 		return `
@@ -401,13 +403,13 @@ export function renderPiagamHTML(data: PiagamPrintData, template: '1' | '2'): st
 		<div class="footer-left">
 			<div class="kepala-status">${ttd.kepalaSekolah.statusKepalaSekolah === 'plt' ? 'Plt. Kepala Sekolah' : 'Kepala Sekolah'}</div>
 			<div class="ttd-name">${formatValue(ttd.kepalaSekolah.nama)}</div>
-			<div class="ttd-nip">${ttd.kepalaSekolah.nip ? `${ttd.kepalaSekolah.nip}` : ''}</div>
+			<div class="ttd-nip">${escHtml(ttd.kepalaSekolah.nip ?? '')}</div>
 		</div>
 		<div class="footer-right">
-			<div class="footer-label">${ttd.tempat}, ${ttd.tanggal}</div>
+			<div class="footer-label">${escHtml(ttd.tempat)}, ${escHtml(ttd.tanggal)}</div>
 			<div class="footer-label">Wali Kelas</div>
 			<div class="ttd-name">${formatValue(ttd.waliKelas.nama)}</div>
-			<div class="ttd-nip">${ttd.waliKelas.nip ? `${ttd.waliKelas.nip}` : ''}</div>
+			<div class="ttd-nip">${escHtml(ttd.waliKelas.nip ?? '')}</div>
 		</div>
 	</div>`;
 	}
@@ -447,7 +449,7 @@ ${bgCert ? `<div class="piagam-bg" style="background-image: url('${bgCert}')"></
 		<div class="sebagai-text">SEBAGAI</div>
 		<div class="ranking-label">${formatUpper(penghargaan.rankingLabel)}</div>
 		<p class="achievement-text">${achievementText}</p>
-		<p class="motivation-text">${penghargaan.motivasi}</p>
+		<p class="motivation-text">${escHtml(penghargaan.motivasi)}</p>
 	</div>
 
 	${footerHTML()}
@@ -479,13 +481,13 @@ ${bgCert2 ? `<div class="piagam-bg" style="background-image: url('${bgCert2}')">
 	<div class="t2-school-name">${formatUpper(data.sekolah.nama)}</div>
 
 	<div class="main-content">
-		<div class="t2-title">${penghargaan.judul}</div>
-		<div class="t2-subtitle">${penghargaan.subjudul}</div>
-		<div class="t2-murid-name">${data.murid.nama}</div>
+		<div class="t2-title">${escHtml(penghargaan.judul)}</div>
+		<div class="t2-subtitle">${escHtml(penghargaan.subjudul)}</div>
+		<div class="t2-murid-name">${escHtml(data.murid.nama)}</div>
 		<div class="sebagai-text">SEBAGAI</div>
 		<div class="ranking-label">${formatUpper(penghargaan.rankingLabel)}</div>
 		<p class="achievement-text">${achievementText}</p>
-		<p class="motivation-text">${penghargaan.motivasi}</p>
+		<p class="motivation-text">${escHtml(penghargaan.motivasi)}</p>
 	</div>
 
 	${footerHTML()}
