@@ -74,17 +74,18 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 
 	// Presensi guru feature toggle (per active sekolah + tahun ajaran). Defaults to
 	// enabled so existing installs keep the feature visible.
+	// Started early as a Promise so it runs in parallel with daftarKelas queries below.
 	let presensiGuruEnabled = true;
-	if (sekolah?.id && academicContext?.activeTahunAjaranId) {
-		const presensiSetting = await db.query.tablePresensiSettings.findFirst({
-			columns: { presensiGuruEnabled: true },
-			where: and(
-				eq(tablePresensiSettings.sekolahId, sekolah.id),
-				eq(tablePresensiSettings.tahunAjaranId, academicContext.activeTahunAjaranId)
-			)
-		});
-		presensiGuruEnabled = presensiSetting?.presensiGuruEnabled ?? true;
-	}
+	const presensiPromise =
+		sekolah?.id && academicContext?.activeTahunAjaranId
+			? db.query.tablePresensiSettings.findFirst({
+					columns: { presensiGuruEnabled: true },
+					where: and(
+						eq(tablePresensiSettings.sekolahId, sekolah.id),
+						eq(tablePresensiSettings.tahunAjaranId, academicContext.activeTahunAjaranId)
+					)
+				})
+			: null;
 
 	// Query daftarKelas: for wali_kelas, get ALL kelas they manage (not just active semester)
 	// For user type (guru), get kelas from tableAuthUserKelas join table
@@ -356,12 +357,34 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 	// human-readable name (e.g. in navbar alerts). Keep original shape
 	// otherwise. Also attach a small permission flag so client can easily
 	// disable UI for restricted 'user' accounts.
+	// Start pegawai + hasMataPelajaran queries as promises (run in parallel via await below).
 	let userForClient = user;
+	let hasMataPelajaran = false;
+	const pegawaiPromise =
+		user?.pegawaiId
+			? db.query.tablePegawai.findFirst({
+					columns: { id: true, nama: true },
+					where: eq(tablePegawai.id, Number(user.pegawaiId))
+				})
+			: null;
+	const hasMapelPromise =
+		user?.type === 'user' && !(user as { mataPelajaranId?: number | null }).mataPelajaranId && user.id
+			? db.query.tableAuthUserMataPelajaran.findMany({
+					columns: { id: true },
+					where: eq(tableAuthUserMataPelajaran.authUserId, user.id),
+					limit: 1
+				})
+			: null;
+
+	// Resolve all parallel promises at once
+	const [presensiSetting, pegawaiRecord, hasMapelRecords] = await Promise.all([
+		presensiPromise,
+		pegawaiPromise,
+		hasMapelPromise
+	]);
+	if (presensiSetting) presensiGuruEnabled = presensiSetting.presensiGuruEnabled ?? true;
+
 	if (user) {
-		// Permission logic:
-		// - 'wali_asuh' should not be allowed to manage mata pelajaran
-		// - 'user' (guru mapel) CAN manage mata pelajaran (they are filtered server-side)
-		// - Other account types retain full access
 		const userType = (user as { type?: string }).type;
 		const canManageMapel = userType !== 'wali_asuh';
 		const canEditUrutan =
@@ -373,45 +396,19 @@ export const load: LayoutServerLoad = async ({ url, locals, cookies, depends }) 
 				? resolvedWaliOwnKelasIds[0]
 				: user.kelasId;
 
-		if (user.pegawaiId) {
-			const pegawaiRecord = await db.query.tablePegawai.findFirst({
-				columns: { id: true, nama: true },
-				where: eq(tablePegawai.id, Number(user.pegawaiId))
-			});
-			// avoid `any` cast by using Object.assign to create a shallow clone
-			userForClient = Object.assign({}, user, {
-				kelasId: resolvedKelasId,
-				ownKelasIds: resolvedWaliOwnKelasIds,
-				pegawaiName: pegawaiRecord?.nama ?? null,
-				canManageMapel,
-				canEditUrutan,
-				canAddImportMapel
-			});
-		} else {
-			userForClient = Object.assign({}, user, {
-				kelasId: resolvedKelasId,
-				ownKelasIds: resolvedWaliOwnKelasIds,
-				canManageMapel,
-				canEditUrutan,
-				canAddImportMapel
-			});
-		}
+		userForClient = Object.assign({}, user, {
+			kelasId: resolvedKelasId,
+			ownKelasIds: resolvedWaliOwnKelasIds,
+			pegawaiName: pegawaiRecord?.nama ?? null,
+			canManageMapel,
+			canEditUrutan,
+			canAddImportMapel
+		});
 	}
 
-	// For user type (guru), check if they have any mata pelajaran assigned
-	// (either via direct column or many-to-many table)
-	let hasMataPelajaran = false;
 	if (user?.type === 'user') {
 		const u = user as { id?: number; mataPelajaranId?: number | null };
-		hasMataPelajaran = !!u.mataPelajaranId;
-		if (!hasMataPelajaran && u.id) {
-			const records = await db.query.tableAuthUserMataPelajaran.findMany({
-				columns: { id: true },
-				where: eq(tableAuthUserMataPelajaran.authUserId, u.id),
-				limit: 1
-			});
-			hasMataPelajaran = records.length > 0;
-		}
+		hasMataPelajaran = !!u.mataPelajaranId || (hasMapelRecords ? hasMapelRecords.length > 0 : false);
 	}
 
 	// Set cookies AFTER all async operations are complete

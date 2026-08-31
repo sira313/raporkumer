@@ -24,28 +24,48 @@ import { fail } from '@sveltejs/kit';
 import { desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 
+// ponytail: short in-process cache for the two full-table COUNTs so repeated visits
+// don't re-scan the entire kelas/murid tables. Relies on TTL expiry only.
+const COUNTS_TTL_MS = 15_000;
+let countsCache: {
+	kelas: Map<number, number>;
+	murid: Map<number, number>;
+	expiresAt: number;
+} | null = null;
+
+function resetCountsCache(force = false) {
+	if (force || !countsCache || countsCache.expiresAt <= Date.now()) {
+		countsCache = null;
+	}
+}
+
 export const load: PageServerLoad = async ({ locals, depends }) => {
 	depends('app:sekolah');
 
-	const [kelasCounts, muridCounts] = await Promise.all([
-		db
-			.select({ sekolahId: tableKelas.sekolahId, total: sql<number>`count(*)` })
-			.from(tableKelas)
-			.groupBy(tableKelas.sekolahId),
-		db
-			.select({ sekolahId: tableMurid.sekolahId, total: sql<number>`count(*)` })
-			.from(tableMurid)
-			.groupBy(tableMurid.sekolahId)
-	]);
-
-	const kelasCountMap = new Map<number, number>();
-	for (const row of kelasCounts) {
-		kelasCountMap.set(row.sekolahId, row.total ?? 0);
-	}
-
-	const muridCountMap = new Map<number, number>();
-	for (const row of muridCounts) {
-		muridCountMap.set(row.sekolahId, row.total ?? 0);
+	resetCountsCache();
+	let kelasCountMap = new Map<number, number>();
+	let muridCountMap = new Map<number, number>();
+	if (!countsCache) {
+		const [kelasCounts, muridCounts] = await Promise.all([
+			db
+				.select({ sekolahId: tableKelas.sekolahId, total: sql<number>`count(*)` })
+				.from(tableKelas)
+				.groupBy(tableKelas.sekolahId),
+			db
+				.select({ sekolahId: tableMurid.sekolahId, total: sql<number>`count(*)` })
+				.from(tableMurid)
+				.groupBy(tableMurid.sekolahId)
+		]);
+		kelasCountMap = new Map(kelasCounts.map((r) => [r.sekolahId, r.total ?? 0]));
+		muridCountMap = new Map(muridCounts.map((r) => [r.sekolahId, r.total ?? 0]));
+		countsCache = {
+			kelas: kelasCountMap,
+			murid: muridCountMap,
+			expiresAt: Date.now() + COUNTS_TTL_MS
+		};
+	} else {
+		kelasCountMap = countsCache.kelas;
+		muridCountMap = countsCache.murid;
 	}
 
 	const sekolahRows = await db.query.tableSekolah.findMany({

@@ -413,34 +413,36 @@ export const actions = {
 			return { message: `Tidak ada perubahan pada tujuan pembelajaran` };
 		}
 
-		if (toUpdate.length > 0) {
-			await Promise.all(
-				toUpdate.map((entry) =>
-					entry.id
-						? db
-								.update(tableTujuanPembelajaran)
-								.set({ lingkupMateri, deskripsi: entry.deskripsi, mataPelajaranId })
-								.where(eq(tableTujuanPembelajaran.id, entry.id))
-						: Promise.resolve()
-				)
-			);
-		}
+		await db.transaction(async (tx) => {
+			if (toUpdate.length > 0) {
+				await Promise.all(
+					toUpdate.map((entry) =>
+						entry.id
+							? tx
+									.update(tableTujuanPembelajaran)
+									.set({ lingkupMateri, deskripsi: entry.deskripsi, mataPelajaranId })
+									.where(eq(tableTujuanPembelajaran.id, entry.id))
+							: Promise.resolve()
+					)
+				);
+			}
 
-		if (toInsert.length > 0) {
-			await db.insert(tableTujuanPembelajaran).values(
-				toInsert.map((entry) => ({
-					lingkupMateri,
-					deskripsi: entry.deskripsi,
-					mataPelajaranId
-				}))
-			);
-		}
+			if (toInsert.length > 0) {
+				await tx.insert(tableTujuanPembelajaran).values(
+					toInsert.map((entry) => ({
+						lingkupMateri,
+						deskripsi: entry.deskripsi,
+						mataPelajaranId
+					}))
+				);
+			}
 
-		if (toDeleteIds.length > 0) {
-			await db
-				.delete(tableTujuanPembelajaran)
-				.where(inArray(tableTujuanPembelajaran.id, toDeleteIds));
-		}
+			if (toDeleteIds.length > 0) {
+				await tx
+					.delete(tableTujuanPembelajaran)
+					.where(inArray(tableTujuanPembelajaran.id, toDeleteIds));
+			}
+		});
 
 		return { message: `Tujuan pembelajaran berhasil diperbarui` };
 	},
@@ -640,26 +642,28 @@ export const actions = {
 		// Update bobot for each lingkupMateri group
 		// Key format from client: "lingkupMateri::id1-id2" (from groupKey function)
 		let updateCount = 0;
-		for (const [key, value] of Object.entries(bobotMap)) {
-			// Extract lingkupMateri from group key (everything before ::)
-			const lingkupMateri = key.split('::')[0]?.trim() ?? '';
-			const tpGroup = groupMap.get(lingkupMateri.toLowerCase());
-			if (!tpGroup || tpGroup.length === 0) continue;
+		await db.transaction(async (tx) => {
+			for (const [key, value] of Object.entries(bobotMap)) {
+				// Extract lingkupMateri from group key (everything before ::)
+				const lingkupMateri = key.split('::')[0]?.trim() ?? '';
+				const tpGroup = groupMap.get(lingkupMateri.toLowerCase());
+				if (!tpGroup || tpGroup.length === 0) continue;
 
-			const bobotValue = Number(value);
-			if (!Number.isFinite(bobotValue) || bobotValue < 0) continue;
+				const bobotValue = Number(value);
+				if (!Number.isFinite(bobotValue) || bobotValue < 0) continue;
 
-			// Update all TP in this group with the same bobot
-			for (const tp of tpGroup) {
-				if (tp.bobot !== bobotValue) {
-					await db
-						.update(tableTujuanPembelajaran)
-						.set({ bobot: bobotValue })
-						.where(eq(tableTujuanPembelajaran.id, tp.id));
-					updateCount++;
+				// Update all TP in this group with the same bobot
+				for (const tp of tpGroup) {
+					if (tp.bobot !== bobotValue) {
+						await tx
+							.update(tableTujuanPembelajaran)
+							.set({ bobot: bobotValue })
+							.where(eq(tableTujuanPembelajaran.id, tp.id));
+						updateCount++;
+					}
 				}
 			}
-		}
+		});
 
 		return {
 			message: updateCount > 0 ? 'Bobot berhasil disimpan.' : 'Tidak ada perubahan pada bobot.'

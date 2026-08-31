@@ -55,7 +55,7 @@ const clientKey = '__rapkumerLibsqlClient';
 async function enableWAL(client: Client) {
 	try {
 		await client.execute('PRAGMA journal_mode=WAL');
-		await client.execute('PRAGMA busy_timeout=5000');
+		await client.execute('PRAGMA busy_timeout=30000');
 	} catch (e) {
 		console.warn('[db] failed to enable WAL mode, concurrency may be limited:', e);
 	}

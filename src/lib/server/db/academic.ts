@@ -23,7 +23,26 @@ export type AcademicContext = {
 	};
 };
 
+// ponytail: simple in-process TTL cache for academic context.
+// Only safe because SvelteKit dev server is single-process; for prod multi-instance
+// use a shared cache (e.g. Redis). Upgrade path: invalidate on year/semester mutations.
+const CACHE_TTL_MS = 10_000;
+const academicCache = new Map<number, { data: AcademicContext; expiresAt: number }>();
+
+export function invalidateAcademicCache(sekolahId?: number) {
+	if (sekolahId != null) {
+		academicCache.delete(sekolahId);
+	} else {
+		academicCache.clear();
+	}
+}
+
 export async function resolveSekolahAcademicContext(sekolahId: number): Promise<AcademicContext> {
+	const now = Date.now();
+	const cached = academicCache.get(sekolahId);
+	// return a shallow copy so consumers can't mutate the shared cached object
+	if (cached && cached.expiresAt > now) return { ...cached.data };
+
 	const tahunAjaranList = await db.query.tableTahunAjaran.findMany({
 		where: eq(tableTahunAjaran.sekolahId, sekolahId),
 		orderBy: [desc(tableTahunAjaran.id)],
@@ -66,7 +85,7 @@ export async function resolveSekolahAcademicContext(sekolahId: number): Promise<
 		};
 	}
 
-	return {
+	const result: AcademicContext = {
 		tahunAjaranList,
 		activeTahunAjaranId,
 		activeSemesterId,
@@ -74,4 +93,7 @@ export async function resolveSekolahAcademicContext(sekolahId: number): Promise<
 		tanggalBagiRaport,
 		tanggalMasuk
 	};
+
+	academicCache.set(sekolahId, { data: result, expiresAt: now + CACHE_TTL_MS });
+	return result;
 }
