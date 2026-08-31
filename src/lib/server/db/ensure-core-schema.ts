@@ -20,6 +20,7 @@ export async function ensureCoreSchema() {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			nama TEXT NOT NULL,
 			nip TEXT NOT NULL,
+			sekolah_id INTEGER REFERENCES sekolah(id),
 			created_at TEXT NOT NULL,
 			updated_at TEXT
 		)`,
@@ -236,6 +237,36 @@ export async function ensureCoreSchema() {
 		} catch {
 			// column already exists
 		}
+	}
+
+	// Pegawai scoping ke sekolah (migration untuk multi-sekolah / dapodik per sekolah)
+	try {
+		await db.$client.execute(
+			`ALTER TABLE pegawai ADD COLUMN sekolah_id INTEGER REFERENCES sekolah(id)`
+		);
+	} catch {
+		// column already exists
+	}
+
+	// Backfill sekolah_id utk pegawai hasil sync dapodik lama (sebelum kolom ini
+	// ada). Data lama tidak punya jejak sekolah asal — pada kasus lazim (satu
+	// sekolah dapodik diinstal dulu, sekolah lain ditambah manual) semua GTK
+	// legacy diasosiasikan ke sekolah yang punya dapodik_settings. Skema lama
+	// memang tak bisa memisahkan guru multi-sekolah; disambiguasi penuh butuh
+	// resync. ponytail: perketat bila ada laporan sekolah-salah pada instalasi
+	// multi-dapodik lama.
+	try {
+		await db.$client.execute(
+			`UPDATE pegawai SET sekolah_id = (
+				SELECT ds.sekolah_id FROM dapodik_settings ds
+				WHERE ds.sekolah_id IS NOT NULL
+				ORDER BY ds.id LIMIT 1
+			)
+			WHERE pegawai.sekolah_id IS NULL AND pegawai.dapodik_ptk_id IS NOT NULL
+			  AND EXISTS (SELECT 1 FROM dapodik_settings ds WHERE ds.sekolah_id IS NOT NULL)`
+		);
+	} catch {
+		// dapodik_settings belum ada — abaikan
 	}
 
 	// Profile columns on auth_user (migration for existing databases)

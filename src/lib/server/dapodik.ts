@@ -843,7 +843,11 @@ interface PegawaiIndex {
 	resolve(ptkId?: string | null, nip?: string | null, nama?: string | null): number | null;
 }
 
-async function buildPegawaiIndex(): Promise<PegawaiIndex> {
+// Index pegawai milik sekolah yang sedang disinkron saja. Bila dibangun global,
+// guru yang mengajar di >1 sekolah akan menu-match baris sekolah lain (ptk_id/nip/
+// nama bersifat nasional), sehingga data GTK bocor antar sekolah. Scoping ke
+// sekolahId membuat penyelesaian hanya melihat pegawai milik sekolah itu.
+async function buildPegawaiIndex(sekolahId: number): Promise<PegawaiIndex> {
 	const index: PegawaiIndex = {
 		byDapodik: new Map(),
 		byNip: new Map(),
@@ -856,7 +860,10 @@ async function buildPegawaiIndex(): Promise<PegawaiIndex> {
 			return null;
 		}
 	};
-	const rows = await db.select().from(tablePegawai);
+	const rows = await db
+		.select()
+		.from(tablePegawai)
+		.where(eq(tablePegawai.sekolahId, sekolahId));
 	for (const row of rows) {
 		if (row.dapodikPtkId) index.byDapodik.set(row.dapodikPtkId, row.id);
 		if (row.nip) index.byNip.set(row.nip, row.id);
@@ -873,7 +880,7 @@ async function syncPtk(
 	semesterId: string,
 	sections: DapodikSectionLog[]
 ): Promise<PegawaiIndex> {
-	const index = await buildPegawaiIndex();
+	const index = await buildPegawaiIndex(sekolahId);
 	try {
 		// Endpoint PTK pada WebService Dapodik desktop bernama `getGtk`
 		// (getPtk/getPTK tidak tersedia → HTTP 404).
@@ -892,11 +899,18 @@ async function syncPtk(
 
 			let pegawaiId = index.resolve(ptkId, nip || null, nama);
 			if (pegawaiId) {
+				const existing = await db.query.tablePegawai.findFirst({
+					columns: { dapodikPtkId: true, sekolahId: true },
+					where: eq(tablePegawai.id, pegawaiId)
+				});
 				await db
 					.update(tablePegawai)
 					.set({
 						dapodikPtkId: ptkId,
 						...(nip ? { nip } : {}),
+						// Placeholder kepsek ('-') bisa dibuat createSekolahFromDapodik
+						// sebelum sekolah punya id — scope ke sekolah ini sekarang.
+						...(existing && !existing.dapodikPtkId && !existing.sekolahId ? { sekolahId } : {}),
 						updatedAt: new Date().toISOString()
 					})
 					.where(eq(tablePegawai.id, pegawaiId));
@@ -907,6 +921,7 @@ async function syncPtk(
 					.values({
 						nama,
 						nip: nip || '',
+						sekolahId,
 						dapodikPtkId: ptkId,
 						nuptk: str(row, 'nuptk') ?? null
 					})
