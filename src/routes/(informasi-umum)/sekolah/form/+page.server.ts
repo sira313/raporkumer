@@ -50,7 +50,8 @@ export async function load({ url, locals }) {
 
 	// Cek apakah Dapodik aktif UNTUK SEKOLAH INI (bukan global) — supaya
 	// tambah sekolah baru tidak terpengaruh sync sekolah lain.
-	const targetSekolahId = sekolahToEdit?.id ?? locals.sekolah?.id ?? null;
+	// mode=new → sekolah target BELUM ada, jangan pakai sekolah aktif.
+	const targetSekolahId = isNew ? null : (sekolahToEdit?.id ?? locals.sekolah?.id ?? null);
 	const dapodikSettings = targetSekolahId ? await getDapodikSettings(targetSekolahId) : null;
 	const dapodikAktif = Boolean(dapodikSettings);
 
