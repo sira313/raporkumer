@@ -25,6 +25,10 @@ export function optionalInteger(paramName: string, value: string | null): number
 
 const LOCALE_ID = 'id-ID';
 
+const LOGO_CACHE_TTL = 60_000;
+const logoSrcCache = new Map<number, { src: string; expires: number }>();
+const logoDinasSrcCache = new Map<number, { src: string; expires: number }>();
+
 export function formatTanggal(value: string | Date | null | undefined): string {
 	if (!value) return '';
 	const date = value instanceof Date ? value : new Date(value);
@@ -37,23 +41,33 @@ export function formatTanggal(value: string | Date | null | undefined): string {
 }
 
 export async function getLogoSrc(sekolahId: number): Promise<string | null> {
+	const cached = logoSrcCache.get(sekolahId);
+	if (cached && cached.expires > Date.now()) return cached.src;
+
 	const row = await db.query.tableSekolah.findFirst({
 		columns: { logo: true, logoType: true },
 		where: eq(tableSekolah.id, sekolahId)
 	});
 	if (row?.logo?.length) {
-		return `data:${row.logoType || 'image/png'};base64,${Buffer.from(row.logo).toString('base64')}`;
+		const src = `data:${row.logoType || 'image/png'};base64,${Buffer.from(row.logo).toString('base64')}`;
+		logoSrcCache.set(sekolahId, { src, expires: Date.now() + LOGO_CACHE_TTL });
+		return src;
 	}
 	return null;
 }
 
 export async function getLogoDinasSrc(sekolahId: number): Promise<string | null> {
+	const cached = logoDinasSrcCache.get(sekolahId);
+	if (cached && cached.expires > Date.now()) return cached.src;
+
 	const row = await db.query.tableSekolah.findFirst({
 		columns: { logoDinas: true, logoDinasType: true },
 		where: eq(tableSekolah.id, sekolahId)
 	});
 	if (row?.logoDinas?.length) {
-		return `data:${row.logoDinasType || 'image/png'};base64,${Buffer.from(row.logoDinas).toString('base64')}`;
+		const src = `data:${row.logoDinasType || 'image/png'};base64,${Buffer.from(row.logoDinas).toString('base64')}`;
+		logoDinasSrcCache.set(sekolahId, { src, expires: Date.now() + LOGO_CACHE_TTL });
+		return src;
 	}
 	return null;
 }

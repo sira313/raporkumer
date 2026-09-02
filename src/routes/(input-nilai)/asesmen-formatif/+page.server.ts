@@ -183,12 +183,16 @@ export async function load({ parent, url, depends }) {
 	// grades students of their agama.
 	let assignedLocalMapelId: number | null = null;
 	let assignedIsAgamaVariant = false;
+	// Cache the user's assigned mapel record to avoid 4 identical DB queries
+	let userAssignedMapelRecord: { id: number; nama: string } | null = null;
 	if (needsMapelFilter(maybeUser, kelasAktif?.id ?? null) && maybeUser?.mataPelajaranId) {
 		try {
-			const assigned = await db.query.tableMataPelajaran.findFirst({
-				columns: { id: true, nama: true },
-				where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
-			});
+			userAssignedMapelRecord =
+				(await db.query.tableMataPelajaran.findFirst({
+					columns: { id: true, nama: true },
+					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
+				})) ?? null;
+			const assigned = userAssignedMapelRecord;
 			if (assigned && assigned.nama) {
 				const norm = normalizeText(assigned.nama);
 				// detect agama or PKS variant
@@ -342,23 +346,15 @@ export async function load({ parent, url, depends }) {
 		// If the user's assigned mapel is an agama or PKS variant and we have the
 		// special rule enabled, default to the parent option instead of the variant id.
 		if (treatAssignedAgamaVariantAsBase) {
-			// Check if user is assigned to PKS variant, then default to PKS parent
-			try {
-				const assigned = await db.query.tableMataPelajaran.findFirst({
-					columns: { id: true, nama: true },
-					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
-				});
-				if (assigned && assigned.nama) {
-					const norm = normalizeText(assigned.nama);
-					if (norm.startsWith('pendalaman kitab suci')) {
-						selectedMapelValue = PKS_MAPEL_VALUE;
-					} else if (norm.startsWith('pendidikan agama')) {
-						selectedMapelValue = AGAMA_MAPEL_VALUE;
-					}
+			const assigned = userAssignedMapelRecord;
+			if (assigned && assigned.nama) {
+				const norm = normalizeText(assigned.nama);
+				if (norm.startsWith('pendalaman kitab suci')) {
+					selectedMapelValue = PKS_MAPEL_VALUE;
+				} else if (norm.startsWith('pendidikan agama')) {
+					selectedMapelValue = AGAMA_MAPEL_VALUE;
 				}
-			} catch (err) {
-				console.warn('[asesmen-formatif] Failed to determine parent mapel value', err);
-				// Fallback to agama parent for backward compatibility
+			} else {
 				selectedMapelValue = AGAMA_MAPEL_VALUE;
 			}
 		} else {
@@ -383,39 +379,23 @@ export async function load({ parent, url, depends }) {
 	) {
 		// Special-case: if assigned to an agama or PKS variant, default to the parent option.
 		if (treatAssignedAgamaVariantAsBase) {
-			// Check if user is assigned to PKS variant, then default to PKS parent
-			try {
-				const assigned = await db.query.tableMataPelajaran.findFirst({
-					columns: { id: true, nama: true },
-					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
-				});
-				if (assigned && assigned.nama) {
-					const norm = normalizeText(assigned.nama);
-					if (norm.startsWith('pendalaman kitab suci')) {
-						selectedMapelValue = PKS_MAPEL_VALUE;
-					} else if (norm.startsWith('pendidikan agama')) {
-						selectedMapelValue = AGAMA_MAPEL_VALUE;
-					}
+			const assigned = userAssignedMapelRecord;
+			if (assigned && assigned.nama) {
+				const norm = normalizeText(assigned.nama);
+				if (norm.startsWith('pendalaman kitab suci')) {
+					selectedMapelValue = PKS_MAPEL_VALUE;
+				} else if (norm.startsWith('pendidikan agama')) {
+					selectedMapelValue = AGAMA_MAPEL_VALUE;
 				}
-			} catch (err) {
-				console.warn('[asesmen-formatif] Failed to determine parent mapel value', err);
-				// Fallback to agama parent for backward compatibility
+			} else {
 				selectedMapelValue = AGAMA_MAPEL_VALUE;
 			}
 		} else {
-			// try to find a mapel in this kelas with the same name and set it
-			try {
-				const assigned = await db.query.tableMataPelajaran.findFirst({
-					columns: { id: true, nama: true },
-					where: eq(tableMataPelajaran.id, Number(maybeUser.mataPelajaranId))
-				});
-				if (assigned && assigned.nama) {
-					const norm = (assigned.nama || '').trim().toLowerCase();
-					const found = mapelRecords.find((r) => (r.nama || '').trim().toLowerCase() === norm);
-					if (found) selectedMapelValue = String(found.id);
-				}
-			} catch (err) {
-				console.warn('[asesmen-formatif] Failed to default to assigned mapel', err);
+			const assigned = userAssignedMapelRecord;
+			if (assigned && assigned.nama) {
+				const norm = (assigned.nama || '').trim().toLowerCase();
+				const found = mapelRecords.find((r) => (r.nama || '').trim().toLowerCase() === norm);
+				if (found) selectedMapelValue = String(found.id);
 			}
 		}
 	}

@@ -11,6 +11,11 @@ const SESSION_REFRESH_THRESHOLD_SECONDS = 60 * 60 * 2; // refresh token when les
 const PASSWORD_KEY_LENGTH = 64;
 const PASSWORD_SALT_BYTES = 16;
 
+// In-memory session cache — keyed by token hash, TTL 30s.
+// Invalidated on delete/refresh so stale data never persists.
+const SESSION_CACHE_TTL = 30_000;
+const sessionCache = new Map<string, { session: AuthSession; user: AuthUser; expires: number }>();
+
 const defaultAdminAccount = {
 	username: 'Admin',
 	password: 'Admin123',
@@ -158,6 +163,30 @@ async function refreshSession(sessionId: number) {
 
 export async function resolveSession(token: string): Promise<SessionResolution | null> {
 	const tokenHash = hashToken(token);
+
+	const cached = sessionCache.get(tokenHash);
+	if (cached && cached.expires > Date.now()) {
+		const secondsRemaining = Math.floor(
+			(new Date(cached.session.expiresAt).getTime() - Date.now()) / 1000
+		);
+		if (secondsRemaining <= 0) {
+			sessionCache.delete(tokenHash);
+		} else {
+			let refreshed = false;
+			let expiresAt = cached.session.expiresAt;
+			if (secondsRemaining < SESSION_REFRESH_THRESHOLD_SECONDS) {
+				expiresAt = await refreshSession(cached.session.id);
+				refreshed = true;
+				sessionCache.set(tokenHash, {
+					session: { ...cached.session, expiresAt },
+					user: cached.user,
+					expires: Date.now() + SESSION_CACHE_TTL
+				});
+			}
+			return { session: { ...cached.session, expiresAt }, user: cached.user, refreshed };
+		}
+	}
+
 	const record = await db.query.tableAuthSession.findFirst({
 		where: eq(tableAuthSession.tokenHash, tokenHash),
 		with: { user: true }
@@ -170,6 +199,7 @@ export async function resolveSession(token: string): Promise<SessionResolution |
 	const expiresAtValue = new Date(record.expiresAt).getTime();
 	if (!Number.isFinite(expiresAtValue) || expiresAtValue <= Date.now()) {
 		await db.delete(tableAuthSession).where(eq(tableAuthSession.id, record.id));
+		sessionCache.delete(tokenHash);
 		return null;
 	}
 
@@ -181,21 +211,28 @@ export async function resolveSession(token: string): Promise<SessionResolution |
 		refreshed = true;
 	}
 
-	const { user, ...sessionData } = record;
+	const { user: rawUser, ...sessionData } = record;
+	const user = rawUser as AuthUser;
 	const session: AuthSession = { ...sessionData, expiresAt };
-	return {
+
+	sessionCache.set(tokenHash, {
 		session,
 		user,
-		refreshed
-	};
+		expires: Date.now() + SESSION_CACHE_TTL
+	});
+
+	return { session, user, refreshed };
 }
 
 export async function deleteSessionByToken(token: string) {
 	const tokenHash = hashToken(token);
+	sessionCache.delete(tokenHash);
 	await db.delete(tableAuthSession).where(eq(tableAuthSession.tokenHash, tokenHash));
 }
 
 export async function deleteSessionsForUser(userId: number) {
+	// Clear entire cache since we don't have token hashes to invalidate selectively
+	sessionCache.clear();
 	await db.delete(tableAuthSession).where(eq(tableAuthSession.userId, userId));
 }
 
