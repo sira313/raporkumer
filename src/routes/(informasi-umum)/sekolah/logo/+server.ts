@@ -4,7 +4,9 @@ import { eq } from 'drizzle-orm';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+const LOGO_CACHE_TTL = 60_000; // 60 seconds
 let placeholderCache: Uint8Array | null = null;
+const logoCache = new Map<number, { data: Uint8Array; type: string; expires: number }>();
 
 async function getPlaceholder() {
 	if (!placeholderCache) {
@@ -28,15 +30,32 @@ export async function GET({ locals }) {
 		});
 	}
 
+	const cached = logoCache.get(sekolahId);
+	if (cached && cached.expires > Date.now()) {
+		return new Response(Buffer.from(cached.data), {
+			headers: {
+				'Content-Type': cached.type,
+				'Cache-Control': 'private, max-age=60'
+			}
+		});
+	}
+
 	const sekolah = await db.query.tableSekolah.findFirst({
 		columns: { logo: true, logoType: true },
 		where: eq(tableSekolah.id, sekolahId)
 	});
 
 	if (sekolah?.logo?.length) {
+		const type = sekolah.logoType || 'image/png';
+		logoCache.set(sekolahId, {
+			data: sekolah.logo,
+			type,
+			expires: Date.now() + LOGO_CACHE_TTL
+		});
 		return new Response(Buffer.from(sekolah.logo), {
 			headers: {
-				'Content-Type': sekolah.logoType || 'image/png'
+				'Content-Type': type,
+				'Cache-Control': 'private, max-age=60'
 			}
 		});
 	}

@@ -42,6 +42,7 @@ async function computePersentaseHarian(params: {
 	user: NonNullable<App.Locals['user']>;
 	simHari: string | null;
 	simJam: string | null;
+	userMpIds?: Set<number>;
 }) {
 	const {
 		sekolahId,
@@ -53,7 +54,8 @@ async function computePersentaseHarian(params: {
 		kegiatanCustom,
 		user,
 		simHari,
-		simJam
+		simJam,
+		userMpIds: existingUserMpIds
 	} = params;
 
 	const dayNames = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
@@ -223,14 +225,17 @@ async function computePersentaseHarian(params: {
 	let userKodeSet: Set<string> | null = null;
 	if (user.type === 'user') {
 		userKodeSet = new Set<string>();
-		const userMpIds = new Set<number>();
-		if (user.mataPelajaranId) userMpIds.add(user.mataPelajaranId);
-		const additional = await db.query.tableAuthUserMataPelajaran.findMany({
-			columns: { mataPelajaranId: true },
-			where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
-		});
-		for (const a of additional) {
-			if (a.mataPelajaranId) userMpIds.add(a.mataPelajaranId);
+		let userMpIds = existingUserMpIds;
+		if (!userMpIds) {
+			userMpIds = new Set<number>();
+			if (user.mataPelajaranId) userMpIds.add(user.mataPelajaranId);
+			const additional = await db.query.tableAuthUserMataPelajaran.findMany({
+				columns: { mataPelajaranId: true },
+				where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
+			});
+			for (const a of additional) {
+				if (a.mataPelajaranId) userMpIds.add(a.mataPelajaranId);
+			}
 		}
 		if (userMpIds.size > 0) {
 			const userMps = await db.query.tableMataPelajaran.findMany({
@@ -712,6 +717,20 @@ export async function loadHarian(params: {
 	let guruMapelSubject: { id: number; nama: string } | null = null;
 	let papbMpId: number | null = null;
 
+	// Pre-fetch user mata pelajaran IDs once to avoid duplicate queries
+	let precomputedUserMpIds: Set<number> | undefined;
+	if (user.type === 'user') {
+		precomputedUserMpIds = new Set<number>();
+		if (user.mataPelajaranId) precomputedUserMpIds.add(user.mataPelajaranId);
+		const additional = await db.query.tableAuthUserMataPelajaran.findMany({
+			columns: { mataPelajaranId: true },
+			where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
+		});
+		for (const a of additional) {
+			if (a.mataPelajaranId) precomputedUserMpIds.add(a.mataPelajaranId);
+		}
+	}
+
 	if (jenisPresensi === 'tiap_mapel' && tableReady && semuaMurid.length > 0) {
 		const result = await computePersentaseHarian({
 			sekolahId,
@@ -723,7 +742,8 @@ export async function loadHarian(params: {
 			kegiatanCustom,
 			user,
 			simHari,
-			simJam
+			simJam,
+			userMpIds: precomputedUserMpIds
 		});
 		persentaseHarianSubjects = result.persentaseHarianSubjects;
 		persentaseHarianRows = result.persentaseHarianRows;
@@ -732,28 +752,17 @@ export async function loadHarian(params: {
 		papbMpId = result.papbMpId;
 	}
 
-	if (user.type === 'user') {
-		const userMpIds = new Set<number>();
-		if (user.mataPelajaranId) userMpIds.add(user.mataPelajaranId);
-		const additional = await db.query.tableAuthUserMataPelajaran.findMany({
-			columns: { mataPelajaranId: true },
-			where: eq(tableAuthUserMataPelajaran.authUserId, user.id)
+	if (user.type === 'user' && precomputedUserMpIds && precomputedUserMpIds.size > 0) {
+		const mp = await db.query.tableMataPelajaran.findFirst({
+			columns: { id: true, nama: true },
+			where: inArray(tableMataPelajaran.id, [...precomputedUserMpIds])
 		});
-		for (const a of additional) {
-			if (a.mataPelajaranId) userMpIds.add(a.mataPelajaranId);
-		}
-		if (userMpIds.size > 0) {
-			const mp = await db.query.tableMataPelajaran.findFirst({
-				columns: { id: true, nama: true },
-				where: inArray(tableMataPelajaran.id, [...userMpIds])
-			});
-			if (mp) {
-				const isAgama = agamaNameSet.has(mp.nama);
-				guruMapelSubject = {
-					id: isAgama && papbMpId != null ? papbMpId : mp.id,
-					nama: isAgama ? 'Pendidikan Agama dan Budi Pekerti' : mp.nama
-				};
-			}
+		if (mp) {
+			const isAgama = agamaNameSet.has(mp.nama);
+			guruMapelSubject = {
+				id: isAgama && papbMpId != null ? papbMpId : mp.id,
+				nama: isAgama ? 'Pendidikan Agama dan Budi Pekerti' : mp.nama
+			};
 		}
 	}
 

@@ -19,6 +19,9 @@ setTimeout(() => {
 	startBellScheduler().catch((e) => {
 		console.error('[hooks] bell scheduler failed to start:', e);
 	});
+	runStartupEnsures().catch((e) => {
+		console.error('[hooks] startup ensures failed:', e);
+	});
 }, 1000);
 
 // Prevent crash from socket write-after-close errors
@@ -137,8 +140,6 @@ function resolveRedirectTarget(value: string | null) {
 }
 
 const authGuard: Handle = async ({ event, resolve }) => {
-	await runStartupEnsures();
-
 	const sessionToken = event.cookies.get(cookieNames.AUTH_SESSION);
 	const resolvedProtocol = resolveRequestProtocol(event.request, event.url);
 	const secure = isSecureRequest(event.request, event.url);
