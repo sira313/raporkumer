@@ -3,7 +3,7 @@ import { normMapelName } from '$lib/server/dapodik';
 import { agamaMapelNames } from '$lib/statics';
 import { ensureSchema } from './ensure-helper';
 import { eq, sql } from 'drizzle-orm';
-import { tableAuthUser, tableMataPelajaran, tableTujuanPembelajaran } from './schema';
+import { tableMataPelajaran } from './schema';
 
 const TABLE = 'dapodik_settings';
 
@@ -96,74 +96,107 @@ export async function ensureDapodikSchema() {
  * setelah kolom Dapodik dipindahkan.
  */
 let mergedAgamaDupes = false;
+
+// Tabel yang mereferensikan mata_pelajaran_id — semua harus dipindahkan ke baris
+// canonical SEBELUM dup dihapus. Beberapa ber-FK ON DELETE CASCADE (formatif,
+// sumatif, sumatif_tujuan, jurnal) yang menghapus nilai, bukan meng-null-kan.
+const MAPEL_FK_TABLES = [
+	'auth_user',
+	'auth_user_mata_pelajaran',
+	'murid_mata_pelajaran',
+	'tujuan_pembelajaran',
+	'asesmen_formatif',
+	'asesmen_sumatif',
+	'asesmen_sumatif_tujuan',
+	'jurnal_mengajar',
+	'absensi',
+	'ketidakhadiran_harian'
+] as const;
+
 async function mergeDuplicateAgamaMapel() {
 	if (mergedAgamaDupes) return;
 	mergedAgamaDupes = true;
 
 	const canonicalSet = new Set(agamaMapelNames);
 	const allAgama = await db.query.tableMataPelajaran.findMany({
-		columns: { id: true, kelasId: true, nama: true },
+		columns: {
+			id: true,
+			kelasId: true,
+			nama: true,
+			dapodikPembelajaranId: true,
+			dapodikMataPelajaranId: true
+		},
 		where: sql`lower(nama) LIKE 'pendidikan agama%' OR lower(nama) LIKE 'pendidikan kepercayaan%'`
 	});
 
 	type Row = (typeof allAgama)[number];
+	// Grup per (kelas, nama) — baris agama ada di SEMUA kelas; tanpa scoping kelas,
+	// merge akan menghapus row kelas lain dan memindahkan FK ke kelas yang salah.
 	const groups = new Map<string, Row[]>();
 	for (const r of allAgama) {
-		const key = normAgama(r.nama);
+		const key = `${r.kelasId}:${normAgama(r.nama)}`;
 		if (!groups.has(key)) groups.set(key, []);
 		groups.get(key)!.push(r);
 	}
 
 	for (const [, rows] of groups) {
 		if (rows.length <= 1) continue;
-		const canonical = rows.find((r) => canonicalSet.has(r.nama));
-		if (!canonical) continue;
-		for (const dup of rows) {
-			if (dup.id === canonical.id) continue;
-			const dupData = await db.query.tableMataPelajaran.findFirst({
-				columns: {
-					dapodikPembelajaranId: true,
-					dapodikMataPelajaranId: true,
-					dapodikIndukPembelajaranId: true,
-					pengampuId: true
-				},
-				where: eq(tableMataPelajaran.id, dup.id)
-			});
-			if (!dupData) continue;
-			const hasDapodikBinding = dupData.dapodikPembelajaranId || dupData.dapodikMataPelajaranId;
-			const canonicalData = await db.query.tableMataPelajaran.findFirst({
-				columns: {
-					dapodikPembelajaranId: true,
-					pengampuId: true
-				},
-				where: eq(tableMataPelajaran.id, canonical.id)
-			});
-			const needsBinding = !canonicalData?.dapodikPembelajaranId && hasDapodikBinding;
-			const needsPengampu = !canonicalData?.pengampuId && dupData.pengampuId;
-			if (needsBinding || needsPengampu) {
-				await db
-					.update(tableMataPelajaran)
-					.set({
-						...(needsBinding
-							? {
-									dapodikPembelajaranId: dupData.dapodikPembelajaranId,
-									dapodikMataPelajaranId: dupData.dapodikMataPelajaranId
-								}
-							: {}),
-						...(needsPengampu ? { pengampuId: dupData.pengampuId } : {})
-					})
-					.where(eq(tableMataPelajaran.id, canonical.id));
+		try {
+			// Pilih canonical deterministik: lebih dulu yang terikat Dapodik,
+			// lalu any canonical-named, terakhir id terkecil — bukan ambil arbitrary.
+			const canonicalRows = rows.filter((r) => canonicalSet.has(r.nama));
+			if (canonicalRows.length === 0) continue;
+			const canonical =
+				canonicalRows.find((r) => r.dapodikPembelajaranId || r.dapodikMataPelajaranId) ??
+				canonicalRows.reduce((a, b) => (a.id < b.id ? a : b));
+			for (const dup of rows) {
+				if (dup.id === canonical.id) continue;
+				const dupData = await db.query.tableMataPelajaran.findFirst({
+					columns: {
+						dapodikPembelajaranId: true,
+						dapodikMataPelajaranId: true,
+						dapodikIndukPembelajaranId: true,
+						pengampuId: true
+					},
+					where: eq(tableMataPelajaran.id, dup.id)
+				});
+				if (!dupData) continue;
+				const hasDapodikBinding = dupData.dapodikPembelajaranId || dupData.dapodikMataPelajaranId;
+				const canonicalData = await db.query.tableMataPelajaran.findFirst({
+					columns: {
+						dapodikPembelajaranId: true,
+						pengampuId: true
+					},
+					where: eq(tableMataPelajaran.id, canonical.id)
+				});
+				const needsBinding = !canonicalData?.dapodikPembelajaranId && hasDapodikBinding;
+				const needsPengampu = !canonicalData?.pengampuId && dupData.pengampuId;
+				if (needsBinding || needsPengampu) {
+					await db
+						.update(tableMataPelajaran)
+						.set({
+							...(needsBinding
+								? {
+										dapodikPembelajaranId: dupData.dapodikPembelajaranId,
+										dapodikMataPelajaranId: dupData.dapodikMataPelajaranId
+									}
+								: {}),
+							...(needsPengampu ? { pengampuId: dupData.pengampuId } : {})
+						})
+						.where(eq(tableMataPelajaran.id, canonical.id));
+				}
+				// Pindahkan semua referensi FK ke canonical sebelum hapus —
+				// kalau tidak, ON DELETE CASCADE menghapus nilai rapor.
+				for (const tableName of MAPEL_FK_TABLES) {
+					await db.run(
+						sql`update ${sql.raw(tableName)} set mata_pelajaran_id = ${canonical.id} where mata_pelajaran_id = ${dup.id}`
+					);
+				}
+				await db.delete(tableMataPelajaran).where(eq(tableMataPelajaran.id, dup.id));
 			}
-			// Reassign FK refs that lack ON DELETE CASCADE/SET NULL before deleting
-			await db
-				.update(tableAuthUser)
-				.set({ mataPelajaranId: canonical.id })
-				.where(eq(tableAuthUser.mataPelajaranId, dup.id));
-			await db
-				.update(tableTujuanPembelajaran)
-				.set({ mataPelajaranId: canonical.id })
-				.where(eq(tableTujuanPembelajaran.mataPelajaranId, dup.id));
-			await db.delete(tableMataPelajaran).where(eq(tableMataPelajaran.id, dup.id));
+		} catch (error) {
+			// Jangan biarkan kegagalan merge menggagalkan boot aplikasi.
+			console.error('[ensure-dapodik] mergeDuplicateAgamaMapel gagal:', error);
 		}
 	}
 }

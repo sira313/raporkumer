@@ -54,7 +54,8 @@
 	const _isPksParentMapel = $derived(data.mapel.nama === PKS_PARENT_NAME);
 	// Check if mapel is PAPB-related (parent or any variant)
 	const isAgamaRelated = $derived(
-		data.mapel.nama === AGAMA_PARENT_NAME || data.mapel.nama?.startsWith('Pendidikan Agama ')
+		data.mapel.nama === AGAMA_PARENT_NAME ||
+			/^(pendidikan agama|pendidikan kepercayaan)/i.test(data.mapel.nama ?? '')
 	);
 	// Check if mapel is PKS-related (parent or any variant)
 	const isPksRelated = $derived(

@@ -16,8 +16,11 @@ import {
 	jenisMapel,
 	agamaMapelNames,
 	agamaParentName,
+	agamaMapelOptions,
+	pksMapelOptions,
 	type DimensiProfilLulusanKey
 } from '$lib/statics';
+import { muridAgamaKey } from '$lib/server/mapel-picker';
 import {
 	buildKokurikulerNarrative,
 	DEFAULT_KOKURIKULER_MESSAGE,
@@ -45,76 +48,36 @@ const LOCALE_ID = 'id-ID';
 
 const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
 
-const AGAMA_VARIANT_MAP: Record<string, string> = {
-	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
-	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
-	protestan: 'Pendidikan Agama Kristen dan Budi Pekerti',
-	katolik: 'Pendidikan Agama Katolik dan Budi Pekerti',
-	katholik: 'Pendidikan Agama Katolik dan Budi Pekerti',
-	hindu: 'Pendidikan Agama Hindu dan Budi Pekerti',
-	budha: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	kepercayaan: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
-	penghayat: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
-	'penghayat kepercayaan': 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti'
-};
-
 const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
-
-// Map dari agama ke nama PKS yang disimpan di database (tanpa "Agama")
-const PKS_VARIANT_DB_MAP: Record<string, string> = {
-	islam: 'Pendalaman Kitab Suci Islam',
-	kristen: 'Pendalaman Kitab Suci Kristen',
-	protestan: 'Pendalaman Kitab Suci Kristen',
-	katolik: 'Pendalaman Kitab Suci Katolik',
-	katholik: 'Pendalaman Kitab Suci Katolik',
-	hindu: 'Pendalaman Kitab Suci Hindu',
-	budha: 'Pendalaman Kitab Suci Buddha',
-	buddha: 'Pendalaman Kitab Suci Buddha',
-	buddhist: 'Pendalaman Kitab Suci Buddha',
-	khonghucu: 'Pendalaman Kitab Suci Khonghucu',
-	'khong hu cu': 'Pendalaman Kitab Suci Khonghucu',
-	konghucu: 'Pendalaman Kitab Suci Khonghucu'
-};
-
-// Map dari agama ke nama PKS untuk ditampilkan di rapor (dengan "Agama")
-const PKS_VARIANT_DISPLAY_MAP: Record<string, string> = {
-	islam: 'Pendalaman Kitab Suci Agama Islam',
-	kristen: 'Pendalaman Kitab Suci Agama Kristen',
-	protestan: 'Pendalaman Kitab Suci Agama Kristen',
-	katolik: 'Pendalaman Kitab Suci Agama Katolik',
-	katholik: 'Pendalaman Kitab Suci Agama Katolik',
-	hindu: 'Pendalaman Kitab Suci Agama Hindu',
-	budha: 'Pendalaman Kitab Suci Agama Buddha',
-	buddha: 'Pendalaman Kitab Suci Agama Buddha',
-	buddhist: 'Pendalaman Kitab Suci Agama Buddha',
-	khonghucu: 'Pendalaman Kitab Suci Agama Khonghucu',
-	'khong hu cu': 'Pendalaman Kitab Suci Agama Khonghucu',
-	konghucu: 'Pendalaman Kitab Suci Agama Khonghucu'
-};
 
 function normalizeText(value: string | null | undefined) {
 	return value?.trim().toLowerCase() ?? '';
 }
 
+function keyAgama(agama: string | null | undefined) {
+	return muridAgamaKey(agama);
+}
+
+function optionByName(key: string | null, options: ReadonlyArray<{ key: string; name: string }>) {
+	return key ? (options.find((o) => o.key === key)?.name ?? null) : null;
+}
+
 function resolveAgamaVariantName(agama: string | null | undefined) {
-	const normalized = normalizeText(agama);
-	return AGAMA_VARIANT_MAP[normalized] ?? null;
+	return optionByName(keyAgama(agama), agamaMapelOptions);
 }
 
 // Resolve PKS variant name as stored in database (without "Agama")
 function resolvePksVariantDbName(agama: string | null | undefined) {
-	const normalized = normalizeText(agama);
-	return PKS_VARIANT_DB_MAP[normalized] ?? null;
+	return optionByName(keyAgama(agama), pksMapelOptions);
 }
 
 // Resolve PKS variant name for display in rapor (with "Agama")
 function resolvePksVariantDisplayName(agama: string | null | undefined) {
-	const normalized = normalizeText(agama);
-	return PKS_VARIANT_DISPLAY_MAP[normalized] ?? null;
+	const key = keyAgama(agama);
+	if (!key) return null;
+	const option = pksMapelOptions.find((o) => o.key === key);
+	if (!option) return null;
+	return `Pendalaman Kitab Suci Agama ${option.label}`;
 }
 
 export type RaporContext = {

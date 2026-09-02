@@ -195,3 +195,72 @@ export function buildGuruMapelPicker(
 
 	return { mapelList, pickerMapelId };
 }
+
+/**
+ * Daftar mapel RELEVAN untuk murid tertentu: mapel reguler + satu varian agama
+ * murid + satu varian PKS murid. Varian agama/PKS lain di-skip — dipakai oleh
+ * halaman rekap nilai akhir (list & detail) agar total/jumlah mapel tidak
+ * menghitung varian milik agama lain.
+ */
+export function relevanMapelUntukMurid(
+	rows: Array<{ id: number; nama: string | null; urutan: number | null }>,
+	muridAgama: string | null | undefined
+): Array<{ id: number; nama: string }> {
+	const normMap = new Map(rows.map((r) => [norm(r.nama), r]));
+	let baseAgama: { id: number; nama: string | null } | null = null;
+	let basePks: { id: number; nama: string | null } | null = null;
+	const regular: Array<{ id: number; nama: string | null; urutan: number | null }> = [];
+
+	for (const r of rows) {
+		if (isKeluargaAgama(r.nama)) {
+			if (norm(r.nama) === 'pendidikan agama dan budi pekerti') baseAgama = r;
+			continue;
+		}
+		if (isKeluargaPks(r.nama)) {
+			if (norm(r.nama) === 'pendalaman kitab suci') basePks = r;
+			continue;
+		}
+		regular.push(r);
+	}
+
+	const pick = (
+		name: string | null,
+		base: { id: number; nama: string | null } | null,
+		familyRe: RegExp
+	): { id: number; nama: string } | null => {
+		const row =
+			(name ? normMap.get(norm(name)) : null) ??
+			base ??
+			rows.find((r) => familyRe.test(norm(r.nama)));
+		return row ? { id: row.id, nama: row.nama || '' } : null;
+	};
+
+	const chosenAgamaName = namaVarianUntukMurid(agamaParentName, muridAgama);
+	const chosenPksName = namaVarianUntukMurid(pksParentName, muridAgama);
+
+	const result: Array<{ id: number; nama: string; urutan: number | null }> = regular.map((r) => ({
+		id: r.id,
+		nama: r.nama || '',
+		urutan: r.urutan
+	}));
+	const agama = pick(chosenAgamaName, baseAgama, /^pendidikan (agama|kepercayaan)/);
+	const pks = pick(chosenPksName, basePks, /^pendalaman kitab suci/);
+
+	// Urutan mengikuti kolom `urutan` (nomor urut "Edit Urutan" di /intrakurikuler);
+	// NULL tampil terakhir — konsisten dengan tampilan intrakurikuler & rapor.
+	const expand = (row: { id: number; nama: string } | null) => {
+		if (!row) return;
+		const orig = rows.find((r) => r.id === row.id);
+		result.push({ id: row.id, nama: row.nama, urutan: orig?.urutan ?? null });
+	};
+	expand(agama);
+	expand(pks);
+
+	result.sort(
+		(a, b) =>
+			(a.urutan ?? Number.POSITIVE_INFINITY) - (b.urutan ?? Number.POSITIVE_INFINITY) ||
+			a.nama.localeCompare(b.nama, 'id')
+	);
+
+	return result.map(({ id, nama }) => ({ id, nama }));
+}

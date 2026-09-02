@@ -4,7 +4,7 @@ import { opsiMapelDapodik } from '$lib/server/dapodik-mapel-options';
 import { tableDapodikPembelajaran, tableKelas, tableMataPelajaran } from '$lib/server/db/schema';
 import { cookieNames, unflattenFormData } from '$lib/utils';
 import { fail } from '@sveltejs/kit';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 
 export async function load({ parent, locals }) {
 	const { kelasAktif } = await parent();
@@ -120,6 +120,12 @@ export const actions = {
 
 		const dapodikMatpelId = mirror?.mataPelajaranId ?? (await resolveReferensiMapelId(nama));
 
+		// Mapel baru selalu diletakkan di nomor urut paling bawah.
+		const [{ maxUrutan }] = await db
+			.select({ maxUrutan: sql<number>`coalesce(max(${tableMataPelajaran.urutan}), 0)` })
+			.from(tableMataPelajaran)
+			.where(eq(tableMataPelajaran.kelasId, kelasId));
+
 		await db.insert(tableMataPelajaran).values({
 			nama,
 			namaLokal: namaLokal || null,
@@ -127,6 +133,7 @@ export const actions = {
 			kkm,
 			kelasId,
 			kode: kode || null,
+			urutan: (maxUrutan ?? 0) + 1,
 			...(mirror ? { dapodikPembelajaranId: mirror.pembelajaranId } : {}),
 			...(!mirror && indukRow ? { dapodikIndukPembelajaranId: indukRow.pembelajaranId } : {}),
 			...(dapodikMatpelId ? { dapodikMataPelajaranId: dapodikMatpelId } : {})

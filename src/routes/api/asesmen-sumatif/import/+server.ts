@@ -9,53 +9,24 @@ import {
 	tableSekolah
 } from '$lib/server/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
+import { muridAgamaKey } from '$lib/server/mapel-picker';
+import { agamaMapelOptions, pksMapelOptions } from '$lib/statics';
 
 const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
 const PKS_BASE_SUBJECT = 'Pendalaman Kitab Suci';
-const AGAMA_VARIANT_MAP: Record<string, string> = {
-	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
-	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
-	protestan: 'Pendidikan Agama Kristen dan Budi Pekerti',
-	katolik: 'Pendidikan Agama Katolik dan Budi Pekerti',
-	katholik: 'Pendidikan Agama Katolik dan Budi Pekerti',
-	hindu: 'Pendidikan Agama Hindu dan Budi Pekerti',
-	budha: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	kepercayaan: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
-	penghayat: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
-	'penghayat kepercayaan': 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti'
-};
-
-const PKS_VARIANT_MAP: Record<string, string> = {
-	islam: 'Pendalaman Kitab Suci Islam',
-	kristen: 'Pendalaman Kitab Suci Kristen',
-	protestan: 'Pendalaman Kitab Suci Kristen',
-	katolik: 'Pendalaman Kitab Suci Katolik',
-	kathholik: 'Pendalaman Kitab Suci Katolik',
-	hindu: 'Pendalaman Kitab Suci Hindu',
-	budha: 'Pendalaman Kitab Suci Buddha',
-	buddha: 'Pendalaman Kitab Suci Buddha',
-	buddhist: 'Pendalaman Kitab Suci Buddha',
-	khonghucu: 'Pendalaman Kitab Suci Khonghucu',
-	'khong hu cu': 'Pendalaman Kitab Suci Khonghucu',
-	konghucu: 'Pendalaman Kitab Suci Khonghucu'
-};
 
 function normalizeText(value: string | null | undefined) {
 	return value?.trim().toLowerCase() ?? '';
 }
 
 function resolveAgamaVariantName(agama: string | null | undefined) {
-	const normalized = normalizeText(agama);
-	return AGAMA_VARIANT_MAP[normalized] ?? null;
+	const key = muridAgamaKey(agama);
+	return key ? (agamaMapelOptions.find((o) => o.key === key)?.name ?? null) : null;
 }
 
 function resolvePksVariantName(agama: string | null | undefined) {
-	const normalized = normalizeText(agama);
-	return PKS_VARIANT_MAP[normalized] ?? null;
+	const key = muridAgamaKey(agama);
+	return key ? (pksMapelOptions.find((o) => o.key === key)?.name ?? null) : null;
 }
 
 function parseNumericCell(value: unknown): number | null {
@@ -321,25 +292,28 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			if (Number.isInteger(maybeNumeric) && maybeNumeric > 0) {
 				targetMapelId = maybeNumeric;
 			} else {
-				// treat as agama/pks-base selection: resolve by student's agama
+				// grouped selection ('agama'/'pks'): resolve by student's agama.
+				// Varian agama DAN PKS wajib dipisah — tanpa ini varian agama selalu
+				// menang dan import PKS jatuh ke mapel agama.
+				const isPksMode = mapelIdRaw === 'pks';
 				const agamaVariantName = resolveAgamaVariantName(muridRecord.agama);
 				const pksVariantName = resolvePksVariantName(muridRecord.agama);
 
-				if (agamaVariantName) {
+				if (!isPksMode && agamaVariantName) {
 					const variantRecord = kelasMapels.find(
 						(rec) => normalizeText(rec.nama) === normalizeText(agamaVariantName)
 					);
 					if (variantRecord) targetMapelId = variantRecord.id;
 				}
-				if (!targetMapelId && agamaBase) targetMapelId = agamaBase.id;
+				if (!targetMapelId && !isPksMode && agamaBase) targetMapelId = agamaBase.id;
 
-				if (!targetMapelId && pksVariantName) {
+				if (isPksMode && pksVariantName) {
 					const variantRecord = kelasMapels.find(
 						(rec) => normalizeText(rec.nama) === normalizeText(pksVariantName)
 					);
 					if (variantRecord) targetMapelId = variantRecord.id;
 				}
-				if (!targetMapelId && pksBase) targetMapelId = pksBase.id;
+				if (!targetMapelId && isPksMode && pksBase) targetMapelId = pksBase.id;
 
 				if (!targetMapelId) targetMapelId = kelasMapels[0]?.id ?? null;
 			}

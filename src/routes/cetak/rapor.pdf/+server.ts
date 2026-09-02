@@ -30,7 +30,8 @@ async function handle({ locals, url }: { locals: App.Locals; url: URL }) {
 
 	return new Response(new Blob([pdfBuffer as BlobPart], { type: 'application/pdf' }), {
 		headers: {
-			'Content-Disposition': `inline; filename="${filename}"`
+			'Content-Disposition': `inline; filename="${filename}"`,
+			'Cache-Control': 'no-store, no-cache, must-revalidate'
 		}
 	});
 }
