@@ -6,8 +6,9 @@ import {
 	deletePegawaiIfOrphaned,
 	findGuruPegawaiForKepalaSekolah
 } from '$lib/server/pengguna-merge.js';
+import { getDapodikSettings } from '$lib/server/dapodik';
 import { error, fail } from '@sveltejs/kit';
-import { eq, isNotNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { authority } from '../../../pengguna/utils.server';
 
 export async function load({ url, locals }) {
@@ -47,17 +48,29 @@ export async function load({ url, locals }) {
 		sekolahToEdit = locals.sekolah;
 	}
 
+	// Cek apakah Dapodik aktif UNTUK SEKOLAH INI (bukan global) — supaya
+	// tambah sekolah baru tidak terpengaruh sync sekolah lain.
+	// mode=new → sekolah target BELUM ada, jangan pakai sekolah aktif.
+	const targetSekolahId = isNew ? null : (sekolahToEdit?.id ?? locals.sekolah?.id ?? null);
+	const dapodikSettings = targetSekolahId ? await getDapodikSettings(targetSekolahId) : null;
+	const dapodikAktif = Boolean(dapodikSettings);
+
 	// Daftar pendidik & tenaga pendidik untuk combobox "Nama Kepala Sekolah"
 	// (mirip logika "Nama Mata Pelajaran" pada Tambah Mata Pelajaran: bila data
 	// GTK hasil Sinkron Dapodik tersedia → pilih dari daftar, selain itu teks bebas).
-	const pegawaiRaw = await db
-		.select({
-			id: tablePegawai.id,
-			nama: tablePegawai.nama,
-			nip: tablePegawai.nip,
-			dapodikPtkId: tablePegawai.dapodikPtkId
-		})
-		.from(tablePegawai);
+	// Difilter per sekolah pemilik pegawai supaya data Dapodik antar sekolah
+	// tidak bocor ke form sekolah lain.
+	const pegawaiRaw = dapodikAktif
+		? await db
+				.select({
+					id: tablePegawai.id,
+					nama: tablePegawai.nama,
+					nip: tablePegawai.nip,
+					dapodikPtkId: tablePegawai.dapodikPtkId
+				})
+				.from(tablePegawai)
+				.where(eq(tablePegawai.sekolahId, targetSekolahId!))
+		: [];
 	const seenNama = new Set<string>();
 	const pegawaiList = pegawaiRaw.filter((p) => {
 		const key = (p.nama || '').trim().toLowerCase();
@@ -65,10 +78,6 @@ export async function load({ url, locals }) {
 		seenNama.add(key);
 		return true;
 	});
-
-	// Data Dapodik tersedia → nama & NIP kepala sekolah terkunci (ubah hanya
-	// lewat /pengaturan/profil masing-masing akun).
-	const dapodikAktif = pegawaiRaw.some((p) => Boolean(p.dapodikPtkId));
 
 	return {
 		isInit,
@@ -128,12 +137,18 @@ export const actions = {
 		// teaching hours). Reuse that existing guru pegawai instead of keeping a
 		// separate person record — otherwise the same name produces two accounts
 		// in /pengguna and two rows in presensi guru.
-		const dapodikAktif = await db
-			.select({ id: tablePegawai.id })
-			.from(tablePegawai)
-			.where(isNotNull(tablePegawai.dapodikPtkId))
-			.limit(1);
-		const lockKepalaSekolah = dapodikAktif.length > 0;
+		const currentSekolah = formSekolah.id
+			? await db.query.tableSekolah.findFirst({
+					columns: { id: true, kepalaSekolahId: true },
+					where: eq(tableSekolah.id, +formSekolah.id)
+				})
+			: null;
+		// Cek Dapodik per sekolah (bukan global) — supaya tambah sekolah baru
+		// tidak terkunci oleh data Dapodik sekolah lain.
+		const sekolahDapodikSettings = currentSekolah?.id
+			? await getDapodikSettings(currentSekolah.id)
+			: null;
+		const lockKepalaSekolah = Boolean(sekolahDapodikSettings);
 		let kpNama = formSekolah.kepalaSekolah?.nama?.trim();
 		let kpNip = formSekolah.kepalaSekolah?.nip?.trim();
 		// Nilai nama/NIP yang ditulis ke pegawai kepala sekolah.
@@ -144,12 +159,6 @@ export const actions = {
 		const kepalaPegawaiIdRaw = Number(formData.get('kepalaSekolahId') ?? 0);
 		const kepalaPegawaiId =
 			Number.isInteger(kepalaPegawaiIdRaw) && kepalaPegawaiIdRaw > 0 ? kepalaPegawaiIdRaw : null;
-		const currentSekolah = formSekolah.id
-			? await db.query.tableSekolah.findFirst({
-					columns: { id: true, kepalaSekolahId: true },
-					where: eq(tableSekolah.id, +formSekolah.id)
-				})
-			: null;
 
 		// Mode terkunci (data Dapodik ada): kepala sekolah hanya bisa DIGANTI
 		// orangnya via pilihan daftar — identitas pegawai tidak pernah ditimpa.

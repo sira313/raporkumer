@@ -57,7 +57,7 @@ export const actions = {
 		}
 
 		async function generateUniqueFilename(
-			dbTrans: DBTransaction,
+			dbTrans: Pick<DBTransaction, 'query'>,
 			base: string,
 			ext: string,
 			dir: string,
@@ -102,6 +102,22 @@ export const actions = {
 
 		formMurid.semesterId = kelas.semesterId;
 
+		// Validate uploaded foto UPFRONT (before any DB write / file I/O) so the
+		// transaction never holds the DB lock while doing filesystem work.
+		if (uploadedFile && uploadedFile.size) {
+			const allowed = ['image/png', 'image/jpeg'];
+			if (uploadedFile.size > 500 * 1024) {
+				error(400, 'Ukuran file foto tidak boleh lebih dari 500KB');
+			}
+			if (!allowed.includes(uploadedFile.type)) {
+				error(400, 'Format file tidak didukung; hanya JPG dan PNG yang diizinkan');
+			}
+		}
+
+		// Track old foto filename to remove after commit (filesystem I/O stays
+		// outside the DB transaction so the SQLite write lock isn't held).
+		let oldFoto: string | null = null;
+
 		await db.transaction(async (db) => {
 			if (params.id) {
 				// update
@@ -109,35 +125,7 @@ export const actions = {
 					where: eq(tableMurid.id, +params.id)
 				});
 				if (!murid) error(404, `Data murid tidak ditemukan`);
-
-				// handle uploaded foto (update)
-				if (uploadedFile && uploadedFile.size) {
-					const allowed = ['image/png', 'image/jpeg'];
-					if (uploadedFile.size > 500 * 1024) {
-						error(400, 'Ukuran file foto tidak boleh lebih dari 500KB');
-					}
-					if (!allowed.includes(uploadedFile.type)) {
-						error(400, 'Format file tidak didukung; hanya JPG dan PNG yang diizinkan');
-					}
-
-					const buffer = Buffer.from(await uploadedFile.arrayBuffer());
-					const dir = uploadsDir();
-					await fs.mkdir(dir, { recursive: true });
-					const ext = uploadedFile.type === 'image/png' ? '.png' : '.jpg';
-					const base = slugifyName(formMurid.nama || murid.nama || `murid-${murid.id}`);
-					const filename = await generateUniqueFilename(db, base, ext, dir, murid.id);
-					const filePath = path.join(dir, filename);
-					// remove old file if exists and different
-					if (murid.foto && murid.foto !== filename) {
-						try {
-							await fs.unlink(path.join(dir, murid.foto));
-						} catch {
-							// ignore
-						}
-					}
-					await fs.writeFile(filePath, buffer, { mode: 0o644 });
-					formMurid.foto = filename;
-				}
+				if (uploadedFile && uploadedFile.size && murid.foto) oldFoto = murid.foto;
 
 				await db
 					.update(tableAlamat)
@@ -218,44 +206,42 @@ export const actions = {
 					.values(formMurid)
 					.returning({ id: tableMurid.id });
 				formMurid.id = murid?.id;
-
-				// handle uploaded foto (new insert)
-				if (uploadedFile && uploadedFile.size) {
-					const allowed = ['image/png', 'image/jpeg'];
-					if (uploadedFile.size > 500 * 1024) {
-						error(400, 'Ukuran file foto tidak boleh lebih dari 500KB');
-					}
-					if (!allowed.includes(uploadedFile.type)) {
-						error(400, 'Format file tidak didukung; hanya JPG dan PNG yang diizinkan');
-					}
-
-					const buffer = Buffer.from(await uploadedFile.arrayBuffer());
-					const dir = uploadsDir();
-					await fs.mkdir(dir, { recursive: true });
-					const ext = uploadedFile.type === 'image/png' ? '.png' : '.jpg';
-					const base = slugifyName(formMurid.nama || `murid-${formMurid.id}`);
-					const filename = await generateUniqueFilename(db, base, ext, dir, formMurid.id);
-					const filePath = path.join(dir, filename);
-					// remove old file if exists
-					const existing = await db.query.tableMurid.findFirst({
-						where: eq(tableMurid.id, formMurid.id),
-						columns: { foto: true }
-					});
-					if (existing?.foto && existing.foto !== filename) {
-						try {
-							await fs.unlink(path.join(dir, existing.foto));
-						} catch {
-							// ignore
-						}
-					}
-					await fs.writeFile(filePath, buffer, { mode: 0o644 });
-					await db
-						.update(tableMurid)
-						.set({ foto: filename })
-						.where(eq(tableMurid.id, formMurid.id));
-				}
 			}
 		});
+
+		// Write the uploaded photo AFTER the transaction commits, so the SQLite
+		// write lock is never held during filesystem I/O. Failures here are
+		// non-fatal: murid record is already saved, foto filename retried next save.
+		if (uploadedFile && uploadedFile.size && formMurid.id) {
+			const buffer = Buffer.from(await uploadedFile.arrayBuffer());
+			const dir = uploadsDir();
+			await fs.mkdir(dir, { recursive: true });
+			const ext = uploadedFile.type === 'image/png' ? '.png' : '.jpg';
+			const base = slugifyName(formMurid.nama || `murid-${formMurid.id}`);
+			const filename = await generateUniqueFilename(db, base, ext, dir, formMurid.id);
+			const filePath = path.join(dir, filename);
+			try {
+				await fs.writeFile(filePath, buffer, { mode: 0o644 });
+				await db.update(tableMurid).set({ foto: filename }).where(eq(tableMurid.id, formMurid.id));
+				formMurid.foto = filename;
+				// remove old file only after the new file is in place
+				if (oldFoto && oldFoto !== filename) {
+					try {
+						await fs.unlink(path.join(uploadsDir(), oldFoto));
+					} catch {
+						// ignore
+					}
+				}
+			} catch (err) {
+				console.error('Gagal menulis file foto murid', err);
+				try {
+					await fs.unlink(filePath);
+				} catch {
+					// ignore
+				}
+			}
+		}
+
 		// return the created/updated murid id and foto filename (if any)
 		return {
 			message: `Data murid berhasil disimpan`,

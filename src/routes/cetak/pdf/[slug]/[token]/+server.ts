@@ -73,7 +73,8 @@ export const GET = (async ({ locals, params }) => {
 
 	return new Response(new Blob([pdfBuffer as unknown as BlobPart], { type: 'application/pdf' }), {
 		headers: {
-			'Content-Disposition': `inline; filename="${stored.slug}.pdf"`
+			'Content-Disposition': `inline; filename="${stored.slug}.pdf"`,
+			'Cache-Control': 'no-store, no-cache, must-revalidate'
 		}
 	});
 }) satisfies RequestHandler;

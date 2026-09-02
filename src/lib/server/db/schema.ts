@@ -100,6 +100,9 @@ export const tablePegawai = sqliteTable('pegawai', {
 	id: int().primaryKey({ autoIncrement: true }),
 	nama: text().notNull(),
 	nip: text().notNull(),
+	// Sekolah pemilik pegawai (null utk placeholder/belum ditetapkan). Dipakai
+	// dapodik sync utk memisahkan data GTK antar sekolah.
+	sekolahId: int().references(() => tableSekolah.id),
 	// Referensi Dapodik
 	dapodikPtkId: text(),
 	nuptk: text(),

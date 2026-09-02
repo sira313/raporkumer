@@ -1,4 +1,4 @@
-import { sharedStyles, formatValue, formatUpper, getTutwuriBwDataUri } from './shared';
+import { sharedStyles, formatValue, formatUpper, escHtml, getTutwuriBwDataUri } from './shared';
 import { parseTingkat, lastGradeOfFase, isGraduatingFase, isGraduatingGrade } from '$lib/tingkat';
 
 export interface RaporPrintData {
@@ -297,28 +297,28 @@ ${bgLogoSrc ? `<img src="${bgLogoSrc}" alt="" class="watermark">` : ''}
 	<div>${formatUpper(data.murid.nama)}</div>
 	<div class="font-bold">Kelas</div>
 	<div>:</div>
-	<div>${data.rombel.nama}</div>
+	<div>${formatValue(data.rombel.nama)}</div>
 
 	<div class="font-bold">NIS / NISN</div>
 	<div>:</div>
 	<div>${formatValue(data.murid.nis)} / ${formatValue(data.murid.nisn)}</div>
 	<div class="font-bold">Fase</div>
 	<div>:</div>
-	<div>${data.rombel.fase}</div>
+	<div>${formatValue(data.rombel.fase)}</div>
 
 	<div class="font-bold">Sekolah</div>
 	<div>:</div>
 	<div>${formatUpper(data.sekolah.nama)}</div>
 	<div class="font-bold">Semester</div>
 	<div>:</div>
-	<div>${data.periode.semester}</div>
+	<div>${formatValue(data.periode.semester)}</div>
 
 	<div class="font-bold">Alamat</div>
 	<div>:</div>
-	<div>${data.sekolah.alamat}</div>
+	<div>${formatValue(data.sekolah.alamat)}</div>
 	<div class="font-bold">Tahun Ajaran</div>
 	<div>:</div>
-	<div>${data.periode.tahunPelajaran}</div>
+	<div>${formatValue(data.periode.tahunPelajaran)}</div>
 </div>
 
 <!-- Intrakurikuler -->
@@ -344,7 +344,7 @@ ${group.items
 	.map(
 		(item, i) => `		<tr>
 			<td class="text-center align-top">${i + 1}</td>
-			<td class="align-top">${item.mataPelajaran}</td>
+			<td class="align-top">${formatValue(item.mataPelajaran)}</td>
 			<td class="text-center align-top">${formatValue(item.nilaiAkhir)}</td>
 			<td class="align-top">${renderDeskripsi(item.deskripsi)}</td>
 		</tr>`
@@ -391,7 +391,7 @@ ${data.ekstrakurikuler
 	.map(
 		(e, i) => `		<tr>
 			<td class="text-center align-top">${i + 1}</td>
-			<td class="align-top">${e.nama}</td>
+			<td class="align-top">${formatValue(e.nama)}</td>
 			<td class="align-top text-justify">${renderDeskripsi(e.deskripsi)}</td>
 		</tr>`
 	)
@@ -454,7 +454,7 @@ ${
 			</thead>
 			<tbody>
 				<tr>
-					<td class="align-top spacer-6-25">${data.tanggapanOrangTua || ''}</td>
+					<td class="align-top spacer-6-25">${escHtml(data.tanggapanOrangTua || '')}</td>
 				</tr>
 			</tbody>
 		</table>
@@ -512,7 +512,7 @@ ${
 		<tbody>
 			<tr>
 				<td></td>
-				<td class="text-center" style="padding-bottom:6pt;">${data.ttd.tempat}, ${data.ttd.tanggal}</td>
+				<td class="text-center" style="padding-bottom:6pt;">${escHtml(data.ttd.tempat)}, ${escHtml(data.ttd.tanggal)}</td>
 			</tr>
 			<tr>
 				<td class="text-center font-bold">Orang Tua / Wali Murid</td>
@@ -524,14 +524,14 @@ ${
 			</tr>
 			<tr>
 				<td class="text-center">____________________</td>
-				<td class="text-center font-bold underline">${data.waliKelas.nama}</td>
+				<td class="text-center font-bold underline">${formatValue(data.waliKelas.nama)}</td>
 			</tr>
 			${
 				data.waliKelas.nip
 					? `
 			<tr>
 				<td></td>
-				<td class="text-center">${data.waliKelas.nip}</td>
+				<td class="text-center">${escHtml(data.waliKelas.nip)}</td>
 			</tr>`
 					: ''
 			}
@@ -544,13 +544,13 @@ ${
 				<td colspan="2" class="spacer-5"></td>
 			</tr>
 			<tr>
-				<td colspan="2" class="text-center font-bold underline">${data.kepalaSekolah.nama}</td>
+				<td colspan="2" class="text-center font-bold underline">${formatValue(data.kepalaSekolah.nama)}</td>
 			</tr>
 			${
 				data.kepalaSekolah.nip
 					? `
 			<tr>
-				<td colspan="2" class="text-center">${data.kepalaSekolah.nip}</td>
+				<td colspan="2" class="text-center">${escHtml(data.kepalaSekolah.nip)}</td>
 			</tr>`
 					: ''
 			}

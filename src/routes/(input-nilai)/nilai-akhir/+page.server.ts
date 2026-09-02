@@ -7,10 +7,10 @@ import {
 	tableEkstrakurikuler,
 	tableKokurikuler,
 	tableAsesmenKokurikuler,
-	tableAsesmenEkstrakurikuler,
-	tableAuthUserMataPelajaran
+	tableAsesmenEkstrakurikuler
 } from '$lib/server/db/schema';
 import { sanitizeDimensionList } from '$lib/kokurikuler';
+import { relevanMapelUntukMurid } from '$lib/server/mapel-picker';
 import { redirect } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
@@ -20,80 +20,6 @@ const PER_PAGE = 20;
 function formatScore(value: number | null | undefined) {
 	if (value == null || Number.isNaN(value)) return null;
 	return Number.parseFloat(value.toFixed(2));
-}
-
-const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
-
-const AGAMA_VARIANT_MAP: Record<string, string> = {
-	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
-	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
-	protestan: 'Pendidikan Agama Kristen dan Budi Pekerti',
-	katolik: 'Pendidikan Agama Katolik dan Budi Pekerti',
-	katholik: 'Pendidikan Agama Katolik dan Budi Pekerti',
-	hindu: 'Pendidikan Agama Hindu dan Budi Pekerti',
-	budha: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	kepercayaan: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
-	penghayat: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
-	'penghayat kepercayaan': 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti'
-};
-
-function normalizeText(value: string | null | undefined) {
-	return value?.trim().toLowerCase() ?? '';
-}
-
-function isAgamaSubject(name: string) {
-	// Mencakup varian "Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti".
-	return /^pendidikan (agama|kepercayaan)/i.test(normalizeText(name));
-}
-
-function resolveAgamaVariantName(agama: string | null | undefined) {
-	const normalized = normalizeText(agama);
-	return AGAMA_VARIANT_MAP[normalized] ?? null;
-}
-
-type MapelRecord = {
-	id: number;
-	nama: string;
-};
-
-function pickAgamaMapel(records: MapelRecord[], muridAgama: string | null | undefined) {
-	const mapelByName = new Map(records.map((record) => [normalizeText(record.nama), record]));
-	let baseMapel: MapelRecord | null = null;
-	const variantMapel: MapelRecord[] = [];
-	const regularMapel: MapelRecord[] = [];
-
-	for (const record of records) {
-		if (isAgamaSubject(record.nama)) {
-			if (normalizeText(record.nama) === normalizeText(AGAMA_BASE_SUBJECT)) {
-				baseMapel = record;
-			} else {
-				variantMapel.push(record);
-			}
-		} else {
-			regularMapel.push(record);
-		}
-	}
-
-	let chosenAgamaMapel: MapelRecord | null = null;
-	const variantName = resolveAgamaVariantName(muridAgama);
-	if (variantName) {
-		chosenAgamaMapel = mapelByName.get(normalizeText(variantName)) ?? null;
-	}
-	if (!chosenAgamaMapel) {
-		chosenAgamaMapel = baseMapel ?? variantMapel.at(0) ?? null;
-	}
-
-	const result = [...regularMapel];
-	if (chosenAgamaMapel) {
-		result.push(chosenAgamaMapel);
-	}
-
-	result.sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
-	return result;
 }
 
 type NilaiAkhirRow = {
@@ -179,7 +105,7 @@ export const load: PageServerLoad = async ({ parent, locals, url, depends }) => 
 	const muridIds = muridRecords.map((murid) => murid.id);
 
 	const rawMapelRecords = await db.query.tableMataPelajaran.findMany({
-		columns: { id: true, nama: true },
+		columns: { id: true, nama: true, urutan: true },
 		where: eq(tableMataPelajaran.kelasId, kelasAktif.id)
 	});
 
@@ -215,7 +141,7 @@ export const load: PageServerLoad = async ({ parent, locals, url, depends }) => 
 	}
 
 	const rows = muridRecords.map((murid) => {
-		const relevantMapel = pickAgamaMapel(rawMapelRecords, murid.agama);
+		const relevantMapel = relevanMapelUntukMurid(rawMapelRecords, murid.agama);
 		let total = 0;
 		let countDinilai = 0;
 
@@ -318,7 +244,7 @@ export const load: PageServerLoad = async ({ parent, locals, url, depends }) => 
 	const uniqueMapelCount = new Set(rawMapelRecords.map((mapel) => mapel.nama)).size;
 
 	// compute ekstrakurikuler / kokurikuler counts for the active class so the UI can show them
-	let ekstrakCount = 0;
+	let ekstrakCount: number;
 	try {
 		const ekstrakRows = await db.query.tableEkstrakurikuler.findMany({
 			columns: { id: true },
@@ -330,7 +256,7 @@ export const load: PageServerLoad = async ({ parent, locals, url, depends }) => 
 		ekstrakCount = 0;
 	}
 
-	let kokurikulerCount = 0;
+	let kokurikulerCount: number;
 	try {
 		const kokuriRows = await db.query.tableKokurikuler.findMany({
 			columns: { id: true },

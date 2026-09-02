@@ -29,6 +29,44 @@ function canManageImportUrutan(userType?: string) {
 	return userType === 'admin' || userType === 'kepala_sekolah' || userType === 'wali_kelas';
 }
 
+type MapelRow = { id: number; nama: string | null };
+
+/** Kembalikan [induk, ...varian] — induk SELALU elemen pertama (urutan `rows` DB tak tentu). */
+function mapelGroupSiblings(
+	rows: MapelRow[],
+	parentName: string,
+	variantSet: Set<string>
+): MapelRow[] {
+	const parent = rows.find((r) => r.nama === parentName);
+	if (!parent) return [];
+	const variants = rows.filter(
+		(r) => r.nama !== parentName && r.nama !== null && variantSet.has(r.nama)
+	);
+	return [parent, ...variants];
+}
+
+/**
+ * Samakan urutan varian tersembunyi (agama & PKS) dengan induknya. Posisi induk
+ * dibaca dari `idList` (urutan = index + 1 — yang baru saja dialokasikan),
+ * bukan dibaca ulang dari DB di dalam transaksi.
+ */
+async function assignSiblingUrutan(
+	tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+	group: MapelRow[],
+	idList: number[]
+) {
+	if (!group.length) return;
+	const parentIdx = idList.indexOf(group[0].id);
+	if (parentIdx === -1) return;
+	const variantIds = group.slice(1).map((g) => g.id);
+	if (variantIds.length) {
+		await tx
+			.update(tableMataPelajaran)
+			.set({ urutan: parentIdx + 1 })
+			.where(inArray(tableMataPelajaran.id, variantIds));
+	}
+}
+
 // Urutan tampil jenis mapel pada tabel gabungan (belum dipetakan paling atas
 // agar segera terlihat dan dipetakan admin).
 const JENIS_URUTAN = [
@@ -472,6 +510,9 @@ export const actions = {
 				mapelByName.set(nameLower, m.id);
 			}
 
+			// Mapel baru selalu diletakkan di nomor urut paling bawah.
+			let nextUrutan = Math.max(0, ...existingMapel.map((m) => m.urutan ?? 0)) + 1;
+
 			for (const [mapelName, meta] of parsed.entries()) {
 				const lower = mapelName.toLowerCase();
 				let mapelId = mapelByName.get(lower) ?? null;
@@ -482,6 +523,7 @@ export const actions = {
 						jenis: (meta.jenis as MataPelajaran['jenis']) ?? 'wajib',
 						kkm: typeof meta.kkm === 'number' ? meta.kkm : 0,
 						kelasId,
+						urutan: nextUrutan++,
 						kode:
 							meta.kode ??
 							((mapelName || '').toLowerCase().startsWith('pendidikan agama') ? 'PAPB' : null)
@@ -701,13 +743,16 @@ export const actions = {
 		if (!kelas) return fail(404, { fail: 'Kelas tidak ditemukan.' });
 
 		const existing = await db.query.tableMataPelajaran.findMany({
-			columns: { id: true },
+			columns: { id: true, nama: true },
 			where: eq(tableMataPelajaran.kelasId, kelasId)
 		});
 		const knownIds = new Set(existing.map((m) => m.id));
 		// Buang ID asing di luar kelas ini; mapel yang tidak ikut di-drag tetap diberi urutan di belakang.
 		const idList = [...new Set(ids.map(Number))].filter((id) => knownIds.has(id));
 		for (const m of existing) if (!idList.includes(m.id)) idList.push(m.id);
+
+		const agamaGroup = mapelGroupSiblings(existing, AGAMA_PARENT_NAME, AGAMA_VARIANT_NAME_SET);
+		const pksGroup = mapelGroupSiblings(existing, PKS_PARENT_NAME, PKS_VARIANT_NAME_SET);
 
 		await db.transaction(async (tx) => {
 			for (let i = 0; i < idList.length; i++) {
@@ -716,6 +761,10 @@ export const actions = {
 					.set({ urutan: i + 1 })
 					.where(eq(tableMataPelajaran.id, idList[i]));
 			}
+
+			// Varian tersembunyi ikut nomor urut induknya (agama & PKS).
+			await assignSiblingUrutan(tx, agamaGroup, idList);
+			await assignSiblingUrutan(tx, pksGroup, idList);
 		});
 
 		return { success: 'Urutan mata pelajaran berhasil disimpan.' };

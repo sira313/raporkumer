@@ -371,7 +371,7 @@ ${logoUrl ? `<img src="${logoUrl}" alt="Watermark" class="watermark">` : ''}
 	<div>${formatValue(data.sekolah.alamat)}</div>
 	<div class="label">Tahun Ajaran</div>
 	<div>:</div>
-	<div>${data.periode.tahunAjaran}</div>
+	<div>${formatValue(data.periode.tahunAjaran)}</div>
 </div>
 
 <table class="main-table">

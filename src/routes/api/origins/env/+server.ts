@@ -10,7 +10,10 @@ function isAdmin(user: { type?: string } | undefined) {
 	return user?.type === 'admin' || user?.type === 'kepala_sekolah';
 }
 
-export const GET = async () => {
+export const GET = async (event: RequestEvent) => {
+	if (!isAdmin(event.locals.user)) {
+		return json({ message: 'Akses ditolak.' }, { status: 403 });
+	}
 	const combined = await readCombinedOriginsFromEnvAndFile();
 	return json({ data: Array.from(combined.values()) });
 };

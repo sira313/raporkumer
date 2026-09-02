@@ -1,92 +1,13 @@
 import db from '$lib/server/db';
 import { ensureAsesmenSumatifSchema } from '$lib/server/db/ensure-asesmen-sumatif';
-import {
-	tableAsesmenSumatif,
-	tableMataPelajaran,
-	tableMurid,
-	tableAuthUserMataPelajaran
-} from '$lib/server/db/schema';
+import { tableAsesmenSumatif, tableMataPelajaran, tableMurid } from '$lib/server/db/schema';
+import { relevanMapelUntukMurid } from '$lib/server/mapel-picker';
 import { error } from '@sveltejs/kit';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 function formatScore(value: number | null | undefined) {
 	if (value == null || Number.isNaN(value)) return null;
 	return Number.parseFloat(value.toFixed(2));
-}
-
-const AGAMA_BASE_SUBJECT = 'Pendidikan Agama dan Budi Pekerti';
-
-const AGAMA_VARIANT_MAP: Record<string, string> = {
-	islam: 'Pendidikan Agama Islam dan Budi Pekerti',
-	kristen: 'Pendidikan Agama Kristen dan Budi Pekerti',
-	protestan: 'Pendidikan Agama Kristen dan Budi Pekerti',
-	katolik: 'Pendidikan Agama Katolik dan Budi Pekerti',
-	katholik: 'Pendidikan Agama Katolik dan Budi Pekerti',
-	hindu: 'Pendidikan Agama Hindu dan Budi Pekerti',
-	budha: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	buddha: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	buddhist: 'Pendidikan Agama Buddha dan Budi Pekerti',
-	khonghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	'khong hu cu': 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	konghucu: 'Pendidikan Agama Khonghucu dan Budi Pekerti',
-	kepercayaan: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
-	penghayat: 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti',
-	'penghayat kepercayaan': 'Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti'
-};
-
-function normalizeText(value: string | null | undefined) {
-	return value?.trim().toLowerCase() ?? '';
-}
-
-function isAgamaSubject(name: string) {
-	// Mencakup varian "Pendidikan Kepercayaan terhadap Tuhan YME dan Budi Pekerti".
-	return /^pendidikan (agama|kepercayaan)/i.test(normalizeText(name));
-}
-
-function resolveAgamaVariantName(agama: string | null | undefined) {
-	const normalized = normalizeText(agama);
-	return AGAMA_VARIANT_MAP[normalized] ?? null;
-}
-
-type MapelRecord = {
-	id: number;
-	nama: string;
-};
-
-function pickAgamaMapel(records: MapelRecord[], muridAgama: string | null | undefined) {
-	const mapelByName = new Map(records.map((record) => [normalizeText(record.nama), record]));
-	let baseMapel: MapelRecord | null = null;
-	const variantMapel: MapelRecord[] = [];
-	const regularMapel: MapelRecord[] = [];
-
-	for (const record of records) {
-		if (isAgamaSubject(record.nama)) {
-			if (normalizeText(record.nama) === normalizeText(AGAMA_BASE_SUBJECT)) {
-				baseMapel = record;
-			} else {
-				variantMapel.push(record);
-			}
-		} else {
-			regularMapel.push(record);
-		}
-	}
-
-	let chosenAgamaMapel: MapelRecord | null = null;
-	const variantName = resolveAgamaVariantName(muridAgama);
-	if (variantName) {
-		chosenAgamaMapel = mapelByName.get(normalizeText(variantName)) ?? null;
-	}
-	if (!chosenAgamaMapel) {
-		chosenAgamaMapel = baseMapel ?? variantMapel.at(0) ?? null;
-	}
-
-	const result = [...regularMapel];
-	if (chosenAgamaMapel) {
-		result.push(chosenAgamaMapel);
-	}
-
-	result.sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
-	return result;
 }
 
 type RingkasanNilai = {
@@ -167,14 +88,13 @@ export async function load({ parent, url, locals, depends }) {
 	}
 
 	const rawMapelRecords = await db.query.tableMataPelajaran.findMany({
-		columns: { id: true, nama: true },
-		where: eq(tableMataPelajaran.kelasId, kelasAktif.id),
-		orderBy: asc(tableMataPelajaran.nama)
+		columns: { id: true, nama: true, urutan: true },
+		where: eq(tableMataPelajaran.kelasId, kelasAktif.id)
 	});
 
 	// Guru mapel can see all subjects on this page (read-only view)
 
-	const mapelRecords = pickAgamaMapel(rawMapelRecords, murid.agama);
+	const mapelRecords = relevanMapelUntukMurid(rawMapelRecords, murid.agama);
 
 	const mapelIds = mapelRecords.map((mapel) => mapel.id);
 

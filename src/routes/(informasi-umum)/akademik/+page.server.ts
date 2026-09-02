@@ -1,6 +1,6 @@
 import db from '$lib/server/db';
 import type { AcademicContext } from '$lib/server/db/academic';
-import { resolveSekolahAcademicContext } from '$lib/server/db/academic';
+import { resolveSekolahAcademicContext, invalidateAcademicCache } from '$lib/server/db/academic';
 import { ensurePresensiSettingsSchema } from '$lib/server/db/ensure-presensi-settings';
 import { parseHariSekolahCustom } from '$lib/hari-sekolah';
 import {
@@ -927,6 +927,7 @@ export const actions: Actions = {
 			});
 		}
 
+		invalidateAcademicCache(sekolahId);
 		const context = await resolveSekolahAcademicContext(sekolahId);
 
 		return {
@@ -1077,6 +1078,7 @@ export const actions: Actions = {
 			}
 		});
 
+		invalidateAcademicCache(sekolahId);
 		return { message: 'Tahun ajaran aktif diperbarui' };
 	},
 	'set-semester': async ({ request, locals }) => {
@@ -1118,6 +1120,7 @@ export const actions: Actions = {
 			await tx.update(tableSemester).set({ isAktif: true }).where(eq(tableSemester.id, semesterId));
 		});
 
+		invalidateAcademicCache(sekolahId);
 		return { message: 'Semester aktif diperbarui' };
 	},
 	'update-rapor': async ({ request, locals }) => {
@@ -1163,6 +1166,7 @@ export const actions: Actions = {
 			}
 		});
 
+		invalidateAcademicCache(sekolahId);
 		return { message: 'Tanggal bagi rapor diperbarui' };
 	},
 	savePresensiSettings: async ({ request, locals }) => {

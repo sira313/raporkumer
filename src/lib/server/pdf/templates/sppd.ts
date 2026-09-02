@@ -1,4 +1,4 @@
-import { sharedStyles, formatUpper, formatValue } from './shared';
+import { sharedStyles, formatUpper, formatValue, escHtml } from './shared';
 import { getKopSuratLines } from '$lib/statics';
 
 export interface SppdPrintData {
@@ -327,22 +327,22 @@ export function renderSppdHTML(data: SppdPrintData): string {
 		sekolah.alamat.kecamatan,
 		sekolah.alamat.kabupaten
 	].filter(Boolean);
-	const alamatLine = alamatParts.join(', ');
+	const alamatLine = escHtml(alamatParts.join(', '));
 
 	const contactParts: string[] = [];
 	contactParts.push(`NPSN: ${sekolah.npsn}`);
 	if (sekolah.website) contactParts.push(`Website: ${sekolah.website}`);
 	if (sekolah.email) contactParts.push(`Email: ${sekolah.email}`);
-	const contactLine = contactParts.join(' | ');
+	const contactLine = escHtml(contactParts.join(' | '));
 
-	const schoolHeadingText = schoolHeading(sekolah.jenjang, sekolah.nama);
+	const schoolHeadingText = escHtml(schoolHeading(sekolah.jenjang, sekolah.nama));
 
 	const kopLines = getKopSuratLines({
 		jenjangVariant: sekolah.jenjangVariant,
 		naungan: sekolah.naungan,
 		kabupaten: sekolah.alamat.kabupaten,
 		provinsi: sekolah.alamat.provinsi
-	});
+	}).map((line) => escHtml(line));
 
 	const kepalaLabel = ttd.statusKepalaSekolah === 'plt' ? 'Plt. Kepala' : 'Kepala';
 	const kepalaLabelSekolah =
