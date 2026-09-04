@@ -433,7 +433,11 @@
 			</div>
 
 			<div class="modal-action sticky bottom-0 z-10">
-				<button class="btn btn-soft shadow-none" type="button" onclick={close} disabled={saving}
+				<button
+					class="btn btn-soft shadow-none mr-auto"
+					type="button"
+					onclick={close}
+					disabled={saving}
 					><Icon name="close" /> Batal</button
 				>
 				<button

@@ -1,118 +1,189 @@
 <script lang="ts">
-	const summary = [
-		{
-			title: 'Gratis & Bebas',
-			description:
-				'Perangkat lunak ini boleh digunakan, disalin, dan dimodifikasi secara gratis untuk keperluan nonkomersial.'
-		},
-		{
-			title: 'NonKomersial',
-			description:
-				'Dilarang menjual, menyewakan, atau memonetisasi perangkat lunak ini maupun hasil modifikasinya dalam bentuk apa pun.'
-		},
-		{
-			title: 'Atribusi',
-			description:
-				'Cantumkan nama Rapkumer dan tautan repositori saat membagikan, serta sebutkan jika ada perubahan.'
-		}
-	];
+	import Icon from '$lib/components/icon.svelte';
 </script>
 
-<div class="flex w-full flex-col gap-4">
-	<section class="rounded-box border-base-200/80 bg-base-100/95 border p-8 shadow-md sm:p-10">
-		<div class="space-y-3">
-			<span class="badge badge-outline badge-lg bg-base-100/70 text-primary shadow">Lisensi</span>
-			<h1 class="text-base-content text-3xl font-bold md:text-4xl">
-				Ketentuan Penggunaan Rapkumer
-			</h1>
-			<p class="text-base-content/80 text-base md:text-lg">
-				Repositori ini menggunakan lisensi khas (custom license) yang melindungi hak pengembang
-				sekaligus memberikan kebebasan maksimal untuk penggunaan nonkomersial. Dengan menggunakan
-				perangkat lunak ini, Anda menyetujui ketentuan berikut.
-			</p>
+<div class="flex flex-col gap-4">
+	<section class="hero bg-base-100 shadow-md rounded-box min-h-48">
+		<div class="hero-content text-center">
+			<div class="max-w-xl">
+				<h1 class="text-base-content text-3xl font-bold md:text-4xl">Lisensi</h1>
+				<p class="text-base-content/80 mt-4">
+					Perangkat lunak ini menggunakan lisensi khusus yang melindungi hak pengembang sekaligus
+					memberikan kebebasan untuk penggunaan nonkomersial.
+				</p>
+			</div>
 		</div>
 	</section>
 
 	<section class="grid gap-4 sm:grid-cols-3">
-		{#each summary as item, index (index)}
-			<article class="rounded-box border-base-200/80 bg-base-100/95 border p-6 shadow-md">
-				<h2 class="text-base-content text-xl font-semibold">{item.title}</h2>
-				<p class="text-base-content/70 text-sm leading-relaxed">{item.description}</p>
-			</article>
-		{/each}
-	</section>
-
-	<section class="rounded-box border-base-200/80 bg-base-100/95 border p-8 shadow-md sm:p-10">
-		<div class="space-y-4">
-			<h2 class="text-base-content text-2xl font-semibold">Hak dan Batasan Utama</h2>
-			<ul class="text-base-content/80 list-inside list-disc space-y-2 text-base">
-				<li>
-					<span class="text-base-content font-medium">Gunakan & salin:</span> bebas menggunakan dan mendistribusikan
-					perangkat lunak ini di media apa pun untuk keperluan nonkomersial.
-				</li>
-				<li>
-					<span class="text-base-content font-medium">Modifikasi:</span> bebas memodifikasi untuk kebutuhan
-					pribadi atau kontribusi ke repositori asli.
-				</li>
-				<li>
-					<span class="text-base-content font-medium">Atribusi:</span> sertakan nama Rapkumer dan tautan
-					repositori saat membagikan, serta sebutkan jika ada perubahan.
-				</li>
-				<li>
-					<span class="text-base-content font-medium">Larangan komersial:</span> dilarang menjual, menyewakan,
-					atau memonetisasi perangkat lunak ini maupun hasil modifikasinya.
-				</li>
-			</ul>
-			<p class="text-base-content/80 text-sm">
-				Lisensi ini tidak menggantikan hukum lain yang mungkin berlaku, seperti hak potret, privasi,
-				atau hak moral. Pastikan Anda mematuhi peraturan setempat saat menggunakan materi ini.
-			</p>
-			<p class="text-base-content/80 text-sm">
-				Teks lisensi lengkap tersedia di file <code>LICENSE</code> pada repositori ini.
-			</p>
+		<div class="bg-base-100 shadow-md rounded-box flex gap-3 p-4">
+			<Icon name="check" class="text-success mt-0.5 h-5 w-5 shrink-0" />
+			<div>
+				<p class="font-semibold">Gratis &amp; Bebas</p>
+				<p class="text-base-content/70 text-sm">
+					Boleh digunakan, disalin, dan dimodifikasi untuk keperluan nonkomersial.
+				</p>
+			</div>
+		</div>
+		<div class="bg-base-100 shadow-md rounded-box flex gap-3 p-4">
+			<Icon name="lock" class="text-error mt-0.5 h-5 w-5 shrink-0" />
+			<div>
+				<p class="font-semibold">Non-Komersial</p>
+				<p class="text-base-content/70 text-sm">
+					Dilarang menjual, menyewakan, atau memonetisasi perangkat lunak ini atau hasil
+					modifikasinya.
+				</p>
+			</div>
+		</div>
+		<div class="bg-base-100 shadow-md rounded-box flex gap-3 p-4">
+			<Icon name="info" class="text-info mt-0.5 h-5 w-5 shrink-0" />
+			<div>
+				<p class="font-semibold">Atribusi</p>
+				<p class="text-base-content/70 text-sm">
+					Cantumkan nama Rapkumer dan tautan repositori saat membagikan.
+				</p>
+			</div>
 		</div>
 	</section>
 
-	<section class="rounded-box border-base-200/80 bg-base-100/95 border p-8 shadow-md sm:p-10">
-		<div class="space-y-4">
-			<h2 class="text-base-content text-2xl font-semibold">Cakupan Lisensi</h2>
-			<p class="text-base-content/80 text-sm leading-relaxed">
-				Lisensi ini mencakup seluruh kode sumber repositori beserta aset-aset berikut:
-			</p>
-			<ul class="text-base-content/80 list-inside list-disc space-y-2">
-				<li>Seluruh kode sumber dalam repositori</li>
-				<li><code>static/logo.png</code></li>
-				<li><code>static/logo.ico</code></li>
-				<li><code>static/favicon.ico</code></li>
-				<li><code>static/favicon.png</code></li>
-				<li><code>static/bipmap2.png</code></li>
+	<section class="card bg-base-100 rounded-box shadow-md">
+		<div class="card-body gap-4">
+			<h2 class="card-title">Hak Penggunaan</h2>
+			<ul class="divide-base-300 bg-base-200 rounded-box divide-y">
+				<li class="flex flex-col gap-1 p-4">
+					<p class="font-semibold">Pribadi, pendidikan &amp; penelitian</p>
+					<p class="text-base-content/70 text-sm">
+						Perangkat lunak ini boleh digunakan untuk keperluan pribadi, pendidikan, pembelajaran,
+						dan penelitian.
+					</p>
+				</li>
+				<li class="flex flex-col gap-1 p-4">
+					<p class="font-semibold">Pelajari &amp; modifikasi</p>
+					<p class="text-base-content/70 text-sm">
+						Boleh mempelajari cara kerja kode sumber dan memodifikasinya sesuai kebutuhan.
+					</p>
+				</li>
+				<li class="flex flex-col gap-1 p-4">
+					<p class="font-semibold">Kontribusi</p>
+					<p class="text-base-content/70 text-sm">
+						Boleh mengirimkan perbaikan bug, fitur baru, atau kontribusi lainnya ke repositori resmi
+						Rapkumer.
+					</p>
+				</li>
+				<li class="flex flex-col gap-1 p-4">
+					<p class="font-semibold">Penyalinan &amp; distribusi</p>
+					<p class="text-base-content/70 text-sm">
+						Boleh menyalin dan mendistribusikan perangkat lunak ini (asli maupun dimodifikasi)
+						dengan syarat lisensi ini tetap disertakan, copyright notice dipertahankan, dan
+						identitas pengembang asli tidak dihilangkan.
+					</p>
+				</li>
 			</ul>
-			<p class="text-base-content/80 text-sm leading-relaxed">
-				Aset lain di luar daftar di atas (termasuk aset lain di folder <code>static/</code>) tetap
-				berada di bawah lisensi aslinya masing-masing. Lihat file <code>LICENSE</code> atau dokumentasi
-				terkait untuk informasi lebih lanjut.
-			</p>
 		</div>
 	</section>
 
-	<section class="rounded-box border-base-200/80 bg-base-100/95 border p-6 shadow-md">
-		<h2 class="text-base-content text-xl font-semibold">Sumber & Kredit Ikon</h2>
-		<p class="text-base-content/80 text-sm leading-relaxed">
-			Ikon yang digunakan dalam folder <code>src/lib/icons</code> berasal dari
-			<strong>Feather</strong>. Feather adalah proyek ikon open-source yang tersedia di
-			<a href="https://github.com/feathericons/feather" target="_blank" rel="noreferrer"
-				>https://github.com/feathericons/feather</a
-			>
-			dan dirilis di bawah lisensi MIT. Penggunaan ikon harus mematuhi syarat lisensi MIT. Kredit disarankan
-			saat menggunakan ikon di luar konteks teknis internal.
-		</p>
+	<section class="card bg-base-100 rounded-box shadow-md">
+		<div class="card-body gap-4">
+			<h2 class="card-title">Larangan Komersial</h2>
+			<p class="text-base-content/80">
+				Perangkat lunak ini <strong class="text-error">tidak boleh</strong> digunakan untuk tujuan komersial
+				dalam bentuk apa pun:
+			</p>
+			<ul class="text-base-content/80 flex flex-col gap-2 text-sm">
+				<li>Menjual perangkat lunak ini, versi modifikasinya, atau hasil turunannya.</li>
+				<li>Menjual atau menyewakan lisensi penggunaan.</li>
+				<li>Memberikan akses berbayar terhadap perangkat lunak ini.</li>
+				<li>Memungut biaya untuk mengunduh perangkat lunak ini.</li>
+				<li>
+					Menawarkan layanan instalasi, konfigurasi, atau dukungan dengan menjadikan perangkat lunak
+					ini sebagai produk utama yang diperjualbelikan.
+				</li>
+				<li>
+					Menggunakan perangkat lunak ini sebagai bagian dari produk atau layanan komersial tanpa
+					izin tertulis dari pemegang hak cipta.
+				</li>
+			</ul>
+			<div role="alert" class="alert alert-warning alert-soft alert-sm">
+				<Icon name="alert" class="h-4 w-4 shrink-0" />
+				<span>
+					Ingin menggunakan Rapkumer untuk keperluan komersial? Hubungi tim pengembang untuk
+					memperoleh izin tertulis.
+				</span>
+			</div>
+		</div>
 	</section>
 
-	<section class="rounded-box border-base-200/80 bg-base-100/95 border p-6 shadow-md">
-		<h2 class="text-base-content text-xl font-semibold">Pertanyaan Lebih Lanjut</h2>
-		<p class="text-base-content/80 text-sm leading-relaxed">
-			Untuk permintaan penggunaan di luar cakupan lisensi ini, hubungi tim pengembang melalui kanal
-			yang disediakan pada halaman Tentang. Kami dengan senang hati membantu menilai kebutuhan Anda.
-		</p>
+	<section class="grid gap-4 lg:grid-cols-2">
+		<div class="card bg-base-100 rounded-box shadow-md">
+			<div class="card-body gap-3">
+				<h2 class="card-title">Atribusi</h2>
+				<p class="text-base-content/80 text-sm">
+					Jika mendistribusikan perangkat lunak ini atau versi yang telah dimodifikasi, wajib:
+				</p>
+				<ul class="list bg-base-200 rounded-box divide-base-300 divide-y">
+					<li class="flex flex-col gap-1 p-4">
+						<p class="font-semibold">Kredit pengembang</p>
+						<p class="text-base-content/70 text-xs">
+							Cantumkan nama Rapkumer sebagai pengembang asli.
+						</p>
+					</li>
+					<li class="flex flex-col gap-1 p-4">
+						<p class="font-semibold">Tautan repositori</p>
+						<p class="text-base-content/70 text-xs">
+							Sertakan tautan ke repositori resmi Rapkumer.
+						</p>
+					</li>
+					<li class="flex flex-col gap-1 p-4">
+						<p class="font-semibold">Sebutkan modifikasi</p>
+						<p class="text-base-content/70 text-xs">
+							Jelaskan bahwa perangkat lunak telah dimodifikasi jika ada perubahan.
+						</p>
+					</li>
+				</ul>
+			</div>
+		</div>
+
+		<div class="card bg-base-100 rounded-box shadow-md">
+			<div class="card-body gap-3">
+				<h2 class="card-title">Cakupan Lisensi</h2>
+				<p class="text-base-content/80 text-sm">Lisensi ini berlaku untuk:</p>
+				<ul class="list bg-base-200 rounded-box divide-base-300 divide-y">
+					<li class="flex flex-col gap-1 p-4">
+						<p class="font-semibold">Seluruh kode sumber</p>
+						<p class="text-base-content/70 text-xs">Semua file kode dalam repositori ini.</p>
+					</li>
+					<li class="flex flex-col gap-1 p-4">
+						<p class="font-semibold">Aset visual</p>
+						<p class="text-base-content/70 text-xs font-mono">
+							logo.png, logo.ico, favicon.ico, favicon.png, bipmap2.png
+						</p>
+					</li>
+					<li class="flex flex-col gap-1 p-4">
+						<p class="font-semibold">Ikon pihak ketiga</p>
+						<p class="text-base-content/70 text-xs">
+							<code>src/lib/icons/</code> berasal dari Feather Icons (lisensi MIT).
+						</p>
+					</li>
+				</ul>
+				<p class="text-base-content/60 text-xs">
+					Aset lain di luar daftar di atas tetap mengikuti lisensi masing-masing.
+				</p>
+			</div>
+		</div>
+	</section>
+
+	<section class="card bg-base-100 rounded-box shadow-md">
+		<div class="card-body gap-4">
+			<h2 class="card-title">Penafian</h2>
+			<div role="alert" class="alert alert-soft alert-sm">
+				<Icon name="alert" class="h-4 w-4 shrink-0" />
+				<span class="text-sm">
+					Perangkat lunak ini disediakan <strong>"sebagaimana adanya"</strong> (AS IS), tanpa jaminan
+					dalam bentuk apa pun, baik tersurat maupun tersirat. Pemegang hak cipta tidak bertanggung jawab
+					atas kerusakan, kehilangan data, gangguan operasional, atau kerugian lainnya yang timbul akibat
+					penggunaan perangkat lunak ini.
+				</span>
+			</div>
+		</div>
 	</section>
 </div>

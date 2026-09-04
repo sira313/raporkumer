@@ -35,12 +35,12 @@
 	}
 </script>
 
-<div>
-	<p class="text-base-content/70 mb-4 text-sm">
+<div class="space-y-6">
+	<p class="text-base-content/70 text-sm">
 		Unggah file Excel (.xlsx) sesuai format di bawah. Baris kosong akan diabaikan.
 	</p>
 
-	<div class="mb-4 overflow-auto rounded-lg text-sm">
+	<div class="overflow-auto rounded-lg text-sm">
 		<table class="table-sm table-compact table-zebra table w-full border-collapse">
 			<thead class="bg-base-300">
 				<tr class="text-sm font-semibold">
@@ -109,7 +109,7 @@
 				</label>
 			</fieldset>
 
-			<div class="mt-6 flex justify-end gap-2">
+			<div class="flex justify-end gap-2">
 				<button
 					type="button"
 					class="btn btn-soft shadow-none"

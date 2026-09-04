@@ -165,7 +165,7 @@
 					{/if}
 				</h2>
 				<a
-					class="btn btn-soft shadow-none"
+					class="btn btn-soft shadow-none w-full sm:w-auto"
 					href="/sekolah/form/sync-dapodik"
 					use:modalRoute={'sync-dapodik'}
 				>
@@ -517,18 +517,24 @@
 			<!-- Back and Save -->
 			<div class="mt-6 flex flex-col justify-end gap-2 sm:flex-row">
 				{#if !data.isInit}
-					<a class="btn btn-soft shadow-none sm:w-auto" href="/sekolah" aria-label="kembali">
-						<Icon name="left" />
-						Kembali
-					</a>
+					<div class="grid grid-cols-2 gap-2 sm:contents">
+						<a class="btn btn-soft shadow-none sm:mr-auto sm:w-auto" href="/sekolah" aria-label="kembali">
+							<Icon name="left" />
+							Kembali
+						</a>
+						<button type="button" class="btn btn-soft shadow-none sm:w-auto" onclick={handleImportDb}>
+							<Icon name="import" />
+							Import DB
+						</button>
+					</div>
+				{:else}
+					<button type="button" class="btn btn-soft shadow-none sm:w-auto" onclick={handleImportDb}>
+						<Icon name="import" />
+						Import DB
+					</button>
 				{/if}
-
-				<button type="button" class="btn btn-soft shadow-none sm:w-auto" onclick={handleImportDb}>
-					<Icon name="import" />
-					Import DB
-				</button>
 				<button
-					class="btn btn-primary shadow-none sm:w-auto"
+					class="btn btn-primary shadow-none mt-4 sm:mt-0 sm:w-auto"
 					disabled={submitting || kepalaBelumDipilih}
 				>
 					{#if submitting}

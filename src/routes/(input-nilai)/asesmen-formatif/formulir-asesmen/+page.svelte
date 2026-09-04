@@ -121,14 +121,14 @@
 			<input type="hidden" name="muridId" value={data.murid.id} />
 			<input type="hidden" name="mapelId" value={data.mapel.id} />
 
-			<div class="mb-6 flex flex-col gap-2 sm:flex-row">
-				<a href={kembaliHref} class="btn btn-soft shadow-none">
+			<div class="mb-6 grid grid-cols-2 gap-2 md:flex md:items-center">
+				<a href={kembaliHref} class="btn btn-soft shadow-none md:w-auto">
 					<Icon name="left" />
 					Kembali
 				</a>
 				<button
 					type="submit"
-					class="btn btn-primary shadow-none sm:ml-auto"
+					class="btn btn-primary shadow-none md:w-auto md:ml-auto"
 					disabled={!data.hasTujuan || submitting}
 				>
 					<Icon name="save" />

@@ -426,7 +426,7 @@
 									<label class="flex flex-col gap-2" aria-busy={submitting}>
 										<input
 											bind:this={addInputRef}
-											class="input input-sm bg-base-200 dark:bg-base-100 w-full dark:border-none"
+											class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
 											placeholder="Masukkan nama ekstrakurikuler"
 											name="nama"
 											value={addNamaInput}
@@ -504,7 +504,7 @@
 										<label class="flex flex-col gap-2" aria-busy={submitting}>
 											<input
 												bind:this={editingInputRef}
-												class="input input-sm bg-base-200 dark:bg-base-100 w-full dark:border-none"
+												class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
 												placeholder="Masukkan nama ekstrakurikuler"
 												name="nama"
 												value={editingNamaInput}

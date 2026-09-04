@@ -410,6 +410,15 @@
 		<div
 			class="border-base-200 mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end"
 		>
+			<button
+				class="btn btn-soft shadow-none hidden md:inline-flex md:mr-auto"
+				type="button"
+				onclick={() => history.back()}
+			>
+				<Icon name="close-sm" />
+				Batal
+			</button>
+
 			{#if invalid}
 				<button
 					class="btn btn-primary shadow-none max-sm:w-full"
@@ -421,8 +430,12 @@
 				</button>
 			{/if}
 
-			<div class="flex flex-row justify-between gap-2 max-sm:w-full sm:ml-2">
-				<button class="btn btn-soft shadow-none" type="button" onclick={() => history.back()}>
+			<div class="flex flex-row justify-between gap-2 max-sm:w-full sm:ml-2 md:contents">
+				<button
+					class="btn btn-soft shadow-none md:hidden"
+					type="button"
+					onclick={() => history.back()}
+				>
 					<Icon name="close-sm" />
 					Batal
 				</button>

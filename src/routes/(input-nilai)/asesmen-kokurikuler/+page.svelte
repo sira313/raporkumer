@@ -258,7 +258,8 @@
 					}
 				}
 			},
-			onNegative: { label: 'Batal', icon: 'close' },
+			onNeutral: { label: 'Batal', icon: 'close' },
+			spreadActions: true,
 			dismissible: true
 		});
 	}

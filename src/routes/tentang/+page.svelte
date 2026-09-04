@@ -2,6 +2,7 @@
 	/* eslint-disable svelte/no-navigation-without-resolve -- static link(s) to external/about pages */
 	import Donate from '$lib/components/donate.svelte';
 	import Icon from '$lib/components/icon.svelte';
+	import { openQrisImage } from '$lib/components/qris-image-modal';
 	import type { PageData } from './$types';
 
 	const { data } = $props<{ data: PageData }>();
@@ -10,183 +11,189 @@
 
 <Donate />
 
-<div class="w-full space-y-5">
-	<section
-		class="rounded-box from-primary/15 via-base-100 to-secondary/20 ring-base-200/60 overflow-hidden bg-linear-to-br p-5 shadow-md ring-1 sm:p-8"
-	>
-		<div class="space-y-6">
-			<span class="badge badge-outline bg-base-100/70 text-primary shadow"
-				>Tentang Rapkumer v{appVersion}</span
-			>
-			<h1 class="text-base-content text-3xl font-bold md:text-4xl">
-				Rapkumer — Aplikasi Administrasi Guru Terpadu
-			</h1>
-			<p class="text-base-content/90 text-base md:text-lg">
-				Rapkumer membantu guru dan operator sekolah menyelesaikan administrasi rutin secara efisien
-				dan siap cetak sesuai kurikulum terbaru.
-			</p>
-
-			<div class="grid gap-4 sm:grid-cols-2">
-				<div class="rounded-box border-base-200/80 bg-base-100/90 border p-4 shadow-md">
-					<h3 class="text-primary font-semibold">Import Excel Sekali Klik</h3>
-					<p class="text-base-content/80 text-sm">
-						Gunakan template bawaan untuk memasukkan data secara massal tanpa perlu copy paste
-						berulang.
-					</p>
+<div class="flex flex-col gap-4">
+	<section class="hero bg-base-100 shadow-md rounded-box min-h-48">
+		<div class="hero-content text-center">
+			<div class="max-w-xl">
+				<h1 class="text-base-content text-3xl font-bold md:text-4xl">Rapkumer</h1>
+				<p class="text-base-content/70 mt-1 text-sm">v{appVersion}</p>
+				<p class="text-base-content/80 mt-4">
+					Aplikasi administrasi guru terpadu untuk presensi, jurnal mengajar, nilai, dan rapor —
+					siap cetak sesuai Kurikulum Merdeka.
+				</p>
+				<div class="mt-6 flex flex-wrap justify-center gap-2">
+					<a
+						class="btn btn-primary btn-sm"
+						href="https://t.me/+zj3h_zjBAC02YjZl"
+						target="_blank"
+						rel="noreferrer"
+					>
+						<Icon name="telegram" />
+						Grup Telegram
+					</a>
+					<a
+						class="btn btn-soft btn-sm"
+						href="https://kurikulum.kemendikdasmen.go.id/"
+						target="_blank"
+						rel="noreferrer"
+					>
+						Kurikulum
+					</a>
+					<a class="btn btn-soft btn-sm" href="/lisensi">Lisensi</a>
 				</div>
-				<div class="rounded-box border-base-200/80 bg-base-100/90 border p-4 shadow-md">
-					<h3 class="text-secondary font-semibold">Ekspor Nilai ke Dapodik</h3>
-					<p class="text-base-content/80 text-sm">
-						Integrasi nilai ke Dapodik sedang dalam tahap riset agar format ekspor aman dipakai.
-						Dukungan donasi membantu percepatan pengembangan.
-					</p>
-				</div>
-			</div>
-
-			<div class="flex flex-col gap-3 sm:flex-row">
-				<a
-					class="btn btn-outline shadow-none"
-					href="https://kurikulum.kemendikdasmen.go.id/"
-					target="_blank"
-					rel="noreferrer">Pelajari Kurikulum</a
-				>
-				<a class="btn btn-outline shadow-none" href="/lisensi">Lihat Lisensi</a>
-				<a
-					class="btn btn-primary shadow-none sm:ml-auto"
-					href="https://t.me/+zj3h_zjBAC02YjZl"
-					target="_blank"
-					rel="noreferrer"
-				>
-					<Icon name="telegram" class="mr-2 text-xl shadow-none" />
-					Tanya di Telegram
-				</a>
 			</div>
 		</div>
 	</section>
 
-	<section class="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-		<div class="rounded-box border-base-200/80 bg-base-100/95 border p-6 shadow-md">
-			<div class="space-y-4">
-				<h2 class="text-base-content text-2xl font-semibold">Mengapa kami membangun Rapkumer?</h2>
-				<p class="text-base-content/90">
-					Aplikasi Rapkumer ini kami kembangkan sebagai aplikasi terpadu untuk membantu tugas-tugas
-					administrasi guru seperti: presensi harian murid, jurnal mengajar, nilai harian, nilai
-					STS, dan nilai SAS yang dihitung otomatis untuk dijadikan nilai rapor yang bisa langsung
-					dicetak maupun dikirim langsung ke Dapodik.
-				</p>
-				<p class="text-base-content/90">
-					Selain itu, Rapkumer juga memiliki fitur tambahan seperti jadwal pembelajaran dan bell
-					otomatis.
-				</p>
-				<p class="text-base-content/90">
-					Harapan kami, aplikasi ini menjadi solusi praktis bagi pendidik dan tenaga kependidikan
-					dalam menerapkan Kurikulum Merdeka secara efektif dan efisien.
-				</p>
+	<section class="card bg-base-100 rounded-box shadow-md">
+		<div class="card-body gap-4">
+			<h2 class="card-title">Fitur Utama</h2>
+			<div class="grid gap-4 sm:grid-cols-2">
+				<div class="bg-base-200 rounded-box flex gap-3 p-4">
+					<Icon name="import" class="text-primary mt-0.5 h-5 w-5 shrink-0" />
+					<div>
+						<p class="font-semibold">Import Excel</p>
+						<p class="text-base-content/70 text-sm">
+							Template bawaan untuk input data massal — tidak perlu copy paste berulang.
+						</p>
+					</div>
+				</div>
+				<div class="bg-base-200 rounded-box flex gap-3 p-4">
+					<Icon name="export" class="text-secondary mt-0.5 h-5 w-5 shrink-0" />
+					<div>
+						<p class="font-semibold">Tarik data dan kirim nilai ke Dapodik</p>
+						<p class="text-base-content/70 text-sm">
+							Aplikasi ini sudah bisa menarik data dan mengirim matev beserta nilainya langsung ke Dapodik.
+						</p>
+					</div>
+				</div>
+				<div class="bg-base-200 rounded-box flex gap-3 p-4">
+					<Icon name="book-open" class="text-accent mt-0.5 h-5 w-5 shrink-0" />
+					<div>
+						<p class="font-semibold">Jurnal Mengajar</p>
+						<p class="text-base-content/70 text-sm">
+							Catat kegiatan belajar mengajar harian secara otomatis.
+						</p>
+					</div>
+				</div>
+				<div class="bg-base-200 rounded-box flex gap-3 p-4">
+					<Icon name="bar-chart" class="text-info mt-0.5 h-5 w-5 shrink-0" />
+					<div>
+						<p class="font-semibold">Nilai Otomatis</p>
+						<p class="text-base-content/70 text-sm">
+							Nilai STS dan SAS dihitung otomatis untuk rapor, siap cetak.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="card bg-base-100 rounded-box shadow-md">
+		<div class="card-body gap-4">
+			<h2 class="card-title">Mengapa Rapkumer?</h2>
+			<p class="text-base-content/80">
+				Aplikasi ini kami kembangkan sebagai solusi terpadu untuk tugas administrasi guru: presensi
+				harian, jurnal mengajar, nilai harian, nilai STS, dan nilai SAS yang dihitung otomatis
+				menjadi nilai rapor — bisa langsung dicetak atau dikirim ke Dapodik.
+			</p>
+			<p class="text-base-content/80">
+				Ada juga jadwal pembelajaran dan bell otomatis. Harapan kami, aplikasi ini membantu pendidik
+				dan tenaga kependidikan menerapkan Kurikulum Merdeka secara efektif dan efisien.
+			</p>
+		</div>
+	</section>
+
+	<section class="grid gap-4 lg:grid-cols-2">
+		<div class="card bg-base-100 rounded-box shadow-md">
+			<div class="card-body gap-3">
+				<h2 class="card-title">Tim Pengembang</h2>
+				<ul class="menu bg-base-200 rounded-box w-full">
+					<li>
+						<a href="https://apoxi.cam/" target="_blank" rel="noreferrer">
+							<span class="font-semibold">Aris Pratama</span>
+							<span class="text-base-content/60">— Founder & Maintainer</span>
+						</a>
+					</li>
+					<li>
+						<a href="https://mustofa.id" target="_blank" rel="noreferrer">
+							<span class="font-semibold">Habib Mustofa</span>
+							<span class="text-base-content/60">— Mentor & Advisor</span>
+						</a>
+					</li>
+				</ul>
+
+				<h3 class="card-title mt-1">Tester</h3>
+				<ul class="menu bg-base-200 rounded-box w-full">
+					{#each ['Hamdani, S.Pd., Gr.', 'Rudiansyah, S.Pd., Gr.', 'Putra Panji Prasetiyo, S.Pd., Gr.'] as name (name)}
+						<li><a class="pointer-events-none cursor-default">{name}</a></li>
+					{/each}
+				</ul>
 			</div>
 		</div>
 
-		<aside class="rounded-box border-base-200/80 bg-base-100/95 border p-6 shadow-md">
-			<div class="space-y-4">
-				<h3 class="text-base-content text-lg font-semibold">Pengembang & Kontributor</h3>
-				<ul class="text-base-content/90 list-inside list-disc space-y-2">
-					<li>
-						<a href="https://apoxi.cam/" target="_blank" class="link link-primary">Aris Pratama</a> —
-						Founder & Maintainer
-					</li>
-					<li>
-						<a href="https://mustofa.id" target="_blank" class="link link-primary">Habib Mustofa</a>
-						— Mentor & Advisor
-					</li>
-				</ul>
-
-				<h3 class="text-base-content text-lg font-semibold">Tester</h3>
-				<ul class="text-base-content/90 list-inside list-disc space-y-1">
-					<li>Hamdani, S.Pd., Gr.</li>
-					<li>Rudiansyah, S.Pd., Gr.</li>
-					<li>Putra Panji Prasetiyo, S.Pd., Gr.</li>
-				</ul>
-
-				<h3 class="text-base-content text-lg font-semibold">Referensi</h3>
-				<ul class="text-base-content/90 list-inside list-disc space-y-2">
-					<li>
+		<div class="card bg-base-100 rounded-box shadow-md">
+			<div class="card-body gap-3">
+				<h2 class="card-title">Referensi</h2>
+				<ul class="divide-base-300 bg-base-200 rounded-box divide-y">
+					<li class="flex flex-col gap-1 p-4">
 						<a
 							href="https://kurikulum.kemendikdasmen.go.id/file/1755668120_manage_file.pdf"
 							target="_blank"
-							class="link link-primary">Panduan Belajar dan Asesmen revisi 2025</a
+							rel="noreferrer"
+							class="link link-hover font-semibold">Panduan Belajar dan Asesmen revisi 2025</a
 						>
+						<span class="text-base-content/60 text-xs">PDF — kurikulum.kemendikdasmen.go.id</span>
 					</li>
-					<li>
+					<li class="flex flex-col gap-1 p-4">
 						<a
 							href="https://kurikulum.kemendikdasmen.go.id/file/1753779343_manage_file.pdf"
 							target="_blank"
-							class="link link-primary">Panduan Kokurikuler tahun 2025</a
+							rel="noreferrer"
+							class="link link-hover font-semibold">Panduan Kokurikuler tahun 2025</a
 						>
+						<span class="text-base-content/60 text-xs">PDF — kurikulum.kemendikdasmen.go.id</span>
 					</li>
-					<li>
+					<li class="flex flex-col gap-1 p-4">
 						<a
 							href="https://drive.google.com/file/d/1XigY7sH6SkA0RCyn_8X85NGJoR4HmyC0/view"
 							target="_blank"
-							class="link link-primary">Capaian Pembelajaran</a
+							rel="noreferrer"
+							class="link link-hover font-semibold">Capaian Pembelajaran</a
 						>
+						<span class="text-base-content/60 text-xs">PDF — Google Drive</span>
 					</li>
 				</ul>
 			</div>
-		</aside>
+		</div>
 	</section>
 
-	<section class="rounded-box border-base-200/80 bg-base-100/95 border p-6 shadow-md sm:p-8">
-		<div class="space-y-4">
-			<h2 class="text-base-content text-2xl font-semibold">Special Thanks</h2>
-			<p class="text-base-content/90">
-				Terima kasih kepada semua pihak yang berkontribusi dalam pengembangan aplikasi ini.
-			</p>
-
-			<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-				<article
-					class="rounded-box border-base-200 dark:bg-base-200 flex h-full flex-col justify-between border p-4 shadow-md dark:shadow-none"
-				>
-					<div class="space-y-2">
-						<span class="badge badge-primary badge-outline">UI &amp; UX</span>
-						<h3 class="text-base-content text-lg font-semibold">Masukan Antarmuka</h3>
-						<p class="text-base-content/70 text-sm">
-							<span class="text-base-content font-semibold">Noffie Suryanti Mandasari, S.Pd.</span> memberikan
-							ide dan saran pengembangan tampilan pengguna.
-						</p>
-					</div>
-				</article>
-
-				<article
-					class="rounded-box border-base-200 dark:bg-base-200 flex h-full flex-col justify-between border p-4 shadow-md dark:shadow-none"
-				>
-					<div class="space-y-2">
-						<span class="badge badge-secondary badge-outline">Asesmen</span>
-						<h3 class="text-base-content text-lg font-semibold">Saran Alur Penilaian</h3>
-						<ul class="text-base-content/70 list-inside list-disc space-y-1 text-sm">
-							<li><span class="text-base-content font-semibold">Saipul Anam, S.Pd.</span></li>
-							<li><span class="text-base-content font-semibold">Anistoga, S.Pd., Gr.</span></li>
-							<li>
-								<span class="text-base-content font-semibold">Fathonah Nilawidya, S.Pd.</span>
-							</li>
-							<li><span class="text-base-content font-semibold">Rudiansyah, S.Pd., Gr.</span></li>
-						</ul>
-					</div>
-				</article>
-
-				<article
-					class="rounded-box border-base-200 dark:bg-base-200 flex h-full flex-col justify-between border p-4 shadow-md dark:shadow-none"
-				>
-					<div class="space-y-2">
-						<span class="badge badge-accent badge-outline">Donasi</span>
-						<h3 class="text-base-content text-lg font-semibold">Dukungan Komunitas</h3>
-						<p class="text-base-content/70 text-sm">
-							Terima kasih kepada seluruh donatur yang mendukung pengembangan melalui <a
-								href="https://trakteer.id/raporkumer/"
-								target="_blank"
-								class="link link-primary">trakteer.id/raporkumer</a
-							>.
-						</p>
-					</div>
-				</article>
+	<section class="card bg-base-100 rounded-box shadow-md">
+		<div class="card-body gap-4">
+			<h2 class="card-title">Terima Kasih</h2>
+			<div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+				<div class="bg-base-200 rounded-box p-4">
+					<span class="badge badge-primary badge-soft badge-sm">UI &amp; UX</span>
+					<p class="mt-2 font-semibold">Noffie Suryanti Mandasari, S.Pd.</p>
+					<p class="text-base-content/70 text-sm">Ide dan saran pengembangan antarmuka.</p>
+				</div>
+				<div class="bg-base-200 rounded-box p-4">
+					<span class="badge badge-secondary badge-soft badge-sm">Asesmen</span>
+					<p class="mt-2 text-sm font-bold">Saran alur penilaian:</p>
+					<ul class="text-base-content/80 mt-1 text-sm">
+						<li>Saipul Anam, S.Pd.</li>
+						<li>Anistoga, S.Pd., Gr.</li>
+						<li>Fathonah Nilawidya, S.Pd.</li>
+						<li>Rudiansyah, S.Pd., Gr.</li>
+					</ul>
+				</div>
+				<div class="bg-base-200 rounded-box p-4">
+					<span class="badge badge-accent badge-soft badge-sm">Donasi</span>
+					<p class="mt-2 text-sm">
+						Dukungan komunitas melalui
+						<button type="button" class="link link-primary" onclick={openQrisImage}>QRIS</button>.
+					</p>
+				</div>
 			</div>
 		</div>
 	</section>

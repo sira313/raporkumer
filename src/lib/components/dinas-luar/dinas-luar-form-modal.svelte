@@ -16,7 +16,8 @@
 				action: () => void submit()
 			},
 			onNegative: undefined,
-			onNeutral: { label: 'Batal', action: () => hideModal() }
+			onNeutral: { label: 'Batal', action: () => hideModal() },
+			spreadActions: true
 		});
 	});
 

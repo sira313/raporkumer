@@ -119,9 +119,17 @@
 		pilihanHadirSemua = 'tidak';
 		step = 'pilih-murid';
 		updateModal({
-			onPositive: { label: 'Simpan', class: 'btn-soft flex-1', action: () => submitSelected() },
-			onNeutral: { label: 'Kembali', class: 'btn-soft flex-1', action: () => goToStep1() },
-			onNegative: undefined
+			onPositive: {
+				label: 'Simpan',
+				class: 'btn-soft flex-1 sm:flex-none',
+				action: () => submitSelected()
+			},
+			onNegative: {
+				label: 'Kembali',
+				class: 'btn-soft flex-1 sm:flex-none sm:mr-auto',
+				action: () => goToStep1()
+			},
+			onNeutral: undefined
 		});
 	}
 
@@ -129,8 +137,16 @@
 		step = 'pilih-mode';
 		pilihanHadirSemua = '';
 		updateModal({
-			onPositive: { label: 'Ya', class: 'btn-soft flex-1', action: () => submitHadirSemua() },
-			onNegative: { label: 'Tidak', class: 'btn-soft flex-1', action: () => pilihTidak() },
+			onPositive: {
+				label: 'Ya',
+				class: 'btn-soft flex-1 sm:flex-none',
+				action: () => submitHadirSemua()
+			},
+			onNegative: {
+				label: 'Tidak',
+				class: 'btn-soft flex-1 sm:flex-none sm:mr-auto',
+				action: () => pilihTidak()
+			},
 			onNeutral: undefined
 		});
 	}
@@ -192,8 +208,16 @@
 
 	onMount(() => {
 		updateModal({
-			onPositive: { label: 'Ya', class: 'btn-soft flex-1', action: () => submitHadirSemua() },
-			onNegative: { label: 'Tidak', class: 'btn-soft flex-1', action: () => pilihTidak() },
+			onPositive: {
+				label: 'Ya',
+				class: 'btn-soft flex-1 sm:flex-none',
+				action: () => submitHadirSemua()
+			},
+			onNegative: {
+				label: 'Tidak',
+				class: 'btn-soft flex-1 sm:flex-none sm:mr-auto',
+				action: () => pilihTidak()
+			},
 			onNeutral: undefined
 		});
 	});

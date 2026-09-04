@@ -80,7 +80,7 @@
 	<td class="align-top" colspan="2">
 		<textarea
 			form={formId}
-			class="textarea validator bg-base-200 dark:bg-base-300 h-30 w-full"
+			class="textarea validator bg-base-200 dark:bg-base-300 dark:border-none h-30 w-full"
 			value={form.lingkupMateri}
 			name="lingkupMateri"
 			aria-label="Lingkup materi"

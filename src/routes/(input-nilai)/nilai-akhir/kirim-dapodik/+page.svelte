@@ -167,12 +167,12 @@
 				</div>
 			{/if}
 		</div>
-		<div class="modal-action flex-col justify-between gap-2 sm:flex-row sm:items-center">
-			<button type="button" class="btn btn-soft shadow-none" onclick={() => history.back()}>
+		<div class="modal-action grid grid-cols-2 gap-2 md:flex md:items-center">
+			<button type="button" class="btn btn-soft shadow-none md:w-auto md:mr-auto" onclick={() => history.back()}>
 				<Icon name="close" />
 				Tutup
 			</button>
-			<button class="btn btn-primary shadow-none" disabled={submitting}>
+			<button class="btn btn-primary shadow-none md:w-auto" disabled={submitting}>
 				{#if submitting}
 					<span class="loading loading-spinner"></span>
 				{:else}

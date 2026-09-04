@@ -81,7 +81,7 @@
 	<div class="flex justify-end gap-2 pt-2">
 		<button
 			type="button"
-			class="btn shadow-none btn-soft"
+			class="btn shadow-none btn-soft mr-auto"
 			onclick={hideModal}
 			disabled={submitting}
 		>

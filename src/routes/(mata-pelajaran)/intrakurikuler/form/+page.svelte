@@ -459,7 +459,7 @@
 			{/if}
 		</div>
 		<div class="modal-action">
-			<button type="button" class="btn btn-soft shadow-none" onclick={() => history.back()}>
+			<button type="button" class="btn btn-soft shadow-none mr-auto" onclick={() => history.back()}>
 				<Icon name="close-sm" />
 				Batal
 			</button>

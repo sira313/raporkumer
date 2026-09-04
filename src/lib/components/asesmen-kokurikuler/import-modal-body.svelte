@@ -33,7 +33,7 @@
 				onchange={onFileChange}
 				aria-label="Pilih file Excel"
 			/>
-			<p class="label">Pilih file Excel (.xlsx) sesuai format "Download Template"</p>
+			<p class="label text-wrap">Pilih file Excel (.xlsx) sesuai format "Download Template"</p>
 		</fieldset>
 	</div>
 </div>

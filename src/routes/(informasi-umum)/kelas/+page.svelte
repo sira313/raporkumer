@@ -83,7 +83,7 @@
 						<p class="text-base-content/70 text-sm">{kelas.waliKelas?.nip}</p>
 					</div>
 				</div>
-				<div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-between">
+				<div class="mt-6 flex items-center justify-between gap-2">
 					<button
 						class="btn btn-error btn-soft shadow-none"
 						type="button"
