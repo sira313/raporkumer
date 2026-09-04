@@ -1,6 +1,11 @@
 import db from '$lib/server/db';
 import { tableMataPelajaran } from '$lib/server/db/schema';
-import { generateTujuanPembelajaran, getAiSettings, withAi429Retry } from '$lib/server/ai';
+import {
+	ADMIN_TYPES,
+	generateTujuanPembelajaran,
+	getAiSettings,
+	withAi429Retry
+} from '$lib/server/ai';
 import { enqueueAi } from '$lib/server/ai-queue';
 import { json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
@@ -60,12 +65,13 @@ export const POST = async ({ request, locals }) => {
 		);
 	}
 
-	const settings = await getAiSettings(user.id);
+	const settings = await getAiSettings(user);
 	if (!settings) {
 		return json(
 			{
-				message:
-					'Fitur AI belum aktif. Minta admin/kepala sekolah menyetel kunci API di halaman Pengaturan, atau setel kunci API pribadi Anda di sana.'
+				message: ADMIN_TYPES.includes(user.type)
+					? 'Fitur AI belum aktif. Setel kunci API di halaman Pengaturan.'
+					: 'Fitur AI belum aktif. Setel kunci API pribadi Anda di halaman Pengaturan.'
 			},
 			{ status: 400 }
 		);

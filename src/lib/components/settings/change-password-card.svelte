@@ -43,7 +43,7 @@
 								type="button"
 								class="cursor-pointer pr-2"
 								onclick={() => (showCurrentPassword = !showCurrentPassword)}
-								aria-label="Toggle password visibility"
+								aria-label="Lihat atau sembunyikan kata sandi"
 							>
 								<Icon name={showCurrentPassword ? 'eye-off' : 'eye'} />
 							</button>
@@ -67,7 +67,7 @@
 								type="button"
 								class="cursor-pointer pr-2"
 								onclick={() => (showNewPassword = !showNewPassword)}
-								aria-label="Toggle password visibility"
+								aria-label="Lihat atau sembunyikan kata sandi"
 							>
 								<Icon name={showNewPassword ? 'eye-off' : 'eye'} />
 							</button>
@@ -91,7 +91,7 @@
 								type="button"
 								class="cursor-pointer pr-2"
 								onclick={() => (showConfirmPassword = !showConfirmPassword)}
-								aria-label="Toggle password visibility"
+								aria-label="Lihat atau sembunyikan kata sandi"
 							>
 								<Icon name={showConfirmPassword ? 'eye-off' : 'eye'} />
 							</button>

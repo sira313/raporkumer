@@ -60,8 +60,8 @@
 
 <label
 	class="btn btn-ghost btn-circle swap swap-rotate shadow-none"
-	title={isDark ? 'Light mode' : 'Dark mode'}
-	aria-label="Toggle color theme"
+	title={isDark ? 'Mode terang' : 'Mode gelap'}
+	aria-label="Ganti tema warna"
 >
 	<input
 		type="checkbox"

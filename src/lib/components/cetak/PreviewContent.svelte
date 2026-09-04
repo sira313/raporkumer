@@ -53,7 +53,7 @@
 {:else if previewDocument && previewData}
 	<div class="alert alert-info mt-6">
 		<Icon name="info" />
-		<span>Pilih murid dan klik tombol "Download PDF" untuk mengunduh dokumen.</span>
+		<span>Pilih murid dan klik tombol "Unduh PDF" untuk mengunduh dokumen.</span>
 	</div>
 {/if}
 

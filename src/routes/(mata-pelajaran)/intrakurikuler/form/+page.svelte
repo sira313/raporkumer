@@ -320,7 +320,7 @@
 								{/each}
 								{#if namaTersaring.length > MAX_OPSI_TAMPIL}
 									<li class="px-2 py-1 text-sm opacity-60">
-										{namaTersaring.length - MAX_OPSI_TAMPIL} lainnya — ketik untuk mempersempit.
+										{namaTersaring.length - MAX_OPSI_TAMPIL} lainnya. Ketik untuk mempersempit.
 									</li>
 								{/if}
 							</ul>
@@ -399,8 +399,8 @@
 							Varian tanpa padanan Dapodik akan dikirim sebagai Sub Pembelajaran. Pilihan berlaku
 							untuk semua varian agama di kelas ini.
 						{:else}
-							"{namaEfektif}" belum terdaftar sebagai pembelajaran Dapodik — akan dikirim sebagai
-							Sub Pembelajaran dari mata pelajaran induk yang dipilih.
+							"{namaEfektif}" belum terdaftar sebagai pembelajaran Dapodik, akan dikirim sebagai Sub
+							Pembelajaran dari mata pelajaran induk yang dipilih.
 						{/if}
 					</p>
 				</fieldset>

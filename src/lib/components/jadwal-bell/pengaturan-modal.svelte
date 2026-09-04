@@ -86,10 +86,10 @@
 					const err = await res.json().catch(() => ({ fail: 'Gagal upload' }));
 					throw new Error(err.fail ?? `Error ${res.status}`);
 				}
-				toast('Sound berhasil diupload', 'success');
+				toast('Sound berhasil diunggah', 'success');
 				await invalidateAll();
 			} catch (e) {
-				toast(e instanceof Error ? e.message : 'Gagal upload sound', 'error');
+				toast(e instanceof Error ? e.message : 'Gagal unggah sound', 'error');
 			} finally {
 				uploadingTipe = null;
 			}
@@ -227,10 +227,11 @@
 	</fieldset>
 
 	<fieldset class="fieldset">
-		<legend class="fieldset-legend">Upload Sound</legend>
+		<legend class="fieldset-legend">Unggah Sound</legend>
 		<p class="text-base-content/70 mb-2 text-xs">
-			Upload file MP3. Maksimal 2MB per file. Jika tidak ada upload, akan menggunakan sound default
-			dari folder <code>static/sounds/</code>.
+			Unggah file MP3, maksimal 2MB per file. Jika tidak ada, akan dipakai sound bawaan dari folder <code
+				>static/sounds/</code
+			>.
 		</p>
 		<div class="flex flex-col gap-1">
 			{#each soundTipes as { tipe, label } (tipe)}
@@ -253,10 +254,10 @@
 							>
 								{#if uploadingTipe === tipe}
 									<span class="loading loading-spinner loading-sm"></span>
-									Uploading…
+									Mengunggah…
 								{:else}
 									<Icon name="import" />
-									Upload
+									Unggah
 								{/if}
 							</button>
 						</div>
@@ -276,7 +277,7 @@
 							class="btn btn-ghost btn-sm text-success shadow-none"
 							onclick={() => handlePlaySound(tipe)}
 							disabled={submitting || playingTipe !== null}
-							aria-label="Test sound {label}"
+							aria-label="Putar sound {label}"
 						>
 							{#if playingTipe === tipe}
 								<span class="loading loading-spinner loading-sm"></span>

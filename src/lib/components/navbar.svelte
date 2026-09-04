@@ -91,7 +91,7 @@
 		e.preventDefault();
 		showModal({
 			title: 'Konfirmasi Keluar',
-			body: 'Anda tidak mempunyai akses untuk Pindah Kelas secara langsung, silahkan login ulang ke kelas yang dituju. Keluar sekarang?',
+			body: 'Anda tidak mempunyai akses untuk Pindah Kelas secara langsung, silakan masuk ulang ke kelas yang dituju. Keluar sekarang?',
 			dismissible: true,
 			onPositive: {
 				label: 'Keluar',
@@ -186,7 +186,7 @@
 		if (!fileName) {
 			toast(
 				`Tombol ini berfungsi untuk menampilkan petunjuk penggunaan.<br />` +
-					`Silahkan klik salah satu menu lalu klik lagi tombol ini.`
+					`Silakan klik salah satu menu lalu klik lagi tombol ini.`
 			);
 			return;
 		}
@@ -274,7 +274,7 @@
 						{#if user?.type === 'admin'}
 							<div role="alert" class="alert alert-info mb-4">
 								<Icon name="info" />
-								<span>Login sebagai <strong>Admin</strong></span>
+								<span>Masuk sebagai <strong>Admin</strong></span>
 							</div>
 						{:else if user?.type === 'kepala_sekolah'}
 							<div role="alert" class="alert alert-info mb-4">

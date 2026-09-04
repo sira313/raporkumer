@@ -52,7 +52,7 @@
 								type="button"
 								class="cursor-pointer pr-2"
 								onclick={() => (showBukuTamuPasskey = !showBukuTamuPasskey)}
-								aria-label="Toggle passkey visibility"
+								aria-label="Lihat atau sembunyikan kunci akses"
 							>
 								<Icon name={showBukuTamuPasskey ? 'eye-off' : 'eye'} />
 							</button>
@@ -79,7 +79,7 @@
 								type="button"
 								class="cursor-pointer pr-2"
 								onclick={() => (showBukuTamuConfirm = !showBukuTamuConfirm)}
-								aria-label="Toggle confirm passkey visibility"
+								aria-label="Lihat atau sembunyikan konfirmasi kunci akses"
 							>
 								<Icon name={showBukuTamuConfirm ? 'eye-off' : 'eye'} />
 							</button>

@@ -171,7 +171,7 @@
 	}}
 >
 	<div class="modal-box max-w-md">
-		<h3 class="mb-6 text-lg font-bold">Upload Semua Foto</h3>
+		<h3 class="mb-6 text-lg font-bold">Unggah Semua Foto</h3>
 
 		<div class="flex flex-col gap-4">
 			<!-- Instructions -->
@@ -223,7 +223,7 @@
 					class="file-input file-input-ghost w-full"
 					onchange={handleFileChange}
 					disabled={uploadingPhotos}
-					aria-label="Upload ZIP foto massal"
+					aria-label="Unggah ZIP foto massal"
 				/>
 				<p class="label text-xs">
 					File ZIP dengan nama file = NISN (max 5MB). Setiap foto max 500KB.
@@ -264,7 +264,7 @@
 				class="btn btn-soft btn-error mr-auto"
 				disabled={uploadingPhotos}
 				onclick={handleBatal}
-				aria-label="Close modal"
+				aria-label="Tutup modal"
 			>
 				Batal
 			</button>
@@ -273,7 +273,7 @@
 				class="btn btn-primary btn-soft"
 				disabled={uploadingPhotos || !selectedFile}
 				onclick={handleSave}
-				aria-label="Upload foto"
+				aria-label="Unggah foto"
 			>
 				{#if uploadingPhotos}
 					<div class="loading loading-spinner loading-sm"></div>

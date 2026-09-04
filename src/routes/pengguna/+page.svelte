@@ -212,7 +212,7 @@
 						</th>
 						<th>Nama</th>
 						<th>Role</th>
-						<th>Username</th>
+						<th>Nama Pengguna</th>
 						<th>Aksi</th>
 						<th>Hak Akses</th>
 					</tr>

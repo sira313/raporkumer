@@ -146,7 +146,7 @@
 			{/each}
 			{#if muridTersaring.length > MAX_OPSI}
 				<li class="px-2 py-1 text-sm opacity-60">
-					{muridTersaring.length - MAX_OPSI} lainnya — ketik untuk mempersempit.
+					{muridTersaring.length - MAX_OPSI} lainnya. Ketik untuk mempersempit.
 				</li>
 			{/if}
 		</ul>

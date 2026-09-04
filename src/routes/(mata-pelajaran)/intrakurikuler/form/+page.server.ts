@@ -114,7 +114,7 @@ export const actions = {
 		}
 		if (!mirror && !indukRow && mirrorRows.length > 0) {
 			return fail(400, {
-				fail: `"${nama}" belum terdaftar sebagai pembelajaran Dapodik — pilih "Mata Pelajaran Induk" agar dapat dikirim sebagai Sub Pembelajaran.`
+				fail: `"${nama}" belum terdaftar sebagai pembelajaran Dapodik. Pilih "Mata Pelajaran Induk" agar dapat dikirim sebagai Sub Pembelajaran.`
 			});
 		}
 
@@ -144,7 +144,7 @@ export const actions = {
 				? ` sebagai Sub Pembelajaran dari "${indukRow.nama}"${
 						dapodikMatpelId
 							? ''
-							: ' — ID referensi mapel belum ditemukan, akan dilengkapi saat kirim'
+							: '; ID referensi mapel belum ditemukan, akan dilengkapi saat kirim'
 					}`
 				: '';
 		return { message: `Data mata pelajaran berhasil ditambah${suffix}` };

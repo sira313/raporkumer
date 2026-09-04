@@ -56,7 +56,7 @@
 				on:change={onFileChange}
 				aria-label="Pilih file Excel"
 			/>
-			<p class="label text-wrap">Pilih file Excel (.xlsx) sesuai format "Download Template"</p>
+			<p class="label text-wrap">Pilih file Excel (.xlsx) sesuai format "Unduh Template"</p>
 		</fieldset>
 	</div>
 	<!-- Footer actions are provided by the global modal. Do not duplicate buttons here. -->

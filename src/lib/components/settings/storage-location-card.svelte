@@ -34,7 +34,7 @@
 			<header class="mb-4 space-y-2">
 				<h2 class="text-xl font-semibold">Lokasi Data</h2>
 				<p class="text-base-content/70 text-sm">
-					Pilih root data — subfolder <code>ttd/</code>, <code>dinas-luar/</code>,
+					Pilih root data. Subfolder <code>ttd/</code>, <code>dinas-luar/</code>,
 					<code>uploads/</code>, dan <code>sounds/</code> akan dibuat otomatis di dalamnya. File yang
 					ada akan dipindahkan otomatis ke lokasi baru; perubahan berlaku setelah server dimulai ulang.
 				</p>
@@ -72,7 +72,7 @@
 					</button>
 				</div>
 				<p class="text-base-content/70 mt-1 text-xs">
-					Cukup pilih root ini saja — subfolder <code>ttd/</code>, <code>dinas-luar/</code>,
+					Cukup pilih root ini saja. Subfolder <code>ttd/</code>, <code>dinas-luar/</code>,
 					<code>uploads/</code>, dan <code>sounds/</code> dibuat otomatis di dalamnya saat disimpan.
 				</p>
 			</fieldset>

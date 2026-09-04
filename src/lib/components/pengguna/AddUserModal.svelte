@@ -400,8 +400,8 @@
 								id="add-user-username"
 								type="text"
 								required
-								placeholder="Username"
-								title="Only letters, numbers or dash"
+								placeholder="Nama pengguna"
+								title="Hanya huruf, angka, atau tanda hubung"
 								bind:value={username}
 							/>
 						</label>
@@ -410,24 +410,26 @@
 							<input
 								id="add-user-password"
 								type={showPassword ? 'text' : 'password'}
-								placeholder={isEditMode ? 'Password baru (kosongkan jika tidak ubah)' : 'Password'}
+								placeholder={isEditMode
+									? 'Kata sandi baru (kosongkan jika tidak diubah)'
+									: 'Kata sandi'}
 								bind:value={password}
 							/>
 							<button
 								type="button"
 								class="cursor-pointer"
 								onclick={() => (showPassword = !showPassword)}
-								aria-label="Toggle password visibility"
+								aria-label="Lihat atau sembunyikan kata sandi"
 							>
 								<Icon name={showPassword ? 'eye-off' : 'eye'} />
 							</button>
 						</label>
 					</div>
-					<p class="validator-hint hidden">Isi username dan password dulu!</p>
+					<p class="validator-hint hidden">Isi nama pengguna dan kata sandi dulu!</p>
 					<p class="label">
 						{isEditMode
-							? 'Username wajib diisi. Password opsional (kosongkan jika tidak diubah).'
-							: 'Username dan password untuk login'}
+							? 'Nama pengguna wajib diisi. Kata sandi opsional (kosongkan jika tidak diubah).'
+							: 'Nama pengguna dan kata sandi untuk masuk'}
 					</p>
 				</fieldset>
 			</div>

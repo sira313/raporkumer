@@ -608,7 +608,7 @@
 
 		if (!lingkupValue) {
 			toast(
-				'lingkup materi tidak boleh kosong, jika anda ingin menghapusnya, anda bisa melakukannya dengan tombol hapus',
+				'lingkup materi tidak boleh kosong, jika Anda ingin menghapusnya, Anda bisa melakukannya dengan tombol hapus',
 				'warning'
 			);
 			lingkupInput?.focus();

@@ -105,7 +105,7 @@
 	onMount(() => {
 		updateModal({
 			onPositive: {
-				label: isEdit ? 'Simpan Perubahan' : 'Upload',
+				label: isEdit ? 'Simpan Perubahan' : 'Unggah',
 				class: 'btn-primary',
 				action: () => void submit()
 			},

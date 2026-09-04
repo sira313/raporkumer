@@ -80,7 +80,7 @@
 
 	function handleUploadBg() {
 		showModal({
-			title: `Unggah Background Piagam — Template ${selectedTemplate}`,
+			title: `Unggah Background Piagam: Template ${selectedTemplate}`,
 			body: PiagamBgUploadBody,
 			bodyProps: {
 				template: selectedTemplate,

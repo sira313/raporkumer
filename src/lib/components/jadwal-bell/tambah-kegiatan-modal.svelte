@@ -169,7 +169,7 @@
 				min="1"
 				disabled={submitting}
 			/>
-			<p class="label w-full text-wrap">— opsional, kosongkan jika sama dengan 1 jam pelajaran</p>
+			<p class="label w-full text-wrap">Opsional, kosongkan jika sama dengan 1 jam pelajaran</p>
 		</fieldset>
 	</div>
 	<fieldset class="fieldset">

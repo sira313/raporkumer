@@ -247,7 +247,7 @@
 						value={pakaiSelectWalas ? walasNip : undefined}
 						disabled={pakaiSelectWalas}
 						title={pakaiSelectWalas
-							? 'Mengikuti data Dapodik — ubah melal menu Pengaturan Profil akun yang bersangkutan'
+							? 'Mengikuti data Dapodik. Ubah melalui menu Pengaturan Profil akun yang bersangkutan'
 							: undefined}
 					/>
 					{#if pakaiSelectWalas}

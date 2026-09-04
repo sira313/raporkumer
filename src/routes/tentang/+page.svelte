@@ -15,10 +15,11 @@
 	<section class="hero bg-base-100 shadow-md rounded-box min-h-48">
 		<div class="hero-content text-center">
 			<div class="max-w-xl">
+				<img src="/logo.png" alt="Logo Rapkumer" class="mx-auto mb-4 w-24" />
 				<h1 class="text-base-content text-3xl font-bold md:text-4xl">Rapkumer</h1>
 				<p class="text-base-content/70 mt-1 text-sm">v{appVersion}</p>
 				<p class="text-base-content/80 mt-4">
-					Aplikasi administrasi guru terpadu untuk presensi, jurnal mengajar, nilai, dan rapor —
+					Aplikasi administrasi guru terpadu untuk presensi, jurnal mengajar, nilai, dan rapor,
 					siap cetak sesuai Kurikulum Merdeka.
 				</p>
 				<div class="mt-6 flex flex-wrap justify-center gap-2">
@@ -54,7 +55,7 @@
 					<div>
 						<p class="font-semibold">Import Excel</p>
 						<p class="text-base-content/70 text-sm">
-							Template bawaan untuk input data massal — tidak perlu copy paste berulang.
+							Template bawaan untuk input data massal, tidak perlu copy paste berulang.
 						</p>
 					</div>
 				</div>
@@ -95,7 +96,7 @@
 			<p class="text-base-content/80">
 				Aplikasi ini kami kembangkan sebagai solusi terpadu untuk tugas administrasi guru: presensi
 				harian, jurnal mengajar, nilai harian, nilai STS, dan nilai SAS yang dihitung otomatis
-				menjadi nilai rapor — bisa langsung dicetak atau dikirim ke Dapodik.
+				menjadi nilai rapor, bisa langsung dicetak atau dikirim ke Dapodik.
 			</p>
 			<p class="text-base-content/80">
 				Ada juga jadwal pembelajaran dan bell otomatis. Harapan kami, aplikasi ini membantu pendidik
@@ -112,13 +113,13 @@
 					<li>
 						<a href="https://apoxi.cam/" target="_blank" rel="noreferrer">
 							<span class="font-semibold">Aris Pratama</span>
-							<span class="text-base-content/60">— Founder & Maintainer</span>
+							<span class="text-base-content/60">Founder &amp; Maintainer</span>
 						</a>
 					</li>
 					<li>
 						<a href="https://mustofa.id" target="_blank" rel="noreferrer">
 							<span class="font-semibold">Habib Mustofa</span>
-							<span class="text-base-content/60">— Mentor & Advisor</span>
+							<span class="text-base-content/60">Mentor &amp; Advisor</span>
 						</a>
 					</li>
 				</ul>
@@ -143,7 +144,7 @@
 							rel="noreferrer"
 							class="link link-hover font-semibold">Panduan Belajar dan Asesmen revisi 2025</a
 						>
-						<span class="text-base-content/60 text-xs">PDF — kurikulum.kemendikdasmen.go.id</span>
+						<span class="text-base-content/60 text-xs">PDF: kurikulum.kemendikdasmen.go.id</span>
 					</li>
 					<li class="flex flex-col gap-1 p-4">
 						<a
@@ -152,16 +153,25 @@
 							rel="noreferrer"
 							class="link link-hover font-semibold">Panduan Kokurikuler tahun 2025</a
 						>
-						<span class="text-base-content/60 text-xs">PDF — kurikulum.kemendikdasmen.go.id</span>
+						<span class="text-base-content/60 text-xs">PDF: kurikulum.kemendikdasmen.go.id</span>
 					</li>
 					<li class="flex flex-col gap-1 p-4">
 						<a
-							href="https://drive.google.com/file/d/1XigY7sH6SkA0RCyn_8X85NGJoR4HmyC0/view"
+							href="https://uploads.belajar.id/document/files/Kepka_BSKAP_No_01k17e8396ajn15j3hcw0k773b.pdf"
 							target="_blank"
 							rel="noreferrer"
 							class="link link-hover font-semibold">Capaian Pembelajaran</a
 						>
-						<span class="text-base-content/60 text-xs">PDF — Google Drive</span>
+						<span class="text-base-content/60 text-xs">PDF: uploads.belajar.id</span>
+					</li>
+					<li class="flex flex-col gap-1 p-4">
+						<a
+							href="https://drive.google.com/file/d/1kZnNYVitjQQqHtqVHGhuiMTdNFDqF3v1/view"
+							target="_blank"
+							rel="noreferrer"
+							class="link link-hover font-semibold">Capaian Pembelajaran Khusus PAPB</a
+						>
+						<span class="text-base-content/60 text-xs">PDF: Google Drive</span>
 					</li>
 				</ul>
 			</div>

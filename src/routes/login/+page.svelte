@@ -89,7 +89,7 @@
 	<div class="card-body space-y-6">
 		<header class="mb-2 space-y-2 text-center">
 			<h1 class="text-2xl font-bold">Selamat Datang</h1>
-			<p class="text-base-content/70 text-sm">Silahkan masukkan nama pengguna dan kata sandi.</p>
+			<p class="text-base-content/70 text-sm">Masukkan nama pengguna dan kata sandi.</p>
 		</header>
 
 		{#if isLocked}
@@ -132,7 +132,7 @@
 							type="button"
 							class="cursor-pointer"
 							onclick={() => (showPassword = !showPassword)}
-							aria-label="Toggle password visibility"
+							aria-label="Lihat atau sembunyikan kata sandi"
 						>
 							<Icon name={showPassword ? 'eye-off' : 'eye'} />
 						</button>

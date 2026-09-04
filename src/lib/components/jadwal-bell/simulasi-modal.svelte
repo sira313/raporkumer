@@ -208,7 +208,7 @@
 	function fireCurrentEvent() {
 		if (currentEventIndex >= events.length) {
 			simulasiRunning = false;
-			toast('Simulasi selesai — semua event telah diputar.', 'success');
+			toast('Simulasi selesai, semua event telah diputar.', 'success');
 			return;
 		}
 		const event = events[currentEventIndex];
@@ -274,9 +274,8 @@
 			{#if simulasiRunning}
 				<button type="button" class="btn btn-error shadow-none" onclick={stopSimulasi}>
 					<Icon name="pause" />
-					Stop
-				</button>
-			{:else}
+					Hentikan
+				</button>{:else}
 				<button type="button" class="btn btn-primary shadow-none" onclick={startSimulasi}>
 					<Icon name="play" />
 					Mulai Simulasi
