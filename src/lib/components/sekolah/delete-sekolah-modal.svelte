@@ -162,7 +162,7 @@
 							<div class="modal-action">
 								<button
 									type="button"
-									class="btn btn-ghost shadow-none sm:w-auto"
+									class="btn btn-soft shadow-none sm:mr-auto sm:w-auto"
 									onclick={close}
 									disabled={submitting}
 								>

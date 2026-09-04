@@ -87,7 +87,7 @@
 		</div>
 
 		<div class="mt-4 flex justify-end gap-2">
-			<button class="btn btn-soft shadow-none" type="button" onclick={() => history.back()}>
+			<button class="btn btn-soft shadow-none mr-auto" type="button" onclick={() => history.back()}>
 				<Icon name="close" />
 				Batal
 			</button>

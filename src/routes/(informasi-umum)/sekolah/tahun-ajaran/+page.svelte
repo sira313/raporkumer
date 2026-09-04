@@ -133,7 +133,7 @@
 		</p>
 	{/if}
 
-	<div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+	<div class="mt-4 flex flex-row items-center justify-between gap-2">
 		<button class="btn btn-soft shadow-none sm:w-auto" type="button" onclick={() => history.back()}>
 			<Icon name="left" />
 			Kembali
@@ -212,7 +212,7 @@
 										{syncCreateFormState(submitting, invalid)}
 										<input type="hidden" name="sekolahId" value={selectedSekolahId} />
 										<input
-											class="input input-sm input-bordered w-full"
+											class="input bg-base-300 dark:border-none input-sm input-bordered w-full"
 											name="nama"
 											placeholder="2025/2026"
 											required

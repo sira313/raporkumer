@@ -5,6 +5,10 @@
 @plugin '@tailwindcss/typography';
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+@theme {
+	--breakpoint-ssm: 480px;
+}
+
 @utility prose {
 	:root & {
 		:where(code):not(pre > code) {

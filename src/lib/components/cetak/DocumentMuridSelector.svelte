@@ -370,7 +370,7 @@
 				</div>
 			</div>
 		{/if}
-		<div class="flex flex-row gap-2">
+		<div class="flex flex-row gap-2 max-sm:flex-col">
 			{#if isJurnalMengajar}
 				<button
 					class="btn btn-primary shadow-none"
@@ -390,7 +390,7 @@
 				</button>
 			{:else if isBukuTamu}
 				<button
-					class="btn btn-primary shadow-none"
+					class="btn btn-primary shadow-none max-sm:w-full"
 					type="button"
 					disabled={!bukuTamuTanggalMulai || !bukuTamuTanggalSelesai || downloadLoading}
 					onclick={onPreviewBukuTamu}
@@ -407,7 +407,7 @@
 				</button>
 			{:else if isPresensiGuru}
 				<button
-					class="btn btn-primary shadow-none"
+					class="btn btn-primary shadow-none max-sm:w-full"
 					type="button"
 					disabled={downloadLoading}
 					onclick={onPreviewPresensiGuru}
@@ -437,7 +437,7 @@
 				</button>
 			{:else}
 				<button
-					class="btn btn-soft shadow-none"
+					class="btn btn-soft shadow-none max-sm:w-full"
 					type="button"
 					disabled={downloadDisabled}
 					onclick={onBulkDownload}

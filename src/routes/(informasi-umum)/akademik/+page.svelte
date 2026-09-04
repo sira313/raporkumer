@@ -275,20 +275,18 @@
 					actions = a;
 				}
 			},
+			spreadActions: true,
+			onNeutral: {
+				label: 'Batal',
+				action: ({ close }) => close()
+			},
 			onPositive: {
 				label: 'Simpan',
 				action: () => actions.submit()
 			},
-			onNegative: {
-				label: 'Batal'
-			},
 			dismissible: false
 		});
 	}
-
-	let presensiBtnClass = $derived(
-		hasPresensiSettings ? 'btn-success shadow-none' : 'btn-error shadow-none'
-	);
 
 	const presensiJadwalReady = $derived(
 		hasPresensiSettings && !!selectedSemesterRecord?.tanggalMasuk
@@ -530,17 +528,20 @@
 								<Icon name="copy" />
 								Salin Semester Ganjil
 							</button>
-							<button
-								type="button"
-								class="btn {presensiBtnClass} max-sm:w-full"
-								onclick={openPresensiSettings}
-								disabled={!selectedTahunAjaranId || !canRaporManage}
-								aria-disabled={!canRaporManage}
-								title={!canRaporManage ? 'Anda tidak memiliki izin untuk mengatur presensi' : ''}
-							>
-								<Icon name="gear" />
-								Pengaturan Presensi
-							</button>
+							<div class="indicator max-sm:w-full">
+								<span class="indicator-item indicator-start badge badge-xs {hasPresensiSettings ? 'badge-success' : 'badge-error'}"></span>
+								<button
+									type="button"
+									class="btn btn-soft shadow-none max-sm:w-full"
+									onclick={openPresensiSettings}
+									disabled={!selectedTahunAjaranId || !canRaporManage}
+									aria-disabled={!canRaporManage}
+									title={!canRaporManage ? 'Anda tidak memiliki izin untuk mengatur presensi' : ''}
+								>
+									<Icon name="gear" />
+									Pengaturan Presensi
+								</button>
+							</div>
 							<button
 								type="button"
 								class="btn btn-soft shadow-none max-sm:w-full"

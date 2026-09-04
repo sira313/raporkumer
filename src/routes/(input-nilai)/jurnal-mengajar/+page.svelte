@@ -140,9 +140,10 @@
 				label: editData ? 'Simpan' : 'Tambah',
 				action: () => actions!.submit()
 			},
-			onNegative: {
+			onNeutral: {
 				label: 'Batal'
 			},
+			spreadActions: true,
 			dismissible: true
 		});
 	}

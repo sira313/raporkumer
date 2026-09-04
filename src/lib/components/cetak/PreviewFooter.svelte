@@ -159,74 +159,82 @@
 	{/if}
 	<div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
 		{#if isPiagamSelected}
-			<button
-				class="btn btn-sm btn-error btn-soft shadow-none"
-				type="button"
-				onclick={handleDeleteBg}
-			>
-				<Icon name="del" />
-				Hapus BG
-			</button>
-			<button class="btn btn-sm btn-soft shadow-none" type="button" onclick={handleUploadBg}>
-				<Icon name="image" />
-				Ganti BG
-			</button>
+			<div class="max-sm:grid max-sm:grid-cols-2 max-sm:gap-2 sm:contents">
+				<button
+					class="btn btn-sm btn-error btn-soft shadow-none max-sm:w-full"
+					type="button"
+					onclick={handleDeleteBg}
+				>
+					<Icon name="del" />
+					Hapus BG
+				</button>
+				<button
+					class="btn btn-sm btn-soft shadow-none max-sm:w-full"
+					type="button"
+					onclick={handleUploadBg}
+				>
+					<Icon name="image" />
+					Ganti BG
+				</button>
+			</div>
 		{/if}
 
 		{#if isRaporSelected}
-			<button
-				class="btn btn-sm btn-soft shadow-none"
-				type="button"
-				title="Download Berita Acara"
-				disabled={!kelasId || isDownloadingBA}
-				onclick={handleDownloadBA}
-			>
-				<Icon name="download" />
-				BA
-			</button>
-			<button
-				class="btn btn-sm btn-soft shadow-none"
-				type="button"
-				title="Atur Kriteria"
-				onclick={() => {
-					showModal({
-						title: 'Atur Kriteria Penilaian Intrakurikuler',
-						body: AturKriteriaModal,
-						dismissible: true,
-						onPositive: {
-							label: 'Simpan',
-							action: ({ close }: { close: () => void }) => {
-								const clearEl = document.getElementById('krit-clear') as HTMLInputElement | null;
-								if (clearEl?.checked) {
-									onSetKriteria(null, null);
+			<div class="max-sm:grid max-sm:grid-cols-2 max-sm:gap-2 sm:contents">
+				<button
+					class="btn btn-sm btn-soft shadow-none max-sm:w-full"
+					type="button"
+					title="Download Berita Acara"
+					disabled={!kelasId || isDownloadingBA}
+					onclick={handleDownloadBA}
+				>
+					<Icon name="download" />
+					BA
+				</button>
+				<button
+					class="btn btn-sm btn-soft shadow-none max-sm:w-full"
+					type="button"
+					title="Atur Kriteria"
+					onclick={() => {
+						showModal({
+							title: 'Atur Kriteria Penilaian Intrakurikuler',
+							body: AturKriteriaModal,
+							dismissible: true,
+							onPositive: {
+								label: 'Simpan',
+								action: ({ close }: { close: () => void }) => {
+									const clearEl = document.getElementById('krit-clear') as HTMLInputElement | null;
+									if (clearEl?.checked) {
+										onSetKriteria(null, null);
+										close();
+										return;
+									}
+									// read inputs from dialog DOM
+									const cuk = document.getElementById('krit-cukup') as HTMLInputElement | null;
+									const baik = document.getElementById('krit-baik') as HTMLInputElement | null;
+									let cval = 85;
+									let bval = 95;
+									if (cuk) cval = Math.round(Number(cuk.value) || cval);
+									if (baik) bval = Math.round(Number(baik.value) || bval);
+									if (bval < cval) {
+										const tmp = bval;
+										bval = cval;
+										cval = tmp;
+									}
+									onSetKriteria(cval, bval);
 									close();
-									return;
 								}
-								// read inputs from dialog DOM
-								const cuk = document.getElementById('krit-cukup') as HTMLInputElement | null;
-								const baik = document.getElementById('krit-baik') as HTMLInputElement | null;
-								let cval = 85;
-								let bval = 95;
-								if (cuk) cval = Math.round(Number(cuk.value) || cval);
-								if (baik) bval = Math.round(Number(baik.value) || bval);
-								if (bval < cval) {
-									const tmp = bval;
-									bval = cval;
-									cval = tmp;
-								}
-								onSetKriteria(cval, bval);
-								close();
-							}
-						},
-						bodyProps: { cukupUpper: kritCukup, baikUpper: kritBaik },
-						// show cancel button too
-						onNegative: { label: 'Batal' }
-					});
-				}}
-			>
-				<Icon name="gear" />
-				Kriteria
-			</button>
+							},
+							bodyProps: { cukupUpper: kritCukup, baikUpper: kritBaik },
+							// show cancel button too
+							onNegative: { label: 'Batal' }
+						});
+					}}
+				>
+					<Icon name="gear" />
+					Kriteria
+				</button>
+			</div>
 		{/if}
 
 		{#if isRaporSelected || isKeasramaanSelected}

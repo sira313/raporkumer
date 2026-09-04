@@ -23,21 +23,21 @@
 	});
 </script>
 
-<fieldset class="fieldset">
+<fieldset class="fieldset w-full">
 	<legend class="fieldset-legend">Pilih Agama</legend>
 
 	<select
 		id={selectId}
-		class="select dark:bg-base-200 w-full truncate dark:border-none"
+		class="select bg-base-200 dark:bg-base-300 w-full truncate dark:border-none"
 		bind:value={selectedKey}
 		aria-label="Pilih agama"
 	>
 		{#each options as opt (opt.key)}
-			<option value={opt.key}>{opt.label}</option>
+			<option class="text-wrap" value={opt.key}>{opt.label}</option>
 		{/each}
 	</select>
 
-	<p class="label">
+	<p class="label text-wrap">
 		Contoh nama mapel di file: <strong>{options.find((o) => o.key === selectedKey)?.name}</strong>
 	</p>
 </fieldset>

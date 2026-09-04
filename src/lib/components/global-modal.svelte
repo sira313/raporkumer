@@ -78,7 +78,7 @@
 				<div class="modal-action shrink-0 {modalProps.spreadActions ? 'justify-between' : ''}">
 					{#if modalProps.spreadActions && modalProps.onNeutral}
 						<button
-							class="btn {modalProps.onNeutral.class ?? ''} gap-2 shadow-none"
+							class="btn {modalProps.onNeutral.class ?? 'btn-soft'} gap-2 shadow-none"
 							type="button"
 							onclick={() => {
 								if (modalProps?.onNeutral?.action) {
@@ -117,7 +117,7 @@
 
 						{#if !modalProps.spreadActions && modalProps.onNeutral}
 							<button
-								class="btn {modalProps.onNeutral.class ?? ''} gap-2 shadow-none"
+								class="btn {modalProps.onNeutral.class ?? 'btn-soft'} gap-2 shadow-none"
 								type="button"
 								onclick={() => {
 									if (modalProps?.onNeutral?.action) {

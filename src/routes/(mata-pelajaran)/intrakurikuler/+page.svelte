@@ -4,7 +4,7 @@
 	import { invalidate } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import Icon from '$lib/components/icon.svelte';
-	import { showModal } from '$lib/components/global-modal.svelte';
+	import { modalRoute } from '$lib/utils';
 	import ImportMapelDialog from '$lib/components/intrakurikuler/import-mapel-dialog.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import {
@@ -16,7 +16,6 @@
 		pksMapelNames,
 		pksParentName
 	} from '$lib/statics';
-	import { modalRoute } from '$lib/utils';
 	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
 
 	type MapelWithIndicator = MataPelajaran & {
@@ -29,6 +28,8 @@
 		data
 	}: { data: { mapel: { daftarMapel: MapelWithIndicator[] }; adaDataDapodik?: boolean } } =
 		$props();
+
+	let importMapelOpen = $state(false);
 
 	const emptyStateMessage = 'Belum ada data mata pelajaran';
 	const agamaMapelNameSet = new Set<string>(agamaMapelNames);
@@ -331,13 +332,7 @@
 								class={`w-full text-left ${!canAddImportMapel ? 'pointer-events-none opacity-50' : ''}`}
 								disabled={!canAddImportMapel}
 								aria-disabled={!canAddImportMapel}
-								onclick={() =>
-									showModal({
-										title: 'Impor Mata Pelajaran',
-										body: ImportMapelDialog,
-										bodyProps: { adaDataDapodik: data.adaDataDapodik },
-										dismissible: true
-									})}
+								onclick={() => (importMapelOpen = true)}
 							>
 								<Icon name="import" />
 								Impor Mapel
@@ -611,6 +606,7 @@
 </div>
 
 <IntrakurikulerModals />
+<ImportMapelDialog bind:open={importMapelOpen} adaDataDapodik={data.adaDataDapodik} />
 
 <style>
 	/* Baris drag-and-drop: background di level sel agar ghost drag punya bg + sudut

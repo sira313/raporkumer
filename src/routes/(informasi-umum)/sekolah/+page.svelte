@@ -199,35 +199,24 @@
 							</div>
 						</div>
 
-						<div class="mt-8 flex flex-col justify-between gap-2 md:flex-row">
-							<button
-								type="button"
-								class="btn btn-error btn-soft shadow-none"
-								aria-label="hapus sekolah"
-								onclick={() => openDeleteSekolah(sekolah)}
-								disabled={!canSekolahManage}
+					<div class="mt-8 flex flex-col justify-between gap-2 md:flex-row">
+						<div class="flex flex-col gap-2 order-1 md:order-2 md:flex-row">
+							<a
+								href="/sekolah/form/sync-dapodik"
+								use:modalRoute={'sync-dapodik'}
+								class="btn btn-soft shadow-none {!canSekolahManage
+									? 'pointer-events-none opacity-50'
+									: ''}"
+								aria-label="Sync Dapodik"
 								aria-disabled={!canSekolahManage}
-								title={!canSekolahManage ? 'Anda tidak memiliki izin untuk menghapus sekolah' : ''}
+								title={!canSekolahManage
+									? 'Anda tidak memiliki izin untuk sinkronisasi Dapodik'
+									: ''}
 							>
-								<Icon name="del" />
-								Hapus Sekolah
-							</button>
-							<div class="flex flex-col gap-2 md:flex-row">
-								<a
-									href="/sekolah/form/sync-dapodik"
-									use:modalRoute={'sync-dapodik'}
-									class="btn btn-soft shadow-none {!canSekolahManage
-										? 'pointer-events-none opacity-50'
-										: ''}"
-									aria-label="Sync Dapodik"
-									aria-disabled={!canSekolahManage}
-									title={!canSekolahManage
-										? 'Anda tidak memiliki izin untuk sinkronisasi Dapodik'
-										: ''}
-								>
-									<Icon name="dapodik" />
-									Sync Dapodik
-								</a>
+								<Icon name="dapodik" />
+								Sync Dapodik
+							</a>
+							<div class="grid grid-cols-2 gap-2 md:flex md:flex-row">
 								<a
 									href={`/sekolah/tahun-ajaran?sekolahId=${sekolah.id}`}
 									class="btn btn-soft shadow-none {!canSekolahManage
@@ -239,8 +228,9 @@
 										? 'Anda tidak memiliki izin untuk melihat Tahun Ajaran'
 										: ''}
 								>
-									<Icon name="calendar" />
-									Tahun Ajaran
+								<Icon name="calendar" />
+								<span class="ssm:hidden">TA</span>
+								<span class="hidden ssm:inline">Tahun Ajaran</span>
 								</a>
 								<a
 									href={`/sekolah/form?sekolahId=${sekolah.id}`}
@@ -258,6 +248,19 @@
 								</a>
 							</div>
 						</div>
+						<button
+							type="button"
+							class="btn btn-error btn-soft shadow-none order-2 mt-4 md:order-1 md:mt-0"
+							aria-label="hapus sekolah"
+							onclick={() => openDeleteSekolah(sekolah)}
+							disabled={!canSekolahManage}
+							aria-disabled={!canSekolahManage}
+							title={!canSekolahManage ? 'Anda tidak memiliki izin untuk menghapus sekolah' : ''}
+						>
+							<Icon name="del" />
+							Hapus Sekolah
+						</button>
+					</div>
 					</div>
 				</div>
 			</div>

@@ -2,7 +2,6 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/icon.svelte';
-	import { showModal } from '$lib/components/global-modal.svelte';
 	import ImportMatevDialog from '$lib/components/keasramaan/import-matev-dialog.svelte';
 	import MataEvaluasiDisplay from '$lib/components/keasramaan/MataEvaluasiDisplay.svelte';
 
@@ -16,6 +15,8 @@
 	}
 
 	let { data } = $props<{ data: Record<string, unknown> }>();
+
+	let importMatevOpen = $state(false);
 
 	const mataEvaluasi = $derived((data.mataEvaluasi as MataEvaluasi[]) ?? []);
 	const tableReady = $derived((data.tableReady as boolean) ?? true);
@@ -130,12 +131,7 @@
 							class="w-full text-left"
 							disabled={!canEdit}
 							aria-disabled={!canEdit}
-							onclick={() =>
-								showModal({
-									title: 'Impor Matev',
-									body: ImportMatevDialog,
-									dismissible: true
-								})}
+							onclick={() => (importMatevOpen = true)}
 						>
 							<Icon name="import" />
 							Impor Matev
@@ -169,4 +165,5 @@
 
 	<!-- Daftar Mata Evaluasi dengan Tabel Individual -->
 	<MataEvaluasiDisplay {mataEvaluasi} {tableReady} {canEdit} />
+	<ImportMatevDialog bind:open={importMatevOpen} />
 </div>

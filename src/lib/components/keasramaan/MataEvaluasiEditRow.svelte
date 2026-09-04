@@ -18,7 +18,7 @@
 	<td class="text-primary animate-pulse align-top font-semibold">{rowIndex + 1}</td>
 	<td class="align-top">
 		<textarea
-			class="textarea textarea-bordered validator bg-base-200 dark:bg-base-300 h-24 w-full"
+			class="textarea validator bg-base-200 dark:bg-base-300 dark:border-none h-24 w-full"
 			value={group.nama}
 			oninput={(e) => onUpdateNama(e.currentTarget.value)}
 			placeholder="Tuliskan mata evaluasi"

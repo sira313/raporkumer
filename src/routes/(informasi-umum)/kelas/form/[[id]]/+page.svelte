@@ -74,7 +74,11 @@
 			title: 'Reset Wali Kelas',
 			body: ResetWalasBody,
 			dismissible: true,
-			onNegative: { label: 'Tidak' },
+			spreadActions: true,
+			onNeutral: {
+				label: 'Tidak',
+				action: ({ close }) => close()
+			},
 			onPositive: {
 				label: 'Ya, tambahkan',
 				action: ({ close }) => {
@@ -284,7 +288,40 @@
 					<span> Biarkan kosong jika tidak ada wali asrama atau tidak memiliki NIP. </span>
 				</div>
 			</div>
-			<div class="mt-6 flex justify-between gap-2">
+		<!-- mobile: 2-col grid -->
+		<div class="mt-6 grid grid-cols-2 gap-2 md:hidden">
+				<a class="btn btn-soft shadow-none" href="/kelas" aria-label="kembali">
+					<Icon name="left" />
+					Kembali
+				</a>
+				<button
+					class="btn shadow-none {data.kelas?.id ? 'btn-secondary' : 'btn-primary'}"
+					disabled={submitting || disableAcademic || walasBelumDipilih}
+				>
+					{#if submitting}
+						<div class="loading loading-spinner"></div>
+					{:else if data.kelas?.id}
+						<Icon name="edit" />
+						Update
+					{:else}
+						<Icon name="plus" />
+						Tambah
+					{/if}
+				</button>
+				{#if data.canResetWalas && data.kelas?.id && pakaiSelectWalas}
+					<button
+						type="button"
+						class="col-span-2 btn btn-soft btn-warning shadow-none"
+						disabled={disableAcademic}
+						onclick={confirmResetWalas}
+					>
+						<Icon name="repeat" />
+						Reset Walas
+					</button>
+				{/if}
+			</div>
+			<!-- desktop: original flex layout -->
+			<div class="mt-6 hidden justify-between gap-2 md:flex">
 				<a class="btn btn-soft shadow-none" href="/kelas" aria-label="kembali">
 					<Icon name="left" />
 					Kembali

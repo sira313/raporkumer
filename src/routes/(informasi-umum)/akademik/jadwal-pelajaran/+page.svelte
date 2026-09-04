@@ -416,7 +416,11 @@
 				label: 'Simpan',
 				action: () => actions!.submit()
 			},
-			onNegative: { label: 'Batal' },
+			spreadActions: true,
+			onNeutral: {
+				label: 'Batal',
+				action: ({ close }) => close()
+			},
 			dismissible: false
 		});
 	}
@@ -435,7 +439,11 @@
 				label: 'Simpan',
 				action: () => actions!.submit()
 			},
-			onNegative: { label: 'Batal' },
+			spreadActions: true,
+			onNeutral: {
+				label: 'Batal',
+				action: ({ close }) => close()
+			},
 			dismissible: false
 		});
 	}
@@ -862,6 +870,10 @@
 </svelte:head>
 
 <div class="grid grid-cols-1 gap-6">
+	<div class="alert alert-info sm:hidden">
+		<Icon name="info" />
+		<span>Gunakan tablet/laptop atau layar yang lebih besar agar lebih mudah mengatur jadwal pelajaran pada halaman ini.</span>
+	</div>
 	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md" bind:this={cardEl}>
 		<div class="space-y-6">
 			<div class="flex flex-wrap items-center justify-between gap-2">

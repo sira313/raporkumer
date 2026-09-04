@@ -83,25 +83,23 @@
 	</button>
 </div>
 
-<button
-	class="btn btn-soft mb-2 w-full shadow-none sm:hidden"
-	type="button"
-	onclick={() => onBack?.()}
->
-	<Icon name="left" />
-	Kembali
-</button>
+<div class="mb-2 grid grid-cols-2 gap-2 sm:hidden">
+	<button class="btn btn-soft shadow-none" type="button" onclick={() => onBack?.()}>
+		<Icon name="left" />
+		Kembali
+	</button>
 
-<button
-	class="btn btn-soft mb-2 w-full shadow-none sm:hidden"
-	type="button"
-	onclick={() => onOpenImport && onOpenImport()}
-	disabled={isImportDisabled}
-	title={importTooltip}
->
-	<Icon name="import" />
-	Import TP
-</button>
+	<button
+		class="btn btn-soft shadow-none"
+		type="button"
+		onclick={() => onOpenImport && onOpenImport()}
+		disabled={isImportDisabled}
+		title={importTooltip}
+	>
+		<Icon name="import" />
+		Import TP
+	</button>
+</div>
 
 <!-- action row -->
 <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -134,7 +132,7 @@
 
 	{#if onGenerate}
 		<button
-			class="btn btn-soft btn-info shadow-none sm:max-w-40"
+			class="btn btn-soft btn-info w-full shadow-none sm:w-auto sm:max-w-40"
 			type="button"
 			onclick={() => onGenerate && onGenerate()}
 			disabled={isGenerateDisabled}
@@ -145,40 +143,42 @@
 		</button>
 	{/if}
 
-	<button
-		class="btn btn-soft shadow-none sm:ml-auto sm:max-w-40"
-		type="button"
-		onclick={() => handlePrimaryActionClick && handlePrimaryActionClick()}
-		disabled={isTambahTpDisabled}
-		title={tambahTpTooltip}
-		class:btn-error={hasSelection}
-		class:btn-secondary={isInteractionLocked}
-	>
-		<Icon name={hasSelection ? 'del' : isInteractionLocked ? 'close' : 'plus'} />
-		{hasSelection ? 'Hapus TP' : isInteractionLocked ? 'Batalkan' : 'Tambah TP'}
-	</button>
+	<div class="grid grid-cols-2 gap-2 sm:ml-auto sm:flex sm:items-center">
+		<button
+			class="btn btn-soft w-full shadow-none sm:w-auto sm:max-w-40"
+			type="button"
+			onclick={() => handlePrimaryActionClick && handlePrimaryActionClick()}
+			disabled={isTambahTpDisabled}
+			title={tambahTpTooltip}
+			class:btn-error={hasSelection}
+			class:btn-secondary={isInteractionLocked}
+		>
+			<Icon name={hasSelection ? 'del' : isInteractionLocked ? 'close' : 'plus'} />
+			{hasSelection ? 'Hapus TP' : isInteractionLocked ? 'Batalkan' : 'Tambah TP'}
+		</button>
 
-	{#if isCreateModeActive || isEditModeActive}
-		<button
-			class="btn btn-primary shadow-none sm:max-w-40"
-			type="button"
-			onclick={() => submitActiveForm && submitActiveForm()}
-			disabled={!activeFormId || isFormSubmitting}
-			aria-busy={isFormSubmitting}
-		>
-			<Icon name="save" />
-			Simpan
-		</button>
-	{:else}
-		<button
-			class="btn shadow-none sm:max-w-40 {isEditingBobot ? '' : 'btn-soft'}"
-			type="button"
-			onclick={() => toggleBobotEditing && toggleBobotEditing()}
-			disabled={!hasGroups}
-			class:btn-success={isEditingBobot}
-		>
-			<Icon name="percent" />
-			{isEditingBobot ? 'Simpan Bobot' : 'Atur Bobot'}
-		</button>
-	{/if}
+		{#if isCreateModeActive || isEditModeActive}
+			<button
+				class="btn btn-primary w-full shadow-none sm:w-auto sm:max-w-40"
+				type="button"
+				onclick={() => submitActiveForm && submitActiveForm()}
+				disabled={!activeFormId || isFormSubmitting}
+				aria-busy={isFormSubmitting}
+			>
+				<Icon name="save" />
+				Simpan
+			</button>
+		{:else}
+			<button
+				class="btn w-full shadow-none sm:w-auto sm:max-w-40 {isEditingBobot ? '' : 'btn-soft'}"
+				type="button"
+				onclick={() => toggleBobotEditing && toggleBobotEditing()}
+				disabled={!hasGroups}
+				class:btn-success={isEditingBobot}
+			>
+				<Icon name="percent" />
+				{isEditingBobot ? 'Simpan Bobot' : 'Atur Bobot'}
+			</button>
+		{/if}
+	</div>
 </div>

@@ -261,7 +261,7 @@
 		<div class="modal-action gap-2">
 			<button
 				type="button"
-				class="btn btn-soft btn-error"
+				class="btn btn-soft btn-error mr-auto"
 				disabled={uploadingPhotos}
 				onclick={handleBatal}
 				aria-label="Close modal"

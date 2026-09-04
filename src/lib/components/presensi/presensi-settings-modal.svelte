@@ -348,8 +348,8 @@
 					{#each HARI_SEKOLAH_KEYS as key (key)}
 						<button
 							type="button"
-							class="badge badge-outline cursor-pointer px-2.5 py-3 {customDays.includes(key)
-								? 'badge-primary'
+							class="badge badge-soft cursor-pointer px-2.5 py-3 {customDays.includes(key)
+								? 'badge-success'
 								: ''}"
 							onclick={() => toggleCustomDay(key)}
 						>
@@ -419,7 +419,7 @@
 	{#if liburDates.length > 0}
 		<div class="flex flex-wrap gap-1.5 my-2">
 			{#each liburDates as date, i (date)}
-				<div class="badge badge-outline gap-1 px-2 py-3 text-sm">
+				<div class="badge badge-soft gap-1 px-2 py-3 text-sm badge-error">
 					{date}
 					<button
 						type="button"
@@ -455,7 +455,7 @@
 			</button>
 		</div>
 		{#each semesterRanges as range, i (i)}
-			<div class="flex items-center gap-2">
+			<div class="flex flex-wrap items-center gap-2">
 				<input
 					type="date"
 					class="input bg-base-200 dark:bg-base-300 w-44 dark:border-none"
