@@ -652,7 +652,7 @@
 				title={!canEdit ? 'Anda tidak memiliki izin' : ''}
 			>
 				<Icon name="download" />
-				Download Template
+				Unduh Template
 			</button>
 			<button
 				class="btn btn-soft shadow-none"

@@ -149,7 +149,7 @@
 <!-- Modal Dialog using DaisyUI standard pattern -->
 <dialog bind:this={dialogRef} class="modal">
 	<div class="modal-box">
-		<h3 class="mb-6 text-lg font-bold">Upload Foto {muridNama}</h3>
+		<h3 class="mb-6 text-lg font-bold">Unggah Foto {muridNama}</h3>
 
 		<div class="flex flex-col gap-4 sm:flex-row">
 			<!-- Preview -->
@@ -179,7 +179,7 @@
 						class="file-input file-input-ghost w-full"
 						onchange={handleFileChange}
 						disabled={uploadingFoto}
-						aria-label="Upload foto murid"
+						aria-label="Unggah foto murid"
 					/>
 					<p class="label">JPG atau PNG. Ukuran maks 500KB</p>
 				</fieldset>
@@ -193,7 +193,7 @@
 				class="btn btn-soft btn-error"
 				disabled={uploadingFoto}
 				onclick={handleBatal}
-				aria-label="Close modal"
+				aria-label="Tutup modal"
 			>
 				Batal
 			</button>
@@ -202,7 +202,7 @@
 				class="btn btn-primary"
 				onclick={handleSave}
 				disabled={uploadingFoto || !selectedFile}
-				aria-label="Save photo"
+				aria-label="Simpan foto"
 			>
 				{#if uploadingFoto}
 					<span class="loading loading-spinner"></span>

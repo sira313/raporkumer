@@ -184,7 +184,7 @@
 		<div class="alert alert-soft alert-warning flex items-center gap-2">
 			<Icon name="alert" class="h-5 w-5 shrink-0" />
 			<span class="text-sm"
-				>Mode simulasi — waktu dicatat sebagai: <strong>{simulasiLabel}</strong></span
+				>Mode simulasi: waktu dicatat sebagai: <strong>{simulasiLabel}</strong></span
 			>
 		</div>
 	{/if}

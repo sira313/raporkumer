@@ -52,8 +52,8 @@
 >
 	<div class="space-y-4">
 		<p class="text-sm">
-			Seluruh isi database akan <strong>dikosongkan</strong> — data sekolah, siswa, nilai, presensi, pengguna,
-			dan pengaturan lainnya dihapus dan aplikasi kembali ke kondisi awal.
+			Seluruh isi database akan <strong>dikosongkan</strong>: data sekolah, siswa, nilai, presensi,
+			pengguna, dan pengaturan lainnya dihapus dan aplikasi kembali ke kondisi awal.
 		</p>
 
 		<div role="alert" class="alert alert-error alert-soft">
@@ -82,7 +82,7 @@
 						type="button"
 						class="cursor-pointer pr-2"
 						onclick={() => (showPassword = !showPassword)}
-						aria-label="Toggle password visibility"
+						aria-label="Lihat atau sembunyikan kata sandi"
 					>
 						<Icon name={showPassword ? 'eye-off' : 'eye'} />
 					</button>

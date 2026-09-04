@@ -12,7 +12,7 @@
 
 <div class="card bg-base-100 w-full shadow-md">
 	<div class="card-body text-center">
-		<h1 class="text-4xl font-extrabold">Ups — Terjadi kesalahan</h1>
+		<h1 class="text-4xl font-extrabold">Ups, terjadi kesalahan</h1>
 		<p class="mt-1 text-sm">
 			Status: <span class="font-mono text-lg">{page?.status ?? 500}</span>
 		</p>

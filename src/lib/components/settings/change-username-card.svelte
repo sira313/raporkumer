@@ -43,7 +43,7 @@
 
 				<div class="w-full">
 					<fieldset class="fieldset">
-						<legend class="fieldset-legend">Konfirmasi Dengan Kata Sandi</legend>
+						<legend class="fieldset-legend">Konfirmasi dengan kata sandi</legend>
 						<div class="form-control">
 							<label class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none">
 								<span class="pl-2"><Icon name="lock" /></span>
@@ -59,7 +59,7 @@
 									type="button"
 									class="cursor-pointer pr-2"
 									onclick={() => (showAdminPassword = !showAdminPassword)}
-									aria-label="Toggle password visibility"
+									aria-label="Lihat atau sembunyikan kata sandi"
 								>
 									<Icon name={showAdminPassword ? 'eye-off' : 'eye'} />
 								</button>

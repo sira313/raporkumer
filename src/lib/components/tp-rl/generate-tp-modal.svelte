@@ -27,11 +27,16 @@
 	let groups = $state<GeneratedGroup[]>([]);
 
 	let aiStatus = $state<'checking' | 'ready' | 'unconfigured'>('checking');
+	let isAdminUser = $state(false);
 
 	const isFormEnabled = $derived(aiStatus === 'ready');
 
+	const isAgamaFamily = $derived(
+		/^pendidikan (agama|kepercayaan)/i.test(mapelName) || /^pendalaman kitab suci/i.test(mapelName)
+	);
+
 	const UNCONFIGURED_MESSAGE =
-		'Fitur AI belum aktif. Minta admin/kepala sekolah menyetel kunci API di halaman Pengaturan.';
+		'Fitur AI belum aktif. Silakan setel kunci API di halaman Pengaturan.';
 
 	onMount(() => {
 		(async () => {
@@ -39,6 +44,7 @@
 				const response = await fetch('/api/ai/status');
 				const body = await response.json().catch(() => ({}));
 				aiStatus = response.ok && body?.configured ? 'ready' : 'unconfigured';
+				isAdminUser = Boolean(body?.isAdmin);
 			} catch {
 				aiStatus = 'unconfigured';
 			}
@@ -186,128 +192,171 @@
 </script>
 
 <dialog class="modal" open onclose={handleCancel}>
-	<div class="modal-box max-w-3xl">
+	{#snippet UnconfiguredMessage()}
+		<span>
+			Fitur AI belum aktif. Setel kunci API {isAdminUser ? '' : 'pribadi Anda '}di halaman
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- deep link to settings page AI key card -->
+			<a class="link" href="/pengaturan#ai-key">Pengaturan</a>.
+		</span>
+	{/snippet}
+	<div class="modal-box flex max-h-[90vh] flex-col p-4 sm:w-full sm:max-w-3xl">
 		<h3 class="mb-2 text-xl font-bold">
 			Generate Lingkup Materi dan Tujuan Pelajaran {mapelName}
 			{kelasLabel}
 		</h3>
 		<p class="text-base-content/70 mb-4 text-sm">
-			Isi Capaian Pembelajaran, lalu AI akan menyusun Lingkup Materi beserta Tujuan Pembelajarannya.
-			Hasil dapat ditinjau dan disunting sebelum disimpan.
+			Fitur ini menggunakan AI untuk generate Materi beserta Tujuan Pembelajarannya menggunakan
+			taksonomi SOLO.
 		</p>
 
-		{#if errorMessage}
-			<div class="alert alert-error alert-soft mb-4" role="alert">
-				<Icon name="error" />
-				<span>{errorMessage}</span>
-			</div>
-		{/if}
-
-		{#if aiStatus === 'checking'}
-			<div class="alert alert-info alert-soft mb-4">
-				<span class="loading loading-spinner loading-sm"></span>
-				<span>Memeriksa ketersediaan fitur AI…</span>
-			</div>
-		{:else if aiStatus === 'unconfigured'}
-			<div class="alert alert-warning alert-soft mb-4" role="alert">
-				<Icon name="warning" />
-				<span>{UNCONFIGURED_MESSAGE}</span>
-			</div>
-		{/if}
-
-		{#if !hasGenerated}
-			<div class="flex flex-col gap-4">
-				<fieldset class="fieldset">
-					<legend class="fieldset-legend font-semibold">Capaian Pembelajaran</legend>
-					<textarea
-						class="textarea validator bg-base-200 dark:bg-base-300 h-40 w-full dark:border-none"
-						bind:value={capaianPembelajaran}
-						placeholder="Tempel atau tulis Capaian Pembelajaran mata pelajaran ini"
-						disabled={!isFormEnabled}></textarea>
-				</fieldset>
-
-				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-					<fieldset class="fieldset">
-						<legend class="fieldset-legend font-semibold">Maksimal Lingkup Materi</legend>
-						<input
-							type="number"
-							class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
-							bind:value={maxLingkupMateri}
-							min="1"
-							max="20"
-							step="1"
-							disabled={!isFormEnabled}
-						/>
-					</fieldset>
-
-					<fieldset class="fieldset">
-						<legend class="fieldset-legend font-semibold">Maksimal Tujuan Pembelajaran</legend>
-						<input
-							type="number"
-							class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
-							bind:value={maxTujuanPembelajaran}
-							min="1"
-							max="20"
-							step="1"
-							disabled={!isFormEnabled}
-						/>
-					</fieldset>
+		<div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-1">
+			{#if aiStatus !== 'unconfigured'}
+				<div class="alert alert-info mb-4" role="note">
+					<Icon name="info" />
+					{#if isAgamaFamily}
+						<span>
+							Khusus sekolah negeri, pastikan menggunakan Capaian Pembelajaran dari
+							<a
+								class="link"
+								href="https://drive.google.com/file/d/1kZnNYVitjQQqHtqVHGhuiMTdNFDqF3v1/view"
+								target="_blank"
+								rel="noreferrer">Keputusan Kepala BKPDM Nomor 020 Tahun 2026</a
+							>.
+						</span>
+					{:else}
+						<span>
+							Khusus sekolah negeri, pastikan menggunakan Capaian Pembelajaran dari
+							<a
+								class="link"
+								href="https://uploads.belajar.id/document/files/Kepka_BSKAP_No_01k17e8396ajn15j3hcw0k773b.pdf"
+								target="_blank"
+								rel="noreferrer">Keputusan Kepala BSKAP Nomor 046 tahun 2025</a
+							>.
+						</span>
+					{/if}
 				</div>
-			</div>
-		{:else}
-			<div class="flex max-h-72 flex-col gap-4 overflow-y-auto pr-1">
-				{#each groups as group, groupIndex (groupIndex)}
-					<div class="border-base-300 dark:border-none dark:bg-base-300/40 rounded-lg border p-3">
-						<div class="mb-2 flex items-center gap-2">
-							<span class="text-base-content/70 shrink-0 text-sm font-semibold">
-								Lingkup {groupIndex + 1}
-							</span>
+			{/if}
+
+			{#if errorMessage}
+				<div class="alert alert-error alert-soft mb-4" role="alert">
+					<Icon name="error" />
+					{#if errorMessage.startsWith('Fitur AI belum aktif')}
+						{@render UnconfiguredMessage()}
+					{:else}
+						<span>{errorMessage}</span>
+					{/if}
+				</div>
+			{/if}
+
+			{#if aiStatus === 'checking'}
+				<div class="alert alert-info alert-soft mb-4">
+					<span class="loading loading-spinner loading-sm"></span>
+					<span>Memeriksa ketersediaan fitur AI…</span>
+				</div>
+			{:else if aiStatus === 'unconfigured'}
+				<div class="alert alert-warning mb-4" role="alert">
+					<Icon name="warning" />
+					{@render UnconfiguredMessage()}
+				</div>
+			{/if}
+
+			{#if !hasGenerated}
+				<div class="flex flex-col gap-4">
+					<fieldset class="fieldset">
+						<legend class="fieldset-legend font-semibold">Capaian Pembelajaran</legend>
+						<textarea
+							class="textarea validator bg-base-200 dark:bg-base-300 h-40 w-full dark:border-none"
+							bind:value={capaianPembelajaran}
+							placeholder="Tempel atau tulis Capaian Pembelajaran mata pelajaran ini"
+							disabled={!isFormEnabled}></textarea>
+					</fieldset>
+
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend font-semibold">Maksimal Lingkup Materi</legend>
 							<input
-								type="text"
-								class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
-								value={group.lingkupMateri}
-								oninput={(event) =>
-									updateLingkupMateri(groupIndex, (event.currentTarget as HTMLInputElement).value)}
-								aria-label="Nama lingkup materi"
+								type="number"
+								class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
+								bind:value={maxLingkupMateri}
+								min="1"
+								max="20"
+								step="1"
+								disabled={!isFormEnabled}
 							/>
-							<button
-								type="button"
-								class="btn btn-soft btn-error btn-sm shadow-none"
-								title="Hapus lingkup materi ini"
-								onclick={() => removeGroup(groupIndex)}
-							>
-								<Icon name="del" />
-							</button>
-						</div>
-						<div class="flex flex-col gap-2">
-							{#each group.deskripsi as tp, tpIndex (tpIndex)}
-								<div class="flex items-start gap-2">
-									<textarea
-										class="textarea validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
-										value={tp}
-										maxlength="100"
-										oninput={(event) =>
-											updateDeskripsi(
-												groupIndex,
-												tpIndex,
-												(event.currentTarget as HTMLTextAreaElement).value
-											)}
-										aria-label={`Tujuan pembelajaran ${tpIndex + 1}`}></textarea>
-									<button
-										type="button"
-										class="btn btn-soft btn-error btn-sm shadow-none"
-										title="Hapus tujuan pembelajaran ini"
-										onclick={() => removeDeskripsi(groupIndex, tpIndex)}
-									>
-										<Icon name="del" />
-									</button>
-								</div>
-							{/each}
-						</div>
+						</fieldset>
+
+						<fieldset class="fieldset">
+							<legend class="fieldset-legend font-semibold">Maksimal Tujuan Pembelajaran</legend>
+							<input
+								type="number"
+								class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
+								bind:value={maxTujuanPembelajaran}
+								min="1"
+								max="20"
+								step="1"
+								disabled={!isFormEnabled}
+							/>
+						</fieldset>
 					</div>
-				{/each}
-			</div>
-		{/if}
+				</div>
+			{:else}
+				<div class="flex flex-col gap-4">
+					{#each groups as group, groupIndex (groupIndex)}
+						<div class="border-base-300 dark:border-none dark:bg-base-300/40 rounded-lg border p-3">
+							<div class="mb-2 flex items-center gap-2">
+								<span class="text-base-content/70 shrink-0 text-sm font-semibold">
+									Lingkup {groupIndex + 1}
+								</span>
+								<input
+									type="text"
+									class="input bg-base-200 dark:bg-base-300 w-full dark:border-none"
+									value={group.lingkupMateri}
+									oninput={(event) =>
+										updateLingkupMateri(
+											groupIndex,
+											(event.currentTarget as HTMLInputElement).value
+										)}
+									aria-label="Nama lingkup materi"
+								/>
+								<button
+									type="button"
+									class="btn btn-soft btn-error btn-sm shadow-none"
+									title="Hapus lingkup materi ini"
+									onclick={() => removeGroup(groupIndex)}
+								>
+									<Icon name="del" />
+								</button>
+							</div>
+							<div class="flex flex-col gap-2">
+								{#each group.deskripsi as tp, tpIndex (tpIndex)}
+									<div class="flex items-start gap-2">
+										<textarea
+											class="textarea validator bg-base-200 dark:bg-base-300 w-full dark:border-none"
+											value={tp}
+											maxlength="100"
+											oninput={(event) =>
+												updateDeskripsi(
+													groupIndex,
+													tpIndex,
+													(event.currentTarget as HTMLTextAreaElement).value
+												)}
+											aria-label={`Tujuan pembelajaran ${tpIndex + 1}`}></textarea>
+										<button
+											type="button"
+											class="btn btn-soft btn-error btn-sm shadow-none"
+											title="Hapus tujuan pembelajaran ini"
+											onclick={() => removeDeskripsi(groupIndex, tpIndex)}
+										>
+											<Icon name="del" />
+										</button>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
 
 		<div class="modal-action justify-between">
 			<button
@@ -362,4 +411,7 @@
 			</div>
 		</div>
 	</div>
+	<form method="dialog" class="modal-backdrop">
+		<button>close</button>
+	</form>
 </dialog>

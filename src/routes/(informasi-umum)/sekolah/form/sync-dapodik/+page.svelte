@@ -90,7 +90,7 @@
 		<h3 class="mb-3 text-lg font-bold">Sinkronisasi Dapodik</h3>
 		<div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-1">
 			<p class="text-sm opacity-70">
-				Ambil data dari aplikasi Dapodik desktop sekolah melalui Web Service (Bearer token). Data
+				Ambil data dari aplikasi Dapodik melalui Web Service (Bearer token). Data
 				Dapodik akan menimpa data yang sudah ada di sistem.
 			</p>
 
@@ -115,7 +115,7 @@
 						class="input bg-base-200 dark:bg-base-300 validator w-full dark:border-none"
 					/>
 					<p class="label text-wrap">
-						Token didapat dari menu Web Service pada aplikasi Dapodik desktop sekolah.
+						Token didapat dari menu Web Service pada aplikasi Dapodik.
 					</p>
 				</div>
 

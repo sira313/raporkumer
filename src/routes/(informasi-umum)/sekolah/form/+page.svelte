@@ -347,7 +347,7 @@
 						value={pakaiSelectPegawai ? kepalaNip : undefined}
 						disabled={kunciKepalaSekolah}
 						title={kunciKepalaSekolah
-							? 'Mengikuti data Dapodik — ubah melalui menu Pengaturan Profil akun yang bersangkutan'
+							? 'Mengikuti data Dapodik. Ubah melalui menu Pengaturan Profil akun yang bersangkutan'
 							: undefined}
 					/>
 					{#if !pakaiSelectPegawai}

@@ -30,10 +30,9 @@
 	<span>
 		<p class="text-lg font-semibold">{indikatorNama}</p>
 		<p class="text-2xl font-bold">
-			{indikatorCategory?.huruf || '–'} ({formatScore(nilaiIndikator)})
-			{#if indikatorCategory}
-				— {indikatorCategory.label}
-			{/if}
+			{indikatorCategory?.huruf || '–'} ({formatScore(nilaiIndikator)}){indikatorCategory
+				? `, ${indikatorCategory.label}`
+				: ''}
 		</p>
 		<p class="text-sm">
 			{#if tpCount > 0}
@@ -45,7 +44,7 @@
 		{#if indikatorCategory}
 			<p class="text-sm">{indikatorCategory.description}</p>
 		{:else}
-			<p class="text-sm font-semibold">— Lengkapi penilaian untuk menghitung nilai indikator</p>
+			<p class="text-sm font-semibold">Lengkapi penilaian untuk menghitung nilai indikator</p>
 		{/if}
 	</span>
 </div>

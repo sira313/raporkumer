@@ -35,7 +35,7 @@
 		<p class="text-2xl font-bold">{formatScore(nilaiAkhir)}</p>
 		<p class="text-sm">
 			{#if sumatifWeights}
-				Pembobotan default — Lingkup Materi {sumatifWeights.lingkup}%, STS {sumatifWeights.sts}%{sumatifWeights.sas !=
+				Pembobotan default: Lingkup Materi {sumatifWeights.lingkup}%, STS {sumatifWeights.sts}%{sumatifWeights.sas !=
 				null
 					? `, SAS ${sumatifWeights.sas}%`
 					: ''} (komponen kosong diabaikan)
@@ -46,9 +46,9 @@
 		<p class="text-sm font-semibold">
 			KKM {kkm}
 			{#if nilaiAkhir == null}
-				— Lengkapi penilaian untuk menghitung nilai akhir
+				Lengkapi penilaian untuk menghitung nilai akhir
 			{:else}
-				— {nilaiAkhirCategory?.label}
+				{nilaiAkhirCategory?.label}
 			{/if}
 		</p>
 		{#if nilaiAkhirCategory}

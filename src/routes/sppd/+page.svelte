@@ -241,7 +241,7 @@
 			dismissible: true,
 			spreadActions: true,
 			onPositive: {
-				label: hasBukti ? 'Edit Bukti' : 'Upload Bukti',
+				label: hasBukti ? 'Edit Bukti' : 'Unggah Bukti',
 				icon: 'download',
 				class: 'btn-primary',
 				action: () => openBuktiModal(sppd)

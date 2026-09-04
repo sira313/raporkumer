@@ -19,7 +19,6 @@
 			envKeyPresent: boolean;
 			model: string;
 			baseUrl: string;
-			schoolKeySet?: boolean;
 		};
 	} = $props();
 
@@ -36,7 +35,10 @@
 	let aiBaseUrl = $state(data.baseUrl);
 </script>
 
-<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md">
+<section
+	id="ai-key"
+	class="card bg-base-100 rounded-lg border border-none p-6 shadow-md scroll-mt-20"
+>
 	<FormEnhance
 		action={saveAction}
 		onsuccess={({ form }) => {
@@ -55,22 +57,13 @@
 						<span>Kunci API {isPersonal ? 'pribadi ' : ''}aktif: {data.maskedKey}</span>
 					</div>
 				{:else if isPersonal}
-					{#if data.schoolKeySet || data.envKeyPresent}
-						<div class="alert alert-info alert-soft">
-							<Icon name="info" />
-							<span>
-								Saat ini Anda memakai kunci API sekolah. Setel kunci pribadi agar memiliki kuota
-								sendiri dan tidak berebut dengan pengguna lain.
-							</span>
-						</div>
-					{:else}
-						<div class="alert alert-warning alert-soft">
-							<Icon name="warning" />
-							<span
-								>Belum ada kunci API sekolah maupun pribadi. Fitur "Generate" belum dapat digunakan.</span
-							>
-						</div>
-					{/if}
+					<div class="alert alert-warning alert-soft">
+						<Icon name="warning" />
+						<span
+							>Belum ada kunci API pribadi. Kunci sekolah tidak bisa dipakai untuk fitur "Generate".
+							Setel kunci Anda di bawah.</span
+						>
+					</div>
 				{:else if data.envKeyPresent}
 					<div class="alert alert-info alert-soft">
 						<Icon name="info" />
@@ -105,7 +98,7 @@
 							type="button"
 							class="cursor-pointer pr-2"
 							onclick={() => (showKey = !showKey)}
-							aria-label="Toggle API key visibility"
+							aria-label="Lihat atau sembunyikan kunci API"
 						>
 							<Icon name={showKey ? 'eye-off' : 'eye'} />
 						</button>

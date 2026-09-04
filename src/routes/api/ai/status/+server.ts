@@ -1,4 +1,4 @@
-import { getAiSettings, getStoredUserAiSettings } from '$lib/server/ai';
+import { getAiSettings, getStoredUserAiSettings, ADMIN_TYPES } from '$lib/server/ai';
 import { json } from '@sveltejs/kit';
 
 const ALLOWED_USER_TYPES = ['admin', 'kepala_sekolah', 'user', 'wali_kelas', 'wali_asuh'];
@@ -12,11 +12,12 @@ export const GET = async ({ locals }) => {
 		return json({ message: 'Anda tidak berhak menggunakan fitur ini.' }, { status: 403 });
 	}
 
-	const settings = await getAiSettings(user.id);
+	const settings = await getAiSettings(user);
 	const personal = await getStoredUserAiSettings(user.id);
 	return json({
 		configured: Boolean(settings),
 		personalKeySet: Boolean(personal),
-		envKeyPresent: Boolean(process.env.GEMINI_API_KEY)
+		envKeyPresent: Boolean(process.env.GEMINI_API_KEY),
+		isAdmin: ADMIN_TYPES.includes(user.type)
 	});
 };

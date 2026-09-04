@@ -34,7 +34,7 @@
 	<input
 		class="input input-sm bg-base-200 dark:bg-base-300 w-full dark:border-none"
 		bind:value={newValues[id].username}
-		placeholder="Username"
+		placeholder="Nama pengguna"
 	/>
 </td>
 <td>
@@ -42,13 +42,13 @@
 		<input
 			type={showPassword ? 'text' : 'password'}
 			bind:value={newValues[id].password}
-			placeholder="Password"
+			placeholder="Kata sandi"
 		/>
 		<button
 			type="button"
 			class="cursor-pointer"
 			onclick={() => (showPassword = !showPassword)}
-			aria-label="Toggle password visibility"
+			aria-label="Lihat atau sembunyikan kata sandi"
 		>
 			<Icon name={showPassword ? 'eye-off' : 'eye'} />
 		</button>

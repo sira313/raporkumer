@@ -30,28 +30,35 @@ export async function getStoredAiSettings(): Promise<AiSettings | null> {
 	};
 }
 
+export const ADMIN_TYPES = ['admin', 'kepala_sekolah'];
+
 /**
- * Resolve the active AI settings for a user. Priority: the user's personal key
- * (set via /pengaturan by wali_kelas/wali_asuh) → the school-wide key stored in
- * the DB → the GEMINI_API_KEY env var for development. Blank model/baseUrl on
- * the personal key fall back to the school-wide values, then defaults.
+ * Resolve the active AI settings for a user. Admins/kepala sekolah use the
+ * school-wide key (DB, then GEMINI_API_KEY env for development). All other
+ * roles must set their own personal key; the school key is never exposed to
+ * them. Personal model/baseUrl fall back to the school-wide values, then
+ * defaults — only the API key is per-user.
  */
-export async function getAiSettings(userId?: number): Promise<AiSettings | null> {
-	const fallback = await getGlobalAiSettings();
-	if (userId != null) {
-		const user = await db.query.tableAuthUser.findFirst({
-			where: eq(tableAuthUser.id, userId),
-			columns: { aiApiKey: true, aiModel: true, aiBaseUrl: true }
-		});
-		if (user?.aiApiKey) {
-			return {
-				apiKey: user.aiApiKey,
-				model: user.aiModel || fallback?.model || DEFAULT_AI_MODEL,
-				baseUrl: user.aiBaseUrl || fallback?.baseUrl || 'https://generativelanguage.googleapis.com'
-			};
-		}
+export async function getAiSettings(user: {
+	id: number;
+	type: string;
+}): Promise<AiSettings | null> {
+	if (ADMIN_TYPES.includes(user.type)) {
+		return getGlobalAiSettings();
 	}
-	return fallback;
+	const fallback = await getGlobalAiSettings();
+	const row = await db.query.tableAuthUser.findFirst({
+		where: eq(tableAuthUser.id, user.id),
+		columns: { aiApiKey: true, aiModel: true, aiBaseUrl: true }
+	});
+	if (row?.aiApiKey) {
+		return {
+			apiKey: row.aiApiKey,
+			model: row.aiModel || fallback?.model || DEFAULT_AI_MODEL,
+			baseUrl: row.aiBaseUrl || fallback?.baseUrl || 'https://generativelanguage.googleapis.com'
+		};
+	}
+	return null;
 }
 
 async function getGlobalAiSettings(): Promise<AiSettings | null> {

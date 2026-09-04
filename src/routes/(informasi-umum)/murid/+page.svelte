@@ -350,12 +350,12 @@
 							{#if canEdit}
 								<li>
 									<button type="button" onclick={openBulkPhotoUploadModal} class="text-left">
-										Upload Semua Foto
+										Unggah Semua Foto
 									</button>
 								</li>
 							{/if}
 							<li>
-								<a href="/api/murid/download-excel" class="text-left"> Download Murid </a>
+								<a href="/api/murid/download-excel" class="text-left"> Unduh Murid </a>
 							</li>
 						</ul>
 					</div>

@@ -126,10 +126,14 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	const storedGemini = isAdminOrKepalaSekolah ? await getStoredAiSettings() : null;
 
-	// Personal AI key card is only offered to guru accounts (wali_kelas/wali_asuh).
-	const isGuru = locals.user?.type === 'wali_kelas' || locals.user?.type === 'wali_asuh';
+	// Personal AI key card is offered to every non-admin role (guru mapel,
+	// wali kelas, wali asuh) — each user must bring their own key.
+	const isGuruOrUser =
+		locals.user?.type === 'user' ||
+		locals.user?.type === 'wali_kelas' ||
+		locals.user?.type === 'wali_asuh';
 	const storedPersonalAi =
-		isGuru && locals.user ? await getStoredUserAiSettings(locals.user.id) : null;
+		isGuruOrUser && locals.user ? await getStoredUserAiSettings(locals.user.id) : null;
 
 	return {
 		meta,
@@ -151,7 +155,6 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			maskedKey: storedPersonalAi ? maskApiKey(storedPersonalAi.apiKey) : null,
 			model: storedPersonalAi?.model ?? '',
 			baseUrl: storedPersonalAi?.baseUrl ?? '',
-			schoolKeySet: Boolean(storedGemini ?? (await getStoredAiSettings())),
 			envKeyPresent: Boolean(process.env.GEMINI_API_KEY)
 		}
 	};
@@ -451,9 +454,14 @@ export const actions: Actions = {
 		return { message: 'Kunci API berhasil dihapus.' };
 	},
 	'save-my-ai-key': async ({ request, locals }) => {
-		if (locals.user?.type !== 'wali_kelas' && locals.user?.type !== 'wali_asuh') {
+		if (
+			locals.user?.type !== 'user' &&
+			locals.user?.type !== 'wali_kelas' &&
+			locals.user?.type !== 'wali_asuh'
+		) {
 			return fail(403, {
-				message: 'Hanya guru (wali kelas/wali asuh) yang dapat mengatur kunci API pribadi.'
+				message:
+					'Hanya guru (guru mapel/wali kelas/wali asuh) yang dapat mengatur kunci API pribadi.'
 			});
 		}
 		const userId = locals.user.id;
@@ -474,9 +482,14 @@ export const actions: Actions = {
 		return { message: 'Kunci API pribadi berhasil disimpan.' };
 	},
 	'clear-my-ai-key': async ({ locals }) => {
-		if (locals.user?.type !== 'wali_kelas' && locals.user?.type !== 'wali_asuh') {
+		if (
+			locals.user?.type !== 'user' &&
+			locals.user?.type !== 'wali_kelas' &&
+			locals.user?.type !== 'wali_asuh'
+		) {
 			return fail(403, {
-				message: 'Hanya guru (wali kelas/wali asuh) yang dapat mengatur kunci API pribadi.'
+				message:
+					'Hanya guru (guru mapel/wali kelas/wali asuh) yang dapat mengatur kunci API pribadi.'
 			});
 		}
 

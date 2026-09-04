@@ -78,7 +78,7 @@
 
 <div class="not-prose flex flex-col gap-4">
 	<fieldset class="fieldset">
-		<legend class="fieldset-legend">Upload file undangan kegiatan perjalanan dinas</legend>
+		<legend class="fieldset-legend">Unggah file undangan kegiatan perjalanan dinas</legend>
 		<input
 			type="file"
 			class="file-input bg-base-200 w-full dark:border-none"
