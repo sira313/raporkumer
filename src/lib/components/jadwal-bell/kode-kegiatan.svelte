@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/icon.svelte';
+	import { touchDragSource } from '$lib/touch-drag.svelte';
 
 	const badgeColors = [
 		'badge-neutral',
@@ -20,7 +21,8 @@
 		canManage,
 		onHapusKegiatan,
 		onEditKegiatan,
-		onDrag
+		onDrag,
+		onDragEnd
 	}: {
 		kodeMapelPerKelas?: Array<{ kelasId: number; namaKelas: string; kodeMapel: string[] }>;
 		kodeTambahan: string[];
@@ -40,6 +42,7 @@
 			soundFileName?: string | null;
 		}) => void;
 		onDrag?: () => void;
+		onDragEnd?: () => void;
 	} = $props();
 
 	const allKodeMapel = $derived(kodeMapelPerKelas.flatMap((k) => k.kodeMapel));
@@ -109,6 +112,8 @@
 				class="badge {kodeColorMap[kode] ?? 'badge-info'} badge-soft cursor-grab"
 				draggable="true"
 				ondragstart={(e) => handleDragStart(e, kode)}
+				ondragend={() => onDragEnd?.()}
+				use:touchDragSource={{ dragData: () => ({ kode }), onDragStart: () => onDrag?.() }}
 			>
 				{kode}
 			</span>
@@ -120,6 +125,11 @@
 				class="badge {kodeColorMap[kegiatan.kode] ?? 'badge-secondary'} badge-soft cursor-grab"
 				draggable="true"
 				ondragstart={(e) => handleDragStart(e, kegiatan.kode)}
+				ondragend={() => onDragEnd?.()}
+				use:touchDragSource={{
+					dragData: () => ({ kode: kegiatan.kode }),
+					onDragStart: () => onDrag?.()
+				}}
 			>
 				{kegiatan.kode}
 				{#if canManage}
@@ -152,6 +162,8 @@
 				class="badge {kodeColorMap[kode] ?? 'badge-accent'} badge-soft cursor-grab"
 				draggable="true"
 				ondragstart={(e) => handleDragStart(e, kode)}
+				ondragend={() => onDragEnd?.()}
+				use:touchDragSource={{ dragData: () => ({ kode }), onDragStart: () => onDrag?.() }}
 			>
 				{kode}
 			</span>
@@ -168,6 +180,11 @@
 						class="badge {kodeColorMap[kode] ?? 'badge-primary'} badge-soft cursor-grab"
 						draggable="true"
 						ondragstart={(e) => handleDragStart(e, kode, kelasGroup.kelasId)}
+						ondragend={() => onDragEnd?.()}
+						use:touchDragSource={{
+							dragData: () => ({ kode, kelasId: kelasGroup.kelasId }),
+							onDragStart: () => onDrag?.()
+						}}
 					>
 						{kode}
 					</span>

@@ -11,6 +11,13 @@
 		modalShown = false;
 		isLoading = false;
 		handler?.();
+		// A drag may have left the class on a dialog that no longer holds the
+		// modal; ensure a fresh show never inherits a hidden (transparent) box.
+		modal?.classList.remove('modal-dragging');
+		modal?.style.removeProperty('pointer-events');
+		modal?.style.removeProperty('opacity');
+		const backdrop = modal?.querySelector('.modal-backdrop');
+		if (backdrop instanceof HTMLElement) backdrop.style.removeProperty('pointer-events');
 	}
 
 	export function showModal<BodyProps extends Record<string, unknown>>(
@@ -47,6 +54,30 @@
 		if (!modal) return;
 		modal.close();
 		clearModal();
+	}
+
+	/** While set, the open dialog stops hit-testing and fades out but stays in
+	 * the DOM, so an in-progress touch/mouse drag on its content is never
+	 * cancelled (removing the touched element would fire `touchcancel`). */
+	export function setModalDragging(state: boolean) {
+		if (!modal) return;
+		modal.classList.toggle('modal-dragging', state);
+		// Modal-mode dialogs also expose a ::backdrop that hit-tests (dismiss
+		// is a <button> in it). While dragging, drop the backdrop's background
+		// and make it (and the box) click-through so native mouse drops can
+		// reach the page behind a modal left in the DOM.
+		const backdrop = modal.querySelector('.modal-backdrop') as HTMLElement | null;
+		if (backdrop) backdrop.style.pointerEvents = state ? 'none' : '';
+		modal.style.pointerEvents = state ? 'none' : '';
+		modal.style.opacity = state ? '0' : '';
+	}
+
+	/** Closes the modal only if its current body is still `body` (so a modal
+	 * opened by the drop handler is not clobbered by the closing of the drag
+	 * source's own modal). */
+	export function hideModalIf(body: unknown) {
+		if (modalProps.body !== body) return;
+		hideModal();
 	}
 
 	export function setLoading(state: boolean) {
@@ -192,3 +223,13 @@
 		{/if}
 	</dialog>
 {/if}
+
+<style>
+	:global(dialog.modal-dragging) {
+		background: transparent !important;
+	}
+	:global(dialog.modal-dragging .modal-box),
+	:global(dialog.modal-dragging .modal-backdrop) {
+		opacity: 0;
+	}
+</style>
