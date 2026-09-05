@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { invalidate } from '$app/navigation';
-	import { showModal, hideModal } from '$lib/components/global-modal.svelte';
+	import { showModal, setModalDragging, hideModalIf } from '$lib/components/global-modal.svelte';
 	import { toast } from '$lib/components/toast.svelte';
 	import { computeNextEventMessage } from '$lib/utils/next-event-message';
 	import BellStatus from '$lib/components/jadwal-bell/bell-status.svelte';
@@ -10,6 +10,8 @@
 	import PengaturanModal from '$lib/components/jadwal-bell/pengaturan-modal.svelte';
 	import TambahKegiatanModal from '$lib/components/jadwal-bell/tambah-kegiatan-modal.svelte';
 	import SimulasiModal from '$lib/components/jadwal-bell/simulasi-modal.svelte';
+	import JadwalPelajaranToolbar from '$lib/components/jadwal-bell/jadwal-pelajaran-toolbar.svelte';
+	import JadwalPelajaranTable from '$lib/components/jadwal-bell/jadwal-pelajaran-table.svelte';
 	import { jadwalIsEditing } from '$lib/stores/jadwal-edit';
 	import { getHariSekolahList, isSchoolDay } from '$lib/hari-sekolah';
 	import type { PageData } from './$types';
@@ -473,8 +475,8 @@
 		});
 	}
 
-	let cardEl: HTMLElement | null = null;
-	let tableScrollEl: HTMLDivElement | null = null;
+	let cardEl = $state<HTMLElement | null>(null);
+	let tableScrollEl = $state<HTMLDivElement | null>(null);
 
 	$effect(() => {
 		if (!cardEl || !tableScrollEl) return;
@@ -532,7 +534,8 @@
 				canManage: canManage && isEditing,
 				onHapusKegiatan: handleHapusKegiatan,
 				onEditKegiatan: openEditKegiatan,
-				onDrag: () => requestAnimationFrame(() => hideModal())
+				onDrag: () => setModalDragging(true),
+				onDragEnd: () => hideModalIf(KodeKegiatan)
 			},
 			onNegative: { label: 'Tutup' },
 			dismissible: true
@@ -840,6 +843,12 @@
 		return hariLabel[hari] ?? hari.charAt(0).toUpperCase() + hari.slice(1);
 	}
 
+	function batalEdit() {
+		editing = {};
+		dirty = false;
+		isEditing = false;
+	}
+
 	let nextEventMessage = $state('');
 	$effect(() => {
 		nextEventMessage = computeNextEventMessage({
@@ -872,300 +881,54 @@
 <div class="grid grid-cols-1 gap-6">
 	<div class="alert alert-info sm:hidden">
 		<Icon name="info" />
-		<span>Gunakan tablet/laptop atau layar yang lebih besar agar lebih mudah mengatur jadwal pelajaran pada halaman ini.</span>
+		<span
+			>Gunakan tablet/laptop atau layar yang lebih besar agar lebih mudah mengatur jadwal pelajaran
+			pada halaman ini.</span
+		>
 	</div>
 	<section class="card bg-base-100 rounded-lg border border-none p-6 shadow-md" bind:this={cardEl}>
 		<div class="space-y-6">
-			<div class="flex flex-wrap items-center justify-between gap-2">
-				<div class="flex flex-wrap items-center gap-2">
-					{#if isEditing}
-						<button
-							type="button"
-							class="btn btn-soft btn-warning shadow-none"
-							onclick={() => {
-								editing = {};
-								dirty = false;
-								isEditing = false;
-							}}
-						>
-							<Icon name="close" />
-							Batal
-						</button>
-					{:else}
-						<a href="/akademik" class="btn btn-soft shadow-none">
-							<Icon name="left" /> Kembali
-						</a>
-					{/if}
-					<button
-						type="button"
-						class="btn btn-soft shadow-none xl:hidden"
-						onclick={openKodeKegiatan}
-						title="Kode Kegiatan"
-					>
-						<Icon name="grid" />
-						Kode
-					</button>
-					<button
-						type="button"
-						class="btn btn-soft shadow-none"
-						onclick={openPengaturan}
-						disabled={!canManage || isEditing}
-						aria-disabled={!canManage || isEditing}
-						title={!canManage || isEditing ? 'Anda tidak memiliki izin' : ''}
-					>
-						<Icon name="gear" />
-						Pengaturan
-					</button>
-					{#if isEditing && hasAnyPlgManual}
-						<button type="button" class="btn btn-soft shadow-none" onclick={resetJamPulang}>
-							<Icon name="repeat" />
-							Reset Jam Pulang
-						</button>
-					{:else}
-						<button
-							type="button"
-							class="btn btn-soft shadow-none"
-							onclick={openTambahKegiatan}
-							disabled={!canManage || isEditing}
-							aria-disabled={!canManage || isEditing}
-							title={!canManage || isEditing ? 'Anda tidak memiliki izin' : ''}
-						>
-							<Icon name="plus" />
-							Tambah Kegiatan
-						</button>
-					{/if}
-					{#if !isEditing && canManage}
-						<button
-							type="button"
-							class="btn btn-soft shadow-none"
-							onclick={() => (isEditing = true)}
-						>
-							<Icon name="edit" />
-							Edit
-						</button>
-					{/if}
-					{#if dirty && isEditing}
-						<button
-							type="button"
-							class="btn btn-primary shadow-none"
-							onclick={handleSaveJadwal}
-							disabled={saving}
-						>
-							{#if saving}
-								<span class="loading loading-spinner loading-sm"></span>
-								Menyimpan…
-							{:else}
-								<Icon name="save" />
-								Simpan Jadwal
-							{/if}
-						</button>
-					{/if}
-				</div>
-				{#if isEditing}
-					<button type="button" class="btn btn-error btn-soft shadow-none" onclick={hapusSemua}>
-						<Icon name="del" />
-						Hapus semua
-					</button>
-				{:else}
-					<div class="flex">
-						<button
-							type="button"
-							class="btn btn-soft rounded-r-none shadow-none {bellActive
-								? 'btn-error'
-								: 'btn-success'}"
-							onclick={toggleBell}
-							disabled={!canManage}
-							aria-disabled={!canManage}
-							title={!canManage ? 'Anda tidak memiliki izin' : ''}
-						>
-							<Icon name={bellActive ? 'pause' : 'play'} />
-							{bellActive ? 'Pause Bell' : 'Play Bell'}
-						</button>
-						<div class="dropdown dropdown-end">
-							<button
-								type="button"
-								class="btn btn-soft rounded-l-none shadow-none {bellActive
-									? 'btn-error'
-									: 'btn-success'}"
-								disabled={!canManage}
-								aria-label="Menu bell"
-							>
-								<Icon name="more-vertical" />
-							</button>
-							<ul
-								class="dropdown-content menu bg-base-100 border-base-300 z-50 mt-2 w-44 rounded-md border p-2 shadow-lg"
-							>
-								<li>
-									<button type="button" onclick={openSimulasi}>
-										<Icon name="play" />
-										Simulasi Bell
-									</button>
-								</li>
-							</ul>
-						</div>
-					</div>
-				{/if}
-			</div>
+			<JadwalPelajaranToolbar
+				{canManage}
+				{isEditing}
+				{dirty}
+				{saving}
+				{bellActive}
+				{hasAnyPlgManual}
+				onBatal={batalEdit}
+				onKode={openKodeKegiatan}
+				onPengaturan={openPengaturan}
+				onResetJamPulang={resetJamPulang}
+				onTambahKegiatan={openTambahKegiatan}
+				onEdit={() => (isEditing = true)}
+				onSave={handleSaveJadwal}
+				onHapusSemua={hapusSemua}
+				onToggleBell={toggleBell}
+				onSimulasi={openSimulasi}
+			/>
 
 			<BellStatus {bellActive} {hariIni} {nextEventMessage} class="alert alert-soft alert-info" />
 
-			<div
-				bind:this={tableScrollEl}
-				class="bg-base-100 dark:bg-base-200 overflow-y-auto rounded-md shadow-md dark:shadow-none"
-			>
-				<table class="border-base-200 dark:border-base-100 table border">
-					<thead class="sticky top-0 z-10">
-						<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
-							<th rowspan="2" class="w-0">Hari</th>
-							<th rowspan="2" class="w-0">Jam</th>
-							<th rowspan="2" class="w-0">Waktu</th>
-							<th colspan={kelasTerurut.length} class="text-center">
-								{kelasTerurut.length > 0 ? 'Kelas' : ''}
-							</th>
-						</tr>
-						<tr class="bg-base-200 dark:bg-base-300 text-left font-bold">
-							{#each kelasTerurut as kelas (kelas.id)}
-								<th class="min-w-[70px] max-w-[15ch] truncate text-center" title={kelas.nama}
-									>{kelas.nama.slice(0, 15)}{kelas.nama.length > 15 ? '…' : ''}</th
-								>
-							{/each}
-						</tr>
-					</thead>
-					<tbody>
-						{#each hariList as hari (hari)}
-							{#each Array.from({ length: hariMaxJam[hari] }, (_, i) => i + 1) as jamKe (jamKe)}
-								{@const allSame = isAllSame(hari, jamKe)}
-								{@const waktu = waktuMatrix[hari]?.[jamKe] ?? { start: '--:--', end: '--:--' }}
-								<tr class="border-base-200 dark:border-base-100 border-b">
-									{#if jamKe === 1}
-										<td rowspan={hariMaxJam[hari]} class="align-top font-medium">
-											{formatHari(hari)}
-										</td>
-									{/if}
-									<td class="text-center text-sm">{jamKe}</td>
-									<td class="text-xs whitespace-nowrap">
-										{#if jamKe === hariMaxJam[hari]}
-											{waktu.start}
-										{:else}
-											{waktu.start} - {waktu.end}
-										{/if}
-									</td>
-									{#if kodeMerged.has(allSame ?? '') || (!canManage && allSame)}
-										<td
-											colspan={kelasTerurut.length}
-											class="h-full text-center align-middle {canManage && isEditing
-												? 'cursor-grab'
-												: ''}"
-											ondragover={(e) => e.preventDefault()}
-											ondrop={(e) => handleDrop(e, hari, jamKe)}
-											ondragstart={(e) => {
-												if (!canManage || !isEditing) return;
-												dragSource = { hari, jamKe, kode: allSame! };
-												e.dataTransfer!.setData('text/plain', allSame!);
-											}}
-											draggable={canManage && isEditing && allSame !== null}
-										>
-											<div class="flex h-full w-full items-center justify-center">
-												{#if canManage && isEditing}
-													<div class="join w-full">
-														{#if jamKe < hariMaxJam[hari] && allSame}
-															<button
-																type="button"
-																class="btn btn-xs join-item btn-soft btn-info shrink-0 px-1 shadow-none"
-																onclick={() => copyToBelow(hari, jamKe)}
-																aria-label="Salin ke bawah"
-															>
-																<Icon name="copy" class="h-3 w-3" />
-															</button>
-														{/if}
-														<span
-															class="badge {badgeColorMap[allSame ?? ''] ??
-																'badge-primary'} join-item badge-soft grow"
-														>
-															{kodeNamaMap.get(allSame!) ?? allSame}
-														</span>
-														<button
-															type="button"
-															class="btn btn-xs join-item btn-soft btn-error shrink-0 px-1 shadow-none"
-															onclick={() => clearCell(hari, jamKe)}
-															aria-label="Hapus {allSame}"
-														>
-															<Icon name="del" class="h-3 w-3" />
-														</button>
-													</div>
-												{:else}
-													<span
-														class="badge {badgeColorMap[allSame ?? ''] ??
-															'badge-primary'} badge-soft w-full"
-													>
-														{kodeNamaMap.get(allSame!) ?? allSame}
-													</span>
-												{/if}
-											</div>
-										</td>
-									{:else}
-										{#each kelasTerurut as kelas (kelas.id)}
-											{@const kode = getKode(hari, jamKe, kelas.id)}
-											<td
-												class="text-center {canManage && isEditing && kode ? 'cursor-grab' : ''}"
-												ondragover={(e) => e.preventDefault()}
-												ondrop={(e) => handleDrop(e, hari, jamKe, kelas.id)}
-												ondragstart={(e) => {
-													if (!canManage || !isEditing || !kode) return;
-													dragSource = { hari, jamKe, kelasId: kelas.id, kode };
-													e.dataTransfer!.setData('text/plain', kode);
-												}}
-												draggable={canManage && isEditing && kode !== ''}
-											>
-												{#if canManage && isEditing}
-													{#if kode}
-														<div class="join">
-															{#if jamKe < hariMaxJam[hari]}
-																<button
-																	type="button"
-																	class="btn btn-xs join-item btn-soft btn-info px-1 shadow-none"
-																	onclick={() => copyToBelow(hari, jamKe, kelas.id)}
-																	aria-label="Salin ke bawah"
-																>
-																	<Icon name="copy" class="h-3 w-3" />
-																</button>
-															{/if}
-															<span
-																class="badge {badgeColorMap[kode] ??
-																	'badge-primary'} join-item badge-soft text-xs"
-															>
-																{kodeNamaMap.get(kode) ?? kode}
-															</span>
-															<button
-																type="button"
-																class="btn btn-xs join-item btn-soft btn-error px-1 shadow-none"
-																onclick={() => clearCell(hari, jamKe, kelas.id)}
-																aria-label="Hapus {kode}"
-															>
-																<Icon name="del" class="h-3 w-3" />
-															</button>
-														</div>
-													{:else}
-														<span class="text-base-content/30 cursor-default text-xs"> — </span>
-													{/if}
-												{:else if kode}
-													<span
-														class="badge {badgeColorMap[kode] ??
-															'badge-primary'} badge-soft text-xs"
-														>{kodeNamaMap.get(kode) ?? kode}</span
-													>
-												{:else}
-													<span class="text-base-content/30 text-xs">—</span>
-												{/if}
-											</td>
-										{/each}
-									{/if}
-								</tr>
-							{/each}
-						{/each}
-					</tbody>
-				</table>
-			</div>
+			<JadwalPelajaranTable
+				bind:scrollEl={tableScrollEl}
+				{hariList}
+				{kelasTerurut}
+				{hariMaxJam}
+				{waktuMatrix}
+				{kodeMerged}
+				{kodeNamaMap}
+				{badgeColorMap}
+				{canManage}
+				{isEditing}
+				{getKode}
+				{isAllSame}
+				{formatHari}
+				onDragStart={(p) => (dragSource = p)}
+				onDragEnd={() => (dragSource = null)}
+				onDrop={handleDrop}
+				onClearCell={clearCell}
+				onCopyBelow={copyToBelow}
+			/>
 		</div>
 	</section>
 </div>

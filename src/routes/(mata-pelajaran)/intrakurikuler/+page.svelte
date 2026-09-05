@@ -4,6 +4,7 @@
 	import { invalidate } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import Icon from '$lib/components/icon.svelte';
+	import { flip } from 'svelte/animate';
 	import { modalRoute } from '$lib/utils';
 	import ImportMapelDialog from '$lib/components/intrakurikuler/import-mapel-dialog.svelte';
 	import { toast } from '$lib/components/toast.svelte';
@@ -17,6 +18,7 @@
 		pksParentName
 	} from '$lib/statics';
 	import IntrakurikulerModals from '$lib/components/intrakurikuler/modals.svelte';
+	import { touchDragSource, dropTarget } from '$lib/touch-drag.svelte';
 
 	type MapelWithIndicator = MataPelajaran & {
 		tpCount: number;
@@ -147,6 +149,18 @@
 		const [moved] = urutanList.splice(dragIndex, 1);
 		urutanList.splice(index, 0, moved);
 		dragIndex = null;
+	}
+
+	// Live reorder preview (pointer drag): the dragged row jumps into the slot
+	// under the cursor and `animate:flip` slides the rows in real time.
+	function reorderHover(targetEl: HTMLElement) {
+		const id = Number(targetEl.dataset.mapelId);
+		if (!Number.isFinite(id) || dragIndex === null) return;
+		const to = urutanList.findIndex((m) => m.id === id);
+		if (to === -1 || to === dragIndex) return;
+		const [moved] = urutanList.splice(dragIndex, 1);
+		urutanList.splice(to, 0, moved);
+		dragIndex = to;
 	}
 
 	const barisTampil = $derived(editUrutan ? urutanList : daftarMapel);
@@ -477,13 +491,25 @@
 				{#each barisTampil as mapel, index (mapel.id)}
 					<tr
 						draggable={editUrutan}
+						data-mapel-id={editUrutan ? mapel.id : undefined}
 						class={editUrutan
 							? `${dragIndex === index ? 'opacity-40' : 'cursor-grab'} active:cursor-grabbing`
 							: undefined}
+						animate:flip={{ duration: 200 }}
 						ondragstart={(e) => handleDragStart(index, e)}
 						ondragover={handleDragOver}
 						ondragend={() => (dragIndex = null)}
 						ondrop={() => handleDrop(index)}
+						use:touchDragSource={{
+							enabled: editUrutan,
+							dragData: () => ({ kode: String(index) }),
+							live: true,
+							onDragStart: () => {
+								dragIndex = index;
+							},
+							onDragOver: (target) => reorderHover(target)
+						}}
+						use:dropTarget={{ enabled: editUrutan }}
 					>
 						{#if editUrutan}
 							<td class="text-center">

@@ -68,3 +68,10 @@ a[data-preloading] {
 [data-theme='dark'] .badge-neutral {
 	color: white;
 }
+
+/* Avoid cursor flicker to the default pointer while a long drag crosses
+   elements that set their own cursor (the DnD helper adds this class). */
+html.rapkumer-dragging,
+html.rapkumer-dragging * {
+	cursor: grabbing !important;
+}
